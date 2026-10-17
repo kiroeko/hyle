@@ -888,7 +888,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_vulkan_runtime",
-        "tree_sha256": "3b3819879be00b7eb9b4605c106a763e65eefb50a2be98ac2c94dd74eade5ba4"
+        "tree_sha256": "38e2cdfe2abf5119571f6697a827defb27da305fa188a25ad5332c5353ce8114"
       },
       "license": {
         "expression": "MIT",
@@ -901,7 +901,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
-            "sha256": "2a4a6b2e003a4cde3eef37ab1e6da48511b57189c3a6ef69e70b942d9c3e35b3"
+            "sha256": "3a26e39b81c7d21a75fbbf52935533b8bf5e2f06dc5e7104d04a7ef96926efde"
           }
         ]
       }
@@ -919,7 +919,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_runtime",
-        "tree_sha256": "3391fe403a96deb6ae5a30ce7a98463eb36072c8c6f63bd9b4d7e1abd0285258"
+        "tree_sha256": "35362dfcd15a927b51412379fb6483282b8c5587a3bc4e6ff943d3731c5cbffe"
       },
       "license": {
         "expression": "MIT",
@@ -932,7 +932,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_runtime/NOTICE.md",
-            "sha256": "ecd3db7c195e32a287ae50bfda65822dfd5c1b7b7e514dbdd6dcf03c9d230952"
+            "sha256": "6b912c773dec4bb673eef914b25815c0ebedd84ccd8086a296479b2e73c96846"
           }
         ]
       }
@@ -1089,7 +1089,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cpu_runtime",
-        "tree_sha256": "1353f674cedaf4f0e64055ff07227fe8af8ded61d12832c581e986ea87455379"
+        "tree_sha256": "fac0b1c718bc238e8c1cadd1eef512049889285c33209c13fc085c3a792e4579"
       },
       "license": {
         "expression": "MIT",
@@ -1102,7 +1102,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_cpu_runtime/NOTICE.md",
-            "sha256": "a116393b6b54b907b0b44b6dd2685fa7f2801f6ed375bc737dfeab903fe8bf15"
+            "sha256": "83615d1ffce3d8725e9170362c18bda30b79077758cd5ac02fd30d43f54a3a2f"
           }
         ]
       }

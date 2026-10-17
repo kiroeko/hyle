@@ -1,0 +1,404 @@
+#include "../compute_ggml_runtime/gallocr_faults.h"
+#include "../compute_provider_native/half_test_support.h"
+#include "ggml-backend-impl.h"
+#include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/model_ops.h"
+#include "hyle/mem/quota_allocator.h"
+#include "hyle/mem/stats.h"
+#include "metadata_arena.h"
+#include "program.h"
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstring>
+#include <gtest/gtest.h>
+#include <iostream>
+#include <limits>
+#include <vector>
+
+namespace {
+namespace c = hyle::compute;
+namespace d = c::ggml_cpu::internal;
+using Half = hyle::simd::float16_t;
+struct AttentionPorts final {
+  std::vector<hyle::mem::Buffer> owners;
+  std::vector<hyle::mem::BufferView> views;
+  explicit AttentionPorts(std::span<const c::TensorDesc> descriptions) {
+    for (const auto &desc : descriptions) {
+      const auto bytes = desc.required_bytes().value();
+      owners.push_back(
+          hyle::mem::Buffer::create(hyle::mem::system_resource(), bytes + 4, 64)
+              .value());
+      views.push_back(owners.back().view().subview(4, bytes).value());
+    }
+  }
+  void write(std::size_t port, const c::TensorDesc &desc,
+             std::span<const double> values) {
+    std::vector<float> data(values.size());
+    std::transform(values.begin(), values.end(), data.begin(),
+                   [](double x) { return static_cast<float>(x); });
+    ASSERT_EQ(data.size(), desc.element_count().value());
+    ASSERT_TRUE(views[port].write(std::as_bytes(std::span(data))).ok());
+  }
+  std::vector<double> read(const c::TensorDesc &desc, std::size_t port) {
+    std::vector<float> data(desc.element_count().value());
+    auto status = views[port].read(std::as_writable_bytes(std::span(data)));
+    if (!status.ok())
+      throw std::bad_alloc();
+    return {data.begin(), data.end()};
+  }
+};
+struct RawProgram final {
+  hyle::mem::AllocatorRef allocator;
+  c::Provider provider = c::ggml_cpu::provider({.native_threads = 2});
+  const c::detail::ProviderVTable *table =
+      c::detail::ProviderAccess::vtable(provider);
+  void *context = nullptr;
+  c::detail::ProviderPrepared prepared;
+  std::vector<void *> slots;
+  std::vector<c::TensorDesc> inputs, outputs;
+  explicit RawProgram(hyle::mem::AllocatorRef resource) : allocator(resource) {}
+  ~RawProgram() {
+    for (auto *slot : slots)
+      prepared.vtable->destroy_invocation(slot, allocator);
+    if (prepared.vtable)
+      prepared.vtable->destroy_prepared(prepared.state, allocator);
+    if (context)
+      table->destroy_context(context, allocator);
+  }
+  hyle::Status initialize(d::Recipe recipe) {
+    HYLE_RETURN_IF_ERROR(table->create_context(provider, c::cpu::device(),
+                                               nullptr, allocator, &context));
+    for (auto id : recipe.inputs)
+      inputs.push_back(recipe.values[id]);
+    for (auto id : recipe.outputs)
+      outputs.push_back(recipe.values[id]);
+    return d::compile(context, std::move(recipe), allocator, &prepared).status;
+  }
+  hyle::Status add_slot() {
+    void *slot = nullptr;
+    auto status = prepared.vtable->create_invocation(prepared.state, allocator,
+                                                     {}, &slot);
+    if (!status.ok()) {
+      if (slot)
+        prepared.vtable->destroy_invocation(slot, allocator);
+      return status;
+    }
+    slots.push_back(slot);
+    return status;
+  }
+  hyle::Status submit(std::size_t slot, c::Queue &queue, AttentionPorts &ports,
+                      std::size_t ninputs) {
+    std::vector<c::ConstTensorView> x;
+    std::vector<c::TensorView> y;
+    for (std::size_t i = 0; i < inputs.size(); ++i)
+      x.push_back(
+          c::ConstTensorView::create(inputs[i], ports.views[i]).value());
+    for (std::size_t i = 0; i < outputs.size(); ++i)
+      y.push_back(
+          c::TensorView::create(outputs[i], ports.views[ninputs + i]).value());
+    return prepared.vtable
+        ->shared_submit(prepared.state, slots[slot], queue, x, y)
+        .status;
+  }
+};
+struct MathCase final {
+  c::DataType type;
+  std::int64_t batch, queries, keys, heads, kv_heads, query_depth, value_depth;
+  float scale;
+  bool causal, sink;
+  bool bshd = true;
+};
+
+void check_math_attention(const MathCase &test) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  const auto dense = [&](auto shape) {
+    if constexpr (std::tuple_size_v<decltype(shape)> == 4)
+      if (!test.bshd)
+        std::swap(shape[1], shape[2]);
+    return c::TensorDesc::dense(test.type, shape).value();
+  };
+  const auto query =
+      dense(std::array{test.batch, test.queries, test.heads, test.query_depth});
+  const auto key =
+      dense(std::array{test.batch, test.keys, test.kv_heads, test.query_depth});
+  const auto value =
+      dense(std::array{test.batch, test.keys, test.kv_heads, test.value_depth});
+  const auto output =
+      dense(std::array{test.batch, test.queries, test.heads, test.value_depth});
+  d::Recipe recipe{.values = {query, key, value}, .inputs = {0, 1, 2}};
+  if (test.sink) {
+    recipe.values.push_back(dense(std::array{test.queries, test.keys}));
+    recipe.values.push_back(dense(std::array{test.heads}));
+    recipe.inputs = {0, 1, 2, 3, 4};
+  }
+  const auto result_id = std::uint32_t(recipe.values.size());
+  recipe.values.push_back(output);
+  recipe.values.push_back(output);
+  const auto operation =
+      test.sink
+          ? c::model_ops::sink_attention(test.scale)
+          : c::Operation(c::ScaledDotProductAttention{
+                .layout = test.bshd
+                              ? c::AttentionLayout::kBatchSequenceHeadDepth
+                              : c::AttentionLayout::kBatchHeadSequenceDepth,
+                .scale = test.scale,
+                .causal = test.causal});
+  recipe.nodes = {{operation, recipe.inputs, {result_id}},
+                  {c::Operation(c::Unary{c::UnaryKind::kNeg}),
+                   {result_id},
+                   {result_id + 1}}};
+  // Publish both the attention intermediate and its downstream consumer.
+  recipe.outputs = {result_id, result_id + 1};
+  RawProgram region(stats.get());
+  ASSERT_TRUE(region.initialize(recipe).ok());
+  ASSERT_TRUE(region.add_slot().ok());
+  ASSERT_TRUE(region.add_slot().ok());
+  EXPECT_EQ(region.prepared.runtime.replay_class,
+            c::ProviderReplayClass::kPrepared);
+  auto queue_context =
+      c::Context::create(c::cpu::device(), c::ggml_cpu::provider()).value();
+  auto queue = queue_context.create_queue().value();
+  std::vector<c::TensorDesc> descriptions(recipe.values.begin(),
+                                          recipe.values.begin() + result_id);
+  descriptions.push_back(output);
+  descriptions.push_back(output);
+  AttentionPorts first(descriptions), second(descriptions);
+  std::vector<double> retained;
+  const auto index = [&](auto b, auto row, auto head, auto rows, auto heads,
+                         auto depth) {
+    return (test.bshd ? (b * rows + row) * heads + head
+                      : (b * heads + head) * rows + row) *
+           depth;
+  };
+  for (int replay = 0; replay < 2; ++replay) {
+    std::vector<double> q(query.element_count().value());
+    std::vector<double> k(key.element_count().value());
+    std::vector<double> v(value.element_count().value());
+    for (std::int64_t b = 0; b < test.batch; ++b) {
+      for (std::int64_t r = 0; r < test.queries; ++r)
+        for (std::int64_t h = 0; h < test.heads; ++h)
+          q[index(b, r, h, test.queries, test.heads, test.query_depth)] =
+              double((b + r + h + replay) % 5 - 2) / 8.;
+      for (std::int64_t r = 0; r < test.keys; ++r)
+        for (std::int64_t h = 0; h < test.kv_heads; ++h) {
+          k[index(b, r, h, test.keys, test.kv_heads, test.query_depth)] =
+              double((3 * r + b + h + replay) % 7 - 3) / 8.;
+          for (std::int64_t z = 0; z < test.value_depth; ++z)
+            v[index(b, r, h, test.keys, test.kv_heads, test.value_depth) + z] =
+                double((r + replay) % 11 - 5) / 32. + double(b * 2 + h) / 64. +
+                double(z % 5 - 2) / 128.;
+        }
+    }
+    auto &ports = replay ? second : first;
+    ports.write(0, query, q);
+    ports.write(1, key, k);
+    ports.write(2, value, v);
+    std::vector<double> mask, sinks;
+    if (test.sink) {
+      mask.resize(std::size_t(test.queries * test.keys));
+      sinks.resize(std::size_t(test.heads));
+      for (std::int64_t r = 0; r < test.queries; ++r)
+        for (std::int64_t s = 0; s < test.keys; ++s)
+          mask[r * test.keys + s] =
+              r == test.queries / 2
+                  ? -std::numeric_limits<double>::infinity()
+                  : double((r + 2 * s + replay) % 7 - 3) / 16.;
+      for (std::int64_t h = 0; h < test.heads; ++h)
+        sinks[h] = double((h + replay) % 5 - 2) / 4.;
+      ports.write(3, descriptions[3], mask);
+      ports.write(4, descriptions[4], sinks);
+    }
+    const auto before = stats.snapshot();
+    const auto submitted = region.submit(0, queue, ports, recipe.inputs.size());
+    ASSERT_TRUE(submitted.ok()) << submitted.message();
+    const auto after = stats.snapshot();
+    EXPECT_EQ(after.total_allocs, before.total_allocs);
+    EXPECT_EQ(after.total_frees, before.total_frees);
+    // A second independent slot installs its first real mappings separately.
+    const auto independent =
+        region.submit(1, queue, ports, recipe.inputs.size());
+    ASSERT_TRUE(independent.ok()) << independent.message();
+    EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
+    const auto actual = ports.read(output, result_id);
+    const auto negative = ports.read(output, result_id + 1);
+    double max_error = 0, max_excess = 0;
+    for (std::int64_t b = 0; b < test.batch; ++b)
+      for (std::int64_t r = 0; r < test.queries; ++r)
+        for (std::int64_t h = 0; h < test.heads; ++h) {
+          const auto kh = h / (test.heads / test.kv_heads);
+          const auto end =
+              test.causal ? test.keys - test.queries + r + 1 : test.keys;
+          const auto q0 =
+              q[index(b, r, h, test.queries, test.heads, test.query_depth)];
+          std::vector<double> weights(std::size_t(end), 0.);
+          double maximum = test.sink ? sinks[h] : -INFINITY;
+          for (std::int64_t s = 0; s < end; ++s) {
+            weights[s] = q0 *
+                             k[index(b, s, kh, test.keys, test.kv_heads,
+                                     test.query_depth)] *
+                             double(test.scale) +
+                         (test.sink ? mask[r * test.keys + s] : 0.);
+            maximum = (std::max)(maximum, weights[s]);
+          }
+          double sum = test.sink ? std::exp(sinks[h] - maximum) : 0.;
+          double weighted_token = 0;
+          for (std::int64_t s = 0; s < end; ++s) {
+            weights[s] = std::exp(weights[s] - maximum);
+            sum += weights[s];
+            weighted_token += weights[s] * double((s + replay) % 11 - 5) / 32.;
+          }
+          const auto mass =
+              test.sink ? 1. - std::exp(sinks[h] - maximum) / sum : 1.;
+          for (std::int64_t z = 0; z < test.value_depth; ++z) {
+            auto expected =
+                weighted_token / sum +
+                mass * (double(b * 2 + kh) / 64. + double(z % 5 - 2) / 128.);
+            expected =
+                test.type == c::DataType::kFloat32
+                    ? double(float(expected))
+                    : half_test::decode(half_test::encode<Half>(expected));
+            const auto at =
+                index(b, r, h, test.queries, test.heads, test.value_depth) + z;
+            const auto tolerance = test.type == c::DataType::kFloat32
+                                       ? 6e-6 * std::abs(expected) + 2e-6
+                                       : .001 * std::abs(expected) + 2e-7;
+            max_error = (std::max)(max_error, std::abs(actual[at] - expected));
+            max_excess =
+                (std::max)(max_excess,
+                           std::abs(actual[at] - expected) - tolerance);
+            ASSERT_TRUE(std::isfinite(actual[at]));
+            ASSERT_EQ(negative[at], -actual[at]);
+          }
+        }
+    std::cout << "math_attention case=" << test.sink << '/' << test.query_depth
+              << '/' << test.value_depth << " replay=" << replay
+              << " max_abs=" << max_error << " budget_excess=" << max_excess
+              << " allocator_live_bytes=" << stats.snapshot().live_bytes
+              << '\n';
+    EXPECT_EQ(max_excess, 0.);
+    if (replay == 0)
+      retained = actual;
+    else
+      EXPECT_EQ(first.read(output, result_id), retained);
+  }
+}
+
+d::Recipe sink_recipe(std::int64_t queries, std::int64_t keys) {
+  auto dense = [](auto shape) {
+    return c::TensorDesc::dense(c::DataType::kFloat32, shape).value();
+  };
+  const auto q = dense(std::array<std::int64_t, 4>{1, queries, 64, 512});
+  const auto kv = dense(std::array<std::int64_t, 4>{1, keys, 1, 512});
+  const auto mask = dense(std::array{queries, keys});
+  const auto sinks = dense(std::array<std::int64_t, 1>{64});
+  return {
+      .values = {q, kv, kv, mask, sinks, q},
+      .nodes = {{c::model_ops::sink_attention(.125F), {0, 1, 2, 3, 4}, {5}}},
+      .inputs = {0, 1, 2, 3, 4},
+      .outputs = {5}};
+}
+TEST(GgmlCpuMathAttention, SinkMaskTailPublishedIntermediateAndRebind) {
+  check_math_attention(
+      {c::DataType::kFloat32, 1, 3, 17, 64, 1, 512, 512, .125F, false, true});
+  check_math_attention({c::DataType::kFloat32, 1, 65, 2049, 64, 1, 512, 512,
+                        .125F, false, true});
+}
+TEST(GgmlCpuMathAttention, LayoutsBatchGqaAndOutputDepth) {
+  check_math_attention({c::DataType::kFloat32, 2, 257, 273, 4, 1, 8, 16, -.5F,
+                        true, false, false});
+  check_math_attention({c::DataType::kFloat32, 2, 513, 129, 4, 1, 8, 16, 0.F,
+                        false, false, true});
+}
+TEST(GgmlCpuMathAttention, ColdQuotaFailureRollsBackAndCanRecover) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  hyle::mem::QuotaAllocator quota(stats.get(), 1ULL << 30);
+  {
+    RawProgram program(quota.get());
+    ASSERT_TRUE(program.initialize(sink_recipe(65, 2049)).ok());
+    const auto before = quota.used();
+    for (const auto available : {std::size_t{0}, std::size_t{1 << 20}}) {
+      auto hold =
+          quota.try_reserve_bytes(quota.remaining() - available).value();
+      const auto result = program.add_slot();
+      EXPECT_TRUE(result.IsResourceExhausted()) << result.message();
+      hold.reset();
+      EXPECT_EQ(quota.used(), before);
+    }
+    ASSERT_TRUE(program.add_slot().ok());
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+TEST(GgmlCpuMathAttention, ColdSinkAllocationUsesBoundedScores) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    RawProgram program(stats.get());
+    auto recipe = sink_recipe(129, 2049);
+    ASSERT_TRUE(program.initialize(recipe).ok());
+    const auto before = stats.snapshot();
+    ASSERT_TRUE(program.add_slot().ok());
+    const auto after = stats.snapshot();
+    const auto allocated = after.live_bytes - before.live_bytes;
+    std::size_t caller = 0;
+    for (auto id : recipe.inputs)
+      caller += recipe.values[id].required_bytes().value();
+    caller += recipe.values.back().required_bytes().value();
+    std::cout << "cold_sink_allocator_bytes=" << allocated
+              << " caller_logical_required_bytes=" << caller
+              << " single_scores_bytes=" << 4ULL * 64 * 129 * 2049 << '\n';
+    EXPECT_LT(allocated, 4ULL * 64 * 129 * 2049);
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+TEST(GgmlCpuMathAttention, NativeColdPlannerFailuresAndFirstBindDoNotAllocate) {
+  auto arena = c::ggml_runtime::MetadataArena::for_graph(
+                   8, 8, hyle::mem::system_allocator())
+                   .value();
+  auto *ctx = arena.get();
+  auto *input = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, 32);
+  auto *middle = ggml_scale(ctx, input, 2.F);
+  auto *output = ggml_neg(ctx, middle);
+  auto *graph = ggml_new_graph_custom(ctx, 8, false);
+  ggml_set_input(input);
+  ggml_set_output(output);
+  ggml_build_forward_expand(graph, output);
+  auto *xb = ggml_backend_cpu_buffer_from_ptr(nullptr, 128);
+  auto *yb = ggml_backend_cpu_buffer_from_ptr(nullptr, 128);
+  input->buffer = xb;
+  output->buffer = yb;
+  alignas(64) std::array<float, 32> x{}, y{};
+  int allocations = 0;
+  for (int fail = 0; fail <= allocations; ++fail) {
+    input->data = nullptr;
+    output->data = nullptr;
+    middle->data = nullptr;
+    middle->buffer = nullptr;
+    hyle_test_gallocr_fail_at(fail);
+    auto *allocator = hyle_test_gallocr_new(ggml_backend_cpu_buffer_type());
+    const auto reserved =
+        allocator && hyle_test_gallocr_reserve(allocator, graph);
+    if (fail == 0) {
+      ASSERT_TRUE(reserved);
+      allocations = hyle_test_gallocr_calls();
+      input->data = x.data();
+      xb->context = x.data();
+      output->data = y.data();
+      yb->context = y.data();
+      ASSERT_TRUE(hyle_test_gallocr_alloc_graph(allocator, graph));
+      EXPECT_EQ(hyle_test_gallocr_calls(), allocations);
+      std::cout << "native_cold_c_malloc_calls=" << allocations
+                << " after_first_bind_calls=" << hyle_test_gallocr_calls()
+                << '\n';
+    } else
+      EXPECT_FALSE(reserved);
+    hyle_test_gallocr_free(allocator);
+    EXPECT_EQ(hyle_test_gallocr_live(), 0);
+  }
+  ggml_backend_buffer_free(xb);
+  ggml_backend_buffer_free(yb);
+  hyle_test_gallocr_fail_at(0);
+}
+} // namespace

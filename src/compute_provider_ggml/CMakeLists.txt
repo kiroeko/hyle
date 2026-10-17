@@ -6,7 +6,8 @@ endif()
 hyle_add_module(compute_provider_ggml SOURCES ggml_cpu_provider.cc standard_index.cc native_batch.cc)
 target_include_directories(hyle_compute_provider_ggml PRIVATE
   "${HYLE_SOURCE_DIR}/src/compute"
-  "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
+  "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime"
+  "${HYLE_GGML_SOURCE_DIR}/src")
 target_link_libraries(hyle_compute_provider_ggml PRIVATE ggml)
 hyle_target_compute_capability(hyle_compute_provider_ggml ggml_cpu)
 target_compile_definitions(hyle_compute_provider_ggml PRIVATE

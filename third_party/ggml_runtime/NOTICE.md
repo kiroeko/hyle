@@ -14,6 +14,9 @@ context alignment/padding and thread counts, preserve native initialization
 errors, and roll back partially created worker threads. Apple deallocation
 uses the original allocation size. A private pool-creation entry carries the
 native failure code to HYLE; it is not an installed public C API.
+The official gallocr keeps native liveness planning and returns allocation
+failures instead of aborting, including partial-construction cleanup. CPU and
+Vulkan adapters share these resource edits; the planner algorithm is unchanged.
 Graph metadata sizing advances integer addresses, including its zero-based
 size-only cursor, without undefined null-pointer arithmetic; layout is unchanged.
 

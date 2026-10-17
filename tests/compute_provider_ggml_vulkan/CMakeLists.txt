@@ -7,11 +7,11 @@ set_tests_properties(hyle_ggml_vulkan_source_contract_test PROPERTIES
   LABELS "compute_provider_ggml_vulkan")
 
 if(_HYLE_COMPUTE_HAVE_VULKAN)
-  hyle_add_test(compute_provider_ggml_vulkan SOURCES metadata_test.cc region_test.cc concat_test.cc attention_causal_test.cc attention_math_test.cc native_test.cc work_test.cc storage_test.cc gallocr_faults.c mxfp4_qualification_test.cc attention_cache_test.cc)
+  hyle_add_test(compute_provider_ggml_vulkan SOURCES metadata_test.cc region_test.cc concat_test.cc attention_causal_test.cc attention_math_test.cc native_test.cc work_test.cc storage_test.cc ../compute_ggml_runtime/gallocr_faults.c mxfp4_qualification_test.cc attention_cache_test.cc)
   if(MSVC)
     # The C fault fixture includes the original UTF-8 vendor source. C++'s
     # normal build-contract encoding flag does not cover this C translation unit.
-    set_source_files_properties(gallocr_faults.c PROPERTIES COMPILE_OPTIONS /utf-8)
+    set_source_files_properties(../compute_ggml_runtime/gallocr_faults.c PROPERTIES COMPILE_OPTIONS /utf-8)
   endif()
   target_include_directories(hyle_compute_provider_ggml_vulkan_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan"

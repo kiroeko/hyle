@@ -14,9 +14,12 @@
 #include <cstring>
 #include <exception>
 #include <limits>
+#include <memory>
 #include <new>
 #include <utility>
 
+#include "ggml-alloc.h"
+#include "ggml-backend-impl.h"
 #include "cpu_execution.h"
 #include "cpu_program.h"
 #include "explicit_rope.h"
@@ -193,6 +196,37 @@ bool native_flash(DataType type) noexcept {
   return f32_flash(type) || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
 }
+std::int64_t attention_query_block(const internal::Recipe &recipe,
+                                   const internal::Node &node) noexcept {
+  const bool sink =
+      node.operation.custom_as<model_ops::SinkAttention>().has_value();
+  const auto *attention = node.operation.get_if<ScaledDotProductAttention>();
+  if (!sink &&
+      (!attention || native_flash(recipe.values[node.inputs[0]].data_type())))
+    return 0;
+  const auto q = recipe.values[node.inputs[0]].dimensions();
+  const auto k = recipe.values[node.inputs[1]].dimensions();
+  const auto v = recipe.values[node.inputs[2]].dimensions();
+  const auto sequence =
+      sink || attention->layout == AttentionLayout::kBatchSequenceHeadDepth
+          ? 1U
+          : 2U;
+  const auto head = sequence == 1 ? 2U : 1U;
+  const auto queries = std::uint64_t(q[sequence]);
+  const auto keys = std::uint64_t(k[sequence]);
+  if (queries <= (8ULL << 20) / 16 / q[0] / q[head] / keys)
+    return 0;
+  const auto target = (64ULL << 20) / 16 / q[0] / q[head] / keys;
+  const auto rows = (std::max)(1ULL, (std::min)(128ULL, target));
+  if (rows >= queries)
+    return 0;
+  // Preserve the existing strategy when the score savings cannot cover the
+  // explicit joined F32 output frontier. This never changes admission.
+  if (keys <= 2 * queries * std::uint64_t(v[3]) / (queries - rows))
+    return 0;
+  return std::int64_t(rows);
+}
+
 bool resident_attention_view(const TensorDesc &description) noexcept {
   if (!description.is_plain() || description.rank() != 4)
     return false;
@@ -314,6 +348,106 @@ struct CacheEncodingState final {
   std::vector<CacheEncodingCall,mem::StdAllocator<CacheEncodingCall>> calls;
   std::vector<const ggml_tensor *,mem::StdAllocator<const ggml_tensor *>> q8_queries;
 };
+
+// Only tiled math recipes use native liveness allocation. The buffer adapter
+// changes ownership, not the upstream planner or selected CPU executor.
+struct GraphStorage final {
+  mem::AllocatorRef allocator;
+  ggml_backend_buffer_type owned_type{};
+  ggml_backend_buffer_type borrowed_type{};
+  ggml_gallocr_t graph_allocator = nullptr;
+  std::vector<ggml_backend_buffer_t> ports;
+  bool bound = false;
+
+  ~GraphStorage() {
+    ggml_gallocr_free(graph_allocator);
+    for (auto *port : ports)
+      ggml_backend_buffer_free(port);
+  }
+  static ggml_backend_buffer_t allocate(ggml_backend_buffer_type_t type,
+                                        std::size_t bytes) noexcept {
+    auto &owner = *static_cast<GraphStorage *>(type->context);
+    const auto alignment = ggml_backend_buft_get_alignment(type);
+    auto *data = owner.allocator.allocate(bytes, alignment);
+    if (!data)
+      return nullptr;
+    try {
+      auto *buffer = ggml_backend_cpu_buffer_from_ptr(data, bytes);
+      if (!buffer) {
+        owner.allocator.deallocate(data, bytes, alignment);
+        return nullptr;
+      }
+      buffer->buft = type;
+      buffer->iface.free_buffer = [](ggml_backend_buffer_t value) {
+        auto &state = *static_cast<GraphStorage *>(value->buft->context);
+        state.allocator.deallocate(value->context, value->size,
+                                   ggml_backend_buffer_get_alignment(value));
+      };
+      return buffer;
+    } catch (...) {
+      owner.allocator.deallocate(data, bytes, alignment);
+      return nullptr;
+    }
+  }
+  Status reserve(mem::AllocatorRef resource, ggml_cgraph *graph,
+                 std::span<ggml_tensor *const> inputs,
+                 std::span<ggml_tensor *const> outputs) {
+    allocator = resource;
+    owned_type = *ggml_backend_cpu_buffer_type();
+    owned_type.context = this;
+    owned_type.iface.alloc_buffer = &allocate;
+    borrowed_type = *ggml_backend_cpu_buffer_type();
+    // Caller mappings retain their original alignment, including scalar-
+    // aligned subviews. Native CPU get_base otherwise rounds pointers upward.
+    borrowed_type.iface.get_alignment = [](ggml_backend_buffer_type_t) {
+      return std::size_t{1};
+    };
+    ports.reserve(inputs.size() + outputs.size());
+    for (const auto roots : {inputs, outputs}) {
+      for (auto *root : roots) {
+        // A real deferred buffer descriptor tells reserve that this payload
+        // belongs to the caller. No placeholder tensor/device address is used.
+        std::unique_ptr<ggml_backend_buffer,
+                        decltype(&ggml_backend_buffer_free)>
+            owner(ggml_backend_cpu_buffer_from_ptr(nullptr, ggml_nbytes(root)),
+                  &ggml_backend_buffer_free);
+        auto *buffer = owner.get();
+        if (!buffer)
+          return allocation_failure();
+        buffer->buft = &borrowed_type;
+        buffer->iface.get_base = [](ggml_backend_buffer_t value) {
+          return value->context;
+        };
+        ports.push_back(buffer);
+        root->buffer = buffer;
+        owner.release();
+      }
+    }
+    graph_allocator = ggml_gallocr_new(&owned_type);
+    if (!graph_allocator || !ggml_gallocr_reserve(graph_allocator, graph))
+      return allocation_failure();
+    return Status::Ok();
+  }
+  void bind_port(std::size_t port, void *data) noexcept {
+    if (graph_allocator)
+      ports[port]->context = data;
+  }
+  Status finish_bind(ggml_cgraph *graph) noexcept {
+    if (graph_allocator && !bound) {
+      // Cold reserve prepared every allocation. Real mapped roots are present
+      // now; this call only installs the reserved tensor/view addresses.
+      if (!ggml_gallocr_alloc_graph(graph_allocator, graph))
+        return allocation_failure();
+      bound = true;
+    }
+    return Status::Ok();
+  }
+  std::size_t bytes() const noexcept {
+    return graph_allocator ? ggml_gallocr_get_buffer_size(graph_allocator, 0)
+                           : 0;
+  }
+};
+
 struct Invocation final {
   mem::AllocatorRef allocator;
   ggml_runtime::MetadataArena arena;
@@ -326,6 +460,7 @@ struct Invocation final {
   std::vector<mem::HostMapping> output_maps;
   void *storage = nullptr;
   std::size_t storage_bytes = 0;
+  GraphStorage *graph_storage = nullptr;
   // Opt-in callback state; the original workers retire before this is freed.
   CacheEncodingState *encoding=nullptr;
   // Declared last: workers/plan retire before their tensors and payload.
@@ -333,6 +468,8 @@ struct Invocation final {
 
   ~Invocation() {
     execution = {};
+    if (graph_storage)
+      allocator.destroy(graph_storage);
     if (storage)
       allocator.deallocate(storage, storage_bytes, GGML_MEM_ALIGN);
     if (encoding)
@@ -590,8 +727,64 @@ ggml_tensor *safe_softmax(ggml_context *context, ggml_tensor *scores) {
                                    GGML_N_TASKS_MAX, nullptr);
 }
 
+ggml_tensor *tiled_math_attention(ggml_context *context, ggml_tensor *query,
+                                  ggml_tensor *key, ggml_tensor *value,
+                                  ggml_tensor *mask, ggml_tensor *sinks,
+                                  float scale, bool causal,
+                                  std::int64_t block_rows) {
+  const auto queries = query->ne[1];
+  const auto heads = query->ne[2];
+  const auto batch = query->ne[3];
+  const auto depth = value->ne[0];
+  value = ggml_cont(context, ggml_transpose(context, value));
+  std::vector<ggml_tensor *> parts;
+  parts.reserve(std::size_t((queries + block_rows - 1) / block_rows));
+  for (std::int64_t begin = 0; begin < queries; begin += block_rows) {
+    const auto rows = (std::min)(block_rows, queries - begin);
+    auto *part = ggml_view_4d(context, query, query->ne[0], rows, heads, batch,
+                              query->nb[1], query->nb[2], query->nb[3],
+                              std::size_t(begin) * query->nb[1]);
+    auto *scores = ggml_mul_mat(context, key, part);
+    if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
+      return nullptr;
+    ggml_tensor *probabilities;
+    if (mask) {
+      auto *rows_mask =
+          ggml_view_2d(context, mask, mask->ne[0], rows, mask->nb[1],
+                       std::size_t(begin) * mask->nb[1]);
+      probabilities = ggml_soft_max_ext(context, scores, rows_mask, scale, 0.F);
+      ggml_soft_max_add_sinks(probabilities, sinks);
+    } else {
+      scores = ggml_scale(context, scores, scale);
+      if (causal)
+        scores = ggml_diag_mask_inf(
+            context, scores, static_cast<int>(key->ne[1] - queries + begin));
+      probabilities = safe_softmax(context, scores);
+    }
+    auto *output = ggml_mul_mat(context, value, probabilities);
+    if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+      return nullptr;
+    output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+    parts.push_back(
+        ggml_reshape_3d(context, output, depth * heads, rows, batch));
+  }
+  // Explicit native dependencies also protect multi-node regions and published
+  // intermediates. gallocr releases block scores after their final consumer.
+  while (parts.size() > 1) {
+    const auto count = parts.size();
+    std::size_t next = 0;
+    for (std::size_t i = 0; i + 1 < count; i += 2)
+      parts[next++] = ggml_concat(context, parts[i], parts[i + 1], 1);
+    if (count % 2 != 0)
+      parts[next++] = parts.back();
+    parts.resize(next);
+  }
+  return ggml_reshape_4d(context, parts.front(), depth, heads, queries, batch);
+}
+
 // ggml ReLU maps NaN to zero. Keep the public propagation contract before
 // downstream region consumers; all non-NaN arithmetic stays in the original.
+
 void relu_nan(ggml_tensor *output, const ggml_tensor *,
               const ggml_tensor *input, int ith, int nth, void *) noexcept {
   const auto count = ggml_nelements(output);
@@ -930,15 +1123,22 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     auto *query = ggml_permute(context, invocation.values[node.inputs[0]], 0, 2, 1, 3);
     auto *key = ggml_permute(context, invocation.values[node.inputs[1]], 0, 2, 1, 3);
     auto *value = ggml_permute(context, invocation.values[node.inputs[2]], 0, 2, 1, 3);
-    auto *scores = ggml_mul_mat(context, key, query);
-    if (!ggml_prec_set_acc(scores, GGML_PREC_F32)) return {};
-    auto *probabilities = ggml_soft_max_ext(context, scores,
-        invocation.values[node.inputs[3]], sink->scale, 0.0F);
-    ggml_soft_max_add_sinks(probabilities, invocation.values[node.inputs[4]]);
-    value = ggml_cont(context, ggml_transpose(context, value));
-    result = ggml_mul_mat(context, value, probabilities);
-    if (!ggml_prec_set_acc(result, GGML_PREC_F32)) return {};
-    result = ggml_permute(context, result, 0, 2, 1, 3);
+    if (const auto rows = attention_query_block(recipe, node)) {
+      result = tiled_math_attention(context, query, key, value,
+                                    invocation.values[node.inputs[3]],
+                                    invocation.values[node.inputs[4]],
+                                    sink->scale, false, rows);
+    } else {
+      auto *scores = ggml_mul_mat(context, key, query);
+      if (!ggml_prec_set_acc(scores, GGML_PREC_F32)) return {};
+      auto *probabilities = ggml_soft_max_ext(context, scores,
+          invocation.values[node.inputs[3]], sink->scale, 0.0F);
+      ggml_soft_max_add_sinks(probabilities, invocation.values[node.inputs[4]]);
+      value = ggml_cont(context, ggml_transpose(context, value));
+      result = ggml_mul_mat(context, value, probabilities);
+      if (!ggml_prec_set_acc(result, GGML_PREC_F32)) return {};
+      result = ggml_permute(context, result, 0, 2, 1, 3);
+    }
   } else if (const auto paged=node.operation.custom_as<internal::PagedRead>();
              paged || node.operation.get_if<ScaledDotProductAttention>()) {
     const auto ordinary=node.operation.get_if<ScaledDotProductAttention>();
@@ -995,20 +1195,30 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     } else {
       key = as_float(context, key);
       value = as_float(context, value);
-      auto *scores = ggml_mul_mat(context, key, query);
-      if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
-        return {};
-      scores = ggml_scale(context, scores, attention->scale);
-      if (attention->causal)
-        scores = ggml_diag_mask_inf(context, scores,
-                                    static_cast<int>(key->ne[1] - query->ne[1]));
-      auto *probabilities = safe_softmax(context, scores);
-      value = ggml_cont(context, ggml_transpose(context, value));
-      result = ggml_mul_mat(context, value, probabilities);
-      if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-        return {};
-      if (bshd)
-        result = ggml_permute(context, result, 0, 2, 1, 3);
+      if (const auto rows = attention_query_block(recipe, node)) {
+        result = tiled_math_attention(context, query, key, value, nullptr,
+                                      nullptr, attention->scale,
+                                      attention->causal, rows);
+        if (!result)
+          return {};
+        if (!bshd)
+          result = ggml_permute(context, result, 0, 2, 1, 3);
+      } else {
+        auto *scores = ggml_mul_mat(context, key, query);
+        if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
+          return {};
+        scores = ggml_scale(context, scores, attention->scale);
+        if (attention->causal)
+          scores = ggml_diag_mask_inf(context, scores,
+                                      static_cast<int>(key->ne[1] - query->ne[1]));
+        auto *probabilities = safe_softmax(context, scores);
+        value = ggml_cont(context, ggml_transpose(context, value));
+        result = ggml_mul_mat(context, value, probabilities);
+        if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+          return {};
+        if (bshd)
+          result = ggml_permute(context, result, 0, 2, 1, 3);
+      }
     }
   } else if (node.operation.get_if<GatedDeltaNet>() ||
              node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
@@ -1089,7 +1299,20 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
         recipe.values.size() > (SIZE_MAX - 8 - recipe.nodes.size() * 32) / 4)
       return allocation_failure();
     auto capacity = recipe.nodes.size() * 32 + recipe.values.size() * 4 + 8;
+    bool tiled = false;
     for (const auto &node : recipe.nodes) {
+      if (const auto rows = attention_query_block(recipe, node)) {
+        tiled = true;
+        const auto attention = node.operation.get_if<ScaledDotProductAttention>();
+        const auto sequence = !attention || attention->layout ==
+            AttentionLayout::kBatchSequenceHeadDepth ? 1U : 2U;
+        const auto queries = recipe.values[node.inputs[0]].dimensions()[sequence];
+        const auto blocks = std::size_t((queries + rows - 1) / rows);
+        if (capacity > INT32_MAX / 4 ||
+            blocks > (INT32_MAX / 4 - capacity) / 16)
+          return allocation_failure();
+        capacity += blocks * 16;
+      }
       if (!node.operation.get_if<Concat>())
         continue;
       // A repeated port can still need Cont, matrix/axis reshapes and Concat;
@@ -1110,6 +1333,8 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
       const auto &description = recipe.values[id];
       auto *tensor = create_tensor_input(context, description);
       invocation->values[id] = tensor;
+      if (tiled)
+        ggml_set_input(tensor);
       invocation->input_roots.push_back(tensor);
     }
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
@@ -1147,7 +1372,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
         invocation->views.push_back(tensor);
         continue;
       }
-      if (tensor->data ||
+      if (tiled || tensor->data ||
           std::ranges::find(invocation->input_roots, tensor) !=
               invocation->input_roots.end() ||
           std::ranges::find(invocation->output_roots, tensor) !=
@@ -1171,6 +1396,17 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
         return allocation_failure();
       for (const auto &[tensor, offset] : allocations)
         tensor->data = static_cast<std::byte *>(invocation->storage) + offset;
+    }
+    if (tiled) {
+      invocation->graph_storage = allocator.construct<GraphStorage>();
+      if (!invocation->graph_storage)
+        return allocation_failure();
+      auto status = invocation->graph_storage->reserve(
+          allocator, invocation->graph, invocation->input_roots,
+          invocation->output_roots);
+      if (!status.ok())
+        return status;
+      invocation->storage_bytes = invocation->graph_storage->bytes();
     }
     auto execution = ggml_runtime::CpuExecution::prepare(
         invocation->graph, static_cast<int>(program.options.native_threads),
@@ -1224,6 +1460,8 @@ Status run(Program &program, Invocation &invocation,
     invocation.input_maps[i] = std::move(*mapping);
     invocation.input_roots[i]->data =
         const_cast<std::byte *>(invocation.input_maps[i].bytes().data());
+    if (invocation.graph_storage)
+      invocation.graph_storage->bind_port(i, invocation.input_roots[i]->data);
   }
   // Q8's original CPU dot converts Q to Q8_0 with a half scale. These private
   // batch queries are dense leaf bindings; refuse overflow before touching
@@ -1268,6 +1506,13 @@ Status run(Program &program, Invocation &invocation,
     if (!bytes)
       return finish(std::move(bytes).error());
     invocation.output_roots[i]->data = bytes->data();
+    if (invocation.graph_storage)
+      invocation.graph_storage->bind_port(inputs.size() + i, bytes->data());
+  }
+  if (invocation.graph_storage) {
+    const auto binding = invocation.graph_storage->finish_bind(invocation.graph);
+    if (!binding.ok())
+      return finish(binding);
   }
   invocation.bind_views();
   if(invocation.encoding)invocation.encoding->invalid.store(false,std::memory_order_relaxed);

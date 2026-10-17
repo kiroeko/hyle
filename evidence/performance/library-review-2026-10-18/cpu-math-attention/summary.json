@@ -1,0 +1,64 @@
+{
+  "status": "implemented_focused_validation_complete_no_commit",
+  "source_root": "C:\\public\\project-hyle\\hyle",
+  "frozen_baseline_commit": "782c5d3a4",
+  "archive_time_head": "628e9d7f0178efdb988aeedb8579e9bbf34dd649",
+  "implementation": {
+    "scope": "Only actually tiled CPU Sink and mixed old-pin F32 math attention recipes use official gallocr. Normal CPU-only flash, causal-mask creation, and other recipes retain their prior path.",
+    "scratch": "Cold reserve uses AllocatorRef-backed native CPU buffers. Real caller binding precedes first alloc_graph; fixed-topology replay only refreshes mapped roots/views. Published inputs/outputs retain native liveness marks.",
+    "ports": "Truthful native port capacities; borrowed buffer base retains caller scalar alignment. Tests deliberately offset F32 ports by 4 bytes from 64-byte allocation bases.",
+    "frontier": "Balanced real concat dataflow preserves multi-node/downstream and published intermediate dependencies, at O(output * log(query_blocks)) copy cost. Full KV conversion is shared once.",
+    "math": "Original F32 QK/probability/PV and scale/mask/per-head sink semantics. Total-Q bottom-right offsets, layouts, batches, GQA and distinct V/output depth retained.",
+    "private_policy": "8MiB trigger, conservative 64MiB score target, at most128 query rows and a score-savings vs output-frontier guard. These select strategy and do not decline valid inputs.",
+    "allocator_resource": "Existing32 fallible ggml-alloc.c edits moved from Vulkan to common456 and applied to FFA CPU with pin-specific complete-file hashes; Vulkan final allocator bytes unchanged."
+  },
+  "validation": {
+    "toolchain": "Windows x64 MSVC14.50.35717, Release/O2/MD. Fresh provider/test C++ objects /W4 /WX; direct CL/LINK only.",
+    "candidate": {
+      "ffa4": {
+        "passed": 5,
+        "total": 5
+      },
+      "mixed": {
+        "passed": 5,
+        "total": 5
+      }
+    },
+    "baseline": "Each pin4/5; only new bounded-cold-allocation assertion fails as expected. Baseline numerical, rebind/downstream, quota cleanup and native fault tests pass. Raw failure retained.",
+    "oracle": "Independent FP64 actual-F32-input oracle; tolerance6e-6*abs(expected)+2e-6 unchanged. Sink maxAbs<=7.45058e-9; mixed ordinary<=1.49012e-8; CPU-only flash control<=1.86265e-8.",
+    "coverage": "Cross/tail blocks, nonzero row-varying/full-masked mask and per-head sinks, published intermediate plus Neg downstream, B2/GQA, BHSD/BSHD, negative/zero scale, noncausal Q>KV, distinct Dq/Dv, repeated real mappings and an independent second slot executed sequentially.",
+    "resource_lock": {
+      "executed_by": "root independently, not rerun by this agent",
+      "command": "cmake -P .scratch/perf-review-2026-10-18/cpu-math-attention/check-lock.cmake",
+      "exit_code": 0,
+      "wall_seconds": 0.6089,
+      "stdout": "-- Three allocator resource trees and license hashes match\n"
+    },
+    "prepared_evidence": {
+      "actual_provider": "AllocatorRef allocation counts unchanged during first submit and rebind; payload quotas reject cold failure and charges roll back, then successful retry.",
+      "native_fixture": "Separate original allocator fixture sees12 C malloc metadata calls at cold reserve and12 after first real bind, and failure at every cold site leaves zero live allocations.",
+      "limits": "Native C malloc fixture is not injected into actual provider; no global new interception or single all-heap end-to-end monitor. No concurrent-slot stress. No public default Graph partitioner build/run; actual internal multi-node Region exercised."
+    }
+  },
+  "cold_space": {
+    "shape": "Sink F32 B1/Q129/KV2049/H64/KV1/D512",
+    "metric": "Actual incremental AllocatorRef requested private bytes at cold invocation creation, including tracked invocation/arena/workspace/gallocr backing. Not process RSS/resident/whole-process memory; untracked native C malloc/system buffer-wrapper metadata excluded.",
+    "baseline_bytes": 156480184,
+    "candidate_ffa4_bytes": 48970792,
+    "candidate_mixed_bytes": 48970760,
+    "caller_logical_required_bytes": 43266820,
+    "caller_allocation_in_this_cold_test": false,
+    "single_full_scores_bytes": 67666176,
+    "cold_large_shape_numerical_execution": false
+  },
+  "limits": [
+    "No throughput or latency experiment; functional GTest elapsed time is not a performance ranking.",
+    "No configure, cmake --build, SDK copy/download or full native rebuild. Native gallocr and Hyle host objects overlaid ahead of existing pinned native libraries.",
+    "Both algorithm arms use the same configured CPUHad ABI2 selected modules. Their ownership was verified in preceding CPUHad validation; this batch did not repeat a module-owner diagnostic."
+  ],
+  "borrowed_cpu_hadamard_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-hadamard\\source-results.zip",
+    "bytes": 1963530,
+    "sha256": "8e297be518dfc326a55e96a2bcd9cd83a5f910ec7bc0961fd98cd13960fad323"
+  }
+}

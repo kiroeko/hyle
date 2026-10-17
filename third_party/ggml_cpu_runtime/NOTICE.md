@@ -13,6 +13,10 @@ implementations are outside this port. Mathematical bodies and tables are
 unchanged; additional CPU switch cases and fallback declarations connect them
 to the newer core. `borrowed-fragments.json` records the source paths.
 
+The official gallocr resource edits also preserve liveness allocation while
+returning metadata/backing allocation failures and cleaning partial state.
+They match the common resource integration on the older shared core.
+
 The immutable dependency cache remains unmodified. The runtime owner creates
 an exact patched copy inside its build directory. Baseline and AVX2 programs
 use that same core and patch. Builds containing a GPU route retain the old

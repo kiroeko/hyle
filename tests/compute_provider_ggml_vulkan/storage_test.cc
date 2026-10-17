@@ -1,5 +1,5 @@
 #include "native_graph.h"
-#include "gallocr_faults.h"
+#include "../compute_ggml_runtime/gallocr_faults.h"
 
 #include <memory>
 #include <vector>
