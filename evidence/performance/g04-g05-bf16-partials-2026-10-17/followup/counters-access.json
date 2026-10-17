@@ -1,0 +1,99 @@
+{
+  "time_utc": "2026-10-17T12:15:42.858062+00:00",
+  "result": "COUNTERS_UNAVAILABLE_PERMISSION",
+  "ncu": "/usr/local/cuda-13.3/bin/ncu",
+  "version": "2026.2.1.0 build 38283040",
+  "hardware": "NVIDIA GeForce RTX 4070 AD104 SM89 GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8 driver617.14",
+  "preflight": {
+    "version_returncode": 0,
+    "list_sections_returncode": 0,
+    "query_metrics_returncode": 0,
+    "query_metrics_reported_error": "ERR_NVGPUCTRPERM",
+    "note": "NCU process returncode0 does not mean counter access succeeded; error is in actual stdout."
+  },
+  "profile_started": false,
+  "new_GPU_launches_for_this_diagnostic": 0,
+  "ordinary_samples_repeated": false,
+  "new_variants": false,
+  "system_permission_changes": false,
+  "candidate": {
+    "binary": "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/peer-trace/consumer",
+    "binary_sha256": "efce3f63a8e6ccda7ca476091774c13bb4582e2cd5a31e4a236b81e8c1e2ba48",
+    "host_source_sha256": "0c1cce0c24af14e167d304333d1ab898a831c29d214fe293187fb70180fb629a",
+    "FI_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e"
+  },
+  "unexecuted_finite_sampling_design": {
+    "binary_change_required": false,
+    "env_only_nonsecret": {
+      "G04_TRACE": "1"
+    },
+    "target": "normal capture=0 alloc=0 order=0 warm prefill only; select existing outer NVTX range and inner control.episode / treatment.episode separately; attention kernel name filter excludes merge; at most two matching launches per arm",
+    "sections": [
+      "SpeedOfLight",
+      "LaunchStats",
+      "SchedulerStats",
+      "WarpStateStats",
+      "InstructionStats",
+      "ComputeWorkloadAnalysis",
+      "MemoryWorkloadAnalysis"
+    ],
+    "collection_role": "hardware causal diagnosis only; profiler/replay/cache effects must not replace prior ordinary E2E primary",
+    "counter_permission_needed": true,
+    "status": "NOT_RUN because preflight counter access already refused"
+  },
+  "evidence": {
+    "help.result.json": {
+      "bytes": 88,
+      "sha256": "bf8f57cbd1adfabe3a1cd56f4badcef1b61042774a130c5d73dbfe7c7dc71a8a"
+    },
+    "help.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "help.stdout.log": {
+      "bytes": 36888,
+      "sha256": "b9a05356a473a859302fd2fce455a4460a6a37f4794e4534d9dea65b699c9bf0"
+    },
+    "metrics.result.json": {
+      "bytes": 137,
+      "sha256": "4478fc8199d19e6cdf13c55ec9dbae85662795503669b0437c91814d9137701c"
+    },
+    "metrics.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "metrics.stdout.log": {
+      "bytes": 288,
+      "sha256": "71e06e094edf3f79164c5e87ba8876f74f7fb14cc36b6ad15f210b143640cb97"
+    },
+    "sections.result.json": {
+      "bytes": 97,
+      "sha256": "d863c8cd856fc169665d5759a28cee94a8daae0d15099f8469a7b9c0f71251e6"
+    },
+    "sections.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "sections.stdout.log": {
+      "bytes": 4760,
+      "sha256": "ebb7286c43a625c6b6ba2ec965e24f21eba383e937d8709cd6fe7342f5ba1040"
+    },
+    "tool-preflight.json": {
+      "bytes": 887,
+      "sha256": "a1815f81ab845f21cda7778181f5f734713760fd627bdb1bd2eb3fdf544e6b02"
+    },
+    "version.result.json": {
+      "bytes": 91,
+      "sha256": "34af7dca4d51774a5dc05dde8875dd3104c8b7e777d11f7259870ab369f7c2be"
+    },
+    "version.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "version.stdout.log": {
+      "bytes": 144,
+      "sha256": "99b61b4937aa4d473ccb4ef2395d69d5f3de64908a7d65d96bc8f9b73f72476a"
+    }
+  },
+  "conclusion": "No GPU counter values were collected. This cannot establish occupancy/LDST/stall/decode as the bottleneck. Existing source/SASS and Nsight Systems attribution remain the only available measurements; prefetch hypothesis was not confirmed by ordinary A/B."
+}

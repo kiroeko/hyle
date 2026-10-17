@@ -1,0 +1,247 @@
+{
+  "kind": "SMALL_PROFILED_PRODUCT_PEER_TRACE_POOLED_SUMMARY",
+  "groups": [
+    {
+      "capture": 0,
+      "arm": "peer",
+      "episodes": 128,
+      "gpu": {
+        "attention_mean_us": 35.5416328125,
+        "merge_mean_us": 8.204359375,
+        "sum_mean_us": 43.7459921875
+      },
+      "host_phase_mean_us": {
+        "update": 0.49627343749999997,
+        "admit_submit": 21.332109375,
+        "checked_wait": 64.279515625,
+        "output_acquire": 0.1588359375
+      },
+      "host_episode_mean_us": 86.9857109375,
+      "host_api_union_mean_us": 72.16078125,
+      "gpu_interkernel_gap_mean_us": 1.610203125,
+      "host_api_by_name": {
+        "cuCtxPopCurrent_v2": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.33775781250000003
+        },
+        "cuCtxPushCurrent_v2": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.1744375
+        },
+        "cudaDeviceGetAttribute_v5000": {
+          "mean_count_per_episode": 3.0,
+          "total_calls": 384,
+          "mean_elapsed_sum_per_episode_us": 0.6054375
+        },
+        "cudaEventRecord_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.69071875
+        },
+        "cudaEventSynchronize_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 58.1720390625
+        },
+        "cudaFuncSetAttribute_v9000": {
+          "mean_count_per_episode": 2.0,
+          "total_calls": 256,
+          "mean_elapsed_sum_per_episode_us": 1.24465625
+        },
+        "cudaGetDevice_v3020": {
+          "mean_count_per_episode": 2.0,
+          "total_calls": 256,
+          "mean_elapsed_sum_per_episode_us": 0.4712421875
+        },
+        "cudaLaunchKernel_v7000": {
+          "mean_count_per_episode": 2.0,
+          "total_calls": 256,
+          "mean_elapsed_sum_per_episode_us": 10.0877265625
+        },
+        "cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags_v7000": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.376765625
+        }
+      }
+    },
+    {
+      "capture": 0,
+      "arm": "optin",
+      "episodes": 128,
+      "gpu": {
+        "attention_mean_us": 40.8348203125,
+        "merge_mean_us": 6.8668125,
+        "sum_mean_us": 47.701632812499994
+      },
+      "host_phase_mean_us": {
+        "update": 0.488,
+        "admit_submit": 21.66171875,
+        "checked_wait": 68.739890625,
+        "output_acquire": 0.414453125
+      },
+      "host_episode_mean_us": 92.0282421875,
+      "host_api_union_mean_us": 76.8031484375,
+      "gpu_interkernel_gap_mean_us": 1.517515625,
+      "host_api_by_name": {
+        "cuCtxPopCurrent_v2": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.3255390625
+        },
+        "cuCtxPushCurrent_v2": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.1733984375
+        },
+        "cudaDeviceGetAttribute_v5000": {
+          "mean_count_per_episode": 3.0,
+          "total_calls": 384,
+          "mean_elapsed_sum_per_episode_us": 0.6108046874999999
+        },
+        "cudaEventRecord_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.5421953125
+        },
+        "cudaEventSynchronize_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 62.574679687499994
+        },
+        "cudaFuncSetAttribute_v9000": {
+          "mean_count_per_episode": 2.0,
+          "total_calls": 256,
+          "mean_elapsed_sum_per_episode_us": 1.2867656250000001
+        },
+        "cudaGetDevice_v3020": {
+          "mean_count_per_episode": 2.0,
+          "total_calls": 256,
+          "mean_elapsed_sum_per_episode_us": 0.5037265625
+        },
+        "cudaLaunchKernel_v7000": {
+          "mean_count_per_episode": 2.0,
+          "total_calls": 256,
+          "mean_elapsed_sum_per_episode_us": 10.401476562500001
+        },
+        "cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags_v7000": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.38456250000000003
+        }
+      }
+    },
+    {
+      "capture": 1,
+      "arm": "peer",
+      "episodes": 128,
+      "gpu": {
+        "attention_mean_us": 35.49890625,
+        "merge_mean_us": 8.1625078125,
+        "sum_mean_us": 43.6614140625
+      },
+      "host_phase_mean_us": {
+        "update": 0.446015625,
+        "admit_submit": 11.044640625,
+        "checked_wait": 69.893140625,
+        "output_acquire": 0.1360546875
+      },
+      "host_episode_mean_us": 82.1227890625,
+      "host_api_union_mean_us": 69.819640625,
+      "gpu_interkernel_gap_mean_us": 0.1508828125,
+      "host_api_by_name": {
+        "cudaEventRecord_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.5454453125
+        },
+        "cudaEventSynchronize_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 63.948054687500004
+        },
+        "cudaGraphLaunch_v10000": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 5.326140625
+        }
+      }
+    },
+    {
+      "capture": 1,
+      "arm": "optin",
+      "episodes": 128,
+      "gpu": {
+        "attention_mean_us": 40.800140625,
+        "merge_mean_us": 6.825640625,
+        "sum_mean_us": 47.62578125
+      },
+      "host_phase_mean_us": {
+        "update": 0.3521796875,
+        "admit_submit": 10.89525,
+        "checked_wait": 75.4215390625,
+        "output_acquire": 0.233046875
+      },
+      "host_episode_mean_us": 87.6489140625,
+      "host_api_union_mean_us": 75.3198984375,
+      "gpu_interkernel_gap_mean_us": 0.1523125,
+      "host_api_by_name": {
+        "cudaEventRecord_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 0.5425703125
+        },
+        "cudaEventSynchronize_v3020": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 69.53700781250001
+        },
+        "cudaGraphLaunch_v10000": {
+          "mean_count_per_episode": 1.0,
+          "total_calls": 128,
+          "mean_elapsed_sum_per_episode_us": 5.2403203125
+        }
+      }
+    }
+  ],
+  "contrasts": [
+    {
+      "capture": 0,
+      "gpu_optin_minus_peer_us": {
+        "attention_mean_us": 5.293187500000002,
+        "merge_mean_us": -1.3375468749999992,
+        "sum_mean_us": 3.955640624999994
+      },
+      "host_phase_optin_minus_peer_us": {
+        "update": -0.00827343749999998,
+        "admit_submit": 0.3296093749999969,
+        "checked_wait": 4.460374999999999,
+        "output_acquire": 0.25561718749999995
+      }
+    },
+    {
+      "capture": 1,
+      "gpu_optin_minus_peer_us": {
+        "attention_mean_us": 5.301234375,
+        "merge_mean_us": -1.3368671874999993,
+        "sum_mean_us": 3.9643671875000024
+      },
+      "host_phase_optin_minus_peer_us": {
+        "update": -0.09383593750000002,
+        "admit_submit": -0.14939062499999878,
+        "checked_wait": 5.528398437500002,
+        "output_acquire": 0.0969921875
+      }
+    }
+  ],
+  "source_review_sha256": "a1e32621c8a14057c01d34451a595f8c5a1adc0c17a078bee89ec67e0641f6c4",
+  "limits": [
+    "Small profiled diagnostic (32 episodes per arm/matrix); never replaces retained unprofiled full-episode performance primary.",
+    "Runtime table includes named CUDA runtime and direct driver APIs. Per-episode API attribution uses exact same-thread NVTX containment; counts and elapsed union are profiler observations.",
+    "checked_wait includes pending GPU work, host scheduling and notification. Host wall minus GPU time is not pure CPU cost; API elapsed time is not a removable critical-path bound.",
+    "Matching geometry does not make FP8/BF16 loaders, attention variants, parameter ABI or final merge scaling the same."
+  ],
+  "conclusion": "Same kernel geometry and same per-mode API counts. Extra FP8-optin GPU cost is in attention (+about5.3us), while its merge is about1.34us faster. Public replay removes native resource-query APIs symmetrically but preserves the attention gap. Profiling does not establish a new unprofiled performance number or isolate the exact attention source factor."
+}

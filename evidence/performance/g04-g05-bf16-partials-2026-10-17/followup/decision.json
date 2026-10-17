@@ -1,0 +1,585 @@
+{
+  "C1_committed_baseline": "6336e9ffc",
+  "selected_product": "C2: C1 opt-in BF16 partial policy plus semantically equivalent no-window specialization",
+  "C2_timing_conclusion": "small descriptive change; paired block interval includes zero; no stable added latency benefit claimed",
+  "C3_product_adopted": false,
+  "C3_reason": "math/device checks passed and intended load moved, but ordinary per-matrix latency directions mixed and peer gap remains",
+  "v12_vendor_candidate_adopted": false,
+  "current_vendor_unchanged_from_C1": true,
+  "canonical_native_cache_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+  "canonical_vendor_sha256": {
+    "third_party/flashinfer_cache/patches.json": "d3a74bb62465b19d5d4e8d47d4ef8e0f6568de0020ed8d52df7b96c37489d6b5",
+    "third_party/flashinfer_cache/NOTICE.md": "83131a06ea708e3eeaedeed9791cbcfc3ae78d3cef1d4e0f927f147f4346bb84",
+    "cmake/HyleDependencyLock.json": "e02147b3d14ecd145add299d6ac7e26adf97fbceb806e54da5697a6013cbf6a2"
+  },
+  "validation_architecture": "C2/C3 complete native_cache TU SM89-only using original flags, product CMake architectures unchanged",
+  "C2_archive": {
+    "argv": [
+      "/usr/local/cuda-13.3/bin/nvcc",
+      "-forward-unknown-to-host-compiler",
+      "-DFLASHINFER_ENABLE_BF16",
+      "-DFLASHINFER_ENABLE_F16",
+      "-DHYLE_COMPUTE_CUDA=1",
+      "-DHYLE_COMPUTE_FLASHINFER=1",
+      "-DHYLE_COMPUTE_PROVIDER_FLASHINFER_BUILD",
+      "-DHYLE_STATIC",
+      "-I/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_flashinfer/cache-source-30c9130520cc8677b3268d2f7f1fd0caa7fe8e78683c920a1be058057be47cc0/include",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute_backend_cuda",
+      "-isystem",
+      "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include",
+      "-isystem",
+      "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++17",
+      "--generate-code=arch=compute_89,code=[sm_89]",
+      "-Xcompiler=-fvisibility=hidden,-fvisibility-inlines-hidden",
+      "-MD",
+      "-MT",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c2/native_cache.cu.o",
+      "-MF",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c2/native_cache.cu.o.d",
+      "-x",
+      "cu",
+      "-c",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c2/native_cache.cu",
+      "-o",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c2/native_cache.cu.o"
+    ],
+    "cwd": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+    "baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+    "C1_source_sha256": "faa9302aa42b599b864d640eca2ea80750b1d72bc2911db1e440f5e9246d2b3f",
+    "C2_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+    "C1_archive": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_flashinfer.a",
+    "C1_archive_sha256": "de8dbd313b03b4c4b40707976f0a8c77221ad0b144794103d8362a748042ff43",
+    "only_source_change": "Bf16PartialAttention inheritance and Base alias use_sliding_window true -> false; original default Variant unchanged",
+    "started_unix": 1792238013.0898006,
+    "compile_returncode": 0,
+    "compile_elapsed_s": 610.5140912532806,
+    "object": "/root/hyle-scratch/compute-unified/g04-bf16-c2/native_cache.cu.o",
+    "object_sha256": "f8098aed1d5d439443d00c1723e8652ee3f863a0e46645119680335773813596",
+    "C2_archive": "/root/hyle-scratch/compute-unified/g04-bf16-c2/libhyle_compute_provider_flashinfer_c2.a",
+    "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+    "members_before": {
+      "flashinfer_provider.cc.o": "cfa6db1db35832a45a4ef21d4584e1e083d60d757629b2dd55ba0a79a38680e2",
+      "native_attention.cu.o": "a1b38300c01af33dd33727386a553a1b07ee891197337f58b7fed9bc4df2a35f",
+      "native_batch.cu.o": "67ff14c49223974a09ec40aa1aa115852a1b18cf6625e33984e9dfd558b408d4",
+      "native_cache.cu.o": "b24dd0bef146038c6ed1e3348bf682e5fcc3dc9b5240885ba4e19191fd80cdbc",
+      "native_cache_encoder.cu.o": "90722a16373f12752f6301ea9546f59acb064a0e80b18d55f16eaefddc266e15"
+    },
+    "members_after": {
+      "flashinfer_provider.cc.o": "cfa6db1db35832a45a4ef21d4584e1e083d60d757629b2dd55ba0a79a38680e2",
+      "native_attention.cu.o": "a1b38300c01af33dd33727386a553a1b07ee891197337f58b7fed9bc4df2a35f",
+      "native_batch.cu.o": "67ff14c49223974a09ec40aa1aa115852a1b18cf6625e33984e9dfd558b408d4",
+      "native_cache.cu.o": "f8098aed1d5d439443d00c1723e8652ee3f863a0e46645119680335773813596",
+      "native_cache_encoder.cu.o": "90722a16373f12752f6301ea9546f59acb064a0e80b18d55f16eaefddc266e15"
+    },
+    "C1_unchanged": true
+  },
+  "C3_archive_not_product": {
+    "argv": [
+      "/usr/local/cuda-13.3/bin/nvcc",
+      "-forward-unknown-to-host-compiler",
+      "-DFLASHINFER_ENABLE_BF16",
+      "-DFLASHINFER_ENABLE_F16",
+      "-DHYLE_COMPUTE_CUDA=1",
+      "-DHYLE_COMPUTE_FLASHINFER=1",
+      "-DHYLE_COMPUTE_PROVIDER_FLASHINFER_BUILD",
+      "-DHYLE_STATIC",
+      "-I/root/hyle-scratch/compute-unified/g04-bf16-c3/vendor-shadow/include",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute",
+      "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute_backend_cuda",
+      "-isystem",
+      "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include",
+      "-isystem",
+      "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++17",
+      "--generate-code=arch=compute_89,code=[sm_89]",
+      "-Xcompiler=-fvisibility=hidden,-fvisibility-inlines-hidden",
+      "-MD",
+      "-MT",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c3/native_cache.cu.o",
+      "-MF",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c3/native_cache.cu.o.d",
+      "-x",
+      "cu",
+      "-c",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c3/native_cache.cu",
+      "-o",
+      "/root/hyle-scratch/compute-unified/g04-bf16-c3/native_cache.cu.o"
+    ],
+    "cwd": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+    "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+    "source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+    "C3_header_sha256": "0642c9cf50794d265aa7281ede8a951174177260bf441dd0e0ac86d2922e7187",
+    "vendor_shadow": "/root/hyle-scratch/compute-unified/g04-bf16-c3/vendor-shadow",
+    "vendor_inventory_sha256": "83908762faa70e89539ffcfe0e0f1bf5bca2c7d7cf06c306b330b220b8f6f8f0",
+    "vendor_files": 2576,
+    "copy_and_hash_elapsed_s": 20.165098215000057,
+    "only_source_change_from_C2": "first 16B raw K prefetch in finite BF16 marker domain, via independent shadow prefill header",
+    "canonical_vendor_lock_modified": false,
+    "started_unix": 1792238406.1033726,
+    "compile_returncode": 0,
+    "compile_elapsed_s": 603.8081297874451,
+    "C2_archive": "/root/hyle-scratch/compute-unified/g04-bf16-c2/libhyle_compute_provider_flashinfer_c2.a",
+    "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+    "C3_archive": "/root/hyle-scratch/compute-unified/g04-bf16-c3/libhyle_compute_provider_flashinfer_c3.a",
+    "C3_archive_sha256": "74cff382522bc01ffaf185531a48dd7c7f5f7e1e3efda1c11599937797c9616c",
+    "object": "/root/hyle-scratch/compute-unified/g04-bf16-c3/native_cache.cu.o",
+    "object_sha256": "06a946ba33a804d5269930d8064fd6f11afdca283862dc17016cb1c307a2a325",
+    "members_before": {
+      "flashinfer_provider.cc.o": "cfa6db1db35832a45a4ef21d4584e1e083d60d757629b2dd55ba0a79a38680e2",
+      "native_attention.cu.o": "a1b38300c01af33dd33727386a553a1b07ee891197337f58b7fed9bc4df2a35f",
+      "native_batch.cu.o": "67ff14c49223974a09ec40aa1aa115852a1b18cf6625e33984e9dfd558b408d4",
+      "native_cache.cu.o": "f8098aed1d5d439443d00c1723e8652ee3f863a0e46645119680335773813596",
+      "native_cache_encoder.cu.o": "90722a16373f12752f6301ea9546f59acb064a0e80b18d55f16eaefddc266e15"
+    },
+    "members_after": {
+      "flashinfer_provider.cc.o": "cfa6db1db35832a45a4ef21d4584e1e083d60d757629b2dd55ba0a79a38680e2",
+      "native_attention.cu.o": "a1b38300c01af33dd33727386a553a1b07ee891197337f58b7fed9bc4df2a35f",
+      "native_batch.cu.o": "67ff14c49223974a09ec40aa1aa115852a1b18cf6625e33984e9dfd558b408d4",
+      "native_cache.cu.o": "06a946ba33a804d5269930d8064fd6f11afdca283862dc17016cb1c307a2a325",
+      "native_cache_encoder.cu.o": "90722a16373f12752f6301ea9546f59acb064a0e80b18d55f16eaefddc266e15"
+    },
+    "C2_unchanged": true
+  },
+  "actual_validation_runs": {
+    "c2": {
+      "public": {
+        "argv": [
+          "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/public/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C2_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+        "C1_archive_unchanged": true,
+        "binary_sha256": "34c05590e2989b934d47efee63fc4050f9470a0a945ebf5cf3479fa1f804b027",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/consumer.o": "c471a005fffd53f36f7a02fd0e9765991455595fb4f8ee6bbc7b05989e52f1f2"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2812 MiB, 46\n",
+          "stderr": ""
+        },
+        "started_unix": 1792238662.0369196,
+        "returncode": 0,
+        "elapsed_s": 1.3674037456512451
+      },
+      "native-test": {
+        "argv": [
+          "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/native-test/consumer",
+          "--gtest_filter=FlashinferCache.*:FlashinferCacheEncode.*:FlashinferBatchReplay.*"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C2_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+        "C1_archive_unchanged": true,
+        "binary_sha256": "7e7247d5de7a8c797c2b3389c5cd1d4253d54a20e0098bf3de82bbee66d09ebf",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test.o": "17e6e8b6e0b392bd12018114c80a7c25b36f42708f9f50fb46e857529d37c88d"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2812 MiB, 46\n",
+          "stderr": ""
+        },
+        "started_unix": 1792238663.5455577,
+        "returncode": 0,
+        "elapsed_s": 17.33777117729187
+      },
+      "precision": {
+        "argv": [
+          "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/precision/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C2_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+        "C1_archive_unchanged": true,
+        "binary_sha256": "80206112f0bc8eed7560ad652009cbae08978a3907ea1cb16d3416765f3fa1c0",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product-precision/consumer.o": "18533ec2519fe01d21ebcb4d3af270114ecdae1f164b8549800ad82d814c575e"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2812 MiB, 46\n",
+          "stderr": ""
+        },
+        "started_unix": 1792238681.0063388,
+        "returncode": 0,
+        "elapsed_s": 2.649481773376465
+      },
+      "memcheck": {
+        "argv": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "memcheck",
+          "--error-exitcode",
+          "86",
+          "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/public/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C2_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+        "C1_archive_unchanged": true,
+        "binary_sha256": "34c05590e2989b934d47efee63fc4050f9470a0a945ebf5cf3479fa1f804b027",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/consumer.o": "c471a005fffd53f36f7a02fd0e9765991455595fb4f8ee6bbc7b05989e52f1f2"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2812 MiB, 46\n",
+          "stderr": ""
+        },
+        "started_unix": 1792238683.7811449,
+        "returncode": 0,
+        "elapsed_s": 1.5942304134368896
+      },
+      "synccheck": {
+        "argv": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "synccheck",
+          "--error-exitcode",
+          "86",
+          "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/public/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C2_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+        "C1_archive_unchanged": true,
+        "binary_sha256": "34c05590e2989b934d47efee63fc4050f9470a0a945ebf5cf3479fa1f804b027",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/consumer.o": "c471a005fffd53f36f7a02fd0e9765991455595fb4f8ee6bbc7b05989e52f1f2"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2812 MiB, 46\n",
+          "stderr": ""
+        },
+        "started_unix": 1792238685.507309,
+        "returncode": 0,
+        "elapsed_s": 1.1222920417785645
+      },
+      "feature-memcheck": {
+        "argv": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "memcheck",
+          "--error-exitcode",
+          "86",
+          "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/native-test/consumer",
+          "--gtest_filter=FlashinferCache.OptInBfloat16PartialsAgainstFeatureOracle"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C2_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C2_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e",
+        "C1_archive_unchanged": true,
+        "binary_sha256": "7e7247d5de7a8c797c2b3389c5cd1d4253d54a20e0098bf3de82bbee66d09ebf",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test.o": "17e6e8b6e0b392bd12018114c80a7c25b36f42708f9f50fb46e857529d37c88d"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2812 MiB, 46\n",
+          "stderr": ""
+        },
+        "started_unix": 1792238686.755973,
+        "returncode": 0,
+        "elapsed_s": 1.0518255233764648
+      }
+    },
+    "c3": {
+      "public": {
+        "argv": [
+          "/root/hyle-scratch/compute-unified/g04-bf16-c3/validation/public/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C3_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C3_header_sha256": "0642c9cf50794d265aa7281ede8a951174177260bf441dd0e0ac86d2922e7187",
+        "C3_archive_sha256": "74cff382522bc01ffaf185531a48dd7c7f5f7e1e3efda1c11599937797c9616c",
+        "C2_archive_unchanged": true,
+        "binary_sha256": "44ee18ea0f5407ae2b9b523a073733e15a10b844a46d5bc32a8f47aebe69cb34",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/consumer.o": "c471a005fffd53f36f7a02fd0e9765991455595fb4f8ee6bbc7b05989e52f1f2"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2788 MiB, 48\n",
+          "stderr": ""
+        },
+        "started_unix": 1792239084.6798105,
+        "returncode": 0,
+        "elapsed_s": 0.8181147575378418
+      },
+      "native-test": {
+        "argv": [
+          "/root/hyle-scratch/compute-unified/g04-bf16-c3/validation/native-test/consumer",
+          "--gtest_filter=FlashinferCache.*:FlashinferCacheEncode.*:FlashinferBatchReplay.*"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C3_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C3_header_sha256": "0642c9cf50794d265aa7281ede8a951174177260bf441dd0e0ac86d2922e7187",
+        "C3_archive_sha256": "74cff382522bc01ffaf185531a48dd7c7f5f7e1e3efda1c11599937797c9616c",
+        "C2_archive_unchanged": true,
+        "binary_sha256": "8ff3b4e422ef26332ca2c5e6062632787c6724244d6028d06e6c547d569a84ac",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test.o": "17e6e8b6e0b392bd12018114c80a7c25b36f42708f9f50fb46e857529d37c88d"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2788 MiB, 48\n",
+          "stderr": ""
+        },
+        "started_unix": 1792239085.6276925,
+        "returncode": 0,
+        "elapsed_s": 16.334217071533203
+      },
+      "precision": {
+        "argv": [
+          "/root/hyle-scratch/compute-unified/g04-bf16-c3/validation/precision/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C3_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C3_header_sha256": "0642c9cf50794d265aa7281ede8a951174177260bf441dd0e0ac86d2922e7187",
+        "C3_archive_sha256": "74cff382522bc01ffaf185531a48dd7c7f5f7e1e3efda1c11599937797c9616c",
+        "C2_archive_unchanged": true,
+        "binary_sha256": "2d7cce46a77d960da51206e9c5506fa625eb14b5dc35d0603813423820db60da",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product-precision/consumer.o": "18533ec2519fe01d21ebcb4d3af270114ecdae1f164b8549800ad82d814c575e"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2788 MiB, 48\n",
+          "stderr": ""
+        },
+        "started_unix": 1792239102.0910106,
+        "returncode": 0,
+        "elapsed_s": 3.001642942428589
+      },
+      "memcheck": {
+        "argv": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "memcheck",
+          "--error-exitcode",
+          "86",
+          "/root/hyle-scratch/compute-unified/g04-bf16-c3/validation/public/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C3_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C3_header_sha256": "0642c9cf50794d265aa7281ede8a951174177260bf441dd0e0ac86d2922e7187",
+        "C3_archive_sha256": "74cff382522bc01ffaf185531a48dd7c7f5f7e1e3efda1c11599937797c9616c",
+        "C2_archive_unchanged": true,
+        "binary_sha256": "44ee18ea0f5407ae2b9b523a073733e15a10b844a46d5bc32a8f47aebe69cb34",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/consumer.o": "c471a005fffd53f36f7a02fd0e9765991455595fb4f8ee6bbc7b05989e52f1f2"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2788 MiB, 48\n",
+          "stderr": ""
+        },
+        "started_unix": 1792239105.2259645,
+        "returncode": 0,
+        "elapsed_s": 1.2293264865875244
+      },
+      "synccheck": {
+        "argv": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "synccheck",
+          "--error-exitcode",
+          "86",
+          "/root/hyle-scratch/compute-unified/g04-bf16-c3/validation/public/consumer"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C3_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C3_header_sha256": "0642c9cf50794d265aa7281ede8a951174177260bf441dd0e0ac86d2922e7187",
+        "C3_archive_sha256": "74cff382522bc01ffaf185531a48dd7c7f5f7e1e3efda1c11599937797c9616c",
+        "C2_archive_unchanged": true,
+        "binary_sha256": "44ee18ea0f5407ae2b9b523a073733e15a10b844a46d5bc32a8f47aebe69cb34",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/consumer.o": "c471a005fffd53f36f7a02fd0e9765991455595fb4f8ee6bbc7b05989e52f1f2"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2788 MiB, 48\n",
+          "stderr": ""
+        },
+        "started_unix": 1792239106.8033578,
+        "returncode": 0,
+        "elapsed_s": 2.022124767303467
+      },
+      "feature-memcheck": {
+        "argv": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "memcheck",
+          "--error-exitcode",
+          "86",
+          "/root/hyle-scratch/compute-unified/g04-bf16-c3/validation/native-test/consumer",
+          "--gtest_filter=FlashinferCache.OptInBfloat16PartialsAgainstFeatureOracle"
+        ],
+        "C1_baseline_commit": "6336e9ffc80bcec28ae4d0d8631e58237d80dd5a",
+        "C3_source_sha256": "8095820397cef116e4ecbc7dae4d6dedb28910000784e267703c88482767295b",
+        "C3_header_sha256": "0642c9cf50794d265aa7281ede8a951174177260bf441dd0e0ac86d2922e7187",
+        "C3_archive_sha256": "74cff382522bc01ffaf185531a48dd7c7f5f7e1e3efda1c11599937797c9616c",
+        "C2_archive_unchanged": true,
+        "binary_sha256": "8ff3b4e422ef26332ca2c5e6062632787c6724244d6028d06e6c547d569a84ac",
+        "C1_unchanged_host_objects": {
+          "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test.o": "17e6e8b6e0b392bd12018114c80a7c25b36f42708f9f50fb46e857529d37c88d"
+        },
+        "gpu_pre": {
+          "returncode": 0,
+          "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2788 MiB, 48\n",
+          "stderr": ""
+        },
+        "started_unix": 1792239108.956457,
+        "returncode": 0,
+        "elapsed_s": 2.021817684173584
+      }
+    }
+  },
+  "counter_access": {
+    "time_utc": "2026-10-17T12:15:42.858062+00:00",
+    "result": "COUNTERS_UNAVAILABLE_PERMISSION",
+    "ncu": "/usr/local/cuda-13.3/bin/ncu",
+    "version": "2026.2.1.0 build 38283040",
+    "hardware": "NVIDIA GeForce RTX 4070 AD104 SM89 GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8 driver617.14",
+    "preflight": {
+      "version_returncode": 0,
+      "list_sections_returncode": 0,
+      "query_metrics_returncode": 0,
+      "query_metrics_reported_error": "ERR_NVGPUCTRPERM",
+      "note": "NCU process returncode0 does not mean counter access succeeded; error is in actual stdout."
+    },
+    "profile_started": false,
+    "new_GPU_launches_for_this_diagnostic": 0,
+    "ordinary_samples_repeated": false,
+    "new_variants": false,
+    "system_permission_changes": false,
+    "candidate": {
+      "binary": "/root/hyle-scratch/compute-unified/g04-bf16-c2/validation/peer-trace/consumer",
+      "binary_sha256": "efce3f63a8e6ccda7ca476091774c13bb4582e2cd5a31e4a236b81e8c1e2ba48",
+      "host_source_sha256": "0c1cce0c24af14e167d304333d1ab898a831c29d214fe293187fb70180fb629a",
+      "FI_archive_sha256": "6b18644c332a00ab4e58052d008ac2c1951d8172851b4cced74a6a9ea1d0092e"
+    },
+    "unexecuted_finite_sampling_design": {
+      "binary_change_required": false,
+      "env_only_nonsecret": {
+        "G04_TRACE": "1"
+      },
+      "target": "normal capture=0 alloc=0 order=0 warm prefill only; select existing outer NVTX range and inner control.episode / treatment.episode separately; attention kernel name filter excludes merge; at most two matching launches per arm",
+      "sections": [
+        "SpeedOfLight",
+        "LaunchStats",
+        "SchedulerStats",
+        "WarpStateStats",
+        "InstructionStats",
+        "ComputeWorkloadAnalysis",
+        "MemoryWorkloadAnalysis"
+      ],
+      "collection_role": "hardware causal diagnosis only; profiler/replay/cache effects must not replace prior ordinary E2E primary",
+      "counter_permission_needed": true,
+      "status": "NOT_RUN because preflight counter access already refused"
+    },
+    "evidence": {
+      "help.result.json": {
+        "bytes": 88,
+        "sha256": "bf8f57cbd1adfabe3a1cd56f4badcef1b61042774a130c5d73dbfe7c7dc71a8a"
+      },
+      "help.stderr.log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "help.stdout.log": {
+        "bytes": 36888,
+        "sha256": "b9a05356a473a859302fd2fce455a4460a6a37f4794e4534d9dea65b699c9bf0"
+      },
+      "metrics.result.json": {
+        "bytes": 137,
+        "sha256": "4478fc8199d19e6cdf13c55ec9dbae85662795503669b0437c91814d9137701c"
+      },
+      "metrics.stderr.log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "metrics.stdout.log": {
+        "bytes": 288,
+        "sha256": "71e06e094edf3f79164c5e87ba8876f74f7fb14cc36b6ad15f210b143640cb97"
+      },
+      "sections.result.json": {
+        "bytes": 97,
+        "sha256": "d863c8cd856fc169665d5759a28cee94a8daae0d15099f8469a7b9c0f71251e6"
+      },
+      "sections.stderr.log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "sections.stdout.log": {
+        "bytes": 4760,
+        "sha256": "ebb7286c43a625c6b6ba2ec965e24f21eba383e937d8709cd6fe7342f5ba1040"
+      },
+      "tool-preflight.json": {
+        "bytes": 887,
+        "sha256": "a1815f81ab845f21cda7778181f5f734713760fd627bdb1bd2eb3fdf544e6b02"
+      },
+      "version.result.json": {
+        "bytes": 91,
+        "sha256": "34af7dca4d51774a5dc05dde8875dd3104c8b7e777d11f7259870ab369f7c2be"
+      },
+      "version.stderr.log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "version.stdout.log": {
+        "bytes": 144,
+        "sha256": "99b61b4937aa4d473ccb4ef2395d69d5f3de64908a7d65d96bc8f9b73f72476a"
+      }
+    },
+    "conclusion": "No GPU counter values were collected. This cannot establish occupancy/LDST/stall/decode as the bottleneck. Existing source/SASS and Nsight Systems attribution remain the only available measurements; prefetch hypothesis was not confirmed by ordinary A/B."
+  },
+  "Windows_token_readonly": {
+    "checked_utc": "2026-10-17T12:18:15.9866719Z",
+    "source": "WindowsIdentity/GetCurrent and WindowsPrincipal/IsInRole",
+    "user": "KIRO-WORKSTATIO\\kiro",
+    "elevated_administrator": false,
+    "system_permissions_changed": false
+  },
+  "Windows_NVIDIA_App_readonly": {
+    "inspection": "read-only Get-Item VersionInfo and Uninstall registry metadata; application not launched and no settings changed",
+    "installed": true,
+    "display_name": "NVIDIA App 11.0.9.251",
+    "display_version": "11.0.9.251",
+    "publisher": "NVIDIA Corporation",
+    "executable": "C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\CEF\\NVIDIA app.exe",
+    "executable_bytes": 3656304,
+    "product_name": "NVIDIA App",
+    "product_version": "11.0.9.251",
+    "file_version": "128.4.13.34",
+    "file_version_note": "FileVersion is the UI executable/CEF version; ProductVersion and matching registry DisplayVersion identify the NVIDIA App release.",
+    "registry_key": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{B2FE1952-0186-46C3-BAEC-A80AA35AC5B8}_Display.NvApp",
+    "registry_install_location": "C:\\Program Files\\NVIDIA Corporation\\Installer2\\Display.NvApp.{9B0858A8-E9EA-49E7-85E8-AF1EC2912555}",
+    "official_control_path": "System > Advanced > Developer > Manage GPU Performance Counters",
+    "official_app_minimum_version": "11.0.6",
+    "installed_product_meets_documented_app_minimum": true,
+    "official_permission_requirement": "Administrative privileges are required to change counter access.",
+    "official_wsl_requirement": "GPU performance counter access must be enabled on the Windows host.",
+    "sources": [
+      "https://developer.nvidia.com/nvidia-development-tools-solutions-err_nvgpuctrperm-permission-issue-performance-counters",
+      "https://docs.nvidia.com/nsight-compute/ReleaseNotes/topics/system-requirements.html"
+    ],
+    "ui_path_status": "Documented path applicable to installed release; UI itself was not opened or inspected."
+  },
+  "established": "Remaining measured difference lies in attention; normal and replay resource-query evidence excludes added host resource calls as its principal source",
+  "not_established": "relative contributions of conversion-instruction throughput, memory stalls, and occupancy without hardware counters; static dependency order is not a dynamic bottleneck verdict",
+  "next_ready_diagnostic": "existing C2 binary; at most two warm normal attention launches per arm using NCU after Windows-host counter access is enabled"
+}

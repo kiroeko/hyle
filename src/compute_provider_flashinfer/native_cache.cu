@@ -60,8 +60,8 @@ namespace hyle::compute::flashinfer::native {
 namespace fi=::flashinfer;
 
 namespace {
-struct Bf16PartialAttention:fi::DefaultAttention<false,true,false,false> {
-  using Base=fi::DefaultAttention<false,true,false,false>;
+struct Bf16PartialAttention:fi::DefaultAttention<false,false,false,false> {
+  using Base=fi::DefaultAttention<false,false,false,false>;
   using Base::Base;
   static constexpr bool hyle_bf16_partials=true;
 };
