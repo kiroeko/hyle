@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "cpu_execution.h"
+#include "cpu_program.h"
 #include "explicit_rope.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/low_precision.h"
@@ -40,9 +41,8 @@ struct Program final {
   };
   Options options;
   internal::Recipe recipe;
-  // Cold, immutable Sylvester matrices. ggml recognizes the explicit
-  // Hadamard hint and retains ownership of the mature backend execution.
-  std::vector<std::vector<float>> hadamards;
+  // The selected native CPU program owns the unary FWHT implementation.
+  ggml_custom_op_t hadamard = nullptr;
   // Cold causal masks for ggml flash attention. They are ordinary upstream
   // mask payloads, broadcast across batch and heads during replay.
   std::vector<std::vector<ggml_fp16_t>> attention_masks;
@@ -920,16 +920,12 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
         rope->rotary_dimensions, rope->layout == RopeLayout::kInterleaved);
   } else if (node.operation.get_if<Hadamard>()) {
-    const auto &values = program.hadamards[node_index];
-    if (values.empty())
+    if (!program.hadamard)
       return {};
-    const auto width = columns(output);
-    auto *transform = ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
-    transform->data = const_cast<float *>(values.data());
-    result = ggml_mul_mat(context, transform, as_float(context, input(0)));
-    ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
-    if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-      return {};
+    auto *source = as_float(context, input(0));
+    result = ggml_custom_4d(context, GGML_TYPE_F32, source->ne[0], source->ne[1],
+                            source->ne[2], source->ne[3], &source, 1,
+                            program.hadamard, GGML_N_TASKS_MAX, nullptr);
   } else if (const auto sink = node.operation.custom_as<model_ops::SinkAttention>()) {
     auto *query = ggml_permute(context, invocation.values[node.inputs[0]], 0, 2, 1, 3);
     auto *key = ggml_permute(context, invocation.values[node.inputs[1]], 0, 2, 1, 3);
@@ -1926,7 +1922,15 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
       if (id >= available.size() || !available[id])
         return ProviderPrepareOutcome::error(
             Status::InvalidArgument("ggml CPU output identity is invalid"));
-    std::vector<std::vector<float>> hadamards(recipe.nodes.size());
+    ggml_custom_op_t hadamard = nullptr;
+    if (std::ranges::any_of(recipe.nodes, [](const auto &node) {
+          return node.operation.template get_if<Hadamard>() != nullptr;
+        })) {
+      auto selected = ggml_runtime::select_cpu_program();
+      if (!selected)
+        return ProviderPrepareOutcome::error(std::move(selected).error());
+      hadamard = (*selected)->hadamard;
+    }
     std::vector<std::vector<ggml_fp16_t>> attention_masks(recipe.nodes.size());
     std::vector<Program::FillValue> fill_values;
     if (std::ranges::any_of(recipe.nodes, [](const auto &node) {
@@ -1944,21 +1948,6 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
           const auto bits = static_cast<std::uint16_t>(fill->value.bits());
           std::memcpy(fill_values[node_index].bytes.data(), &bits, sizeof(bits));
         }
-      }
-      if (node.operation.get_if<Hadamard>()) {
-        const auto width = static_cast<std::size_t>(
-            recipe.values[node.outputs[0]].dimensions().back());
-        if (width > SIZE_MAX / width ||
-            width * width > SIZE_MAX / sizeof(float))
-          return ProviderPrepareOutcome::error(
-              Status::OutOfRange("Hadamard matrix size overflows"));
-        auto &matrix = hadamards[node_index];
-        matrix.resize(width * width);
-        const auto scale = 1.0F / std::sqrt(static_cast<float>(width));
-        for (std::size_t row = 0; row < width; ++row)
-          for (std::size_t column = 0; column < width; ++column)
-            matrix[row * width + column] =
-                std::popcount(row & column) % 2 == 0 ? scale : -scale;
       }
       const auto paged=node.operation.custom_as<PagedRead>();
       const ScaledDotProductAttention paged_attention{
@@ -1994,7 +1983,7 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
       return ProviderPrepareOutcome::resource_declined(allocation_failure());
     auto *program = ::new (storage)
         Program{static_cast<Configuration *>(context)->options,
-                std::move(recipe), std::move(hadamards),
+                std::move(recipe), hadamard,
                 std::move(attention_masks), std::move(index_checks),
                 std::move(fill_values)};
     *output = {.vtable = &kPrepared,

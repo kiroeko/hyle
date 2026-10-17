@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <bit>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -38,6 +39,60 @@ TEST(GgmlCpuExecution, Avx2ProgramRequiresCpuAndOsEnabledPrerequisites) {
   }
   CpuFeatureSet unrelated{CpuFeature::kArmNeon, CpuFeature::kArmBf16};
   EXPECT_FALSE(cpu_avx2_program_eligible(unrelated));
+}
+
+TEST(GgmlCpuExecution, UnaryHadamardOwnsNoMatrixInEitherReferenceSetting) {
+  using hyle::compute::ggml_runtime::select_cpu_program;
+  auto selected = select_cpu_program();
+  ASSERT_TRUE(selected) << selected.error().message();
+  const auto *program = *selected;
+  ASSERT_NE(program->hadamard, nullptr);
+  program->initialize();
+  constexpr int width = 64, rows = 2;
+  std::array<float, width * rows> input{}, unary_output{}, matrix_output{};
+  std::array<float, width * width> matrix{};
+  for (int i = 0; i < width * rows; ++i)
+    input[i] = float(i % 9 - 4) / 8;
+  for (int row = 0; row < width; ++row)
+    for (int column = 0; column < width; ++column)
+      matrix[row * width + column] =
+          (std::popcount(unsigned(row & column)) % 2 ? -1.0F : 1.0F) / 8;
+  auto arena = MetadataArena::for_graph(8, 8, hyle::mem::system_allocator());
+  ASSERT_TRUE(arena);
+  auto *source = ggml_new_tensor_2d(arena->get(), GGML_TYPE_F32, width, rows);
+  source->data = input.data();
+  auto *unary = ggml_custom_4d(arena->get(), GGML_TYPE_F32, width, rows, 1, 1,
+                               &source, 1, program->hadamard,
+                               GGML_N_TASKS_MAX, nullptr);
+  unary->data = unary_output.data();
+  EXPECT_EQ(unary->src[0], source);
+  EXPECT_EQ(unary->src[1], nullptr);
+  EXPECT_EQ(ggml_nbytes(source), sizeof(input));
+  auto *weights = ggml_new_tensor_2d(arena->get(), GGML_TYPE_F32, width, width);
+  weights->data = matrix.data(); // The legacy hinted operation keeps real storage.
+  auto *hinted = ggml_mul_mat(arena->get(), weights, source);
+  ggml_mul_mat_set_hint(hinted, GGML_HINT_SRC0_IS_HADAMARD);
+  hinted->data = matrix_output.data();
+  auto *graph = ggml_new_graph_custom(arena->get(), 8, false);
+  ggml_build_forward_expand(graph, unary);
+  ggml_build_forward_expand(graph, hinted);
+  for (const bool reference : {false, true}) {
+    SCOPED_TRACE(reference);
+    auto plan = program->plan(graph, 2, nullptr);
+    plan.use_ref = reference;
+    alignas(GGML_MEM_ALIGN) std::array<std::uint8_t, 4096> work{};
+    ASSERT_LE(plan.work_size, work.size());
+    plan.work_data = work.data();
+    ASSERT_EQ(program->compute(graph, &plan), GGML_STATUS_SUCCESS);
+    for (int row = 0; row < rows; ++row)
+      for (int column = 0; column < width; ++column) {
+        double expected = 0;
+        for (int k = 0; k < width; ++k)
+          expected += double(input[row * width + k]) * matrix[column * width + k];
+        EXPECT_NEAR(unary_output[row * width + column], expected, 2e-6);
+        EXPECT_NEAR(matrix_output[row * width + column], expected, 2e-6);
+      }
+  }
 }
 
 // An original ggml RMSNorm -> F16 MatMul -> state addition. Payloads are

@@ -1,7 +1,7 @@
 {
   "upstream_revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
   "borrowed_iq1_revision": "46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f",
-  "scope": "original resource edits plus original IQ1 inference-only types/grids/dequant/CPU dot/validation; no encoder or GPU qualification",
+  "scope": "original resource edits plus original IQ1 inference-only types/grids/dequant/CPU dot/validation; no encoder or GPU qualification; original unary bridge reuses the native FWHT body without a matrix payload",
   "files": [
     {
       "path": "src/ggml.c",
@@ -176,7 +176,7 @@
     {
       "path": "src/ggml-cpu/ops.cpp",
       "before_sha256": "215d16e7ebbb4066920e2d7a5f7ea6c46636d298aedd553e00f0b3ebb0d59305",
-      "after_sha256": "18c32123603a0d461851757463cd4274bc6f7c4a7cd5d5b4e9ad675e00802c03",
+      "after_sha256": "955bfc88db73a307482054475b9589e31312d0512c60d6096f3ab89b6fd88c87",
       "edits": [
         {
           "before": "        case GGML_TYPE_TQ1_0:\n        case GGML_TYPE_TQ2_0:\n        case GGML_TYPE_IQ2_XXS:\n        case GGML_TYPE_IQ2_XS:\n        case GGML_TYPE_IQ3_XXS:\n        case GGML_TYPE_IQ1_S:\n        case GGML_TYPE_IQ1_M:\n        case GGML_TYPE_IQ4_NL:\n        case GGML_TYPE_IQ4_XS:\n        case GGML_TYPE_IQ3_S:\n        case GGML_TYPE_IQ2_S:\n        case GGML_TYPE_Q8_K:\n        case GGML_TYPE_I8:",
@@ -269,6 +269,26 @@
         {
           "before": "        if (v->type == GGML_TYPE_F16) {\n            for (int64_t d = 0; d < DV; ++d) {\n                VKQ32[d] = GGML_CPU_FP16_TO_FP32(VKQ16[d]);",
           "after": "        if (v->type == GGML_TYPE_F16 && !hyle_flash_boxed(dst)) {\n            for (int64_t d = 0; d < DV; ++d) {\n                VKQ32[d] = GGML_CPU_FP16_TO_FP32(VKQ16[d]);"
+        },
+        {
+          "before": "static void ggml_compute_forward_fwht_impl(const ggml_compute_params * params, ggml_tensor * dst) {\n    const ggml_tensor * src0 = dst->src[0];\n    const ggml_tensor * src1 = dst->src[1];",
+          "after": "static void ggml_compute_forward_fwht_impl(const ggml_compute_params * params, const ggml_tensor * src1, ggml_tensor * dst) {"
+        },
+        {
+          "before": "    GGML_TENSOR_BINARY_OP_LOCALS\n\n    const int ith = params->ith;\n    const int nth = params->nth;\n\n    const int64_t n = ne10;\n    GGML_ASSERT((n & (n - 1)) == 0); // must be power of 2",
+          "after": "    // Both the legacy matrix hint and the unary bridge use this same body.\n    GGML_TENSOR_LOCALS(int64_t, ne1, src1, ne)\n    GGML_TENSOR_LOCALS(size_t, nb1, src1, nb)\n    GGML_TENSOR_LOCALS(int64_t, ne, dst, ne)\n    GGML_TENSOR_LOCALS(size_t, nb, dst, nb)\n\n    const int ith = params->ith;\n    const int nth = params->nth;\n\n    const int64_t n = ne10;\n    GGML_ASSERT((n & (n - 1)) == 0); // must be power of 2"
+        },
+        {
+          "before": "ggml_compute_forward_fwht_impl<float>(params, dst);",
+          "after": "ggml_compute_forward_fwht_impl<float>(params, src1, dst);"
+        },
+        {
+          "before": "ggml_compute_forward_fwht_impl<ggml_fp16_t>(params, dst);",
+          "after": "ggml_compute_forward_fwht_impl<ggml_fp16_t>(params, src1, dst);"
+        },
+        {
+          "before": "// ggml_compute_forward_lightning_indexer\n",
+          "after": "// A same-revision unary CUSTOM entry: no matrix descriptor or payload. The\n// existing FWHT body owns scaling, F32 accumulation and row partitioning.\n// CUSTOM has no matrix-reference fallback, including with cplan.use_ref=true.\nextern \"C\" void ggml_hyle_cpu_hadamard(ggml_tensor * dst, int ith, int nth, void * userdata) {\n    const ggml_tensor * input = dst->src[0];\n    GGML_ASSERT(dst->op == GGML_OP_CUSTOM && input != nullptr && dst->src[1] == nullptr);\n    GGML_ASSERT(input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);\n    GGML_ASSERT(ggml_are_same_shape(input, dst) && input->ne[0] > 0);\n    GGML_ASSERT(input->nb[0] == sizeof(float) && dst->nb[0] == sizeof(float));\n    ggml_compute_params params = {};\n    params.ith = ith;\n    params.nth = nth;\n    ggml_compute_forward_fwht_impl<float>(&params, input, dst);\n    (void) userdata;\n}\n\n// ggml_compute_forward_lightning_indexer\n"
         }
       ]
     }

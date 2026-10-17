@@ -33,3 +33,13 @@ existing CPU IQ1 manifest composition deduplicates these shared edits.
 The generic per-token loop resolves its physical row once and applies the
 independent K/V byte strides to that same row; attention arithmetic and table
 ownership are unchanged.
+
+# CPU unary Hadamard integration
+
+The unary Hadamard bridge reuses each pinned core's existing FWHT body.
+Only its input parameter and metadata locals are made explicit; normalization,
+F32 accumulation, SIMD butterflies and row partitioning remain native. A unary
+CUSTOM entry takes one real input, without a synthetic matrix or payload. Its
+callback belongs to the selected baseline/AVX2 CPU program. The legacy matrix
+hint and its `use_ref` matrix fallback remain intact; unary CUSTOM execution
+uses the same FWHT body in either reference setting.

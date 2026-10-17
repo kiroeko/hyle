@@ -1089,7 +1089,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cpu_runtime",
-        "tree_sha256": "bc351a8d9a3d2eaedc8993f8de119730921ae2e3731cd94811e61b561c477c09"
+        "tree_sha256": "1353f674cedaf4f0e64055ff07227fe8af8ded61d12832c581e986ea87455379"
       },
       "license": {
         "expression": "MIT",
@@ -1102,7 +1102,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_cpu_runtime/NOTICE.md",
-            "sha256": "944cdb2a42bf7e95147872342c039fa4b62df8a6c281fc250fd19bb1e7f7ecf0"
+            "sha256": "a116393b6b54b907b0b44b6dd2685fa7f2801f6ed375bc737dfeab903fe8bf15"
           }
         ]
       }

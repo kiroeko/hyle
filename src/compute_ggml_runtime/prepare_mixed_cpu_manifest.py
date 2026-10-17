@@ -1,4 +1,4 @@
-"""Derive the old-core resource + original CPU IQ1 manifest from locked inputs.
+"""Derive old-core resource, CPU IQ1 and unary FWHT edits from locked inputs.
 
 No mathematical bodies are rewritten or separately maintained. The caller
 authenticates the source and both owning manifests before invoking this tool.
@@ -18,12 +18,28 @@ def derive(source, resource_manifest, cpu_manifest, output):
     edits = {f["path"]: list(f["edits"]) for f in resource["files"]}
     added = 0
     for file in cpu["files"]:
-        borrowed = [e for e in file["edits"] if e["before"] not in existing]
+        borrowed = []
+        for edit in file["edits"]:
+            if edit["before"] in existing:
+                continue
+            # The old core has the same F32 FWHT body without the newer F16
+            # template overload. Adapt only its signature/call-site spelling;
+            # the original arithmetic remains in each owning native source.
+            if "ggml_compute_forward_fwht_impl<ggml_fp16_t>" in edit["before"]:
+                continue
+            ported = {}
+            for key in ("before", "after"):
+                ported[key] = edit[key].replace(
+                    "ggml_compute_forward_fwht_impl<float>",
+                    "ggml_compute_forward_fwht_f32").replace(
+                    "ggml_compute_forward_fwht_impl(",
+                    "ggml_compute_forward_fwht_f32(")
+            borrowed.append(ported)
         if borrowed:
             edits.setdefault(file["path"], []).extend(borrowed)
             added += len(borrowed)
-    if added != 19:
-        raise ValueError("original IQ1 port composition changed; re-audit")
+    if added != 23:
+        raise ValueError("mixed CPU patch composition changed; re-audit")
     files = []
     for name, changes in edits.items():
         relative = Path(name)

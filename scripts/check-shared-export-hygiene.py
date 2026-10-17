@@ -202,7 +202,7 @@ def forbidden_reason(symbol: str, binary: Path | None = None) -> str | None:
     # product. Its sole descriptor entry must remain discoverable. Keep the
     # allowance bound to the identified module and this exact symbol; all
     # other exports still pass through the ordinary policy below.
-    if (name == "hyle_ggml_cpu_program_v1" and binary is not None and
+    if (name == "hyle_ggml_cpu_program_v2" and binary is not None and
             re.fullmatch(
                 r"(?:lib)?hyle_ggml_cpu_avx2_[0-9a-f]{8}_[0-9a-f]{16}\.(?:dll|so|dylib)",
                 binary.name)):

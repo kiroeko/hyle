@@ -1,0 +1,10 @@
+{
+  "archive": "evidence/performance/library-review-2026-10-18/cpu-hadamard/source-results.zip",
+  "bytes": 1963530,
+  "sha256": "8e297be518dfc326a55e96a2bcd9cd83a5f910ec7bc0961fd98cd13960fad323",
+  "product_patch_sha256": "c6d147a0db5ce0b4529d289fa2f18193a4f397719f28d35ada6585ca10dd3e23",
+  "summary_sha256": "c63cc86cabd4fcb4a1bd110dd2e24bcf666636ba0777d7bae342549bef2d6e45",
+  "source_identity_sha256": "edadfdca263bc1ea115370d9f202e3e6d7d67fb4a859223e641dd0ce2b22d12f",
+  "binary_outputs_excluded_from_zip": true,
+  "members": 101
+}

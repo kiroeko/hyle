@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cpu_program_abi.h"
+#include "metadata_arena.h"
 
 #include "hyle/error/result.h"
 #include "hyle/platform/cpu.h"
@@ -15,6 +16,7 @@ cpu_avx2_program_eligible(const platform::CpuFeatureSet &facts) noexcept {
       CpuFeature::kX86F16c, CpuFeature::kX86Bmi2};
   return facts.has_all(required);
 }
-Result<const CpuProgram *> select_cpu_program() noexcept;
+HYLE_GGML_RUNTIME_INTERNAL_API Result<const CpuProgram *>
+select_cpu_program() noexcept;
 
 } // namespace hyle::compute::ggml_runtime

@@ -19,8 +19,9 @@ struct CpuProgram {
   ggml_cplan (*plan)(const ggml_cgraph *, int, ggml_threadpool *);
   ggml_status (*compute)(ggml_cgraph *, ggml_cplan *);
   void (*free_pool)(ggml_threadpool *);
+  ggml_custom_op_t hadamard;
 };
 
-inline constexpr std::uint32_t kCpuProgramAbi = 1;
+inline constexpr std::uint32_t kCpuProgramAbi = 2;
 
 } // namespace hyle::compute::ggml_runtime

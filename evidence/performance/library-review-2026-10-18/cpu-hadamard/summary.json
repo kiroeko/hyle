@@ -1,0 +1,185 @@
+{
+  "status": "implemented_and_focused_validation_passed",
+  "canonical_source_root": "C:\\public\\project-hyle\\hyle",
+  "implementation": {
+    "operation": "CPU Hadamard, public C++ domain and scaling unchanged",
+    "native_bridge": "Real unary GGML_OP_CUSTOM callback reuses the existing native FWHT arithmetic body; no dummy matrix, null W-squared storage, numerical kernel rewrite, or log-W operation graph.",
+    "private_abi": 2,
+    "entry_symbol": "hyle_ggml_cpu_program_v2",
+    "pins": [
+      "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+      "456172ec733a (existing mixed CPU pin/cache)"
+    ],
+    "reference_semantics": "The unary CUSTOM always means FWHT under either use_ref value. The original hinted MUL_MAT still owns a real matrix and preserves its genuine matrix reference fallback.",
+    "ownership": "The callback comes from the selected baseline/AVX2 CpuProgram. The module and compute callback share the actual selected owner; no new per-invocation globals or scratch state.",
+    "metadata_capacity": "Existing capacity retained: matrix-plus-MUL_MAT becomes one unary CUSTOM, with the same possible dtype casts."
+  },
+  "validation": {
+    "toolchain": "Windows x64, MSVC 14.50.35717 / compiler 19.50.35728, Release /MD; fresh Hyle/test objects /W4 /WX",
+    "public_and_native_tests": [
+      {
+        "pin": "ffa4",
+        "selection": "baseline",
+        "tests_passed": 4,
+        "raw_log": "ffa4-tests-baseline.log",
+        "actual_identity": {
+          "abi": 2,
+          "descriptor_bytes": 80,
+          "tensor_bytes": 336,
+          "plan_bytes": 56,
+          "callback_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/ffa4/tests-baseline.exe",
+          "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/ffa4/tests-baseline.exe"
+        },
+        "fresh_baseline_callback_in_link_map": true,
+        "old_native_ops_archive_member_present": false
+      },
+      {
+        "pin": "ffa4",
+        "selection": "selected",
+        "tests_passed": 4,
+        "raw_log": "ffa4-tests-selected.log",
+        "actual_identity": {
+          "abi": 2,
+          "descriptor_bytes": 80,
+          "tensor_bytes": 336,
+          "plan_bytes": 56,
+          "callback_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/ffa4/hyle_ggml_cpu_avx2_ffa4_hadamard_v2_overlay.dll",
+          "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/ffa4/hyle_ggml_cpu_avx2_ffa4_hadamard_v2_overlay.dll"
+        },
+        "fresh_baseline_callback_in_link_map": true,
+        "old_native_ops_archive_member_present": false
+      },
+      {
+        "pin": "mixed",
+        "selection": "baseline",
+        "tests_passed": 4,
+        "raw_log": "mixed-tests-baseline.log",
+        "actual_identity": {
+          "abi": 2,
+          "descriptor_bytes": 80,
+          "tensor_bytes": 336,
+          "plan_bytes": 56,
+          "callback_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/mixed/tests-baseline.exe",
+          "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/mixed/tests-baseline.exe"
+        },
+        "fresh_baseline_callback_in_link_map": true,
+        "old_native_ops_archive_member_present": false
+      },
+      {
+        "pin": "mixed",
+        "selection": "selected",
+        "tests_passed": 4,
+        "raw_log": "mixed-tests-selected.log",
+        "actual_identity": {
+          "abi": 2,
+          "descriptor_bytes": 80,
+          "tensor_bytes": 336,
+          "plan_bytes": 56,
+          "callback_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/mixed/hyle_ggml_cpu_avx2_mixed_hadamard_v2_overlay.dll",
+          "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-hadamard/mixed/hyle_ggml_cpu_avx2_mixed_hadamard_v2_overlay.dll"
+        },
+        "fresh_baseline_callback_in_link_map": true,
+        "old_native_ops_archive_member_present": false
+      }
+    ],
+    "total_gtests_passed": 16,
+    "coverage": "F32/F16/BF16, widths 1/4/128/4096, 6 rows, forward/inverse, independent invocations and rebind; independent FP64 Sylvester oracle. F32 native unary and legacy real-matrix reference each tested with use_ref false/true.",
+    "shared_boundary": {
+      "good": "Actual dllimport select_cpu_program crosses a fresh runtime selector DLL and returns ABI2 callback; shared-good-client.log exit 0.",
+      "stale": "Existing old v1 module rejected as FailedPrecondition ggml CPU program ABI; shared-stale-client.log exit 0.",
+      "scope": "Private selector DLL boundary smoke, not a full installed shared SDK rebuild."
+    },
+    "export_hygiene_unit": {
+      "command": "python tests/tooling/shared_export_hygiene_test.py",
+      "exit": 0,
+      "raw_log": "export-hygiene-unit.log",
+      "note": "Negative synthetic cases intentionally print failed diagnostics; the unit script succeeds. Not a full product export scan."
+    },
+    "resource_lock": {
+      "command": "cmake -P .scratch/perf-review-2026-10-18/cpu-hadamard/check-lock.cmake",
+      "result": "PASS",
+      "reported_and_run_by": "root, independent final tree/license check; not rerun by this subagent"
+    }
+  },
+  "cold_prepare_allocation": {
+    "shape": "F32 W4096, rows2, separate baseline/candidate processes",
+    "measurement_boundary": "Selected CPU program DLL loaded/initialized before counters. Only public prepare is measured; input/output allocation and numerical execution occur after capture.",
+    "metric": "Successful unaligned global new/new[] requested bytes, plus separate coarse Windows process PrivateUsage/WorkingSet snapshots. Not live allocation, device memory, complete allocator traffic, or peak resident memory.",
+    "baseline": {
+      "width": 4096,
+      "rows": 2,
+      "dtype": "F32",
+      "native_abi": 2,
+      "cold_successful_unaligned_new_calls": 16,
+      "cold_new_requested_bytes": 67110619,
+      "cold_largest_new_request": 67108903,
+      "cold_requests_at_least_64MiB": 1,
+      "private_before": 3416064,
+      "private_after": 70725632,
+      "working_set_before": 6434816,
+      "working_set_after": 73662464,
+      "caller_input_bytes": 32768,
+      "caller_output_bytes": 32768,
+      "checked_elements": 8192,
+      "max_abs_error": 0
+    },
+    "candidate": {
+      "width": 4096,
+      "rows": 2,
+      "dtype": "F32",
+      "native_abi": 2,
+      "cold_successful_unaligned_new_calls": 14,
+      "cold_new_requested_bytes": 1692,
+      "cold_largest_new_request": 368,
+      "cold_requests_at_least_64MiB": 0,
+      "private_before": 3420160,
+      "private_after": 3489792,
+      "working_set_before": 6434816,
+      "working_set_after": 6549504,
+      "caller_input_bytes": 32768,
+      "caller_output_bytes": 32768,
+      "checked_elements": 8192,
+      "max_abs_error": 0
+    },
+    "removed_payload_bytes": 67108864,
+    "removed_largest_new_request_note": "The real W-squared float matrix requests payload 64 MiB plus 39 B of MSVC STL aligned-allocation overhead. Total requested-byte reduction also includes the removed outer vector storage.",
+    "initial_instrumentation_correction": "Initial exact-64MiB counter was zero because MSVC requested 64MiB+39B; first-space logs preserved. Final counter uses requests >=64MiB. Both initial and final numerical checks passed."
+  },
+  "build_scope": {
+    "foundation_cache": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+    "fresh_native_per_pin": "Only ops.cpp baseline + AVX2, and private entry host TU; old original ops.cpp.obj excluded from linking.",
+    "reused_non_ops_avx2_objects": {
+      "ffa4": 15,
+      "mixed": 14
+    },
+    "reused_libraries": "Existing same-pin ggml base/CPU libraries and current Hyle foundation static libraries; original files unchanged. Exact paths and commands retained in commands.json/run.py.",
+    "not_performed": [
+      "No configure or whole native/SDK build",
+      "No dependency download or SDK copy",
+      "No throughput timing",
+      "No full shared installed SDK validation",
+      "No full Graph suite",
+      "No non-Windows runtime validation"
+    ]
+  },
+  "history_and_warnings": [
+    "Native FFA4 command retains the pre-existing exception-flag override warning; compile succeeded.",
+    "Initial source-feasibility.json describes the previous missing-unary-API state and is superseded by this implementation. It is not a current pending conclusion."
+  ],
+  "commands_recorded": 53,
+  "command_exit_codes": [
+    0
+  ],
+  "resource_identity": {
+    "vendored_tree_sha256": "1353f674cedaf4f0e64055ff07227fe8af8ded61d12832c581e986ea87455379",
+    "notice_sha256": "a116393b6b54b907b0b44b6dd2685fa7f2801f6ed375bc737dfeab903fe8bf15",
+    "tree_manifest": [
+      "LICENSE|94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d\n",
+      "NOTICE.md|a116393b6b54b907b0b44b6dd2685fa7f2801f6ed375bc737dfeab903fe8bf15\n",
+      "borrowed-fragments.json|611152962cbe81632a019051090ab68c96f9c883e1c03958adeaf928edff588a\n",
+      "patches.json|eead71336e45e95ee7441f966f99d2f29fd8f462008bec559ac10fafdb0f1b52\n"
+    ]
+  },
+  "source_identity_file": "source-identity.json",
+  "cleanup_candidates_file": "cleanup-candidates.json"
+}
