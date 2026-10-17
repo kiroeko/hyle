@@ -28,8 +28,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
       hyle_compute_backend_cuda_copy_late_failure_test)
     set_target_properties(${_hyle_cuda_test} PROPERTIES
       CUDA_STANDARD 17
-      CUDA_STANDARD_REQUIRED ON
-      CUDA_ARCHITECTURES native)
+      CUDA_STANDARD_REQUIRED ON)
     hyle_stage_runtime(${_hyle_cuda_test})
   endforeach()
   if(MSVC)
