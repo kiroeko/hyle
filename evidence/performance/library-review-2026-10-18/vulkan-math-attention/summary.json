@@ -1,0 +1,109 @@
+{
+  "changes": [
+    "Large nonfused ordinary/wide SDPA and SinkAttention use bounded full-KV Q blocks with a balanced explicit concat frontier. Existing multi-node/published-intermediate dependencies stay native dataflow; no implicit CPY frontier, Graph gate, support decline, new API or option.",
+    "All these math paths now request QK/PV F32 source precision as well as F32 accumulation. Query is made native dim01-contiguous in F32 (per block for tiled path) because the existing Vulkan dispatcher otherwise widens a noncontiguous input through Half even with the source flag. Fused FullF32/paged paths are unchanged."
+  ],
+  "strategy": {
+    "initial_threshold_bytes": 8388608,
+    "score_budget_target_bytes": 67108864,
+    "score_budget_note": "Conservative four F32 score-sized buffers; a row alignment quantum can exceed this target. It is not an allocation rejection or hard VRAM limit.",
+    "max_target_rows": 128,
+    "alignment": "block rows is a multiple of alignment/gcd(alignment, query row pitch) and mask row pitch. Native minStorageBufferOffsetAlignment from the actual device; mask pitch remains original caller pitch.",
+    "benefit_guard": "(Q-block_rows)*KV > 2*Q*Dout; otherwise preserve untiled math. Wide integer arithmetic follows already validated tensor extents. This is a conservative internal strategy estimate, not a measured throughput guarantee.",
+    "shared": "Full-KV key cast and value transpose/contiguous payload are built once outside blocks. F32 query copies are per block.",
+    "bottom_right": "n_past=KV-total_Q+block_begin; caller Sink mask row view begins at block_begin*original_mask.nb1, sinks vector is unchanged per head.",
+    "frontier_cost": "Balanced output copies cost O(output*log(block_count)) work and linear live output storage; this is explicit overhead, not zero-copy output or only one block of total memory.",
+    "metadata": "16 extra tensor/node slots per block, checked against INT32_MAX/4 before multiplication. Unique space cold lowering observed capacity359,tensors200,nodes195,metadata_used91984B."
+  },
+  "tests": {
+    "original_baseline": "Three strict FP64 numeric tests FAIL before correction: wide F32 maxAbs2.7068e-5, MLA1.05463e-5, Sink3.61353e-6. Initial F16 rounded oracle passed. Logs/source retained.",
+    "precision_corrected_baseline": "Final numeric3/3 PASS. Space regression expected FAIL only backing threshold; analytic output check still passes.",
+    "final_candidate": "4/4 PASS; two independent buffer sets, replay/rebind, previous output retained, attention intermediate published with downstream Neg in same Region. Original short-KV controls stay untiled. Three natural long-KV representatives actually tile: B2/F16 wide noncausal/zero scale; F32 MLA576-to512 causal/negative scale; F32 Sink with row-dependent nonzero/full-masked mask and per-head sinks. Existing short domains retain negative/positive/zero scale checks.",
+    "oracle": "Independent FP64 stable softmax from exact dyadic actual input values. Q/K have one nonzero channel; token-dependent plus channel-dependent V permits exact separable FP64 reference without an enormous CPU D inner loop. All output elements and downstream negatives checked; final F16 rounding is explicit.",
+    "unchanged_budgets": {
+      "F32": "6e-6*abs(expected)+2e-6",
+      "F16": ".001*abs(expected)+2e-7"
+    },
+    "candidate_worst_F32_max_abs": 1.19209e-07,
+    "candidate_F16_long_domain_max_abs": 0,
+    "public_generic_graph": "Not separately rebuilt/run; actual Region multi-node native submission and published-intermediate binding tested. Existing Graph route/gates unchanged."
+  },
+  "space": {
+    "shape": {
+      "kind": "SinkAttention",
+      "dtype": "F32",
+      "B": 1,
+      "Q": 513,
+      "KV": 2049,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512
+    },
+    "caller_requested_bytes": 147077380,
+    "caller_native_capacity_bytes": 147077380,
+    "gallocr_backing_bytes": {
+      "same_precision_untiled": 340527360,
+      "candidate": 176687104
+    },
+    "reduction_fraction": 0.48113683435010923,
+    "single_full_scores_bytes": 269091072,
+    "candidate_QK_score_nodes": 19,
+    "candidate_QK_score_output_flags": 0,
+    "candidate_QK_score_address_union_bytes": 47724544,
+    "oracle": ".25*2049/2050 from Q=K=mask=sinks=0,V=.25, every output checked under original F32 budget. Both sides pass.",
+    "interpretation": "Actual gallocr backing capacity is not total/instantaneous peak VRAM. Caller complete mask/Q/K/V/output counted separately; NativeWork hidden staging/pools, commands, driver allocations are not included. Address union demonstrates alias reuse, not peak simultaneously live score memory."
+  },
+  "same_precision_numerical_case_gallocr_bytes": {
+    "short_wide_F32": [
+      17384512,
+      17384512
+    ],
+    "short_wide_F16": [
+      43356416,
+      43356416
+    ],
+    "short_MLA": [
+      24738304,
+      24738304
+    ],
+    "short_Sink": [
+      52205824,
+      52205824
+    ],
+    "tiled_wide_F16": [
+      84115520,
+      66969536
+    ],
+    "tiled_MLA": [
+      99801600,
+      53745920
+    ],
+    "tiled_masked_Sink": [
+      172689664,
+      88606720
+    ]
+  },
+  "rejected_first_strategy": {
+    "reason": "Without the benefit guard, even same-F32 small-KV/wide-output domains allocated more for the concat frontier. These real negative points are retained, not reclassified as wins.",
+    "same_precision_short_wide_F32": [
+      17384512,
+      25444352
+    ],
+    "same_precision_short_MLA": [
+      24738304,
+      34482432
+    ],
+    "same_precision_short_Sink": [
+      52205824,
+      84445184
+    ],
+    "alignment_failure": "Initial unaligned mask block caused native src1 descriptor-origin assertion; failing log retained. Quantum selection fixes this, not a shader change.",
+    "space_case_Q513_KV1025": [
+      203950336,
+      182978560
+    ]
+  },
+  "performance": "No submit/wait latency or engine tokens/s timing; the stricter F32 operand path and output joins may have performance costs. This batch establishes correctness/space only.",
+  "cleanup": "Root owns exact rebuildable manifest cleanup via test.ps1; no SDK/cache/native libs listed for removal.",
+  "product_commit": "Not committed; parent owns integration."
+}

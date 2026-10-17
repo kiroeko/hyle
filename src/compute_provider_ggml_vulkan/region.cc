@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <new>
+#include <numeric>
 
 #include "ggml-backend.h"
 #include "ggml.h"
@@ -17,6 +18,112 @@ namespace hyle::compute::ggml_vulkan::detail {
 namespace {
 // Host-only tag, ignored by the native backend. Keep it out of its TU seam.
 constexpr int kBatchRuntimeRequestSlot = 11;
+
+std::int64_t attention_query_block(const RegionRecipe &recipe,
+                                   const RegionNode &node,
+                                   std::uint64_t alignment) noexcept {
+  const bool sink =
+      node.operation.custom_as<model_ops::SinkAttention>().has_value();
+  if (!sink && !node.operation.get_if<ScaledDotProductAttention>())
+    return 0;
+  const auto q = recipe.values[node.inputs[0]].dimensions();
+  const auto k = recipe.values[node.inputs[1]].dimensions();
+  const auto v = recipe.values[node.inputs[2]].dimensions();
+  if (!sink && k[3] == v[3] && (k[3] == 64 || k[3] == 128 || k[3] == 256))
+    return 0; // Keep the existing fused attention domain unchanged.
+  // Four F32 score-sized temporaries conservatively bound each math block.
+  // Divide before multiplying so even large legal descriptors cannot overflow.
+  const auto threshold_rows = (8ULL << 20) / 16 / q[0] / q[2] / k[1];
+  if (std::uint64_t(q[1]) <= threshold_rows)
+    return 0;
+  const auto budget_rows = (64ULL << 20) / 16 / q[0] / q[2] / k[1];
+  const auto &query = recipe.values[node.inputs[0]];
+  const auto query_pitch =
+      query.data_type() == DataType::kFloat32
+          ? std::uint64_t(query.byte_strides()[1])
+          : std::uint64_t(q[2]) * std::uint64_t(q[3]) * sizeof(float);
+  auto quantum = alignment / std::gcd(alignment, query_pitch);
+  if (sink) {
+    const auto mask_pitch =
+        std::uint64_t(recipe.values[node.inputs[3]].byte_strides()[0]);
+    quantum = std::lcm(quantum, alignment / std::gcd(alignment, mask_pitch));
+  }
+  // Native matmul/softmax views require aligned descriptor origins. At least
+  // one aligned row quantum is needed even when one row exceeds the budget.
+  const auto target = (std::min<std::uint64_t>)(128, budget_rows);
+  const auto rows = (std::max)(quantum, target / quantum * quantum);
+  if (rows >= std::uint64_t(q[1]))
+    return 0;
+  // Joining blocks needs a linear F32 output frontier. Do not trade a smaller
+  // score matrix for more output storage in the small-KV / wide-value domain.
+  const auto frontier = 2 * std::uint64_t(q[1]) * std::uint64_t(v[3]);
+  if (std::uint64_t(k[1]) <= frontier / (std::uint64_t(q[1]) - rows))
+    return 0;
+  return std::int64_t(rows);
+}
+
+Result<ggml_tensor *>
+tiled_math_attention(ggml_context *context, ggml_tensor *query,
+                     ggml_tensor *key, ggml_tensor *value, ggml_tensor *mask,
+                     ggml_tensor *sinks, float scale, bool causal,
+                     std::int64_t block_rows) {
+  const auto queries = query->ne[1];
+  const auto heads = query->ne[2];
+  const auto batch = query->ne[3];
+  const auto depth = value->ne[0];
+  value = ggml_cont(context, ggml_transpose(context, value));
+  std::vector<ggml_tensor *> parts;
+  parts.reserve(std::size_t((queries + block_rows - 1) / block_rows));
+  for (std::int64_t begin = 0; begin < queries; begin += block_rows) {
+    const auto rows = (std::min)(block_rows, queries - begin);
+    // Preserve the full query's batch pitch, including padded resident views.
+    auto *part = ggml_view_4d(context, query, query->ne[0], rows, heads, batch,
+                              query->nb[1], query->nb[2], query->nb[3],
+                              std::size_t(begin) * query->nb[1]);
+    part = ggml_cont(context, part);
+    auto *scores = ggml_mul_mat(context, key, part);
+    if (!ggml_prec_set_acc(scores, GGML_PREC_F32) ||
+        !ggml_prec_set_src(scores, GGML_PREC_F32, 1))
+      return std::unexpected(
+          Status::Unimplemented("ggml Vulkan attention score accumulation"));
+    ggml_tensor *probabilities;
+    if (mask) {
+      auto *rows_mask =
+          ggml_view_2d(context, mask, mask->ne[0], rows, mask->nb[1],
+                       std::size_t(begin) * mask->nb[1]);
+      probabilities = ggml_soft_max_ext(context, scores, rows_mask, scale, 0.F);
+      ggml_soft_max_add_sinks(probabilities, sinks);
+    } else {
+      scores = ggml_scale(context, scores, scale);
+      if (causal)
+        scores = ggml_diag_mask_inf(
+            context, scores, static_cast<int>(key->ne[1] - queries + begin));
+      probabilities = ggml_soft_max(context, scores);
+    }
+    auto *output = ggml_mul_mat(context, value, probabilities);
+    if (!ggml_prec_set_acc(output, GGML_PREC_F32) ||
+        !ggml_prec_set_src(output, GGML_PREC_F32, 1))
+      return std::unexpected(
+          Status::Unimplemented("ggml Vulkan attention value accumulation"));
+    output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+    parts.push_back(
+        ggml_reshape_3d(context, output, depth * heads, rows, batch));
+  }
+  // An explicit balanced frontier preserves dependencies for downstream nodes
+  // and published intermediates. Only the final joined result is an output;
+  // gallocr can retire each block's scores while retaining the linear outputs.
+  while (parts.size() > 1) {
+    const auto count = parts.size();
+    std::size_t next = 0;
+    for (std::size_t i = 0; i + 1 < count; i += 2)
+      parts[next++] = ggml_concat(context, parts[i], parts[i + 1], 1);
+    if (count % 2 != 0)
+      parts[next++] = parts.back();
+    parts.resize(next);
+  }
+  return ggml_reshape_4d(context, parts.front(), depth, heads, queries, batch);
+}
+
 bool runtime_attention_node(const ggml_tensor* node) noexcept {
   return node->op==GGML_OP_FLASH_ATTN_EXT &&
       node->op_params[bridge::kFlashAttentionCacheSlot]==bridge::kFlashAttentionCache &&
@@ -802,6 +909,17 @@ Result<Region> Region::create(NativeDevice device,
       for (const auto input : node.inputs)
         rank = (std::max)(rank, recipe.values[input].rank());
       capacity += 4 * rank + 2 * node.inputs.size() + 4;
+      if (const auto rows = attention_query_block(
+              recipe, node, device.native().storage_buffer_alignment)) {
+        const auto queries = recipe.values[node.inputs[0]].dimensions()[1];
+        const auto blocks = std::size_t((queries + rows - 1) / rows);
+        // Includes query/mask views, math, layout adapters and balanced joins.
+        if (capacity > INT32_MAX / 4 ||
+            blocks > (INT32_MAX / 4 - capacity) / 16)
+          return std::unexpected(
+              Status::ResourceExhausted("ggml Vulkan attention node capacity"));
+        capacity += 16 * blocks;
+      }
     }
     if (capacity > INT32_MAX / 4)
       return std::unexpected(
@@ -1004,16 +1122,26 @@ Result<Region> Region::create(NativeDevice device,
         auto *query = ggml_permute(context, arguments[0], 0, 2, 1, 3);
         auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
         auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
-        auto *scores = ggml_mul_mat(context, key, query);
-        if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
-          return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention score accumulation"));
-        auto *probabilities = ggml_soft_max_ext(context, scores, arguments[3], sink->scale, 0.0F);
-        ggml_soft_max_add_sinks(probabilities, arguments[4]);
-        value = ggml_cont(context, ggml_transpose(context, value));
-        output = ggml_mul_mat(context, value, probabilities);
-        if (!ggml_prec_set_acc(output, GGML_PREC_F32))
-          return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention value accumulation"));
-        output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+        if (const auto rows = attention_query_block(
+                recipe, node, state.device.native().storage_buffer_alignment)) {
+          HYLE_ASSIGN_OR_RETURN(output,
+              tiled_math_attention(context, query, key, value, arguments[3],
+                                   arguments[4], sink->scale, false, rows));
+        } else {
+          query = ggml_cont(context, query);
+          auto *scores = ggml_mul_mat(context, key, query);
+          if (!ggml_prec_set_acc(scores, GGML_PREC_F32) ||
+              !ggml_prec_set_src(scores, GGML_PREC_F32, 1))
+            return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention score accumulation"));
+          auto *probabilities = ggml_soft_max_ext(context, scores, arguments[3], sink->scale, 0.0F);
+          ggml_soft_max_add_sinks(probabilities, arguments[4]);
+          value = ggml_cont(context, ggml_transpose(context, value));
+          output = ggml_mul_mat(context, value, probabilities);
+          if (!ggml_prec_set_acc(output, GGML_PREC_F32) ||
+              !ggml_prec_set_src(output, GGML_PREC_F32, 1))
+            return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention value accumulation"));
+          output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+        }
       } else if (const auto paged = node.operation.custom_as<PagedAttentionRead>()) {
         auto *query = ggml_permute(context,
             ggml_cast(context, arguments[0], GGML_TYPE_F32), 0, 2, 1, 3);
@@ -1072,21 +1200,32 @@ Result<Region> Region::create(NativeDevice device,
         } else {
           key = ggml_cast(context, key, GGML_TYPE_F32);
           value = ggml_cast(context, value, GGML_TYPE_F32);
+          if (const auto rows = attention_query_block(
+                recipe, node, state.device.native().storage_buffer_alignment)) {
+            HYLE_ASSIGN_OR_RETURN(output,
+                tiled_math_attention(context, query, key, value, nullptr,
+                                     nullptr, attention->scale,
+                                     attention->causal, rows));
+          } else {
+            query = ggml_cont(context, query);
           auto *scores = ggml_mul_mat(context, key, query);
-          if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
-            return std::unexpected(Status::Unimplemented(
-                "ggml Vulkan attention score accumulation"));
-          scores = ggml_scale(context, scores, attention->scale);
-          if (attention->causal)
-            scores = ggml_diag_mask_inf(
-                context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
-          auto *probabilities = ggml_soft_max(context, scores);
-          value = ggml_cont(context, ggml_transpose(context, value));
-          output = ggml_mul_mat(context, value, probabilities);
-          if (!ggml_prec_set_acc(output, GGML_PREC_F32))
-            return std::unexpected(Status::Unimplemented(
-                "ggml Vulkan attention value accumulation"));
-          output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+            if (!ggml_prec_set_acc(scores, GGML_PREC_F32) ||
+                !ggml_prec_set_src(scores, GGML_PREC_F32, 1))
+              return std::unexpected(Status::Unimplemented(
+                  "ggml Vulkan attention score accumulation"));
+            scores = ggml_scale(context, scores, attention->scale);
+            if (attention->causal)
+              scores = ggml_diag_mask_inf(
+                  context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
+            auto *probabilities = ggml_soft_max(context, scores);
+            value = ggml_cont(context, ggml_transpose(context, value));
+            output = ggml_mul_mat(context, value, probabilities);
+            if (!ggml_prec_set_acc(output, GGML_PREC_F32) ||
+                !ggml_prec_set_src(output, GGML_PREC_F32, 1))
+              return std::unexpected(Status::Unimplemented(
+                  "ggml Vulkan attention value accumulation"));
+            output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+          }
         }
         if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
           output = ggml_cast(context, output, GGML_TYPE_F16);
