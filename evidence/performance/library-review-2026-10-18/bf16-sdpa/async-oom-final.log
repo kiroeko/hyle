@@ -1,0 +1,14 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *OriginalOomRetainsPrefixAndQueueRecovers*
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from DirectAndGraph/TorchCudaAttentionAsync
+[ RUN      ] DirectAndGraph/TorchCudaAttentionAsync.OriginalOomRetainsPrefixAndQueueRecovers/0
+[       OK ] DirectAndGraph/TorchCudaAttentionAsync.OriginalOomRetainsPrefixAndQueueRecovers/0 (96 ms)
+[ RUN      ] DirectAndGraph/TorchCudaAttentionAsync.OriginalOomRetainsPrefixAndQueueRecovers/1
+[       OK ] DirectAndGraph/TorchCudaAttentionAsync.OriginalOomRetainsPrefixAndQueueRecovers/1 (4 ms)
+[----------] 2 tests from DirectAndGraph/TorchCudaAttentionAsync (101 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (101 ms total)
+[  PASSED  ] 2 tests.

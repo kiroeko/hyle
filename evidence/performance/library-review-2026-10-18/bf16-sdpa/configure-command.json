@@ -1,0 +1,16 @@
+[
+  "cmake",
+  "-S",
+  "C:\\public\\project-hyle\\hyle",
+  "-B",
+  "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+  "-DHYLE_DEV_FACTORS=compute;compute_state;compute_backend_cuda;compute_provider_torch_cuda;graph",
+  "-DHYLE_BUILD_TESTS=ON",
+  "-DHYLE_INSTALL=OFF",
+  "-DHYLE_STATIC=ON",
+  "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+  "-DFETCHCONTENT_UPDATES_DISCONNECTED=ON",
+  "-DCMAKE_CUDA_ARCHITECTURES=89",
+  "-DCUDAToolkit_ROOT=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3",
+  "-DCMAKE_CUDA_COMPILER=C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\nvcc.exe"
+]

@@ -1,0 +1,11 @@
+[
+  "cmake",
+  "--build",
+  "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+  "--target",
+  "hyle_compute_backend_cuda",
+  "hyle_compute_provider_torch_cuda",
+  "hyle_graph",
+  "-j",
+  "2"
+]

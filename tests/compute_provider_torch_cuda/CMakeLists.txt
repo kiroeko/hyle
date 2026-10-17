@@ -14,6 +14,18 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     target_compile_options(hyle_compute_provider_torch_cuda_test PRIVATE ${_torch_flags})
   endif()
   hyle_stage_runtime(hyle_compute_provider_torch_cuda_test)
+  # The provider's own Direct/Graph contract does not require the complete
+  # default CUDA route or rebuilding unrelated ggml kernels.
+  hyle_add_test(compute_provider_torch_cuda NAME attention
+    SOURCES attention_test.cc DEPS hyle_compute_backend_cuda hyle_graph)
+  target_include_directories(hyle_compute_provider_torch_cuda_attention_test SYSTEM PRIVATE
+    "${_cuda_lib_directory}/../include")
+  target_link_libraries(hyle_compute_provider_torch_cuda_attention_test PRIVATE
+    torch torch_cpu c10 hyle_vendor_c10_cuda CUDA::cudart)
+  if(TORCH_CXX_FLAGS)
+    target_compile_options(hyle_compute_provider_torch_cuda_attention_test PRIVATE ${_torch_flags})
+  endif()
+  hyle_stage_runtime(hyle_compute_provider_torch_cuda_attention_test)
   hyle_add_test(compute_provider_torch_cuda NAME packed_consumer
     SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda hyle_compute_route_cuda)
   hyle_stage_runtime(hyle_compute_provider_torch_cuda_packed_consumer_test)

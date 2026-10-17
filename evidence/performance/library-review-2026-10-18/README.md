@@ -10,15 +10,15 @@
 |---|---|---|
 | CPU 普通路线漏注册 ggml | [owner CMake](../../../src/compute_provider_ggml/CMakeLists.txt) 用 `NO_DEFINE`，而 [Direct](../../../src/compute_route_cpu/cpu_context.cc) / [Graph](../../../src/graph_route_cpu/cpu_context.cc) 以该 presence 宏编译注册。实际库虽链接，候选却消失，旧 CPU 排名不能直接继承 | 已恢复 target 的宏传播；实际 owner 声明的配置回归通过。未测修复后的 CPU 模型倍率 |
 | StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；`replace` / `import` 等也调用它。密集单池 B 块为二次扫描 | 已在命中后停止。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
-| CUDA BF16/F32 attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 仅 F16 走 flash，BF16/F32 物化 scores。B1/H8/Q=KV8192 时，单个 F32 scores 为 **2 GiB**，不含 softmax 等其它 scratch。Windows 当前无 FlashInfer 路线 | 确认空间复杂度问题；未测当前峰值或倍率。优先调查锁定原生库的 BF16 融合接法，不能以窄化 F16 规避 |
+| CUDA BF16/F32 attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 仅 F16 走 flash，BF16/F32 物化 scores。B1/H8/Q=KV8192 时，单个 F32 scores 为 **2 GiB**，不含 softmax 等其它 scratch。Windows 当前无 FlashInfer 路线 | 已接通适用域的 BF16 融合程序，实际 Hyle 的空间结果见下；F32 和其它不受理域未改，不能外推全部 attention |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
 
 CUDA 的 F16 flash 分支也会物化 Q×KV 的 F16 causal mask，8K方形时为128 MiB；
 不能因为主 attention kernel 融合就假定整个调用的额外空间为线性。
 锁定 Torch CUDA 的 Windows 二进制没有 FlashAttention，但已有 CUTLASS BF16 memory-efficient 内核。
-候选入口是原生 `_efficient_attention_forward`、bottom-right mask type、显式scale、F32 accumulator；
-GQA需核对分组切片与零stride view。内核概率tile使用BF16，与现有全F32中间图并非逐位等价，
-必须先核数值合同与实际设备结果，再决定接线和排序。
+接入使用原生 `_efficient_attention_forward`、bottom-right mask type、显式scale、F32 accumulator；
+GQA按KV头分组切片，零stride view复用KV，不复制KV缓存，不物化Q×KV mask/scores。
+内核概率tile使用BF16，与现有全F32中间图并非逐位等价。
 
 Windows RTX4070 原生[探针](bf16-sdpa/sdpa_probe.cc)已验证10个BF16场景：同头、非方形bottom-right、
 H8/KV2/D256零stride GQA、decode、零/负scale、非因果Q>KV，以及超F16范围的K/V。
@@ -28,7 +28,46 @@ Q128/KV257/H8/D64 的额外 Torch allocated 峰值262144 B，包含分组输出/
 为1052672 B。这仅证明小规模原生接法可行，不是8K总显存、Hyle接入或吞吐结果。
 复现使用本机已有锁定SDK：
 `python evidence/performance/library-review-2026-10-18/bf16-sdpa/run_probe.py --compile --run`，
-产物写入 `.scratch/perf-review-2026-10-18/bf16-sdpa`。外部stream/Queue、失败退休、并发和Graph选择仍待接入验证。
+产物写入 `.scratch/perf-review-2026-10-18/bf16-sdpa`。该原生探针的1.5%预算不替代Hyle回归测试。
+
+### Hyle BF16 融合接入与空间
+
+[实现](../../../src/compute_provider_torch_cuda/artifact_provider.cc)接入既有Torch CUDA provider，
+不新增用户选项或依赖。准备期检查dense BSHD、BF16、无mask端口、F32 accumulation、
+SM80–SM121、相同Q/K/V depth为8–256且为8的倍数，以及原生索引、grid和16-byte对齐约束。
+支持同头/GQA、bottom-right causal及显式零/负scale；causal要求KV≥Q。
+默认排序为适用的FlashInfer → 适用的Torch BF16融合 → ggml，其它dtype/算子排序不变。
+仍声明Managed、provider私有workspace大小未知、不支持外部capture，未伪装成预分配程序。
+
+真实[Hyle Direct空间消费者](bf16-sdpa/hyle_space_probe.cc)在RTX4070上使用CUDA MemoryResource、
+实际SharedQueue和Completion；每个形状独立新进程。B1/H8/KV2/D256、Q=KV，Q/K为零、V为1.25，
+逐元素核对完整输出均精确正确，provider ID与Queue wait均核对成功。
+
+| Q=KV | Hyle端口请求 | Torch首次submit额外allocated峰值 | Torch reserved峰值 | 旧单个F32 scores理论值 |
+|---:|---:|---:|---:|---:|
+| 512 | 5 MiB | 4 MiB | 22 MiB | 8 MiB |
+| 1024 | 10 MiB | 8 MiB | 20 MiB | 32 MiB |
+| 2048 | 20 MiB | 16 MiB | 20 MiB | 128 MiB |
+| 8192 | 80 MiB | 64 MiB | 80 MiB | 2048 MiB |
+
+[原始数据](bf16-sdpa/hyle-space-results.jsonl)分别记录cold prepare前后、submit前与wait后计数。
+额外峰值为submit前resetPeak后allocated_peak减submit前allocated_current，包含首次执行、GQA分组输出和拼接。
+四个cold prepare后Torch allocated/reserved均为零。这里验证了该形状族额外分配的线性增长，
+**不是总VRAM、旧完整程序峰值、所有head/长度的上界或模型tokens/s比较**；驱动、module与其它分配不在Torch计数中。
+
+实际[Hyle回归](../../../tests/compute_provider_torch_cuda/attention_test.cc)共9项通过：
+[数值与拒绝5项](bf16-sdpa/numeric-and-admission-final.log)，包括独立FP64参考、同头/GQA、decode、
+非方形causal、零/负scale、非因果Q>KV、超F16范围和重绑定，保留现有绝对0.01误差预算；
+[异步4项](bf16-sdpa/async-lifetime-final.log)覆盖Direct与generic Graph的外部stream先写后算、
+pending时销毁artifact/invocation，以及原ATen allocator受控OOM后保活已接纳前缀、报告错误、同Queue恢复。
+实际GPU使用显式Torch-only Context；默认排序的[42项独立检查](cuda-policy/policy_probe.cc)也通过，
+两者不等于完整默认CUDA/Graph roster的GPU测试，后者及Linux CUDA本轮未运行。
+空间复现：`python evidence/performance/library-review-2026-10-18/bf16-sdpa/run_hyle_space.py --compile --run`，
+复用本机锁定SDK与现成基础静态库；捕获的编译/链接命令和[source/binary hash](bf16-sdpa/hyle-source-binary-sha256.json)随数据保存。
+
+验证中还修复了Windows CUDA13.3的`bin/x64`运行库搜索，以及backend测试覆盖用户architecture设置的问题。
+临时测试对象构建曾意外触发runtime staging；已先写`test.ps1`再执行，删除29个本轮新副本、回收4.51 GiB，
+原SDK与9个既有缓存runtime全部保留。最终复现编译直接调用生成的cl命令，不再次触发该复制步骤。
 
 ## 有效历史小输，当前版本待复测
 

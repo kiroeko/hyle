@@ -1,0 +1,18 @@
+{
+  "actual_hyle_context": "explicit Torch-only",
+  "actual_graph": "generic Graph compile with same explicit Torch-only Context",
+  "gpu_tests_passed": 9,
+  "policy_probe_checks_passed": 42,
+  "full_default_roster_gpu_tests_run": false,
+  "linux_cuda_run": false,
+  "sdk_runtime_cleanup": {
+    "script": "test.ps1",
+    "new_dlls_removed": 29,
+    "bytes_removed": 4844456656,
+    "sdk_originals_preserved": true,
+    "previous_cache_runtime_files_preserved": 9
+  },
+  "compiler": "MSVC 19.50.35728 Release /O2 /W4 /WX",
+  "hyle_float_reference_budget": "absolute 0.01; not the earlier native feasibility budget",
+  "model_tokens_s_measured": false
+}

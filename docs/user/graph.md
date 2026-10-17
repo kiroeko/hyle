@@ -241,9 +241,10 @@ HYLE region 翻译成 provider-native artifact；单节点 region 可以像函�
 离开再进入集合的路径不强行融合。它可与同设备cuBLAS片段串接，共用真实Completion。
 每个invocation持有独立原生资源，旧结果不被其他槽覆盖；prefer-capture对该managed程序使用
 commands，ggml保留自己的内部capture。它不是全算子覆盖或其他平台接入完成的声明。
-普通SDPA节点亦复用Compute的完整原版attention程序；Windows选择ggml，Linux优先
-FlashInfer，具体类型/head/数值域见Compute指南。多节点张量region保留逐节点的半精度舍入和发布中间值；
-该 region 规则不替换 Linux 已支持的 FlashInfer attention 路线。
+普通SDPA节点亦复用Compute的完整原版attention程序；Linux优先适用的FlashInfer，
+适用的BF16域随后选择原生融合程序，再由ggml承载其它域，具体类型/head/数值边界见
+[Compute指南](compute.md#普通-cuda-入口)。SDPA作为独立operation执行，不被ggml张量region接管。
+多节点张量region保留逐节点的半精度舍入和发布中间值。
 需要外部 CUDA capture 的消费者，应在编译时用
 `CompileOptions{.provider_replay = ProviderReplayPolicy::kRequirePrepared}` 排除 managed 程序，
 再由 `prepare_replay(..., {.mode = ReplayMode::kRequireCapture})` 验证实际 capture 支持。

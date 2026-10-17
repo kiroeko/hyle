@@ -7,15 +7,20 @@
 #pragma warning(disable : 4702)
 #endif
 
+#include <algorithm>
 #include <array>
 #include <climits>
+#include <cmath>
 #include <exception>
 #include <limits>
 #include <new>
+#include <vector>
 
 #include <ATen/ATen.h>
 #include <ATen/core/grad_mode.h>
 #include <ATen/cuda/CUDAContext.h>
+#include <ATen/native/transformers/sdp_utils_cpp.h>
+#include <ATen/ops/_efficient_attention_forward.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
 
@@ -42,13 +47,19 @@ constexpr auto kPackedRuntime = [] {
   runtime.blocks_host = false;
   return runtime;
 }();
-struct Context final { CUcontext primary = nullptr; int device = -1; };
+struct Context final {
+  CUcontext primary = nullptr;
+  int device = -1;
+  int sm = 0;
+};
 struct Program final {
   Context context;
   model_ops::ArtifactWeightDecode operation;
   model_ops::MlxQuantized mlx{};
   bool is_mlx = false;
   bool is_softplus = false;
+  bool is_attention = false;
+  ScaledDotProductAttention attention{};
   std::array<TensorDesc, 6> inputs;
   TensorDesc output;
   std::size_t count = 0;
@@ -77,13 +88,38 @@ at::ScalarType scalar(DataType type) noexcept {
   default: return at::kFloat;
   }
 }
-Status select(const Operation &operation, std::span<const TensorDesc> inputs,
+Status select(const Context &context, const Operation &operation, std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
   const auto mlx = operation.custom_as<model_ops::MlxQuantized>();
   const auto *unary = operation.get_if<Unary>();
+  const auto *attention = operation.get_if<ScaledDotProductAttention>();
   const bool softplus = unary && unary->kind == UnaryKind::kSoftplus;
-  if (!operation.custom_as<model_ops::ArtifactWeightDecode>() && !mlx && !softplus)
-    return Status::Unimplemented("CUDA ATen carrier requires an original artifact or MLX operation");
+  if (!operation.custom_as<model_ops::ArtifactWeightDecode>() && !mlx && !softplus && !attention)
+    return Status::Unimplemented("CUDA ATen carrier does not support this operation");
+  if (attention) {
+    if (inputs.size() != 3 || outputs.size() != 1 ||
+        attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
+        attention->mask != MaskKind::kNone ||
+        attention->accumulation_type != DataType::kFloat32 ||
+        !std::isfinite(attention->scale) || context.sm < 80 || context.sm > 121)
+      return Status::Unimplemented("CUDA ATen BF16 attention requires dense BSHD, FP32 accumulation and SM80-SM121");
+    for (const auto &desc : inputs) {
+      if (!desc.is_plain() || !desc.is_dense() || desc.rank() != 4 ||
+          desc.data_type() != DataType::kBFloat16)
+        return Status::Unimplemented("CUDA ATen fused attention requires dense BF16 input ports");
+      HYLE_ASSIGN_OR_RETURN(const auto elements, desc.element_count());
+      // The original kernel uses 32-bit dimensions/strides and CUDA's
+      // 65535-sized batch/head grid axes. No Q*KV scores bound is needed.
+      if (elements == 0 || elements > INT32_MAX)
+        return Status::Unimplemented("CUDA ATen fused attention exceeds native indexing capacity");
+    }
+    const auto q = inputs[0].dimensions(), k = inputs[1].dimensions();
+    const auto v = inputs[2].dimensions();
+    if (q[0] > 65535 || q[2] > 65535 || q[3] < 8 || q[3] > 256 ||
+        q[3] % 8 != 0 || v[3] != q[3] ||
+        (attention->causal && k[1] < q[1]))
+      return Status::Unimplemented("CUDA ATen fused attention shape exceeds its native BF16 domain");
+  }
   if (softplus && (inputs.size() != 1 || outputs.size() != 1 ||
       !inputs[0].is_plain() || !inputs[0].is_dense() ||
       !outputs[0].is_plain() || !outputs[0].is_dense() ||
@@ -94,7 +130,7 @@ Status select(const Operation &operation, std::span<const TensorDesc> inputs,
   std::array<TensorDesc, 1> inferred;
   HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, inferred));
   if (outputs.size() != 1 || outputs[0] != inferred[0])
-    return Status::InvalidArgument("CUDA ATen output differs from artifact inference");
+    return Status::InvalidArgument("CUDA ATen output differs from operation inference");
   for (const auto &desc : inputs) {
     HYLE_ASSIGN_OR_RETURN(const auto bytes, desc.required_bytes());
     if (bytes > INT64_MAX / 32)
@@ -104,6 +140,40 @@ Status select(const Operation &operation, std::span<const TensorDesc> inputs,
   if (elements > INT64_MAX / 32)
     return Status::OutOfRange("CUDA ATen decoded temporary capacity overflows");
   return Status::Ok();
+}
+
+at::Tensor attention_result(const Program &program,
+                            const std::array<at::Tensor, 6> &inputs) {
+  const auto &q = inputs[0], &k = inputs[1], &v = inputs[2];
+  const auto mask = program.attention.causal
+      ? sdp::CustomMaskType::CausalFromBottomRight
+      : sdp::CustomMaskType::NoCustomMask;
+  const auto fused = [&](const at::Tensor &query, const at::Tensor &key,
+                         const at::Tensor &value) {
+    // Call the original fused operator explicitly: generic SDPA may choose
+    // a quadratic math fallback, and its causal flag is top-left aligned.
+    // The locked BF16 CUTLASS kernel keeps accumulation/softmax statistics
+    // in FP32 and never narrows K/V to F16 or materializes a score matrix.
+    // Probability tiles remain BF16; this is not bitwise equivalence with
+    // the fallback's fully FP32 intermediate tensors.
+    return std::get<0>(at::_efficient_attention_forward(query, key, value,
+        std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+        0.0, static_cast<std::int64_t>(mask), false,
+        static_cast<double>(program.attention.scale)));
+  };
+  if (q.size(2) == k.size(2))
+    return fused(q, k, v);
+  const auto ratio = q.size(2) / k.size(2);
+  std::vector<at::Tensor> groups;
+  groups.reserve(static_cast<std::size_t>(k.size(2)));
+  for (std::int64_t head = 0; head < k.size(2); ++head) {
+    // The native operator needs equal logical head counts. Zero-head-stride
+    // views share each KV head across its Q group without copying the cache.
+    auto key = k.narrow(2, head, 1).expand({k.size(0), k.size(1), ratio, k.size(3)});
+    auto value = v.narrow(2, head, 1).expand({v.size(0), v.size(1), ratio, v.size(3)});
+    groups.push_back(fused(q.narrow(2, head * ratio, ratio), key, value));
+  }
+  return at::cat(groups, 2);
 }
 
 native::Scalar packed_scalar(DataType type) noexcept {
@@ -145,7 +215,8 @@ Status create_context(const Provider &, Device device, void *backend,
     return Status::ResourceExhausted("CUDA ATen context allocation failed");
   // The backend already owns and validates this cold fact. Do not create a
   // second SDK device query or driver dependency for the same ordinal.
-  *output = ::new (storage) Context{primary, environment->device_ordinal};
+  *output = ::new (storage) Context{primary, environment->device_ordinal,
+                                  environment->sm_major * 10 + environment->sm_minor};
   return Status::Ok();
 }
 void destroy_context(void *state, mem::AllocatorRef allocator) noexcept {
@@ -160,13 +231,18 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
   if (device < 0 || device > (std::numeric_limits<c10::DeviceIndex>::max)())
     return Status::Unimplemented("CUDA ATen device ordinal exceeds the original SDK index capacity");
   if (!request.shape.exact())
-    return Status::Unimplemented("CUDA ATen artifact decode requires exact shapes");
-  HYLE_RETURN_IF_ERROR(select(request.operation, request.inputs, request.outputs));
+    return Status::Unimplemented("CUDA ATen requires exact shapes");
+  HYLE_RETURN_IF_ERROR(select(*static_cast<const Context *>(state),
+                             request.operation, request.inputs, request.outputs));
   for (std::size_t i = 0; i < inputs.size(); ++i) inputs[i] = device_binding(request.inputs[i]);
+  if (request.operation.get_if<ScaledDotProductAttention>())
+    for (auto &input : inputs)
+      input.minimum_alignment = (std::max)(input.minimum_alignment, std::size_t{16});
   outputs[0] = device_binding(request.outputs[0]);
   const auto mlx = request.operation.custom_as<model_ops::MlxQuantized>();
   const auto *unary = request.operation.get_if<Unary>();
-  const auto route = unary ? 0x200ULL : mlx ? 0x100ULL + static_cast<std::uint64_t>(mlx->kind) * 3 +
+  const auto route = request.operation.get_if<ScaledDotProductAttention>() ? 0x300ULL
+      : unary ? 0x200ULL : mlx ? 0x100ULL + static_cast<std::uint64_t>(mlx->kind) * 3 +
                              static_cast<std::uint64_t>(mlx->format)
       : static_cast<std::uint64_t>(request.operation.custom_as<model_ops::ArtifactWeightDecode>()->format) + 1;
   *proposal = {.route = route,
@@ -215,8 +291,11 @@ detail::EnqueueResult submit(void *state, void *slot, Queue &queue,
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
   std::array<const void *, 6> pointers{};
   for (std::size_t i = 0; i < inputs.size(); ++i) {
+    const auto alignment = program.is_attention
+        ? (std::max)(program.inputs[i].required_alignment(), std::size_t{16})
+        : program.inputs[i].required_alignment();
     auto pointer = cuda::detail::const_pointer(inputs[i].storage(),
-        program.inputs[i].required_alignment(), data_type_size(program.inputs[i].data_type()));
+        alignment, data_type_size(program.inputs[i].data_type()));
     if (!pointer) return detail::EnqueueResult::rejected(std::move(pointer).error());
     pointers[i] = *pointer;
   }
@@ -247,7 +326,9 @@ detail::EnqueueResult submit(void *state, void *slot, Queue &queue,
           at::TensorOptions().dtype(scalar(desc.data_type())).device(at::kCUDA, program.context.device));
     }
     const auto type = scalar(program.output.data_type());
-    if (program.is_softplus) {
+    if (program.is_attention) {
+      invocation.result = attention_result(program, tensors);
+    } else if (program.is_softplus) {
       invocation.result = at::softplus(tensors[0]);
     } else {
       const auto rows = program.output.dimensions()[0], columns = program.output.dimensions()[1];
@@ -282,10 +363,10 @@ const detail::ProviderPreparedVTable kPrepared{
 ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest &request,
                                mem::AllocatorRef allocator, detail::ProviderPrepared *output) noexcept {
   *output = {};
-  auto status = select(request.operation, request.inputs, request.outputs);
+  const auto &context = *static_cast<const Context *>(state);
+  auto status = select(context, request.operation, request.inputs, request.outputs);
   if (!status.ok()) return status.IsUnimplemented() ? ProviderPrepareOutcome::unsupported(std::move(status))
                                                    : ProviderPrepareOutcome::error(std::move(status));
-  const auto &context = *static_cast<const Context *>(state);
   if (context.device < 0 || context.device > (std::numeric_limits<c10::DeviceIndex>::max)())
     return ProviderPrepareOutcome::unsupported(Status::Unimplemented("CUDA ATen device index capacity exceeded"));
   auto *storage = allocator.allocate(sizeof(Program), alignof(Program));
@@ -293,10 +374,13 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   const auto artifact = request.operation.custom_as<model_ops::ArtifactWeightDecode>();
   const auto mlx = request.operation.custom_as<model_ops::MlxQuantized>();
   const auto *unary = request.operation.get_if<Unary>();
+  const auto *attention = request.operation.get_if<ScaledDotProductAttention>();
   auto *program = ::new (storage) Program{.context = context,
       .operation = artifact ? *artifact : model_ops::ArtifactWeightDecode{},
       .mlx = mlx ? *mlx : model_ops::MlxQuantized{}, .is_mlx = mlx.has_value(),
       .is_softplus = unary != nullptr,
+      .is_attention = attention != nullptr,
+      .attention = attention ? *attention : ScaledDotProductAttention{},
       .inputs = {}, .output = request.outputs[0], .count = request.inputs.size(),
       .shifts = {}, .order = {}};
   for (std::size_t i = 0; i < program->count; ++i) program->inputs[i] = request.inputs[i];
@@ -316,16 +400,19 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     at::NoGradGuard no_grad;
     // Real torch_cuda import keeps the original dispatcher registration live;
     // CPU common DLLs remain the immutable locked host dispatch runtime.
-    (void)at::cuda::getCurrentCUDABlasHandle();
+    if (!program->is_attention)
+      (void)at::cuda::getCurrentCUDABlasHandle();
     const auto options = at::TensorOptions().dtype(at::kLong).device(at::kCUDA, context.device);
-    if (!program->is_softplus && (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
+    if (!program->is_attention && !program->is_softplus && (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
         program->operation.format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4))
       program->shifts = at::arange(0, 32, 4, options);
-    if (!program->is_mlx && !program->is_softplus && program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4)
+    if (!program->is_attention && !program->is_mlx && !program->is_softplus && program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4)
       program->order = at::tensor({0, 4, 1, 5, 2, 6, 3, 7}, at::kLong).to(options, false, true);
     // Publish constants only after their original library stream has finished.
-    status = cuda::status(cudaStreamSynchronize(c10::cuda::getCurrentCUDAStream(index).stream()));
-    if (!status.ok()) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(std::move(status)); }
+    if (!program->is_attention) {
+      status = cuda::status(cudaStreamSynchronize(c10::cuda::getCurrentCUDAStream(index).stream()));
+      if (!status.ok()) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(std::move(status)); }
+    }
   } catch (...) {
     status = failure(); destroy_program(program, allocator);
     return status.IsResourceExhausted() ? ProviderPrepareOutcome::resource_declined(std::move(status))
@@ -338,7 +425,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
 Status drain(void *) noexcept { return Status::Ok(); }
 const detail::ProviderVTable kProvider{
     .identity = {.id = kProviderId, .name = "original-artifacts-cuda",
-        .version = "libtorch-2.8.0+cu129+bnb-83364904+awq-88e4c76b+ct-ac8e2ba8+mlx-2b2bb497-native-packed+stable-softplus"},
+        .version = "libtorch-2.8.0+cu129+bnb-83364904+awq-88e4c76b+ct-ac8e2ba8+mlx-2b2bb497-native-packed+stable-softplus+bf16-efficient-sdpa"},
     .create_context = &create_context, .destroy_context = &destroy_context,
     .propose = &propose, .prepare = &prepare, .drain_context = &drain};
 } // namespace

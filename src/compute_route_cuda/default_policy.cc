@@ -52,11 +52,19 @@ Family baseline(const ProviderOperationRequest &request) noexcept {
   return Family::kGgml;
 }
 
-std::uint32_t rank(Family family, Family primary) noexcept {
+std::uint32_t rank(Family family, Family primary,
+                   const ProviderOperationRequest &request) noexcept {
   if (family == Family::kNative)
     return 1000; // Unreplaced semantic/resource domains, not a WIN claim.
   if (family == primary)
     return 100;
+  // Admission stays with the provider: its fused BF16 attention precedes
+  // ggml's materialized score graph, while admitted FlashInfer stays first.
+  if (family == Family::kTorch &&
+      request.operation.kind() == OperationKind::kScaledDotProductAttention &&
+      !request.inputs.empty() &&
+      request.inputs[0].data_type() == DataType::kBFloat16)
+    return 150;
   if (family == Family::kGgml)
     return 200;
   if (family == Family::kCublas || family == Family::kSglang ||
@@ -81,7 +89,8 @@ Status propose(void *context, const ProviderOperationRequest &request,
   if (!status.ok())
     return status;
   const auto primary = baseline(request);
-  proposal->preference = rank(F, primary) + (S == DefaultScope::kGraph ? 200 : 0);
+  proposal->preference = rank(F, primary, request) +
+                         (S == DefaultScope::kGraph ? 200 : 0);
   proposal->policy = {0x48594c4543554444ULL,
       1 + (static_cast<std::uint64_t>(request.operation.kind()) << 16) +
           (static_cast<std::uint64_t>(primary) << 8) + static_cast<std::uint64_t>(F), 1};

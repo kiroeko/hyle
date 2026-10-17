@@ -1,4 +1,5 @@
 #include "hyle/compute/providers/ggml_cuda.h"
+#include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/graph/cuda.h"
 
 #include "../compute_provider_flashinfer/attention_test_support.h"
@@ -6,16 +7,21 @@
 namespace {
 using namespace flashinfer_test;
 namespace graph = hyle::graph;
-#if defined(__linux__)
-constexpr auto kAttentionProvider = compute::flashinfer::kProviderId;
-#else
-constexpr auto kAttentionProvider = compute::ggml_cuda::kProviderId;
-#endif
 
 template <class T>
 void run_attention(compute::DataType type, int query_length, int kv_length,
                    double tolerance) {
   auto context = graph::cuda::create_context().value();
+#if defined(__linux__)
+  const auto expected_provider = compute::flashinfer::kProviderId;
+#else
+  const auto environment = cuda::environment(context).value();
+  const int sm = environment.sm_major * 10 + environment.sm_minor;
+  const auto expected_provider = type == compute::DataType::kBFloat16 &&
+                                         sm >= 80 && sm <= 121
+                                     ? compute::torch_cuda::kProviderId
+                                     : compute::ggml_cuda::kProviderId;
+#endif
   auto memory =
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
   Tensor query(type, {2, query_length, 8, 256}, memory.ref());
@@ -31,7 +37,7 @@ void run_attention(compute::DataType type, int query_length, int kv_length,
   auto prepared = compute::prepare(context, compute::Operation(operation),
                                    inputs, outputs, memory.ref())
                       .value();
-  ASSERT_EQ(prepared.provider().id, kAttentionProvider);
+  ASSERT_EQ(prepared.provider().id, expected_provider);
   const auto requirement = prepared.workspace_requirement();
   mem::Buffer workspace;
   if (requirement.size != 0) {
@@ -54,7 +60,7 @@ void run_attention(compute::DataType type, int query_length, int kv_length,
   auto compiled = graph::cuda::compile(logical, context, memory.ref());
   ASSERT_TRUE(compiled) << compiled.error().message();
   ASSERT_EQ(compiled->report.step_count(), 1u);
-  EXPECT_EQ(compiled->report.step(0)->provider.id, kAttentionProvider);
+  EXPECT_EQ(compiled->report.step(0)->provider.id, expected_provider);
   auto invocation_result = compiled->executable.create_invocation();
   ASSERT_TRUE(invocation_result) << invocation_result.error().message();
   auto invocation = std::move(*invocation_result);

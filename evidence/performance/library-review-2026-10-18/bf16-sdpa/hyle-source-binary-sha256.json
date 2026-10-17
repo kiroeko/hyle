@@ -1,0 +1,7 @@
+{
+  "src/compute_provider_torch_cuda/artifact_provider.cc": "b96e52b4d7256ee16c3cf823fe079c82dce42fbfbddbca199efa1068b6bbf54f",
+  "src/compute_route_cuda/default_policy.cc": "c5e18378f63db70ed3cd6177f90d05a58c82ff1104e6fa13d1ab8f5ab6482573",
+  "tests/compute_provider_torch_cuda/attention_test.cc": "f2d9b2928a6a7ca206d74a4165a3616b8500f9394fc43903177586671b60d20b",
+  ".scratch\\perf-review-2026-10-18\\bf16-sdpa\\hyle_space_probe.exe": "ce92ae725bc83d4032ea8cfc521e1e24f35ae1dbf05a7bc5ca9a43fcf75c7957",
+  ".scratch\\perf-review-2026-10-18\\bf16-sdpa-hyle\\hyle_attention_test.exe": "c7b2dd95503f49eb07718dfc40e9d70ba54a4b665ca4988b7c16877b698938b2"
+}

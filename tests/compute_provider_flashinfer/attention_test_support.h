@@ -73,18 +73,23 @@ void check_output(Tensor &output, const std::vector<T> &q,
                   .read(std::as_writable_bytes(std::span(actual)))
                   .ok());
   const auto batches = output.description.dimensions()[0];
+  const auto query_heads = output.description.dimensions()[2];
+  const auto depth = static_cast<std::size_t>(output.description.dimensions()[3]);
+  const auto kv_heads = static_cast<std::int64_t>(
+      k.size() / (static_cast<std::size_t>(batches * kv_length) * depth));
+  const auto head_group = query_heads / kv_heads;
   for (std::int64_t batch = 0; batch < batches; ++batch) {
     for (int n = 0; n < query_length; ++n) {
-      for (int head = 0; head < 8; ++head) {
+      for (std::int64_t head = 0; head < query_heads; ++head) {
         const int count = causal ? kv_length - query_length + n + 1 : kv_length;
         std::vector<double> weights(static_cast<std::size_t>(count));
         const auto qo_offset = static_cast<std::size_t>(
-            ((batch * query_length + n) * 8 + head) * 256);
+            ((batch * query_length + n) * query_heads + head) * depth);
         for (int s = 0; s < count; ++s) {
           const auto kv_offset = static_cast<std::size_t>(
-              ((batch * kv_length + s) * 2 + head / 4) * 256);
+              ((batch * kv_length + s) * kv_heads + head / head_group) * depth);
           double dot = 0;
-          for (std::size_t d = 0; d < 256; ++d)
+          for (std::size_t d = 0; d < depth; ++d)
             dot += double(decode(q[qo_offset + d])) * decode(k[kv_offset + d]);
           weights[static_cast<std::size_t>(s)] = dot * scale;
         }
@@ -95,11 +100,11 @@ void check_output(Tensor &output, const std::vector<T> &q,
           weight = std::exp(weight - maximum);
           total += weight;
         }
-        for (std::size_t d = 0; d < 256; ++d) {
+        for (std::size_t d = 0; d < depth; ++d) {
           double expected = 0;
           for (int s = 0; s < count; ++s) {
             const auto kv_offset = static_cast<std::size_t>(
-                ((batch * kv_length + s) * 2 + head / 4) * 256);
+                ((batch * kv_length + s) * kv_heads + head / head_group) * depth);
             expected +=
                 weights[static_cast<std::size_t>(s)] * decode(v[kv_offset + d]);
           }

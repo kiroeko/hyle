@@ -373,4 +373,38 @@ TEST(CudaDefaultCompute, DefaultRulesRetainSeparateAndPackedTailCapability) {
   }
 }
 
+#if defined(HYLE_COMPUTE_TORCH_CUDA)
+TEST(CudaDefaultCompute, BFloat16AttentionPrefersFusedTorchBeforeGgml) {
+  auto owner = cuda::create_context().value();
+  const auto environment = cuda::environment(owner).value();
+  const int sm = environment.sm_major * 10 + environment.sm_minor;
+  if (sm < 80 || sm > 121)
+    GTEST_SKIP() << "BF16 CUTLASS attention is not admitted on this device";
+  auto memory =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  // Noncausal attention is outside FlashInfer's current causal domain, so
+  // this checks the Torch/ggml ordering on both Windows and Linux.
+  const compute::Operation operation(compute::ScaledDotProductAttention{
+      .scale = 0.125F});
+  for (const auto type : {compute::DataType::kBFloat16,
+                          compute::DataType::kFloat16,
+                          compute::DataType::kFloat32}) {
+    SCOPED_TRACE(static_cast<unsigned>(type));
+    const auto query = compute::TensorDesc::dense(
+        type, std::array<std::int64_t, 4>{1, 3, 4, 64}).value();
+    const auto key = compute::TensorDesc::dense(
+        type, std::array<std::int64_t, 4>{1, 7, 2, 64}).value();
+    const std::array inputs{query, key, key};
+    const std::array outputs{query};
+    auto prepared = compute::prepare(owner, operation, inputs, outputs,
+                                     memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id,
+              type == compute::DataType::kBFloat16
+                  ? compute::torch_cuda::kProviderId
+                  : compute::ggml_cuda::kProviderId);
+  }
+}
+#endif
+
 } // namespace

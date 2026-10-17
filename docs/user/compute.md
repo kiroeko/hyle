@@ -543,8 +543,13 @@ tensor，submit 后显式检查 Completion。完整 dense gate/up → SwiGLU →
   量化与 scale 合同，不把输入 dtype 当作中间计算精度。
 - Linux 的适用 attention 可以使用 FlashInfer；Windows 使用匹配的其它实现。
   managed 程序可能分配、阻塞 host，或只支持自己内部 capture。外部 capture 要显式要求并检查。
-- BF16 attention 某些路径使用 F32 score/softmax 组合以避免原生 half 缩窄；score 与转换临时值随
-  `batch * heads * query_length * kv_length` 增长，应把完整成本计入预算。
+- SM80–SM121 的 dense BSHD BF16 attention，在无显式 mask、F32 accumulation、Q/K/V
+  depth 相同且为8的倍数（8–256）时，可使用原生融合程序；支持 GQA、bottom-right causal
+  和显式 scale。它保留 BF16 的指数范围，以 F32 累加和计算 softmax 统计，概率 tile 使用 BF16；
+  与完整 F32 中间图不是逐位相同。该程序不物化 Q×KV scores/mask，但仍有 provider 私有分配、
+  GQA 分组输出与拼接成本，属于 managed，不能用于要求外部 capture 的调用。
+  其它 BF16/F32 路径仍可能物化 F32 score/softmax，其临时值随
+  `batch * heads * query_length * kv_length` 增长，应检查实际程序并计入预算。
 - checked Gather/Scan 在 GPU 验证索引或整数前缀，可回传少量控制标量并等待。
   失败输出不发布，重建失败 invocation；不把 checked 程序当作完全不阻塞 host 的 kernel。
 - 原 ggml 数学节点有容量和对齐要求：通常为 256-byte 数学端口，对复制/转换可有更窄要求。

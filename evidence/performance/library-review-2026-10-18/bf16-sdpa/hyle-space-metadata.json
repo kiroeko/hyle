@@ -1,0 +1,12 @@
+{
+  "captured_utc": "2026-10-17T18:44:57.990415+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB",
+  "shape_processes": 4,
+  "all_correct": true,
+  "peak_extra_algorithm": "resetPeakStats immediately before submit; after_wait.allocated_peak - before_submit.allocated_current",
+  "allocator_scope": "Torch allocated/reserved bytes only; Hyle CUDA ports are separate requested payload bytes; driver/runtime/whole process VRAM unmeasured",
+  "performance_timing": false,
+  "probe_sdk_copy_or_download": false,
+  "probe_scope": "Only the space probe compilation/linking and four fresh-process executions; prerequisite Hyle library/test builds and their separate SDK runtime staging are outside this field"
+}
