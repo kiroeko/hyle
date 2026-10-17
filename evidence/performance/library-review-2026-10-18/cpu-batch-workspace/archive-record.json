@@ -1,0 +1,7 @@
+{
+  "path": ".scratch/perf-review-2026-10-18/cpu-batch-workspace/raw.zip",
+  "bytes": 121003,
+  "sha256": "9983bb5f2d485405ddf5e930006b2e1257d82ea2b5c32f0f6f8f4b2727df6e5a",
+  "members": 51,
+  "note": "Sources/commands/identities/all logs only; no obj/exe/DLL/lib/SDK."
+}

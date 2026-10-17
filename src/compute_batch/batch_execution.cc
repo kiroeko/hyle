@@ -92,9 +92,9 @@ void native_release(void*opaque)noexcept{
 Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept{
   d::BatchWorkspaceViews views;
   HYLE_ASSIGN_OR_RETURN(views.metadata,(s.graph_shared_metadata.valid()?s.graph_shared_metadata:s.mirror_ready).view());
-  HYLE_ASSIGN_OR_RETURN(views.float_workspace,s.float_workspace.view());
-  HYLE_ASSIGN_OR_RETURN(views.int_workspace,s.int_workspace.view());
-  HYLE_ASSIGN_OR_RETURN(views.host_workspace,s.host_workspace.view());
+  if(s.float_workspace.valid()){HYLE_ASSIGN_OR_RETURN(views.float_workspace,s.float_workspace.view());}
+  if(s.int_workspace.valid()){HYLE_ASSIGN_OR_RETURN(views.int_workspace,s.int_workspace.view());}
+  if(s.host_workspace.valid()){HYLE_ASSIGN_OR_RETURN(views.host_workspace,s.host_workspace.view());}
   if(s.output.valid()){HYLE_ASSIGN_OR_RETURN(views.output,s.output.view());}return views;
 }
 std::array<mem::ConstBufferView,5> replay_bindings(std::span<const ConstTensorView>inputs,
@@ -152,8 +152,10 @@ Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
   for(const auto&lease:value_pages)HYLE_RETURN_IF_ERROR(reads.add(lease));
   HYLE_RETURN_IF_ERROR(reads.add(s.graph_shared_metadata.valid()?s.graph_shared_metadata:s.mirror_ready));
   HYLE_RETURN_IF_ERROR(reads.admit(use));
-  HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
-  if(planning)HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));else HYLE_RETURN_IF_ERROR(use.write(s.output));
+  if(s.float_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));
+  if(s.int_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
+  if(planning){if(s.host_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));}
+  else HYLE_RETURN_IF_ERROR(use.write(s.output));
   HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
   HYLE_ASSIGN_OR_RETURN(auto completion,finish_native(s,planning,inputs,views,std::move(use),sequence));
   return s.completion.publish(std::move(completion));
@@ -177,7 +179,8 @@ Status capture_batch(d::BatchInvocationData&s,std::span<const ConstTensorView>in
   // preparation event; actual Q/K/V/page permissions are admitted at replay.
   HYLE_ASSIGN_OR_RETURN(auto use,s.uses.begin());
   HYLE_RETURN_IF_ERROR(use.read(s.graph_shared_metadata.valid()?s.graph_shared_metadata:s.mirror_ready));
-  HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
+  if(s.float_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));
+  if(s.int_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
   HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
   const auto begun=d::CommandCaptureAccess::begin(extension,sequence);
   if(!begun.ok()){
@@ -278,14 +281,19 @@ Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue
   s->buffers=p->allocator.construct<d::BatchBuffers>(p);if(!s->buffers)return std::unexpected(Status::ResourceExhausted("batch buffer owner"));
   s->buffers->provider_owner=p->extension;
   HYLE_ASSIGN_OR_RETURN(auto output_capacity,output_bytes(p->schema.capacity()));const auto output=external_output?0u:output_capacity;const auto mirror=p->schema.metadata_offsets().bytes;
+  const auto float_bytes=p->table->uses_caller_workspace?p->options.max_float_workspace_bytes:0u;
+  const auto int_bytes=p->table->uses_caller_workspace?p->options.max_int_workspace_bytes:0u;
   std::size_t capacity=4u*256u;
-  for(const auto bytes:{output,mirror,p->options.max_float_workspace_bytes,p->options.max_int_workspace_bytes}){if(bytes>SIZE_MAX-capacity)return std::unexpected(Status::OutOfRange("batch pool extent overflow"));capacity+=bytes;}
+  for(const auto bytes:{output,mirror,float_bytes,int_bytes}){if(bytes>SIZE_MAX-capacity)return std::unexpected(Status::OutOfRange("batch pool extent overflow"));capacity+=bytes;}
   HYLE_ASSIGN_OR_RETURN(s->buffers->device,LeasePool::create(p->options.resource,capacity,{.max_blocks=4,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
-  if(mirror>SIZE_MAX-p->options.max_int_workspace_bytes-512u)return std::unexpected(Status::OutOfRange("batch host workspace extent overflow"));
-  HYLE_ASSIGN_OR_RETURN(s->buffers->host,LeasePool::create(p->options.host_workspace,p->options.max_int_workspace_bytes+mirror+512u,{.max_blocks=2,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
+  if(mirror>SIZE_MAX-int_bytes-512u)return std::unexpected(Status::OutOfRange("batch host workspace extent overflow"));
+  HYLE_ASSIGN_OR_RETURN(s->buffers->host,LeasePool::create(p->options.host_workspace,int_bytes+mirror+512u,{.max_blocks=2,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
   HYLE_ASSIGN_OR_RETURN(s->mirror,s->buffers->device.allocate(mirror));if(!external_output){HYLE_ASSIGN_OR_RETURN(s->output,s->buffers->device.allocate(output));}
-  HYLE_ASSIGN_OR_RETURN(s->float_workspace,s->buffers->device.allocate(p->options.max_float_workspace_bytes));
-  HYLE_ASSIGN_OR_RETURN(s->int_workspace,s->buffers->device.allocate(p->options.max_int_workspace_bytes));HYLE_ASSIGN_OR_RETURN(s->host_workspace,s->buffers->host.allocate(p->options.max_int_workspace_bytes));
+  if(p->table->uses_caller_workspace){
+    HYLE_ASSIGN_OR_RETURN(s->float_workspace,s->buffers->device.allocate(float_bytes));
+    HYLE_ASSIGN_OR_RETURN(s->int_workspace,s->buffers->device.allocate(int_bytes));
+    HYLE_ASSIGN_OR_RETURN(s->host_workspace,s->buffers->host.allocate(int_bytes));
+  }
   HYLE_ASSIGN_OR_RETURN(s->staging,s->buffers->host.allocate(mirror));
   HYLE_RETURN_IF_ERROR(s->mirror.view()->fill(std::byte{0}));
   HYLE_RETURN_IF_ERROR(s->staging.view()->fill(std::byte{0}));
@@ -539,7 +547,8 @@ Result<Completion> PagedBatchReceiver::submit(const ReadLease&query,
     return std::unexpected(Status::Unavailable("common pending native slot is still retained"));
   HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(*s));HYLE_ASSIGN_OR_RETURN(auto use,s->uses.begin());
   HYLE_RETURN_IF_ERROR(use.read(query));HYLE_RETURN_IF_ERROR(use.read(s->mirror_ready));
-  HYLE_RETURN_IF_ERROR(use.write(s->float_workspace));HYLE_RETURN_IF_ERROR(use.write(s->int_workspace));
+  if(s->float_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s->float_workspace));
+  if(s->int_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s->int_workspace));
   HYLE_RETURN_IF_ERROR(use.write(s->output));
   auto sources=p.source.take(std::move(update));if(!sources)return std::unexpected(sources.error());
   const auto restore=[&]()noexcept{update=std::move(p.source.update());sources->release(sources->state);};

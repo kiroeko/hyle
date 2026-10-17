@@ -323,7 +323,9 @@ detail::EnqueueResult run(void *value, Queue &queue,
   }
   return detail::EnqueueResult::accepted_command();
 }
-const detail::BatchProviderVTable table{&qualify, &create, &destroy, &update, &plan, &run};
+const detail::BatchProviderVTable table{
+    .qualify=&qualify,.create=&create,.destroy=&destroy,.update=&update,
+    .plan=&plan,.run=&run,.uses_caller_workspace=false};
 } // namespace
 const detail::BatchProviderVTable *native_batch_table() noexcept { return &table; }
 } // namespace hyle::compute::ggml_cpu::internal

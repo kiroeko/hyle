@@ -1,0 +1,60 @@
+{
+  "problem": "Common BatchInvocation eagerly allocated max_float_workspace_bytes plus two max_int_workspace_bytes for CPU ggml, although its native plan ignores all three scratch views and owns/charges actual scratch separately. LeasePool::create immediately creates physical resource backing; it was not just a logical capacity.",
+  "change": {
+    "private_contract": "BatchProviderVTable appends uses_caller_workspace=true. CPU static table explicitly false; FlashInfer retains default true and existing full float/device-int/host-int allocations. Private extension version2→3 rejects mixed old/new tables before interpreting the new bit; no public option/API change and native CpuProgram ABI2 remains unchanged.",
+    "core": "Only allocate/account optional scratch in common device/host pool capacities when required. Conditional views and F1 write admission at native submit, capture and pending receiver paths. Original output/metadata/staging, provider/lease ownership, original budget values, query lower bound and final actual-native-budget checks remain.",
+    "boundaries": "CPU ragged/paged including Q8/window share this opt-out. Graph batch forwards the whole table and inherits it. FlashInfer genuinely consumes all three views; Apple/Vulkan materialized/native controllers do not implement this private BatchProviderVTable and are unaffected."
+  },
+  "method": "Windows x64 MSVC14.50.35717 /O2 /MD /W4 /WX. Direct small host TU compilation; retained same-pin HYCA native baseline objects/AVX2 DLLs and shared foundation reused. No native kernel/SDK/full product rebuild, dependency download, throughput or latency experiment.",
+  "validation": {
+    "cpu_math_tests": "Both pins each4/4: ImplicitCausalPrefillUsesLogicalRowsAcrossLayoutChanges; ImplicitCausalPlanChargesActualWorkspaceWithoutMaskSeed; NativeFlashReadsTwoRequestsWithoutKvMaterialization; ColdBudgetAndPagedQualificationAreExplicit. The first FFA combined run also had a failing new mock fixture; its four CPU tests passed and were not rerun after mock-only changes.",
+    "mock_final": "1/1 final. Default=true observes/writes all full-size float/device-int/host-int views in plan and float/device-int in run. False receives empty scratch views. Counted actual resource backings1,181,408→1,760B, difference1MiB+2×64KiB. Old extension2 query returns Unimplemented. Output ReadLease remains readable after control owners release.",
+    "graph": {
+      "actual_graph_batch_region": true,
+      "wrapper_uses_caller_workspace": false,
+      "external_output_elements": 256,
+      "native_known_bytes": 222960,
+      "checked": true
+    },
+    "budget": "CPU numerical test retains actual known1,269,488B; a budget1,269,487B is rejected specifically by final known-native-workspace check. Generic pool reduction does not lower, ignore or replace native budget admission.",
+    "executor_identity": "Test logs identify the original retained matching pin AVX2 ABI2 DLL. Common host core/test/native-batch objects are shared between pin runs where pin-independent; provider and selector are compiled separately per pin.",
+    "not_run": "Actual FlashInfer/CUDA batch runtime and command capture; only default=true core mock/source contract checked. No full test suite, Linux/macOS validation or pending-receiver fault matrix."
+  },
+  "real_cpu_backing_example": {
+    "shape": "F16 paged Q2048/logicalKV16384/H1/D64, two physical pages referenced1024 times. Same float128MiB/int8MiB budgets.",
+    "baseline": {
+      "Q": 2048,
+      "logical_KV": 16384,
+      "configured_float_bytes": 134217728,
+      "configured_int_bytes": 8388608,
+      "tracked_actual_pool_backing_bytes": 151266920,
+      "reported_known_native_bytes": 1269488,
+      "graph_executed": false,
+      "counted_carrier_and_system_plan_separate": true
+    },
+    "candidate": {
+      "Q": 2048,
+      "logical_KV": 16384,
+      "configured_float_bytes": 134217728,
+      "configured_int_bytes": 8388608,
+      "tracked_actual_pool_backing_bytes": 271976,
+      "reported_known_native_bytes": 1269488,
+      "graph_executed": false,
+      "counted_carrier_and_system_plan_separate": true
+    },
+    "backing_bytes_removed": 150994944,
+    "interpretation": "Actual generic pool requests151,266,920→271,976B, exactly144MiB removed. Separately prepared native plan remains1,269,488B on both arms; no attention execution for this large shape. Default64MiB float/8MiB int options would save80MiB per CPU slot by the same policy (derived, not a second sample).",
+    "baseline_identity": "Old allocation-policy batch_execution.cc from50fcf099c compiled against the same current ABI3 header and current CPU opt-out table. It is not an old full binary/SDK comparison.",
+    "counting_boundary": "StatsAllocator backs a host MemoryResource only for BatchInvocation creation, observing both actual pool backing requests. That custom carrier has no CPU CopyBatch physical-identity authority, so upload/native planning is a separate system_resource phase. No admission rule was bypassed or relaxed. Counts omit native/private C or global allocations, metadata not routed through that resource, RSS and peak resident."
+  },
+  "retained_failures": [
+    "First mock used the counted custom host resource for upload: existing CPU copy gate rejected mutable carrier without proven physical identity. Fixed fixture by separating counted creation from system-resource execution; product gate unchanged. Full source/log retained.",
+    "Second mock tried reading1B from a128B full view. Fixed to explicit1B subview. Full source/log retained. Initial FFA four CPU tests passed despite mock failure; final mock-only run passed."
+  ],
+  "artifacts": {
+    "sources": "candidate/ and baseline-batch_execution.cc",
+    "identity": "source-identities.json",
+    "commands": "commands.json",
+    "cleanup": "cleanup-and-retain.json"
+  }
+}

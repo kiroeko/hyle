@@ -15,7 +15,7 @@ struct BatchMetadataSegment final {
 struct BatchLayoutAccess final {
   HYLE_COMPUTE_BATCH_API static std::array<BatchMetadataSegment,5> segments(const BatchLayoutVersion&) noexcept;
 };
-inline constexpr ProviderExtensionId kBatchPlanningExtensionId{0x48594c4542415443ULL,0x504c414e4e494e47ULL,2};
+inline constexpr ProviderExtensionId kBatchPlanningExtensionId{0x48594c4542415443ULL,0x504c414e4e494e47ULL,3};
 struct BatchWorkspaceViews final {
   mem::ConstBufferView metadata;
   mem::BufferView float_workspace,int_workspace,host_workspace,output;
@@ -31,5 +31,8 @@ struct BatchProviderVTable final {
   EnqueueResult (*plan)(void *,Queue &,const BatchLayoutVersion &,BatchWorkspaceViews,BatchPlanReport *) noexcept=nullptr;
   EnqueueResult (*run)(void *,Queue &,std::span<const ConstTensorView>,BatchWorkspaceViews) noexcept=nullptr;
   bool supports_command_capture=false;
+  // False means the native owner allocates its own scratch. Common output and
+  // metadata storage, native budget checks and completion retention still apply.
+  bool uses_caller_workspace=true;
 };
 } // namespace hyle::compute::detail
