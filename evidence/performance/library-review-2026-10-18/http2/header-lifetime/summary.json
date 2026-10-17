@@ -1,0 +1,776 @@
+{
+  "result": "Keep the minimal removal of capacity-sized initialization work. These four processes do not establish a throughput improvement; the current candidate remains slower than its same-process manual peer.",
+  "head_at_packaging": "8f501cceff0b04deaf9671831880b338a14fce9f",
+  "scope": {
+    "product_file": "src/io_http2/http2.cc",
+    "trace": "Only original 4 streams x256KiB request/response holdout",
+    "outer_order": [
+      "old",
+      "new",
+      "new",
+      "old"
+    ],
+    "inner_order": [
+      "Hyle then peer",
+      "Hyle then peer",
+      "peer then Hyle",
+      "peer then Hyle"
+    ],
+    "processes": 4,
+    "epochs_per_arm": 9,
+    "arms_per_process": 2,
+    "all_72_epochs_retained": true,
+    "full_smoke": "One complete original oracle episode per variant before formal; each returned Hyle=4, peer=4.",
+    "extra_AA_shapes_probes_or_formal_retries": false,
+    "terminal_capture": false
+  },
+  "change": {
+    "actual_entries": "StoredHeader is construct_at only after both field appends succeed; HttpHeader views are construct_at only for the published count.",
+    "lifetime": "Both types are statically required to be trivially destructible. Capacity storage is independently deallocated without destructing unconstructed entries. Repeated same-type non-const replacement is intentional.",
+    "unchanged": "Both capacity allocations, their order, overflow/OOM checks, limits, bytes, alignment, field append and transport/protocol work remain unchanged. This saves initialization work, not allocated capacity.",
+    "removed_work": "Four max_header_count value-construction loops per stream; at default 128 this is 512 capacity objects per stream. Trivial destructor loops already compile away in the baseline, so no destructor speedup is claimed."
+  },
+  "static_review": {
+    "informational": "Informational headers reset count and byte storage without materializing views; overwritten same-type entries are transparently replaced, unused suffix is never read.",
+    "repeated_views": "Each new HttpHeader value is computed from StoredHeader/ByteBuffer before construct_at; no old HttpHeader value is read. Only [0,count) is exposed as a contiguous span.",
+    "partial_initialization": "No capacity object is assumed live. Each non-null allocation is deallocated separately even when the other allocation fails; count increments only after both field appends succeed.",
+    "address": "The views allocation starts at a byte offset, not typed pointer arithmetic across unused StoredHeader capacity. Existing alignment and size-overflow preflight are retained.",
+    "limits": "No new targeted informational/OOM case or allocation probe; these lifetime boundaries are supported by source analysis. Existing multi-header/trailer/stable-view regressions ran.",
+    "independent_review": "configuration_consistency_scan reviewed lifetime/count reuse; backend_assembly_design independently recomputed all four medians and Hyle/peer ratios."
+  },
+  "static_object_observation": {
+    "compiler": "GCC 14.2.0, same -O3 closure flags recorded in commands",
+    "create_stream_code_bytes_before": 4767,
+    "create_stream_code_bytes_after": 1559,
+    "interpretation": "The old object contains capacity zero-store loops absent in the candidate. Code-size reduction is not a measured time attribution."
+  },
+  "tests": [
+    {
+      "backend": "default configured backend",
+      "tests": 15,
+      "failures": 0,
+      "time": "1.551s",
+      "raw": "default-tests.json",
+      "names": [
+        "IoHttp2.MultiplexesIncrementalMessagesInCompletionOrder",
+        "IoHttp2.ConsumerProgressDrivesBothFlowControlWindows",
+        "IoHttp2.BorrowedBodySurvivesOtherStreamReceivingMoreData",
+        "IoHttp2.DuplexProgressSurvivesSmallSocketAndFlowControl",
+        "IoHttp2.PeerCloseTerminatesBackpressuredFixedBodyWrite",
+        "IoHttp2.ConcurrentLimitDoesNotBecomeLifetimeRequestLimit",
+        "IoHttp2.StreamsFragmentedBodiesAndPublishesTrailersAtEnd",
+        "IoHttp2.OperationCancellationAndStreamResetDoNotPoisonSession",
+        "IoHttp2.ExternalCancelWakesOwnerLocalDirectionContender",
+        "IoHttp2.GoawayDrainsExistingStreamAndRejectsNewStreams",
+        "IoHttp2.RejectsInvalidHeadersAndSurfacesAllocatorAndLimitFailures",
+        "IoHttp2.RejectsInvalidClientPrefaceAsProtocolDataLoss",
+        "IoHttp2.AbandonSinkFailureAndBodyLimitIsolateStreamsWithoutPoisoningSession",
+        "IoHttp2.DeadlineInterruptsFlowControlledWriterWithoutPoisoningSession",
+        "IoHttp2Feature.ReportsTheCompiledCapability"
+      ]
+    },
+    {
+      "backend": "same executable with HYLE_IO_FORCE_EPOLL=1",
+      "tests": 15,
+      "failures": 0,
+      "time": "1.548s",
+      "raw": "epoll-tests.json",
+      "names": [
+        "IoHttp2.MultiplexesIncrementalMessagesInCompletionOrder",
+        "IoHttp2.ConsumerProgressDrivesBothFlowControlWindows",
+        "IoHttp2.BorrowedBodySurvivesOtherStreamReceivingMoreData",
+        "IoHttp2.DuplexProgressSurvivesSmallSocketAndFlowControl",
+        "IoHttp2.PeerCloseTerminatesBackpressuredFixedBodyWrite",
+        "IoHttp2.ConcurrentLimitDoesNotBecomeLifetimeRequestLimit",
+        "IoHttp2.StreamsFragmentedBodiesAndPublishesTrailersAtEnd",
+        "IoHttp2.OperationCancellationAndStreamResetDoNotPoisonSession",
+        "IoHttp2.ExternalCancelWakesOwnerLocalDirectionContender",
+        "IoHttp2.GoawayDrainsExistingStreamAndRejectsNewStreams",
+        "IoHttp2.RejectsInvalidHeadersAndSurfacesAllocatorAndLimitFailures",
+        "IoHttp2.RejectsInvalidClientPrefaceAsProtocolDataLoss",
+        "IoHttp2.AbandonSinkFailureAndBodyLimitIsolateStreamsWithoutPoisoningSession",
+        "IoHttp2.DeadlineInterruptsFlowControlledWriterWithoutPoisoningSession",
+        "IoHttp2Feature.ReportsTheCompiledCapability"
+      ]
+    }
+  ],
+  "method": {
+    "toolchain": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+    "system": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "hardware": "Same Windows-host WSL system and process taskset CPU 2 as the retained holdout closure; no new hardware/topology snapshot was collected in this batch.",
+    "fresh": "Current HTTP2 and protocol-test TUs plus the unchanged canonical one-holdout wrapper TU. No whole-HEAD rebuild, configure, dependency download, SDK staging or native-library rebuild.",
+    "baseline": "Reused the saved private-Status-helper-fixed old HTTP2 object. Exact measured source and its formatting-only applied difference are archived. Current before source is byte-identical to that applied source.",
+    "core": "Both tests and both holdout loaders resolve the retained current-holdout core override. Its SHA and current proactor source SHA are recorded; remaining foundation/nghttp2 caches are retained, not rebuilt.",
+    "feature": "Only the protocol test TU is fresh; the one-test feature object is reused with its exact hash and current source snapshot.",
+    "affinity": "All formal processes were launched with taskset -c 2. The original configured harness owns caller + one Scheduler worker + one RawHarness worker. No in-formal TID/backend/affinity snapshot was collected.",
+    "boundary": "Original run_workload warm episodes, nine epochs, min five iterations and original 1ms target, full body/header/reverse completion, socket/session/handoff cleanup boundaries are unchanged.",
+    "peer": "Current canonical peer is byte-identical to the preceding current-holdout-status source. Relative to stage3, only the worker member initialization-order race fix and its comment differ; the source diff is archived.",
+    "counters": "perf_event_open unavailable warning preserved. Zero hardware counter fields are not measurements. Reported clock resolution is separate from process-to-process drift."
+  },
+  "processes": [
+    {
+      "index": 0,
+      "variant": "old",
+      "inner_order": "Hyle then peer",
+      "raw": "epochs-0-old-4.json",
+      "arms": [
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_microseconds_per_stream": 191.29670833333324,
+          "epoch_microseconds_per_stream_range": [
+            188.94329166666674,
+            203.01755
+          ],
+          "median_absolute_percent_error": 0.00575503454536626,
+          "measured_clock_resolution_seconds": 1.2e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0008120702,
+              "actual_duration_seconds": 0.004060351,
+              "microseconds_per_stream": 203.01755
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007666658,
+              "actual_duration_seconds": 0.003833329,
+              "microseconds_per_stream": 191.66645
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007652834,
+              "actual_duration_seconds": 0.003826417,
+              "microseconds_per_stream": 191.32085
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000755773166666667,
+              "actual_duration_seconds": 0.004534639000000002,
+              "microseconds_per_stream": 188.94329166666674
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.000769616,
+              "actual_duration_seconds": 0.00384808,
+              "microseconds_per_stream": 192.404
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000764238333333333,
+              "actual_duration_seconds": 0.004585429999999998,
+              "microseconds_per_stream": 191.05958333333325
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000765186833333333,
+              "actual_duration_seconds": 0.0045911209999999975,
+              "microseconds_per_stream": 191.29670833333324
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007562648,
+              "actual_duration_seconds": 0.003781324,
+              "microseconds_per_stream": 189.0662
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.0007597425,
+              "actual_duration_seconds": 0.004558455,
+              "microseconds_per_stream": 189.93562500000002
+            }
+          ]
+        },
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_microseconds_per_stream": 173.185,
+          "epoch_microseconds_per_stream_range": [
+            166.98904166666676,
+            241.58075000000002
+          ],
+          "median_absolute_percent_error": 0.0330195748416276,
+          "measured_clock_resolution_seconds": 1.2e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.000742871,
+              "actual_duration_seconds": 0.003714355,
+              "microseconds_per_stream": 185.71775
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006730452,
+              "actual_duration_seconds": 0.003365226,
+              "microseconds_per_stream": 168.2613
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.00069274,
+              "actual_duration_seconds": 0.0034636999999999997,
+              "microseconds_per_stream": 173.185
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000707729166666667,
+              "actual_duration_seconds": 0.004246375000000002,
+              "microseconds_per_stream": 176.93229166666677
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.000697951,
+              "actual_duration_seconds": 0.003489755,
+              "microseconds_per_stream": 174.48775
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000966323,
+              "actual_duration_seconds": 0.005797938000000001,
+              "microseconds_per_stream": 241.58075000000002
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000670597166666667,
+              "actual_duration_seconds": 0.0040235830000000024,
+              "microseconds_per_stream": 167.64929166666676
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006686206,
+              "actual_duration_seconds": 0.003343103,
+              "microseconds_per_stream": 167.15515
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000667956166666667,
+              "actual_duration_seconds": 0.0040077370000000025,
+              "microseconds_per_stream": 166.98904166666676
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.1045801214500865,
+      "hyle_slower_than_same_process_peer_percent": 10.458012145008656
+    },
+    {
+      "index": 1,
+      "variant": "new",
+      "inner_order": "Hyle then peer",
+      "raw": "epochs-1-new-4.json",
+      "arms": [
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_microseconds_per_stream": 189.82815000000002,
+          "epoch_microseconds_per_stream_range": [
+            186.14025,
+            196.809875
+          ],
+          "median_absolute_percent_error": 0.0102799871845572,
+          "measured_clock_resolution_seconds": 1.2e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007671994,
+              "actual_duration_seconds": 0.003835997,
+              "microseconds_per_stream": 191.79985
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007593126,
+              "actual_duration_seconds": 0.003796563,
+              "microseconds_per_stream": 189.82815000000002
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007581522,
+              "actual_duration_seconds": 0.0037907609999999997,
+              "microseconds_per_stream": 189.53805
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000744561,
+              "actual_duration_seconds": 0.004467366,
+              "microseconds_per_stream": 186.14025
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007508884,
+              "actual_duration_seconds": 0.003754442,
+              "microseconds_per_stream": 187.7221
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.0007637475,
+              "actual_duration_seconds": 0.004582485,
+              "microseconds_per_stream": 190.93687500000001
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.0007872395,
+              "actual_duration_seconds": 0.004723437,
+              "microseconds_per_stream": 196.809875
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007782742,
+              "actual_duration_seconds": 0.003891371,
+              "microseconds_per_stream": 194.56855
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000754418833333333,
+              "actual_duration_seconds": 0.004526512999999998,
+              "microseconds_per_stream": 188.60470833333324
+            }
+          ]
+        },
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_microseconds_per_stream": 169.11285,
+          "epoch_microseconds_per_stream_range": [
+            165.02405,
+            188.68905
+          ],
+          "median_absolute_percent_error": 0.0112875170646785,
+          "measured_clock_resolution_seconds": 1.2e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007547562,
+              "actual_duration_seconds": 0.0037737810000000004,
+              "microseconds_per_stream": 188.68905
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006764514,
+              "actual_duration_seconds": 0.003382257,
+              "microseconds_per_stream": 169.11285
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007176324,
+              "actual_duration_seconds": 0.0035881619999999998,
+              "microseconds_per_stream": 179.4081
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000672862166666667,
+              "actual_duration_seconds": 0.0040371730000000015,
+              "microseconds_per_stream": 168.21554166666675
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006810784,
+              "actual_duration_seconds": 0.003405392,
+              "microseconds_per_stream": 170.2696
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000673519,
+              "actual_duration_seconds": 0.004041114,
+              "microseconds_per_stream": 168.37975
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000668901166666667,
+              "actual_duration_seconds": 0.004013407000000002,
+              "microseconds_per_stream": 167.22529166666675
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006600962,
+              "actual_duration_seconds": 0.0033004809999999996,
+              "microseconds_per_stream": 165.02405
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.0007448965,
+              "actual_duration_seconds": 0.004469379000000001,
+              "microseconds_per_stream": 186.22412500000002
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.1224939441325719,
+      "hyle_slower_than_same_process_peer_percent": 12.249394413257185
+    },
+    {
+      "index": 2,
+      "variant": "new",
+      "inner_order": "peer then Hyle",
+      "raw": "epochs-2-new-4.json",
+      "arms": [
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_microseconds_per_stream": 168.674,
+          "epoch_microseconds_per_stream_range": [
+            164.40941666666677,
+            190.6125
+          ],
+          "median_absolute_percent_error": 0.0215274522557616,
+          "measured_clock_resolution_seconds": 1.4e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006902142,
+              "actual_duration_seconds": 0.003451071,
+              "microseconds_per_stream": 172.55355
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.00076245,
+              "actual_duration_seconds": 0.00381225,
+              "microseconds_per_stream": 190.6125
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007413972,
+              "actual_duration_seconds": 0.0037069860000000002,
+              "microseconds_per_stream": 185.3493
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000662044666666667,
+              "actual_duration_seconds": 0.003972268000000003,
+              "microseconds_per_stream": 165.51116666666675
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.000674696,
+              "actual_duration_seconds": 0.00337348,
+              "microseconds_per_stream": 168.674
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000684949166666667,
+              "actual_duration_seconds": 0.004109695000000002,
+              "microseconds_per_stream": 171.23729166666675
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000670432,
+              "actual_duration_seconds": 0.004022592,
+              "microseconds_per_stream": 167.608
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006604776,
+              "actual_duration_seconds": 0.003302388,
+              "microseconds_per_stream": 165.1194
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000657637666666667,
+              "actual_duration_seconds": 0.003945826000000002,
+              "microseconds_per_stream": 164.40941666666677
+            }
+          ]
+        },
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_microseconds_per_stream": 191.66895833333325,
+          "epoch_microseconds_per_stream_range": [
+            185.67165,
+            202.2337
+          ],
+          "median_absolute_percent_error": 0.0100446864775341,
+          "measured_clock_resolution_seconds": 1.4e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007934524,
+              "actual_duration_seconds": 0.003967262,
+              "microseconds_per_stream": 198.3631
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007590514,
+              "actual_duration_seconds": 0.003795257,
+              "microseconds_per_stream": 189.76285
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007426866,
+              "actual_duration_seconds": 0.003713433,
+              "microseconds_per_stream": 185.67165
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000766675833333333,
+              "actual_duration_seconds": 0.004600054999999998,
+              "microseconds_per_stream": 191.66895833333325
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0008089348,
+              "actual_duration_seconds": 0.004044674,
+              "microseconds_per_stream": 202.2337
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000762603333333333,
+              "actual_duration_seconds": 0.004575619999999998,
+              "microseconds_per_stream": 190.65083333333325
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000797133333333333,
+              "actual_duration_seconds": 0.0047827999999999985,
+              "microseconds_per_stream": 199.28333333333327
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007663336,
+              "actual_duration_seconds": 0.003831668,
+              "microseconds_per_stream": 191.5834
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000772745666666667,
+              "actual_duration_seconds": 0.0046364740000000015,
+              "microseconds_per_stream": 193.18641666666676
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.1363278177628635,
+      "hyle_slower_than_same_process_peer_percent": 13.63278177628635
+    },
+    {
+      "index": 3,
+      "variant": "old",
+      "inner_order": "peer then Hyle",
+      "raw": "epochs-3-old-4.json",
+      "arms": [
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_microseconds_per_stream": 179.35524999999998,
+          "epoch_microseconds_per_stream_range": [
+            171.02095833333325,
+            195.2929
+          ],
+          "median_absolute_percent_error": 0.0418914059690761,
+          "measured_clock_resolution_seconds": 1.2e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007284932,
+              "actual_duration_seconds": 0.0036424660000000005,
+              "microseconds_per_stream": 182.1233
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007740302,
+              "actual_duration_seconds": 0.0038701509999999996,
+              "microseconds_per_stream": 193.50754999999998
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007811716,
+              "actual_duration_seconds": 0.003905858,
+              "microseconds_per_stream": 195.2929
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000717421,
+              "actual_duration_seconds": 0.0043045259999999995,
+              "microseconds_per_stream": 179.35524999999998
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007363388,
+              "actual_duration_seconds": 0.0036816939999999997,
+              "microseconds_per_stream": 184.0847
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000688044333333333,
+              "actual_duration_seconds": 0.0041282659999999985,
+              "microseconds_per_stream": 172.01108333333326
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000684083833333333,
+              "actual_duration_seconds": 0.004104502999999998,
+              "microseconds_per_stream": 171.02095833333325
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0006885756,
+              "actual_duration_seconds": 0.003442878,
+              "microseconds_per_stream": 172.1439
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000696746333333333,
+              "actual_duration_seconds": 0.004180477999999998,
+              "microseconds_per_stream": 174.18658333333323
+            }
+          ]
+        },
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_microseconds_per_stream": 193.48925,
+          "epoch_microseconds_per_stream_range": [
+            189.86216666666675,
+            204.88525
+          ],
+          "median_absolute_percent_error": 0.0175729536695908,
+          "measured_clock_resolution_seconds": 1.2e-08,
+          "epochs": [
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.000788244,
+              "actual_duration_seconds": 0.0039412200000000005,
+              "microseconds_per_stream": 197.061
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007625626,
+              "actual_duration_seconds": 0.003812813,
+              "microseconds_per_stream": 190.64065000000002
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007765698,
+              "actual_duration_seconds": 0.003882849,
+              "microseconds_per_stream": 194.14245
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000799431666666667,
+              "actual_duration_seconds": 0.0047965900000000025,
+              "microseconds_per_stream": 199.85791666666677
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.000819541,
+              "actual_duration_seconds": 0.004097705,
+              "microseconds_per_stream": 204.88525
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000773957,
+              "actual_duration_seconds": 0.004643742,
+              "microseconds_per_stream": 193.48925
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000759448666666667,
+              "actual_duration_seconds": 0.004556692000000002,
+              "microseconds_per_stream": 189.86216666666675
+            },
+            {
+              "iterations": 5,
+              "seconds_per_episode": 0.0007613598,
+              "actual_duration_seconds": 0.003806799,
+              "microseconds_per_stream": 190.33995000000002
+            },
+            {
+              "iterations": 6,
+              "seconds_per_episode": 0.000760591166666667,
+              "actual_duration_seconds": 0.004563547000000002,
+              "microseconds_per_stream": 190.14779166666676
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.0788044955472451,
+      "hyle_slower_than_same_process_peer_percent": 7.880449554724511
+    }
+  ],
+  "same_inner_order_pairs": [
+    {
+      "old_process": 0,
+      "new_process": 1,
+      "inner_order": "Hyle then peer",
+      "new_over_old_hyle_percent": -0.7676861489818609,
+      "new_over_old_peer_percent": -2.351329503132482,
+      "new_over_old_normalized_hyle_peer_percent": 1.6217766674062606
+    },
+    {
+      "old_process": 3,
+      "new_process": 2,
+      "inner_order": "peer then Hyle",
+      "new_over_old_hyle_percent": -0.9407714726615279,
+      "new_over_old_peer_percent": -5.955359544813977,
+      "new_over_old_normalized_hyle_peer_percent": 5.3321359387215495
+    }
+  ],
+  "process_median_ranges": {
+    "old": {
+      "hyle_process_median_microseconds_per_stream_range": [
+        191.29670833333324,
+        193.48925
+      ],
+      "peer_process_median_microseconds_per_stream_range": [
+        173.185,
+        179.35524999999998
+      ],
+      "hyle_slower_than_same_process_peer_percent_range": [
+        7.880449554724511,
+        10.458012145008656
+      ]
+    },
+    "new": {
+      "hyle_process_median_microseconds_per_stream_range": [
+        189.82815000000002,
+        191.66895833333325
+      ],
+      "peer_process_median_microseconds_per_stream_range": [
+        168.674,
+        169.11285
+      ],
+      "hyle_slower_than_same_process_peer_percent_range": [
+        12.249394413257185,
+        13.63278177628635
+      ]
+    }
+  },
+  "conclusion": {
+    "current_residual": "Candidate Hyle/peer residuals are the two new-process points and range recorded below; old controls and every raw epoch remain alongside them.",
+    "performance": "New Hyle absolute medians are slightly lower, while its peer medians are also lower by a larger amount; normalized Hyle/peer is worse in both matched inner orders. No demonstrated throughput gain, equivalence or confidence interval is claimed.",
+    "attribution": "Do not subtract older rounds (including the previous 14.7-17.1% residual) from this round or attribute their difference to this source change. Four processes do not identify time spent in the deleted initialization.",
+    "application": "Parent reviewed and authorized retaining this bounded redundant-work deletion; parent owns final commit and cleanup."
+  },
+  "source_identities": {
+    "before": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2/header-lifetime/http2.before.cc",
+      "bytes": 109329,
+      "sha256": "ce572103ee51ce46b65e61aac445df76e93fd69a6ceacb80a4708e9199807b91"
+    },
+    "old_object_measured_source": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2/header-lifetime/old-object-measured.cc",
+      "bytes": 109423,
+      "sha256": "031dea0e99cfa8d414d9e7843d2387c8b084a60208ad731402350894a378ebeb"
+    },
+    "measured": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2/header-lifetime/http2.measured.cc",
+      "bytes": 108814,
+      "sha256": "e9612109ec594e3d06479ebbf24429efe1e55f6cba249421b9b88ddd8aebbf9f"
+    },
+    "applied": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2/header-lifetime/http2.applied.cc",
+      "bytes": 108814,
+      "sha256": "e9612109ec594e3d06479ebbf24429efe1e55f6cba249421b9b88ddd8aebbf9f"
+    },
+    "measured_equals_applied": true,
+    "canonical_peer": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2/header-lifetime/http2_p1_bench.cc",
+      "bytes": 34571,
+      "sha256": "349e49e8d64c1f5f3d1c5ff5dd18433973fd3cb8aab025cbcdc63fefff8b6e90"
+    },
+    "current_proactor": {
+      "path": "/mnt/c/public/project-hyle/hyle/src/io_core/proactor.cc",
+      "bytes": 195316,
+      "sha256": "a88642932ed4db672c91997e151f0bf6c72f60a4635d2489570c8cb35d15f2ca"
+    }
+  },
+  "identity_files": [
+    "build-identity.json",
+    "holdout-identity.json",
+    "commands.json",
+    "holdout-commands.json",
+    "old-object-commands.json"
+  ],
+  "failures": "No compile, link, test, smoke or formal failure in this batch. All attempts and stderr, including empty stderr, are retained.",
+  "artifacts": "Exact four cleanup candidates and two small current cache objects are listed in cleanup-candidates.json; shared core and optional superseded baseline are explicitly separate. No files deleted."
+}

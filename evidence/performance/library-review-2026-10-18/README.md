@@ -5,7 +5,7 @@
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
 **仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple部分普通fallback、typed Sink guard外及opaque compile等未覆盖域的scores空间。
-HTTP2在header/body、冗余私有Task帧及benchmark启动竞态修复后的当前复测仍慢约14.7–17.1%；跨轮绝对时间变化不作微改动收益归因。
+HTTP2最新删除容量级header初始化后，两次候选相对同进程peer仍慢12.25%/13.63%；同轮旧实现为7.88%/10.46%，peer漂移大于候选绝对变化，未证明新吞吐收益。此前14.7–17.1%保留为旧轮结果，不跨轮归因。
 Apple Sink最终采用单owner Job内同步Q128数学分块：固定点extra active peak降78.8%，同工时延未见退步；Direct/Graph已接通，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
 CUDA长域F32探针的原1e-5预算仍失败，现已定位到原生PV长归约舍入；同native对照输出完全相同，没有证实Hyle额外精度损失，见下。
@@ -34,7 +34,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；后补已知无NAX硬件的F32 D256 causal及D192 tile，两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。其余域仍待补 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的长Q收益域改用单Job同步Q128块，原固定extra peak1344307200→285310976 B（−78.8%），同工时延未见退步。Q16图/compact负候选拒绝；guard外及opaque compile保留原路线 |
-| HTTP2大body背压holdout | 修正peer后旧轮慢5.59–8.27%，后续有漂移；header/body、当前proactor及私有帧/benchmark竞态修复后的单一holdout仍慢14.7–17.1% | 当前残差仍在；私有帧消除有静态资源证据，但不把跨轮差值归因该微改。两endpoint Task与手工双端loop差异继续分开调查 |
+| HTTP2大body背压holdout | 唯一4×256 KiB holdout的最新候选仍慢12.25%/13.63%；同轮旧控制慢7.88%/10.46%，存在peer漂移 | 已去容量级header预初始化；静态冗余减少，但本轮未证明吞吐收益。残差保留，Task/通用借用与错误职责和手工单loop策略仍分开调查 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
@@ -1188,3 +1188,23 @@ V1/V2的144个epoch全保留，包含高点，无筛除、AA或追加形状。[�
 同LP4/QPC固定ABBA、每进程9epochs×128完整episode，中位数old/new/new/old为34.9414/34.7719/34.2594/34.7094 µs。
 初次import、warm及每epoch后的全1024成员检查在计时外；两侧真实更新工作完全相同，36epochs全留。
 此点未见明显回退，不声称排序无成本或所有capacity都如此；没有为此扩大矩阵。[冷更新摘要](state-distinct-roots/cold-update/summary.json)与[源码/全部结果](state-distinct-roots/cold-update/source-results.zip)。
+
+## HTTP2：只构造实际header条目
+
+每stream原来按max_header_count预构造两组StoredHeader及HttpHeader views，默认128时共512个capacity对象；unused槽位只需保留存储。
+现在两次容量分配、对齐、overflow/OOM时机不变，收到完整字段后construct_at一个StoredHeader，发布时只构造实际count个连续view。
+两类型以static_assert约束为平凡析构；informational清count后原址同型替换，部分分配失败只释放nonnull块，不析构未构造容量。
+GCC14.2同flags旧对象的容量zero-store循环确实存在，新对象消失；create_stream码长4767→1559 B，不将码长换算成耗时。
+只fresh当前产品与协议test两个TU，原foundation/core缓存复用；default与同exe epoll各15/15通过。
+
+原holdout、peer、warm/9epochs/iteration/oracle/完成边界保持，另fresh相同wrapper一个TU；old/new各一次完整smoke后，唯一ABBA四进程72epochs全保留：
+
+| 顺序 | Hyle µs/stream | 同进程peer µs/stream | Hyle差值 |
+|---|---:|---:|---:|
+| old | 191.2967 | 173.1850 | +10.46% |
+| new | 189.8282 | 169.1129 | +12.25% |
+| new | 191.6690 | 168.6740 | +13.63% |
+| old | 193.4893 | 179.3553 | +7.88% |
+
+候选绝对时间小幅更低，但peer下降更多、归一化更差，区间有重叠；不报告已证吞吐提升，也不追加样本找胜点。
+保留这次明确的容量级冗余删除，HTTP2性能残差仍未解决。[摘要](http2/header-lifetime/summary.json)及[源码、静态反汇编、全部测试和样本](http2/header-lifetime/source-results.zip)。

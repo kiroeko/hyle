@@ -9,6 +9,7 @@
 #include <memory>
 #include <mutex>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include <nghttp2/nghttp2.h>
@@ -90,13 +91,19 @@ struct alignas(HttpHeader) StoredHeader {
   FieldRef value;
 };
 
+// Only actual entries are constructed; unused capacity needs no destruction.
+static_assert(std::is_trivially_destructible_v<StoredHeader>);
+static_assert(std::is_trivially_destructible_v<HttpHeader>);
+
 constexpr std::size_t kHeaderSlotBytes = sizeof(StoredHeader) + sizeof(HttpHeader);
 
 HttpHeader *header_views(StoredHeader *storage, std::size_t slots) noexcept {
   // Keep the views contiguous: a span cannot stride over the stored offsets.
   // StoredHeader's alignment also aligns this second array in the allocation.
-  return storage == nullptr ? nullptr
-                            : reinterpret_cast<HttpHeader *>(storage + slots);
+  if (storage == nullptr)
+    return nullptr;
+  return reinterpret_cast<HttpHeader *>(reinterpret_cast<std::byte *>(storage) +
+                                        slots * sizeof(StoredHeader));
 }
 
 struct Http2StreamState {
@@ -113,35 +120,17 @@ struct Http2StreamState {
     header_slots_bytes = bytes;
     headers = static_cast<StoredHeader *>(
         head_bytes.allocator.allocate(bytes, alignof(StoredHeader)));
-    if (headers != nullptr) {
-      std::uninitialized_value_construct_n(headers, limits.max_header_count);
-      std::uninitialized_value_construct_n(
-          header_views(headers, limits.max_header_count),
-          limits.max_header_count);
-    }
     trailers = static_cast<StoredHeader *>(
         head_bytes.allocator.allocate(bytes, alignof(StoredHeader)));
-    if (trailers != nullptr) {
-      std::uninitialized_value_construct_n(trailers, limits.max_header_count);
-      std::uninitialized_value_construct_n(
-          header_views(trailers, limits.max_header_count),
-          limits.max_header_count);
-    }
     return headers != nullptr && trailers != nullptr;
   }
 
   ~Http2StreamState() {
     if (headers != nullptr) {
-      const std::size_t slots = header_slots_bytes / kHeaderSlotBytes;
-      std::destroy_n(header_views(headers, slots), slots);
-      std::destroy_n(headers, slots);
       head_bytes.allocator.deallocate(headers, header_slots_bytes,
                                       alignof(StoredHeader));
     }
     if (trailers != nullptr) {
-      const std::size_t slots = header_slots_bytes / kHeaderSlotBytes;
-      std::destroy_n(header_views(trailers, slots), slots);
-      std::destroy_n(trailers, slots);
       head_bytes.allocator.deallocate(trailers, header_slots_bytes,
                                       alignof(StoredHeader));
     }
@@ -489,8 +478,9 @@ StringView field_view(const ByteBuffer &buffer, FieldRef field) noexcept {
 void materialize_headers(ByteBuffer &bytes, StoredHeader *headers,
                          HttpHeader *views, std::size_t count) noexcept {
   for (std::size_t index = 0; index < count; ++index) {
-    views[index] = HttpHeader{field_view(bytes, headers[index].name),
-                             field_view(bytes, headers[index].value)};
+    std::construct_at(views + index,
+        HttpHeader{field_view(bytes, headers[index].name),
+                    field_view(bytes, headers[index].value)});
   }
 }
 
@@ -666,8 +656,7 @@ int on_header(nghttp2_session *, const nghttp2_frame *frame,
                 Http2Error::kInternal);
     return NGHTTP2_ERR_TEMPORAL_CALLBACK_FAILURE;
   }
-  slots[count].name = stored_name;
-  slots[count].value = stored_value;
+  std::construct_at(slots + count, StoredHeader{stored_name, stored_value});
   ++count;
   return 0;
 }
