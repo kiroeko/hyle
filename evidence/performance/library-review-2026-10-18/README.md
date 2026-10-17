@@ -13,6 +13,7 @@
 | CUDA BF16/F32 attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 仅 F16 走 flash，BF16/F32 物化 scores。B1/H8/Q=KV8192 时，单个 F32 scores 为 **2 GiB**，不含 softmax 等其它 scratch。Windows 当前无 FlashInfer 路线 | 已接通适用域的 BF16 融合程序，实际 Hyle 的空间结果见下；F32 和其它不受理域未改，不能外推全部 attention |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
 | Linux watch重复close-write唤醒 | [inotify mask](../../../src/io_watch/watch_linux.cc) 同时订阅IN_MODIFY和IN_CLOSE_WRITE；公开接口只提供内容变化提示，未承诺writer-close。即使最终忽略sibling名称，额外通知也会唤醒owner | 已去冗余close订阅；实际减少约1.97次上下文切换/发布。16项watch测试通过，剩余小负样本未声称全部解决 |
+| TaskScope读写状态布局 | [私有State](../../../src/sched/task_scope.cc) 的cancel token与admission写入共用cache line；32-child消费者当前复现小输 | 已分隔control字段。scope-only绝对时间有改善信号，代价为本机每scope冷状态增加48 B；31项测试通过，未直接测硬件cache事件或跨平台收益 |
 
 CUDA 的 F16 flash 分支也会物化 Q×KV 的 F16 causal mask，8K方形时为128 MiB；
 不能因为主 attention kernel 融合就假定整个调用的额外空间为线性。
@@ -83,7 +84,7 @@ pending时销毁artifact/invocation，以及原ATen allocator受控OOM后保活�
 |---|---|---|
 | Apple ragged F16 prefill、D256 | [旧summary](../inference-g01-native-ragged-apple-m1-p1/summary.json)，8组比值0.98266–0.98941，所有CI上界低于1；约1.07%–1.76%延迟差 | 已在Air复测当前对应路径；默认fast较快但不满足同数值合同，同合同force-fused未确认当前稳定慢，见下。旧小输不直接继承 |
 | WSL 单文件 atomic replace watch | [旧summary](../io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json)，4点0.96813–0.98638，2组CI上界低于1 | 当前已复测并修掉冗余close-write唤醒；修后仍有0.1–1.0%小负样本，未确认稳定或严格等价，见下 |
-| TaskScope、32 child、4 workers | 本机历史 `C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json`；一个 placement+peer-first 组合0.970796，CI[0.955245,0.989531]，其它3组跨1 | 两侧含相同 child 工作与 Scheduler::drain。方向依赖布局/顺序，当前增加了 priority 处理；先核 A/A 与布局响应，不能直接宣布当前普遍慢2.92% |
+| TaskScope、32 child、4 workers | 本机历史 `C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json`；一个 placement+peer-first 组合0.970796，CI[0.955245,0.989531]，其它3组跨1 | 当前4组复现约4–7%差，随后应用私有布局优化；混合peer漂移与scope-only小样本限制均保留，见下。不能宣称所有scope负载已解决 |
 | G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | 旧倍率不是同线程资源方案；修后缺同输入、同线程预算的完整性能包。历史 BLOCKED 不是性能证据 |
 
 旧报告中的摊销空 harness ns/op 不等于硬件时钟分辨率。历史CI同侧不能替代当前版本的同路径 A/A、
@@ -132,6 +133,35 @@ perf/strace只用于机制观察，不计入吞吐样本；未从无法解码的
 
 确认修掉的是无必要的native唤醒；第二对按peer归一几乎无收益，不选点夸大。
 修后约0.1–1.0%负点仍需进一步判断稳定性，不能称严格等价、所有性能差已消失或时钟分辨率问题。
+
+### TaskScope：分隔只读token与admission写入
+
+[当前研究](task-scope/summary.json)沿用32个Status child、各yield一次、4个persistent workers、
+每16个owner一次业务失败；两侧包含相同cancel root、join、drain至off-stack cleanup及owner销毁。
+manual peer是公开Hyle API组合，不是另一个调度引擎。固定4个不同物理核、CPU0/2/4/6，
+Windows EfficiencyClass均为1，不根据编号推断P/E。QPC为10 MHz；旧0.2 ns空harness不是硬件tick。
+
+初始4组当前混合消费者均小输，两侧A/A未确认恒定计时偏差。push-front和调整取消检查顺序均无稳定收益，未应用。
+phase诊断没有证明join/Event为根因；它包含worker重叠且会扰动调度。只将私有State的control字段按已有
+destructive-interference常量对齐，分开admission写入与child读取的token；没有改变取消、完成或错误协议。
+混合BA中的manual peer也从13–14 μs漂到约17 μs，故不能只凭归一化反转认定提速。
+
+改用已有AA_ROUTE，让两臂都只运行TaskScope，按下面进程顺序记录绝对时间：
+
+| 进程 | 实现 | 第一臂 μs | 第二臂 μs |
+|---|---|---:|---:|
+| 1 | 原布局 | 17.50659 | 16.43563 |
+| 2 | 分隔布局 | 13.10329 | 13.50180 |
+| 3 | 分隔布局 | 12.96347 | 12.84731 |
+| 4 | 原布局 | 14.10180 | 14.00150 |
+
+候选也低于后一次较稳基线；首过程8.8%/12.2%噪声完整保留，不虚构跨进程CI或精确普遍倍率。
+所有同过程A/A CI均跨1。Windows/MSVC实际State由80 B/align8变为128 B/align64，
+每scope增加48 B冷内存，child大小不变；Apple ARM64常量为128，未测其布局和性能。
+既有31项TaskScope测试通过，测试专用HYLE_TESTING仅用于正确性target，全部性能target关闭。
+[原始包](task-scope/raw-results.zip)保留28进程、失败候选、布局、命令和测试；
+[源码身份](task-scope/final-source-identity.json)区分基线、测量与应用源码。
+只重编TaskScope TU并复用相同foundation缓存，不是整个HEAD运行库重建，也未跑全Sched/TSan或跨系统矩阵。
 
 ## 已排除的旧“输项”
 

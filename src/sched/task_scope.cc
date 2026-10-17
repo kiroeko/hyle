@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "fiber_access.h"
+#include "hyle/core/cache.h"
 #include "hyle/core/compiler.h"
 #include "hyle/sched/sync.h"
 #include "hyle/util/spin_lock.h"
@@ -54,7 +55,8 @@ struct TaskScopeState {
   std::optional<ExecutionPriority> priority;
   // One short control lock is the admission/close linearization point and the
   // rare error aggregator. Successful child completion never touches it.
-  util::SpinLock control_lock;
+  // Separate admission writes from the token read by running child drivers.
+  alignas(core::kDestructiveInterferenceSize) util::SpinLock control_lock;
   TaskScopeCompletion* head = nullptr;
   TaskScopeCompletion* tail = nullptr;
   std::atomic<bool> closed{false};

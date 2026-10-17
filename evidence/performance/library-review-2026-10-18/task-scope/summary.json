@@ -1,0 +1,1045 @@
+{
+  "task": "TaskScope32child/4worker current performance review",
+  "outcome": "Applied a bounded private State layout change after measured signal and31existing TaskScope tests passed. No new synchronization protocol, public API, or option. This is a per-shape local improvement, not a universal scheduler performance claim.",
+  "product_change": {
+    "file": "src/sched/task_scope.cc",
+    "change": "Include hyle/core/cache.h and align private TaskScopeState.control_lock to core::kDestructiveInterferenceSize; short comment explains token-read/admission-write separation.",
+    "unchanged": "Admission/close/error semantics, completion/Event/refcounts, child drivers and public headers are unchanged.",
+    "cause_limit": "Layout facts and timings support separating read/write state; CPU cache event causality was not measured directly.",
+    "memory_cost_this_windows_build": {
+      "old_bytes": 80,
+      "old_alignment": 8,
+      "new_bytes": 128,
+      "new_alignment": 64,
+      "additional_cold_bytes_per_scope": 48,
+      "additional_child_driver_bytes": 0
+    },
+    "platform_limit": "These layout sizes are Windows/MSVC facts only. Apple ARM64 uses the existing128-byte interference constant and may incur different padding. Other-platform size/performance was not measured."
+  },
+  "historical": {
+    "path": "C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json",
+    "commit": "d32f4fc465edc4b6b6a450b1cd14cdc08383f5a7",
+    "placement_peer_first_ratio": 0.9707958693493449,
+    "placement_peer_first_ci": [
+      0.9552445268146963,
+      0.9895312573328904
+    ],
+    "interpretation": "Historical2.92%small loss despite historical5%equivalence label; evidence retained unchanged. Historical0.2ns floor was amortized empty harness, not hardware clock resolution."
+  },
+  "method": {
+    "consumer": "Current bench/sched/task_scope_cleanup_p1_bench.cc and task_scope_p1_common.h match historical bytes; p1_common.h differs only#error wording.",
+    "work": "32 Status-bearing child coroutines, one cooperative yield each, four persistent workers, one business failure every16owners, deterministic outputs and callback counts checked.",
+    "common_boundary": "Root cancellation/ownership creation, all child admission, close/join, Scheduler::drain through off-stack cleanup, owner/handles destruction. Scheduler creation and4096alternating warm owners per arm are outside timing.",
+    "cpus": "Four distinct physical cores, logical CPUs0,2,4,6. Raw Windows EfficiencyClass=1 for each, as recorded in host.json; no P/E-core inference from logical IDs.",
+    "process_policy": "Affinity0x55, above-normal; actual worker singleton placements checked by consumer.",
+    "QPC_frequency_hz": 10000000,
+    "rounds_per_process": 52,
+    "processes": 28,
+    "groups": {
+      "initial_current_primary_placement_AB_BA": 4,
+      "initial_AA_scope_or_manual_AB_BA": 4,
+      "exact_baseline_vs_rejected_push_front": 4,
+      "exact_baseline_vs_rejected_done_first": 4,
+      "instrumented_owner_phases_AB_BA": 2,
+      "layout_mixed_AB_BA_and_BA_recheck": 6,
+      "layout_scope_only_baseline_candidate_candidate_baseline": 4
+    },
+    "identity": "Performance uses standalone exact TaskScope TU plus identical existing foundation cache, not a whole-library HEAD rebuild. Reused cache is never reconfigured. Source hashes in final-source-identity.json distinguish initial baseline, frozen measured candidate and applied product source.",
+    "no_governance": "No legacy launcher, historical gates, full library rebuild or shape expansion."
+  },
+  "evidence_interpretation": [
+    "Initial four current mixed cases showed~4-7%manual advantage, motivating investigation; AA CIs included1.",
+    "Two smaller hypotheses (push_front and done-first cancellation check) did not produce consistent improvement and were not applied.",
+    "Owner phase diagnostics did not justify changing join/Event protocol. Admit dominates and includes concurrent worker activity.",
+    "Layout-only candidate turned mixed relative ranking toward TaskScope, but mixed BA also moved manual peer toward17us while baseline manual stayed13-14us. This limitation is retained and mixed normalization alone is not used as absolute speedup proof.",
+    "Scope-only comparison removes manual workload entirely via existing AA_ROUTE=candidate. Baseline\u2192candidate\u2192candidate\u2192baseline produced both-arm medians: baseline1[17.50659,16.43563]us(high noise retained), candidate2[13.10329,13.50180]us, candidate3[12.96347,12.84731]us, baseline4[14.10180,14.00150]us.",
+    "The two candidate processes have lower absolute point estimates than the later steadier baseline process as well; this is a small-sample signal, with no invented cross-process CI or guaranteed exact percent. All same-process scope-only A/A CIs include1."
+  ],
+  "phase_diagnostic": {
+    "file": "owner_phases.cc",
+    "processes": [
+      "phases-ab",
+      "phases-ba"
+    ],
+    "clock_calls_per_owner": 6,
+    "clock_adjacent_call_mean_ns": [
+      12.215,
+      11.93
+    ],
+    "clock_loop_wall_mean_per_call_ns": [
+      12.1075,
+      11.91
+    ],
+    "clock_probe_pairs": 20000,
+    "limits": "Main-thread inclusive aggregate phases overlap worker execution. Added clocks/bookkeeping alter scheduling/layout; phase throughputs are not an uninstrumented throughput result. Join includes close on both arms, manual handle teardown is later in dtor; compare join+drain+dtor together.",
+    "phase_means_ns": [
+      {
+        "run": "phases-ab",
+        "route": "scope",
+        "calls": 8974,
+        "create_ns": 57.778,
+        "admit_ns": 15886.1043,
+        "join_ns": 1224.3258,
+        "drain_ns": 50.4569,
+        "dtor_ns": 87.1072
+      },
+      {
+        "run": "phases-ab",
+        "route": "manual",
+        "calls": 8974,
+        "create_ns": 41.8877,
+        "admit_ns": 15900.1671,
+        "join_ns": 866.6927,
+        "drain_ns": 263.2605,
+        "dtor_ns": 140.4502
+      },
+      {
+        "run": "phases-ba",
+        "route": "scope",
+        "calls": 5895,
+        "create_ns": 52.112,
+        "admit_ns": 14416.6751,
+        "join_ns": 1155.7082,
+        "drain_ns": 60.6955,
+        "dtor_ns": 76.1493
+      },
+      {
+        "run": "phases-ba",
+        "route": "manual",
+        "calls": 6062,
+        "create_ns": 41.7024,
+        "admit_ns": 13732.0686,
+        "join_ns": 1155.2788,
+        "drain_ns": 181.1283,
+        "dtor_ns": 119.0861
+      }
+    ]
+  },
+  "rejected_candidates": [
+    {
+      "name": "push_front",
+      "source": "task_scope.front.cc",
+      "diff": "task_scope.front.diff",
+      "decision": "No consistent benefit; not applied. Exact baseline BA reversed direction with noise; retained."
+    },
+    {
+      "name": "done_first",
+      "source": "task_scope.done_first.cc",
+      "diff": "task_scope.done_first.diff",
+      "decision": "AB approached parity but BA did not improve; not applied."
+    }
+  ],
+  "layout_sources": {
+    "measured": "task_scope.separate.cc",
+    "measured_diff": "task_scope.separate.diff",
+    "actual_baseline_layout": "state-layout.stdout.txt (compiled actual baseline source with /Zs)",
+    "separated_layout": "state-separated-layout.stdout.txt (field mirror compile only, not a new implementation unit test)",
+    "applied_snapshot": "task_scope.applied.cc",
+    "measured_vs_applied": "measured-vs-applied.diff records include order/comment only"
+  },
+  "correctness": {
+    "tests_passed": 31,
+    "suites": [
+      "TaskScope",
+      "TaskScopeDeathTest"
+    ],
+    "test_source": "existing tests/sched/task_scope_test.cc, unchanged",
+    "compiled_scope_source": "current applied src/sched/task_scope.cc",
+    "test_only_HYLE_TESTING": true,
+    "perf_HYLE_TESTING": false,
+    "scope": "Error/exception propagation, cancellation, failed admission/OOM, remaining, concurrent close/join, final publisher lifetime, typed/move-only results and explicit destruction duties.",
+    "command_record": "tests-command.json",
+    "stdout": "tests.stdout.txt",
+    "no_broad_validation": "No full Sched rebuild/test matrix, TSan matrix, or other-platform test was run."
+  },
+  "source_identity": {
+    "baseline_repo_source_sha256_before_product_change": "429093d4d118832e8c4a19f78c71b8bc10d75f576d115cf0e28862bc54bd9f8f",
+    "baseline_perf_snapshot": {
+      "path": "task_scope.baseline.cc",
+      "sha256": "ec164a998629fab42385a308f92ebb27b793bf2adff081bad6f36bc8afa0dff2",
+      "LF_normalized_sha256": "429093d4d118832e8c4a19f78c71b8bc10d75f576d115cf0e28862bc54bd9f8f"
+    },
+    "measured_layout_candidate": {
+      "path": "task_scope.separate.cc",
+      "sha256": "5fcfa8a89f8c8d38c18e83c3cc9c851f955842f785dab942fae17cb69668b7e9",
+      "LF_normalized_sha256": "915a81651c4c0dc08e06fe24f83dc3456da6621c023520c6f9e142cff530c521"
+    },
+    "applied_product_source": {
+      "path": "src/sched/task_scope.cc",
+      "snapshot": "task_scope.applied.cc",
+      "sha256": "6528236cf04082481385ed17ae372415922d476c2f9005f033817908bcdf5ae2"
+    },
+    "measurement_vs_applied_difference": "Only include order (cache.h itself includes compiler.h) and a short explanation comment; same State alignment/layout/body. Frozen measured candidate not overwritten. Current product source compiled for31correctness tests.",
+    "initial_source_cache_identity_note": "source-cache-identity.json was captured before product change and is baseline identity; it is not a current applied-source manifest.",
+    "initial_16_artifacts": {
+      "initial16-results.zip": "44dbc2a6debe3c4fcdeb524c5517014a3dfffe25de2644dda48ac59b66dc05e1",
+      "initial16-summary.json": "e05d4bd90b3663b20b665ebbdcf1dd861d22f6dceb1ff7d803ac14cbb19b6aad"
+    },
+    "identity_limit": "Performance consumers use an explicit standalone TaskScope TU plus the same existing foundation cache. This is not a whole-library HEAD rebuild or a whole cache current-source audit."
+  },
+  "initial16_preservation": {
+    "summary": "initial16-summary.json",
+    "zip": "initial16-results.zip",
+    "sha256": {
+      "initial16-results.zip": "44dbc2a6debe3c4fcdeb524c5517014a3dfffe25de2644dda48ac59b66dc05e1",
+      "initial16-summary.json": "e05d4bd90b3663b20b665ebbdcf1dd861d22f6dceb1ff7d803ac14cbb19b6aad"
+    },
+    "note": "The original16process raw files are retained unchanged; new experiments use different filenames. Initial source-cache-identity.json is explicitly baseline, not applied source."
+  },
+  "limits": [
+    "Individual-process paired CIs are not independent-process aggregate CIs. No outlier was removed, including noisy baseline1 scope-only and mixed BA peer slowdown.",
+    "Other cached foundation runtime objects were reused rather than completely rebuilt/audited against HEAD.",
+    "AA row labels remain historical HYLE/manual text; actual both-arm routes are governed by recorded AA_ROUTE and called out per row.",
+    "This change addresses the measured local layout issue; it does not prove every TaskScope workload or platform is faster."
+  ],
+  "rows": [
+    {
+      "run": "aa-candidate-ab",
+      "executable": "task_scope_primary.exe",
+      "execution_order": "AB",
+      "actual_aa_route": "candidate",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 15050.3,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 9.3
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 14979.04,
+          "relative_percent": 99.6,
+          "ci_printed": "97.5% .. 101.8%",
+          "noise_percent": 9.8
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "TaskScope",
+      "aa_second_over_first_speed_ratio": 0.996,
+      "aa_95ci_from_rounded_table": [
+        0.975,
+        1.018
+      ]
+    },
+    {
+      "run": "aa-candidate-ba",
+      "executable": "task_scope_primary.exe",
+      "execution_order": "BA",
+      "actual_aa_route": "candidate",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 14671.86,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 2.4
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 15052.4,
+          "relative_percent": 97.5,
+          "ci_printed": "95.2% .. 100.2%",
+          "noise_percent": 5.7
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "TaskScope",
+      "aa_second_over_first_speed_ratio": 0.975,
+      "aa_95ci_from_rounded_table": [
+        0.9520000000000001,
+        1.002
+      ]
+    },
+    {
+      "run": "aa-peer-ab",
+      "executable": "task_scope_primary.exe",
+      "execution_order": "AB",
+      "actual_aa_route": "peer",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14135.53,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.7
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13762.89,
+          "relative_percent": 99.9,
+          "ci_printed": "97.9% .. 101.4%",
+          "noise_percent": 3.4
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "manual owner",
+      "aa_second_over_first_speed_ratio": 0.9990000000000001,
+      "aa_95ci_from_rounded_table": [
+        0.9790000000000001,
+        1.014
+      ]
+    },
+    {
+      "run": "aa-peer-ba",
+      "executable": "task_scope_primary.exe",
+      "execution_order": "BA",
+      "actual_aa_route": "peer",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 14780.54,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.8
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14921.86,
+          "relative_percent": 100.1,
+          "ci_printed": "98.2% .. 101.9%",
+          "noise_percent": 4.7
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "manual owner",
+      "aa_second_over_first_speed_ratio": 1.001,
+      "aa_95ci_from_rounded_table": [
+        0.982,
+        1.0190000000000001
+      ]
+    },
+    {
+      "run": "done-test-exact_baseline-ab",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14110.36,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.9
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13488.74,
+          "relative_percent": 104.7,
+          "ci_printed": "103.3% .. 107.6%",
+          "noise_percent": 5.6
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9551098376313276,
+      "normalized_95ci_from_rounded_table": [
+        0.9293680297397771,
+        0.9680542110358181
+      ]
+    },
+    {
+      "run": "done-test-exact_baseline-ba",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 13740.12,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.1
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14226.35,
+          "relative_percent": 96.4,
+          "ci_printed": "94.7% .. 98.4%",
+          "noise_percent": 2.8
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9640000000000001,
+      "normalized_95ci_from_rounded_table": [
+        0.9470000000000001,
+        0.9840000000000001
+      ]
+    },
+    {
+      "run": "done-test-exact_done_first-ab",
+      "executable": "task_scope_exact_done_first.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14227.84,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.1
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13997.01,
+          "relative_percent": 101.6,
+          "ci_printed": "97.8% .. 103.8%",
+          "noise_percent": 3.4
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.984251968503937,
+      "normalized_95ci_from_rounded_table": [
+        0.9633911368015414,
+        1.0224948875255624
+      ]
+    },
+    {
+      "run": "done-test-exact_done_first-ba",
+      "executable": "task_scope_exact_done_first.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 13768.86,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.9
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14753.59,
+          "relative_percent": 95.1,
+          "ci_printed": "92.8% .. 97.2%",
+          "noise_percent": 8.4
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.951,
+      "normalized_95ci_from_rounded_table": [
+        0.9279999999999999,
+        0.972
+      ]
+    },
+    {
+      "run": "exact_baseline-ab",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14528.05,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.1
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13682.01,
+          "relative_percent": 106.7,
+          "ci_printed": "103.1% .. 108.4%",
+          "noise_percent": 4.5
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9372071227741331,
+      "normalized_95ci_from_rounded_table": [
+        0.9225092250922509,
+        0.9699321047526674
+      ]
+    },
+    {
+      "run": "exact_baseline-ba",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 15982.34,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 6.7
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 15124.25,
+          "relative_percent": 105.6,
+          "ci_printed": "101.0% .. 109.0%",
+          "noise_percent": 8.2
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 1.056,
+      "normalized_95ci_from_rounded_table": [
+        1.01,
+        1.09
+      ]
+    },
+    {
+      "run": "exact_front-ab",
+      "executable": "task_scope_exact_front.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14777.54,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.4
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13752.99,
+          "relative_percent": 107.9,
+          "ci_printed": "104.4% .. 109.4%",
+          "noise_percent": 3.0
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9267840593141798,
+      "normalized_95ci_from_rounded_table": [
+        0.9140767824497257,
+        0.9578544061302682
+      ]
+    },
+    {
+      "run": "exact_front-ba",
+      "executable": "task_scope_exact_front.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 14230.63,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 5.9
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14489.19,
+          "relative_percent": 95.2,
+          "ci_printed": "93.3% .. 97.4%",
+          "noise_percent": 4.1
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9520000000000001,
+      "normalized_95ci_from_rounded_table": [
+        0.9329999999999999,
+        0.9740000000000001
+      ]
+    },
+    {
+      "run": "phases-ab",
+      "executable": "task_scope_phases.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 18441.92,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 2.2
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 18140.72,
+          "relative_percent": 100.4,
+          "ci_printed": "98.6% .. 102.2%",
+          "noise_percent": 2.8
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": true,
+      "normalized_hyle_over_manual_speed_ratio": 0.9960159362549801,
+      "normalized_95ci_from_rounded_table": [
+        0.9784735812133072,
+        1.0141987829614605
+      ]
+    },
+    {
+      "run": "phases-ba",
+      "executable": "task_scope_phases.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 15009.91,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 12.2
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14643.69,
+          "relative_percent": 94.3,
+          "ci_printed": "92.2% .. 98.5%",
+          "noise_percent": 6.9
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": true,
+      "normalized_hyle_over_manual_speed_ratio": 0.943,
+      "normalized_95ci_from_rounded_table": [
+        0.922,
+        0.985
+      ]
+    },
+    {
+      "run": "placement-ab",
+      "executable": "task_scope_placement.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 15821.86,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 11.6
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 14846.71,
+          "relative_percent": 104.2,
+          "ci_printed": "102.7% .. 107.1%",
+          "noise_percent": 8.4
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9596928982725528,
+      "normalized_95ci_from_rounded_table": [
+        0.9337068160597572,
+        0.973709834469328
+      ]
+    },
+    {
+      "run": "placement-ba",
+      "executable": "task_scope_placement.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 13820.06,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.3
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14400.9,
+          "relative_percent": 95.4,
+          "ci_printed": "92.2% .. 98.3%",
+          "noise_percent": 3.8
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9540000000000001,
+      "normalized_95ci_from_rounded_table": [
+        0.922,
+        0.983
+      ]
+    },
+    {
+      "run": "primary-ab",
+      "executable": "task_scope_primary.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14418.02,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.3
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13913.51,
+          "relative_percent": 105.3,
+          "ci_printed": "102.4% .. 106.8%",
+          "noise_percent": 3.3
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9496676163342831,
+      "normalized_95ci_from_rounded_table": [
+        0.9363295880149812,
+        0.9765625
+      ]
+    },
+    {
+      "run": "primary-ba",
+      "executable": "task_scope_primary.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 13840.99,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 2.9
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14693.69,
+          "relative_percent": 93.5,
+          "ci_printed": "91.6% .. 95.5%",
+          "noise_percent": 3.2
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.935,
+      "normalized_95ci_from_rounded_table": [
+        0.9159999999999999,
+        0.955
+      ]
+    },
+    {
+      "run": "scopeonly-1-exact_baseline-ab",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "AB",
+      "actual_aa_route": "candidate",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 17506.59,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 8.8
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 16435.63,
+          "relative_percent": 102.3,
+          "ci_printed": "99.8% .. 104.6%",
+          "noise_percent": 12.2
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "TaskScope",
+      "aa_second_over_first_speed_ratio": 1.023,
+      "aa_95ci_from_rounded_table": [
+        0.998,
+        1.046
+      ]
+    },
+    {
+      "run": "scopeonly-2-exact_separate-ab",
+      "executable": "task_scope_exact_separate.exe",
+      "execution_order": "AB",
+      "actual_aa_route": "candidate",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 13103.29,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 5.8
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13501.8,
+          "relative_percent": 100.4,
+          "ci_printed": "97.0% .. 102.9%",
+          "noise_percent": 7.4
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "TaskScope",
+      "aa_second_over_first_speed_ratio": 1.004,
+      "aa_95ci_from_rounded_table": [
+        0.97,
+        1.0290000000000001
+      ]
+    },
+    {
+      "run": "scopeonly-3-exact_separate-ab",
+      "executable": "task_scope_exact_separate.exe",
+      "execution_order": "AB",
+      "actual_aa_route": "candidate",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 12963.47,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.6
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 12847.31,
+          "relative_percent": 100.1,
+          "ci_printed": "98.6% .. 103.3%",
+          "noise_percent": 4.5
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "TaskScope",
+      "aa_second_over_first_speed_ratio": 1.001,
+      "aa_95ci_from_rounded_table": [
+        0.986,
+        1.033
+      ]
+    },
+    {
+      "run": "scopeonly-4-exact_baseline-ab",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "AB",
+      "actual_aa_route": "candidate",
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14101.8,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.0
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 14001.5,
+          "relative_percent": 99.9,
+          "ci_printed": "98.8% .. 101.1%",
+          "noise_percent": 2.7
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "actual_routes_both": "TaskScope",
+      "aa_second_over_first_speed_ratio": 0.9990000000000001,
+      "aa_95ci_from_rounded_table": [
+        0.988,
+        1.011
+      ]
+    },
+    {
+      "run": "separate-test-exact_baseline-ab",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14333.23,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.1
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13756.29,
+          "relative_percent": 102.5,
+          "ci_printed": "101.2% .. 104.9%",
+          "noise_percent": 2.5
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.9756097560975611,
+      "normalized_95ci_from_rounded_table": [
+        0.9532888465204956,
+        0.9881422924901185
+      ]
+    },
+    {
+      "run": "separate-test-exact_baseline-ba",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 13961.38,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.5
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14354.79,
+          "relative_percent": 98.2,
+          "ci_printed": "94.2% .. 100.1%",
+          "noise_percent": 4.9
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.982,
+      "normalized_95ci_from_rounded_table": [
+        0.9420000000000001,
+        1.001
+      ]
+    },
+    {
+      "run": "separate-test-exact_separate-ab",
+      "executable": "task_scope_exact_separate.exe",
+      "execution_order": "AB",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 13133.18,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 3.7
+        },
+        {
+          "label": "manual public task owner",
+          "median_ns": 13975.45,
+          "relative_percent": 95.0,
+          "ci_printed": "93.2% .. 96.7%",
+          "noise_percent": 4.7
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 1.0526315789473684,
+      "normalized_95ci_from_rounded_table": [
+        1.0341261633919336,
+        1.0729613733905579
+      ]
+    },
+    {
+      "run": "separate-test-exact_separate-ba",
+      "executable": "task_scope_exact_separate.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 16793.12,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 6.6
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 16251.56,
+          "relative_percent": 102.8,
+          "ci_printed": "100.2% .. 105.9%",
+          "noise_percent": 8.8
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 1.028,
+      "normalized_95ci_from_rounded_table": [
+        1.002,
+        1.0590000000000002
+      ]
+    },
+    {
+      "run": "separate_check-test-exact_baseline-ba",
+      "executable": "task_scope_exact_baseline.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 13268.56,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 4.2
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 14191.92,
+          "relative_percent": 93.7,
+          "ci_printed": "91.1% .. 96.3%",
+          "noise_percent": 5.4
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 0.937,
+      "normalized_95ci_from_rounded_table": [
+        0.9109999999999999,
+        0.963
+      ]
+    },
+    {
+      "run": "separate_check-test-exact_separate-ba",
+      "executable": "task_scope_exact_separate.exe",
+      "execution_order": "BA",
+      "actual_aa_route": null,
+      "exit": 0,
+      "arms": [
+        {
+          "label": "manual public task owner",
+          "median_ns": 17033.11,
+          "relative_percent": 100.0,
+          "ci_printed": "",
+          "noise_percent": 6.3
+        },
+        {
+          "label": "HYLE TaskScope",
+          "median_ns": 16617.88,
+          "relative_percent": 103.7,
+          "ci_printed": "101.6% .. 106.3%",
+          "noise_percent": 5.1
+        }
+      ],
+      "paired_rounds": 52,
+      "instrumented_diagnostic": false,
+      "normalized_hyle_over_manual_speed_ratio": 1.037,
+      "normalized_95ci_from_rounded_table": [
+        1.016,
+        1.063
+      ]
+    }
+  ]
+}

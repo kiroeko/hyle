@@ -1,0 +1,25 @@
+{
+  "baseline_repo_source_sha256_before_product_change": "429093d4d118832e8c4a19f78c71b8bc10d75f576d115cf0e28862bc54bd9f8f",
+  "baseline_perf_snapshot": {
+    "path": "task_scope.baseline.cc",
+    "sha256": "ec164a998629fab42385a308f92ebb27b793bf2adff081bad6f36bc8afa0dff2",
+    "LF_normalized_sha256": "429093d4d118832e8c4a19f78c71b8bc10d75f576d115cf0e28862bc54bd9f8f"
+  },
+  "measured_layout_candidate": {
+    "path": "task_scope.separate.cc",
+    "sha256": "5fcfa8a89f8c8d38c18e83c3cc9c851f955842f785dab942fae17cb69668b7e9",
+    "LF_normalized_sha256": "915a81651c4c0dc08e06fe24f83dc3456da6621c023520c6f9e142cff530c521"
+  },
+  "applied_product_source": {
+    "path": "src/sched/task_scope.cc",
+    "snapshot": "task_scope.applied.cc",
+    "sha256": "6528236cf04082481385ed17ae372415922d476c2f9005f033817908bcdf5ae2"
+  },
+  "measurement_vs_applied_difference": "Only include order (cache.h itself includes compiler.h) and a short explanation comment; same State alignment/layout/body. Frozen measured candidate not overwritten. Current product source compiled for31correctness tests.",
+  "initial_source_cache_identity_note": "source-cache-identity.json was captured before product change and is baseline identity; it is not a current applied-source manifest.",
+  "initial_16_artifacts": {
+    "initial16-results.zip": "44dbc2a6debe3c4fcdeb524c5517014a3dfffe25de2644dda48ac59b66dc05e1",
+    "initial16-summary.json": "e05d4bd90b3663b20b665ebbdcf1dd861d22f6dceb1ff7d803ac14cbb19b6aad"
+  },
+  "identity_limit": "Performance consumers use an explicit standalone TaskScope TU plus the same existing foundation cache. This is not a whole-library HEAD rebuild or a whole cache current-source audit."
+}
