@@ -19,7 +19,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | 项目 | 证据与影响 | 本轮处理 |
 |---|---|---|
 | CPU 普通路线漏注册 ggml | [owner CMake](../../../src/compute_provider_ggml/CMakeLists.txt) 用 `NO_DEFINE`，而 [Direct](../../../src/compute_route_cpu/cpu_context.cc) / [Graph](../../../src/graph_route_cpu/cpu_context.cc) 以该 presence 宏编译注册。实际库虽链接，候选却消失，旧 CPU 排名不能直接继承 | 已恢复 target 的宏传播；实际 owner 声明的配置回归通过。未测修复后的 CPU 模型倍率 |
-| StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；回收形成的前缀空洞也被逐块重扫，`replace` / `import` 等会调用它 | 已在命中后停止，并将前缀空洞一次跳过。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
+| StateStore 重复扫描 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 原先重复扫描同池及空洞；首修后N个独立root仍扫描N(N−1)/2前项 | 私有ledger只在有效root乱序时原地排序，热统计改为线性扫描（clone routes另计）；没有新增字段、分配或backing。1024独立root热stats约172–174→1.25 µs，单共享root也改善；冷更新完整episode另测见末尾 |
 | CUDA attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原BF16/F32物化scores，F16物化causal mask。B1/H8/Q=KV8192时，单个F32 scores为2 GiB | BF16适用域已融合；ggml大型独立SDPA已按Q分块、复用完整KV与临时空间。实际8K F32显式private从8368降至48.5 MiB，见下 |
 | CUDA SinkAttention的按头展开平方scratch | 同provider的独立Sink原来仍分配完整scores/probabilities；H64、Q=KV2048时两块各1 GiB，属于schema允许的prefill | 已复用Q分块并使Graph走单Compute步骤。1025×1041实际private从651.17降至27.57 MiB；调用方mask仍为O(Q·KV)，见下 |
 | CUDA variadic Concat重复复制前缀 | [lowering](../../../src/compute_provider_ggml_cuda/tensor_program.cc) 线性链保留每个累积前缀；64个各1 MiB输入会额外保留2016 MiB前缀，最终输出仅64 MiB | 已改为原生平衡树，保持Graph依赖。同输入图的private分配请求2016→320 MiB；消除二次项，不宣称一次写完的最优线性算法 |
@@ -1163,3 +1163,28 @@ gallocr本身支持非空data的外部叶子，不能把边界解释成其无法
 这解释本次事件差异，不能倒推无逐帧记录的历史65 B，也不能把当前约15–17%耗时残差分摊给这些帧或Task。
 公开路线与原peer未更换；记录copy/counter可能影响推进节奏，不用于性能排名。
 [摘要](http2/terminal-drain/summary.json)与[源码、完整帧流和结果](http2/terminal-drain/source-results.zip)保留两次观察及失败的只读打包步骤。
+
+## StateStore：独立root统计不再重复扫描前缀
+
+前一次同池/空洞修复没有消除独立root的二次项：1024个有效块、无clone route时，仍访问523776个较早条目。
+ledger位置是私有实现，没有公开稳定索引；现在将有序性检查并入统计遍历，仅遇逆序才原地排序并重算distinct-root计费。
+metadata、容量、clone route计费及escaped reader寿命不变。暖态成本为O(L + D·R)，其中L是ledger容量、D是不同root数、R是clone route数；乱序更新后另付O(LlogL)。
+没有新增persistent字段、heap分配或公共选项；preflight/retain的既有扫描和初次import成本未包含在热统计收益中。
+
+先做独立is_sorted预扫的V1使共享root慢约38%，已拒绝，负样本及失败link都保留；最终V2仅重编一个产品TU。
+同1024×64 B payload及65536 B实际pool容量，LP4/normal，QPC10 MHz且观察最小正步长100 ns；固定old/new/new/old四进程、每场景9epochs×128次完整公共stats及相同字段校验：
+
+| root数 | old µs/call（两进程中位数） | V2 µs/call（两进程中位数） |
+|---|---:|---:|
+| 1 | 0.7711 / 0.7641 | 0.5828 / 0.5828 |
+| 1024 | 173.8703 / 171.3727 | 1.2508 / 1.2492 |
+
+独立root固定热统计约快137–139倍，共享root约快24%，不外推整个import、推理或不同capacity。
+26项compute_state测试一次通过，新回归覆盖32独立root乱序导入、所有成员payload、escaped reader、collect及空ledger复用。
+V1/V2的144个epoch全保留，包含高点，无筛除、AA或追加形状。[摘要](state-distinct-roots/v2/summary.json)、[逻辑访问计数](state-distinct-roots/v2/source-count.json)及[源码/全部结果](state-distinct-roots/source-results-final.zip)。
+
+为检查冷排序是否把成本转移给常见更新，另固定1024 entries/2 pools、ledger1025槽；每轮只替换一个64 B条目，finalize后释放旧version/draft/调用方lease，再collect及stats。
+每轮稳态为1version/0draft/1024blocks/2roots，两个pool各512live，容量合计65664 B；精确退休计数、旧新payload及所有stats字段都检查。
+同LP4/QPC固定ABBA、每进程9epochs×128完整episode，中位数old/new/new/old为34.9414/34.7719/34.2594/34.7094 µs。
+初次import、warm及每epoch后的全1024成员检查在计时外；两侧真实更新工作完全相同，36epochs全留。
+此点未见明显回退，不声称排序无成本或所有capacity都如此；没有为此扩大矩阵。[冷更新摘要](state-distinct-roots/cold-update/summary.json)与[源码/全部结果](state-distinct-roots/cold-update/source-results.zip)。

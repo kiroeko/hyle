@@ -1,0 +1,156 @@
+{
+  "variant": "Final candidate v2 after separately preserved v1 shared-root regression",
+  "review": "The root-order check is folded into the accounting pass. Duplicate roots do not repeat std::less or clone_root. After detecting inversion, onlyblocks/metadata continue; root charges reset and recompute after sorting. Private ledger layout and published record/cell/route ordinals unchanged.",
+  "build": "One fresh StateVersions TU only; original baseline/probe/two test objects reused with matching source SHA. Two fresh v2 executables manually linked.",
+  "tests": {
+    "component_tests_passed": 26,
+    "component_tests_total": 26,
+    "component_runs": 1,
+    "baseline_unit_runs": 0,
+    "untimed_v2_same_two_case_smoke": "PASS",
+    "per_formal_process_payload_and_fields": "PASS, all72epochs checksum independently verified after measurement."
+  },
+  "trace": "Exactly original fixed N1024 roots1/1024; samepoolcapacity65536B, LP4, normal priority, QPC10MHz/100ns observedmin; fixed old,new,new,old4processes, eachcase9epochs*128completepublicstats. Original probe bytes and timingboundary unchanged.",
+  "process_results": [
+    {
+      "execution_sequence": 1,
+      "variant": "baseline",
+      "identity": {
+        "event": "identity",
+        "pid": 68856,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_nominal_tick_ns": 100.0,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "cases": [
+        {
+          "roots": 1,
+          "median_ns_per_stats": 771.09375,
+          "mean_ns_per_stats": 813.6284722222222,
+          "min_ns_per_stats": 763.28125,
+          "max_ns_per_stats": 1044.53125
+        },
+        {
+          "roots": 1024,
+          "median_ns_per_stats": 173870.3125,
+          "mean_ns_per_stats": 181899.13194444444,
+          "min_ns_per_stats": 166307.03125,
+          "max_ns_per_stats": 207501.5625
+        }
+      ]
+    },
+    {
+      "execution_sequence": 2,
+      "variant": "candidate",
+      "identity": {
+        "event": "identity",
+        "pid": 71948,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_nominal_tick_ns": 100.0,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "cases": [
+        {
+          "roots": 1,
+          "median_ns_per_stats": 582.8125,
+          "mean_ns_per_stats": 577.8645833333334,
+          "min_ns_per_stats": 551.5625,
+          "max_ns_per_stats": 586.71875
+        },
+        {
+          "roots": 1024,
+          "median_ns_per_stats": 1250.78125,
+          "mean_ns_per_stats": 1381.3368055555557,
+          "min_ns_per_stats": 1192.1875,
+          "max_ns_per_stats": 2296.09375
+        }
+      ]
+    },
+    {
+      "execution_sequence": 3,
+      "variant": "candidate",
+      "identity": {
+        "event": "identity",
+        "pid": 17768,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_nominal_tick_ns": 100.0,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "cases": [
+        {
+          "roots": 1,
+          "median_ns_per_stats": 582.8125,
+          "mean_ns_per_stats": 698.6979166666666,
+          "min_ns_per_stats": 582.03125,
+          "max_ns_per_stats": 1571.875
+        },
+        {
+          "roots": 1024,
+          "median_ns_per_stats": 1249.21875,
+          "mean_ns_per_stats": 1608.767361111111,
+          "min_ns_per_stats": 1243.75,
+          "max_ns_per_stats": 3211.71875
+        }
+      ]
+    },
+    {
+      "execution_sequence": 4,
+      "variant": "baseline",
+      "identity": {
+        "event": "identity",
+        "pid": 85980,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_nominal_tick_ns": 100.0,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "cases": [
+        {
+          "roots": 1,
+          "median_ns_per_stats": 764.0625,
+          "mean_ns_per_stats": 769.2708333333334,
+          "min_ns_per_stats": 763.28125,
+          "max_ns_per_stats": 807.8125
+        },
+        {
+          "roots": 1024,
+          "median_ns_per_stats": 171372.65625,
+          "mean_ns_per_stats": 174297.39583333334,
+          "min_ns_per_stats": 166444.53125,
+          "max_ns_per_stats": 192914.84375
+        }
+      ]
+    }
+  ],
+  "interpretation": {
+    "shared_root": "Per-process medians old771.09375/764.0625ns, v2 582.8125/582.8125ns, around24% lower at this point. The v1 +38% regression is kept in ../v1 and is not substituted into this ranking.",
+    "independent_roots": "Per-process medians old173870.3125/171372.65625ns, v2 1250.78125/1249.21875ns; around137-139x at this hot fixed point. Not a whole inference, import or cold-sort speedup.",
+    "noise": "Every epoch retained. Candidateprocess3 includes shared1571.875ns/call and distinct3211.71875ns/call highpoints; baselineprocess1 distinct ranges166307.03125-207501.5625ns. Means, ranges and full original ordered records remain. NoAA, selection, rerun or new shape.",
+    "scope": "Timing includes identical complete stats validation/checksum. Cold sorting/import/setup/warm/memberpayload oracle/destruction excluded. No inference about preflight/retain, clone routes or all shapes.",
+    "complexity": "Warm L+distinctroots*routes plus existing records/activecounts; unorderedchangedledger adds O(LlogL) sort. No new persistent field/allocator/planner."
+  },
+  "raw": "All72epochs with actual_ns,ticks,checksum and sequence remain in fouroriginal stdout logs and processed-processes.json."
+}

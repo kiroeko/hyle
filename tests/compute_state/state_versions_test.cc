@@ -3,6 +3,7 @@
 #include "hyle/mem/quota_allocator.h"
 #include <array>
 #include <thread>
+#include <vector>
 
 namespace {
 using namespace hyle::compute;
@@ -104,6 +105,48 @@ TEST(StateVersions, MixedRootsMetadataAndCollectedPrefixKeepExactAccounting) {
   EXPECT_EQ(after.retained_blocks,3u);EXPECT_EQ(after.backing_roots,3u);
   EXPECT_EQ(after.backing_bytes,196u);EXPECT_EQ(after.host_snapshot_bytes,4u);
   EXPECT_TRUE(updated.valid());
+}
+TEST(StateVersions, IndependentRootsPreserveMembersAndEscapedReadersAcrossCollection) {
+  constexpr std::size_t count = 32;
+  auto schema = StateSchema::create(std::vector<StateEntrySpec>(count, resource_spec())).value();
+  auto store = StateStore::create(schema, {.max_retained_blocks = count,
+                                         .max_backing_bytes = count * 16}).value();
+  std::vector<ReadLease> sources;
+  std::vector<StateMember> members;
+  for (std::size_t i = 0; i < count; ++i)
+    sources.push_back(ready(std::byte(i + 1)));
+  for (std::size_t i = 0; i < count; ++i)
+    members.push_back({schema.entry(i).value(), sources[(i * 13) % count]});
+  auto version = store.import(members).value();
+  sources.clear(); members.clear();
+  for (int pass = 0; pass < 2; ++pass) {
+    const auto stats = store.stats();
+    EXPECT_EQ(stats.backing_roots, count);
+    EXPECT_EQ(stats.retained_blocks, count);
+    EXPECT_EQ(stats.backing_bytes, count * 16);
+    for (std::size_t i = 0; i < count; ++i)
+      EXPECT_EQ(bytes(version.member(schema.entry(i).value()).value())[0],
+                std::byte((i * 13) % count + 1));
+  }
+  auto escaped = version.member(schema.entry(7).value()).value();
+  version.reset();
+  ASSERT_TRUE(store.collect().ok());
+  EXPECT_EQ(store.stats().retained_blocks, 1u);
+  EXPECT_EQ(store.stats().backing_roots, 1u);
+  EXPECT_EQ(store.stats().backing_bytes, 16u);
+  EXPECT_EQ(bytes(escaped)[0], std::byte((7 * 13) % count + 1));
+  escaped.reset();
+  ASSERT_TRUE(store.collect().ok());
+  EXPECT_EQ(store.stats().backing_roots, 0u);
+  EXPECT_EQ(store.stats().backing_bytes, 0u);
+  auto shared = ready(std::byte{77});
+  for (std::size_t i = 0; i < count; ++i)
+    members.push_back({schema.entry(i).value(), shared});
+  auto reused = store.import(members).value();
+  EXPECT_EQ(store.stats().retained_blocks, 1u);
+  EXPECT_EQ(store.stats().backing_roots, 1u);
+  for (std::size_t i = 0; i < count; ++i)
+    EXPECT_EQ(bytes(reused.member(schema.entry(i).value()).value())[0], std::byte{77});
 }
 TEST(StateVersions, CapacityCancelCloseAndCrossStoreAreExplicit) {
   auto schema=StateSchema::create(std::array{resource_spec()}).value();auto id=schema.entry(0).value();

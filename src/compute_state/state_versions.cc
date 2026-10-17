@@ -1,6 +1,7 @@
 #include "state_internal.h"
 
 #include <algorithm>
+#include <functional>
 #include <limits>
 #include <new>
 
@@ -60,7 +61,7 @@ bool clone_root(const d::StateStoreData &s, const void *root) noexcept {
   for (const auto &r : s.routes) if (r.root == root) return true;
   return false;
 }
-StateStoreStats stats_locked(const d::StateStoreData &s) noexcept {
+StateStoreStats stats_locked(d::StateStoreData &s) noexcept {
   StateStoreStats stats; stats.closed = s.closed;
   for (std::size_t i = 0; i < s.records.size(); ++i) if (s.records[i].live) {
     if (i < s.options.max_versions) ++stats.versions; else ++stats.drafts;
@@ -71,20 +72,48 @@ StateStoreStats stats_locked(const d::StateStoreData &s) noexcept {
     stats.clone_capacity_bytes += r.capacity;
   }
   stats.backing_bytes = stats.clone_capacity_bytes;
-  // Collected prefix slots cannot match any retained root. Skip them once,
-  // rather than rediscovering the same empty prefix for every live anchor.
-  std::size_t first = 0;
-  while (first < s.backing.size() && !s.backing[first].anchor.valid()) ++first;
-  for (std::size_t i = first; i < s.backing.size(); ++i) {
-    const auto &b = s.backing[i]; if (!b.anchor.valid()) continue;
+  // Ledger positions are private, unlike version and clone-route ordinals.
+  // Detect root order during accounting so shared pools need only one pass.
+  const auto root_order = [](const d::StateBacking &a, const d::StateBacking &b) noexcept {
+    if (a.anchor.valid() != b.anchor.valid()) return a.anchor.valid();
+    return a.anchor.valid() && std::less<const void *>{}(a.backing.identity, b.backing.identity);
+  };
+  const auto charge_root = [&](const d::StateBacking &b) noexcept {
+    if (!clone_root(s, b.backing.identity)) {
+      ++stats.backing_roots;
+      stats.backing_bytes += b.backing.bytes;
+    }
+  };
+  const void *previous_root = nullptr;
+  bool has_previous_root = false;
+  bool ordered_roots = true;
+  for (const auto &b : s.backing) {
+    if (!b.anchor.valid()) continue;
     ++stats.retained_blocks;
-    bool previous = clone_root(s, b.backing.identity);
-    // A root is charged once. Once it is found, inspecting further anchors
-    // cannot change the result; shared-pool pages must not all rescan a prefix.
-    for (std::size_t j = first; !previous && j < i; ++j)
-      previous = s.backing[j].anchor.valid() && s.backing[j].backing.identity == b.backing.identity;
-    if (!previous) { ++stats.backing_roots; stats.backing_bytes += b.backing.bytes; }
+    if (ordered_roots && (!has_previous_root || previous_root != b.backing.identity)) {
+      ordered_roots = !has_previous_root ||
+          !std::less<const void *>{}(b.backing.identity, previous_root);
+      if (ordered_roots) charge_root(b);
+      previous_root = b.backing.identity;
+      has_previous_root = true;
+    }
     if (b.metadata) stats.host_snapshot_bytes += b.anchor.size();
+  }
+  if (!ordered_roots) {
+    // Only a changed, unordered ledger needs sorting. Payload accounting above
+    // is independent of order; recompute just the distinct-root totals.
+    std::sort(s.backing.begin(), s.backing.end(), root_order);
+    stats.backing_roots = 0;
+    stats.backing_bytes = stats.clone_capacity_bytes;
+    has_previous_root = false;
+    for (const auto &b : s.backing) {
+      if (!b.anchor.valid()) break;
+      if (!has_previous_root || previous_root != b.backing.identity) {
+        charge_root(b);
+        previous_root = b.backing.identity;
+        has_previous_root = true;
+      }
+    }
   }
   stats.backing_roots += std::uint32_t(s.routes.size());
   return stats;

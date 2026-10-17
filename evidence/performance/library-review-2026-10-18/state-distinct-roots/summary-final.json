@@ -1,0 +1,14 @@
+{
+  "applied_variant": "v2",
+  "product_source_sha256": "eef0d5ee35c8de6c0810846bd2bc959010a88ddb9bd827c6322a8b20c4e56b61",
+  "test_source_sha256": "389602c1f6008b439362e268eee8427d44464592b5ea6fee9d8638e80c86ade3",
+  "v1_rejected_tradeoff": "Standalone is_sorted pass made warm sharedroot around38%slower; allsource/results/originalfailurein v1/source-results.zip, originalarchiveSHAa4be9297d6de96969194bd5fdc2c71eccdd25d89cf6ab9203024474af2a89710.",
+  "v2_summary": "v2/summary.json",
+  "v2_process_results": "v2/processed-processes.json",
+  "source_complexity": "v2/source-count.json",
+  "cleanup": "cleanup-final-manifest.json",
+  "total_measured_epochs_preserved": 144,
+  "new_v2_product_TUs": 1,
+  "no_added_AA_or_shapes": true,
+  "no_commit_or_cleanup": true
+}

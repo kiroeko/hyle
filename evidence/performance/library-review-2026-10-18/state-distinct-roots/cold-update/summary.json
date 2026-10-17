@@ -1,0 +1,125 @@
+{
+  "conclusion": "At this fixed complete single-entry update episode, no obvious regression was observed. This does not establish zero sorting overhead or equal cost for every capacity/update pattern.",
+  "parameters": {
+    "entries": 1024,
+    "initial_import": "Alternating pool0/pool1 resources by schema entry index.",
+    "roots": 2,
+    "block_bytes": 64,
+    "pool_capacity_each": 32832,
+    "pool_max_blocks_each": 513,
+    "steady_live_blocks_each": 512,
+    "steady_live_payload_bytes": 65536,
+    "total_backing_capacity": 65664,
+    "max_retained_blocks": 1025,
+    "max_versions": 2,
+    "max_drafts": 1,
+    "actual_clone_routes": 0
+  },
+  "timed": [
+    "Allocate/fill/publish one new64B block from its original root pool.",
+    "begin(current), replace exactlyentry0/entry1 alternately, finalize one newversion.",
+    "Check old and new replaced-entry complete64B payload.",
+    "Drop oldversion, finalizeddraft and replacementcallerlease; retain only newcurrentversion.",
+    "collect; check all10 StateStoreStats fields and both pools capacity/allocated/live/max/active/reclaimed/closed/peak bounds; update observable checksum."
+  ],
+  "outside_timing": [
+    "fixture schema/twopools/interleavedimport",
+    "warm16episodes",
+    "full1024-entry64B payloadoracle beforetiming and aftereachepoch",
+    "stdout formatting afterQPC",
+    "fixture and pool destruction"
+  ],
+  "smoke": "Both arms passed 16 warm plus 32 untimed complete episodes.",
+  "formal": "Exactly old/new/new/old: each process 16 warm plus 9 epochs of 128 timed episodes. All 36 epochs preserved in order; no AA, new shape, sample rejection or rerun.",
+  "ownership": "Each completed episode retains one version, no draft, 1024 blocks and two roots; each pool has 512 live blocks and 32832 B capacity. Each update retires exactly one old block, checked via both pool counters.",
+  "actual_identity": "All formal processes read back LP4 mask16/current CPU4, normal priority32/thread0, QPC10MHz and minimum observed positive step1 tick/100ns. PIDs and original identity records remain.",
+  "process_results": [
+    {
+      "execution_sequence": 1,
+      "variant": "baseline",
+      "identity": {
+        "event": "identity",
+        "pid": 33844,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "median_ns_per_episode": 34941.40625,
+      "mean_ns_per_episode": 35059.54861111111,
+      "min_ns_per_episode": 34687.5,
+      "max_ns_per_episode": 35633.59375
+    },
+    {
+      "execution_sequence": 2,
+      "variant": "candidate",
+      "identity": {
+        "event": "identity",
+        "pid": 60428,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "median_ns_per_episode": 34771.875,
+      "mean_ns_per_episode": 34910.32986111111,
+      "min_ns_per_episode": 34596.875,
+      "max_ns_per_episode": 35420.3125
+    },
+    {
+      "execution_sequence": 3,
+      "variant": "candidate",
+      "identity": {
+        "event": "identity",
+        "pid": 11604,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "median_ns_per_episode": 34259.375,
+      "mean_ns_per_episode": 34314.322916666664,
+      "min_ns_per_episode": 33813.28125,
+      "max_ns_per_episode": 35021.09375
+    },
+    {
+      "execution_sequence": 4,
+      "variant": "baseline",
+      "identity": {
+        "event": "identity",
+        "pid": 68804,
+        "affinity_mask": 16,
+        "logical_processor": 4,
+        "process_priority": 32,
+        "thread_priority": 0,
+        "qpc_frequency_hz": 10000000,
+        "qpc_observed_min_step_ticks": 1,
+        "qpc_observed_min_step_ns": 100.0,
+        "smoke": false
+      },
+      "median_ns_per_episode": 34709.375,
+      "mean_ns_per_episode": 34761.197916666664,
+      "min_ns_per_episode": 34382.8125,
+      "max_ns_per_episode": 35797.65625
+    }
+  ],
+  "oracle": "Every episode checks all10 StoreStats fields, both pools capacity/allocated/live/max/active/reclaimed/closed/peak bounds, old/new64B payload and observable checksum. Full1024-entry payload is checked outside QPC after every epoch. All passed.",
+  "source_vs_runtime": "Alternating roots can trigger ledger reordering, as discussed in the plan. No per-sort counter or profiler was added; do not claim an observed exact sort frequency or attribute the timing delta only to sort.",
+  "limits": "Whole episode includes pool allocation/fill/publish, begin/finalize reference copies, replacement/preflight/retain, old owner drop, collect, stats and identical checks. Initial interleaved import and destruction are excluded. No capacity matrix, clone-route or pure-sort timing claim.",
+  "original_evidence": "Original v1/v2 archives and144 hot epochs are untouched. plan.json preserves the pre-execution proposal; commands.json and this summary record actual execution.",
+  "failures": [],
+  "no_further_runs": true,
+  "no_product_change_commit_or_cleanup": true
+}

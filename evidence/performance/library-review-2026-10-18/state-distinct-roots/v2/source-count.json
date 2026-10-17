@@ -1,0 +1,23 @@
+{
+  "method": "Source-level logical loop/comparator counts, full occupied1024ledger and no clone routes after warm. Not measured runtime instructions or timing attribution.",
+  "baseline_reference": "../v1/source-count.json",
+  "candidate_source_sha256": "eef0d5ee35c8de6c0810846bd2bc959010a88ddb9bd827c6322a8b20c4e56b61",
+  "warm_shared_root": {
+    "accounting_anchor_visits": 1024,
+    "adjacent_identity_comparisons": 1023,
+    "pointer_order_comparisons": 0,
+    "clone_root_calls_empty_routes": 1,
+    "sorting_calls": 0,
+    "second_root_passes": 0
+  },
+  "warm_distinct_roots": {
+    "accounting_anchor_visits": 1024,
+    "adjacent_identity_comparisons": 1023,
+    "pointer_order_comparisons": 1023,
+    "clone_root_calls_empty_routes": 1024,
+    "sorting_calls": 0,
+    "second_root_passes": 0
+  },
+  "cold_changed_ledger": "First pass always accounts all blocks/metadata; after first inverse pointer order it stops provisional root charging, then sorts full private ledger and resets/recomputes only root accounting. O(L log L) cold comparison/move cost plus scans; no measured cold latency.",
+  "remaining": "Distinct roots times clone routes, driver.active costs, preflight_backing existing ledger/incoming scans and retain scans remain."
+}
