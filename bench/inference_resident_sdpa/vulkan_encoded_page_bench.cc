@@ -2,6 +2,7 @@
 #include <cstring>
 #include "hyle/compute/detail/materialized_native_controller.h"
 #include "hyle/compute/detail/vulkan_batch_access.h"
+#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
 #include "perf_process.h"
 #include <nanobench.h>
 #include <algorithm>
@@ -95,6 +96,7 @@ struct Data final {
 struct PeerTraits final {
   using Context=n::Context;using Program=n::Program;using Memory=n::MemoryResource;
   using Invocation=n::Invocation;using CopyInvocation=n::CopyBatchInvocation;
+  using CopyAccess=n::detail::CopyStreamAccess;
   using View=n::Tensor;
   using Submission=c::OwnedResult<n::Results>;
   static auto invocation(const Program& p,hyle::mem::AllocatorRef a){return p.create_invocation(a);}
@@ -105,6 +107,8 @@ struct PeerTraits final {
   static auto submit(Invocation& i,c::LeaseUseBatch u){return n::detail::PagedBatchAccess::submit(i,std::move(u));}
   static auto wait_native(Invocation& i){return n::detail::PagedBatchAccess::wait_native(i);}
   static auto reuse_gate(Invocation& i){return n::detail::PagedBatchAccess::reuse_gate(i);}
+  static auto release_inputs(Invocation& i){return n::detail::PagedBatchAccess::release_inputs(i);}
+  static auto update_layout(Invocation& i,const c::BatchLayoutVersion& l){return n::detail::PagedBatchAccess::update_layout(i,l);}
   static auto prepare_program(const Context& x,const c::NativePagedBatchProgram& p,c::BatchLayoutVersion l,const c::WorkloadContext& w){return hyle::bench::resident::encoded_page_reference_program(x,p,std::move(l),w);}
 };
 using PeerState=c::detail::MaterializedNativeState<PeerTraits,c::detail::PagedMetadataPolicy>;
@@ -149,8 +153,8 @@ struct Harness final {
   ~Harness(){for(auto& p:peers)if(p){p->drain().IgnoreError();p.reset();}for(auto& p:selected){p.drain().IgnoreError();p={};}key_frame={};value_frame={};key_reads.clear();value_reads.clear();query={};check(context.close());}
   void execute(std::vector<std::uint16_t>* host=nullptr){
     const auto slot=next++%2;
-    // Explicit prepare/version/F2 upload/cold original Program and native slot
-    // replacement are charged in both arms; no hidden kernel-only shortcut.
+    // Both arms charge checked prepare/version, idle input release and any F2
+    // metadata delta. This fixed layout reuses its prepared native slot.
     if(original){check(peers[slot]->prepare(layout));check(peers[slot]->bind(query,key_frame,value_frame));}
     else{check(selected[slot].prepare_batch(layout));check(selected[slot].bind(query,key_frame,value_frame));}
     auto submitted=original?take(peers[slot]->submit()):take(selected[slot].submit());auto result=take(submitted.wait());

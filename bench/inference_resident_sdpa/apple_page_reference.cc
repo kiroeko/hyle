@@ -1,4 +1,5 @@
 #include "native_page_reference.h"
+#include "hyle/compute/detail/apple_batch_access.h"
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 #include <array>
@@ -11,7 +12,8 @@ Result<n::Program> page_reference_program(const n::Context& context,
   if(!recipe.valid() || !recipe.schema().owns(layout))return std::unexpected(Status::InvalidArgument("page peer schema"));
   std::array<n::InputSpec,4> specs;
   for(unsigned i=0;i<4;++i){HYLE_ASSIGN_OR_RETURN(specs[i],n::input_spec(recipe.descriptions()[i]));}
-  return context.compile([recipe,layout](const std::vector<mx::array>& inputs,mx::Stream stream)->Result<std::vector<mx::array>>{
+  return n::detail::PagedBatchAccess::prepare_runtime_program(context,layout,specs,
+      [recipe](const c::BatchLayoutVersion& layout,const std::vector<mx::array>& inputs,mx::Stream stream)->Result<std::vector<mx::array>>{
     const auto cap=recipe.schema().capacity();const auto host=layout.host();std::vector<mx::array> outputs;
     const mx::Shape physical{int(cap.max_pages*16),int(cap.kv_heads),int(cap.qk_head_dim)};
     const auto kroot=mx::reshape(inputs[1],physical,stream),vroot=mx::reshape(inputs[2],physical,stream);
@@ -37,6 +39,6 @@ Result<n::Program> page_reference_program(const n::Context& context,
     }
     if(outputs.size()==1)return outputs;
     return std::vector{mx::concatenate(outputs,0,stream)};
-  },specs,workload);
+  },workload,recipe.causal(),recipe.window_left());
 }
 } // namespace hyle::bench::resident

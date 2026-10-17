@@ -2,8 +2,10 @@
 #include "hyle/compute/detail/materialized_native_controller.h"
 #if defined(HYLE_PAGE_APPLE_BENCH)
 #include "hyle/compute/detail/apple_batch_access.h"
+#include "../../src/compute_route_apple/apple_file_stream_access.h"
 #else
 #include "hyle/compute/detail/vulkan_batch_access.h"
+#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
 #endif
 #include "../common/perf_process.h"
 #include <nanobench.h>
@@ -75,6 +77,7 @@ struct PeerTraits final {
   using View=n::Tensor;
 #endif
   using Submission=c::OwnedResult<n::Results>;
+  using CopyAccess=n::detail::CopyStreamAccess;
   static auto invocation(const Program& p,hyle::mem::AllocatorRef a){return p.create_invocation(a);}
   static auto copy_program(const Context& x,std::span<const c::CopyResourceSpec> s,c::CopyBatchOptions o){return n::CopyBatchProgram::prepare(x,s,o);}
   static auto copy_invocation(const n::CopyBatchProgram& p){return n::CopyBatchInvocation::create(p);}
@@ -83,6 +86,8 @@ struct PeerTraits final {
   static auto submit(Invocation& i,c::LeaseUseBatch u){return n::detail::PagedBatchAccess::submit(i,std::move(u));}
   static auto wait_native(Invocation& i){return n::detail::PagedBatchAccess::wait_native(i);}
   static auto reuse_gate(Invocation& i){return n::detail::PagedBatchAccess::reuse_gate(i);}
+  static auto release_inputs(Invocation& i){return n::detail::PagedBatchAccess::release_inputs(i);}
+  static auto update_layout(Invocation& i,const c::BatchLayoutVersion& l){return n::detail::PagedBatchAccess::update_layout(i,l);}
   static auto prepare_program(const Context& x,const c::NativePagedBatchProgram& p,c::BatchLayoutVersion l,const c::WorkloadContext& w){return hyle::bench::resident::page_reference_program(x,p,std::move(l),w);}
 };
 using PeerState=c::detail::MaterializedNativeState<PeerTraits,c::detail::PagedMetadataPolicy>;
@@ -120,8 +125,9 @@ struct Harness final {
     };
     auto qw=take(query_pool.allocate(query_bytes,64));query=upload(qw,data.values[0]);
     for(unsigned p=0;p<unsigned(data.kp[2]);++p){
-      auto k=take(keys.acquire(p));key_reads.push_back(upload(k.lease(),std::span(data.values[1]).subspan(p*page_bytes/2,page_bytes/2)));check(k.complete(key_reads.back()));
-      auto v=take(values.acquire(p));value_reads.push_back(upload(v.lease(),std::span(data.values[2]).subspan(p*page_bytes/2,page_bytes/2)));check(v.complete(value_reads.back()));
+      // upload observes successful completion of a whole-page copy before ready publication.
+      auto k=take(keys.acquire(p));key_reads.push_back(upload(k.lease(),std::span(data.values[1]).subspan(p*page_bytes/2,page_bytes/2)));check(k.complete(key_reads.back(),data.cap.page_size));
+      auto v=take(values.acquire(p));value_reads.push_back(upload(v.lease(),std::span(data.values[2]).subspan(p*page_bytes/2,page_bytes/2)));check(v.complete(value_reads.back(),data.cap.page_size));
     }
     key_frame=take(keys.read(layout,key_reads));value_frame=take(values.read(layout,value_reads));
     const c::NativePagedInvocationOptions options{.max_metadata_backing_bytes=1<<20};
@@ -132,8 +138,9 @@ struct Harness final {
   ~Harness(){for(auto& p:peers)if(p){p->drain().IgnoreError();p.reset();}for(auto& p:selected){p.drain().IgnoreError();p={};}key_frame={};value_frame={};key_reads.clear();value_reads.clear();query={};check(context.close());}
   void execute(std::vector<std::uint16_t>* host=nullptr){
     const auto slot=next++%2;
-    // Explicit prepare/version/F2 upload/cold original Program and native slot
-    // replacement are charged in both arms; no hidden kernel-only shortcut.
+    // Both arms pay the shared controller's prepare/version, changed-table F2
+    // upload, binding, submit and checked wait costs. Immutable layouts reuse
+    // their native plan; only the peer's cold mathematical recipe differs.
     if(original){check(peers[slot]->prepare(layout));check(peers[slot]->bind(query,key_frame,value_frame));}
     else{check(selected[slot].prepare_batch(layout));check(selected[slot].bind(query,key_frame,value_frame));}
     auto submitted=original?take(peers[slot]->submit()):take(selected[slot].submit());auto result=take(submitted.wait());

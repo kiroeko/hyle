@@ -10,18 +10,25 @@ valid region. Each arm checks finite output within2e-3, four replays over two
 slots, and exact readonly bytes. Numerical qualification is required before A/A.
 
 Both arms use the original native controller, exact per-page F1 permissions,
-F2 table upload and checked completion/output owners. Every operation includes
-prepare/version/native Program and Invocation replacement, table upload/wait,
-bind/submit/native wait and output owner return/release. Submit consumes the
-prepared episode; the benchmark cannot restore private flags for warm replay.
+F2 table upload and checked completion/output owners. In the current source,
+every operation includes checked prepare/version, idle input release, layout
+update, bind/submit/native wait and output owner return/release. The controller
+creates a native Program/Invocation on first prepare or query-topology change;
+this benchmark repeats one fixed layout and reuses that plan. Metadata upload
+initializes both table banks once and then transfers changed page-index bytes
+only, with a checked wait when a transfer occurs. An unchanged table needs no
+new transfer. Submit still consumes the prepared episode.
 Only initial immutable payload placement, schema/layout and outer slot creation
 are outside timing; final context close occurs after all results are released.
+The reference embeds logical gather indices in its prepared recipe; this fixed
+layout benchmark does not qualify reference reuse with changing KV layouts.
+These current-source notes do not alter historical contracts or raw results.
 
 Candidate attention directly reads physical Q8 pages. Peer uses unchanged
 original456 non-MMQ scalar Q8 flash shader and existing original GetRows I32
 opaque bit-copy, with independent K/V encoded row widths. Each request creates
-and uploads one logical-row to physical-row index array during prepare. Both
-K/V normalization and generated output Copy remain charged, as do compressed
+and uploads one logical-row to physical-row index array during cold plan
+preparation. Both K/V normalization and generated output Copy remain charged, as do compressed
 gather, F16 causal/window masks, Q/output conversions, split/reduce and joining.
 This explicitly selected original direct-Q8 pipeline is not a best-of original
 host comparison; original host may select MMQ or a full-history F16 expansion.

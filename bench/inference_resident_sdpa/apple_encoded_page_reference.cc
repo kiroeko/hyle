@@ -1,4 +1,5 @@
 #include "apple_encoded_page_reference.h"
+#include "hyle/compute/detail/apple_batch_access.h"
 #include "general-q8-source.h"
 
 #include <mlx/allocator.h>
@@ -197,7 +198,8 @@ Result<n::Program> encoded_page_reference_program(const AppleEncodedPeerContext 
     return std::unexpected(Status::Unimplemented("original Metal peer finite Q8/F16 domain"));
   std::array<n::InputSpec, 4> specs;
   for (unsigned i = 0; i < 4; ++i) { HYLE_ASSIGN_OR_RETURN(specs[i], n::input_spec(recipe.descriptions()[i])); }
-  return peer.context->compile([recipe, layout, completion = peer.completion](
+  return n::detail::PagedBatchAccess::prepare_runtime_program(*peer.context,layout,specs,
+      [recipe, completion = peer.completion](const c::BatchLayoutVersion& layout,
       const std::vector<mx::array> &inputs, mx::Stream stream) -> Result<std::vector<mx::array>> {
     const auto cap = recipe.schema().capacity(); const auto host = layout.host();
     const int dk = int(cap.qk_head_dim), dv = int(cap.value_head_dim);
@@ -238,6 +240,6 @@ Result<n::Program> encoded_page_reference_program(const AppleEncodedPeerContext 
     if (parts.empty()) return std::unexpected(Status::InvalidArgument("empty original Metal peer batch"));
     if (parts.size() == 1) return parts;
     return std::vector{mx::concatenate(parts, 0, stream)};
-  }, specs, workload);
+  }, workload, recipe.causal(), recipe.window_left());
 }
 }

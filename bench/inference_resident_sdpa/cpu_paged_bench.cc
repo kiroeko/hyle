@@ -77,7 +77,8 @@ struct Harness {
       auto kw=take(keys.acquire(page)),vw=take(values.acquire(page));
       check(kw.lease().view()->write(std::as_bytes(std::span(data.values[1])).subspan(page*page_bytes,page_bytes)));
       check(vw.lease().view()->write(std::as_bytes(std::span(data.values[2])).subspan(page*page_bytes,page_bytes)));
-      physical_ids.push_back(page);key_pages.push_back(take(kw.publish()));value_pages.push_back(take(vw.publish()));
+      // Both writes initialize the entire physical page, including its padded tail.
+      physical_ids.push_back(page);key_pages.push_back(take(kw.publish(data.capacity.page_size)));value_pages.push_back(take(vw.publish(data.capacity.page_size)));
     }
     key_frame=take(keys.read(layout,key_pages));value_frame=take(values.read(layout,value_pages));
     if(original)reference=take(hyle::bench::resident::cpu_paged_reference_data(layout,key_frame,value_frame));

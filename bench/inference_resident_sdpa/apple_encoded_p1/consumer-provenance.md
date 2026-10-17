@@ -9,14 +9,20 @@ Both arms require the independent double oracle within2e-3, finite output,
 four replays/two slots and exact readonly bytes before measurement.
 
 Both arms retain the original native controller, exact per-page F1 guards,
-F2 table upload and owned native completion/output. Every measured operation
-includes prepare/version, native Program/Invocation replacement, allocation,
-upload/wait, binding, submit, native completion and output return/release.
+F2 table upload and owned native completion/output. In the current source,
+every operation includes checked prepare/version, idle input release, layout
+update, binding, submit, native completion and output return/release. The
+controller creates a native Program/Invocation on first prepare or a change in
+query topology; this benchmark repeats one fixed layout and reuses that plan.
+Metadata upload initializes both table banks once, then uploads changed page
+indices only and waits when a transfer occurs. Unchanged indices need no upload.
 Only initial immutable placement/schema/layout and outer slot creation are
 outside timing. Initial device library/pipeline compilation and cache warmup
 are inside the mandatory untimed numerical/warmup phase for both arms. Each
-subsequent complete episode still charges native preparation. There is no
-private flag reset or warm replay shortcut.
+subsequent complete episode still charges checked preparation and invokes the
+original MLX builder through the paged runtime adapter. This fixed layout does
+not qualify reuse with changing KV layouts. These current-source notes do not
+alter historical contracts or raw results.
 
 The independent peer instantiates the unchanged original456 general Q8 Metal
 template, pad and mask-block kernels. Its original64/64,128/128,256/256 exports
