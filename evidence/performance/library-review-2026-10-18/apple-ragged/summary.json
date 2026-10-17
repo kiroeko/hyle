@@ -1,0 +1,923 @@
+{
+  "reference": "Same pinned Hyle-patched MLX 0.32.2 fast entry (1f8e74e3f12f...), not independent unmodified MLX",
+  "machine": "MacBook Air Mac16,12 M4 applegpu_g16g, macOS27.0.1, 16GiB",
+  "method": {
+    "processes": "4 AB/BA execution/allocation crossed, 4 AA (selected/native x AB/BA), 2 forced-fused AB/BA, 4 raw diagnostic AB/BA (default/forced)",
+    "paired_rounds": "original lifecycle 16, direct compiled diagnostic24",
+    "warmup": "program creation and isolated warmup cold; actual correctness/download outside timing; 4 warm executions each arm",
+    "lifecycle": "resident same layout/dtype/mathematics; bind ready owner array copies -> submit -> checked wait -> retain packed output owner -> scoped release; no timed upload/download",
+    "extra_candidate": "One ordinary Steel BQ16/WM2/BK16 dispatch override vs originalBQ32/WM4/BK16, AB/BA, rejected. CPU-only single-source override, SDK/metallib originals untouched."
+  },
+  "conclusions": [
+    "On regular input, default fast unfused is ~9-12% faster than Hyle fused D256 prefill in four balanced lifecycle processes.",
+    "Selected/selected and native/native prefill AA CIs all include1.",
+    "Forcing fast fused eliminates repeatable Hyle loss; raw compiled without Hyle queue/Completion preserves default fast speed advantage but not forced fused advantage.",
+    "A legal representable weak-probability/large-value case passes original Hyle abs2e-3 and fails default fast by0.41157; do not adopt its half scores/probabilities as a contract-preserving optimization.",
+    "No current same-contract performance loss was established against forced-fused fast; historical1.07-1.76% remains historical, not reclassified retroactively.",
+    "One same-precision Steel tile candidate reduced static threadgroup memory29184->20736bytes but made prefill14-15%slower. Rejected; no product source modification."
+  ],
+  "actual_fused_dispatch": {
+    "kernel": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256..._hyle_0_0_0",
+    "static_threadgroup_bytes": 29184,
+    "NAX": false,
+    "correction": "Earlier intermediate messages inferred NAX from available source branch; actual M4 architecture g16g is below MLX NAX gen17 gate. Host dispatch diagnostic confirms ordinary Steel."
+  },
+  "numeric_counterexample": {
+    "shape": "Q[64,128], KV[1024,768], Hq8 Hkv2 D256 F16 causal, packed NHD, scale1/16",
+    "values": "Q first dim1 rest0; each request first K0 and V0; other K first dim-256 and V60000. Same ready arrays/oracle.",
+    "original_abs_limit": 0.002,
+    "hyle_max_abs": 0.00199546475,
+    "default_fast_max_abs": 0.411574704,
+    "fused_path_preserved": "F32 online accumulation, no QxKV score materialization"
+  },
+  "source_identity": {
+    "matched": [
+      "src/compute_route_apple/apple_batch.cc",
+      "src/compute_route_apple/apple_context.cc",
+      "third_party/mlx_cast/patches.json",
+      "bench/inference_resident_sdpa/apple_ragged_reference.cc",
+      "bench/inference_resident_sdpa/apple_ragged_reference.h",
+      "bench/nanobench_impl.cc",
+      "third_party/nanobench/nanobench.h",
+      "include/hyle/compute/apple_batch.h",
+      "include/hyle/compute/result.h",
+      "src/compute_route_apple/apple_internal.h",
+      "src/compute_route_apple/apple_runtime_internal.h",
+      "src/compute_route_apple/apple_completion_internal.h",
+      "src/compute_route_apple/apple_checks.h",
+      "src/compute/completion_internal.h",
+      "src/compute/completion.cc",
+      "src/compute/result.cc",
+      "src/compute/retained_completion.cc",
+      "include/hyle/compute/detail/generated_result.h",
+      "include/hyle/compute/detail/lease_access.h",
+      "include/hyle/platform/wait.h",
+      "include/hyle/platform/thread.h"
+    ],
+    "different": [
+      "bench/inference_resident_sdpa/native_ragged_bench.cc",
+      "bench/common/perf_process.h",
+      "include/hyle/compute/apple.h",
+      "include/hyle/compute/batch_layout.h",
+      "src/compute/resource_leases.cc"
+    ],
+    "differences_explained": {
+      "native_ragged_bench.cc": "old source obsolete AA-ready governance gate; current driver has gate removed and output label changed only",
+      "perf_process.h": "comments only",
+      "apple.h/batch_layout.h": "export macros moved to visibility.h; installed SDK builds HYLE_STATIC",
+      "resource_leases.cc": "LeaseUsePool::create bound check uses std::cmp_greater currently; this hot plain native benchmark does not exercise that validation"
+    },
+    "limit": "Uses existing SDK libraries, not a full HEAD rebuild. Relevant Apple context, batch, queue, ResultSlot and completion implementations source hashes match; not a whole SDK binary/source audit."
+  },
+  "limits": [
+    "Raw AB had20.7/18.4% noise and is retained, not filtered. Relative directional evidence is supported by BA and four lifecycle process results.",
+    "Phase wait includes worker scheduling, native graph construction/eval and GPU completion; no pure Metal GPU timestamp measurements. Do not subtract raw and lifecycle medians as a queue overhead estimate.",
+    "Not a new independent Original-MLX ranking; patched and original attention file hashes differ.",
+    "No product source changed at this point; no full SDK build or SDK copy."
+  ],
+  "rows": [
+    {
+      "run": "aa-native-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 481237.5,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 491833.3,
+          "relative": "97.5%",
+          "ci": "94.9% .. 100.6%"
+        }
+      ]
+    },
+    {
+      "run": "aa-native-ab",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1059743.17,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1070597.33,
+          "relative": "99.4%",
+          "ci": "89.1% .. 101.6%"
+        }
+      ]
+    },
+    {
+      "run": "aa-native-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 269796.56,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 272943.65,
+          "relative": "99.2%",
+          "ci": "97.1% .. 101.3%"
+        }
+      ]
+    },
+    {
+      "run": "aa-native-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 488637.5,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 490075.0,
+          "relative": "100.1%",
+          "ci": "97.6% .. 107.7%"
+        }
+      ]
+    },
+    {
+      "run": "aa-native-ba",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1062604.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1053500.0,
+          "relative": "101.0%",
+          "ci": "98.2% .. 104.3%"
+        }
+      ]
+    },
+    {
+      "run": "aa-native-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 280415.44,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 279572.32,
+          "relative": "101.4%",
+          "ci": "96.8% .. 105.9%"
+        }
+      ]
+    },
+    {
+      "run": "aa-selected-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1572770.83,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1526118.0,
+          "relative": "101.4%",
+          "ci": "96.2% .. 105.3%"
+        }
+      ]
+    },
+    {
+      "run": "aa-selected-ab",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1176402.83,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1227930.67,
+          "relative": "97.0%",
+          "ci": "92.4% .. 100.6%"
+        }
+      ]
+    },
+    {
+      "run": "aa-selected-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 284585.76,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 283602.94,
+          "relative": "100.7%",
+          "ci": "99.3% .. 101.9%"
+        }
+      ]
+    },
+    {
+      "run": "aa-selected-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 559297.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 541437.5,
+          "relative": "104.0%",
+          "ci": "101.7% .. 106.9%"
+        }
+      ]
+    },
+    {
+      "run": "aa-selected-ba",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1248354.17,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1203111.17,
+          "relative": "101.7%",
+          "ci": "99.3% .. 104.7%"
+        }
+      ]
+    },
+    {
+      "run": "aa-selected-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 279284.32,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 278462.0,
+          "relative": "99.6%",
+          "ci": "96.9% .. 105.2%"
+        }
+      ]
+    },
+    {
+      "run": "ab-allocab-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 516493.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 504659.83,
+          "relative": "103.5%",
+          "ci": "99.0% .. 114.7%"
+        }
+      ]
+    },
+    {
+      "run": "ab-allocab-1",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1176833.33,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1072923.67,
+          "relative": "109.4%",
+          "ci": "100.1% .. 116.9%"
+        }
+      ]
+    },
+    {
+      "run": "ab-allocab-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 257393.25,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 273526.06,
+          "relative": "94.1%",
+          "ci": "90.4% .. 102.8%"
+        }
+      ]
+    },
+    {
+      "run": "ab-allocba-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 504995.9,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 491933.3,
+          "relative": "102.9%",
+          "ci": "98.2% .. 109.8%"
+        }
+      ]
+    },
+    {
+      "run": "ab-allocba-1",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1173229.17,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1033958.17,
+          "relative": "112.3%",
+          "ci": "110.7% .. 116.2%"
+        }
+      ]
+    },
+    {
+      "run": "ab-allocba-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 280992.65,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 276080.88,
+          "relative": "102.3%",
+          "ci": "100.0% .. 105.0%"
+        }
+      ]
+    },
+    {
+      "run": "ba-allocab-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 498541.67,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 499805.67,
+          "relative": "98.7%",
+          "ci": "86.4% .. 113.4%"
+        }
+      ]
+    },
+    {
+      "run": "ba-allocab-1",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1080177.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1202271.0,
+          "relative": "90.0%",
+          "ci": "84.7% .. 92.1%"
+        }
+      ]
+    },
+    {
+      "run": "ba-allocab-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 285502.47,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 286969.35,
+          "relative": "99.3%",
+          "ci": "96.0% .. 101.0%"
+        }
+      ]
+    },
+    {
+      "run": "ba-allocba-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1379236.17,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1439715.17,
+          "relative": "97.3%",
+          "ci": "93.0% .. 100.9%"
+        }
+      ]
+    },
+    {
+      "run": "ba-allocba-1",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1067673.67,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1175062.5,
+          "relative": "91.0%",
+          "ci": "87.5% .. 93.3%"
+        }
+      ]
+    },
+    {
+      "run": "ba-allocba-1",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 275148.26,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 273340.68,
+          "relative": "101.5%",
+          "ci": "97.9% .. 104.5%"
+        }
+      ]
+    },
+    {
+      "run": "fused-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 757906.25,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 778197.87,
+          "relative": "98.5%",
+          "ci": "93.7% .. 106.0%"
+        }
+      ]
+    },
+    {
+      "run": "fused-ab",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1192750.17,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1232361.0,
+          "relative": "96.5%",
+          "ci": "94.4% .. 106.7%"
+        }
+      ]
+    },
+    {
+      "run": "fused-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 283768.38,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 277238.97,
+          "relative": "102.6%",
+          "ci": "99.2% .. 103.7%"
+        }
+      ]
+    },
+    {
+      "run": "fused-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 545317.75,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 546828.12,
+          "relative": "100.2%",
+          "ci": "90.8% .. 102.8%"
+        }
+      ]
+    },
+    {
+      "run": "fused-ba",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1211131.83,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1188416.67,
+          "relative": "102.6%",
+          "ci": "101.2% .. 103.7%"
+        }
+      ]
+    },
+    {
+      "run": "fused-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 281364.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 276335.79,
+          "relative": "102.0%",
+          "ci": "98.0% .. 103.1%"
+        }
+      ]
+    },
+    {
+      "run": "raw-ab",
+      "shape": "Direct compiled resident D256 Q64,128 KV1024,768 F16",
+      "arms": [
+        {
+          "name": "raw hyle native",
+          "median_ns": 2467229.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "raw patched fast",
+          "median_ns": 2121000.0,
+          "relative": "112.3%",
+          "ci": "102.5% .. 118.6%"
+        }
+      ]
+    },
+    {
+      "run": "raw-ba",
+      "shape": "Direct compiled resident D256 Q64,128 KV1024,768 F16",
+      "arms": [
+        {
+          "name": "raw patched fast",
+          "median_ns": 1063111.17,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "raw hyle native",
+          "median_ns": 1182486.17,
+          "relative": "89.2%",
+          "ci": "87.1% .. 91.0%"
+        }
+      ]
+    },
+    {
+      "run": "raw-forced-ab",
+      "shape": "Direct compiled resident D256 Q64,128 KV1024,768 F16",
+      "arms": [
+        {
+          "name": "raw hyle native",
+          "median_ns": 1164833.33,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "raw patched fast",
+          "median_ns": 1151500.0,
+          "relative": "100.8%",
+          "ci": "98.6% .. 102.2%"
+        }
+      ]
+    },
+    {
+      "run": "raw-forced-ba",
+      "shape": "Direct compiled resident D256 Q64,128 KV1024,768 F16",
+      "arms": [
+        {
+          "name": "raw patched fast",
+          "median_ns": 1152111.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "raw hyle native",
+          "median_ns": 1147361.0,
+          "relative": "100.3%",
+          "ci": "98.7% .. 102.1%"
+        }
+      ]
+    },
+    {
+      "run": "tile-forced-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1555840.33,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1469020.83,
+          "relative": "106.9%",
+          "ci": "97.2% .. 113.9%"
+        }
+      ],
+      "scratch_tile_variant": "BQ16 WM2, rejected"
+    },
+    {
+      "run": "tile-forced-ab",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1405389.0,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1217007.0,
+          "relative": "115.4%",
+          "ci": "112.7% .. 118.8%"
+        }
+      ],
+      "scratch_tile_variant": "BQ16 WM2, rejected"
+    },
+    {
+      "run": "tile-forced-ab",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 268056.35,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 260022.09,
+          "relative": "103.1%",
+          "ci": "97.9% .. 107.3%"
+        }
+      ],
+      "scratch_tile_variant": "BQ16 WM2, rejected"
+    },
+    {
+      "run": "tile-forced-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 551276.79,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 552032.71,
+          "relative": "100.4%",
+          "ci": "95.2% .. 103.3%"
+        }
+      ],
+      "scratch_tile_variant": "BQ16 WM2, rejected"
+    },
+    {
+      "run": "tile-forced-ba",
+      "shape": "Apple ragged F16 Q=64,128 KV=1024,768 D=256 causal=1",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 1217416.5,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 1389930.5,
+          "relative": "87.2%",
+          "ci": "86.3% .. 88.5%"
+        }
+      ],
+      "scratch_tile_variant": "BQ16 WM2, rejected"
+    },
+    {
+      "run": "tile-forced-ba",
+      "shape": "Apple ragged F16 Q=1,17 KV=31,47 D=64 causal=0",
+      "arms": [
+        {
+          "name": "Patched MLX fast Apple ragged lifecycle",
+          "median_ns": 280264.71,
+          "relative": "100.0%",
+          "ci": ""
+        },
+        {
+          "name": "HYLE Apple ragged",
+          "median_ns": 285208.35,
+          "relative": "97.9%",
+          "ci": "95.9% .. 100.8%"
+        }
+      ],
+      "scratch_tile_variant": "BQ16 WM2, rejected"
+    }
+  ],
+  "phase_diagnostics": [
+    {
+      "run": "raw-ab",
+      "median_phase_ns": {
+        "hyle": {
+          "bind_ns": 83.0,
+          "submit_ns": 1042.0,
+          "wait_ns": 1706562.5,
+          "own_ns": 104.5,
+          "release_ns": 83.5
+        },
+        "fast": {
+          "bind_ns": 271.0,
+          "submit_ns": 2124.5,
+          "wait_ns": 1458458.5,
+          "own_ns": 42.0,
+          "release_ns": 20.5
+        }
+      }
+    },
+    {
+      "run": "raw-ba",
+      "median_phase_ns": {
+        "hyle": {
+          "bind_ns": 292.0,
+          "submit_ns": 3458.0,
+          "wait_ns": 1177479.0,
+          "own_ns": 84.0,
+          "release_ns": 83.0
+        },
+        "fast": {
+          "bind_ns": 375.0,
+          "submit_ns": 3708.5,
+          "wait_ns": 1060604.0,
+          "own_ns": 84.0,
+          "release_ns": 83.0
+        }
+      }
+    },
+    {
+      "run": "raw-forced-ab",
+      "median_phase_ns": {
+        "hyle": {
+          "bind_ns": 292.0,
+          "submit_ns": 4250.0,
+          "wait_ns": 1143291.5,
+          "own_ns": 84.0,
+          "release_ns": 83.0
+        },
+        "fast": {
+          "bind_ns": 250.0,
+          "submit_ns": 3958.0,
+          "wait_ns": 1162166.5,
+          "own_ns": 84.0,
+          "release_ns": 83.0
+        }
+      }
+    },
+    {
+      "run": "raw-forced-ba",
+      "median_phase_ns": {
+        "hyle": {
+          "bind_ns": 333.0,
+          "submit_ns": 3833.5,
+          "wait_ns": 1152458.5,
+          "own_ns": 125.0,
+          "release_ns": 83.0
+        },
+        "fast": {
+          "bind_ns": 375.0,
+          "submit_ns": 3729.0,
+          "wait_ns": 1161062.5,
+          "own_ns": 84.0,
+          "release_ns": 83.0
+        }
+      }
+    }
+  ],
+  "tile_candidate": {
+    "source": "scaled_dot_product_attention.tile.cpp (scratch only)",
+    "domain": "plain F16 ragged, Dqk=Dv256, no window, 32<Q<=128",
+    "change": "BQ32->16, WM4->2; BK16/WN1 unchanged",
+    "static_threadgroup_bytes": 20736,
+    "oracle_weak_probability_max_abs": 0.00199546475,
+    "decision": "reject: slower than original same-contract forced-fused peer in both AB/BA",
+    "runs": [
+      {
+        "run": "tile-forced-ab",
+        "hyle_ns": 1405389,
+        "original_forced_fast_ns": 1217007,
+        "peer_speed_ratio": 1.154,
+        "peer_95ci": [
+          1.127,
+          1.188
+        ]
+      },
+      {
+        "run": "tile-forced-ba",
+        "hyle_ns": 1389930.5,
+        "original_forced_fast_ns": 1217416.5,
+        "hyle_speed_ratio": 0.872,
+        "hyle_95ci": [
+          0.863,
+          0.885
+        ]
+      }
+    ]
+  },
+  "source_locations": {
+    "hyle_ragged_private_primitive": "src/compute_route_apple/apple_batch.cc:131-134",
+    "matched_patched_mlx_fast_fallback_heuristic": "mlx/backend/metal/scaled_dot_product_attention.cpp:845-848",
+    "actual_steel_dispatch_default": "mlx/backend/metal/scaled_dot_product_attention.cpp:253-261",
+    "G09_actual_threadgroup_guard": "mlx/backend/metal/scaled_dot_product_attention.cpp:335-351",
+    "fast_half_score_and_softmax_fallback": "mlx/fast.cpp:872-923",
+    "hyle_fixed_layout_cached_evaluation": "src/compute_route_apple/apple_context.cc:390-397"
+  },
+  "archive_sha256": "87e304f87514f5dbf1ee2ae210a27a125044b575a73090462b4b8854816212ab"
+}

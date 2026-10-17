@@ -54,6 +54,7 @@ SM80–SM121、相同Q/K/V depth为8–256且为8的倍数，以及原生索引�
 额外峰值为submit前resetPeak后allocated_peak减submit前allocated_current，包含首次执行、GQA分组输出和拼接。
 四个cold prepare后Torch allocated/reserved均为零。这里验证了该形状族额外分配的线性增长，
 **不是总VRAM、旧完整程序峰值、所有head/长度的上界或模型tokens/s比较**；驱动、module与其它分配不在Torch计数中。
+8K的wait后仍有32 MiB allocated结果由invocation持有，直至重用或销毁；80 MiB reserved也不等于已归还驱动。
 
 实际[Hyle回归](../../../tests/compute_provider_torch_cuda/attention_test.cc)共9项通过：
 [数值与拒绝5项](bf16-sdpa/numeric-and-admission-final.log)，包括独立FP64参考、同头/GQA、decode、
@@ -62,6 +63,10 @@ SM80–SM121、相同Q/K/V depth为8–256且为8的倍数，以及原生索引�
 pending时销毁artifact/invocation，以及原ATen allocator受控OOM后保活已接纳前缀、报告错误、同Queue恢复。
 实际GPU使用显式Torch-only Context；默认排序的[42项独立检查](cuda-policy/policy_probe.cc)也通过，
 两者不等于完整默认CUDA/Graph roster的GPU测试，后者及Linux CUDA本轮未运行。
+补做单个[BF16弱概率×大V诊断](bf16-sdpa/hyle-weak-result.json)：实际V=59904，最大相对FP64误差0.3693%、
+绝对误差0.02477；只做最终BF16舍入的oracle自身绝对误差已达0.01558，候选与该oracle最多差1 BF16 ULP。
+它保留了弱概率贡献，也说明上述0.01只用于原回归输入，不能当作全BF16输出域的绝对误差保证。
+未把这项无容差诊断写成通过1.5%门槛或模型精度不下降；完整模型精度仍待真实引擎比较。
 空间复现：`python evidence/performance/library-review-2026-10-18/bf16-sdpa/run_hyle_space.py --compile --run`，
 复用本机锁定SDK与现成基础静态库；捕获的编译/链接命令和[source/binary hash](bf16-sdpa/hyle-source-binary-sha256.json)随数据保存。
 
@@ -75,13 +80,32 @@ pending时销毁artifact/invocation，以及原ATen allocator受控OOM后保活�
 
 | 项目 | 原证据 | 当前边界 |
 |---|---|---|
-| Apple ragged F16 prefill、D256 | [summary](../inference-g01-native-ragged-apple-m1-p1/summary.json)，8组比值0.98266–0.98941，所有CI上界低于1；约1.07%–1.76%延迟差 | 相同 packed 输入与原 MLX 数学、完整 warm 调用；当前仍有对应实现。需分清 kernel、managed metadata 与完成观察成本 |
+| Apple ragged F16 prefill、D256 | [旧summary](../inference-g01-native-ragged-apple-m1-p1/summary.json)，8组比值0.98266–0.98941，所有CI上界低于1；约1.07%–1.76%延迟差 | 已在Air复测当前对应路径；默认fast较快但不满足同数值合同，同合同force-fused未确认当前稳定慢，见下。旧小输不直接继承 |
 | WSL 单文件 atomic replace watch | [summary](../io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json)，4点0.96813–0.98638，2组CI上界低于1 | 同写入/rename/通知分类/读取generation/完成。当前保留主要机制，但新增递归路径；需重测现版本，不按“低频可接受”免查 |
 | TaskScope、32 child、4 workers | 本机历史 `C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json`；一个 placement+peer-first 组合0.970796，CI[0.955245,0.989531]，其它3组跨1 | 两侧含相同 child 工作与 Scheduler::drain。方向依赖布局/顺序，当前增加了 priority 处理；先核 A/A 与布局响应，不能直接宣布当前普遍慢2.92% |
 | G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | 旧倍率不是同线程资源方案；修后缺同输入、同线程预算的完整性能包。历史 BLOCKED 不是性能证据 |
 
 旧报告中的摊销空 harness ns/op 不等于硬件时钟分辨率。历史CI同侧不能替代当前版本的同路径 A/A、
 顺序/布局响应和完整完成边界核对。
+
+### Apple D256：先排除中间精度差
+
+Air Mac16,12/M4/16 GiB，复用现有G09 SDK的小consumer；相关Apple batch/context/Queue/ResultSlot/
+Completion源码hash与Windows一致，其余已解释差异见[来源与全部结果](apple-ragged/summary.json)。
+这不是整个HEAD重建，也不是未改原版MLX排名：参考为同pin的patched-MLX fast入口。
+4个平衡执行/分配顺序的进程中，默认fast在D256 prefill快约9–12%；两侧各自A/A未复现此恒定偏差。
+raw compiled绕过Hyle Queue/Completion后差额仍在；令fast也走融合路径后未确认Hyle当前稳定更慢。
+不能把wait中含调度/native求值/GPU的时间直接当纯GPU时间。
+
+默认fast会物化F16 scores/softmax概率。对相同Q[64,128]/KV[1024,768]、H8/KV2/D256/F16/causal，
+强键score=0/V=0，其余score=-16/V=60000的合法输入，Hyle最大绝对误差**0.001995**，
+默认fast为**0.411575**，原门槛为0.002。较快参考丢失的弱概率贡献已超合同，不能直接换入。
+[原始压缩包](apple-ragged/raw-results.zip)保留命令、stdout/stderr、独立oracle源码、graph与噪声样本；
+诊断进程只记录两侧误差，exit0不是默认fast数值通过。
+
+实际Air使用普通Steel（非NAX），BQ32/BK16/WM4、静态threadgroup29184 B。
+唯一保精度的BQ16/WM2候选把该量降为20736 B，但同融合参考下AB/BA稳定慢14–15%，已拒绝。
+产品与SDK原件未改，仅新增约49 MiB小consumer产物；不再为追低精度参考扩展调参。
 
 ## 已排除的旧“输项”
 

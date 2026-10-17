@@ -1,0 +1,33 @@
+{
+  "reference": "same pinned patched-MLX fast entry, not an unmodified independent MLX build",
+  "local_source_sha256": {
+    "src/compute_route_apple/apple_batch.cc": "d63100040d3624f2e477849126b26ae5a5823ec8493b0f144302c7c19e000ae9",
+    "src/compute_route_apple/apple_context.cc": "5bb2691c198cf25ad2d113b5126c683fe81e3acc1cd09089f08f4e68daf9e040",
+    "third_party/mlx_cast/patches.json": "c7ec1769d7ddc31472ddd519cfa1ba9543da45c795b0aa481459a5ef01919d14",
+    "bench/inference_resident_sdpa/native_ragged_bench.cc": "cf3adaf93cf71fcd8d89a34b3eb9d3757f22d6752b7f7db5f8471320e035353d",
+    "bench/inference_resident_sdpa/apple_ragged_reference.cc": "83d03b365fe0c6a8bfab0043366ac3f43bf326e19bb249e67b15cc5ee3cc7625",
+    "bench/inference_resident_sdpa/apple_ragged_reference.h": "a30000f598783476ca08bb60b785525bf48d9ccc574bf491e062014bc1ccac80",
+    "bench/nanobench_impl.cc": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+    "bench/common/perf_process.h": "534de087391808d2a1a54da97ae9f6fdd75063db5f70b113fa6f6c6c8223bf81",
+    "third_party/nanobench/nanobench.h": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+    "include/hyle/compute/apple.h": "24a7f88e8ac27006c4f6235c494673526ddad8038265bedd2a6b424b69bb5df7",
+    "include/hyle/compute/apple_batch.h": "e101becd5f95f670374ec698931895a2ab8b28d95b43370e6147ae7db64862ec",
+    "include/hyle/compute/batch_layout.h": "39dc7b773b9e3ba41e5cbb467b60f618a9eff0687bec60a543786a32b704911f",
+    "include/hyle/compute/result.h": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164",
+    "src/compute_route_apple/apple_internal.h": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c",
+    "src/compute_route_apple/apple_runtime_internal.h": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a",
+    "src/compute_route_apple/apple_completion_internal.h": "b6d81794b360fd96100f1f96c5d54562e32b38f819c65457656cd9612fa42196",
+    "src/compute_route_apple/apple_checks.h": "ad551180e3211086858440f36dd2e1b0f624436973a40bd2c8875e45a4496543",
+    "src/compute/completion_internal.h": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec",
+    "src/compute/completion.cc": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+    "src/compute/result.cc": "9e974aa39ff14d064902ed37525bba8363332ffe702bb0a0f4a2cfee83cf289c",
+    "src/compute/resource_leases.cc": "bec28971901ca0506417c2f4ef55923fc7bc801cecdad3815e4d61e423e754d1",
+    "src/compute/retained_completion.cc": "196aa0b36e81a114dcd0d5ef38c520cce5de30e7c78a1e30292ac4d0c403e071",
+    "include/hyle/compute/detail/generated_result.h": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa",
+    "include/hyle/compute/detail/lease_access.h": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18",
+    "include/hyle/platform/wait.h": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f",
+    "include/hyle/platform/thread.h": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+  },
+  "driver_change": "Only replace misleading Original output label; hot timing boundary unchanged",
+  "driver_sha256": "4bd5f6b589b0f4620f77ae458970ae5173fd75420a18571265e76f2fc82ea786"
+}
