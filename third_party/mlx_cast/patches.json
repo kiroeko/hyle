@@ -434,9 +434,17 @@
         {
           "before": "  auto kernel = make_kernel();",
           "after": "  auto kernel = make_kernel();\n  if (ordinary_f32) {\n    const auto required = kernel->staticThreadgroupMemoryLength();\n    const auto limit = d.mtl_device()->maxThreadgroupMemoryLength();\n    if (required > limit)\n      throw std::runtime_error(\"HYLE F32 Steel static threadgroup exceeds actual device limit\");\n  }"
+        },
+        {
+          "before": "  if (ordinary_f32) { bq = 16; bk = 8; wm = 2; wn = 1; }",
+          "after": "  // Ordinary D192 reuses the float tile for causal and noncausal prefill;\n  // array masks, sinks and page adapters retain their existing dispatch.\n  const bool ordinary_f32_d192 = !page && !mask && !sinks &&\n      q.dtype() == float32 && bd == 192 && bv == 192 && qL > 8 &&\n      (!do_causal_ || qL <= kL);\n  if (ordinary_f32 || ordinary_f32_d192) { bq = 16; bk = 8; wm = 2; wn = 1; }"
+        },
+        {
+          "before": "  if (ordinary_f32) {\n    const auto required",
+          "after": "  if (ordinary_f32 || ordinary_f32_d192) {\n    const auto required"
         }
       ],
-      "after_sha256": "3325bb041f6319ba2e82e0459683b8edeb1595dd1732f082563d747f770b205e"
+      "after_sha256": "a9a0e48630e7c8eb6e8041a48b62fab497a51e1ce974759c0e6f957f4107bfa7"
     },
     {
       "path": "mlx/backend/metal/kernels/sdpa_vector.h",

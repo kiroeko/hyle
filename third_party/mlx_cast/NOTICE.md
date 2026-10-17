@@ -80,3 +80,10 @@ threadgroup-memory limit before dispatch. HYLE forces this bounded F32 route
 only on known pre-NAX Apple GPU generations 13-16; unknown/new architectures
 retain native selection. Query, probabilities, online softmax and PV remain
 F32; no new shader, half conversion, synchronization or public API is added.
+
+Ordinary F32 D192 attention without an array mask or sinks uses the same
+existing BQ16/BK8/WM2/WN1 float template for queries longer than eight, including
+noncausal attention. Causal attention still requires Q length not exceeding KV.
+Its actual pipeline threadgroup usage is checked before dispatch. HYLE uses
+the same known-generation guard; the existing D256, NAX and page routes remain
+unchanged. This reuses the original JIT template without adding a shader.
