@@ -400,97 +400,134 @@ void bench_mpmc(bool bounded_only = false) {
   }
 }
 
-// ---- 3. work-stealing OWNER hot path (single-owner push+pop, no contention) -
-// The whole point of a per-core local queue: the owner pushes/pops with no CAS.
-// FIFO (tokio-style) and LIFO (Chase-Lev) are measured separately. The general
-// MPMC queues are shown alongside ONLY to quantify the atomic the owner avoids
-// (NOT a same-family comparison -- that's crossbeam in the Rust bench).
+// ---- 3. work-stealing OWNER (single-thread fill+drain) ---------------------
+// FIFO and LIFO are separate policies. Queue construction/destruction is outside
+// timed callbacks; each arm gets 200 explicit checked warm waves. Crossbeam's
+// native Worker can still shrink/grow during each wave, unlike these fixed rings.
+template <class Push, class Pop>
+void checked_ws_owner_wave(Push push, Pop pop, bool lifo) {
+  for (int i = 0; i < kBatch; ++i)
+    if (!push(static_cast<std::uint64_t>(i))) std::abort();
+  std::uint64_t value = 0;
+  for (int i = 0; i < kBatch; ++i) {
+    const auto expected = static_cast<std::uint64_t>(lifo ? kBatch - 1 - i : i);
+    if (!pop(value) || value != expected) std::abort();
+  }
+  if (pop(value)) std::abort();
+  ankerl::nanobench::doNotOptimizeAway(value);
+}
+
+struct CheckedStealBatch {
+  std::array<bool, kBatch> seen{};
+  ConsumerResult result;
+
+  void add(std::uint64_t value) {
+    if (value >= kBatch || seen[static_cast<std::size_t>(value)]) std::abort();
+    seen[static_cast<std::size_t>(value)] = true;
+    ++result.count;
+    result.sum += value;
+    result.xor_sum ^= value;
+  }
+
+  void finish() const {
+    if (result.count != kBatch || result.sum != kBatch * (kBatch - 1) / 2 ||
+        result.xor_sum != 0)
+      std::abort();
+    ankerl::nanobench::doNotOptimizeAway(result);
+  }
+};
+
 void bench_ws_owner() {
+  WsFifoQueue<std::uint64_t> fifo(kCap);
+  WorkStealingDeque<std::uint64_t> lifo(kCap);
+  if (!fifo.valid() || !lifo.valid()) std::abort();
+  auto fifo_wave = [&] {
+    checked_ws_owner_wave(
+        [&](std::uint64_t value) { return fifo.try_push_back(value); },
+        [&](std::uint64_t& value) { return fifo.try_pop_front(value); }, false);
+  };
+  auto lifo_wave = [&] {
+    checked_ws_owner_wave(
+        [&](std::uint64_t value) { return lifo.try_push_bottom(value); },
+        [&](std::uint64_t& value) { return lifo.try_pop_bottom(value); }, true);
+  };
+#if defined(HYLE_BENCH_MOODYCAMEL)
+  // General MPMC reference only; not a same-family owner comparison.
+  moodycamel::ConcurrentQueue<std::uint64_t> moody(kCap);
+  auto moody_wave = [&] {
+    checked_ws_owner_wave(
+        [&](std::uint64_t value) { return moody.enqueue(value); },
+        [&](std::uint64_t& value) { return moody.try_dequeue(value); }, false);
+  };
+#endif
+  for (unsigned wave = 0; wave != 200; ++wave) {
+    fifo_wave();
+    lifo_wave();
+#if defined(HYLE_BENCH_MOODYCAMEL)
+    moody_wave();
+#endif
+  }
+  // Functional smoke never enters nanobench's timing path.
+  if (std::getenv("HYLE_BENCH_SMOKE") != nullptr) return;
   ankerl::nanobench::Bench b;
-  b.title("work-stealing OWNER fill+drain (1024 cap, 512 batch)")
+  b.title("work-stealing owner single-thread checked fill+drain (512 items)")
       .relative(true)
       .batch(static_cast<std::uint64_t>(kBatch) * 2)
       .minEpochIterations(2000);
-
-  b.run("HYLE WsFifoQueue (FIFO owner)", [&] {
-    static WsFifoQueue<std::uint64_t> q(kCap);
-    for (int i = 0; i < kBatch; ++i)
-      q.try_push_back(static_cast<std::uint64_t>(i));
-    std::uint64_t sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      std::uint64_t value = 0;
-      q.try_pop_front(value);
-      sum += value;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
-
-  b.run("HYLE WorkStealingDeque (LIFO owner)", [&] {
-    static WorkStealingDeque<std::uint64_t> d(kCap);
-    for (int i = 0; i < kBatch; ++i)
-      d.try_push_bottom(static_cast<std::uint64_t>(i));
-    std::uint64_t sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      std::uint64_t value = 0;
-      d.try_pop_bottom(value);
-      sum += value;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
-
+  b.run("HYLE WsFifoQueue (FIFO owner)", fifo_wave);
+  b.run("HYLE WorkStealingDeque (LIFO owner)", lifo_wave);
 #if defined(HYLE_BENCH_MOODYCAMEL)
-  b.run("moodycamel (general MPMC ref)", [&] {
-    static moodycamel::ConcurrentQueue<std::uint64_t> q(kCap);
-    for (int i = 0; i < kBatch; ++i) q.enqueue(static_cast<std::uint64_t>(i));
-    std::uint64_t out = 0, sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      q.try_dequeue(out);
-      sum += out;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
+  b.run("moodycamel (general MPMC ref)", moody_wave);
 #endif
 }
 
-// ---- 4. work-stealing STEAL throughput (thief drains victim ~half at a time) -
-// Owner fills kBatch; a single thief steals everything in steal-half waves.
-// Measures the steal path (the contended end). Reported as ns per item stolen.
+// ---- 4. work-stealing APIs, single-thread fill+steal+drain -------------------
+// There is no concurrent owner/thief here. Owner fill is inside every callback;
+// the denominator is 512 transferred items, not isolated steal operations.
+// Hyle steals ceil(remaining/2); Crossbeam's default batch cap is 32. Compare
+// conservation, not batch boundaries or the order of each directly returned item.
 void bench_ws_steal() {
+  WsFifoQueue<std::uint64_t> victim(kCap);
+  WsFifoQueue<std::uint64_t> thief(kCap);
+  WorkStealingDeque<std::uint64_t> deque(kCap);
+  if (!victim.valid() || !thief.valid() || !deque.valid()) std::abort();
+  auto batch_wave = [&] {
+    for (int i = 0; i < kBatch; ++i)
+      if (!victim.try_push_back(static_cast<std::uint64_t>(i))) std::abort();
+    CheckedStealBatch checked;
+    std::uint64_t value = 0;
+    while (victim.try_steal_into(thief, value)) {
+      checked.add(value);
+      while (thief.try_pop_front(value)) checked.add(value);
+    }
+    checked.finish();
+    if (victim.try_pop_front(value) || thief.try_pop_front(value)) std::abort();
+  };
+  auto single_wave = [&] {
+    for (int i = 0; i < kBatch; ++i)
+      if (!deque.try_push_bottom(static_cast<std::uint64_t>(i))) std::abort();
+    std::uint64_t count = 0, value = 0;
+    for (;;) {
+      const auto status = deque.try_steal_top(value);
+      if (status == hyle::container::StealStatus::kRetry) continue;
+      if (status == hyle::container::StealStatus::kEmpty) break;
+      if (count >= kBatch || value != count++) std::abort();
+    }
+    if (count != kBatch || deque.try_pop_bottom(value)) std::abort();
+    ankerl::nanobench::doNotOptimizeAway(count);
+  };
+  for (unsigned wave = 0; wave != 200; ++wave) {
+    batch_wave();
+    single_wave();
+  }
+  if (std::getenv("HYLE_BENCH_SMOKE") != nullptr) return;
   ankerl::nanobench::Bench b;
-  b.title("work-stealing STEAL drain (owner fills 512)")
+  b.title("work-stealing API single-thread checked fill+steal+drain (512 items)")
       .relative(true)
       .batch(kBatch)
       .minEpochIterations(1000);
-
-  b.run("HYLE WsFifoQueue try_steal_into", [&] {
-    static WsFifoQueue<std::uint64_t> victim(kCap);
-    static WsFifoQueue<std::uint64_t> thief(kCap);
-    for (int i = 0; i < kBatch; ++i)
-      victim.try_push_back(static_cast<std::uint64_t>(i));
-    std::uint64_t sum = 0;
-    // Drain victim: each try_steal_into grabs ~half into `thief`, returns one.
-    for (;;) {
-      std::uint64_t value = 0;
-      if (!victim.try_steal_into(thief, value)) break;
-      sum += value;
-      // empty the thief's haul so capacity guard never trips
-      while (thief.try_pop_front(value)) sum += value;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
-
-  b.run("HYLE WorkStealingDeque try_steal_top", [&] {
-    static WorkStealingDeque<std::uint64_t> d(kCap);
-    for (int i = 0; i < kBatch; ++i)
-      d.try_push_bottom(static_cast<std::uint64_t>(i));
-    std::uint64_t sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      std::uint64_t value = 0;
-      if (d.try_steal_top(value) == hyle::container::StealStatus::kOk)
-        sum += value;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
+  b.run("HYLE WsFifoQueue steal-half + local drain", batch_wave);
+  b.run("HYLE WorkStealingDeque single-item steal", single_wave);
 }
 
 // ---- 5. ConcurrentVector: push_back + indexed read (vs tbb) ------------------
@@ -699,6 +736,14 @@ void bench_concurrent_vector() {
 int main() {
   const char* filter = std::getenv("HYLE_QUEUE_BENCH_FILTER");
   if (filter != nullptr) {
+    if (std::string_view(filter) == "ws-owner") {
+      bench_ws_owner();
+      return 0;
+    }
+    if (std::string_view(filter) == "ws-steal") {
+      bench_ws_steal();
+      return 0;
+    }
     if (std::string_view(filter) == "concurrent-vector") {
       bench_concurrent_vector();
       return 0;

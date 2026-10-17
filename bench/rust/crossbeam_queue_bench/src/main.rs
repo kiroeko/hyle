@@ -1,41 +1,33 @@
-// crossbeam-deque parity bench for HYLE's work-stealing queues (task #9).
-//
-// Mirrors bench/container/queue_sota_bench.cc EXACTLY in workload shape so the
-// ns/op numbers are comparable across languages:
-//   * same kBatch = 512 fill+drain wave
-//   * Worker::new_fifo()  == HYLE WsFifoQueue (tokio-style FIFO owner queue)
-//   * Worker::new_lifo()  == HYLE WorkStealingDeque (Chase-Lev LIFO)
-//   * steal_batch_and_pop == HYLE WsFifoQueue::try_steal_into (steal ~half + return one)
-//   * Stealer::steal      == HYLE WorkStealingDeque::try_steal_top (one item)
-//
-// HONEST cross-language caveats (printed, not hidden):
-//   * Different language + compiler (rustc LLVM vs MSVC/GCC). Same -O3+LTO+1 CGU.
-//   * crossbeam Worker is UNBOUNDED (grows); HYLE's are BOUNDED rings. The owner
-//     hot path is the comparable part (push/pop); a bounded ring also pays a
-//     capacity check the unbounded one skips -- noted, not hidden.
-//   * Measurement: hand-rolled min-of-epochs harness (nanobench has no Rust twin).
-//     We report the MEDIAN ns/op over many epochs, same statistic nanobench shows.
-//
-// No criterion dependency (not in the offline cache); std::time::Instant is plenty
-// for a 512-op batch repeated thousands of times.
+// Native Crossbeam work-stealing API traces beside Hyle's C++ queue benchmark.
+// Both fill 512 values and check every output, but they are not identical
+// implementations or harnesses: Rust/LLVM differs from the measured C++ build;
+// Worker buffers can grow and shrink whereas Hyle's rings are fixed; Crossbeam's
+// default steal batch is capped at 32 whereas Hyle steals half the remaining items.
+// These are single-thread API traces, not concurrent owner/thief throughput.
 
 use crossbeam_deque::{Steal, Worker};
 use std::hint::black_box;
 use std::time::Instant;
 
-const CAP: usize = 1024; // matches C++ ring capacity (crossbeam grows past it)
-const BATCH: usize = 512; // matches C++ kBatch
+const BATCH: usize = 512;
+const WARMUP: usize = 200;
 
-// Run `f` for enough epochs to get a stable median ns/op. `ops_per_call` is how
-// many logical queue ops one call of `f` performs (for the per-op divide).
+// Queue/stealer construction precedes this function and destruction follows it.
+// Warmup does not stop native Worker::pop from shrinking its buffer: a later fill
+// may grow it again. Keep that native work in the callback and disclose it.
 fn measure<F: FnMut() -> u64>(name: &str, ops_per_call: u64, mut f: F) {
-    // Warm up (let the Worker buffer reach steady-state capacity, prime caches).
-    for _ in 0..200 {
+    for _ in 0..WARMUP {
         black_box(f());
     }
+    // A functional-only path: never enter Instant's timing path.
+    if std::env::var_os("HYLE_BENCH_SMOKE").is_some() {
+        println!("smoke PASS: {name}, {WARMUP} checked waves");
+        return;
+    }
     const EPOCHS: usize = 400;
-    const ITERS: usize = 50; // calls timed per epoch
+    const ITERS: usize = 50;
     let mut samples: Vec<f64> = Vec::with_capacity(EPOCHS);
+    let mut elapsed_ns: Vec<u128> = Vec::with_capacity(EPOCHS);
     for _ in 0..EPOCHS {
         let t0 = Instant::now();
         let mut acc = 0u64;
@@ -43,102 +35,170 @@ fn measure<F: FnMut() -> u64>(name: &str, ops_per_call: u64, mut f: F) {
             acc = acc.wrapping_add(f());
         }
         black_box(acc);
-        let elapsed = t0.elapsed().as_nanos() as f64;
+        let elapsed = t0.elapsed().as_nanos();
         let total_ops = (ITERS as u64 * ops_per_call) as f64;
-        samples.push(elapsed / total_ops);
+        elapsed_ns.push(elapsed);
+        samples.push(elapsed as f64 / total_ops);
     }
-    samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let median = samples[samples.len() / 2];
-    let min = samples[0];
-    println!("{:<42} median {:>7.2} ns/op   min {:>7.2} ns/op", name, median, min);
+    // Preserve execution order. Sort only a copy to calculate summary statistics.
+    let mut sorted = samples.clone();
+    sorted.sort_by(|a, b| a.total_cmp(b));
+    let median = (sorted[EPOCHS / 2 - 1] + sorted[EPOCHS / 2]) / 2.0;
+    println!(
+        "{:<48} median {:>7.2} ns/unit   min {:>7.2} ns/unit",
+        name, median, sorted[0]
+    );
+    for (epoch, ns_per_unit) in samples.iter().enumerate() {
+        println!(
+            "sample\t{name}\t{epoch}\t{ITERS}\t{ops_per_call}\t{}\t{ns_per_unit:.12}",
+            elapsed_ns[epoch]
+        );
+    }
 }
 
-// 1. OWNER FIFO fill+drain (== HYLE WsFifoQueue owner path). Reuse one Worker so
-//    its buffer stops growing after the first wave (matches C++ static queue).
+fn owner_wave(w: &Worker<u64>, lifo: bool) -> u64 {
+    for i in 0..BATCH {
+        w.push(i as u64); // infallible native API (may allocate/grow)
+    }
+    let mut sum = 0;
+    for i in 0..BATCH {
+        let expected = if lifo { BATCH - 1 - i } else { i } as u64;
+        assert_eq!(w.pop(), Some(expected));
+        sum += expected;
+    }
+    assert_eq!(w.pop(), None);
+    sum
+}
+
+struct CheckedBatch {
+    seen: [bool; BATCH],
+    count: usize,
+    sum: u64,
+    xor_sum: u64,
+}
+
+impl CheckedBatch {
+    fn new() -> Self {
+        Self {
+            seen: [false; BATCH],
+            count: 0,
+            sum: 0,
+            xor_sum: 0,
+        }
+    }
+
+    fn add(&mut self, value: u64) {
+        assert!(value < BATCH as u64 && !self.seen[value as usize]);
+        self.seen[value as usize] = true;
+        self.count += 1;
+        self.sum += value;
+        self.xor_sum ^= value;
+    }
+
+    fn finish(self) -> u64 {
+        assert_eq!(self.count, BATCH);
+        assert_eq!(self.sum, (BATCH * (BATCH - 1) / 2) as u64);
+        assert_eq!(self.xor_sum, 0);
+        self.sum
+    }
+}
+
 fn bench_owner_fifo() {
-    let w: Worker<u64> = Worker::new_fifo();
-    measure("crossbeam Worker FIFO owner fill+drain", (BATCH * 2) as u64, || {
-        for i in 0..BATCH {
-            w.push(i as u64);
-        }
-        let mut sum = 0u64;
-        while let Some(v) = w.pop() {
-            sum = sum.wrapping_add(v);
-        }
-        sum
-    });
+    let w = Worker::new_fifo();
+    measure(
+        "crossbeam FIFO owner fill+drain (scalar ops)",
+        (BATCH * 2) as u64,
+        || owner_wave(&w, false),
+    );
 }
 
-// 2. OWNER LIFO fill+drain (== HYLE WorkStealingDeque Chase-Lev owner path).
 fn bench_owner_lifo() {
-    let w: Worker<u64> = Worker::new_lifo();
-    measure("crossbeam Worker LIFO owner fill+drain", (BATCH * 2) as u64, || {
-        for i in 0..BATCH {
-            w.push(i as u64);
-        }
-        let mut sum = 0u64;
-        while let Some(v) = w.pop() {
-            sum = sum.wrapping_add(v);
-        }
-        sum
-    });
+    let w = Worker::new_lifo();
+    measure(
+        "crossbeam LIFO owner fill+drain (scalar ops)",
+        (BATCH * 2) as u64,
+        || owner_wave(&w, true),
+    );
 }
 
-// 3. STEAL drain via steal_batch_and_pop (== HYLE WsFifoQueue::try_steal_into):
-//    owner fills BATCH, thief steals ~half into its own worker + pops one, drains.
+// Owner fill is timed too; denominator is 512 transferred items. The native
+// default cap of 32 is retained. Direct-return order differs from Hyle's batch
+// operation, so validate exact conservation without imposing a shared order.
 fn bench_steal_batch() {
-    let victim: Worker<u64> = Worker::new_fifo();
-    let thief: Worker<u64> = Worker::new_fifo();
+    let victim = Worker::new_fifo();
+    let thief = Worker::new_fifo();
     let stealer = victim.stealer();
-    measure("crossbeam steal_batch_and_pop drain", BATCH as u64, || {
-        for i in 0..BATCH {
-            victim.push(i as u64);
-        }
-        let mut sum = 0u64;
-        loop {
-            match stealer.steal_batch_and_pop(&thief) {
-                Steal::Success(v) => {
-                    sum = sum.wrapping_add(v);
-                    while let Some(t) = thief.pop() {
-                        sum = sum.wrapping_add(t);
-                    }
-                }
-                Steal::Empty => break,
-                Steal::Retry => continue,
+    measure(
+        "crossbeam capped32 fill+steal+drain (items)",
+        BATCH as u64,
+        || {
+            for i in 0..BATCH {
+                victim.push(i as u64);
             }
-        }
-        sum
-    });
+            let mut checked = CheckedBatch::new();
+            loop {
+                match stealer.steal_batch_and_pop(&thief) {
+                    Steal::Success(value) => {
+                        checked.add(value);
+                        while let Some(value) = thief.pop() {
+                            checked.add(value);
+                        }
+                    }
+                    Steal::Empty => break,
+                    Steal::Retry => continue,
+                }
+            }
+            assert_eq!(victim.pop(), None);
+            assert_eq!(thief.pop(), None);
+            checked.finish()
+        },
+    );
 }
 
-// 4. Single-item steal (== HYLE WorkStealingDeque::try_steal_top): owner fills, thief
-//    steals one at a time off a LIFO deque.
 fn bench_steal_one() {
-    let w: Worker<u64> = Worker::new_lifo();
-    let s = w.stealer();
-    measure("crossbeam Stealer::steal one-at-a-time", BATCH as u64, || {
-        for i in 0..BATCH {
-            w.push(i as u64);
-        }
-        let mut sum = 0u64;
-        loop {
-            match s.steal() {
-                Steal::Success(v) => sum = sum.wrapping_add(v),
-                Steal::Empty => break,
-                Steal::Retry => continue,
+    let w = Worker::new_lifo();
+    let stealer = w.stealer();
+    measure(
+        "crossbeam single-item fill+steal+drain (items)",
+        BATCH as u64,
+        || {
+            for i in 0..BATCH {
+                w.push(i as u64);
             }
-        }
-        sum
-    });
+            let mut count = 0;
+            loop {
+                match stealer.steal() {
+                    Steal::Success(value) => {
+                        assert!(count < BATCH);
+                        assert_eq!(value, count as u64);
+                        count += 1;
+                    }
+                    Steal::Empty => break,
+                    Steal::Retry => continue,
+                }
+            }
+            assert_eq!(count, BATCH);
+            assert_eq!(w.pop(), None);
+            count as u64
+        },
+    );
 }
 
 fn main() {
-    // crossbeam-deque resolved from crates.io 0.8.x (or a local clone if patched
-    // in via --config; see Cargo.toml). API is identical across 0.8.* either way.
-    println!("# crossbeam-deque 0.8.x parity (cap={}, batch={})", CAP, BATCH);
-    println!("# rival for HYLE WsFifoQueue (FIFO) + WorkStealingDeque (LIFO/Chase-Lev)");
-    bench_owner_fifo();
-    bench_owner_lifo();
-    bench_steal_batch();
-    bench_steal_one();
+    println!(
+        "# Native crossbeam-deque; record the resolved Cargo.lock/metadata and compiler identity."
+    );
+    println!("# Single thread, 512 items/wave; owner units=push+pop, steal units=items including owner fill.");
+    println!("# Worker may grow/shrink; default batch cap32 differs from Hyle steal-half; no identical-work ranking claim.");
+    println!("# sample columns: name, epoch, iterations, units/call, elapsed_ns, ns/unit (execution order)");
+    let filter = std::env::var("HYLE_QUEUE_BENCH_FILTER").unwrap_or_default();
+    assert!(filter.is_empty() || filter == "ws-owner" || filter == "ws-steal");
+    if filter.is_empty() || filter == "ws-owner" {
+        bench_owner_fifo();
+        bench_owner_lifo();
+    }
+    if filter.is_empty() || filter == "ws-steal" {
+        bench_steal_batch();
+        bench_steal_one();
+    }
 }

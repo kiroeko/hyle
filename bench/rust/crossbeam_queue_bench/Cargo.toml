@@ -17,8 +17,8 @@ publish = false
 [dependencies]
 crossbeam-deque = "0.8"
 
-# Match the C++ bench's optimization level: full opt + LTO + single codegen unit so
-# the cross-language ns/op comparison isn't an artifact of a weaker Rust build.
+# Use optimized Release with LTO and one codegen unit. Record the actual flags
+# for both compilers; these settings do not imply matching code generation.
 [profile.release]
 opt-level = 3
 lto = true
