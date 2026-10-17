@@ -127,7 +127,7 @@ CPU扩展已经进入实施：11种新增GGUF格式和已准入NF4/AWQ/CT/MLX接
 |---|---|---|
 | 104 GGUF制品归并的559合同、34packed、45plain，八模型族 | 两入口实际geometry/编码/变化输入与replay通过；完整词表按分片、驻留专家有界 | [A2实际矩阵](../../evidence/correctness/apple-parity-a2/README.md) |
 | Pro0813／Flash0731官方混合FP4/FP8主干 | 原group32 FP4精确BF16、原FP8 activation/专家、ratio0/4/128压缩attention/indexer和完整MoE通过 | [FP4资格](../implementation/tasks/compute/apple-ds4-fp4-source-qualification.md) |
-| 必要MTP与DSpark | 两个官方三stage DSpark、Qwen混合Q3/Q4/Q6 sidecar完整MTP、Flash Q8/BF16 sidecars完整DSpark通过 | [当前Apple卡](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md) |
+| 必要MTP与DSpark | 两个官方三stage DSpark、Qwen混合Q3/Q4/Q6 sidecar完整MTP、Flash Q8/BF16 sidecars完整DSpark通过 | [Apple实现记录](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md) |
 | source／static／shared | 同一公开consumer实际运行上述新FP4承载、重放/坏ID/恢复/lease；离线搬迁与资源失配检查通过 | [A4交付](../../evidence/correctness/apple-parity-a4/README.md) |
 
 机器为当前MacBook Air M4/16GiB；资格有实际工具链/原source版本边界，不等于巨型整模型

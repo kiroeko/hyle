@@ -696,7 +696,7 @@ Graph 自动规划同一资源。输入、输出和 workspace 必须活到实际
 不在执行时改选其它实现。Windows 未准入此 FlashInfer pin，普通入口在上述域使用ggml。
 
 M2 新增 ggml CUDA 张量映射仍在逐平台验收，具体门见
-[M2-B1 CUDA 当前卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda.md)。普通入口会在符合上述域时
+[CUDA 实现记录](../implementation/tasks/compute/llm-moe-m2-b1-cuda.md)。普通入口会在符合上述域时
 绑定原版 ggml；这不是全21行或所有平台验证已完成的声明。其元素数上限为
 `(INT32_MAX-1024)/sizeof(float)`，plain storage 的跨度和单stride不超过INT32_MAX；空张量、
 高rank不可折叠stride、奇数字节stride、Select/min/max、稳定激活/gate与索引域尚不由这份映射承载。
@@ -777,7 +777,7 @@ Reduce检查全部前缀（包括exclusive最后总和），仅两个验证标�
 Direct必须提供独立caller workspace，不接受输入/输出别名；Graph规划同一工作区。caller的
 tensor、workspace和Queue须活到Completion结束，即使PreparedOperation/Invocation句柄已释放。
 CCCL这些接线的Windows开发验证与尚未运行的跨平台/三交付/P1见
-[当前接入卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md)，不代表完整模型覆盖。
+[实现记录](../implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md)，不代表完整模型覆盖。
 整数/FP8 Cast 与算术等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
@@ -885,7 +885,7 @@ Softmax axis／scale、非零 Bool 或 floating additive mask，以及 SDPA 的 
 声明 F32。ATen RoPE 接 F32/F16/BF16 data、F32 frequency、I32/I64 positions、两种 pair layout 和完整 prefix／axis，
 未旋转 tail 保留原 bits。依赖和 SDK 平台同上，具体资格见
 [Transformer／矩阵接入](../implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md)。
-低精度data的增量验收见[当前接缝卡](../implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md)。
+低精度data的实测范围见[实现记录](../implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md)。
 ATen沿原Double phase程序；普通I32模型路径仍可使用ggml的Float32 phase程序。两种中间精度
 应按实际消费者区分，不能拿Double reference代替明确的Float32模型程序或直接签同合同性能胜负。
 
@@ -1005,7 +1005,7 @@ Provider 已接入明确有限域；合法的 block-Q4 `TensorDesc` 仍须匹配
 
 ### CUDA Provider 接入状态
 
-以下是 [R4 当前施工卡](../implementation/tasks/compute/cuda-v1-four-route-foundation.md) 下已实现并有
+以下是 [R4 实现记录](../implementation/tasks/compute/cuda-v1-four-route-foundation.md) 中已实现并有
 Windows/SM89 验证的专家接入点。普通入口按前述规则自动组成它们，专家可显式限定 Provider。
 Direct/Graph FFN、完整 CUDA 三交付与当前支持域 P1 已验收；单个 Provider 的可编译域仍不等于
 所有 GPU/驱动组合都已资格化。
@@ -1384,7 +1384,7 @@ Copy/Concat的15种plain scalar借ggml的位复制载体，element-aligned strid
 原精确scalar bits→repeat保留signed zero/NaN payload，支持Direct/Graph和空输出。
 合法空输入且非空输出的K0 MatMul/Concat等按同一已验supports进入完整region；空输出仍走leaf。
 这些具名域通过Windows/Linux普通Direct/Graph、变化输入和source/static/shared消费；
-范围、成本及剩余域见[当前接入卡](../implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md)。
+范围、成本及剩余域见[实现记录](../implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md)。
 当前Native保留分支的精确资格和通用成熟默认见本页开头与清退账本。真实并行executor
 可让oneDNN沿N维分成不重叠tile。所有选择均在准备期固定，submit不重选。
 

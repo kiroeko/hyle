@@ -60,7 +60,7 @@ storage 或 MLX interop 都要按各自公开合同审计，不能从其中一�
 
 ## 对新架构的约束
 
-- 当前 `compute_provider_ggml` 是 CPU-only 的阻塞审计身份，不是 Compute 本身；CUDA、Metal 与 Vulkan
+- 当前 `compute_provider_ggml` 是 CPU-only 的阻塞执行适配，不是 Compute 本身；CUDA、Metal 与 Vulkan
   carrier 必须各有独立身份和验证，用户普通 API 不出现 ggml 类型。
 - 同一 Graph 可以把部分 region 给 ggml、部分给 HYLE native 或其他 provider；选择发生在编译阶段。
 - provider-owned storage 不削弱 Mem 的 owner/view 价值：Graph boundary、host mapping、external buffer、
@@ -68,8 +68,8 @@ storage 或 MLX interop 都要按各自公开合同审计，不能从其中一�
 - 若跨 island copy 使 ggml 路线整体更慢，应选择另一 provider 或扩大合法 region，而不是伪造零拷贝。
 - provider 的自有线程/stream/graph capture 必须在 capability 与 cost 中声明，并由 Sched/Graph 避免
   nested oversubscription；HYLE 不假装能注入一个 provider 并未接受的线程池。
-- ggml 升级若改变 buffer import、allocator、threading、graph capture 或 completion 行为，会触发该
-  provider factor 的定向重审，不自动重开无关 Compute/Graph 因子。
+- ggml 升级若改变 buffer import、allocator、threading、graph capture 或 completion 行为，
+  按实际影响检查对应 provider 和直接消费者。
 
 ## ggml graph 怎样成为 HYLE 可调用制品
 

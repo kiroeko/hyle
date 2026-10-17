@@ -76,8 +76,8 @@ ABI。多个模块可以共享锁定 provider headers，但这不自动形成 HY
 离线机器搬运完整受管 cache，或通过根级 `hyle-offline-deps.cmake` 显式注入已审查源码。产品 source
 cache、benchmark peer checkout 和编译产物是三类目录，不能混用。
 
-依赖升级必须由 owner module 的真实影响触发：先改锁和许可证投影，再验证直接消费者、三交付和适用
-性能。更新 vendor 不是“只改构建”；它会触发 owning factor 进入合法审计状态。
+依赖升级同步更新锁和许可证信息，按实际影响验证直接消费者、交付和性能。
+vendor 的算法、布局或运行时变化也要检查，不通过模块状态或审计许可控制修改。
 
 Compute Provider 接入由 CMake 主导，每个库在 owning factor 的一个接入位置描述所属路线/feature、
 锁定依赖名、必要 vendor options、生成/链接 targets、公开与私有 usage requirements、运行资源和

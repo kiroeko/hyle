@@ -2,7 +2,8 @@
 
 这是 CPU／CUDA／Apple／Vulkan **共同的需求目录**，从 CPU 扩覆盖轮已冻结的真实模型与制品事实派生。
 各路线可采用不同成熟 Provider；相同模型／tensor／精度／状态合同应有相同能力目标。
-本表不是四路线支持表，也不把 CPU PASS 复制给 GPU。路线验收仍看当前 owner 卡与实际收据。
+本表不是四路线支持表，也不把 CPU 的运行结果复制给 GPU。各路线的支持范围以实际接口、
+设备与数值检查和运行记录为准。
 
 需求真相为 [逐制品／端口目录](../implementation/tasks/compute/cpu-final-demand-carriers.json)，
 真实 tensor 名／shape／原 storage 示例见 [完整 header 汇总](../../evidence/correctness/cpu-quant-mtp-c1-demand/actual-storage-matrix.json)。

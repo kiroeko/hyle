@@ -168,7 +168,7 @@ CPU+CUDA、CPU+Apple、CPU+Vulkan 使用各自 native endpoint 类型和局部�
 组合编译器拥有 node coverage、canonical 边界、依赖/liveness 与 whole-plan 预算；
 片段仍由原路线 compiler 生成 native Program/Executable，Provider 可吞一个 op、融合片段或完整 region。
 借 [ggml backend scheduler](https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/include/ggml-backend.h)
-完整承载时，必须固定实际 backend/语义/资源规则及重复运行资格，普通用户不排序 backend 数组。
+完整承载时，需说明实际 backend、语义、资源规则及可重复执行的范围，普通用户不排序 backend 数组。
 需检查其 split/allocate 是否随 shape/bind 重做；不能拿 managed replay 冒充零分配 prepared replay，
 也不能把 reset 的失效资源交给旧 lease。不为 HYLE 全部亲自调度拆掉成熟融合。
 其它片段只在粗边界组合，不能加逐 kernel vtable、统一 Queue 或第二套 scheduler/allocator。

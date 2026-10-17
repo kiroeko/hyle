@@ -193,7 +193,8 @@ F16结果在同一region舍入；BF16结果经同GPU的IREE转换，在每个公
 保留公开F32乘法中间舍入，再调用原版Softmax。额外物化和dispatch计入实际成本。
 Graph发布的中间值会保护其实际producer storage；两个Invocation独立持有运行状态。
 此项是[M2-B1成熟接入](../implementation/tasks/compute/llm-moe-m2-b1-vulkan.md)的首批域，
-完整半精度/stride/empty/索引/掩码覆盖和本批跨平台、三交付及性能资格仍按该卡推进。
+上述实现记录中的运行结果仅覆盖实际受测组合；半精度、stride、empty、索引、掩码及其他
+平台、交付和性能范围需要分别验证。
 
 其它已接张量域包含使用 U32 storage 和固定 specialization 的原生 SPIR-V，128-lane workgroup；
 不要求可选的 shaderFloat16/Int8/Int16/Int64。每个输出 word 单 writer，半精度和 Bool 尾块

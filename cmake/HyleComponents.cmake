@@ -466,8 +466,7 @@ _hyle_declare_component(compute_provider_ggml_vulkan
 _hyle_declare_component(compute_ggml_runtime
   PRIVATE_DEPS core error mem platform)
 
-# M1-C AUDITED identities; the finite native resource/ABI contract is frozen.
-# Product dependencies and headers are added with their real implementation.
+# Native provider dependencies and public headers follow their implementations.
 _hyle_declare_component(compute_provider_ggml_cuda
   PRIVATE_DEPS compute_backend_cuda compute_ops compute_ggml_runtime error mem
   PUBLIC_DEPS core compute

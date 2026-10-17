@@ -50,7 +50,7 @@ writer.publish().IgnoreError();
 
 Apple/Vulkan factory调用它们各自的CopyBatchInvocation::create(program)，不需要通用Queue。
 clone只复制该完整byte-addressable成员，保留原编码；不对opaque布局做raw clone。不同资源/
-设备/原数学转换不是同一件事，必须沿实际原F2资格和已有成熟转换。pool/resource/Context、
+设备/原数学转换不是同一件事，需使用批量搬运接口支持的资源组合和已有成熟转换。pool/resource/Context、
 borrowed Queue与allocator活到全部版本、writer和实际native use退休。
 
 ticket内部遵循原F2 output→drop submission→reset→ReadLease::try_write的独占规则。Writer

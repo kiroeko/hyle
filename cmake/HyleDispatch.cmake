@@ -265,8 +265,8 @@ function(hyle_target_simd)
   endif()
 
   # Highway intentionally blocks AVX3 under classic cl.exe. Refuse to label an
-  # AVX2 fallback as an exact AVX-512 source kernel; use clang-cl or AVX2 until
-  # the owning ticket admits a qualified specialty implementation.
+  # AVX2 fallback as an exact AVX-512 source kernel; use clang-cl or AVX2 with
+  # this locked Highway implementation.
   if(_isa STREQUAL "AVX512" AND MSVC AND
      CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     message(FATAL_ERROR

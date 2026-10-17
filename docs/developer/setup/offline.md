@@ -88,7 +88,7 @@ manifest。两种形状都核对许可证；通过后才设置标准
 `FETCHCONTENT_SOURCE_DIR_<UPPER_NAME>`，Tracy 则设置 `HYLE_TRACY_DIR`。脚本同时强制
 `FETCHCONTENT_FULLY_DISCONNECTED=ON` 和 `FETCHCONTENT_UPDATES_DISCONNECTED=ON`，因此缺少所选 feature
 需要的目录会在首次干净配置中失败，不会访问网络或借共享 cache 蒙混过关。显式 override 的优先级
-高于 cache，因此这个入口适合组织已经按依赖逐项审批的介质。
+高于 cache，因此这个入口适合组织已核实来源和内容完整性的介质。
 若所选 component/feature 完全不触达外部源码（例如 tests 关闭的 core/error-only 形状），`deps/` 可不存在
 或为空；断网门仍开启。预载脚本会为未携带项登记预期本地路径，只有真正选择该项时才清晰报 missing source。
 
