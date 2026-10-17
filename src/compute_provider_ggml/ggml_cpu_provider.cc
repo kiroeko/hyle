@@ -349,8 +349,10 @@ struct CacheEncodingState final {
   std::vector<const ggml_tensor *,mem::StdAllocator<const ggml_tensor *>> q8_queries;
 };
 
-// Only tiled math recipes use native liveness allocation. The buffer adapter
-// changes ownership, not the upstream planner or selected CPU executor.
+// Tiled math and ordinary multi-node recipes use native liveness allocation.
+// Private cache paths retain their existing observation/update boundaries.
+// The buffer adapter changes ownership, not the upstream planner or selected
+// CPU executor.
 struct GraphStorage final {
   mem::AllocatorRef allocator;
   ggml_backend_buffer_type owned_type{};
@@ -1321,6 +1323,13 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
         return allocation_failure();
       capacity += node.inputs.size() * 4;
     }
+    const bool use_liveness =
+        tiled || (recipe.nodes.size() > 1 && encoders == 0 &&
+                  std::ranges::none_of(recipe.nodes, [](const auto &node) {
+                    return node.operation
+                        .template custom_as<internal::PagedRead>()
+                        .has_value();
+                  }));
     auto arena =
         ggml_runtime::MetadataArena::for_graph(capacity, capacity, allocator);
     if (!arena)
@@ -1333,7 +1342,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
       const auto &description = recipe.values[id];
       auto *tensor = create_tensor_input(context, description);
       invocation->values[id] = tensor;
-      if (tiled)
+      if (use_liveness)
         ggml_set_input(tensor);
       invocation->input_roots.push_back(tensor);
     }
@@ -1372,7 +1381,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
         invocation->views.push_back(tensor);
         continue;
       }
-      if (tiled || tensor->data ||
+      if (use_liveness || tensor->data ||
           std::ranges::find(invocation->input_roots, tensor) !=
               invocation->input_roots.end() ||
           std::ranges::find(invocation->output_roots, tensor) !=
@@ -1397,7 +1406,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
       for (const auto &[tensor, offset] : allocations)
         tensor->data = static_cast<std::byte *>(invocation->storage) + offset;
     }
-    if (tiled) {
+    if (use_liveness) {
       invocation->graph_storage = allocator.construct<GraphStorage>();
       if (!invocation->graph_storage)
         return allocation_failure();

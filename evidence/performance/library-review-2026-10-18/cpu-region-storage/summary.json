@@ -1,0 +1,51 @@
+{
+  "status": "implemented_focused_validation_complete_awaiting_root_review",
+  "baseline_commit": "143f2fedf89e071cc79ae98d15ba482797bf89c5",
+  "scope": "Official existing GraphStorage for tiled || (recipe.nodes.size()>1 and noCacheEncode/PagedRead). Single nodes, private cache strategies, alias rules, selected CPU executor, precision and native kernels unchanged.",
+  "implementation": "Only internal strategy and ownership comment changed; cold reserve, scalar-aligned real bindings, native input/output-root marks, first alloc_graph, view refresh and error cleanup reuse the already-shipping implementation.",
+  "validation": {
+    "candidate_tests": {
+      "ffa4": "9/9 PASS",
+      "mixed": "9/9 PASS"
+    },
+    "baseline_tests": "Both8/9; only new OrdinaryChainColdAllocationIsBounded assertion fails, raw logs retained. Same numerical/lifetime tests pass.",
+    "coverage": "64step small finite chain with published step32 view/root, source immutability, two independent slots each rebound to two real4B-offset port sets with no AllocatorRef allocation/free during calls; branch+Fill constant+ReLU+BF16/F32 Cast+safeSoftmax NaN callbacks; cold quota0/1MiB failure charge rollback and successful retry; existing5 tiled-attention/native-gallocr checks retained.",
+    "numerics": "Neg chain, finite branch and published ReLU values checked exactly. Dyadic inputs/Fill2 remain exactly representable after BF16 casts. FP64 softmax oracle abs2e-6 unchanged new budget; undefined rows and per-element NaNs checked explicitly.",
+    "prepared_limit": "Actual invocation AllocatorRef counters monitored. No end-to-end global new/C malloc interception, no concurrent-slot stress. Retained native allocator fault fixture is separate from actual provider injection.",
+    "boundary": "Fresh current Hyle provider/test/selector host objects and native allocator overlay link before pinned native archives, with retained ABI2 CPUHad selected AVX2 modules. Internal compile recipe/multi-node provider shared_submit uses real CPU Queue; no full public Graph partitioner/installed SDK build.",
+    "build": "MSVC14.50.35717 Release/O2/MD; fresh Hyle C++ /W4 /WX. Direct CL/LINK only; no configure/cmake --build/SDK copy/download.",
+    "initial_harness_compile_failures_retained": [
+      "Fill TensorShape requires create() rather than aggregate braces",
+      "Operation constructor is explicit; wrap native operation structs"
+    ],
+    "post_test_edit": "Whitespace-only wrapping of new predicate and Fill initializer. Both exact tested snapshots and applied files included, with whitespace-stripped byte equality asserted. No semantic edit after tests.",
+    "no_timing": true
+  },
+  "cold_allocation": {
+    "shape": "64Neg nodes, F32[256,1024],1MiB each, one input/one final output",
+    "metric": "Actual incremental AllocatorRef live requested private bytes across create_invocation after prepare, including tracked native backing/metadata/workspace. Not RSS, peak resident, whole-process memory or complete C malloc metadata.",
+    "baseline_both_pins_bytes": 67049688,
+    "candidate_ffa4_bytes": 3086784,
+    "candidate_mixed_bytes": 3086752,
+    "caller_logical_required_bytes": 2097152,
+    "caller_allocated_or_large_numerical_execution_in_this_cold_test": false,
+    "legacy_owned_payload_census_from_source_bytes": 66060288,
+    "native_backing_request_seen_in_candidate_quota_failure_bytes": 2097152
+  },
+  "dependencies": {
+    "pins": [
+      "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+      "456172ec733a mixed locked pin"
+    ],
+    "retain_cpu_hadamard_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-hadamard\\source-results.zip",
+      "bytes": 1963530,
+      "sha256": "8e297be518dfc326a55e96a2bcd9cd83a5f910ec7bc0961fd98cd13960fad323"
+    },
+    "prior_cpu_allocator_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-math-attention\\source-evidence.zip",
+      "bytes": 390232,
+      "sha256": "0447b9ff2c9e37778752bde7ef2e8685d653193407da76336775c9ad2718897b"
+    }
+  }
+}

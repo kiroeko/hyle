@@ -401,4 +401,166 @@ TEST(GgmlCpuMathAttention, NativeColdPlannerFailuresAndFirstBindDoNotAllocate) {
   ggml_backend_buffer_free(yb);
   hyle_test_gallocr_fail_at(0);
 }
+d::Recipe negative_chain(std::int64_t rows, std::int64_t columns,
+                         bool publish_middle = false) {
+  const auto description = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array{rows, columns}).value();
+  d::Recipe recipe{.values = std::vector<c::TensorDesc>(65, description),
+                   .inputs = {0},
+                   .outputs = publish_middle ? std::vector<std::uint32_t>{32, 64}
+                                             : std::vector<std::uint32_t>{64}};
+  for (std::uint32_t i = 1; i <= 64; ++i)
+    recipe.nodes.push_back(
+        {c::Operation(c::Unary{c::UnaryKind::kNeg}), {i - 1}, {i}});
+  return recipe;
+}
+
+TEST(GgmlCpuStorage, OrdinaryChainColdAllocationIsBounded) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    RawProgram program(stats.get());
+    ASSERT_TRUE(program.initialize(negative_chain(256, 1024)).ok());
+    const auto before = stats.snapshot();
+    ASSERT_TRUE(program.add_slot().ok());
+    const auto bytes = stats.snapshot().live_bytes - before.live_bytes;
+    std::cout << "ordinary_chain_cold_allocator_bytes=" << bytes
+              << " legacy_owned_payload_bytes=" << 63ULL * 1024 * 1024
+              << " caller_logical_required_bytes=" << 2ULL * 1024 * 1024
+              << '\n';
+    EXPECT_LT(bytes, 8ULL * 1024 * 1024);
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(GgmlCpuStorage, PublishedViewRootAndTwoSlotsRebindWithoutAllocation) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    RawProgram program(stats.get());
+    ASSERT_TRUE(program.initialize(negative_chain(4, 8, true)).ok());
+    ASSERT_TRUE(program.add_slot().ok());
+    ASSERT_TRUE(program.add_slot().ok());
+    std::vector<c::TensorDesc> descriptions = program.inputs;
+    descriptions.insert(descriptions.end(), program.outputs.begin(),
+                        program.outputs.end());
+    AttentionPorts first(descriptions), second(descriptions);
+    auto queue_context =
+        c::Context::create(c::cpu::device(), c::ggml_cpu::provider()).value();
+    auto queue = queue_context.create_queue().value();
+    std::vector<double> retained;
+    for (int replay = 0; replay != 2; ++replay) {
+      auto &ports = replay == 0 ? first : second;
+      std::vector<double> input(32);
+      for (std::size_t i = 0; i < input.size(); ++i)
+        input[i] = double(int(i) - 17 + replay) / 4.;
+      ports.write(0, descriptions[0], input);
+      for (std::size_t slot = 0; slot != 2; ++slot) {
+        const auto before = stats.snapshot();
+        const auto status = program.submit(slot, queue, ports, 1);
+        ASSERT_TRUE(status.ok()) << status.message();
+        EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
+        EXPECT_EQ(stats.snapshot().total_frees, before.total_frees);
+        EXPECT_EQ(ports.read(descriptions[0], 0), input);
+        EXPECT_EQ(ports.read(descriptions[1], 1), input);
+        EXPECT_EQ(ports.read(descriptions[2], 2), input);
+      }
+      if (replay == 0)
+        retained = input;
+      else
+        EXPECT_EQ(first.read(descriptions[1], 1), retained);
+    }
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(GgmlCpuStorage, BranchConstantsAndNanObserversRetainTheirSources) {
+  const auto description = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{4, 8}).value();
+  auto narrow = c::TensorDesc::dense(c::DataType::kBFloat16,
+                                    std::array<std::int64_t, 2>{4, 8}).value();
+  d::Recipe recipe{
+      .values = std::vector<c::TensorDesc>(10, description),
+      .nodes = {{c::Operation(c::Unary{c::UnaryKind::kNeg}), {0}, {1}},
+                {c::Operation(c::Unary{c::UnaryKind::kRelu}), {1}, {2}},
+                {c::Operation(c::Unary{c::UnaryKind::kNeg}), {2}, {3}},
+                {c::Operation(c::Fill{
+                     .output_shape = c::TensorShape::create(
+                                         description.dimensions()).value(),
+                     .output_type = c::DataType::kFloat32,
+                     .value = c::ScalarValue(2.F)}),
+                 {},
+                 {4}},
+                {c::Operation(c::Binary{c::BinaryKind::kAdd}), {3, 4}, {5}},
+                {c::Operation(c::Cast{c::DataType::kBFloat16}), {5}, {6}},
+                {c::Operation(c::Cast{c::DataType::kFloat32}), {6}, {7}},
+                {c::Operation(c::Softmax{}), {7}, {8}},
+                {c::Operation(c::Unary{c::UnaryKind::kNeg}), {7}, {9}}},
+      .inputs = {0},
+      .outputs = {2, 8, 9}};
+  recipe.values[6] = narrow;
+  RawProgram program(hyle::mem::system_allocator());
+  const auto initialized = program.initialize(std::move(recipe));
+  ASSERT_TRUE(initialized.ok()) << initialized.message();
+  ASSERT_TRUE(program.add_slot().ok());
+  std::array descriptions{description, description, description, description};
+  AttentionPorts ports(descriptions);
+  auto queue_context =
+      c::Context::create(c::cpu::device(), c::ggml_cpu::provider()).value();
+  auto queue = queue_context.create_queue().value();
+  for (int replay = 0; replay != 2; ++replay) {
+    std::vector<double> input(32), relu(32), shifted(32);
+    for (std::size_t i = 0; i < input.size(); ++i) {
+      input[i] = double(int(i % 13) - 6 + replay) / 4.;
+      relu[i] = (std::max)(-input[i], 0.);
+      shifted[i] = 2. - relu[i];
+    }
+    input[10] = std::numeric_limits<double>::quiet_NaN();
+    ports.write(0, description, input);
+    const auto status = program.submit(0, queue, ports, 1);
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto middle = ports.read(description, 1);
+    const auto softmax = ports.read(description, 2);
+    const auto branch = ports.read(description, 3);
+    for (std::size_t row = 0; row != 4; ++row) {
+      double denominator = 0.;
+      for (std::size_t column = 0; column != 8; ++column)
+        denominator += std::exp(shifted[row * 8 + column]);
+      for (std::size_t column = 0; column != 8; ++column) {
+        const auto i = row * 8 + column;
+        if (i == 10) {
+          EXPECT_TRUE(std::isnan(middle[i]));
+          EXPECT_TRUE(std::isnan(branch[i]));
+        } else {
+          EXPECT_EQ(middle[i], relu[i]);
+          EXPECT_EQ(branch[i], -shifted[i]);
+        }
+        if (row == 1)
+          EXPECT_TRUE(std::isnan(softmax[i]));
+        else
+          EXPECT_NEAR(softmax[i], std::exp(shifted[i]) / denominator, 2e-6);
+      }
+    }
+  }
+}
+
+TEST(GgmlCpuStorage, ColdQuotaFailureRollsBackAndCanRecover) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  hyle::mem::QuotaAllocator quota(stats.get(), 1ULL << 30);
+  {
+    RawProgram program(quota.get());
+    ASSERT_TRUE(program.initialize(negative_chain(256, 1024)).ok());
+    const auto before = quota.used();
+    for (const auto available : {std::size_t{0}, std::size_t{1 << 20}}) {
+      auto hold = quota.try_reserve_bytes(quota.remaining() - available).value();
+      const auto result = program.add_slot();
+      EXPECT_TRUE(result.IsResourceExhausted()) << result.message();
+      hold.reset();
+      EXPECT_EQ(quota.used(), before);
+    }
+    ASSERT_TRUE(program.add_slot().ok());
+  }
+  EXPECT_TRUE(stats.balanced());
+}
 } // namespace
