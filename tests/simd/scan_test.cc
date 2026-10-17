@@ -155,6 +155,7 @@ TEST(Scan, PublicCoreAndConveniencesCoverAllTypes) {
   expect_equal(input, expected_zero, "exclusive/zero-convenience", input.size());
 }
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(Scan, EverySupportedRuntimeVariant) {
   for (const hs::KernelTarget isa : {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4,
                             hs::KernelTarget::kAvx2, hs::KernelTarget::kAvx512,
@@ -181,7 +182,9 @@ TEST(Scan, EverySupportedRuntimeVariant) {
 #undef HYLE_CHECK_SCAN_RUNTIME
   }
 }
+#endif
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(Scan, SelectedTargetDescribesActualKernelTable) {
   const auto& runtime = hs::runtime();
   const hs::SelectedTarget target = hs::selected_target(hs::KernelFamily::kScan);
@@ -190,3 +193,4 @@ TEST(Scan, SelectedTargetDescribesActualKernelTable) {
   EXPECT_NE(runtime.scan_ops.inclusive_scan_u32, nullptr);
   EXPECT_NE(runtime.scan_ops.exclusive_scan_f64, nullptr);
 }
+#endif

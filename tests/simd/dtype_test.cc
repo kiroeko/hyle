@@ -11,6 +11,7 @@
 #include "hyle/core/environment.h"
 #include "hyle/simd/dtype.h"
 #include "hyle/simd/dtype_ops.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/runtime_internal.h"
 
 // dtype_test -- public storage conversion correctness. Two layers:
@@ -302,8 +303,8 @@ TEST(DtypeBatch, F32ToBf16SelectedRouteMatchesScalarExact) {
 // through the specialization (CPU support alone is insufficient for exact builds).
 TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 #if HYLE_ARCH_X64
-  if ((hyle::simd::runtime().dtype.features &
-       hyle::simd::Runtime::kFeatureAvx512Bf16) == 0)
+  if (!hyle::simd::selected_target(hyle::simd::KernelFamily::kDtype)
+           .has(hyle::simd::TargetFeature::kAvx512Bf16))
     GTEST_SKIP() << "selected artifact does not use AVX-512-BF16";
 #else
   GTEST_SKIP() << "non-x86 -- no AVX-512-BF16 path";
@@ -329,34 +330,24 @@ TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 // Fat artifacts may add precise-feature specializations from the host probe;
 // exact artifacts expose only features owned by their sole compiled product tier.
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
+  const auto dtype =
+      hyle::simd::selected_target(hyle::simd::KernelFamily::kDtype);
 #if HYLE_ARCH_X64
 #if defined(HYLE_SIMD_EXACT)
-  const bool tier_owns_f16c = hyle::simd::runtime().target == KernelTarget::kAvx2 ||
-                              hyle::simd::runtime().target == KernelTarget::kAvx512;
-  EXPECT_EQ((hyle::simd::runtime().dtype.features &
-             hyle::simd::Runtime::kFeatureF16c) != 0,
-            tier_owns_f16c);
+  const auto active = hyle::simd::selected_target().target;
+  const bool tier_owns_f16c =
+      active == KernelTarget::kAvx2 || active == KernelTarget::kAvx512;
+  EXPECT_EQ(dtype.has(hyle::simd::TargetFeature::kF16c), tier_owns_f16c);
 #else
-  if (hyle::platform::cpu_features().has(
-          hyle::platform::CpuFeature::kX86F16c)) {
-    EXPECT_NE(hyle::simd::runtime().dtype.features &
-                  hyle::simd::Runtime::kFeatureF16c,
-              0u);
-  } else {
-    EXPECT_EQ(hyle::simd::runtime().dtype.features &
-                  hyle::simd::Runtime::kFeatureF16c,
-              0u);
-  }
+  EXPECT_EQ(dtype.has(hyle::simd::TargetFeature::kF16c),
+            hyle::platform::cpu_features().has(
+                hyle::platform::CpuFeature::kX86F16c));
 #endif
-#elif HYLE_ARCH_ARM64
-  // AArch64 always has the NEON floor. A fat SVE artifact promotes the common
-  // conversion graph to its selected scalable tier instead of stopping at NEON.
-  EXPECT_EQ(hyle::simd::runtime().dtype.target, hyle::simd::runtime().target);
-#elif HYLE_ARCH_RISCV64
-  // A compiled RVV product owns the common conversion graph directly.
-  EXPECT_EQ(hyle::simd::runtime().dtype.target, hyle::simd::runtime().target);
+#elif HYLE_ARCH_ARM64 || HYLE_ARCH_RISCV64
+  // The compiled scalable product owns the common conversion graph directly.
+  EXPECT_EQ(dtype.target, hyle::simd::selected_target().target);
 #else
-  EXPECT_EQ(hyle::simd::runtime().dtype.target, KernelTarget::kScalar);
+  EXPECT_EQ(dtype.target, KernelTarget::kScalar);
 #endif
 }
 
@@ -392,6 +383,7 @@ TEST(DtypeGraph, CoversEveryDirectedStorageEdge) {
   expect_conversion<float8_e5m2_t, float8_e4m3_t>(e5m2);
 }
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(DtypeGraph, CommonConversionsMatchScalarOnEveryRuntimeTier) {
   const auto f16 = all_storage_patterns<float16_t>();
   const auto bf16 = all_storage_patterns<bfloat16_t>();
@@ -443,6 +435,7 @@ TEST(DtypeGraph, CommonConversionsMatchScalarOnEveryRuntimeTier) {
     }
   }
 }
+#endif
 
 TEST(DtypeGraph, ZeroAcceptsNullForEveryDirectedEdge) {
   expect_zero_conversion<float, float16_t>();

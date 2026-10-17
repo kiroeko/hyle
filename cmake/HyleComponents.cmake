@@ -726,6 +726,21 @@ endif()
 if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
   include("${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake")
   hyle_resolve_compute_product_routes("${_hyle_requested_products}")
+  if("cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
+    # Public expert factories belong to the product just like the default
+    # context. Root them at the facade so both their presence defines and their
+    # shared-library link requirements reach consumers; route composition stays
+    # an implementation-private edge.
+    set(_hyle_cuda_experts compute_provider_cublas compute_provider_cuda
+      compute_provider_ggml_cuda compute_provider_torch_cuda)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      list(APPEND _hyle_cuda_experts compute_provider_flashinfer)
+    endif()
+    list(APPEND _HYLE_PRODUCT_FACTORS_COMPUTE ${_hyle_cuda_experts})
+    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH ${_hyle_cuda_experts}
+      graph_provider_ggml_cuda)
+    unset(_hyle_cuda_experts)
+  endif()
   if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
      "cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
     list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_cuda)

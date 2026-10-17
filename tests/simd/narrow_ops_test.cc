@@ -172,6 +172,7 @@ TEST(NarrowOps, PublicDispatchedSurface) {
       hs::is_sorted_total(static_cast<const hs::bfloat16_t *>(nullptr), 0));
 }
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(NarrowOps, EverySupportedRuntimeVariant) {
   for (const hs::KernelTarget isa :
        {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4, hs::KernelTarget::kAvx2, hs::KernelTarget::kAvx512,
@@ -185,3 +186,4 @@ TEST(NarrowOps, EverySupportedRuntimeVariant) {
                                  0x7FC1u, isa);
   }
 }
+#endif

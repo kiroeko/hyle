@@ -124,6 +124,11 @@ function(hyle_add_header_self_contained_test module)
   unset(_hyle_extra_include_dir)
 endfunction()
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME hyle_product_macro_contract_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/product_macro_contract_test.py")
+set_tests_properties(hyle_product_macro_contract_test PROPERTIES
+  LABELS "tooling;build;package")
 add_test(NAME hyle_visibility_generation_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/visibility_generation_test.py"

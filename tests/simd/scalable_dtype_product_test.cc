@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/simd/dtype_ops.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/runtime_internal.h"
 #include "src/simd/dtype/conversion_kernels.h"
 #include "src/simd/dtype/kernels.h"
@@ -70,10 +71,13 @@ void CheckConversions(bool public_api) {
 TEST(ScalableDtypeProduct, DirectKernelsMatchScalarOracle) { CheckConversions(false); }
 
 TEST(ScalableDtypeProduct, RuntimeAndPublicApiUseScalableTier) {
-  EXPECT_EQ(hs::runtime().dtype.target, kExpectedDtypeIsa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kDtype).target,
+            kExpectedDtypeIsa);
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
   const hs::Runtime* exact = hs::runtime_for(kExpectedDtypeIsa);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(exact->dtype.target, kExpectedDtypeIsa);
+#endif
   CheckConversions(true);
 }
 

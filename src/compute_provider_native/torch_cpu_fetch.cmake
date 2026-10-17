@@ -185,10 +185,9 @@ function(hyle_register_torch_cpu_runtime root)
   endif()
   # The installed shim runs before HyleTargets is loaded. The names may be
   # registered before they exist; collection happens for the consumer later.
-  foreach(_owner IN ITEMS hyle_compute_provider_native hyle::_factor_compute_provider_native torch_cpu)
-    string(SHA256 _key "${_owner}")
-    set_property(GLOBAL APPEND PROPERTY "HYLE_RUNTIME_FILES_${_key}" ${_files})
-  endforeach()
+  hyle_register_runtime_files(
+    TARGETS hyle_compute_provider_native hyle::_factor_compute_provider_native torch_cpu
+    FILES ${_files})
 endfunction()
 
 # Private prebuilt-SDK acquisition, also shipped with the static dependency

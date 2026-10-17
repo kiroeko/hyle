@@ -14,9 +14,10 @@
 #include <type_traits>
 #include <vector>
 
+#include "hyle/simd/dtype.h"
 #include "hyle/simd/math.h"
 #include "hyle/simd/target.h"
-#include "src/simd/runtime_internal.h"
+#include "hyle/simd/runtime.h"
 
 // math_test -- ordinary batch operations vs the std::/libm oracle. Runtime
 // routes to a fixed-target locked-Highway implementation where qualified and
@@ -623,7 +624,7 @@ TEST(Math, TailSizes) {
 // ensures the runtime diagnostic names the fixed target actually compiled for
 // the host.
 TEST(Math, ActiveVariantReported) {
-  const KernelTarget v = hyle::simd::runtime().math.target;
+  const KernelTarget v = hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).target;
 #if HYLE_ARCH_X64
   // x86: scalar floor, or locked-Highway AVX2 / AVX-512 target when available.
   EXPECT_TRUE(v == KernelTarget::kScalar || v == KernelTarget::kAvx2 ||

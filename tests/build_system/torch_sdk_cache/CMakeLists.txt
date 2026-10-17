@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(hyle_torch_sdk_cache_test LANGUAGES NONE)
 get_filename_component(HYLE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+include("${HYLE_SOURCE_DIR}/cmake/HyleRuntimeStaging.cmake")
 include("${HYLE_SOURCE_DIR}/src/compute_provider_native/torch_cpu_fetch.cmake")
 
 # Placeholder Windows SDK files exercise only configuration, never native code

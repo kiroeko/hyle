@@ -138,9 +138,7 @@ function(hyle_import_torch_cuda_leaf root cpu_root)
     file(GLOB _common "${cpu_root}/lib/*.so*")
     list(APPEND _runtime ${_common})
   endif()
-  # Installed dependency configs run before HyleRuntimeStaging is included.
-  foreach(_owner IN ITEMS hyle_compute_provider_torch_cuda hyle::_factor_compute_provider_torch_cuda)
-    string(SHA256 _key "${_owner}")
-    set_property(GLOBAL APPEND PROPERTY "HYLE_RUNTIME_FILES_${_key}" ${_runtime})
-  endforeach()
+  hyle_register_runtime_files(
+    TARGETS hyle_compute_provider_torch_cuda hyle::_factor_compute_provider_torch_cuda
+    FILES ${_runtime})
 endfunction()

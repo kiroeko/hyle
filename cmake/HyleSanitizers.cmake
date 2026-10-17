@@ -14,7 +14,10 @@ function(hyle_apply_sanitizer target)
         HYLE_DETAIL_SANITIZER_ADDRESS=1)
       # /Zi is part of a valid MSVC ASan invocation (native cl emits C5072
       # without it) and gives both compiler frontends actionable reports.
-      target_compile_options(${target} PRIVATE /fsanitize=address /Zi)
+      target_compile_options(${target} PRIVATE
+        "$<$<COMPILE_LANGUAGE:C,CXX>:/fsanitize=address>"
+        "$<$<COMPILE_LANGUAGE:C,CXX>:/Zi>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/fsanitize=address,/Zi>")
       get_target_property(_hyle_sanitizer_type ${target} TYPE)
       if(_hyle_sanitizer_type STREQUAL "EXECUTABLE" OR
          _hyle_sanitizer_type STREQUAL "SHARED_LIBRARY" OR
@@ -91,8 +94,11 @@ function(hyle_apply_sanitizer target)
           set(_hyle_asan_runtime_dll "${_hyle_asan_dll}")
         endif()
         target_link_options(${target} PRIVATE
-          /DEBUG /INCREMENTAL:NO /INCLUDE:__asan_seh_interceptor
-          "/WHOLEARCHIVE:${_hyle_asan_thunk}" /INFERASANLIBS:NO)
+          "$<HOST_LINK:LINKER:/DEBUG>"
+          "$<HOST_LINK:LINKER:/INCREMENTAL:NO>"
+          "$<HOST_LINK:LINKER:/INCLUDE:__asan_seh_interceptor>"
+          "$<HOST_LINK:LINKER:/WHOLEARCHIVE:${_hyle_asan_thunk}>"
+          "$<HOST_LINK:LINKER:/INFERASANLIBS:NO>")
         add_custom_command(TARGET ${target} POST_BUILD
           COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                   "${_hyle_asan_runtime_dll}" "$<TARGET_FILE_DIR:${target}>"
@@ -145,13 +151,20 @@ function(hyle_apply_sanitizer target)
     target_compile_options(${target} PRIVATE
       "$<$<COMPILE_LANGUAGE:CXX>:-Wno-error=mismatched-new-delete>")
   endif()
-  target_compile_options(${target} PRIVATE ${flags})
+  foreach(_flag IN LISTS flags)
+    target_compile_options(${target} PRIVATE
+      "$<$<COMPILE_LANGUAGE:C,CXX>:${_flag}>"
+      "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${_flag}>")
+  endforeach()
+  set(_runtime_options
+    "$<HOST_LINK:$<$<LINK_LANGUAGE:C,CXX>:${_runtime_flag}>>"
+    "$<HOST_LINK:$<$<LINK_LANGUAGE:CUDA>:-Xcompiler=${_runtime_flag}>>")
   get_target_property(_type ${target} TYPE)
   if(_type STREQUAL "STATIC_LIBRARY")
     # Archives do not link a runtime. The final application/shared library must
     # receive this requirement even if it does not instrument its own sources.
-    target_link_options(${target} INTERFACE ${_runtime_flag})
+    target_link_options(${target} INTERFACE ${_runtime_options})
   else()
-    target_link_options(${target} PRIVATE ${_runtime_flag})
+    target_link_options(${target} PRIVATE ${_runtime_options})
   endif()
 endfunction()

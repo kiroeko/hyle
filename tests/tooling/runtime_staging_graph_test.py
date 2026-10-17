@@ -31,6 +31,8 @@ foreach(i RANGE 0 9)
   target_link_libraries(b${i} INTERFACE "$<BUILD_INTERFACE:$<1:n${next}>>")
 endforeach()
 hyle_register_runtime_files(TARGETS n10 FILES "${CMAKE_BINARY_DIR}/A.txt")
+add_library(n10_alias ALIAS n10)
+hyle_register_runtime_files(TARGETS n10_alias FILES "${CMAKE_BINARY_DIR}/A.txt")
 set_property(TARGET n10 PROPERTY HYLE_APPLE_METALLIB "${CMAKE_BINARY_DIR}/mlx.metallib")
 add_library(alias ALIAS n0)
 add_library(conditional INTERFACE)
@@ -53,8 +55,36 @@ foreach(target IN ITEMS alias conditional cycleA cyclicConditional other n0)
   get_property(producers GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS)
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/${target}-producers.txt" CONTENT "$<JOIN:${producers},\n>")
 endforeach()
+# Source dependency setup can precede target creation in a child directory.
+hyle_register_runtime_files(TARGETS pending_source future_alias
+  FILES "${CMAKE_BINARY_DIR}/A.txt")
+add_subdirectory(left)
+add_library(future_alias ALIAS pending_source)
+add_subdirectory(right)
+foreach(target IN ITEMS pending_source future_alias)
+  _hyle_collect_runtime_files(${target} files)
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/${target}.txt" CONTENT "$<JOIN:${files},\n>")
+endforeach()
 '''.replace("@HELPER@", (repo / "cmake/HyleRuntimeStaging.cmake").as_posix())
         (root / "CMakeLists.txt").write_text(source, encoding="utf-8")
+        for side in ("left", "right"):
+            child = root / side
+            child.mkdir()
+            (child / "CMakeLists.txt").write_text(r'''
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/runtime.dll" "@SIDE@")
+# Match an installed private dependency shim: owner not imported yet.
+hyle_register_runtime_files(TARGETS sdk_owner
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/runtime.dll")
+hyle_register_runtime_files(TARGETS sdk_owner
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/runtime.dll")
+add_library(sdk_owner INTERFACE IMPORTED)
+add_library(sdk::alias ALIAS sdk_owner)
+if("@SIDE@" STREQUAL "left")
+  add_library(pending_source INTERFACE)
+endif()
+_hyle_collect_runtime_files(sdk::alias files)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/files.txt" CONTENT "$<JOIN:${files},\n>")
+'''.replace("@SIDE@", side), encoding="utf-8")
         for config in ("Release", "Debug"):
             build = root / config
             result = subprocess.run(["cmake", "-S", str(root), "-B", str(build),
@@ -75,7 +105,14 @@ endforeach()
                 producers = set((build / (target + "-producers.txt")).read_text().splitlines()) - {""}
                 expected_producers = {"n10"} if expected_assets else set()
                 assert producers == expected_producers, (config, target, producers, expected_producers)
-        print("PASS: DLL/native asset and producer diamond/alias/conditional/false/cycle and per-collection reset in Debug and Release")
+            for side in ("left", "right"):
+                values = (build / side / "files.txt").read_text().splitlines()
+                expected = [(build / side / "runtime.dll").as_posix()]
+                assert values == expected, (config, side, values, expected)
+            for target in ("pending_source", "future_alias"):
+                values = (build / (target + ".txt")).read_text().splitlines()
+                assert values == [(build / "A.txt").as_posix()], (config, target, values)
+        print("PASS: runtime graph/conditional/assets, pending source/alias, duplicate registration and sibling SDK isolation in Debug and Release")
 
 
 if __name__ == "__main__":

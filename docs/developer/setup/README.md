@@ -42,6 +42,8 @@ cmake --preset <windows-vs2026|windows>
 
 完整 configure/build/test 可用 `cmake --workflow --preset <windows-vs2026|windows|linux|macos>-check`。
 Windows Ninja 使用 wrapper 配合 `windows-ninja`；clang-cl 使用独立的 `windows-clangcl` build tree。
+wrapper 的 Workflow 按各步骤的 preset 选择同一构建目录，不接受 `-B`/`--build-directory` 重定向。
+需要自选目录时，分别执行 Configure、Build、Test，并为三步传入相同的 `-BinaryDir`。
 
 ## 独占构建与组件交付
 

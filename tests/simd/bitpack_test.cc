@@ -67,6 +67,7 @@ template <typename T> void check_all_round_trips() {
   }
 }
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 template <typename T> struct RuntimeBitpack;
 
 template <> struct RuntimeBitpack<std::uint8_t> {
@@ -146,6 +147,8 @@ template <typename T> void check_cross_tier_bytes() {
     }
   }
 }
+
+#endif
 
 std::vector<std::uint16_t> pack_u16_lane_oracle(const std::uint16_t *raw,
                                                 unsigned bits) {
@@ -235,15 +238,21 @@ TEST(BitPack, PackedSizeIsOverflowSafeCeil) {
   EXPECT_EQ(hs::packed_size<std::uint32_t>(max, 32), max);
 }
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(BitPack, EveryAvailableTierUsesCanonicalBytesU8) {
   check_cross_tier_bytes<std::uint8_t>();
 }
+#endif
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(BitPack, EveryAvailableTierUsesCanonicalBytesU16) {
   check_cross_tier_bytes<std::uint16_t>();
 }
+#endif
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(BitPack, EveryAvailableTierUsesCanonicalBytesU32) {
   check_cross_tier_bytes<std::uint32_t>();
 }
+#endif
 
 TEST(BitPack, IndependentU16Layout11) { check_u16_corrected_layout(11); }
 TEST(BitPack, IndependentU16Layout13) { check_u16_corrected_layout(13); }

@@ -15,10 +15,10 @@ namespace bt = hyle::simd::test;
 
 #if defined(HYLE_SIMD_TARGET_SVE)
 #define HYLE_SCALABLE_BITPACK(name) hs::detail::name##_sve
-constexpr hs::KernelTarget kExpectedBitpackIsa = hs::KernelTarget::kSve;
+[[maybe_unused]] constexpr hs::KernelTarget kExpectedBitpackIsa = hs::KernelTarget::kSve;
 #elif defined(HYLE_SIMD_TARGET_RVV)
 #define HYLE_SCALABLE_BITPACK(name) hs::detail::name##_rvv
-constexpr hs::KernelTarget kExpectedBitpackIsa = hs::KernelTarget::kRvv;
+[[maybe_unused]] constexpr hs::KernelTarget kExpectedBitpackIsa = hs::KernelTarget::kRvv;
 #endif
 
 namespace {
@@ -95,6 +95,7 @@ void check_golden(const std::array<std::uint64_t, N> &expected) {
 
 } // namespace
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(ScalableBitpackProduct, RuntimeTableOwnsDirectScalableEntries) {
   const hs::Runtime &active = hs::runtime();
   EXPECT_EQ(active.bitpack.target, kExpectedBitpackIsa);
@@ -106,6 +107,7 @@ TEST(ScalableBitpackProduct, RuntimeTableOwnsDirectScalableEntries) {
   EXPECT_EQ(exact->bitpack_ops.unpack_u16, &HYLE_SCALABLE_BITPACK(unpack_u16));
   EXPECT_EQ(exact->bitpack_ops.pack_u32, &HYLE_SCALABLE_BITPACK(pack_u32));
 }
+#endif
 
 TEST(ScalableBitpackProduct, DirectAndPublicAllWidthsPreserveCanonicalBytes) {
   check_all_widths<std::uint8_t>();

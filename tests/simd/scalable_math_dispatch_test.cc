@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/simd/math.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/runtime_internal.h"
 
 #include <algorithm>
@@ -29,13 +30,15 @@ void ExpectNearRelative(T actual, T expected, T tolerance) {
 }  // namespace
 
 TEST(ScalableMathDispatch, RuntimeSelectsScalableProductTier) {
-  EXPECT_EQ(hs::runtime().target, kExpectedIsa);
-  EXPECT_EQ(hs::runtime().math.target, kExpectedIsa);
+  EXPECT_EQ(hs::selected_target().target, kExpectedIsa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kMath).target, kExpectedIsa);
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
   const hs::Runtime* exact = hs::runtime_for(kExpectedIsa);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(exact->target, kExpectedIsa);
   EXPECT_EQ(exact->math.target, kExpectedIsa);
+#endif
 }
 
 TEST(ScalableMathDispatch, PublicBatchApiUsesScalableCoreAndTail) {

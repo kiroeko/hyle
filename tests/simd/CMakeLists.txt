@@ -63,8 +63,6 @@ if(TARGET hyle_simd)
     hyle_target_simd(TARGET hyle_simd_provider_winner_neon_test ISA NEON)
   endif()
 
-  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
-  target_compile_definitions(hyle_simd_test PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
   target_include_directories(hyle_simd_test PRIVATE "${PROJECT_SOURCE_DIR}")
   hyle_add_fat_kernel(
     TARGET hyle_simd_test
@@ -128,5 +126,18 @@ if(TARGET hyle_simd)
       target_include_directories(hyle_simd_rvv_product_test PRIVATE
         "${PROJECT_SOURCE_DIR}")
     endif()
+  endif()
+  if(HYLE_TEST_INSTRUMENTATION)
+    # Only structural/per-tier tests need private runtime tables. Ordinary tests
+    # exercise the shipping DLL without adding otherwise-hidden exports.
+    target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
+    foreach(_hyle_simd_private_test IN ITEMS hyle_simd_test
+        hyle_simd_sve_product_test hyle_simd_rvv_product_test)
+      if(TARGET ${_hyle_simd_private_test})
+        target_compile_definitions(${_hyle_simd_private_test}
+          PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
+      endif()
+    endforeach()
+    unset(_hyle_simd_private_test)
   endif()
 endif()

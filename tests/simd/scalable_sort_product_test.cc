@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "hyle/simd/runtime.h"
 #include "src/simd/runtime_internal.h"
 #include "hyle/simd/sort.h"
 #include "src/simd/sort/kernels.h"
@@ -194,10 +195,12 @@ TEST(ScalableSortProduct, RuntimeAndPublicApiUseScalableTier) {
 #else
   constexpr hs::KernelTarget kExpected = hs::KernelTarget::kSve;
 #endif
-  EXPECT_EQ(hs::runtime().sort.target, kExpected);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kSort).target, kExpected);
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
   const hs::Runtime* exact = hs::runtime_for(kExpected);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(exact->sort.target, kExpected);
+#endif
 
   auto values = make_values<std::uint32_t>(1000, 0);
   hs::sort(values.data(), values.size(), hs::SortOrder::kAscending);

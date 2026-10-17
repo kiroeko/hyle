@@ -51,6 +51,7 @@ int fat_rvv() noexcept { return 1; }
 #endif
 } // namespace
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   const hs::Runtime &active = hs::runtime();
   EXPECT_EQ(hs::selected_target().target, active.target);
@@ -165,6 +166,7 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_EQ(hs::runtime_for(hs::KernelTarget::kNeon), nullptr);
 #endif
 }
+#endif
 
 #if HYLE_ARCH_X64
 TEST(SimdRuntime, SortCompilerTierContract) {
@@ -186,20 +188,20 @@ TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
 #if HYLE_ARCH_X64
   const auto fn =
       hs::select_fat_kernel(&fat_scalar, &fat_sse4, &fat_avx2, &fat_avx512);
-  const int expected = hs::runtime().target == hs::KernelTarget::kAvx512  ? 3
-                       : hs::runtime().target == hs::KernelTarget::kAvx2  ? 2
-                       : hs::runtime().target == hs::KernelTarget::kSse4 ? 1
+  const int expected = hs::selected_target().target == hs::KernelTarget::kAvx512  ? 3
+                       : hs::selected_target().target == hs::KernelTarget::kAvx2  ? 2
+                       : hs::selected_target().target == hs::KernelTarget::kSse4 ? 1
                                                               : 0;
   EXPECT_EQ(fn(), expected);
 #elif HYLE_ARCH_ARM64
   const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_neon, &fat_sve);
-  const int expected = hs::runtime().target == hs::KernelTarget::kSve    ? 2
-                       : hs::runtime().target == hs::KernelTarget::kNeon ? 1
+  const int expected = hs::selected_target().target == hs::KernelTarget::kSve    ? 2
+                       : hs::selected_target().target == hs::KernelTarget::kNeon ? 1
                                                              : 0;
   EXPECT_EQ(fn(), expected);
 #elif HYLE_ARCH_RISCV64
   const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_rvv);
-  EXPECT_EQ(fn(), hs::runtime().target == hs::KernelTarget::kRvv ? 1 : 0);
+  EXPECT_EQ(fn(), hs::selected_target().target == hs::KernelTarget::kRvv ? 1 : 0);
 #else
   EXPECT_EQ(hs::select_fat_kernel(&fat_scalar)(), 0);
 #endif
@@ -231,9 +233,9 @@ TEST(SimdRuntime, GeneratedPublicFatKernelMatchesRuntimeTier) {
   fn(src.data(), dst.data(), src.size(), &selected);
   for (std::size_t i = 0; i < src.size(); ++i)
     EXPECT_FLOAT_EQ(dst[i], src[i] + 1.0f);
-  auto expected_selected = static_cast<std::uint32_t>(hs::runtime().target);
+  auto expected_selected = static_cast<std::uint32_t>(hs::selected_target().target);
 #if defined(HYLE_SIMD_FAT_AVX512_CAPPED)
-  if (hs::runtime().target == hs::KernelTarget::kAvx512)
+  if (hs::selected_target().target == hs::KernelTarget::kAvx512)
     expected_selected = static_cast<std::uint32_t>(hs::KernelTarget::kAvx2);
 #endif
   EXPECT_EQ(selected, expected_selected);
@@ -317,6 +319,7 @@ TEST(SimdRuntime, PartialCanonicalRequirementsFallBackSafely) {
 }
 #endif
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(SimdRuntime, RandomSequenceIgnoresIsaWidth) {
   constexpr std::size_t kCount = 257;
   hs::RandomState active_state(12345);
@@ -336,7 +339,9 @@ TEST(SimdRuntime, RandomSequenceIgnoresIsaWidth) {
   }
   EXPECT_EQ(active, scalar);
 }
+#endif
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(SimdRuntime, EveryAvailableRandomTierPreservesSequenceAndAdvance) {
   constexpr std::size_t kCount = 257;
   hs::RandomState reference_u64(0x51A7Eull);
@@ -381,6 +386,7 @@ TEST(SimdRuntime, EveryAvailableRandomTierPreservesSequenceAndAdvance) {
         << "advance tier=" << static_cast<unsigned>(isa);
   }
 }
+#endif
 
 TEST(SimdRuntime, RandomFillIsChunkBoundaryIndependent) {
   constexpr std::size_t kCount = 79;

@@ -153,6 +153,7 @@ TEST(Search, FloatingNaNContract) {
   }
 }
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(Search, FloatingExtremaKeepFirstTieAndFirstNaNAcrossBlocks) {
   for (const hs::Runtime* runtime : {
            hs::runtime_for(hs::KernelTarget::kScalar),
@@ -187,7 +188,9 @@ TEST(Search, FloatingExtremaKeepFirstTieAndFirstNaNAcrossBlocks) {
     EXPECT_TRUE(std::isnan(maximum));
   }
 }
+#endif
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(Search, FloatingExtremaHonorSignedZeroOnEveryRuntimeTier) {
   for (const hs::Runtime *runtime : {hs::runtime_for(hs::KernelTarget::kScalar),
                                      hs::runtime_for(hs::KernelTarget::kSse4),
@@ -239,6 +242,7 @@ TEST(Search, FloatingExtremaHonorSignedZeroOnEveryRuntimeTier) {
         only_positive_zero.data(), only_positive_zero.size())));
   }
 }
+#endif
 
 TEST(Search, EmptyNullRange) {
   EXPECT_EQ(hs::count_equal(static_cast<const std::uint32_t*>(nullptr), 0, 1), 0u);
@@ -272,6 +276,7 @@ TEST(Search, ExtremaIndexKeepsFirstTieAcrossCounterSegments) {
   EXPECT_EQ(hs::index_of_max(data.data(), data.size()), 456u);
 }
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(Search, EverySupportedRuntimeVariant) {
   const std::int32_t data[] = {4, 1, 4, -3, 9, 4, 8};
   for (const hs::KernelTarget isa : {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4,
@@ -293,7 +298,9 @@ TEST(Search, EverySupportedRuntimeVariant) {
     EXPECT_FALSE(rt->search.is_sorted_desc_i32(data, 7));
   }
 }
+#endif
 
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
 TEST(Search, SelectedTargetDescribesActualKernelTable) {
   const auto& runtime = hs::runtime();
   const hs::SelectedTarget target =
@@ -303,3 +310,4 @@ TEST(Search, SelectedTargetDescribesActualKernelTable) {
   EXPECT_NE(runtime.search.count_equal_i8, nullptr);
   EXPECT_NE(runtime.search.index_of_max_f64, nullptr);
 }
+#endif

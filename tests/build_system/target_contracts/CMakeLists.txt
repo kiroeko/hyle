@@ -28,7 +28,7 @@ foreach(HYLE_SANITIZER IN ITEMS asan tsan ubsan)
   hyle_apply_sanitizer(static_${HYLE_SANITIZER})
   get_target_property(_runtime static_${HYLE_SANITIZER} INTERFACE_LINK_OPTIONS)
   get_target_property(_consumer_compile static_${HYLE_SANITIZER} INTERFACE_COMPILE_OPTIONS)
-  if(NOT _runtime MATCHES "^-fsanitize=" OR _consumer_compile)
+  if(NOT _runtime MATCHES "-fsanitize=" OR _consumer_compile)
     message(FATAL_ERROR "Static ${HYLE_SANITIZER} loses runtime or exports instrumentation")
   endif()
   add_library(shared_${HYLE_SANITIZER} SHARED EXCLUDE_FROM_ALL

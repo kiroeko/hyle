@@ -14,6 +14,7 @@
 
 #include "hyle/simd/sort.h"
 #include "hyle/simd/target.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/runtime_internal.h"
 
 // sort_test -- the borrowed Highway vqsort (whatever tier is live:
@@ -667,11 +668,13 @@ TEST(Sort, SmallKKeyValue64) {
 // host), just that it is one of the expected tiers -- a smoke check that the
 // shared runtime metadata is wired.
 TEST(Sort, ActiveVariantIsSane) {
-  const auto& active = hyle::simd::runtime();
-  const KernelTarget v = active.sort.target;
+  const KernelTarget v =
+      hyle::simd::selected_target(hyle::simd::KernelFamily::kSort).target;
   EXPECT_TRUE(v == KernelTarget::kAvx512 || v == KernelTarget::kAvx2 ||
               v == KernelTarget::kSve || v == KernelTarget::kNeon ||
               v == KernelTarget::kRvv || v == KernelTarget::kScalar);
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
+  const auto& active = hyle::simd::runtime();
   const auto* owner = hyle::simd::runtime_for(v);
   if (owner != nullptr) {
     EXPECT_EQ(active.sort_ops.sort_u32, owner->sort_ops.sort_u32);
@@ -689,6 +692,7 @@ TEST(Sort, ActiveVariantIsSane) {
     EXPECT_NE(active.sort_ops.partial_sort_f32, nullptr);
     EXPECT_NE(active.sort_ops.select_kv64, nullptr);
   }
+#endif
 }
 
 TEST(Sort, EmptyRangesAcceptNullButNonemptyRangesDoNot) {

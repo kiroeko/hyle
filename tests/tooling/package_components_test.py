@@ -84,6 +84,17 @@ endforeach()
 target_link_libraries(hyle_product_compute INTERFACE hyle_compute_backend_cpu)
 
 include("${HYLE_SOURCE_DIR}/cmake/HylePackageRegistry.cmake")
+add_library(HyleFixtureRuntime::runtime INTERFACE IMPORTED)
+target_link_libraries(hyle_core INTERFACE HyleFixtureRuntime::runtime)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/HyleFixtureRuntimeConfig.cmake"
+  "if(NOT TARGET HyleFixtureRuntime::runtime)\n"
+  "  add_library(HyleFixtureRuntime::runtime INTERFACE IMPORTED)\n"
+  "  set_property(TARGET HyleFixtureRuntime::runtime PROPERTY HYLE_FIXTURE_ORIGIN \"\${CMAKE_CURRENT_LIST_DIR}\")\n"
+  "endif()\nset(HyleFixtureRuntime_FOUND TRUE)\n")
+hyle_register_package_dependency(NAME bundled_runtime OWNER core
+  FIND_DEPENDENCIES HyleFixtureRuntime
+  DEVELOPMENT_FILE_SPECS
+    "${CMAKE_CURRENT_BINARY_DIR}/HyleFixtureRuntimeConfig.cmake|lib/cmake/HyleFixtureRuntime")
 hyle_register_package_dependency(NAME cpu OWNER compute_backend_cpu
   EXPORT_TARGETS fake_cpu_vendor FIND_DEPENDENCIES PackageCpuSDK
   STATIC_FIND_DEPENDENCIES PackageStaticSDK)
@@ -201,6 +212,42 @@ if(NOT Hyle_LOADED_COMPONENTS STREQUAL "core;mem"
 endif()
 ''', variant=variant)
 
+    def test_hyle_dir_alone_finds_bundled_private_shims(self):
+        self.consume("private-shim-dir", r'''
+set(CMAKE_PREFIX_PATH "")
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS core)
+if(NOT TARGET HyleFixtureRuntime::runtime OR NOT TARGET hyle::core)
+  message(FATAL_ERROR "Hyle_DIR did not locate this SDK's private shim")
+endif()
+''')
+
+    def test_failed_quiet_compute_probe_allows_mem_retry_from_same_sdk(self):
+        self.consume("quiet-retry", r'''
+set(CMAKE_DISABLE_FIND_PACKAGE_PackageCpuSDK TRUE)
+find_package(Hyle 0.1.0 EXACT QUIET COMPONENTS compute)
+if(Hyle_FOUND)
+  message(FATAL_ERROR "missing external SDK did not reject Compute")
+endif()
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem)
+if(NOT TARGET hyle::mem OR NOT Hyle_mem_FOUND)
+  message(FATAL_ERROR "the failed Compute probe prevented Mem fallback")
+endif()
+''')
+
+    def test_missing_private_shim_propagates_failure_and_allows_retry(self):
+        self.consume("private-shim-retry", r'''
+set(CMAKE_DISABLE_FIND_PACKAGE_HyleFixtureRuntime TRUE)
+find_package(Hyle 0.1.0 EXACT QUIET COMPONENTS core)
+if(Hyle_FOUND)
+  message(FATAL_ERROR "a missing private shim was reported as successful")
+endif()
+unset(CMAKE_DISABLE_FIND_PACKAGE_HyleFixtureRuntime)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS core)
+if(NOT TARGET hyle::core)
+  message(FATAL_ERROR "Core could not be retried after restoring its shim")
+endif()
+''')
+
     def test_second_find_adds_compute_and_preserves_public_properties(self):
         for variant in ("static", "shared"):
             self.consume("repeat-" + variant, r'''
@@ -288,10 +335,20 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/left" "${CMAKE_CURRENT_BINARY_D
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/left/CMakeLists.txt" [=[
 set(Hyle_DIR "@FIRST@")
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem)
+get_target_property(origin HyleFixtureRuntime::runtime HYLE_FIXTURE_ORIGIN)
+get_filename_component(expected "@FIRST@/../HyleFixtureRuntime" ABSOLUTE)
+if(NOT origin STREQUAL expected)
+  message(FATAL_ERROR "left sibling loaded another SDK's private shim: ${origin}")
+endif()
 ]=])
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/right/CMakeLists.txt" [=[
 set(Hyle_DIR "@SECOND@")
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS compute)
+get_target_property(origin HyleFixtureRuntime::runtime HYLE_FIXTURE_ORIGIN)
+get_filename_component(expected "@SECOND@/../HyleFixtureRuntime" ABSOLUTE)
+if(NOT origin STREQUAL expected)
+  message(FATAL_ERROR "right sibling loaded another SDK's private shim: ${origin}")
+endif()
 ]=])
 add_subdirectory("${CMAKE_CURRENT_BINARY_DIR}/left" left-build)
 add_subdirectory("${CMAKE_CURRENT_BINARY_DIR}/right" right-build)

@@ -17,3 +17,8 @@ Windows 产品工作树；Windows 与同机 WSL 的性能实验错开运行。
 公开头的 DLL 导出宏集中在 `hyle/visibility.h`；增改 API 名称后用
 `python scripts/generate-visibility.py --write` 更新，`--check` 检查同步。名称按 factor 自动生成，历史 IO 别名保留。
 这些都是 target 的构建要求，库用户无需手配 `*_BUILD`、`HYLE_STATIC` 或 presence 宏。
+
+三平台的工具链能力、用户所选后端集合、执行模式和交付形态分别处理。CPU＋GPU 的桥接依赖
+由所选后端组合带出，普通引擎不选择算子 Provider 或第三方库开关。默认 context 负责实现绑定；
+显式 Provider 工厂保留给调优与诊断。后端装配仍需把平台条件、公开出口、宏、链接及资源的
+归属收束到一致的描述，避免新增后端时分散修改多份组合名单。

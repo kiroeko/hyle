@@ -9,6 +9,7 @@
 
 #include "hyle/core/environment.h"
 #include "hyle/simd/target.h"
+#include "hyle/simd/runtime.h"
 #include "hyle/simd/ops.h"
 #include "src/simd/runtime_internal.h"
 
@@ -21,7 +22,6 @@
 using hyle::simd::add;
 using hyle::simd::dot;
 using hyle::simd::KernelTarget;
-using hyle::simd::runtime;
 using hyle::simd::saxpy;
 
 namespace {
@@ -48,14 +48,46 @@ long double ref_dot_d(const std::vector<double>& x, const std::vector<double>& y
   return s;
 }
 
-std::vector<const hyle::simd::Runtime*> available_runtimes() {
-  std::vector<const hyle::simd::Runtime*> out;
-  for (hyle::simd::KernelTarget isa : {hyle::simd::KernelTarget::kScalar, hyle::simd::KernelTarget::kSse4,
-                              hyle::simd::KernelTarget::kAvx2, hyle::simd::KernelTarget::kAvx512,
-                              hyle::simd::KernelTarget::kNeon, hyle::simd::KernelTarget::kSve,
-                              hyle::simd::KernelTarget::kRvv}) {
-    if (const auto* table = hyle::simd::runtime_for(isa)) out.push_back(table);
+struct OperationTable {
+  KernelTarget target;
+  hyle::simd::Runtime::Ops ops;
+};
+
+std::vector<OperationTable> operation_tables() {
+  // The first table always calls the public shipping API. Private per-tier
+  // entries are additional coverage only in an explicitly instrumented build.
+  hyle::simd::Runtime::Ops public_ops{};
+  public_ops.dot_bf16_bf16 = &hyle::simd::dot;
+  public_ops.dot_f32_bf16 = &hyle::simd::dot;
+  public_ops.dot_f16_f16 = &hyle::simd::dot;
+  public_ops.dot_i16_i16 = &hyle::simd::dot;
+  public_ops.dot_i8_i8 = &hyle::simd::dot;
+  public_ops.sub_f32 = &hyle::simd::subtract;
+  public_ops.mul_f32 = &hyle::simd::multiply;
+  public_ops.div_f32 = &hyle::simd::divide;
+  public_ops.scale_f32 = &hyle::simd::scale;
+  public_ops.add_scalar_f32 = &hyle::simd::add_scalar;
+  public_ops.affine_f32 = &hyle::simd::affine;
+  public_ops.sum_f32 = &hyle::simd::sum;
+  public_ops.abs_f32 = &hyle::simd::abs;
+  public_ops.neg_f32 = &hyle::simd::negate;
+  public_ops.square_f32 = &hyle::simd::square;
+  public_ops.sqrt_f32 = &hyle::simd::sqrt;
+  public_ops.reciprocal_sqrt_f32 = &hyle::simd::reciprocal_sqrt;
+  public_ops.fmin_f32 = &hyle::simd::fmin;
+  public_ops.fmax_f32 = &hyle::simd::fmax;
+  public_ops.select_values_f32 = &hyle::simd::select_values;
+  std::vector<OperationTable> out{
+      {hyle::simd::selected_target().target, public_ops}};
+#if defined(HYLE_SIMD_INTERNAL_TESTING)
+  for (KernelTarget isa : {KernelTarget::kScalar, KernelTarget::kSse4,
+                          KernelTarget::kAvx2, KernelTarget::kAvx512,
+                          KernelTarget::kNeon, KernelTarget::kSve,
+                          KernelTarget::kRvv}) {
+    if (const auto* table = hyle::simd::runtime_for(isa))
+      out.push_back({table->target, table->ops});
   }
+#endif
   return out;
 }
 
@@ -169,14 +201,14 @@ TEST(Ops, MixedPrecisionDotsMatchReferenceOnEveryRuntimeTier) {
     EXPECT_NEAR(dot(f16a.data(), f16b.data(), n), f16_ref, f16_tol)
         << "public f16 n=" << n;
 
-    for (const auto* table : available_runtimes()) {
-      EXPECT_NEAR(table->ops.dot_bf16_bf16(bf0.data(), bf1.data(), n),
-                  bf_ref, bf_tol) << "bf16 tier=" << static_cast<int>(table->target) << " n=" << n;
-      EXPECT_NEAR(table->ops.dot_f32_bf16(f32.data(), bf1.data(), n),
+    for (const auto& table : operation_tables()) {
+      EXPECT_NEAR(table.ops.dot_bf16_bf16(bf0.data(), bf1.data(), n),
+                  bf_ref, bf_tol) << "bf16 tier=" << static_cast<int>(table.target) << " n=" << n;
+      EXPECT_NEAR(table.ops.dot_f32_bf16(f32.data(), bf1.data(), n),
                   mixed_ref, mixed_tol)
-          << "mixed tier=" << static_cast<int>(table->target) << " n=" << n;
-      EXPECT_NEAR(table->ops.dot_f16_f16(f16a.data(), f16b.data(), n),
-                  f16_ref, f16_tol) << "f16 tier=" << static_cast<int>(table->target) << " n=" << n;
+          << "mixed tier=" << static_cast<int>(table.target) << " n=" << n;
+      EXPECT_NEAR(table.ops.dot_f16_f16(f16a.data(), f16b.data(), n),
+                  f16_ref, f16_tol) << "f16 tier=" << static_cast<int>(table.target) << " n=" << n;
     }
   }
 }
@@ -214,9 +246,9 @@ TEST(Ops, I16DotIsExactAndModuloDefinedOnEveryRuntimeTier) {
   }
   const std::int64_t expected = ref_dot_i16(x, y);
   EXPECT_EQ(dot(x.data(), y.data(), x.size()), expected);
-  for (const auto* table : available_runtimes())
-    EXPECT_EQ(table->ops.dot_i16_i16(x.data(), y.data(), x.size()), expected)
-        << "tier=" << static_cast<int>(table->target);
+  for (const auto& table : operation_tables())
+    EXPECT_EQ(table.ops.dot_i16_i16(x.data(), y.data(), x.size()), expected)
+        << "tier=" << static_cast<int>(table.target);
 
   EXPECT_EQ(dot(static_cast<const std::int16_t*>(nullptr),
                 static_cast<const std::int16_t*>(nullptr), 0), 0);
@@ -233,9 +265,9 @@ TEST(Ops, I8DotIsExactAndModuloDefinedOnEveryRuntimeTier) {
   }
   const std::int64_t expected = ref_dot_i8(x, y);
   EXPECT_EQ(dot(x.data(), y.data(), x.size()), expected);
-  for (const auto* table : available_runtimes())
-    EXPECT_EQ(table->ops.dot_i8_i8(x.data(), y.data(), x.size()), expected)
-        << "tier=" << static_cast<int>(table->target);
+  for (const auto& table : operation_tables())
+    EXPECT_EQ(table.ops.dot_i8_i8(x.data(), y.data(), x.size()), expected)
+        << "tier=" << static_cast<int>(table.target);
 
   EXPECT_EQ(dot(static_cast<const std::int8_t*>(nullptr),
                 static_cast<const std::int8_t*>(nullptr), 0), 0);
@@ -293,8 +325,8 @@ TEST(Ops, CompleteF32RowAlgebraMatchesReferenceOnEveryRuntimeTier) {
     y[i] = 1.0f + static_cast<float>(i % 7) * 0.25f;
   }
 
-  for (const auto* table : available_runtimes()) {
-    const auto& ops = table->ops;
+  for (const auto& table : operation_tables()) {
+    const auto& ops = table.ops;
     ops.sub_f32(x.data(), y.data(), out.data(), kCount);
     for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], x[i] - y[i]);
     ops.mul_f32(x.data(), y.data(), out.data(), kCount);
@@ -411,34 +443,34 @@ TEST(Ops, ComputeF32RowsMatchFullPrecisionAndNumberSemanticsOnEveryTier) {
     return a > b ? a : b;
   };
 
-  for (const auto *table : available_runtimes()) {
-    table->ops.reciprocal_sqrt_f32(left.data(), out.data(), left.size());
+  for (const auto& table : operation_tables()) {
+    table.ops.reciprocal_sqrt_f32(left.data(), out.data(), left.size());
     for (std::size_t i = 0; i < left.size(); ++i)
       expect_bits_or_nan(out[i], 1.0F / std::sqrt(left[i]));
 
     auto reciprocal_alias = left;
-    table->ops.reciprocal_sqrt_f32(reciprocal_alias.data(),
+    table.ops.reciprocal_sqrt_f32(reciprocal_alias.data(),
                                    reciprocal_alias.data(),
                                    reciprocal_alias.size());
     for (std::size_t i = 0; i < reciprocal_alias.size(); ++i)
       expect_bits_or_nan(reciprocal_alias[i], 1.0F / std::sqrt(left[i]));
 
-    table->ops.fmin_f32(left.data(), right.data(), out.data(), left.size());
+    table.ops.fmin_f32(left.data(), right.data(), out.data(), left.size());
     for (std::size_t i = 0; i < left.size(); ++i)
       expect_bits_or_nan(out[i], number_min(left[i], right[i]));
 
-    table->ops.fmax_f32(left.data(), right.data(), out.data(), left.size());
+    table.ops.fmax_f32(left.data(), right.data(), out.data(), left.size());
     for (std::size_t i = 0; i < left.size(); ++i)
       expect_bits_or_nan(out[i], number_max(left[i], right[i]));
 
     auto maximum_alias = right;
-    table->ops.fmax_f32(left.data(), maximum_alias.data(), maximum_alias.data(),
+    table.ops.fmax_f32(left.data(), maximum_alias.data(), maximum_alias.data(),
                         maximum_alias.size());
     for (std::size_t i = 0; i < maximum_alias.size(); ++i)
       expect_bits_or_nan(maximum_alias[i], number_max(left[i], right[i]));
 
     auto alias = left;
-    table->ops.fmin_f32(alias.data(), right.data(), alias.data(), alias.size());
+    table.ops.fmin_f32(alias.data(), right.data(), alias.data(), alias.size());
     for (std::size_t i = 0; i < alias.size(); ++i)
       expect_bits_or_nan(alias[i], number_min(left[i], right[i]));
   }
@@ -454,21 +486,21 @@ TEST(Ops, ByteBoolSelectUsesAnyNonzeroAndSupportsValueAlias) {
     when_false[i] = -100.0F - static_cast<float>(i);
   }
 
-  for (const auto *table : available_runtimes()) {
-    table->ops.select_values_f32(condition, when_true.data(), when_false.data(),
+  for (const auto& table : operation_tables()) {
+    table.ops.select_values_f32(condition, when_true.data(), when_false.data(),
                                  out.data(), kCount);
     for (std::size_t i = 0; i < kCount; ++i)
       EXPECT_EQ(out[i], condition[i] != 0 ? when_true[i] : when_false[i]);
 
     auto alias_true = when_true;
-    table->ops.select_values_f32(condition, alias_true.data(),
+    table.ops.select_values_f32(condition, alias_true.data(),
                                  when_false.data(), alias_true.data(), kCount);
     for (std::size_t i = 0; i < kCount; ++i)
       EXPECT_EQ(alias_true[i],
                 condition[i] != 0 ? when_true[i] : when_false[i]);
 
     auto alias_false = when_false;
-    table->ops.select_values_f32(condition, when_true.data(),
+    table.ops.select_values_f32(condition, when_true.data(),
                                  alias_false.data(), alias_false.data(),
                                  kCount);
     for (std::size_t i = 0; i < kCount; ++i)
@@ -485,7 +517,7 @@ TEST(Ops, ByteBoolSelectUsesAnyNonzeroAndSupportsValueAlias) {
 // Fat artifacts select the best compiled host tier. Exact artifacts deliberately
 // contain one builder-selected tier and must not reintroduce host probing.
 TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
-  const KernelTarget active = runtime().target;
+  const KernelTarget active = hyle::simd::selected_target().target;
 #if defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
   EXPECT_EQ(active, KernelTarget::kScalar);
 #elif defined(HYLE_SIMD_EXACT_TARGET_SSE4)
@@ -545,5 +577,6 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
 
 // Dispatch is stable: repeated calls return the same cached selection (no re-resolve).
 TEST(Ops, ActiveVariantStable) {
-  EXPECT_EQ(&runtime(), &runtime());
+  EXPECT_EQ(hyle::simd::selected_target().target,
+            hyle::simd::selected_target().target);
 }

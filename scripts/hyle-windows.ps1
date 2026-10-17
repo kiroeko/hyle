@@ -14,6 +14,17 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Workflow build/test presets retain their own binary directory. Redirecting
+# only configure would build and test a different (possibly stale) tree.
+if ($Action -eq 'Workflow') {
+    foreach ($argument in $ExtraArgs) {
+        if ($argument.StartsWith('-B') -or $argument -eq '--build-directory' -or
+            $argument.StartsWith('--build-directory=')) {
+            throw 'Workflow cannot redirect its binary directory with -B/--build-directory. Use Configure, Build, and Test with the same -BinaryDir, or define a workflow whose presets share that directory.'
+        }
+    }
+}
+
 $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 if ($DependencySourceCache) {
     if (-not [System.IO.Path]::IsPathFullyQualified($DependencySourceCache)) {
@@ -93,15 +104,29 @@ function Get-HyleConfigurePreset {
     param([string]$Name)
     $entry = $presets.configurePresets | Where-Object name -eq $Name | Select-Object -First 1
     if (-not $entry) { return $null }
-    $result = @{}
+    $result = @{ environment=@{}; cacheVariables=@{} }
     $parents = @($entry.inherits)
     for ($i = $parents.Count - 1; $i -ge 0; --$i) {
         if (-not $parents[$i]) { continue }
         $parent = Get-HyleConfigurePreset $parents[$i]
-        if ($parent) { foreach ($key in $parent.Keys) { $result[$key] = $parent[$key] } }
+        if ($parent) {
+            foreach ($key in $parent.Keys) {
+                if ($key -in @('environment', 'cacheVariables')) {
+                    if (-not $result.ContainsKey($key)) { $result[$key] = @{} }
+                    foreach ($name in $parent[$key].Keys) { $result[$key][$name] = $parent[$key][$name] }
+                } else { $result[$key] = $parent[$key] }
+            }
+        }
     }
     foreach ($key in @('generator', 'binaryDir', 'toolset', 'architecture')) {
         if ($entry.$key) { $result[$key] = $entry.$key }
+    }
+    foreach ($key in @('environment', 'cacheVariables')) {
+        if (-not $entry.$key) { continue }
+        if (-not $result.ContainsKey($key)) { $result[$key] = @{} }
+        foreach ($property in $entry.$key.PSObject.Properties) {
+            $result[$key][$property.Name] = $property.Value
+        }
     }
     return $result
 }
@@ -134,16 +159,36 @@ if ($observedBinary -and -not ($Action -in @('Configure', 'Workflow') -and '--fr
     }
 }
 $effectiveExtraArgs = @($ExtraArgs)
-$generator = if ($cache.CMAKE_GENERATOR) { $cache.CMAKE_GENERATOR } else { $presetSettings.generator }
+$generator = if ($cache.CMAKE_GENERATOR) { $cache.CMAKE_GENERATOR } elseif ($presetSettings.generator) { $presetSettings.generator } else { $env:CMAKE_GENERATOR }
 $toolsetArgument = if ($cache.ContainsKey('CMAKE_GENERATOR_TOOLSET')) { $cache.CMAKE_GENERATOR_TOOLSET } else { $presetSettings.toolset }
 if ($toolsetArgument -and $toolsetArgument -isnot [string]) { $toolsetArgument = $toolsetArgument.value }
 $installation = $cache.CMAKE_GENERATOR_INSTANCE
 $compiler = if ($cache.CMAKE_CXX_COMPILER) { $cache.CMAKE_CXX_COMPILER } else { $env:CXX }
 $cCompiler = if ($cache.CMAKE_C_COMPILER) { $cache.CMAKE_C_COMPILER } else { $env:CC }
+$compilerFromPreset = $false
+$cCompilerFromPreset = $false
 $toolchain = if ($cache.CMAKE_TOOLCHAIN_FILE) { $cache.CMAKE_TOOLCHAIN_FILE } else { $env:CMAKE_TOOLCHAIN_FILE }
 $architecture = if ($cache.CMAKE_GENERATOR_PLATFORM) { $cache.CMAKE_GENERATOR_PLATFORM } else { $presetSettings.architecture }
 if ($architecture -and $architecture -isnot [string]) { $architecture = $architecture.value }
 if ($Action -in @('Configure', 'Workflow')) {
+    # Preset cache definitions override an existing cache; environment compiler
+    # defaults apply only before that cache has selected its compiler. Keep
+    # their origin so a clang-cl preset still initializes the required VS SDK.
+    foreach ($selection in @(
+        @{ Cache='CMAKE_CXX_COMPILER'; Environment='CXX'; Variable='compiler'; FromPreset='compilerFromPreset' },
+        @{ Cache='CMAKE_C_COMPILER'; Environment='CC'; Variable='cCompiler'; FromPreset='cCompilerFromPreset' })) {
+        if ($presetSettings -and $presetSettings.cacheVariables.ContainsKey($selection.Cache)) {
+            $presetCompiler = $presetSettings.cacheVariables[$selection.Cache]
+            if ($presetCompiler -and $presetCompiler -isnot [string]) { $presetCompiler = $presetCompiler.value }
+            if ($presetCompiler) {
+                Set-Variable -Name $selection.Variable -Value $presetCompiler
+                Set-Variable -Name $selection.FromPreset -Value $true
+            }
+        } elseif (-not $cache[$selection.Cache] -and $presetSettings -and $presetSettings.environment.ContainsKey($selection.Environment)) {
+            Set-Variable -Name $selection.Variable -Value $presetSettings.environment[$selection.Environment]
+            Set-Variable -Name $selection.FromPreset -Value $true
+        }
+    }
     $value = Get-HyleCmakeArgument -ShortOption '-G' -LongOption '--generator'
     if ($value) { $generator = $value }
     $value = Get-HyleCmakeArgument -ShortOption '-T' -LongOption '--toolset'
@@ -153,9 +198,9 @@ if ($Action -in @('Configure', 'Workflow')) {
     $value = Get-HyleCmakeArgument -Definition CMAKE_GENERATOR_INSTANCE
     if ($value) { $installation = $value }
     $value = Get-HyleCmakeArgument -Definition CMAKE_CXX_COMPILER
-    if ($value) { $compiler = $value }
+    if ($value) { $compiler = $value; $compilerFromPreset = $false }
     $value = Get-HyleCmakeArgument -Definition CMAKE_C_COMPILER
-    if ($value) { $cCompiler = $value }
+    if ($value) { $cCompiler = $value; $cCompilerFromPreset = $false }
     $value = Get-HyleCmakeArgument -Definition CMAKE_TOOLCHAIN_FILE
     if ($value) { $toolchain = $value }
 }
@@ -178,7 +223,10 @@ if (-not $requiredToolset -and $cache.CMAKE_VS_PLATFORM_TOOLSET_VERSION) { $requ
 
 # An external compiler/toolchain with no VS anchor owns its setup. Likewise,
 # Build/Test with an absent cache should let CMake report that cache error.
-$externalToolchain = -not $generatorMajor -and -not $installation -and ($compiler -or $cCompiler -or $toolchain)
+$presetMsvcFrontend = ($compilerFromPreset -and [System.IO.Path]::GetFileName($compiler) -match '^(clang-cl|cl)(\.exe)?$') -or
+    ($cCompilerFromPreset -and [System.IO.Path]::GetFileName($cCompiler) -match '^(clang-cl|cl)(\.exe)?$')
+$externalToolchain = -not $generatorMajor -and -not $installation -and
+    ($toolchain -or (($compiler -or $cCompiler) -and -not $presetMsvcFrontend))
 $missingBuildCache = $Action -in @('Build', 'Test') -and $cache.Count -eq 0
 $unknownPreset = -not $presetSettings -and -not $installation -and $cache.Count -eq 0
 if (-not $externalToolchain -and -not $missingBuildCache -and -not $unknownPreset) {
@@ -251,14 +299,21 @@ if (-not $externalToolchain -and -not $missingBuildCache -and -not $unknownPrese
 
 $usesPresetToolchain = $Action -in @('Configure', 'Workflow')
 $needsNinja = $Action -in @('ComponentContract', 'SelectedComponentSmoke', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke') -or
-    ($usesPresetToolchain -and $Preset -in @('windows-ninja', 'windows-ninja-check', 'windows-clangcl',
-        'windows-clangcl-check', 'win', 'compute-cpu', 'compute-cuda', 'compute-apple', 'compute-vulkan'))
+    ($usesPresetToolchain -and $generator -match '^Ninja( Multi-Config)?$')
 if ($needsNinja -and -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     throw "The '$Preset' preset/action requires Ninja on PATH."
 }
-if ($usesPresetToolchain -and $Preset -in @('windows-clangcl', 'windows-clangcl-check') -and
-    -not (Get-Command clang-cl -ErrorAction SilentlyContinue)) {
-    throw "The '$Preset' preset requires clang-cl on PATH. Install the Visual Studio LLVM component or initialize an environment that provides clang-cl."
+if ($usesPresetToolchain) {
+    # Visual Studio selects its compiler through -T, rather than CC/CXX.
+    $selectedCompilers = if ($generatorMajor) {
+        if ($toolsetArgument -match '(^|,)ClangCL(,|$)') { @('clang-cl') } else { @() }
+    } else { @($compiler, $cCompiler) }
+    foreach ($selectedCompiler in $selectedCompilers | Select-Object -Unique) {
+        if ($selectedCompiler -and [System.IO.Path]::GetFileName($selectedCompiler) -match '^clang-cl(\.exe)?$' -and
+            -not (Get-Command $selectedCompiler -ErrorAction SilentlyContinue)) {
+            throw "The selected compiler '$selectedCompiler' is unavailable. Install the Visual Studio LLVM component or initialize an environment that provides clang-cl."
+        }
+    }
 }
 
 switch ($Action) {

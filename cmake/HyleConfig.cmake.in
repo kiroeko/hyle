@@ -1,6 +1,7 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
+include("${CMAKE_CURRENT_LIST_DIR}/HyleRuntimeStaging.cmake")
 set(Hyle_FOUND TRUE)
 unset(Hyle_NOT_FOUND_MESSAGE)
 
@@ -132,24 +133,41 @@ foreach(_Hyle_group IN LISTS _Hyle_package_group_order)
   endif()
   foreach(_Hyle_spec IN LISTS _Hyle_group_${_Hyle_group}_find_dependencies)
     string(REPLACE "|" ";" _Hyle_args "${_Hyle_spec}")
-    find_dependency(${_Hyle_args})
+    list(GET _Hyle_args 0 _Hyle_dependency)
+    if(_Hyle_dependency MATCHES "^Hyle[A-Za-z0-9_]+$")
+      # These private shims ship beside Hyle itself. Hyle_DIR is sufficient
+      # to consume the SDK; external MODULE dependencies retain normal lookup.
+      # Override only this lookup's normal variable: a sibling may have left
+      # the same private package's cache entry pointing at another SDK copy.
+      block(SCOPE_FOR VARIABLES PROPAGATE Hyle_FOUND Hyle_NOT_FOUND_MESSAGE
+          "${_Hyle_dependency}_FOUND")
+        set("${_Hyle_dependency}_DIR"
+          "${CMAKE_CURRENT_LIST_DIR}/../${_Hyle_dependency}")
+        find_dependency(${_Hyle_args} CONFIG
+          PATHS "${CMAKE_CURRENT_LIST_DIR}/../${_Hyle_dependency}" NO_DEFAULT_PATH)
+      endblock()
+    else()
+      find_dependency(${_Hyle_args})
+    endif()
   endforeach()
   if(_Hyle_group_${_Hyle_group}_file)
     include("${CMAKE_CURRENT_LIST_DIR}/${_Hyle_group_${_Hyle_group}_file}")
+    # A later optional/QUIET dependency lookup can return from this config.
+    # Tag each imported portion immediately so a retry of another component
+    # recognizes the targets already loaded from this same installation.
+    foreach(_Hyle_target IN LISTS _Hyle_origin_targets)
+      if(TARGET "${_Hyle_target}")
+        set_target_properties("${_Hyle_target}" PROPERTIES
+          HYLE_PACKAGE_CONFIG_DIR "${_Hyle_package_config_dir}"
+          HYLE_PACKAGE_RECIPE_ID "${Hyle_COMPUTE_RECIPE_ID}")
+      endif()
+    endforeach()
   endif()
 endforeach()
 set(Hyle_LOADED_COMPONENTS "")
-if(TARGET hyle::_build_contract)
-  set_target_properties(hyle::_build_contract PROPERTIES
-    HYLE_PACKAGE_CONFIG_DIR "${_Hyle_package_config_dir}"
-    HYLE_PACKAGE_RECIPE_ID "${Hyle_COMPUTE_RECIPE_ID}")
-endif()
 foreach(_Hyle_component IN LISTS Hyle_AVAILABLE_COMPONENTS)
   if(TARGET hyle::${_Hyle_component})
     list(APPEND Hyle_LOADED_COMPONENTS "${_Hyle_component}")
-    set_target_properties(hyle::${_Hyle_component} PROPERTIES
-      HYLE_PACKAGE_CONFIG_DIR "${_Hyle_package_config_dir}"
-      HYLE_PACKAGE_RECIPE_ID "${Hyle_COMPUTE_RECIPE_ID}")
   endif()
 endforeach()
 
@@ -179,6 +197,7 @@ unset(_Hyle_required)
 unset(_Hyle_complete)
 unset(_Hyle_spec)
 unset(_Hyle_args)
+unset(_Hyle_dependency)
 # Older CMake package helpers may overwrite this variable in find_dependency.
 set(PACKAGE_PREFIX_DIR "${_Hyle_package_prefix}")
 unset(_Hyle_package_prefix)
@@ -188,5 +207,3 @@ unset(_Hyle_target)
 unset(_Hyle_imported)
 unset(_Hyle_existing_config)
 unset(_Hyle_existing_recipe)
-
-include("${CMAKE_CURRENT_LIST_DIR}/HyleRuntimeStaging.cmake")
