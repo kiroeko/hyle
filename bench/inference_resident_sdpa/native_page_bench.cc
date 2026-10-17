@@ -33,8 +33,8 @@ constexpr const char* backend="Vulkan";
 #ifndef HYLE_PAGE_PLACEMENT
 #define HYLE_PAGE_PLACEMENT 0
 #endif
-void check(hyle::Status status){if(!status.ok()){std::fprintf(stderr,"native page: %.*s\n",int(status.message().size()),status.message().data());std::exit(2);}}
-template<class T>T take(hyle::Result<T> value){if(!value)check(value.error());return std::move(*value);}
+void check(hyle::Status status,const char* operation=""){if(!status.ok()){std::fprintf(stderr,"native page %s: %.*s (code=%u native_domain=%u native_code=%lld)\n",operation,int(status.message().size()),status.message().data(),unsigned(status.code()),unsigned(status.native_error().domain),static_cast<long long>(status.native_error().code));std::exit(2);}}
+template<class T>T take(hyle::Result<T> value,const char* operation=""){if(!value)check(value.error(),operation);return std::move(*value);}
 bool set(const char* key){const auto* value=std::getenv(key);return value && *value;}
 std::uint16_t encode(float x){if(x==0)return 0;const auto bits=std::bit_cast<std::uint32_t>(x);return std::uint16_t(((bits>>16)&0x8000U)|(((bits>>23&255U)-112U)<<10)|((bits&0x7fffffU)>>13));}
 double decode(std::uint16_t bits){const unsigned e=(bits>>10)&31U,f=bits&1023U;const double sign=(bits&0x8000U)?-1.:1.;return sign*(e?std::ldexp(1.+double(f)/1024.,int(e)-15):std::ldexp(double(f),-24));}
@@ -141,9 +141,11 @@ struct Harness final {
     // Both arms pay the shared controller's prepare/version, changed-table F2
     // upload, binding, submit and checked wait costs. Immutable layouts reuse
     // their native plan; only the peer's cold mathematical recipe differs.
-    if(original){check(peers[slot]->prepare(layout));check(peers[slot]->bind(query,key_frame,value_frame));}
-    else{check(selected[slot].prepare_batch(layout));check(selected[slot].bind(query,key_frame,value_frame));}
-    auto submitted=original?take(peers[slot]->submit()):take(selected[slot].submit());auto result=take(submitted.wait());
+    if(original){check(peers[slot]->prepare(layout),"peer prepare");check(peers[slot]->bind(query,key_frame,value_frame),"peer bind");}
+    else{check(selected[slot].prepare_batch(layout),"selected prepare");check(selected[slot].bind(query,key_frame,value_frame),"selected bind");}
+    auto submitted=original?take(peers[slot]->submit(),"peer submit"):take(selected[slot].submit(),"selected submit");
+    const std::array peer_wait{"peer wait slot 0","peer wait slot 1"},selected_wait{"selected wait slot 0","selected wait slot 1"};
+    auto result=take(submitted.wait(),original?peer_wait[slot]:selected_wait[slot]);
 #if defined(HYLE_PAGE_APPLE_BENCH)
     const auto output=result->arrays()[0];if(host){auto desc=take(c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{layout.facts().query_rows,8,schema.capacity().qk_head_dim}));auto read=take(device.import_readonly(output,desc));check(read.view()->read(std::as_writable_bytes(std::span(*host))));}
 #else

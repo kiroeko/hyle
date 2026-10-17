@@ -519,8 +519,8 @@ Status LeasePool::drain() noexcept {
 
 Result<LeaseUsePool> LeaseUsePool::create(LeaseUsePoolOptions options) noexcept {
   if (!options.allocator.valid() || options.max_batches == 0 || options.max_batches == UINT32_MAX ||
-      options.max_resources_per_batch == 0 || options.max_resources_per_batch >
-          (SIZE_MAX - detail::kEntryOffset) / sizeof(detail::LeaseUseEntry))
+      options.max_resources_per_batch == 0 || std::cmp_greater(options.max_resources_per_batch,
+          (SIZE_MAX - detail::kEntryOffset) / sizeof(detail::LeaseUseEntry)))
     return std::unexpected(Status::InvalidArgument("invalid lease use capacities"));
   auto allocator = options.allocator;
   if (options.resource_budget.valid()) {

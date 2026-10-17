@@ -1,6 +1,9 @@
 // Included after native_runtime_impl.h inside the locked Vulkan translation
 // unit. Graph ownership/lowering lives above this native completion seam.
+#include <algorithm>
+#include <array>
 #include <chrono>
+#include <memory>
 #include <thread>
 
 namespace hyle::compute::ggml_vulkan::bridge {
@@ -213,6 +216,14 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
       work->assessed_graph = graph;
     }
     const bool eligible = attach_to_last && work->fixed_attention;
+    // Upstream can retire an already submitted prefix and grow its scratch
+    // buffers while recording later attention nodes. Such a first execution
+    // is valid, but its saved prefix commands refer to the replaced storage.
+    // Weak owners preserve control-block identity without retaining old GPU
+    // allocations. Admit replay only after all four scratch owners are stable.
+    const std::array<std::weak_ptr<vk_buffer_struct>, 4> recording_scratch{
+        ctx->prealloc_x, ctx->prealloc_y, ctx->prealloc_split_k,
+        ctx->prealloc_add_rms_partials};
     // This finite graph has no Add/RmsNorm consumer. The original backend's
     // default 1024-byte partials clear would create a needless UMA host memset.
     if (eligible)
@@ -229,7 +240,16 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
       // emitted final batch. One region marker, never a per-kernel wrapper.
       ctx->device->compute_queue->handle->submit({}, work->fence);
     }
+    const std::array<vk_buffer, 4> current_scratch{
+        ctx->prealloc_x, ctx->prealloc_y, ctx->prealloc_split_k,
+        ctx->prealloc_add_rms_partials};
+    const bool scratch_stable = std::equal(
+        recording_scratch.begin(), recording_scratch.end(), current_scratch.begin(),
+        [](const auto& before, const auto& after) {
+          return !before.owner_before(after) && !after.owner_before(before);
+        });
     work->recorded = eligible && work->failure.error == Error::None &&
+                     scratch_stable &&
                      ctx->compute_cmd_pool.hyle_record_safe &&
                      !work->recorded_commands.empty() &&
                      ctx->gc.semaphores.empty() &&

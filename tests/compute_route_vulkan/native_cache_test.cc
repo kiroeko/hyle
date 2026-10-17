@@ -50,31 +50,35 @@ double q8_value(std::span<const std::uint8_t> bytes,std::size_t index) {
 }
 
 template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned dv,
-    bool causal,int window,bool long_prefill=false,bool large_values=false,bool bounded_long=false) {
+    bool causal,int window,bool long_prefill=false,bool large_values=false,bool bounded_long=false,
+    unsigned replays=1,bool resident_history=false) {
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" q8="<<quantized<<" dk="<<dk
       <<" dv="<<dv<<" window="<<window<<" long="<<long_prefill<<" large="<<large_values);
   const unsigned qr=large_values?(long_prefill?65:1):(long_prefill?66:(causal?18:68));
-  const unsigned physical=large_values?8192:(long_prefill?(paged?256:274):64);
+  const unsigned physical=resident_history?1856:(large_values?8192:(long_prefill?(paged?256:274):64));
   const auto storage=quantized?c::CacheStorage::q8_0().value():c::CacheStorage::plain(half_test::data_type<T>()).value();
   const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
       .query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),
       .key_storage=storage,.value_storage=storage,.max_requests=large_values?1u:2u,
-      .max_query_rows=qr,.max_kv_rows=large_values?physical:(long_prefill?274u:physical),
-      .max_pages=paged?(long_prefill?16u:4u):0u,.max_page_refs=paged?(long_prefill?19u:5u):0u,
+      .max_query_rows=qr,.max_kv_rows=resident_history?1792u:(large_values?physical:(long_prefill?274u:physical)),
+      .max_pages=paged?(resident_history?116u:(long_prefill?16u:4u)):0u,
+      .max_page_refs=paged?(resident_history?112u:(long_prefill?19u:5u)):0u,
       .query_heads=8,.kv_heads=2,.qk_head_dim=dk,.value_head_dim=dv,.page_size=paged?16u:1u};
   auto context=n::Context::create().value();auto memory=n::MemoryResource::create(context,n::MemoryKind::kDevice).value();
   auto staging=n::MemoryResource::create(context,n::MemoryKind::kStaging).value();
   auto schema=c::BatchSchema::create(cap).value();
   const std::vector<std::int32_t> qp=large_values?std::vector<std::int32_t>{0,int(qr)}:
       (long_prefill?std::vector<std::int32_t>{0,1,66}:(causal?std::vector<std::int32_t>{0,1,18}:std::vector<std::int32_t>{0,33,68}));
-  const std::vector<std::int32_t> kp=large_values?std::vector<std::int32_t>{0,8192}:
+  const std::vector<std::int32_t> kp=resident_history?std::vector<std::int32_t>{0,64,112}:
+      (large_values?std::vector<std::int32_t>{0,8192}:
       (long_prefill?(paged?std::vector<std::int32_t>{0,9,19}:std::vector<std::int32_t>{0,129,274}):
-       (paged?std::vector<std::int32_t>{0,2,5}:std::vector<std::int32_t>{0,31,64}));
-  const std::vector<std::int32_t> ids=paged?(long_prefill?
+       (paged?std::vector<std::int32_t>{0,2,5}:std::vector<std::int32_t>{0,31,64})));
+  std::vector<std::int32_t> ids=paged?(long_prefill?
       std::vector<std::int32_t>{13,0,15,1,2,3,4,5,6,9,10,11,12,7,8,0,3,4,14}:
       std::vector<std::int32_t>{3,1,0,2,1}):std::vector<std::int32_t>{};
-  const std::vector<std::int32_t> tails=paged?(long_prefill?std::vector<std::int32_t>{1,1}:
-      std::vector<std::int32_t>{15,1}):std::vector<std::int32_t>{};
+  if(resident_history){ids.resize(112);for(unsigned i=0;i<ids.size();++i)ids[i]=111-int(i);}
+  const std::vector<std::int32_t> tails=paged?(resident_history?std::vector<std::int32_t>{16,16}:
+      (long_prefill?std::vector<std::int32_t>{1,1}:std::vector<std::int32_t>{15,1})):std::vector<std::int32_t>{};
   auto layout=schema.version({qp,kp,ids,tails}).value();
   std::vector<T> query(std::size_t(qr)*8*dk);
   std::vector<float> key(std::size_t(physical)*2*dk),value(std::size_t(physical)*2*dv);
@@ -101,7 +105,8 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
   if(paged) {
     auto keys=c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=kb.size()+64}).value();
     auto values=c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=vb.size()+64}).value();
-    std::vector<c::ReadLease> kr(cap.max_pages),vr(cap.max_pages);
+    const unsigned ready_pages=resident_history?112u:cap.max_pages;
+    std::vector<c::ReadLease> kr(ready_pages),vr(ready_pages);
     const auto maximum=std::max(kb.size(),vb.size())/cap.max_pages;
     auto host=c::LeasePool::create(staging.ref(),maximum+64).value();
     const std::array specs{c::CopyResourceSpec{staging.ref(),maximum},c::CopyResourceSpec{memory.ref(),maximum}};
@@ -118,15 +123,20 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
       HYLE_RETURN_IF_ERROR(submitted.wait());HYLE_ASSIGN_OR_RETURN(auto ready,submitted.output({0},{1},0,size));
       HYLE_RETURN_IF_ERROR(target.complete(ready,16));return ready;
     };
-    for(unsigned page=0;page<cap.max_pages;++page){auto k=fill(keys,kb,page),v=fill(values,vb,page);
+    for(unsigned page=0;page<ready_pages;++page){auto k=fill(keys,kb,page),v=fill(values,vb,page);
       ASSERT_TRUE(k)<<k.error().message();ASSERT_TRUE(v)<<v.error().message();kr[page]=std::move(*k);vr[page]=std::move(*v);}
     auto kframe=keys.read(layout,kr).value(),vframe=values.read(layout,vr).value();
     auto made_recipe=c::NativePagedBatchProgram::prepare(schema,{.max_host_metadata_bytes=8192,.scale=scale,.causal=causal,.window_left=window});
     ASSERT_TRUE(made_recipe)<<made_recipe.error().message();auto recipe=std::move(*made_recipe);
     auto slot=n::PagedBatchInvocation::create(context,recipe,memory,staging,{.max_metadata_backing_bytes=4u<<20}).value();
-    const auto prepared=slot.prepare_batch(layout);ASSERT_TRUE(prepared.ok())<<prepared.message();
-    ASSERT_TRUE(slot.bind(q,kframe,vframe).ok());auto run=slot.submit();ASSERT_TRUE(run)<<run.error().message();
-    auto waited=run->wait();ASSERT_TRUE(waited)<<waited.error().message();result=std::move(*waited);
+    for(unsigned replay=0;replay<replays;++replay){
+      SCOPED_TRACE(::testing::Message()<<"replay="<<replay);
+      result={};
+      const auto prepared=slot.prepare_batch(layout);ASSERT_TRUE(prepared.ok())<<prepared.message();
+      EXPECT_EQ(slot.report().reused_native_plan,replay!=0);
+      ASSERT_TRUE(slot.bind(q,kframe,vframe).ok());auto run=slot.submit();ASSERT_TRUE(run)<<run.error().message();
+      auto waited=run->wait();ASSERT_TRUE(waited)<<waited.error().message();result=std::move(*waited);
+    }
   } else {
     auto kd=c::batch_cache_description(cap,c::BatchCacheRole::kKey).value(),vd=c::batch_cache_description(cap,c::BatchCacheRole::kValue).value();
     const std::array inputs{query_tensor,context.upload(kd,std::as_bytes(std::span(kb))).value(),
@@ -145,7 +155,8 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
     return half_test::decode(half_test::encode<T>(k?key[index]:value[index]));
   };
   for(unsigned request=0;request<cap.max_requests;++request) {
-    const int queries=qp[request+1]-qp[request],rows=large_values?8192:(long_prefill?(request?145:129):(request?33:31));
+    const int queries=qp[request+1]-qp[request],rows=resident_history?(request?768:1024):
+        (large_values?8192:(long_prefill?(request?145:129):(request?33:31)));
     for(int row=0;row<queries;++row)for(unsigned head=0;head<8;++head) {
       const int position=rows-queries+row,first=window<0?0:std::max(0,position-window),last=causal?position+1:rows;
       std::vector<double> weights(static_cast<std::size_t>(rows));double sum=0;
@@ -184,6 +195,9 @@ TEST(VulkanCache, OriginalPlainCoupledUnboundedPaths) {
     boxed_case<F16>(paged,false,depth,depth,true,-1);
 
   }
+}
+TEST(VulkanCache, PlainPagedReusesPreparedNativeSlot) {
+  boxed_case<F16>(true,false,256,256,true,-1,false,false,false,3,true);
 }
 TEST(VulkanCache, MainDepthsAndLongPrefill) {
   for(bool paged:{false,true})for(unsigned d:{64u,128u,256u}) {

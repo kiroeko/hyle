@@ -74,8 +74,14 @@ TEST(GgmlVulkanAttention,
       EXPECT_FALSE(work->recording_ready());
       auto completed = work->wait();
       ASSERT_TRUE(completed.status.ok()) << completed.status.message();
-      ASSERT_TRUE(work->recording_ready())
-          << "fixed original flash recording was not retained";
+      // A scalar flash may need no scratch growth and cache immediately.
+      // Once storage has settled, every replay and explicit invalidation must
+      // recover the cache; changing graph owners must preserve that behavior.
+      if (owner != 0 || step != 0) {
+        ASSERT_TRUE(work->recording_ready())
+            << "stable original flash recording was not retained at owner "
+            << owner << " step " << step;
+      }
       std::array<float, 128> actual{};
       ggml_backend_tensor_get(output, actual.data(), 0, sizeof(actual));
       for (const auto value : actual) {
@@ -116,11 +122,115 @@ TEST(GgmlVulkanAttention,
   auto native=n::NativeGraph::allocate(*device,std::move(*arena),graph,imports);ASSERT_TRUE(native)<<native.error().message();
   for(unsigned step=0;step<64;++step){
     for(unsigned request=0;request<2;++request){const std::vector<float> values(ggml_nelements(inputs[3*request+2]),float(step)*.015625F+float(request)*.25F);ggml_backend_tensor_set(inputs[3*request+2],values.data(),0,values.size()*sizeof(float));}
-    if(step==32)ASSERT_TRUE(work->invalidate_recording().ok());
+    if(step==32){ASSERT_TRUE(work->invalidate_recording().ok());EXPECT_FALSE(work->recording_ready());}
     auto submitted=work->submit(native->get(),native->lease());ASSERT_TRUE(submitted.status.ok())<<submitted.status.message();
-    ASSERT_TRUE(work->wait().status.ok());ASSERT_TRUE(work->recording_ready())<<"multi flash/Concat still managed on every replay";
+    ASSERT_TRUE(work->wait().status.ok());
+    if(step==0)EXPECT_FALSE(work->recording_ready())<<"cold scratch allocation must reject the initial recording";
+    else ASSERT_TRUE(work->recording_ready())<<"stable multi flash/Concat recording was not retained at step "<<step;
     std::vector<float> actual(18*512);ggml_backend_tensor_get(output,actual.data(),0,actual.size()*sizeof(float));
     for(std::size_t i=0;i<actual.size();++i)EXPECT_NEAR(actual[i],float(step)*.015625F+(i<512?0.F:.25F),1.e-5F);
+  }
+}
+
+TEST(GgmlVulkanAttention,
+     MixedLongKvScratchGrowthRejectsColdRecordingAndThenReplays) {
+  auto device = n::NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  auto active = device->activate();
+  auto work = device->create_work();
+  ASSERT_TRUE(work) << work.error().message();
+  auto arena =
+      n::MetadataArena::for_graph(32, 64, hyle::mem::system_allocator());
+  ASSERT_TRUE(arena) << arena.error().message();
+  auto *context = arena->get();
+  constexpr int depth = 256, heads = 8, kv_heads = 2;
+  constexpr std::array<int, 2> query_rows{1, 17}, key_rows{1024, 768};
+  std::array<ggml_tensor *, 6> inputs{};
+  std::array<ggml_tensor *, 2> parts{};
+  for (std::size_t request = 0; request < parts.size(); ++request) {
+    auto *q = inputs[3 * request] = ggml_new_tensor_4d(
+        context, GGML_TYPE_F32, depth, query_rows[request], heads, 1);
+    auto *k = inputs[3 * request + 1] = ggml_new_tensor_4d(
+        context, GGML_TYPE_F32, depth, key_rows[request], kv_heads, 1);
+    auto *v = inputs[3 * request + 2] = ggml_new_tensor_4d(
+        context, GGML_TYPE_F32, depth, key_rows[request], kv_heads, 1);
+    auto *attention = ggml_flash_attn_ext(context, q, k, v, nullptr,
+                                         .0625F, 0.F, 0.F);
+    ASSERT_TRUE(ggml_prec_set_acc(attention, GGML_PREC_F32));
+    attention->op_params[b::kFlashAttentionMathSlot] =
+        b::kFlashAttentionFullF32;
+    parts[request] = ggml_reshape_2d(
+        context, attention, depth * heads, query_rows[request]);
+  }
+  auto imports =
+      std::make_shared<std::array<std::shared_ptr<ggml_backend_buffer>, 6>>();
+  for (std::size_t port = 0; port < inputs.size(); ++port) {
+    ggml_set_input(inputs[port]);
+    auto buffer = device->allocate_buffer(ggml_nbytes(inputs[port]));
+    ASSERT_TRUE(buffer) << buffer.error().message();
+    (*imports)[port] = std::shared_ptr<ggml_backend_buffer>(
+        *buffer, [owner = *device](ggml_backend_buffer *p) {
+          auto active = owner.activate();
+          ggml_backend_buffer_free(p);
+        });
+    ASSERT_EQ(ggml_backend_tensor_alloc(
+                  (*imports)[port].get(), inputs[port],
+                  ggml_backend_buffer_get_base((*imports)[port].get())),
+              GGML_STATUS_SUCCESS);
+    const std::vector<float> zeros(ggml_nelements(inputs[port]), 0.F);
+    ggml_backend_tensor_set(inputs[port], zeros.data(), 0,
+                            zeros.size() * sizeof(float));
+  }
+  auto *output = ggml_concat(context, parts[0], parts[1], 1);
+  ggml_set_output(output);
+  auto *graph = ggml_new_graph_custom(context, 64, false);
+  ggml_build_forward_expand(graph, output);
+  auto native =
+      n::NativeGraph::allocate(*device, std::move(*arena), graph, imports);
+  ASSERT_TRUE(native) << native.error().message();
+  for (int step = 0; step < 4; ++step) {
+    std::array<double, 2> row_means{};
+    for (std::size_t request = 0; request < parts.size(); ++request) {
+      std::vector<float> values(ggml_nelements(inputs[3 * request + 2]));
+      for (int head = 0; head < kv_heads; ++head)
+        for (int row = 0; row < key_rows[request]; ++row) {
+          const auto row_value = float((row % 5) - 2) * .015625F;
+          if (head == 0)
+            row_means[request] += double(row_value) / key_rows[request];
+          for (int column = 0; column < depth; ++column)
+            values[(head * key_rows[request] + row) * depth + column] =
+                float(step) * .125F + float(request) * .25F + row_value +
+                float(head) * .0625F + float(column % 7) * .00390625F;
+        }
+      ggml_backend_tensor_set(inputs[3 * request + 2], values.data(), 0,
+                              values.size() * sizeof(float));
+    }
+    auto submitted = work->submit(native->get(), native->lease());
+    ASSERT_TRUE(submitted.status.ok()) << submitted.status.message();
+    EXPECT_FALSE(work->recording_ready());
+    auto completed = work->wait();
+    ASSERT_TRUE(completed.status.ok()) << completed.status.message();
+    if (step == 0)
+      EXPECT_FALSE(work->recording_ready())
+          << "scratch growth must reject saved commands from the cold execution";
+    else
+      ASSERT_TRUE(work->recording_ready())
+          << "stable scratch must permit recording/replay at step " << step;
+    std::vector<float> actual(18 * heads * depth);
+    ggml_backend_tensor_get(output, actual.data(), 0,
+                            actual.size() * sizeof(float));
+    // Zero Q/K makes attention uniform. This independent mean includes the
+    // different logical KV extents, GQA head mapping, and changing V payload.
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+      const std::size_t request = i < heads * depth ? 0 : 1;
+      const auto head = int(i / depth) % heads;
+      const auto column = int(i % depth);
+      const double expected = double(step) * .125 + double(request) * .25 +
+          row_means[request] + double(head / (heads / kv_heads)) * .0625 +
+          double(column % 7) * .00390625;
+      ASSERT_TRUE(std::isfinite(actual[i]));
+      EXPECT_NEAR(actual[i], expected, 1.e-5) << "step " << step << " element " << i;
+    }
   }
 }
 
