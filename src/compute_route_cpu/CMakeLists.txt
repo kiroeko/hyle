@@ -1,6 +1,6 @@
 hyle_add_module(compute_route_cpu SOURCES cpu_context.cc default_policy.cc file_stream.cc)
 
-if(HYLE_STATIC AND NOT HYLE_COMPUTE_ONEDNN_ENABLED)
+if(HYLE_STATIC AND NOT _HYLE_COMPUTE_HAVE_ONEDNN)
   # The absent provider keeps its source-graph identity but contributes no
   # symbols or exported target to an installed Native-only CPU route.
   get_target_property(_route_links hyle_compute_route_cpu

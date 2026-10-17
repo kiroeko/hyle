@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   # This consumer also compiles ordinary .cu kernels through the typed HYLE
   # stream seam; the backend's own CUDA TU only merges device status words.
   enable_language(CUDA)

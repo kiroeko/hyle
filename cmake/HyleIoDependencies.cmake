@@ -55,6 +55,8 @@ function(hyle_configure_io_dependencies)
     # nghttp2 is a pinned PRIVATE protocol kernel, not a second public/runtime
     # ABI. block() prevents its generic options from changing the parent build.
     block()
+      set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+      set(CMAKE_POLICY_DEFAULT_CMP0126 NEW)
       set(ENABLE_LIB_ONLY ON)
       set(ENABLE_APP OFF)
       set(ENABLE_EXAMPLES OFF)

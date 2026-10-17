@@ -23,14 +23,6 @@
 #include "hyle/sched/coro.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // Scheduler-bound RAII TCP resources. TcpStream owns a connected socket and
 // exposes typed span-based asynchronous transfers;
 // TcpListener binds/listens and exposes co_await accept -> TcpStream. Both are

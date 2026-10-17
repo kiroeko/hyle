@@ -5,14 +5,6 @@
 #include "hyle/graph/native_variants.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_ROUTE_APPLE_API
-#elif defined(HYLE_GRAPH_ROUTE_APPLE_BUILD)
-#define HYLE_GRAPH_ROUTE_APPLE_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_ROUTE_APPLE_API HYLE_IMPORT
-#endif
-
 #if defined(HYLE_COMPUTE_APPLE)
 #include <functional>
 #include <optional>

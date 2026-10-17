@@ -6,14 +6,6 @@
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/resource_leases.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_COMPUTE_BATCH_API
-#elif defined(HYLE_COMPUTE_BATCH_BUILD)
-#define HYLE_COMPUTE_BATCH_API HYLE_EXPORT
-#else
-#define HYLE_COMPUTE_BATCH_API HYLE_IMPORT
-#endif
-
 namespace hyle::compute {
 enum class BatchStorage : std::uint8_t { kPaged, kRagged };
 enum class BatchCacheRole : std::uint8_t { kKey, kValue };

@@ -4,7 +4,7 @@ add_test(NAME hyle_ggml_runtime_source_contract_test
     "${HYLE_SOURCE_DIR}/tests/compute_provider_ggml_vulkan/source_contract_test.py")
 set_tests_properties(hyle_ggml_runtime_source_contract_test PROPERTIES
   LABELS "compute_ggml_runtime")
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_test(compute_ggml_runtime NAME cuda SOURCES cuda_resource_test.cc)
   target_include_directories(hyle_compute_ggml_runtime_cuda_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_cuda"

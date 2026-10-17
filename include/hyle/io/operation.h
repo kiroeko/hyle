@@ -9,14 +9,6 @@
 #include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#define HYLE_IO_API HYLE_EXPORT
-#else
-#define HYLE_IO_API HYLE_IMPORT
-#endif
-
 namespace hyle::sched {
 class CancelToken;
 }

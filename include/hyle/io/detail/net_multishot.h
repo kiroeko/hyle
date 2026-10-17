@@ -11,14 +11,6 @@
 #include "hyle/sched/waker.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // io-07b multishot recv (kBuffer/kMore half): the co_await surface for io_uring's
 // zero-copy multishot receive. ONE submit_recv_multishot keeps delivering a
 // completion per arriving segment (kMore SET while armed); the kernel picks a buffer

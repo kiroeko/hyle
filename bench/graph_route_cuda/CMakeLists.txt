@@ -1,4 +1,4 @@
-if(HYLE_STATIC AND HYLE_COMPUTE_CUDA_ENABLED)
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_CUDA)
   # The retired Marlin FFN source is not a current benchmark. This opt-in
   # consumer needs the D5 local model fixture and its existing test oracle.
   option(HYLE_D5_CUDA_FRAGMENT_BENCH "Build the D5 CUDA model fragment consumer" OFF)
@@ -14,7 +14,7 @@ if(HYLE_STATIC AND HYLE_COMPUTE_CUDA_ENABLED)
     set_property(TARGET hyle_graph_route_cuda_bench PROPERTY
       INTERPROCEDURAL_OPTIMIZATION FALSE)
     hyle_apply_warnings(hyle_graph_route_cuda_bench)
-    hyle_stage_runtime_dependencies(hyle_graph_route_cuda_bench)
+    hyle_stage_runtime(hyle_graph_route_cuda_bench)
     hyle_register_benches(graph_route_cuda hyle_graph_route_cuda_bench)
   endif()
 endif()

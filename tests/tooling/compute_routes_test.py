@@ -36,8 +36,8 @@ class ComputeRoutesTest(unittest.TestCase):
             f'include("{(ROOT / "cmake/HyleComputeRoutes.cmake").as_posix()}")\n'
             + body + '\n'
             + f'file(WRITE "{output.as_posix()}" "${{HYLE_COMPUTE_ROUTE_LIST}}|'
-              '${HYLE_COMPUTE_CPU}|${HYLE_COMPUTE_CUDA}|${HYLE_COMPUTE_APPLE}|'
-              '${HYLE_COMPUTE_VULKAN}|${HYLE_COMPUTE_ONEDNN}|${HYLE_COMPUTE_TORCH_CPU}")\n',
+              '${_HYLE_COMPUTE_REQUEST_CPU}|${_HYLE_COMPUTE_REQUEST_CUDA}|${_HYLE_COMPUTE_REQUEST_APPLE}|'
+              '${_HYLE_COMPUTE_REQUEST_VULKAN}|${_HYLE_COMPUTE_REQUEST_ONEDNN}|${_HYLE_COMPUTE_REQUEST_TORCH_CPU}")\n',
             encoding="utf-8")
         result = subprocess.run(["cmake", "-P", str(script)], capture_output=True,
                                 text=True, timeout=15, **NO_WINDOW)
@@ -182,8 +182,13 @@ class ComputeRoutesTest(unittest.TestCase):
             f'file(MAKE_DIRECTORY "{sdk.as_posix()}")\n'
             f'configure_package_config_file("{(ROOT / "cmake/HyleConfig.cmake.in").as_posix()}" '
             f'"{(sdk / "HyleConfig.cmake").as_posix()}" INSTALL_DESTINATION lib/cmake/Hyle)\n'
-            f'file(WRITE "{(sdk / "HyleTargets.cmake").as_posix()}" '
+            f'file(WRITE "{(sdk / "HyleTargets-product_compute.cmake").as_posix()}" '
             '"add_library(hyle::compute INTERFACE IMPORTED)\\n")\n'
+            f'file(WRITE "{(sdk / "HylePackageIndex.cmake").as_posix()}" '
+            '"set(_Hyle_package_group_order product_compute)\\n'
+            'set(_Hyle_product_compute_groups product_compute)\\n'
+            'set(_Hyle_product_compute_required_groups product_compute)\\n'
+            'set(_Hyle_group_product_compute_file HyleTargets-product_compute.cmake)\\n")\n'
             f'file(COPY "{(ROOT / "cmake/HyleRuntimeStaging.cmake").as_posix()}" '
             f'DESTINATION "{sdk.as_posix()}")\n', encoding="utf-8")
         result = subprocess.run(["cmake", "-S", str(prepare), "-B", str(prepare / "build")],
@@ -200,6 +205,7 @@ class ComputeRoutesTest(unittest.TestCase):
         cases = [([], True), (["-DHYLE_COMPUTE_ROUTES=CPU"], True),
                  (["-DHYLE_COMPUTE_ROUTES=cpu;cuda"], False),
                  (["-DHYLE_COMPUTE_ROUTES="], False),
+                 (["-DHYLE_COMPUTE_ROUTES=cpu;;cpu"], False),
                  (["-DHYLE_COMPUTE_TORCH_CPU=OFF"], False)]
         for ordinal, (args, expected) in enumerate(cases):
             result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / str(ordinal)),

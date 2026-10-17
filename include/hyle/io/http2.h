@@ -10,14 +10,6 @@
 #include "hyle/io/http.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_IO_HTTP2_API
-#elif defined(HYLE_IO_HTTP2_BUILD)
-#define HYLE_IO_HTTP2_API HYLE_EXPORT
-#else
-#define HYLE_IO_HTTP2_API HYLE_IMPORT
-#endif
-
 namespace hyle::io {
 
 HYLE_IO_HTTP2_API bool http2_available() noexcept;

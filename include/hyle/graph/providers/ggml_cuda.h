@@ -3,14 +3,6 @@
 #include "hyle/compute/provider.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_PROVIDER_GGML_CUDA_API
-#elif defined(HYLE_GRAPH_PROVIDER_GGML_CUDA_BUILD)
-#define HYLE_GRAPH_PROVIDER_GGML_CUDA_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_PROVIDER_GGML_CUDA_API HYLE_IMPORT
-#endif
-
 namespace hyle::graph::ggml_cuda {
 
 // The Compute provider plus Graph region discovery/lowering. Original ggml

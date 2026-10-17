@@ -37,7 +37,7 @@ target_compile_options(${_target} PRIVATE
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall;-Wextra;-Werror>)
 target_link_libraries(${_target} PRIVATE hyle::graph hyle::compute hyle::simd
   d5_nanobench GTest::gtest ggml-base)
-hyle_stage_runtime_dependencies(${_target})
+hyle_stage_runtime(${_target})
 add_executable(hyle_perf_control_bench "${_hyle_fixture_root}/bench/integration/perf_control_bench.cc")
 target_compile_features(hyle_perf_control_bench PRIVATE cxx_std_23)
 target_compile_definitions(hyle_perf_control_bench PRIVATE _CRT_SECURE_NO_WARNINGS)

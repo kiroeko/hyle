@@ -10,14 +10,6 @@
 #include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // Proactor: the platform-neutral COMPLETION-reaping seam (io-design "模块形状",
 // sched-design §3.2/§3.3). One proactor per worker. It is NOT the socket/file
 // API (that is io-04 net/); it is the thin layer that (a) lets a backend record

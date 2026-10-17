@@ -1,5 +1,5 @@
 hyle_ensure_module_test_target(graph_route_cpu_cuda)
-if(HYLE_COMPUTE_CUDA_ENABLED AND HYLE_COMPUTE_CPU)
+if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU)
   get_filename_component(_hyle_cuda_test_bin "${CMAKE_CUDA_COMPILER}" DIRECTORY)
   find_path(_hyle_cuda_test_include cuda.h REQUIRED
     HINTS "${_hyle_cuda_test_bin}/../include"
@@ -14,7 +14,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED AND HYLE_COMPUTE_CPU)
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_public_consumer_test)
 endif()
 
-if(HYLE_COMPUTE_CUDA_ENABLED AND HYLE_COMPUTE_CPU)
+if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU)
   hyle_add_test(graph_route_cpu_cuda NAME sampling_consumer
     SOURCES sampling_consumer.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda)
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_sampling_consumer_test)

@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   hyle_add_module(graph_route_cpu_vulkan SOURCES compile.cc invocation.cc)
 else()
   hyle_add_module(graph_route_cpu_vulkan OPTIONAL_ABSENT)

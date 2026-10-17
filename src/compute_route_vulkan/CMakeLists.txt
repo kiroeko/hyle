@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   configure_file(vulkan_build.h.in vulkan_build.h @ONLY)
   set(_shader_source "${HYLE_SOURCE_DIR}/third_party/ggml_vulkan_shaders/shaders")
   set(_shader_output "${CMAKE_CURRENT_BINARY_DIR}/shaders")
@@ -20,11 +20,10 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   target_include_directories(hyle_compute_route_vulkan PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute" "${CMAKE_CURRENT_BINARY_DIR}"
     "${_shader_output}")
-  target_compile_definitions(hyle_compute_route_vulkan PUBLIC HYLE_COMPUTE_VULKAN=1)
+  hyle_target_compute_capability(hyle_compute_route_vulkan vulkan)
   target_link_libraries(hyle_compute_route_vulkan PUBLIC Vulkan-Headers)
   hyle_register_package_dependency(
-    NAME vulkan_headers OWNER compute_route_vulkan FEATURES compute_vulkan
-    EXPORT_TARGETS Vulkan-Headers LOCKED_DEPENDENCIES vulkan_headers ggml_vulkan_shaders
+    NAME vulkan_headers OWNER compute_route_vulkan EXPORT_TARGETS Vulkan-Headers LOCKED_DEPENDENCIES vulkan_headers ggml_vulkan_shaders
     RUNTIME_FILE_SPECS
       "${HYLE_VULKAN_HEADERS_SOURCE_DIR}/LICENSE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|vulkan-headers-LICENSE.md"
       "${HYLE_VULKAN_HEADERS_SOURCE_DIR}/LICENSES/Apache-2.0.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|vulkan-headers-Apache-2.0.txt"

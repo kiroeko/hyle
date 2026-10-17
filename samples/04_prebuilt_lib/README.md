@@ -16,13 +16,18 @@ Run both shared and static paths on Linux/WSL:
 CC=gcc-14 CXX=g++-14 bash build_and_run.sh
 ```
 
+The script reuses `.scratch/sample04` under the repository and preserves its
+build caches. Pass an absolute directory as its first argument to isolate a
+different compiler/configuration. Configure, build, install and consumer errors
+remain visible and produce a nonzero script exit.
+
 Equivalent manual flow:
 
 ```bash
 cmake -S ../.. -B /tmp/hyle-build -G Ninja -DHYLE_COMPONENTS='simd;mem' \
   -DHYLE_BUILD_TESTS=OFF -DHYLE_INSTALL=ON \
   -DCMAKE_INSTALL_PREFIX=/tmp/hyle-prefix
-cmake --build /tmp/hyle-build --target hyle_simd
+cmake --build /tmp/hyle-build
 cmake --install /tmp/hyle-build
 
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=/tmp/hyle-prefix

@@ -1,5 +1,5 @@
 # hyle_apply_sanitizer(<target>): apply HYLE_SANITIZER (off|asan|tsan|ubsan).
-# Sanitizers are mutually exclusive (charter: separate CI builds). The VALUE is validated
+# Sanitizers are mutually exclusive. The value is validated
 # + normalized in the top-level CMakeLists (aliases mapped, unknown values hard-fail), so
 # by here it is always one of the four canonical names -- a defensive else still FATALs
 # rather than silently emit no flags (an empty flag set = a sanitizer build that proves
@@ -110,10 +110,12 @@ function(hyle_apply_sanitizer target)
   endif()
   if(HYLE_SANITIZER STREQUAL "asan")
     set(flags -fsanitize=address -fno-omit-frame-pointer)
+    set(_runtime_flag -fsanitize=address)
     target_compile_definitions(${target} PRIVATE
       HYLE_DETAIL_SANITIZER_ADDRESS=1)
   elseif(HYLE_SANITIZER STREQUAL "tsan")
     set(flags -fsanitize=thread)
+    set(_runtime_flag -fsanitize=thread)
     target_compile_definitions(${target} PRIVATE
       HYLE_DETAIL_SANITIZER_THREAD=1)
     # GCC warns (-Wtsan) that std::atomic_thread_fence "is not supported" under
@@ -128,6 +130,7 @@ function(hyle_apply_sanitizer target)
     endif()
   elseif(HYLE_SANITIZER STREQUAL "ubsan")
     set(flags -fsanitize=undefined -fno-sanitize-recover=all)
+    set(_runtime_flag -fsanitize=undefined)
     target_compile_definitions(${target} PRIVATE
       HYLE_DETAIL_SANITIZER_UNDEFINED=1)
   else()
@@ -143,5 +146,12 @@ function(hyle_apply_sanitizer target)
       "$<$<COMPILE_LANGUAGE:CXX>:-Wno-error=mismatched-new-delete>")
   endif()
   target_compile_options(${target} PRIVATE ${flags})
-  target_link_options(${target} PRIVATE ${flags})
+  get_target_property(_type ${target} TYPE)
+  if(_type STREQUAL "STATIC_LIBRARY")
+    # Archives do not link a runtime. The final application/shared library must
+    # receive this requirement even if it does not instrument its own sources.
+    target_link_options(${target} INTERFACE ${_runtime_flag})
+  else()
+    target_link_options(${target} PRIVATE ${_runtime_flag})
+  endif()
 endfunction()

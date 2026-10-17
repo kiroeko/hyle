@@ -12,14 +12,6 @@
 #include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_TIME_API
-#elif defined(HYLE_TIME_BUILD)
-#  define HYLE_TIME_API HYLE_EXPORT
-#else
-#  define HYLE_TIME_API HYLE_IMPORT
-#endif
-
 // Time primitives. Two distinct clocks (conflating them is a classic bug):
 //   - monotonic: steady, never jumps/goes back, arbitrary zero. The ONLY clock
 //     for deadlines/timeouts/elapsed (sched will key timers on it). clay lacked

@@ -8,14 +8,6 @@
 #include "hyle/sched/waker.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // io-04 net: the co_await socket layer over the proactor. This is the seam where
 // io/ meets sched/ -- an async op suspends the FIBER (not just the coroutine) and
 // resumes when the completion carries its result back.

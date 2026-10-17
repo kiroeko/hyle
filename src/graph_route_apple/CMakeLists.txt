@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_APPLE_ENABLED)
+if(_HYLE_COMPUTE_HAVE_APPLE)
   hyle_add_module(graph_route_apple TRACE SOURCES apple_lowering.cc apple_batch.cc)
 else()
   hyle_add_module(graph_route_apple OPTIONAL_ABSENT)

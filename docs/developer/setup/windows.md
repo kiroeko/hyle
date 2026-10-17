@@ -29,9 +29,11 @@
 ## 二、环境初始化（关键，每个构建 shell 都要先做）
 
 Visual Studio generator 会选择对应 IDE 实例，但在同一 VS 内并存多套 v143 时不保证选择数值最高
-的 toolset；Ninja 则完全使用 shell 中的 `cl.exe`。推荐统一走仓库脚本：它为 Ninja 用 `vswhere`
-选最新已安装 C++ toolchain，为 VS 2022 solution 枚举并显式选择最高的 MSVC 14.43+，都不写死
-Edition/安装路径：
+的 toolset；Ninja 则完全使用 shell 中的 `cl.exe`。推荐统一走仓库脚本，
+优先使用已配置 cache 的 VS 实例、编译器和 toolset。新配置按所选 generator 选择对应 VS 版本；
+VS 2022 solution 显式选择已安装的最高合格 v143。已有 Ninja cache 不会因机器另装新版 VS 而漂移，
+脚本也不自动清空 cache。显式编译器或自定义 toolchain 没有 VS 路径时沿用调用方环境，
+由该 toolchain 提供 SDK，不盲目注入最新 VS。Edition/安装路径均不写死：
 
 ```powershell
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja

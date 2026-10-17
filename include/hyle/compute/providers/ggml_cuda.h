@@ -3,14 +3,6 @@
 #include "hyle/compute/provider.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_COMPUTE_PROVIDER_GGML_CUDA_API
-#elif defined(HYLE_COMPUTE_PROVIDER_GGML_CUDA_BUILD)
-#define HYLE_COMPUTE_PROVIDER_GGML_CUDA_API HYLE_EXPORT
-#else
-#define HYLE_COMPUTE_PROVIDER_GGML_CUDA_API HYLE_IMPORT
-#endif
-
 namespace hyle::compute::ggml_cuda {
 
 inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,

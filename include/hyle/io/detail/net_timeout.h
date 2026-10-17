@@ -14,14 +14,6 @@
 #include "hyle/time/timer_entry.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // io-06 timed io (capability C2): recv/accept/connect WITH a deadline. The op and a
 // timer race; first to fire wins, loser is cancelled. "Almost every network
 // library's survival trait" (tokio timeout / Go SetReadDeadline / asio cancel_after

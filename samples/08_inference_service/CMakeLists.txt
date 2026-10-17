@@ -1,12 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(hyle_sample_inference_service LANGUAGES CXX)
 
-# This is a source-embedding consumer, not an in-tree HYLE target. Keep optional
-# protocol providers out of the slice: it exercises the portable HTTP/1 route.
-set(HYLE_BUILD_TESTS OFF)
-set(HYLE_BUILD_BENCH OFF)
-set(HYLE_IO_TLS OFF)
-set(HYLE_IO_HTTP2 OFF)
+# This source-embedding consumer exercises HTTP/1. Optional TLS/HTTP2 stay at
+# HYLE's default OFF unless the caller explicitly enables them.
 set(HYLE_COMPONENTS "container;util;sched;io;simd;obs;platform;mem")
 add_subdirectory(../.. hyle_build)
 

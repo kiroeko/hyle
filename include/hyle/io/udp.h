@@ -15,14 +15,6 @@
 #include "hyle/io/operation.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // io-04 net, datagram half: RAII UDP socket wrapper over the raw co_await ops in
 // net.h. Unlike TCP there is no connection/accept -- a single UdpSocket both
 // receives (recv_from, learning each datagram's sender) and sends (send_to, to an

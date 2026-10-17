@@ -2,7 +2,7 @@
 
 # The normalization adoption experiment compares complete Direct/Graph paths.
 # Explicit provider selection is confined to this development benchmark.
-if(HYLE_STATIC AND HYLE_COMPUTE_ONEDNN_ENABLED
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_ONEDNN
     AND TARGET hyle_compute_provider_native)
   foreach(_variant IN ITEMS primary placement)
     set(_target hyle_onednn_normalization_bench)

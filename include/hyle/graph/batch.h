@@ -8,14 +8,6 @@
 #include <cstdint>
 #include <string_view>
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_BATCH_API
-#elif defined(HYLE_GRAPH_BATCH_BUILD)
-#define HYLE_GRAPH_BATCH_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_BATCH_API HYLE_IMPORT
-#endif
-
 namespace hyle::graph::batch {
 inline constexpr compute::ProviderId kProviderId{0x48594c4547524241ULL,0x5443485245470001ULL};
 // Original native BatchPlanning capability + original Graph region v19. The

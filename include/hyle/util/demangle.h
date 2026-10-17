@@ -8,14 +8,6 @@
 
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_UTIL_RUNTIME_API
-#elif defined(HYLE_UTIL_RUNTIME_BUILD)
-#  define HYLE_UTIL_RUNTIME_API HYLE_EXPORT
-#else
-#  define HYLE_UTIL_RUNTIME_API HYLE_IMPORT
-#endif
-
 // Runtime symbol demangling (clay sys/demangle). Turns a mangled C++ symbol --
 // e.g. "_Z1gv" -> "g()" -- into something human-readable, for diagnostics and
 // backtraces. This is the RUNTIME complement to util/type_name<T> (compile-time,

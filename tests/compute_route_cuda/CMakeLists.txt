@@ -1,6 +1,6 @@
 hyle_add_header_self_contained_test(compute_route_cuda
   HEADER_DIR compute HEADERS cuda.h)
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_test(compute_route_cuda NAME file_stream SOURCES file_stream_test.cc)
   hyle_stage_runtime(hyle_compute_route_cuda_file_stream_test)
   hyle_add_test(compute_route_cuda SOURCES context_test.cc ggml_test.cc best_of_test.cc
@@ -14,7 +14,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_stage_runtime(hyle_compute_route_cuda_test)
 endif()
 
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
 
 hyle_add_test(compute_route_cuda NAME sampling_consumer
   SOURCES sampling_consumer.cc DEPS hyle_compute_backend_cuda)

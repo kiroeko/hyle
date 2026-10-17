@@ -7,8 +7,6 @@ option(HYLE_SAMPLE_SIMD_FAT
 if(HYLE_SAMPLE_SIMD_USE_INSTALLED)
   find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS simd)
 else()
-  set(HYLE_BUILD_TESTS OFF)
-  set(HYLE_BUILD_BENCH OFF)
   set(HYLE_COMPONENTS simd)
   add_subdirectory(../.. hyle_build)
 endif()

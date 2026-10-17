@@ -121,12 +121,21 @@ select_linux_pair() {
       return
     fi
   done
-  if pair_supported cc c++; then
-    CC=cc
-    CXX=c++
-    export CC CXX
-    return
-  fi
+  # Some distributions expose a supported compiler only under its unversioned
+  # name; cc/c++ may still point to a different, older system pair.
+  for cc in gcc clang cc; do
+    case "$cc" in
+      gcc) cxx=g++ ;;
+      clang) cxx=clang++ ;;
+      cc) cxx=c++ ;;
+    esac
+    if pair_supported "$cc" "$cxx"; then
+      CC="$cc"
+      CXX="$cxx"
+      export CC CXX
+      return
+    fi
+  done
 
   fail "no supported compiler pair found; install GCC 14+ or Clang 18+, or set both CC and CXX"
 }

@@ -1,0 +1,14 @@
+execute_process(COMMAND "${CMAKE_COMMAND}" -S "${SOURCE}" -B "${BINARY}"
+  -G "${GENERATOR}" "-DHYLE_TORCH_TEST_CASE=${CASE}"
+  RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+if(CASE STREQUAL "partial")
+  set(expected "partial Torch target set")
+elseif(CASE STREQUAL "environment")
+  set(expected "TORCH_INSTALL_PREFIX selects")
+else()
+  set(expected "Existing Torch target 'torch'")
+endif()
+if(result EQUAL 0 OR NOT "${output}\n${error}" MATCHES "${expected}")
+  message(FATAL_ERROR "Expected ${CASE} SDK rejection; got ${result}:\n${output}\n${error}")
+endif()
+message(STATUS "Expected ${CASE} SDK rejection verified")

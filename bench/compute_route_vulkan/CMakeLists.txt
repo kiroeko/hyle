@@ -1,4 +1,4 @@
-if(HYLE_STATIC AND HYLE_COMPUTE_VULKAN_ENABLED)
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_VULKAN)
   file(TO_CMAKE_PATH "${HYLE_VULKAN_REFERENCE_SOURCE_DIR}" _reference_source)
   if(NOT EXISTS "${_reference_source}/src/ggml-vulkan/ggml-vulkan.cpp")
     message(FATAL_ERROR "Vulkan benchmarks require the pinned independent HYLE_VULKAN_REFERENCE_SOURCE_DIR")

@@ -9,14 +9,6 @@
 #include "hyle/io/file.h"
 #include "hyle/mem/mapping.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_COMPUTE_STREAM_API
-#elif defined(HYLE_COMPUTE_STREAM_BUILD)
-#define HYLE_COMPUTE_STREAM_API HYLE_EXPORT
-#else
-#define HYLE_COMPUTE_STREAM_API HYLE_IMPORT
-#endif
-
 namespace hyle::compute {
 namespace detail {
 struct StreamFileState;

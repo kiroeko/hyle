@@ -1,4 +1,4 @@
-if(HYLE_STATIC AND HYLE_COMPUTE_ONEDNN_ENABLED)
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_ONEDNN)
   function(_hyle_configure_compute_onednn_provider_bench target)
     # dnnl is linked explicitly because the peer arm calls the exact private
     # BRGEMM ukernel used by the provider. It remains benchmark-only and never

@@ -56,3 +56,7 @@ foreach(_scenario IN LISTS _hyle_runtime_scenarios)
   set_tests_properties(compute_route_cpu_thread_runtime_${_scenario} PROPERTIES
     LABELS "compute_route_cpu")
 endforeach()
+
+if(HYLE_GGML_CPU_ENABLED)
+  target_compile_definitions(hyle_compute_route_cpu_test PRIVATE HYLE_TEST_GGML_CPU=1)
+endif()

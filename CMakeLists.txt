@@ -74,16 +74,10 @@ include(HyleTargetPlatform)
 include(HyleDependencyVersions)
 include(HyleDependencyCache)
 
-# Component resolution needs to know whether factor-owned tests are part of
-# this build: TEST_DEPS are build fixtures, never shipping product edges.
-set(_hyle_tests_default "${PROJECT_IS_TOP_LEVEL}")
-if(HYLE_INSTALL OR DEFINED HYLE_COMPUTE_ROUTES)
-  # A product route/SDK request is a shipping journey. Explicit developer
-  # presets or callers can still request tests, without a second lite SKU.
-  set(_hyle_tests_default OFF)
-endif()
-option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${_hyle_tests_default})
-unset(_hyle_tests_default)
+# Tests are an explicit development choice, independent of product/routes and
+# installation. Developer presets enable them; ordinary source consumers do
+# not acquire test fixtures merely by omitting a route whose default is cpu.
+option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" OFF)
 
 # Resolve platform capability before the component graph. Sched and its current
 # IO consumers require fcontext; the Compute and Graph runtime factors remain
@@ -168,14 +162,16 @@ option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
 option(HYLE_INSTALL "generate install rules and a relocatable CMake package" OFF)
 if(HYLE_INSTALL AND DEFINED HYLE_DEV_FACTORS)
   message(FATAL_ERROR
-    "HYLE_INSTALL=ON cannot be combined with HYLE_DEV_FACTORS. Internal factor "
-    "selection is a source-maintenance journey; install a complete product "
-    "selected through HYLE_COMPONENTS instead.")
+    "HYLE_DEV_FACTORS does not select installable products. Reuse this build "
+    "directory with -DHYLE_INSTALL=OFF for factor development, or remove "
+    "HYLE_DEV_FACTORS with -UHYLE_DEV_FACTORS and select HYLE_COMPONENTS "
+    "for installation.")
 endif()
-if(HYLE_INSTALL AND HYLE_BUILD_TESTS)
+if(HYLE_INSTALL AND HYLE_TEST_INSTRUMENTATION)
   message(FATAL_ERROR
-    "HYLE_INSTALL=ON requires HYLE_BUILD_TESTS=OFF. Test configurations are validation "
-    "artifacts; the instrumented form may change layout, and neither form is an SDK.")
+    "HYLE_INSTALL=ON cannot export the test-instrumented ABI. Set "
+    "HYLE_TEST_INSTRUMENTATION=OFF to build tests and install the production "
+    "libraries from this same build directory.")
 endif()
 
 # Lock projection is global, but vendored source requirements follow the
@@ -278,15 +274,11 @@ set(HYLE_SANITIZER "${_san_lc}" CACHE STRING "off|asan|tsan|ubsan" FORCE)
 set(HYLE_SANITIZER "${_san_lc}")
 message(STATUS "HYLE_SANITIZER = ${HYLE_SANITIZER}")
 
-# Build configurations. Multi-config generators (VS, Xcode, Ninja Multi-Config)
-# pick per-build via --config; single-config (plain Ninja, Makefiles) via
-# CMAKE_BUILD_TYPE. RelWithDebInfo kept: a perf lib needs an optimized build that
-# still profiles/symbolicates. MinSizeRel dropped (irrelevant for infra).
+# Multi-config generators use --config and retain the user's configuration
+# catalog. Single-config standalone builds default to optimized Release.
 get_property(_hyle_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(PROJECT_IS_TOP_LEVEL)
-  if(_hyle_multi_config)
-    set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "" FORCE)
-  elseif(NOT CMAKE_BUILD_TYPE)
+  if(NOT _hyle_multi_config AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)  # perf-first top-level default
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo)
   endif()
@@ -367,7 +359,6 @@ if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
     file(GLOB_RECURSE _hyle_highway_development_headers
       CONFIGURE_DEPENDS LIST_DIRECTORIES false
       "${HYLE_HIGHWAY_SOURCE_DIR}/hwy/*.h")
-    list(APPEND _hyle_highway_development_assets DEVELOPMENT_FILE_SPECS)
     foreach(_hyle_highway_header IN LISTS _hyle_highway_development_headers)
       file(RELATIVE_PATH _hyle_highway_relative
         "${HYLE_HIGHWAY_SOURCE_DIR}" "${_hyle_highway_header}")
@@ -384,11 +375,10 @@ if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
   hyle_register_package_dependency(
     NAME foundation_highway
     OWNER foundation
+    CONSUMER_COMPONENTS simd container
     LOCKED_DEPENDENCIES highway
-    ${_hyle_highway_development_assets}
     RUNTIME_FILE_SPECS
       "${HYLE_HIGHWAY_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-upstream-LICENSE")
-  unset(_hyle_highway_development_assets)
   if(HYLE_BUILD_SIMD)
     hyle_register_package_dependency(
       NAME simd_xsimd
@@ -396,6 +386,7 @@ if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
       EXPORT_TARGETS hyle_simd_expert
       LOCKED_DEPENDENCIES xsimd
       DEVELOPMENT_FILE_SPECS
+        ${_hyle_highway_development_assets}
         "${HYLE_SOURCE_DIR}/cmake/HyleIsa.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/Hyle"
         "${HYLE_SOURCE_DIR}/cmake/HyleDispatch.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/Hyle"
       DEVELOPMENT_DIRECTORY_SPECS
@@ -403,36 +394,37 @@ if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
       RUNTIME_FILE_SPECS
         "${HYLE_XSIMD_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|xsimd-upstream-LICENSE")
   endif()
+  unset(_hyle_highway_development_assets)
 endif()
 if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN OR
    HYLE_BUILD_PRODUCT_COMPUTE OR HYLE_BUILD_PRODUCT_GRAPH)
   include(HyleComputeDependencies)
   hyle_configure_compute_dependencies()
 else()
-  set(HYLE_COMPUTE_ONEDNN_ENABLED OFF)
+  set(_HYLE_COMPUTE_HAVE_ONEDNN OFF)
 endif()
 if(HYLE_BUILD_COMPUTE_BACKEND_CUDA)
   include(HyleCudaDependencies)
   hyle_configure_cuda_dependency()
 else()
-  set(HYLE_COMPUTE_CUDA_ENABLED OFF)
+  set(_HYLE_COMPUTE_HAVE_CUDA OFF)
 endif()
 if(HYLE_BUILD_COMPUTE_ROUTE_APPLE OR HYLE_BUILD_COMPUTE_PROVIDER_GGML_METAL)
   include(HyleAppleDependencies)
   hyle_configure_apple_dependencies()
-  if(HYLE_COMPUTE_APPLE_ENABLED)
+  if(_HYLE_COMPUTE_HAVE_APPLE)
     enable_language(OBJC)
     enable_language(OBJCXX)
   endif()
 else()
-  set(HYLE_COMPUTE_APPLE_ENABLED OFF)
+  set(_HYLE_COMPUTE_HAVE_APPLE OFF)
 endif()
 
 if(HYLE_BUILD_COMPUTE_ROUTE_VULKAN OR HYLE_BUILD_COMPUTE_PROVIDER_GGML_VULKAN)
   include(HyleVulkanDependencies)
   hyle_configure_vulkan_dependencies()
 else()
-  set(HYLE_COMPUTE_VULKAN_ENABLED OFF)
+  set(_HYLE_COMPUTE_HAVE_VULKAN OFF)
 endif()
 # ---- modules (component closure + dependency order) -------------------------
 # sched fiber switching needs platform fcontext asm. Vendored build integration

@@ -20,14 +20,6 @@
 #include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_OBS_API
-#elif defined(HYLE_OBS_BUILD)
-#define HYLE_OBS_API HYLE_EXPORT
-#else
-#define HYLE_OBS_API HYLE_IMPORT
-#endif
-
 #ifndef HYLE_OBS_COMPILED_MIN_LEVEL
 #define HYLE_OBS_COMPILED_MIN_LEVEL 0
 #endif

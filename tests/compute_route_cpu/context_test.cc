@@ -274,7 +274,7 @@ TEST(CpuDefaultContext, ColdFailureReleasesPartialProviderAssembly) {
   EXPECT_TRUE(stats.balanced());
 }
 
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
 TEST(CpuDefaultContext, GgmlBindsThroughOrdinaryFactory) {
   auto context = create_context().value();
   const auto description = matrix(17, 31);
@@ -403,7 +403,7 @@ TEST(CpuDefaultContext, MatureNormalizationBindsThroughOrdinaryFactory) {
                 ProviderReplayClass::kManaged);
     } else {
       ASSERT_TRUE(vendor.error().IsUnimplemented());
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
       EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
 #else
       EXPECT_EQ(prepared->provider().id, native::kProviderId);
@@ -472,7 +472,7 @@ TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
               prepared->workload().profile.matches(workload_test::kModel));
         }
         ProviderId expected = aten_cpu::kProviderId;
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
         expected = ggml_cpu::kProviderId;
 #endif
 #if defined(HYLE_COMPUTE_ONEDNN)
@@ -565,7 +565,7 @@ TEST(CpuDefaultContext, InvalidAndUnsupportedInputsRemainErrors) {
             std::string_view::npos);
 }
 
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
 TEST(CpuDefaultContext, B2MatureDomainsBindThroughDefaultRuleSet) {
   auto context = create_context().value();
   const auto f16_left =

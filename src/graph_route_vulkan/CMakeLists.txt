@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   hyle_add_module(graph_route_vulkan TRACE SOURCES vulkan_lowering.cc vulkan_batch.cc)
 else()
   hyle_add_module(graph_route_vulkan OPTIONAL_ABSENT)

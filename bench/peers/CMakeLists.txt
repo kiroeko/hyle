@@ -186,20 +186,36 @@ if(HYLE_BENCH_FOLLY)
       # executables are built in parallel.
       set(_hyle_folly_runtime_stamp
         "${CMAKE_CURRENT_BINARY_DIR}/folly-runtime-$<CONFIG>.stamp")
+      file(GLOB _hyle_folly_runtime_files CONFIGURE_DEPENDS LIST_DIRECTORIES FALSE
+        "${HYLE_FOLLY_PREFIX}/bin/*.dll")
+      # Track both content updates and additions/removals. The manifest changes
+      # only when the glob's file set changes; an unchanged build does no copy.
+      set(_hyle_folly_runtime_manifest
+        "${CMAKE_CURRENT_BINARY_DIR}/folly-runtime-inputs.txt")
+      file(CONFIGURE OUTPUT "${_hyle_folly_runtime_manifest}"
+        CONTENT "${_hyle_folly_runtime_files}\n" @ONLY)
+      set(_hyle_folly_copy_command "")
+      if(_hyle_folly_runtime_files)
+        set(_hyle_folly_copy_command
+          COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            ${_hyle_folly_runtime_files} "$<TARGET_FILE_DIR:${target}>")
+      endif()
       add_custom_command(
         OUTPUT "${_hyle_folly_runtime_stamp}"
         COMMAND "${CMAKE_COMMAND}" -E make_directory
                 "$<TARGET_FILE_DIR:${target}>"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory
-                "${HYLE_FOLLY_PREFIX}/bin"
-                "$<TARGET_FILE_DIR:${target}>"
+        ${_hyle_folly_copy_command}
         COMMAND "${CMAKE_COMMAND}" -E touch
                 "${_hyle_folly_runtime_stamp}"
         COMMENT "Staging the prepared Folly runtime once"
+        DEPENDS ${_hyle_folly_runtime_files} "${_hyle_folly_runtime_manifest}"
         VERBATIM)
       add_custom_target(hyle_bench_folly_runtime
         DEPENDS "${_hyle_folly_runtime_stamp}")
       unset(_hyle_folly_runtime_stamp)
+      unset(_hyle_folly_runtime_files)
+      unset(_hyle_folly_runtime_manifest)
+      unset(_hyle_folly_copy_command)
     endif()
     if(TARGET hyle_bench_folly_runtime)
       add_dependencies(${target} hyle_bench_folly_runtime)

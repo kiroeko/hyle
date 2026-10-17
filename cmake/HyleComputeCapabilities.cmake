@@ -1,0 +1,27 @@
+include_guard(GLOBAL)
+
+# One declaration owns both the C++ presence define and package capability.
+# Request/availability variables remain private configure-time facts.
+function(hyle_target_compute_capability target capability)
+  cmake_parse_arguments(ARG "NO_DEFINE" "VISIBILITY" "" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES OR
+     NOT TARGET ${target} OR NOT capability MATCHES "^[a-z][a-z0-9_]*$")
+    message(FATAL_ERROR "Invalid Compute capability declaration: ${target}/${capability}")
+  endif()
+  get_target_property(_capabilities ${target} HYLE_COMPUTE_CAPABILITIES)
+  if(NOT _capabilities)
+    set(_capabilities "")
+  endif()
+  list(APPEND _capabilities "${capability}")
+  list(REMOVE_DUPLICATES _capabilities)
+  set_property(TARGET ${target} PROPERTY HYLE_COMPUTE_CAPABILITIES "${_capabilities}")
+  if(NOT ARG_NO_DEFINE)
+    if(NOT ARG_VISIBILITY)
+      set(ARG_VISIBILITY PUBLIC)
+    elseif(NOT ARG_VISIBILITY MATCHES "^(PUBLIC|PRIVATE|INTERFACE)$")
+      message(FATAL_ERROR "Invalid Compute capability visibility: ${ARG_VISIBILITY}")
+    endif()
+    string(TOUPPER "${capability}" _upper)
+    target_compile_definitions(${target} ${ARG_VISIBILITY} "HYLE_COMPUTE_${_upper}=1")
+  endif()
+endfunction()

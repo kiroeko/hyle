@@ -3,14 +3,6 @@
 #include "hyle/compute/provider.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_PROVIDER_ONEDNN_API
-#elif defined(HYLE_GRAPH_PROVIDER_ONEDNN_BUILD)
-#define HYLE_GRAPH_PROVIDER_ONEDNN_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_PROVIDER_ONEDNN_API HYLE_IMPORT
-#endif
-
 namespace hyle::graph::onednn {
 
 inline constexpr compute::ProviderId kProviderId{0x48594c4500000001ULL,

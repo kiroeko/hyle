@@ -5,14 +5,6 @@
 #include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_SCHED_API
-#elif defined(HYLE_SCHED_BUILD)
-#  define HYLE_SCHED_API HYLE_EXPORT
-#else
-#  define HYLE_SCHED_API HYLE_IMPORT
-#endif
-
 // The completion spine: the single seam through which every
 // asynchronous source -- io_uring/IOCP completions, GPU events, timers -- wakes a
 // fiber. A fiber that must block on an external event captures a Waker (which

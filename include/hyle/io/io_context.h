@@ -7,14 +7,6 @@
 #include "hyle/sched/scheduler.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // io-04 integration (plan A): per-core proactor rings plugged into the sched
 // worker loop. IoContext owns ONE Proactor PER WORKER and registers a poll hook
 // on the Scheduler; each worker, at the top of its loop, reaps ITS OWN ring

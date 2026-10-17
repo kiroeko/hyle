@@ -7,14 +7,6 @@
 
 #include "hyle/compute/batch_transfer.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_COMPUTE_STATE_API
-#elif defined(HYLE_COMPUTE_STATE_BUILD)
-#define HYLE_COMPUTE_STATE_API HYLE_EXPORT
-#else
-#define HYLE_COMPUTE_STATE_API HYLE_IMPORT
-#endif
-
 namespace hyle::compute {
 namespace detail { struct StateSchemaData; struct StateStoreData; struct StateAccess; }
 class StateEntryId;

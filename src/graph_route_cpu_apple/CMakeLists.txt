@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_APPLE_ENABLED)
+if(_HYLE_COMPUTE_HAVE_APPLE)
   hyle_add_module(graph_route_cpu_apple SOURCES compile.cc invocation.cc)
 else()
   hyle_add_module(graph_route_cpu_apple OPTIONAL_ABSENT)

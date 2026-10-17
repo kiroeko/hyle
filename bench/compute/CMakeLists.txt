@@ -1,4 +1,4 @@
-if(HYLE_STATIC AND HYLE_COMPUTE_CUDA_ENABLED AND
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_CUDA AND
    TARGET hyle_compute_backend_cuda)
   function(_hyle_configure_compute_cuda_runtime_bench target)
     target_link_libraries(${target} PRIVATE

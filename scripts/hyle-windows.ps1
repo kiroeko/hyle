@@ -41,8 +41,8 @@ if ($Component) {
     if ($Action -eq 'Configure' -and -not $resolvedBinaryDir) {
         throw '-Component requires Configure together with an explicit -BinaryDir.'
     }
-    if ($Action -notin @('Configure', 'SelectedComponentSmoke')) {
-        throw '-Component is supported only by isolated Configure or SelectedComponentSmoke.'
+    if ($Action -notin @('Configure', 'SelectedComponentSmoke', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke')) {
+        throw '-Component is supported only by isolated Configure or a component/package smoke action.'
     }
 }
 if ($Factor) {
@@ -57,147 +57,206 @@ if ($Factor) {
     }
 }
 
-$vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-if (-not (Test-Path -LiteralPath $vswhere)) {
-    throw 'vswhere.exe was not found. Install Visual Studio/Build Tools with the C++ workload.'
-}
-
-function Get-LatestSupportedVs2022Toolset {
-    param([string]$VswherePath)
-
-    $vs2022 = & $VswherePath -latest -version '[17.0,18.0)' -products * `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationPath
-    if ($LASTEXITCODE -ne 0 -or -not $vs2022) {
-        throw 'The windows preset needs Visual Studio 2022 with the x64 C++ workload.'
-    }
-
-    $toolsetRoot = Join-Path $vs2022 'VC\Tools\MSVC'
-    $toolsets = @(Get-ChildItem -LiteralPath $toolsetRoot -Directory -ErrorAction SilentlyContinue |
-        ForEach-Object {
-            try {
-                [pscustomobject]@{ Name = $_.Name; Version = [version]$_.Name }
-            } catch {
-                # Ignore non-version directories owned by Visual Studio extensions.
-            }
-        } |
-        Where-Object { $_.Version -ge [version]'14.43' } |
-        Sort-Object Version -Descending)
-    if ($toolsets.Count -eq 0) {
-        throw "Visual Studio 2022 at '$vs2022' has no MSVC 14.43+ toolset."
-    }
-
-    $selected = $toolsets[0]
-    [pscustomobject]@{
-        Installation = $vs2022
-        Version = "$($selected.Version.Major).$($selected.Version.Minor)"
-    }
-}
-
 function Get-HyleSmokeComponents {
-    if ($Component) {
-        return $Component
-    }
+    if ($Component) { return $Component }
     return 'all'
 }
 
-$installation = & $vswhere -latest -products * `
-    -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-    -property installationPath
-if ($LASTEXITCODE -ne 0 -or -not $installation) {
-    throw 'No Visual Studio installation with the x64 C++ toolchain was found.'
-}
-
-$vsDevCmd = Join-Path $installation 'Common7\Tools\VsDevCmd.bat'
-if (-not (Test-Path -LiteralPath $vsDevCmd)) {
-    throw "Visual Studio environment script was not found: $vsDevCmd"
-}
-
-# Import the selected Visual Studio environment into this PowerShell process so
-# configure and Ninja builds see one coherent compiler/SDK contract. Reuse an
-# already initialized environment for the same installation/architecture:
-# repeatedly calling VsDevCmd prepends duplicate PATH entries until cmd.exe's
-# 8191-character input limit is exceeded (notably in multi-command CI steps).
-$selectedInstallation = [System.IO.Path]::GetFullPath($installation).TrimEnd('\')
-$activeInstallation = if ($env:VSINSTALLDIR) {
-    [System.IO.Path]::GetFullPath($env:VSINSTALLDIR).TrimEnd('\')
-} else {
-    ''
-}
-$hasSelectedEnvironment = $env:VSCMD_VER -and
-    $env:VCINSTALLDIR -and
-    $env:WindowsSdkDir -and
-    $env:VSCMD_ARG_TGT_ARCH -eq 'x64' -and
-    $activeInstallation -eq $selectedInstallation
-if (-not $hasSelectedEnvironment) {
-    $environmentCommand = 'call "' + $vsDevCmd + '" -arch=x64 >nul && set'
-    $environmentLines = & $env:ComSpec /d /s /c $environmentCommand
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to initialize the Visual Studio environment from $vsDevCmd"
+function Get-HyleCmakeArgument {
+    param([string]$Definition, [string]$ShortOption, [string]$LongOption)
+    $value = $null
+    for ($i = 0; $i -lt $ExtraArgs.Count; ++$i) {
+        $argument = $ExtraArgs[$i]
+        if ($Definition) {
+            if ($argument -eq '-D' -and $i + 1 -lt $ExtraArgs.Count) {
+                $argument = '-D' + $ExtraArgs[++$i]
+            }
+            if ($argument -match ('^-D' + [regex]::Escape($Definition) + '(?::[^=]+)?=(.*)$')) {
+                $value = $Matches[1]
+            }
+        } elseif ($argument -eq $ShortOption -or $argument -eq $LongOption) {
+            if ($i + 1 -lt $ExtraArgs.Count) { $value = $ExtraArgs[++$i] }
+        } elseif ($ShortOption -and $argument.StartsWith($ShortOption) -and $argument.Length -gt $ShortOption.Length) {
+            $value = $argument.Substring($ShortOption.Length)
+        } elseif ($LongOption -and $argument.StartsWith($LongOption + '=')) {
+            $value = $argument.Substring($LongOption.Length + 1)
+        }
     }
-    foreach ($line in $environmentLines) {
-        $separator = $line.IndexOf('=')
-        if ($separator -gt 0) {
+    return $value
+}
+
+# Resolve checked-in preset inheritance only for toolchain/cache observation.
+# Unknown/user presets still go to CMake unchanged; explicit cache/toolchain
+# facts below take precedence over preset defaults.
+$presets = Get-Content -LiteralPath (Join-Path $sourceDir 'CMakePresets.json') -Raw | ConvertFrom-Json
+function Get-HyleConfigurePreset {
+    param([string]$Name)
+    $entry = $presets.configurePresets | Where-Object name -eq $Name | Select-Object -First 1
+    if (-not $entry) { return $null }
+    $result = @{}
+    $parents = @($entry.inherits)
+    for ($i = $parents.Count - 1; $i -ge 0; --$i) {
+        if (-not $parents[$i]) { continue }
+        $parent = Get-HyleConfigurePreset $parents[$i]
+        if ($parent) { foreach ($key in $parent.Keys) { $result[$key] = $parent[$key] } }
+    }
+    foreach ($key in @('generator', 'binaryDir', 'toolset', 'architecture')) {
+        if ($entry.$key) { $result[$key] = $entry.$key }
+    }
+    return $result
+}
+$workflow = $null
+$configureName = $Preset
+if ($Action -eq 'Workflow') {
+    $workflow = $presets.workflowPresets | Where-Object name -eq $Preset | Select-Object -First 1
+    if ($workflow) { $configureName = ($workflow.steps | Where-Object type -eq configure | Select-Object -First 1).name }
+} elseif ($Action -in @('Build', 'Test') -and -not $resolvedBinaryDir) {
+    $entries = if ($Action -eq 'Build') { $presets.buildPresets } else { $presets.testPresets }
+    $entry = $entries | Where-Object name -eq $Preset | Select-Object -First 1
+    if ($entry) { $configureName = $entry.configurePreset }
+}
+$presetSettings = Get-HyleConfigurePreset $configureName
+$observedBinary = $resolvedBinaryDir
+if ($Action -eq 'Configure') {
+    $argumentBinary = Get-HyleCmakeArgument -ShortOption '-B' -LongOption '--build-directory'
+    if ($argumentBinary) { $observedBinary = [System.IO.Path]::GetFullPath($argumentBinary) }
+}
+if (-not $observedBinary -and $presetSettings.binaryDir) {
+    $observedBinary = $presetSettings.binaryDir.Replace('${sourceDir}', $sourceDir).Replace('${presetName}', $configureName)
+}
+$cache = @{}
+if ($observedBinary -and -not ($Action -in @('Configure', 'Workflow') -and '--fresh' -in $ExtraArgs)) {
+    $cachePath = Join-Path $observedBinary 'CMakeCache.txt'
+    if (Test-Path -LiteralPath $cachePath) {
+        foreach ($line in Get-Content -LiteralPath $cachePath) {
+            if ($line -match '^([^#/:][^:=]*):[^=]*=(.*)$') { $cache[$Matches[1]] = $Matches[2] }
+        }
+    }
+}
+$effectiveExtraArgs = @($ExtraArgs)
+$generator = if ($cache.CMAKE_GENERATOR) { $cache.CMAKE_GENERATOR } else { $presetSettings.generator }
+$toolsetArgument = if ($cache.ContainsKey('CMAKE_GENERATOR_TOOLSET')) { $cache.CMAKE_GENERATOR_TOOLSET } else { $presetSettings.toolset }
+if ($toolsetArgument -and $toolsetArgument -isnot [string]) { $toolsetArgument = $toolsetArgument.value }
+$installation = $cache.CMAKE_GENERATOR_INSTANCE
+$compiler = if ($cache.CMAKE_CXX_COMPILER) { $cache.CMAKE_CXX_COMPILER } else { $env:CXX }
+$cCompiler = if ($cache.CMAKE_C_COMPILER) { $cache.CMAKE_C_COMPILER } else { $env:CC }
+$toolchain = if ($cache.CMAKE_TOOLCHAIN_FILE) { $cache.CMAKE_TOOLCHAIN_FILE } else { $env:CMAKE_TOOLCHAIN_FILE }
+$architecture = if ($cache.CMAKE_GENERATOR_PLATFORM) { $cache.CMAKE_GENERATOR_PLATFORM } else { $presetSettings.architecture }
+if ($architecture -and $architecture -isnot [string]) { $architecture = $architecture.value }
+if ($Action -in @('Configure', 'Workflow')) {
+    $value = Get-HyleCmakeArgument -ShortOption '-G' -LongOption '--generator'
+    if ($value) { $generator = $value }
+    $value = Get-HyleCmakeArgument -ShortOption '-T' -LongOption '--toolset'
+    if ($value) { $toolsetArgument = $value }
+    $value = Get-HyleCmakeArgument -ShortOption '-A' -LongOption '--platform'
+    if ($value) { $architecture = $value }
+    $value = Get-HyleCmakeArgument -Definition CMAKE_GENERATOR_INSTANCE
+    if ($value) { $installation = $value }
+    $value = Get-HyleCmakeArgument -Definition CMAKE_CXX_COMPILER
+    if ($value) { $compiler = $value }
+    $value = Get-HyleCmakeArgument -Definition CMAKE_C_COMPILER
+    if ($value) { $cCompiler = $value }
+    $value = Get-HyleCmakeArgument -Definition CMAKE_TOOLCHAIN_FILE
+    if ($value) { $toolchain = $value }
+}
+$generatorMajor = if ($generator -match '^Visual Studio (\d+) ') { [int]$Matches[1] } else { 0 }
+$requiredToolset = $null
+$targetArchitecture = 'x64'
+if ($architecture) {
+    $targetArchitecture = switch ($architecture.Split(',')[0]) { 'Win32' { 'x86' }; default { $architecture.Split(',')[0].ToLowerInvariant() } }
+}
+# MSVC compiler/linker paths pin both the original VS instance and SxS tools.
+# A cached Ninja build therefore does not drift when another VS is installed.
+$nativePath = @($compiler, $cCompiler, $cache.CMAKE_LINKER) | Where-Object { $_ -match '[/\\]VC[/\\]Tools[/\\]MSVC[/\\]' } | Select-Object -First 1
+if ($nativePath -match '^(.*)[/\\]VC[/\\]Tools[/\\]MSVC[/\\]([^/\\]+)[/\\]bin[/\\]Host[^/\\]+[/\\]([^/\\]+)[/\\]') {
+    if (-not $installation) { $installation = $Matches[1] }
+    $requiredToolset = $Matches[2]
+    if (-not $architecture) { $targetArchitecture = $Matches[3].ToLowerInvariant() }
+}
+if ($toolsetArgument -match '(?:^|,)version=([^,]+)') { $requiredToolset = $Matches[1] }
+if (-not $requiredToolset -and $cache.CMAKE_VS_PLATFORM_TOOLSET_VERSION) { $requiredToolset = $cache.CMAKE_VS_PLATFORM_TOOLSET_VERSION }
+
+# An external compiler/toolchain with no VS anchor owns its setup. Likewise,
+# Build/Test with an absent cache should let CMake report that cache error.
+$externalToolchain = -not $generatorMajor -and -not $installation -and ($compiler -or $cCompiler -or $toolchain)
+$missingBuildCache = $Action -in @('Build', 'Test') -and $cache.Count -eq 0
+$unknownPreset = -not $presetSettings -and -not $installation -and $cache.Count -eq 0
+if (-not $externalToolchain -and -not $missingBuildCache -and -not $unknownPreset) {
+    if (-not $installation -and -not $generatorMajor -and $env:VSINSTALLDIR -and
+        (Test-Path -LiteralPath (Join-Path $env:VSINSTALLDIR 'Common7\Tools\VsDevCmd.bat'))) {
+        $installation = $env:VSINSTALLDIR
+        if (-not $requiredToolset) { $requiredToolset = $env:VCToolsVersion }
+    }
+    if (-not $installation) {
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+        if (-not (Test-Path -LiteralPath $vswhere)) { throw 'Install Visual Studio/Build Tools with the C++ workload, or initialize the selected custom toolchain.' }
+        $query = @('-latest', '-products', '*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property', 'installationPath')
+        if ($generatorMajor) { $query += @('-version', "[$generatorMajor.0,$($generatorMajor + 1).0)") }
+        $installation = & $vswhere @query
+        if ($LASTEXITCODE -ne 0 -or -not $installation) { throw "No Visual Studio C++ installation matches '$generator'." }
+    }
+    # CMake instance syntax can append a version constraint after the path.
+    $installation = [System.IO.Path]::GetFullPath(($installation -split ',version=', 2)[0]).TrimEnd('\')
+    if ($requiredToolset) { $requiredToolset = $requiredToolset.TrimEnd('\') }
+    $toolsetRoot = Join-Path $installation 'VC\Tools\MSVC'
+    $toolsets = @(Get-ChildItem -LiteralPath $toolsetRoot -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { try { [pscustomobject]@{ Name=$_.Name; Version=[version]$_.Name } } catch {} } |
+        Where-Object {
+            if ($requiredToolset) { $_.Name -eq $requiredToolset -or $_.Name.StartsWith($requiredToolset.TrimEnd('\') + '.') }
+            else {
+                $v143 = $toolsetArgument -match '(^|,)v143(,|$)' -or ($generatorMajor -eq 17 -and -not $toolsetArgument)
+                $v145 = $toolsetArgument -match '(^|,)v145(,|$)'
+                $_.Version -ge [version]'14.43' -and (-not $v143 -or $_.Version -lt [version]'14.50') -and
+                    (-not $v145 -or $_.Version -ge [version]'14.50')
+            }
+        } | Sort-Object Version -Descending)
+    if (-not $toolsets.Count) { throw "Visual Studio at '$installation' has no matching MSVC toolset '$requiredToolset'." }
+    $selectedToolset = $toolsets[0].Name
+    # Only a fresh VS 2022 configure needs an automatic -T; never reset an
+    # existing cache or replace its compiler/toolset choice implicitly.
+    if ($generatorMajor -eq 17 -and $Action -in @('Configure', 'Workflow') -and
+        $cache.Count -eq 0 -and -not $toolsetArgument) {
+        $effectiveExtraArgs = @('-T', "version=$selectedToolset") + $effectiveExtraArgs
+    }
+    $vsDevCmd = Join-Path $installation 'Common7\Tools\VsDevCmd.bat'
+    if (-not (Test-Path -LiteralPath $vsDevCmd)) { throw "Visual Studio environment script was not found: $vsDevCmd" }
+    $activeInstallation = if ($env:VSINSTALLDIR) { [System.IO.Path]::GetFullPath($env:VSINSTALLDIR).TrimEnd('\') } else { '' }
+    $hasSelectedEnvironment = $env:VSCMD_VER -and $env:VCINSTALLDIR -and $env:WindowsSdkDir -and
+        $env:VSCMD_ARG_TGT_ARCH -eq $targetArchitecture -and $activeInstallation -eq $installation -and
+        $env:VCToolsVersion -and $env:VCToolsVersion.TrimEnd('\') -eq $selectedToolset
+    if (-not $hasSelectedEnvironment) {
+        $environmentCommand = 'call "' + $vsDevCmd + '" -arch=' + $targetArchitecture + ' -host_arch=x64 -vcvars_ver=' + $selectedToolset + ' >nul && set'
+        if ($env:VSCMD_VER -and $activeInstallation) {
+            $activeDevCmd = Join-Path $activeInstallation 'Common7\Tools\VsDevCmd.bat'
+            if (Test-Path -LiteralPath $activeDevCmd) {
+                # The original VsDevCmd reverses its own setup before switching
+                # instance/toolset. Otherwise VC may retain the previous VS root.
+                $environmentCommand = 'call "' + $activeDevCmd + '" -clean_env >nul && ' + $environmentCommand
+            }
+        }
+        $environmentLines = & $env:ComSpec /d /s /c $environmentCommand
+        if ($LASTEXITCODE -ne 0) { throw "Failed to initialize Visual Studio at '$installation' with MSVC $selectedToolset." }
+        foreach ($line in $environmentLines) {
+            $separator = $line.IndexOf('=')
+            if ($separator -le 0) { continue }
             $name = $line.Substring(0, $separator)
             $value = $line.Substring($separator + 1)
-            # Windows environment keys are case-insensitive, but a parent
-            # process can still hand cmd.exe duplicate PATH/Path entries.
-            # VsDevCmd emits its toolchain-prefixed PATH and may then echo the
-            # stale mixed-case entry; importing both makes PowerShell let the
-            # latter erase cl.exe again. For PATH, accept only the initialized
-            # value that contains this Visual Studio installation.
-            if ($name -ieq 'Path') {
-                if ($value -like "*$installation\VC\Tools\MSVC\*") {
-                    Set-Item -Path 'Env:Path' -Value $value
-                }
-            } else {
+            if ($name -ine 'Path' -or $value.Replace('/', '\') -like "*$installation\VC\Tools\MSVC\*") {
                 Set-Item -Path "Env:$name" -Value $value
             }
         }
     }
+    Write-Host "HYLE Windows toolchain: $installation; MSVC $selectedToolset; $targetArchitecture"
 }
 
-$effectiveExtraArgs = @($ExtraArgs)
-$vs2022Toolset = $null
-if (($Action -eq 'Configure' -and $Preset -eq 'windows') -or
-    ($Action -eq 'Workflow' -and $Preset -eq 'windows-check')) {
-    $hasExplicitToolset = $effectiveExtraArgs | Where-Object {
-        $_ -eq '-T' -or $_ -eq '--toolset' -or $_ -like '-T*' -or $_ -like '--toolset=*'
-    }
-    if (-not $hasExplicitToolset) {
-        $vs2022Toolset = Get-LatestSupportedVs2022Toolset -VswherePath $vswhere
-        $toolsetArgument = "version=$($vs2022Toolset.Version)"
-        Write-Host "HYLE Visual Studio solution: VS 2022 toolset $toolsetArgument"
-
-        # CMake forbids changing a generator toolset in-place. Refresh only its
-        # generated cache when an older/default v143 cache is already present;
-        # sources, dependencies, build outputs and user files remain untouched.
-        $cachePath = if ($resolvedBinaryDir) {
-            Join-Path $resolvedBinaryDir 'CMakeCache.txt'
-        } else {
-            Join-Path $sourceDir 'build-windows\CMakeCache.txt'
-        }
-        if (Test-Path -LiteralPath $cachePath) {
-            $cachedToolset = Get-Content -LiteralPath $cachePath |
-                Where-Object { $_ -like 'CMAKE_GENERATOR_TOOLSET:INTERNAL=*' } |
-                Select-Object -First 1
-            if ($cachedToolset -ne "CMAKE_GENERATOR_TOOLSET:INTERNAL=$toolsetArgument") {
-                Write-Host 'Refreshing the Visual Studio CMake cache to select the supported toolset.'
-                $effectiveExtraArgs = @('--fresh') + $effectiveExtraArgs
-            }
-        }
-        $effectiveExtraArgs = @('-T', $toolsetArgument) + $effectiveExtraArgs
-    }
-}
-
-$needsNinja = $Action -in @('PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke') -or
-    $Preset -in @('windows-ninja', 'windows-ninja-check', 'windows-clangcl',
-        'windows-clangcl-check', 'win', 'windows-cuda', 'compute-cpu',
-        'compute-cuda', 'compute-apple', 'compute-vulkan')
+$usesPresetToolchain = $Action -in @('Configure', 'Workflow')
+$needsNinja = $Action -in @('ComponentContract', 'SelectedComponentSmoke', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke') -or
+    ($usesPresetToolchain -and $Preset -in @('windows-ninja', 'windows-ninja-check', 'windows-clangcl',
+        'windows-clangcl-check', 'win', 'compute-cpu', 'compute-cuda', 'compute-apple', 'compute-vulkan'))
 if ($needsNinja -and -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     throw "The '$Preset' preset/action requires Ninja on PATH."
 }
-if ($Preset -in @('windows-clangcl', 'windows-clangcl-check') -and
+if ($usesPresetToolchain -and $Preset -in @('windows-clangcl', 'windows-clangcl-check') -and
     -not (Get-Command clang-cl -ErrorAction SilentlyContinue)) {
     throw "The '$Preset' preset requires clang-cl on PATH. Install the Visual Studio LLVM component or initialize an environment that provides clang-cl."
 }
@@ -232,13 +291,17 @@ switch ($Action) {
         }
     }
     'Workflow'  {
-        if ($Preset -eq 'windows-check' -and $vs2022Toolset) {
-            # A workflow preset cannot forward a dynamically discovered -T
-            # argument to its configure step, so spell out the same three
-            # preset-backed steps here.
-            & cmake --preset windows @effectiveExtraArgs
-            if ($LASTEXITCODE -eq 0) { & cmake --build --preset windows }
-            if ($LASTEXITCODE -eq 0) { & ctest --preset windows }
+        if ($workflow -and -not ($workflow.steps | Where-Object type -notin @('configure', 'build', 'test'))) {
+            # Configure arguments (-T/-D/--fresh) belong to its configure step,
+            # not to cmake --workflow. Keep build/test on their named presets.
+            foreach ($step in $workflow.steps) {
+                switch ($step.type) {
+                    'configure' { & cmake --preset $step.name @effectiveExtraArgs }
+                    'build' { & cmake --build --preset $step.name }
+                    'test' { & ctest --preset $step.name }
+                }
+                if ($LASTEXITCODE -ne 0) { break }
+            }
         } else {
             & cmake --workflow --preset $Preset @effectiveExtraArgs
         }
@@ -249,7 +312,7 @@ switch ($Action) {
         }
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiComponentContract.cmake'
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
-            -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
+            -DHYLE_SMOKE_GENERATOR=Ninja @ExtraArgs -P $smokeScript
     }
     'SelectedComponentSmoke' {
         if (-not $SmokeRoot -or -not $Component) {
@@ -268,7 +331,7 @@ switch ($Action) {
         $smokeComponents = Get-HyleSmokeComponents
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             "-DHYLE_SMOKE_COMPONENTS=$smokeComponents" `
-            -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
+            -DHYLE_SMOKE_GENERATOR=Ninja @ExtraArgs -P $smokeScript
     }
     'ProductShapeSmoke' {
         if (-not $SmokeRoot) {
@@ -299,7 +362,7 @@ switch ($Action) {
                 "-DHYLE_PACKAGE_BUILD=$packageBuild" `
                 "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
                 "-DHYLE_SMOKE_COMPONENTS=$smokeComponents" `
-                -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
+                -DHYLE_SMOKE_GENERATOR=Ninja @ExtraArgs -P $smokeScript
         }
     }
 }

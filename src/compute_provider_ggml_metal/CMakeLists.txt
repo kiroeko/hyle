@@ -1,4 +1,4 @@
-if(NOT HYLE_COMPUTE_APPLE_ENABLED)
+if(NOT _HYLE_COMPUTE_HAVE_APPLE)
   hyle_add_module(compute_provider_ggml_metal OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_ggml_metal PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()

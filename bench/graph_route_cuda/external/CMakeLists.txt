@@ -38,7 +38,7 @@ target_compile_options(hyle_graph_route_cuda_bench PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/utf-8;/W4;/WX>)
 target_link_libraries(hyle_graph_route_cuda_bench PRIVATE hyle::graph hyle::compute
   hyle::simd d5_nanobench GTest::gtest ggml-base)
-hyle_stage_runtime_dependencies(hyle_graph_route_cuda_bench)
+hyle_stage_runtime(hyle_graph_route_cuda_bench)
 # The canonical control executable is built unchanged, with the same compiler
 # and nanobench as the consumer. No module-local statistics or controls.
 add_executable(hyle_perf_control_bench

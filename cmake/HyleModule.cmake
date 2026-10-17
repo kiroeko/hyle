@@ -1,21 +1,6 @@
 include_guard(GLOBAL)
 
-# Build-only header seams are created only when the selected product closure
-# consumes them. They are real target edges for source composition, while
-# BUILD_INTERFACE prevents them from leaking into static/shared package
-# metadata or masquerading as independently delivered product components.
-set(_hyle_active_build_dependencies "")
-foreach(_hyle_component IN LISTS HYLE_KNOWN_COMPONENTS)
-  string(TOUPPER "${_hyle_component}" _hyle_component_upper)
-  if(HYLE_BUILD_${_hyle_component_upper})
-    list(APPEND _hyle_active_build_dependencies
-      ${_HYLE_PRIVATE_BUILD_DEPS_${_hyle_component_upper}})
-  endif()
-endforeach()
-list(REMOVE_DUPLICATES _hyle_active_build_dependencies)
-unset(_hyle_active_build_dependencies)
-unset(_hyle_component)
-unset(_hyle_component_upper)
+include("${CMAKE_CURRENT_LIST_DIR}/HyleComputeCapabilities.cmake")
 
 # Keep the executable component manifest in HyleComponents.cmake as the single
 # source of truth. Its PUBLIC/PRIVATE lists generate both the pre-target

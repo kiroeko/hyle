@@ -1,6 +1,6 @@
 hyle_add_header_self_contained_test(graph_route_vulkan
   HEADER_DIR graph HEADERS vulkan.h)
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/affine.spv"
     COMMAND "${HYLE_VULKAN_GLSLANG}" -V --target-env vulkan1.2 -S comp
       -o "${CMAKE_CURRENT_BINARY_DIR}/affine.spv"
@@ -17,7 +17,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     "${HYLE_GGML_SOURCE_DIR}/src")
 endif()
 
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
 
 hyle_add_test(graph_route_vulkan NAME sampling_consumer
   SOURCES ../compute_route_vulkan/sampling_consumer.cc)

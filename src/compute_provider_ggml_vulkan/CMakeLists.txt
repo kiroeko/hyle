@@ -1,4 +1,4 @@
-if(NOT HYLE_COMPUTE_VULKAN_ENABLED)
+if(NOT _HYLE_COMPUTE_HAVE_VULKAN)
   hyle_add_module(compute_provider_ggml_vulkan OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_ggml_vulkan PROPERTY
     HYLE_INTERNAL_ONLY_ABSENT TRUE)

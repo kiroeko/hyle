@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.25)
 project(hyle_batched_transfers_sample LANGUAGES CXX)
 
 if(HYLE_SAMPLE_SOURCE)
-  set(HYLE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-  set(HYLE_BUILD_BENCH OFF CACHE BOOL "" FORCE)
   set(HYLE_COMPONENTS graph)
   add_subdirectory("${HYLE_SAMPLE_SOURCE}" hyle_build)
 else()

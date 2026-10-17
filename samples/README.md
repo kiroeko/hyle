@@ -11,9 +11,7 @@ shared libraries。这里的产品示例只演示这三种 C++ 接入；shared l
 ## 接入模式（每个 sample 的 CMakeLists 都这么做）
 
 ```cmake
-# 集成方在 add_subdirectory 之前关掉 HYLE 自己的测试/基准，避免拖入 GoogleTest 等
-set(HYLE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(HYLE_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+# 测试和基准默认关闭；只选择需要的产品。
 set(HYLE_COMPONENTS "container;mem")
 add_subdirectory(<path-to-hyle> hyle_build)
 
@@ -23,6 +21,10 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 链接 `hyle::<product>` 自动带上头路径与内部 factor 闭包（如 `hyle::container` 自动拉所需 mem）。
 不要直接链接包内的 `hyle::_factor_*` detail target。
 头一律 `#include "hyle/<module>/<header>.h"`。
+
+Compute/Graph 路线样例仅在源码消费者未指定 `HYLE_COMPUTE_ROUTES` 时给出默认集合，
+并用公开 target 的同名属性检查所需路线；安装消费者使用相同检查。
+测试、基准等调用方显式设置保持有效，样例不强制改写父工程 cache。
 
 ## C++ 用户示例
 

@@ -14,14 +14,6 @@
 #include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_MEM_RECLAIM_API
-#elif defined(HYLE_MEM_RECLAIM_BUILD)
-#define HYLE_MEM_RECLAIM_API HYLE_EXPORT
-#else
-#define HYLE_MEM_RECLAIM_API HYLE_IMPORT
-#endif
-
 namespace hyle::mem {
 
 using ReclaimCallback = void (*)(void *) noexcept;

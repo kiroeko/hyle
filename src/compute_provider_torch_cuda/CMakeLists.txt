@@ -1,22 +1,16 @@
-if(NOT HYLE_COMPUTE_CUDA_ENABLED)
+if(NOT _HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_module(compute_provider_torch_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_torch_cuda PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()
 endif()
 include("${HYLE_SOURCE_DIR}/src/compute_provider_native/torch_cpu_fetch.cmake")
 hyle_resolve_torch_cpu_sdk("${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json" _cpu_root)
-set(Torch_DIR "${_cpu_root}/share/cmake/Torch")
-set(Caffe2_DIR "${_cpu_root}/share/cmake/Caffe2")
+_hyle_prepare_torch_cpu_sdk("${_cpu_root}")
 if(NOT TARGET torch OR NOT TARGET torch_cpu OR NOT TARGET c10)
   find_package(Torch 2.8.0 EXACT CONFIG REQUIRED
     PATHS "${_cpu_root}/share/cmake/Torch" NO_DEFAULT_PATH)
   include("${HYLE_SOURCE_DIR}/src/compute_provider_native/HyleTorchCpuSdkConfig.cmake")
-  foreach(_target IN ITEMS torch torch_cpu c10 torch_cpu_library torch_library)
-    get_target_property(_global ${_target} IMPORTED_GLOBAL)
-    if(NOT _global)
-      set_property(TARGET ${_target} PROPERTY IMPORTED_GLOBAL TRUE)
-    endif()
-  endforeach()
+  _hyle_promote_torch_cpu_targets()
 endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/torch_cuda_fetch.cmake")
 hyle_resolve_torch_cuda_leaf("${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json" _cuda_root)
@@ -38,7 +32,7 @@ if(MSVC)
   target_compile_options(hyle_compute_provider_torch_cuda PRIVATE
     "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
 endif()
-target_compile_definitions(hyle_compute_provider_torch_cuda PUBLIC HYLE_COMPUTE_TORCH_CUDA=1)
+hyle_target_compute_capability(hyle_compute_provider_torch_cuda torch_cuda)
 target_include_directories(hyle_compute_provider_torch_cuda PRIVATE
   "${HYLE_SOURCE_DIR}/src/compute" "${HYLE_SOURCE_DIR}/src/compute_backend_cuda"
   "${HYLE_SOURCE_DIR}/third_party/bitsandbytes_cuda"
@@ -73,7 +67,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     "${_cuda_sdk_directory}/nvidia/cusparselt/LICENSE.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cuda-sdk|cusparselt-LICENSE.txt")
 endif()
 hyle_register_package_dependency(NAME torch_cuda_sdk OWNER compute_provider_torch_cuda
-  FEATURES compute_cuda FIND_DEPENDENCIES HyleTorchCudaSdk
+  FIND_DEPENDENCIES HyleTorchCudaSdk
   DEVELOPMENT_DIRECTORY_SPECS ${_cuda_license_specs}
   DEVELOPMENT_FILE_SPECS
     ${_cuda_extra_license_specs}

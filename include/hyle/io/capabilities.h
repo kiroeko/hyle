@@ -18,14 +18,6 @@
 #include "hyle/error/status.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 #if HYLE_ARCH_X64 &&                                           \
     ((HYLE_OS_WINDOWS && defined(_MSC_VER)) ||                 \
      HYLE_OS_LINUX || HYLE_OS_MACOS)

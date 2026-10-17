@@ -36,7 +36,8 @@ cmake --preset <windows-vs2026|windows>
 ```
 
 顶层默认 `HYLE_COMPONENTS=all`；父工程 `add_subdirectory()` 前需显式设置所需组件。
-开发 preset 中昂贵的 TLS/HTTP2/trace 默认 OFF。普通测试默认 `HYLE_TEST_INSTRUMENTATION=OFF`，
+裸 CMake 的 tests/bench 默认 OFF；开发 preset 显式设置 tests ON。TLS/HTTP2/trace 默认 OFF。
+普通测试默认 `HYLE_TEST_INSTRUMENTATION=OFF`，
 测试实际产品路径；需要 fault injection 等内部诊断时使用独立 build tree 显式设为 ON。
 
 完整 configure/build/test 可用 `cmake --workflow --preset <windows-vs2026|windows|linux|macos>-check`。

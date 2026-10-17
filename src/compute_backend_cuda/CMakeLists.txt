@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
     set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
   endif()
@@ -45,12 +45,10 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
         /NODEFAULTLIB:LIBCMT)
     endif()
   endif()
-  target_compile_definitions(hyle_compute_backend_cuda
-    PUBLIC HYLE_COMPUTE_CUDA=1)
+  hyle_target_compute_capability(hyle_compute_backend_cuda cuda)
   hyle_register_package_dependency(
     NAME compute_cuda_sdk
     OWNER compute_backend_cuda
-    FEATURES compute_cuda
     FIND_DEPENDENCIES CUDAToolkit|13.3 HyleCudaSdk
     DEVELOPMENT_FILE_SPECS
       "${CMAKE_CURRENT_SOURCE_DIR}/HyleCudaSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleCudaSdk|HyleCudaSdkConfig.cmake")

@@ -8,8 +8,8 @@
 # HYLE_TESTING is that gate. It requires both HYLE_BUILD_TESTS and the explicit
 # HYLE_TEST_INSTRUMENTATION option. The default OFF test build exercises the
 # exact shipping layout and hot paths; an explicit ON build reaches
-# fault-injection/structural diagnostics. Shipping builds have
-# HYLE_BUILD_TESTS=OFF, so every block vanishes with zero product cost.
+# fault-injection/structural diagnostics. With instrumentation OFF, tests and
+# installation share the same production libraries and public ABI.
 #
 # ODR: a test-only MEMBER changes a class's layout, so the production .cc that compiles
 # the class and the test TU that includes the same header MUST agree on whether the hook
@@ -30,8 +30,8 @@ add_library(hyle_testing INTERFACE)
 set_target_properties(hyle_testing PROPERTIES FOLDER "hyle/foundation")
 
 if(HYLE_BUILD_TESTS AND HYLE_TEST_INSTRUMENTATION)
-  # Installable builds forbid HYLE_BUILD_TESTS, but keep the definition explicitly
-  # build-only as a second line of defence against exporting a test ABI/layout.
+  # Installation rejects this instrumented layout. Keep the definition
+  # build-only as a second defence against exporting a test ABI/layout.
   target_compile_definitions(hyle_testing INTERFACE "$<BUILD_INTERFACE:HYLE_TESTING>")
   message(STATUS "HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)")
 elseif(HYLE_BUILD_TESTS)

@@ -2,30 +2,5 @@
 
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_CONTAINER_API
-#  define HYLE_CONTAINER_CONCURRENT_API
-#  define HYLE_CONTAINER_QUEUE_API
-#  define HYLE_CONTAINER_TEXT_API
-#else
-#  if defined(HYLE_CONTAINER_BUILD)
-#    define HYLE_CONTAINER_API HYLE_EXPORT
-#  else
-#    define HYLE_CONTAINER_API HYLE_IMPORT
-#  endif
-#  if defined(HYLE_CONTAINER_CONCURRENT_BUILD)
-#    define HYLE_CONTAINER_CONCURRENT_API HYLE_EXPORT
-#  else
-#    define HYLE_CONTAINER_CONCURRENT_API HYLE_IMPORT
-#  endif
-#  if defined(HYLE_CONTAINER_QUEUE_BUILD)
-#    define HYLE_CONTAINER_QUEUE_API HYLE_EXPORT
-#  else
-#    define HYLE_CONTAINER_QUEUE_API HYLE_IMPORT
-#  endif
-#  if defined(HYLE_CONTAINER_TEXT_BUILD)
-#    define HYLE_CONTAINER_TEXT_API HYLE_EXPORT
-#  else
-#    define HYLE_CONTAINER_TEXT_API HYLE_IMPORT
-#  endif
-#endif
+// Retain the historical header-only factor export names for compatibility:
+// HYLE_CONTAINER_CONCURRENT_API, HYLE_CONTAINER_QUEUE_API.

@@ -16,8 +16,6 @@ HYLE 支持三种 C++ 消费方式：
 ## 源码集成
 
 ```cmake
-set(HYLE_BUILD_TESTS OFF)
-set(HYLE_BUILD_BENCH OFF)
 set(HYLE_COMPONENTS "mem;container")
 add_subdirectory(path/to/hyle hyle-build)
 
@@ -43,10 +41,12 @@ target_link_libraries(my_app PRIVATE hyle::container)
 安装只含所选组件闭包拥有的公开头，不保证未请求模块的头可见。预发布 `0.y.z` 必须请求完整
 精确版本；patch 版本、headers 与 artifact 是同一个 C++ 构建合同。
 
-已验收产品中的 TLS、HTTP/2 和 trace 等昂贵能力默认关闭，相应 cache 选项只在 owner/gate 成立时
-出现。当前 Compute 提供不增加可选依赖的 HYLE-native CPU 路线；x86-64 可显式选择已经独立验收的
-oneDNN MatMul provider。CUDA、Metal/MLX、Vulkan 和其他 provider 只有各自通过独立能力、交付与
-性能审计后才会产生配置项。HIP/ROCm 当前无限期不纳入产品，因此不存在相关配置项；当前 trace 只有 Tracy。
+测试、基准、TLS、HTTP/2 和 trace 默认关闭；开发 preset 显式开启测试。需要测试时设置
+`HYLE_BUILD_TESTS=ON`，普通测试与安装可以同时开启；内部测试插桩不能进入安装包。
+Compute/Graph 用 `HYLE_COMPUTE_ROUTES` 选择完整 `cpu`、`cuda`、`apple`、`vulkan` 路线或其集合，
+省略时默认 CPU。所需数学实现与依赖自动接入；用户不用选择 oneDNN、ATen 或 ggml 等内部 provider。
+CPU 路线也有其锁定依赖，不是零依赖配置。具体系统、工具链和 SDK 要求见
+[构建与交付](distribution.md)。HIP/ROCm 当前不提供配置项；trace 使用 Tracy。
 
 ## 选择模块
 

@@ -230,8 +230,19 @@ foreach(_linkage IN ITEMS shared static)
   elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
     file(READ "${_staging}/lib/cmake/Hyle/HyleConfig.cmake"
       _installed_hyle_config)
-    file(READ "${_staging}/lib/cmake/Hyle/HyleTargets.cmake"
-      _installed_hyle_targets)
+    file(READ "${_staging}/lib/cmake/Hyle/HylePackageIndex.cmake"
+      _installed_hyle_index)
+    string(APPEND _installed_hyle_config "\n${_installed_hyle_index}")
+    file(GLOB _installed_hyle_export_files
+      "${_staging}/lib/cmake/Hyle/HyleTargets-*.cmake")
+    if(NOT _installed_hyle_export_files)
+      message(FATAL_ERROR "installed SDK lacks target export files")
+    endif()
+    set(_installed_hyle_targets "")
+    foreach(_export_file IN LISTS _installed_hyle_export_files)
+      file(READ "${_export_file}" _export_content)
+      string(APPEND _installed_hyle_targets "${_export_content}\n")
+    endforeach()
     _hyle_selected_require_compute_routes(
       "${_installed_hyle_config}" "${_smoke_routes}")
     string(REGEX MATCH "set\\(Hyle_AVAILABLE_FEATURES \"([^\"]*)\"\\)"

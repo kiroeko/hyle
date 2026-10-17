@@ -4,7 +4,7 @@ add_test(NAME hyle_iree_source_contract_test
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/source_contract_test.py")
 set_tests_properties(hyle_iree_source_contract_test PROPERTIES
   LABELS compute_provider_iree_vulkan)
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   hyle_add_test(compute_provider_iree_vulkan SOURCES native_test.cc)
   target_include_directories(hyle_compute_provider_iree_vulkan_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_iree_vulkan")

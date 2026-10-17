@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_module(graph_route_cuda SOURCES cuda_context.cc)
   target_include_directories(hyle_graph_route_cuda PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_route_cuda")

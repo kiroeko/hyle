@@ -1,4 +1,4 @@
-if(NOT HYLE_COMPUTE_VULKAN_ENABLED)
+if(NOT _HYLE_COMPUTE_HAVE_VULKAN)
   hyle_add_module(compute_provider_iree_vulkan OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_iree_vulkan PROPERTY
     HYLE_INTERNAL_ONLY_ABSENT TRUE)
@@ -35,6 +35,8 @@ if(NOT _result EQUAL 0)
 endif()
 message(STATUS "${_output}")
 block()
+  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0126 NEW)
   # The original top-level build probes CUDA unconditionally, even with only
   # the Vulkan runtime enabled. Keep that SDK probe out of this private scope.
   set(CMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit TRUE)
@@ -67,9 +69,9 @@ block()
   foreach(_option IN ITEMS BUILD_COMPILER BUILD_TESTS BUILD_BENCHMARKS BUILD_SAMPLES
       BUILD_PYTHON_BINDINGS BUILD_BINDINGS_TFLITE BUILD_BINDINGS_TFLITE_JAVA
       HAL_DRIVER_DEFAULTS ENABLE_CPUINFO)
-    set(IREE_${_option} OFF CACHE BOOL "Private Vulkan runtime configuration" FORCE)
+    set(IREE_${_option} OFF)
   endforeach()
-  set(IREE_HAL_DRIVER_VULKAN ON CACHE BOOL "Private Vulkan runtime" FORCE)
+  set(IREE_HAL_DRIVER_VULKAN ON)
   add_subdirectory("${_source}" "${HYLE_DEP_BUILD_DIR}/iv/build" EXCLUDE_FROM_ALL)
 endblock()
 

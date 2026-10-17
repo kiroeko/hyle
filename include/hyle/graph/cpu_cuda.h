@@ -12,14 +12,6 @@
 #include "hyle/sched/scheduler.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_ROUTE_CPU_CUDA_API
-#elif defined(HYLE_GRAPH_ROUTE_CPU_CUDA_BUILD)
-#define HYLE_GRAPH_ROUTE_CPU_CUDA_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_ROUTE_CPU_CUDA_API HYLE_IMPORT
-#endif
-
 namespace hyle::graph::cpu_cuda {
 
 inline constexpr ExecutionTargetId kCudaTarget{0};

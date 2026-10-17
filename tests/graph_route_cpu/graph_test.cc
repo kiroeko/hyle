@@ -29,7 +29,7 @@ namespace {
 namespace compute = hyle::compute;
 namespace graph = hyle::graph;
 
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
 template <class T> void stable_gate_region() {
   constexpr std::int64_t rows = 3, hidden = 7, columns = 2;
   const auto dtype = half_test::data_type<T>();
@@ -500,7 +500,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 #endif
 
-#if defined(HYLE_GRAPH_ONEDNN) || defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_GRAPH_ONEDNN) || defined(HYLE_TEST_GGML_CPU)
 void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
                               bool multiply_residual) {
   constexpr std::int64_t width = 31;
@@ -564,13 +564,13 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
       workload = {};
       EXPECT_TRUE(compiled->executable.workload().profile.matches(
           workload_test::kModel));
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
       EXPECT_EQ(compiled->report.region_count(), 1U);
 #else
       EXPECT_EQ(compiled->report.region_count(), published ? 0U : 1U);
 #endif
       if (!published) {
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
         ASSERT_EQ(compiled->report.step_count(), 1U);
         auto prefix = compiled->report.step(0);
         ASSERT_TRUE(prefix);
@@ -709,7 +709,7 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
 }
 #endif
 
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
 TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
   using F16 = hyle::simd::float16_t;
   auto context = graph::cpu::create_context().value();
@@ -943,7 +943,7 @@ TEST(CpuDefaultGraph, NonModelGraphReplaysAndReclaimsItsOwners) {
     auto logical = std::move(builder).finish().value();
     auto compiled = graph::compile(logical, context).value();
     EXPECT_EQ(compiled.report.node_count(), 2U);
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
     EXPECT_EQ(compiled.report.region_count(), 1U);
     EXPECT_EQ(compiled.report.step(0)->provider.id,
               compute::ggml_cpu::kProviderId);
@@ -1239,7 +1239,7 @@ TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
       compute::ConstTensorView::create(data_desc, data_buffer.view()).value()}};
   auto compiled = graph::compile(logical, context, {.constants = constants});
   ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
   ASSERT_EQ(compiled->report.step_count(), 2U);
   for (std::size_t step = 0; step < 2; ++step)
     EXPECT_EQ(compiled->report.step(step)->provider.id,
@@ -1270,7 +1270,7 @@ TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
   }
 }
 
-#if defined(HYLE_COMPUTE_GGML_CPU)
+#if defined(HYLE_TEST_GGML_CPU)
 TEST(CpuDefaultGraph, SelectedGroupMeansBroadcastWithinOneMatureRegion) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();

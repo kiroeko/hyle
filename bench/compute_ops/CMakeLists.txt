@@ -1,3 +1,11 @@
+# This is a standalone original-peer experiment, invoked with
+# `cmake -S bench/compute_ops ...`. The ordinary benchmark aggregate visits
+# factor-named directories too; it must not enter this experiment's project,
+# installed-SDK lookup or private fixture configuration.
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  return()
+endif()
+
 cmake_minimum_required(VERSION 3.25)
 project(g08_topk_p1 LANGUAGES C CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")

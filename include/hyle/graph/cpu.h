@@ -4,14 +4,6 @@
 #include "hyle/graph/executable.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_ROUTE_CPU_API
-#elif defined(HYLE_GRAPH_ROUTE_CPU_BUILD)
-#define HYLE_GRAPH_ROUTE_CPU_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_ROUTE_CPU_API HYLE_IMPORT
-#endif
-
 namespace hyle::graph::cpu {
 
 // CPU Graph with fixed mature region and leaf rules. Compile retains eligible

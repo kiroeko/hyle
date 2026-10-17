@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_ONEDNN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_ONEDNN)
   hyle_add_module(compute_provider_onednn SOURCES
     brgemm_internal.cc
     normalization_internal.cc
@@ -12,12 +12,10 @@ if(HYLE_COMPUTE_ONEDNN_ENABLED)
   target_include_directories(hyle_compute_provider_onednn PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute")
   target_link_libraries(hyle_compute_provider_onednn PRIVATE dnnl)
-  target_compile_definitions(hyle_compute_provider_onednn
-    PUBLIC HYLE_COMPUTE_ONEDNN=1)
+  hyle_target_compute_capability(hyle_compute_provider_onednn onednn)
   hyle_register_package_dependency(
     NAME onednn
     OWNER compute_provider_onednn
-    FEATURES compute_onednn
     STATIC_EXPORT_TARGETS dnnl
     LOCKED_DEPENDENCIES onednn
     RUNTIME_FILE_SPECS

@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_audit_in_tree_dependencies(sglang_activation deepseek_fp8 deepseek_quantization)
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
     set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
@@ -44,7 +44,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     target_link_options(hyle_compute_provider_cuda PRIVATE
       "$<$<LINK_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
   endif()
-  target_compile_definitions(hyle_compute_provider_cuda PUBLIC HYLE_COMPUTE_CUDA=1)
+  hyle_target_compute_capability(hyle_compute_provider_cuda cuda)
   if(MSVC)
     # SDK collectives include CCCL headers, which require the conforming
     # preprocessor in nvcc's MSVC host preprocessing phase.
@@ -56,13 +56,16 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   # CCCL is supplied by the user-installed CUDA SDK, not a FetchContent or
   # vendored source dependency. Ship its original aggregate license with the
   # instantiated device code in both SDK forms; the source form includes it.
-  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CCCL-LICENSE.txt"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-    RENAME cuda-cccl-LICENSE.txt COMPONENT Hyle_Runtime)
+  # Unlike locked source dependencies, this license belongs to the installed
+  # machine SDK. Respect both install opt-in and the production package closure.
+  if(HYLE_INSTALL AND "compute_provider_cuda" IN_LIST HYLE_PRODUCTION_COMPONENT_LIST)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CCCL-LICENSE.txt"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME cuda-cccl-LICENSE.txt COMPONENT Hyle_Runtime)
+  endif()
   hyle_register_package_dependency(
     NAME sglang_activation
     OWNER compute_provider_cuda
-    FEATURES compute_cuda
     LOCKED_DEPENDENCIES sglang_activation
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-activation-LICENSE"
@@ -72,7 +75,6 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_register_package_dependency(
     NAME deepseek_fp8
     OWNER compute_provider_cuda
-    FEATURES compute_cuda
     LOCKED_DEPENDENCIES deepseek_fp8
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-fp8-LICENSE"
@@ -80,7 +82,6 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_register_package_dependency(
     NAME deepseek_quantization
     OWNER compute_provider_cuda
-    FEATURES compute_cuda
     LOCKED_DEPENDENCIES deepseek_quantization
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-quantization-LICENSE"

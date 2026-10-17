@@ -6,29 +6,19 @@ include_guard(GLOBAL)
 # Private availability is derived from the selected DAG by HyleComputeRoutes.
 
 function(hyle_configure_cuda_dependency)
-  if(HYLE_COMPUTE_CUDA STREQUAL "OFF")
+  if(_HYLE_COMPUTE_REQUEST_CUDA STREQUAL "OFF")
     message(STATUS "HYLE: CUDA backend OFF -- system SDK probe skipped")
-    set(HYLE_COMPUTE_CUDA_ENABLED OFF PARENT_SCOPE)
+    set(_HYLE_COMPUTE_HAVE_CUDA OFF PARENT_SCOPE)
     return()
   endif()
 
-  if(HYLE_COMPUTE_CUDA STREQUAL "ON")
-    find_package(CUDAToolkit 13.3 REQUIRED)
-  else()
-    find_package(CUDAToolkit 13.3 QUIET)
-    if(NOT CUDAToolkit_FOUND)
-      message(STATUS
-        "HYLE: CUDA backend AUTO -- CUDA Toolkit 13.3+ not found; capability disabled")
-      set(HYLE_COMPUTE_CUDA_ENABLED OFF PARENT_SCOPE)
-      return()
-    endif()
-  endif()
+  find_package(CUDAToolkit 13.3 REQUIRED)
 
   # A REQUIRED lookup already emits the authoritative configuration error.
   # Return here as well so CMake does not follow it with misleading secondary
   # diagnostics about imported targets that naturally were never created.
   if(NOT CUDAToolkit_FOUND)
-    set(HYLE_COMPUTE_CUDA_ENABLED OFF PARENT_SCOPE)
+    set(_HYLE_COMPUTE_HAVE_CUDA OFF PARENT_SCOPE)
     return()
   endif()
 
@@ -63,10 +53,10 @@ function(hyle_configure_cuda_dependency)
       "CUDA::cudart did not publish the Toolkit include directory")
   endif()
 
-  set(HYLE_COMPUTE_CUDA_ENABLED ON PARENT_SCOPE)
+  set(_HYLE_COMPUTE_HAVE_CUDA ON PARENT_SCOPE)
   set(HYLE_CUDA_PUBLIC_INCLUDE_DIRS
     "${_hyle_cuda_include_dirs}" PARENT_SCOPE)
   message(STATUS
-    "HYLE: CUDA backend ${HYLE_COMPUTE_CUDA} -- found CUDA Toolkit "
+    "HYLE: CUDA backend ${_HYLE_COMPUTE_REQUEST_CUDA} -- found CUDA Toolkit "
     "${CUDAToolkit_VERSION} at '${CUDAToolkit_TARGET_DIR}'; capability enabled")
 endfunction()

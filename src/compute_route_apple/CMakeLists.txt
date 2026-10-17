@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_APPLE_ENABLED)
+if(_HYLE_COMPUTE_HAVE_APPLE)
   configure_file(apple_build.h.in apple_build.h @ONLY)
   hyle_add_module(compute_route_apple TRACE SOURCES
     apple_context.cc apple_operations.cc apple_tensor.cc apple_leased_invocation.cc file_stream.cc apple_batch.cc apple_materialized_invocation.cc
@@ -16,7 +16,7 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
     OBJCXX_STANDARD 23 OBJCXX_STANDARD_REQUIRED ON OBJCXX_EXTENSIONS OFF)
   target_link_libraries(hyle_compute_route_apple PUBLIC mlx)
   target_link_libraries(hyle_compute_route_apple PRIVATE "-framework Foundation" "-framework Metal")
-  target_compile_definitions(hyle_compute_route_apple PUBLIC HYLE_COMPUTE_APPLE=1)
+  hyle_target_compute_capability(hyle_compute_route_apple apple)
   include("${HYLE_SOURCE_DIR}/cmake/HyleAppleRuntime.cmake")
   get_target_property(_mlx_binary mlx HYLE_DEP_BINARY_DIR)
   set(_metallib "${_mlx_binary}/mlx/backend/metal/kernels/mlx.metallib")
@@ -42,8 +42,7 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
       "${HYLE_APPLE_MLX_SOURCE_DIR}/${_header}|${HYLE_INSTALL_INCLUDEDIR}/${_directory}")
   endforeach()
   hyle_register_package_dependency(
-    NAME apple_mlx OWNER compute_route_apple FEATURES compute_apple
-    EXPORT_TARGETS mlx
+    NAME apple_mlx OWNER compute_route_apple EXPORT_TARGETS mlx
     LOCKED_DEPENDENCIES mlx mlx_cast_patches metal_cpp json fmt
     GENERATED_RUNTIME_FILE_SPECS
       "mlx|${_metallib}|${CMAKE_INSTALL_LIBDIR}"
@@ -63,7 +62,7 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
       "${HYLE_APPLE_METAL_CPP_SOURCE_DIR}/QuartzCore|${HYLE_INSTALL_INCLUDEDIR}/metal_cpp")
   foreach(_recipe IN ITEMS bitsandbytes_apple awq_apple compressed_tensors_apple ggml_q4k_apple)
     hyle_register_package_dependency(NAME ${_recipe} OWNER compute_route_apple
-      FEATURES compute_apple LOCKED_DEPENDENCIES ${_recipe} RUNTIME_FILE_SPECS
+      LOCKED_DEPENDENCIES ${_recipe} RUNTIME_FILE_SPECS
       "${HYLE_SOURCE_DIR}/third_party/${_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-LICENSE"
       "${HYLE_SOURCE_DIR}/third_party/${_recipe}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-NOTICE.md")
   endforeach()
@@ -81,7 +80,7 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
         "${HYLE_SOURCE_DIR}/third_party/deepseek_quantization/CUTLASS-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|apple-deepseek-CUTLASS-LICENSE")
     endif()
     hyle_register_package_dependency(NAME apple_${_source_recipe} OWNER compute_route_apple
-      FEATURES compute_apple LOCKED_DEPENDENCIES ${_source_recipe} RUNTIME_FILE_SPECS
+      LOCKED_DEPENDENCIES ${_source_recipe} RUNTIME_FILE_SPECS
       "${HYLE_SOURCE_DIR}/third_party/${_source_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|apple-${_source_recipe}-LICENSE"
       ${_source_extra_licenses})
   endforeach()

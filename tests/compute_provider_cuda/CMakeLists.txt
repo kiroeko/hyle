@@ -1,11 +1,11 @@
 hyle_add_header_self_contained_test(compute_provider_cuda
   HEADER_DIR compute/providers HEADERS cuda.h)
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_test(compute_provider_cuda SOURCES cuda_provider_test.cc tensor_test.cc scatter_test.cc sglang_primitives_test.cc collectives_test.cc gather_collectives_test.cc
     DEPS hyle_compute_backend_cuda)
 endif()
 
-if(HYLE_COMPUTE_CUDA_ENABLED)
+if(_HYLE_COMPUTE_HAVE_CUDA)
   enable_language(CUDA)
   hyle_add_test(compute_provider_cuda NAME sampling_math
     SOURCES sampling_math_test.cc sampling_math_probe.cu

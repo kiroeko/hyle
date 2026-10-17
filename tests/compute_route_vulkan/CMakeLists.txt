@@ -1,6 +1,6 @@
 hyle_add_header_self_contained_test(compute_route_vulkan
   HEADER_DIR compute HEADERS vulkan.h vulkan_batch.h detail/vulkan_plan.h)
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/affine.spv"
     COMMAND "${HYLE_VULKAN_GLSLANG}" -V --target-env vulkan1.2 -S comp
       -o "${CMAKE_CURRENT_BINARY_DIR}/affine.spv" "${CMAKE_CURRENT_SOURCE_DIR}/affine.comp"
@@ -24,14 +24,14 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   hyle_stage_runtime(hyle_compute_route_vulkan_test)
 endif()
 
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
 
 hyle_add_test(compute_route_vulkan NAME sampling_consumer
   SOURCES sampling_consumer.cc)
 hyle_stage_runtime(hyle_compute_route_vulkan_sampling_consumer_test)
 endif()
 
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sampling_math.spv"
     COMMAND "${HYLE_VULKAN_GLSLANG}" -V --target-env vulkan1.2 -S comp
       "-I${HYLE_SOURCE_DIR}/src/compute_route_vulkan/shaders"

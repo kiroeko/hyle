@@ -6,7 +6,7 @@ add_test(NAME hyle_ggml_vulkan_source_contract_test
 set_tests_properties(hyle_ggml_vulkan_source_contract_test PROPERTIES
   LABELS "compute_provider_ggml_vulkan")
 
-if(HYLE_COMPUTE_VULKAN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_VULKAN)
   hyle_add_test(compute_provider_ggml_vulkan SOURCES metadata_test.cc region_test.cc native_test.cc work_test.cc storage_test.cc gallocr_faults.c mxfp4_qualification_test.cc attention_cache_test.cc)
   if(MSVC)
     # The C fault fixture includes the original UTF-8 vendor source. C++'s

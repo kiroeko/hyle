@@ -1,4 +1,4 @@
-if(HYLE_STATIC AND HYLE_COMPUTE_CUDA_ENABLED AND
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_CUDA AND
    TARGET hyle_compute_backend_cuda AND
    TARGET hyle_compute_backend_cpu AND
    TARGET hyle_compute_provider_native)

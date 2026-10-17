@@ -1,4 +1,4 @@
-if(HYLE_COMPUTE_ONEDNN_ENABLED)
+if(_HYLE_COMPUTE_HAVE_ONEDNN)
   hyle_add_module(graph_provider_onednn SOURCES onednn_region_provider.cc)
   target_include_directories(hyle_graph_provider_onednn PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute"

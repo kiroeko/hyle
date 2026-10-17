@@ -20,8 +20,6 @@ managed 调用入口。
 
 ```cmake
 set(HYLE_COMPONENTS "mem;container")
-set(HYLE_BUILD_TESTS OFF)
-set(HYLE_BUILD_BENCH OFF)
 add_subdirectory(path/to/hyle hyle-build)
 
 target_link_libraries(my_app PRIVATE hyle::container)
@@ -62,7 +60,6 @@ tree，并先审计依赖版本；它不会把 `.git`、build cache 或未提交
 ```bash
 cmake -S . -B build-sdk-static \
   -DHYLE_COMPONENTS="mem;container" \
-  -DHYLE_BUILD_TESTS=OFF \
   -DHYLE_INSTALL=ON \
   -DHYLE_STATIC=ON \
   -DCMAKE_INSTALL_PREFIX=/opt/hyle-static
@@ -80,7 +77,6 @@ consumer 时才安装，不会复制整棵 HYLE 公开头树。消费者不应�
 ```bash
 cmake -S . -B build-sdk-shared \
   -DHYLE_COMPONENTS="mem;container" \
-  -DHYLE_BUILD_TESTS=OFF \
   -DHYLE_INSTALL=ON \
   -DHYLE_STATIC=OFF \
   -DCMAKE_INSTALL_PREFIX=/opt/hyle-shared
@@ -115,6 +111,8 @@ endif()
 
 Visual Studio 生成器下，在创建 consumer target 的同一 CMake 目录调用
 `hyle_stage_runtime()`；其链接的库可以来自其它目录。
+该函数用于本地构建运行：Unix 仅补充 `BUILD_RPATH`，不会把本机 SDK 路径写入
+应用的 `INSTALL_RPATH`。应用安装时的动态库布局和 loader 路径由应用工程设置。
 
 Linux 静态 SDK 若要链入 shared library，生产 SDK 时设置
 `-DCMAKE_POSITION_INDEPENDENT_CODE=ON`。普通静态 EXE 与这种 PIC SDK 是明确的 producer 配置；
@@ -155,9 +153,9 @@ Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 
 `hyle::compute/graph`；未选路线在取依赖闭包前排除，不影响 GPU 所需 host 控制和传输。
 配置示例：
 
-裸 CMake 显式选择路线或 `HYLE_INSTALL=ON` 时，默认采用 tests OFF 的发行配置；
-不需要再手动关闭测试。维护 preset/调用方明确 `HYLE_BUILD_TESTS=ON` 仍有效；
-明确同时要求 install 和 tests 的冲突仍拒绝。
+裸 CMake、源码嵌入和安装配置的测试、基准默认关闭；开发 preset 显式开启测试。
+需要同时构建普通测试和安装包时设置 `HYLE_BUILD_TESTS=ON`、`HYLE_INSTALL=ON`。
+内部测试插桩 `HYLE_TEST_INSTRUMENTATION=ON` 不用于安装包。
 
 | 交付能力 | `HYLE_COMPUTE_ROUTES` |
 |---|---|
@@ -165,14 +163,15 @@ Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 
 | CUDA / Apple MLX-Metal / Vulkan | cuda / apple / vulkan |
 | CPU 与一个 GPU 的 SDK | cpu;cuda / cpu;apple / cpu;vulkan |
 
-这些值由源码父工程在 `add_subdirectory()` 前设置，或由 SDK producer 的 CMake 配置选择；安装消费者
-读取 `Hyle_AVAILABLE_FEATURES` 中的 `compute_cpu/compute_cuda/compute_onednn`，不能在自己工程里
-用宏创建未交付路线。选中 target 传播相应 `HYLE_COMPUTE_*` 存在性宏；它们不改变公共对象布局。
+这些值由源码父工程在 `add_subdirectory()` 前设置，或由 SDK producer 的 CMake 配置选择。
+源码与安装消费者都从公开 `hyle::compute` 或 `hyle::graph` target 的 `HYLE_COMPUTE_ROUTES`
+属性查询实际路线。链接 target 自动传播相应 C++ 存在性宏，不需要手工定义宏、追加头路径或枚举内部库。
 未选 native/provider 的头、空实现 target、SDK 查找与运行库不进入安装包。
 路线集合顺序不是 preference；空、未知、AUTO 和不支持的平台组合明确拒绝。
-旧六个 CPU/CUDA/Apple/Vulkan/oneDNN/Torch CPU 开关要求迁移和 fresh build，不保留双轨。
+旧六个 CPU/CUDA/Apple/Vulkan/oneDNN/Torch CPU 开关不再接受；按配置错误提示用 `cmake -U`
+移除旧 cache 项后选择路线，不必为迁移复制依赖或新建整棵构建目录。
 presence 宏由 target 传播，不能在 consumer 手写宏创建未交付能力。
-mixed SDK 只证明编入多路线，跨路线联合图仍须 H1–H3 另行验收。
+mixed SDK 编入多条路线；具体跨路线图的支持范围见对应接口与后端说明。
 
 安装包提供 `Hyle_AVAILABLE_COMPUTE_ROUTES` 与 `Hyle_COMPUTE_RECIPE_ID`；source 和安装 target
 都可通过 `get_target_property(... hyle::compute HYLE_COMPUTE_ROUTES)` / `HYLE_COMPUTE_RECIPE_ID`
@@ -211,7 +210,7 @@ Windows 消费者在链接公开产品后调用
 DLL 放在 exe 同目录；源码、静态 SDK 和动态 SDK 使用同一入口。构建时仍需安装 CUDA Toolkit，
 运行机器需具备相应 NVIDIA 驱动与 VC runtime。
 Apple MLX/Metal 的构建、metallib 邻置与已验收边界见 [Apple 指南](apple-compute.md)。
-Vulkan 的 ON/OFF、系统 loader、嵌入 SPIR-V 与当前交付验收见 [Vulkan 指南](vulkan-compute.md)；
+Vulkan 路线的系统 loader、嵌入 SPIR-V 与交付要求见 [Vulkan 指南](vulkan-compute.md)；
 开启 Vulkan 不取得 CPU/CUDA/MLX 实现，二进制 SDK 不要求 glslang。各路线的具体设备与工具链限制见对应指南。HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
 当前 trace 只有 Tracy，不存在 `HYLE_TRACE_BACKEND` 选择项。
 

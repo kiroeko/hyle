@@ -1,4 +1,4 @@
-if(HYLE_STATIC AND HYLE_COMPUTE_APPLE_ENABLED)
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_APPLE)
   # Both mathematical arms use exactly one locked MLX runtime. The independent
   # peer checkout is an identity input for qualification, never a second DSO.
   if(DEFINED HYLE_APPLE_REFERENCE_SOURCE_DIR AND
@@ -15,7 +15,7 @@ if(HYLE_STATIC AND HYLE_COMPUTE_APPLE_ENABLED)
     target_link_libraries(${target} PRIVATE hyle_${owner} nanobench)
     set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
     hyle_apply_warnings(${target})
-    hyle_stage_apple_runtime(${target})
+    hyle_stage_runtime(${target})
     if(placement)
       target_compile_options(${target} PRIVATE -falign-functions=64)
     endif()

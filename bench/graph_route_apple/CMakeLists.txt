@@ -1,4 +1,4 @@
-if(HYLE_STATIC AND HYLE_COMPUTE_APPLE_ENABLED)
+if(HYLE_STATIC AND _HYLE_COMPUTE_HAVE_APPLE)
   add_executable(hyle_graph_route_apple_bench ../compute_route_apple/route_p1_bench.cc)
   hyle_configure_apple_ffn_bench(hyle_graph_route_apple_bench graph_route_apple 1 FALSE)
   add_executable(hyle_graph_route_apple_bench_placement ../compute_route_apple/route_p1_bench.cc)

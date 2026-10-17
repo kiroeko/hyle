@@ -124,7 +124,8 @@ function(_hyle_stage_runtime_dependencies target)
         list(APPEND _runtime_paths "$<PATH:GET_PARENT_PATH,${_file}>")
       endforeach()
       set_property(TARGET ${target} APPEND PROPERTY BUILD_RPATH ${_runtime_paths})
-      set_property(TARGET ${target} APPEND PROPERTY INSTALL_RPATH ${_runtime_paths})
+      # These are build-host SDK locations. Deployment layout belongs to the
+      # application: never bake them into its installed executable's RPATH.
       # RUNPATH is not transitive: the HYLE shared adapter, rather than the
       # executable, needs torch_cpu. Opt-in RPATH also covers its SDK-local
       # dependencies, without making a second SDK copy for every application.
@@ -204,7 +205,11 @@ function(hyle_stage_runtime target)
     get_property(_producers GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS)
     list(REMOVE_DUPLICATES _assets)
     list(REMOVE_DUPLICATES _producers)
-    include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/HyleAppleRuntime.cmake")
+    # An installed Apple SDK may already provide this helper in a sibling
+    # scope after a CPU-only SDK first defined the common staging API.
+    if(NOT COMMAND _hyle_stage_apple_runtime)
+      include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/HyleAppleRuntime.cmake")
+    endif()
     _hyle_stage_apple_runtime(${target} "${_assets}" "${_producers}")
   endif()
   set_property(TARGET ${target} PROPERTY HYLE_UNIFIED_RUNTIME_STAGING TRUE)

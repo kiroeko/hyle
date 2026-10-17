@@ -8,14 +8,6 @@
 #include "hyle/compute/file_stream.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_COMPUTE_ROUTE_CPU_API
-#elif defined(HYLE_COMPUTE_ROUTE_CPU_BUILD)
-#define HYLE_COMPUTE_ROUTE_CPU_API HYLE_EXPORT
-#else
-#define HYLE_COMPUTE_ROUTE_CPU_API HYLE_IMPORT
-#endif
-
 namespace hyle::compute::cpu {
 
 enum class RuntimeThreadBackend : std::uint8_t {

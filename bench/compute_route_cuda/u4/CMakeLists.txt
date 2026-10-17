@@ -11,13 +11,13 @@ target_compile_features(hyle_cuda_provider_choices_bench PRIVATE cxx_std_23)
 target_compile_definitions(hyle_cuda_provider_choices_bench PRIVATE _CRT_SECURE_NO_WARNINGS)
 target_link_libraries(hyle_cuda_provider_choices_bench PRIVATE hyle::compute
   hyle::_factor_compute_provider_cuda hyle::_factor_compute_provider_ggml_cuda u4_nanobench)
-hyle_stage_runtime_dependencies(hyle_cuda_provider_choices_bench)
+hyle_stage_runtime(hyle_cuda_provider_choices_bench)
 add_executable(hyle_cuda_provider_admission admission.cc)
 target_compile_features(hyle_cuda_provider_admission PRIVATE cxx_std_23)
 target_link_libraries(hyle_cuda_provider_admission PRIVATE hyle::compute
   hyle::_factor_compute_provider_cuda hyle::_factor_compute_provider_ggml_cuda
   hyle::_factor_compute_provider_torch_cuda)
-hyle_stage_runtime_dependencies(hyle_cuda_provider_admission)
+hyle_stage_runtime(hyle_cuda_provider_admission)
 add_executable(hyle_cuda_matrix_bench matrix_bench.cc)
 target_compile_features(hyle_cuda_matrix_bench PRIVATE cxx_std_23)
 target_compile_definitions(hyle_cuda_matrix_bench PRIVATE _CRT_SECURE_NO_WARNINGS
@@ -25,7 +25,7 @@ target_compile_definitions(hyle_cuda_matrix_bench PRIVATE _CRT_SECURE_NO_WARNING
 target_link_libraries(hyle_cuda_matrix_bench PRIVATE hyle::compute u4_nanobench
   hyle::_factor_compute_provider_cuda hyle::_factor_compute_provider_ggml_cuda
   hyle::_factor_compute_provider_torch_cuda)
-hyle_stage_runtime_dependencies(hyle_cuda_matrix_bench)
+hyle_stage_runtime(hyle_cuda_matrix_bench)
 add_executable(hyle_perf_control_bench "${_root}/bench/integration/perf_control_bench.cc")
 target_compile_features(hyle_perf_control_bench PRIVATE cxx_std_23)
 target_compile_definitions(hyle_perf_control_bench PRIVATE _CRT_SECURE_NO_WARNINGS)

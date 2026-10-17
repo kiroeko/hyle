@@ -7,7 +7,7 @@ if(HYLE_GGML_CPU_ENABLED)
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml")
 endif()
 
-if(HYLE_STATIC AND NOT HYLE_COMPUTE_ONEDNN_ENABLED)
+if(HYLE_STATIC AND NOT _HYLE_COMPUTE_HAVE_ONEDNN)
   get_target_property(_route_links hyle_graph_route_cpu
     INTERFACE_LINK_LIBRARIES)
   foreach(_absent IN ITEMS compute_provider_onednn graph_provider_onednn)

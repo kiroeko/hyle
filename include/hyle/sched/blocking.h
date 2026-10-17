@@ -11,14 +11,6 @@
 #include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_SCHED_API
-#elif defined(HYLE_SCHED_BUILD)
-#  define HYLE_SCHED_API HYLE_EXPORT
-#else
-#  define HYLE_SCHED_API HYLE_IMPORT
-#endif
-
 // spawn_blocking runs a BLOCKING syscall / CPU-bound closure on a dedicated
 // offload thread pool, NOT on a scheduler worker.
 //

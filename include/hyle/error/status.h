@@ -8,14 +8,6 @@
 
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_ERROR_API
-#elif defined(HYLE_ERROR_BUILD)
-#define HYLE_ERROR_API HYLE_EXPORT
-#else
-#define HYLE_ERROR_API HYLE_IMPORT
-#endif
-
 namespace hyle {
 
 // ---- status code table (single source of truth) ----------------------------

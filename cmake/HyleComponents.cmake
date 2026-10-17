@@ -622,9 +622,10 @@ _hyle_declare_product(graph FACTORS
 if(DEFINED HYLE_DEV_FACTORS)
   if(DEFINED HYLE_COMPONENTS)
     message(FATAL_ERROR
-      "HYLE_DEV_FACTORS and HYLE_COMPONENTS are mutually exclusive; use a "
-      "fresh build tree and choose either an internal maintenance root or a "
-      "consumer product")
+      "HYLE_DEV_FACTORS and HYLE_COMPONENTS are mutually exclusive. Reuse this "
+      "build directory with -UHYLE_COMPONENTS -UHYLE_COMPUTE_ROUTES when "
+      "selecting factors, or -UHYLE_DEV_FACTORS when selecting products. "
+      "Remove the unused selector rather than setting it to an empty value.")
   endif()
   if(NOT PROJECT_IS_TOP_LEVEL)
     message(FATAL_ERROR
@@ -819,32 +820,34 @@ endforeach()
 get_property(_hyle_topological_components GLOBAL
   PROPERTY _HYLE_COMPONENT_TOPOLOGICAL_ORDER)
 
-# Visit the selected graph once. Product edges are always followed; TEST_DEPS
-# are followed only for a test-enabled developer build. Selection is recorded
-# before recursion so even a harmless test-fixture cycle terminates. Every
-# selected vertex and outgoing edge is therefore inspected at most once.
-function(_hyle_select_component component include_test_dependencies)
+# Preserve production membership independently of the larger build graph.
+# Tests may need ordinary product factors as fixtures, but those factors must
+# not manufacture public products or become installed SDK dependencies.
+# Each traversal records selection before recursion, including fixture cycles.
+function(_hyle_select_component component include_test_dependencies selection)
   string(TOUPPER "${component}" _select_upper)
   get_property(_selected GLOBAL PROPERTY
-    "_HYLE_COMPONENT_SELECTED_${_select_upper}")
+    "_HYLE_COMPONENT_${selection}_${_select_upper}")
   if(_selected)
     return()
   endif()
   set_property(GLOBAL PROPERTY
-    "_HYLE_COMPONENT_SELECTED_${_select_upper}" TRUE)
+    "_HYLE_COMPONENT_${selection}_${_select_upper}" TRUE)
 
   foreach(_dependency IN LISTS _HYLE_DEPS_${_select_upper})
-    _hyle_select_component("${_dependency}" "${include_test_dependencies}")
+    _hyle_select_component("${_dependency}" "${include_test_dependencies}"
+      "${selection}")
   endforeach()
   if(include_test_dependencies)
     foreach(_dependency IN LISTS _HYLE_TEST_DEPS_${_select_upper})
-      _hyle_select_component("${_dependency}" TRUE)
+      _hyle_select_component("${_dependency}" TRUE "${selection}")
     endforeach()
   endif()
 endfunction()
 
 foreach(_component IN LISTS _hyle_requested_roots)
-  _hyle_select_component("${_component}" "${HYLE_BUILD_TESTS}")
+  _hyle_select_component("${_component}" FALSE PRODUCTION)
+  _hyle_select_component("${_component}" "${HYLE_BUILD_TESTS}" SELECTED)
 endforeach()
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   string(TOUPPER "${_component}" _component_upper)
@@ -855,8 +858,17 @@ endforeach()
 # Preserve the computed topological order for target construction, audit and
 # configure diagnostics.
 set(_hyle_resolved "")
+set(HYLE_PRODUCTION_COMPONENT_LIST "")
+set(HYLE_TEST_FIXTURE_COMPONENT_LIST "")
 foreach(_component IN LISTS _hyle_topological_components)
   string(TOUPPER "${_component}" _component_upper)
+  get_property(_production GLOBAL PROPERTY
+    "_HYLE_COMPONENT_PRODUCTION_${_component_upper}")
+  if(_production)
+    list(APPEND HYLE_PRODUCTION_COMPONENT_LIST "${_component}")
+  elseif(_HYLE_SELECTED_${_component_upper})
+    list(APPEND HYLE_TEST_FIXTURE_COMPONENT_LIST "${_component}")
+  endif()
   if(_HYLE_SELECTED_${_component_upper})
     set(HYLE_BUILD_${_component_upper} TRUE)
     list(APPEND _hyle_resolved "${_component}")
@@ -872,7 +884,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "factor")
   hyle_resolve_compute_factor_routes()
 endif()
 
-# Product mode exposes a facade only when all of its root factors are present.
+# Product mode exposes a facade only when all roots belong to production.
 # This also exposes a complete transitive product (for example Core) when
 # another requested product already built it, while refusing to manufacture a
 # partial Container facade from Time's container_intrusive dependency alone.
@@ -884,8 +896,7 @@ foreach(_product IN LISTS HYLE_KNOWN_PRODUCTS)
   if(_hyle_selection_mode STREQUAL "product")
     set(_product_complete TRUE)
     foreach(_factor IN LISTS _HYLE_PRODUCT_FACTORS_${_product_upper})
-      string(TOUPPER "${_factor}" _factor_upper)
-      if(NOT HYLE_BUILD_${_factor_upper})
+      if(NOT _factor IN_LIST HYLE_PRODUCTION_COMPONENT_LIST)
         set(_product_complete FALSE)
         break()
       endif()
@@ -898,6 +909,8 @@ foreach(_product IN LISTS HYLE_KNOWN_PRODUCTS)
     set(HYLE_BUILD_PRODUCT_${_product_upper} FALSE)
   endif()
 endforeach()
+# This is the package/export product set as well as the source facade set.
+set(HYLE_PRODUCTION_PRODUCT_LIST "${HYLE_RESOLVED_PRODUCT_LIST}")
 
 # Owner-scope the trace option: a fresh Core-only/cache-light configure must not
 # advertise a switch which cannot affect any selected target.
@@ -913,14 +926,18 @@ endforeach()
 set(HYLE_RESOLVED_COMPONENT_LIST "${_hyle_resolved}")
 list(JOIN _hyle_resolved "," HYLE_RESOLVED_COMPONENTS)
 list(JOIN HYLE_RESOLVED_PRODUCT_LIST "," HYLE_RESOLVED_PRODUCTS)
+list(JOIN HYLE_PRODUCTION_COMPONENT_LIST "," _hyle_production_text)
+list(JOIN HYLE_TEST_FIXTURE_COMPONENT_LIST "," _hyle_fixture_text)
 if(_hyle_selection_mode STREQUAL "factor")
   message(STATUS
     "HYLE developer factors: requested='${HYLE_DEV_FACTORS}' "
-    "resolved='${HYLE_RESOLVED_COMPONENTS}' products='${HYLE_RESOLVED_PRODUCTS}'")
+    "resolved='${HYLE_RESOLVED_COMPONENTS}' test-fixtures='${_hyle_fixture_text}' "
+    "products='${HYLE_RESOLVED_PRODUCTS}'")
 else()
   message(STATUS
     "HYLE products: requested='${HYLE_COMPONENTS}' "
-    "available='${HYLE_RESOLVED_PRODUCTS}' factors='${HYLE_RESOLVED_COMPONENTS}'")
+    "available='${HYLE_RESOLVED_PRODUCTS}' production='${_hyle_production_text}' "
+    "test-fixtures='${_hyle_fixture_text}'")
 endif()
 
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
@@ -928,6 +945,8 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   unset(_HYLE_SELECTED_${_component_upper})
   set_property(GLOBAL PROPERTY
     "_HYLE_COMPONENT_SELECTED_${_component_upper}" "")
+  set_property(GLOBAL PROPERTY
+    "_HYLE_COMPONENT_PRODUCTION_${_component_upper}" "")
   set_property(GLOBAL PROPERTY
     "_HYLE_COMPONENT_VISIT_${_component_upper}" "")
 endforeach()
@@ -941,6 +960,9 @@ unset(_hyle_selection_mode)
 unset(_hyle_resolution_order)
 unset(_hyle_topological_components)
 unset(_hyle_known_text)
+unset(_hyle_production_text)
+unset(_hyle_fixture_text)
+unset(_production)
 unset(_component)
 unset(_component_upper)
 unset(_dependency)

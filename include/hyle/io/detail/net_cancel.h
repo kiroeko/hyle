@@ -10,14 +10,6 @@
 #include "hyle/sched/waker.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
-
 // sched-07 / io: CANCELLABLE io ops -- recv/accept bound to a CancelToken. When the
 // token is cancelled, an in-flight kernel op is actively cancelled (submit_cancel:
 // io_uring ASYNC_CANCEL / IOCP CancelIoEx / epoll synth -ECANCELED) so a fiber

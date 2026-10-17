@@ -10,14 +10,6 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#  define HYLE_SCHED_API
-#elif defined(HYLE_SCHED_BUILD)
-#  define HYLE_SCHED_API HYLE_EXPORT
-#else
-#  define HYLE_SCHED_API HYLE_IMPORT
-#endif
-
 namespace hyle::sched {
 
 class CancelCallback;

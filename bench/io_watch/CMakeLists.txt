@@ -13,14 +13,18 @@ if(HYLE_IO_WATCH_P1_BENCH)
   endif()
 
   if(NOT TARGET uv_a)
-    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-    set(LIBUV_BUILD_SHARED OFF CACHE BOOL "" FORCE)
-    set(LIBUV_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(LIBUV_BUILD_BENCH OFF CACHE BOOL "" FORCE)
-    add_subdirectory(
-      "${HYLE_LIBUV_DIR}"
-      "${HYLE_BINARY_DIR}/bench/peers/io-watch-libuv"
-      EXCLUDE_FROM_ALL)
+    block()
+      set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+      set(CMAKE_POLICY_DEFAULT_CMP0126 NEW)
+      set(BUILD_TESTING OFF)
+      set(LIBUV_BUILD_SHARED OFF)
+      set(LIBUV_BUILD_TESTS OFF)
+      set(LIBUV_BUILD_BENCH OFF)
+      add_subdirectory(
+        "${HYLE_LIBUV_DIR}"
+        "${HYLE_BINARY_DIR}/bench/peers/io-watch-libuv"
+        EXCLUDE_FROM_ALL)
+    endblock()
   endif()
 
   function(_hyle_configure_io_watch_p1 target placement)

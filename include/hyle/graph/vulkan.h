@@ -5,14 +5,6 @@
 #include "hyle/graph/native_variants.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_ROUTE_VULKAN_API
-#elif defined(HYLE_GRAPH_ROUTE_VULKAN_BUILD)
-#define HYLE_GRAPH_ROUTE_VULKAN_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_ROUTE_VULKAN_API HYLE_IMPORT
-#endif
-
 #if defined(HYLE_COMPUTE_VULKAN)
 #include <array>
 #include <cstddef>

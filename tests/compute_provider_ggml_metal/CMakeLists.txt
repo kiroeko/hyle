@@ -1,5 +1,5 @@
 hyle_ensure_module_test_target(compute_provider_ggml_metal)
-if(HYLE_COMPUTE_APPLE_ENABLED)
+if(_HYLE_COMPUTE_HAVE_APPLE)
   hyle_add_test(compute_provider_ggml_metal SOURCES native_program_test.mm
     DEPS hyle_compute_ops hyle_mem hyle_error)
   set_target_properties(hyle_compute_provider_ggml_metal_test PROPERTIES

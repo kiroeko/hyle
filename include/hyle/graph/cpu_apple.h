@@ -7,14 +7,6 @@
 #include "hyle/graph/executable.h"
 #include "hyle/visibility.h"
 
-#if defined(HYLE_STATIC)
-#define HYLE_GRAPH_ROUTE_CPU_APPLE_API
-#elif defined(HYLE_GRAPH_ROUTE_CPU_APPLE_BUILD)
-#define HYLE_GRAPH_ROUTE_CPU_APPLE_API HYLE_EXPORT
-#else
-#define HYLE_GRAPH_ROUTE_CPU_APPLE_API HYLE_IMPORT
-#endif
-
 #if defined(HYLE_COMPUTE_APPLE)
 #include <array>
 #include <memory>

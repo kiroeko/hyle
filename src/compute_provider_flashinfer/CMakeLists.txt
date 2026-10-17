@@ -1,6 +1,6 @@
 # The bounded native qualification admitted this pin on Linux. Windows uses
 # the ggml CUDA attention route; CUDA-OFF never fetches these headers.
-if(NOT HYLE_COMPUTE_CUDA_ENABLED OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(NOT _HYLE_COMPUTE_HAVE_CUDA OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
   hyle_add_module(compute_provider_flashinfer OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_flashinfer PROPERTY
     HYLE_INTERNAL_ONLY_ABSENT TRUE)
@@ -60,13 +60,12 @@ target_include_directories(hyle_compute_provider_flashinfer PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../compute_backend_cuda")
 target_include_directories(hyle_compute_provider_flashinfer SYSTEM PRIVATE
   "${flashinfer_SOURCE_DIR}/include")
+hyle_target_compute_capability(hyle_compute_provider_flashinfer flashinfer)
 target_compile_definitions(hyle_compute_provider_flashinfer
-  PUBLIC HYLE_COMPUTE_FLASHINFER=1
   PRIVATE FLASHINFER_ENABLE_BF16 FLASHINFER_ENABLE_F16)
 target_link_libraries(hyle_compute_provider_flashinfer PRIVATE CUDA::cudart)
 hyle_register_package_dependency(
   NAME compute_flashinfer OWNER compute_provider_flashinfer
-  FEATURES compute_cuda
   FIND_DEPENDENCIES CUDAToolkit|13.3
   LOCKED_DEPENDENCIES flashinfer flashinfer_cache_patches
   RUNTIME_FILE_SPECS

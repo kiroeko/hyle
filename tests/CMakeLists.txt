@@ -21,6 +21,8 @@ else()
     URL_HASH SHA256=${HYLE_DEP_GOOGLETEST_ARCHIVE_SHA256}
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
   block()
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+    set(CMAKE_POLICY_DEFAULT_CMP0126 NEW)
     set(gtest_force_shared_crt ON)
     set(BUILD_GMOCK OFF)
     set(INSTALL_GTEST OFF)
@@ -122,6 +124,12 @@ function(hyle_add_header_self_contained_test module)
   unset(_hyle_extra_include_dir)
 endfunction()
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME hyle_visibility_generation_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/visibility_generation_test.py"
+                 --compiler "${CMAKE_CXX_COMPILER}")
+set_tests_properties(hyle_visibility_generation_test PROPERTIES
+  LABELS "tooling;build;headers")
 add_test(NAME hyle_shared_export_hygiene_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/shared_export_hygiene_test.py")

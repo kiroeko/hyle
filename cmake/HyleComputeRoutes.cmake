@@ -10,7 +10,7 @@ function(_hyle_reject_legacy_compute_options)
         "${_name} is no longer a public build option. Use "
         "HYLE_COMPUTE_ROUTES=cpu, cuda, apple, vulkan, or a semicolon-separated "
         "set such as 'cpu;cuda'. Remove the old option from the parent/preset "
-        "and use a fresh build tree; required Providers are automatic.")
+        "or clear its cached value with cmake -U ${_name}; required Providers are automatic.")
     endif()
   endforeach()
 endfunction()
@@ -52,7 +52,7 @@ function(_hyle_check_compute_route_platform routes)
         message(FATAL_ERROR
           "The complete CPU route requires Windows/Linux x86_64 or macOS ARM64 "
           "for its locked ATen SDK; '${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}' "
-          "has no complete qualified CPU recipe. Select another supported route.")
+          "has no supported complete CPU recipe. Select another supported route.")
       endif()
     elseif(_route STREQUAL "cuda")
       if(NOT CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$")
@@ -76,9 +76,9 @@ macro(_hyle_publish_compute_routes routes)
   foreach(_route IN ITEMS cpu cuda apple vulkan)
     string(TOUPPER "${_route}" _upper)
     if(_route IN_LIST _active)
-      set(HYLE_COMPUTE_${_upper} ON PARENT_SCOPE)
+      set(_HYLE_COMPUTE_REQUEST_${_upper} ON PARENT_SCOPE)
     else()
-      set(HYLE_COMPUTE_${_upper} OFF PARENT_SCOPE)
+      set(_HYLE_COMPUTE_REQUEST_${_upper} OFF PARENT_SCOPE)
     endif()
   endforeach()
   set(_onednn OFF)
@@ -95,8 +95,8 @@ macro(_hyle_publish_compute_routes routes)
       set(_torch ON)
     endif()
   endif()
-  set(HYLE_COMPUTE_ONEDNN "${_onednn}" PARENT_SCOPE)
-  set(HYLE_COMPUTE_TORCH_CPU "${_torch}" PARENT_SCOPE)
+  set(_HYLE_COMPUTE_REQUEST_ONEDNN "${_onednn}" PARENT_SCOPE)
+  set(_HYLE_COMPUTE_REQUEST_TORCH_CPU "${_torch}" PARENT_SCOPE)
 endmacro()
 
 function(hyle_resolve_compute_product_routes products)
@@ -123,7 +123,8 @@ function(hyle_resolve_compute_factor_routes)
   if(DEFINED HYLE_COMPUTE_ROUTES)
     message(FATAL_ERROR
       "HYLE_DEV_FACTORS derives native availability from its exact factor/test "
-      "closure. Do not combine it with the product selector HYLE_COMPUTE_ROUTES.")
+      "closure. Do not combine it with the product selector HYLE_COMPUTE_ROUTES; "
+      "clear a previous product selection with cmake -U HYLE_COMPUTE_ROUTES.")
   endif()
   set(_routes "")
   if(HYLE_BUILD_COMPUTE_BACKEND_CPU OR HYLE_BUILD_COMPUTE_PROVIDER_NATIVE OR
