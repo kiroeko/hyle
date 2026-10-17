@@ -1,0 +1,1168 @@
+{
+  "schema": "hyle.inference-g09-p1-native-preflight/v1",
+  "state": "ALL_FOUR_NATIVE_PROFILE_RUNTIME_DIAGNOSTICS_PASS_CUDA_PILOT_WORKLOAD_AA_PASS_NOT_FORMAL_P1",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "scope": "Complete remaining private Windows Vulkan artifact construction/provenance and actual native Air/Windows Vulkan loader/full math/retirement/State destruction/original unload. CUDA was accepted in prior artifact checkpoint. All16 private facade images across8 sets now constructed; no HYLE product/SDK/native rebuild, public API or performance-core change.",
+  "independent_reviews": {
+    "16": {
+      "path": "review-16.json",
+      "sha256": "f69ce0f9380dbf2c05acd33b9efa35444c5508bc32012f473d7a82cb438d24e3",
+      "decision": "ALLOW_VERIFY_ONLY_LOADER_MATH_COMPLETION_RETIREMENT_DIAGNOSTICS_NOT_AA_OR_P1"
+    },
+    "17": {
+      "path": "review-17.json",
+      "sha256": "a193ac820cf3353722b0776450809f340920e8b4da9b29b02424ed3cadfad01b",
+      "decision": "ALLOW_ORIGINAL_DRIVER_VERIFY_ONLY_AFTER_EXISTING_STAGED_RUNTIME_FREEZE_NOT_AA_OR_P1"
+    }
+  },
+  "windows_vulkan": {
+    "builds": [
+      {
+        "image_set": "baseline",
+        "elapsed_seconds": 21.469000000040978,
+        "images": [
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-baseline\\bin\\g09_vulkan_baseline_1.dll",
+            "sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+            "bytes": 66030080,
+            "exports": [
+              "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+              "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+              "??0RRefInterface@c10@@QEAA@XZ",
+              "??1Await@ivalue@c10@@UEAA@XZ",
+              "??1Future@ivalue@c10@@UEAA@XZ",
+              "??1Object@ivalue@c10@@UEAA@XZ",
+              "??1RRefInterface@c10@@UEAA@XZ",
+              "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+              "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+              "??_7Await@ivalue@c10@@6B@",
+              "??_7Future@ivalue@c10@@6B@",
+              "??_7Object@ivalue@c10@@6B@",
+              "??_7RRefInterface@c10@@6B@",
+              "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+              "?completed@Await@ivalue@c10@@QEAA_NXZ",
+              "?completed@Future@ivalue@c10@@QEBA_NXZ",
+              "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+              "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+              "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+              "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+              "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+              "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+              "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+              "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+              "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+              "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+              "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+              "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+              "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+              "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+              "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+              "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+              "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+              "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+              "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+              "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+              "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+              "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Future@ivalue@c10@@QEAAXXZ",
+              "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+              "hyle_g09_facade_v1"
+            ],
+            "direct_import_dlls": [
+              "torch_cpu.dll",
+              "c10.dll",
+              "api-ms-win-core-synch-l1-2-0.dll",
+              "KERNEL32.dll",
+              "ADVAPI32.dll",
+              "MSVCP140.dll",
+              "MSVCP140_ATOMIC_WAIT.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-time-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-filesystem-l1-1-0.dll",
+              "WS2_32.dll"
+            ],
+            "map_sha256": "d51a891a6dcbb04264df7c7dd44845091c56d9d0e22425e1002e1953afa1c359"
+          },
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-baseline\\bin\\g09_vulkan_baseline_2.dll",
+            "sha256": "9e3fbd6d2a28050e3711e43d5140e5e6dad37af00ed2dcb5856768f81efb75b4",
+            "bytes": 66030080,
+            "exports": [
+              "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+              "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+              "??0RRefInterface@c10@@QEAA@XZ",
+              "??1Await@ivalue@c10@@UEAA@XZ",
+              "??1Future@ivalue@c10@@UEAA@XZ",
+              "??1Object@ivalue@c10@@UEAA@XZ",
+              "??1RRefInterface@c10@@UEAA@XZ",
+              "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+              "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+              "??_7Await@ivalue@c10@@6B@",
+              "??_7Future@ivalue@c10@@6B@",
+              "??_7Object@ivalue@c10@@6B@",
+              "??_7RRefInterface@c10@@6B@",
+              "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+              "?completed@Await@ivalue@c10@@QEAA_NXZ",
+              "?completed@Future@ivalue@c10@@QEBA_NXZ",
+              "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+              "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+              "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+              "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+              "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+              "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+              "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+              "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+              "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+              "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+              "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+              "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+              "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+              "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+              "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+              "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+              "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+              "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+              "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+              "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+              "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+              "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Future@ivalue@c10@@QEAAXXZ",
+              "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+              "hyle_g09_facade_v1"
+            ],
+            "direct_import_dlls": [
+              "torch_cpu.dll",
+              "c10.dll",
+              "api-ms-win-core-synch-l1-2-0.dll",
+              "KERNEL32.dll",
+              "ADVAPI32.dll",
+              "MSVCP140.dll",
+              "MSVCP140_ATOMIC_WAIT.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-time-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-filesystem-l1-1-0.dll",
+              "WS2_32.dll"
+            ],
+            "map_sha256": "b3d5049f72cf9fcd67bdf50d5a149860f7a0263c5e08eed0c085199ebc5582dd"
+          }
+        ],
+        "driver": null
+      },
+      {
+        "image_set": "candidate",
+        "elapsed_seconds": 21.10899999999674,
+        "images": [
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-candidate\\bin\\g09_vulkan_candidate_1.dll",
+            "sha256": "fd8fb031a0c801e934743f9e99e9e8e60f55c77487fb7b6f03ac4b2adef3e1f1",
+            "bytes": 66067456,
+            "exports": [
+              "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+              "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+              "??0RRefInterface@c10@@QEAA@XZ",
+              "??1Await@ivalue@c10@@UEAA@XZ",
+              "??1Future@ivalue@c10@@UEAA@XZ",
+              "??1Object@ivalue@c10@@UEAA@XZ",
+              "??1RRefInterface@c10@@UEAA@XZ",
+              "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+              "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+              "??_7Await@ivalue@c10@@6B@",
+              "??_7Future@ivalue@c10@@6B@",
+              "??_7Object@ivalue@c10@@6B@",
+              "??_7RRefInterface@c10@@6B@",
+              "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+              "?completed@Await@ivalue@c10@@QEAA_NXZ",
+              "?completed@Future@ivalue@c10@@QEBA_NXZ",
+              "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+              "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+              "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+              "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+              "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+              "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+              "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+              "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+              "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+              "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+              "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+              "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+              "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+              "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+              "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+              "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+              "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+              "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+              "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+              "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+              "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+              "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Future@ivalue@c10@@QEAAXXZ",
+              "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+              "hyle_g09_facade_v1"
+            ],
+            "direct_import_dlls": [
+              "torch_cpu.dll",
+              "c10.dll",
+              "api-ms-win-core-synch-l1-2-0.dll",
+              "KERNEL32.dll",
+              "ADVAPI32.dll",
+              "MSVCP140.dll",
+              "MSVCP140_ATOMIC_WAIT.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-time-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-filesystem-l1-1-0.dll",
+              "WS2_32.dll"
+            ],
+            "map_sha256": "72d04a5c9a61f5c0c70c05cd85a39f4d4161c6737a4d420ef40a9f198d7012d7"
+          },
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-candidate\\bin\\g09_vulkan_candidate_2.dll",
+            "sha256": "2995b8ca2f2a4a80030099c861ae6884956d862e1418173585b95f5d5ab48046",
+            "bytes": 66067456,
+            "exports": [
+              "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+              "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+              "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+              "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+              "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+              "??0RRefInterface@c10@@QEAA@XZ",
+              "??1Await@ivalue@c10@@UEAA@XZ",
+              "??1Future@ivalue@c10@@UEAA@XZ",
+              "??1Object@ivalue@c10@@UEAA@XZ",
+              "??1RRefInterface@c10@@UEAA@XZ",
+              "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+              "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+              "??_7Await@ivalue@c10@@6B@",
+              "??_7Future@ivalue@c10@@6B@",
+              "??_7Object@ivalue@c10@@6B@",
+              "??_7RRefInterface@c10@@6B@",
+              "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+              "?completed@Await@ivalue@c10@@QEAA_NXZ",
+              "?completed@Future@ivalue@c10@@QEBA_NXZ",
+              "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+              "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+              "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+              "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+              "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+              "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+              "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+              "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+              "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+              "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+              "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+              "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+              "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+              "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+              "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+              "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+              "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+              "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+              "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+              "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+              "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+              "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+              "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+              "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+              "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+              "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+              "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+              "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+              "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+              "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+              "?wait@Future@ivalue@c10@@QEAAXXZ",
+              "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+              "hyle_g09_facade_v1"
+            ],
+            "direct_import_dlls": [
+              "torch_cpu.dll",
+              "c10.dll",
+              "api-ms-win-core-synch-l1-2-0.dll",
+              "KERNEL32.dll",
+              "ADVAPI32.dll",
+              "MSVCP140.dll",
+              "MSVCP140_ATOMIC_WAIT.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-time-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-filesystem-l1-1-0.dll",
+              "WS2_32.dll"
+            ],
+            "map_sha256": "3fa2dfa8f7695b20368621fda77c2bbc87de6d9152056127f8aed5b3b18bda9e"
+          }
+        ],
+        "driver": {
+          "path": "C:\\h7\\g09-p1\\vulkan-candidate\\bin\\g09_pipeline_driver.exe",
+          "sha256": "3249ed4e99e35493435594c6f3e039f0b7ee5b9abf2e4ac64e273cb567d72ee3",
+          "bytes": 133120
+        }
+      }
+    ],
+    "exact_equal_staged_runtime_dll_pairs": 8,
+    "runtime_record_sha256": "9e782345edb95b8cd47a2159bb6e6c5428b6b19df6b316c9dd93a58158c04e0b",
+    "orders": [
+      {
+        "order": "candidate-first",
+        "exit_code": 0,
+        "elapsed_seconds": 2.0939999999827705,
+        "actual_loaded_modules": 73
+      },
+      {
+        "order": "baseline-first",
+        "exit_code": 0,
+        "elapsed_seconds": 2.1089999999967404,
+        "actual_loaded_modules": 73
+      }
+    ],
+    "vendor_provenance": "Vulkan original old/new native archive/object hashes match each other; exact .drectve equals independently reviewed R13 original77-symbol list. Actual4PE exports/maps and private binding were independently verified byR17; no CUDA whole-object identity assumption or vendor wildcard."
+  },
+  "actual_air": [
+    {
+      "route": "apple",
+      "sha256": "0f71f72363711a14f173cf8b518c1ea088975063e333655961b074f22b17c82d",
+      "elapsed_seconds": 2.922027833,
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434"
+      },
+      "stages": [
+        {
+          "order": "candidate-first",
+          "exit_code": 0,
+          "elapsed_seconds": 1.9699451669999999,
+          "actual_loaded_modules": 485
+        },
+        {
+          "order": "baseline-first",
+          "exit_code": 0,
+          "elapsed_seconds": 0.634590625,
+          "actual_loaded_modules": 485
+        }
+      ],
+      "runtime_files": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/.hyle-apple-runtime.lock",
+          "name": ".hyle-apple-runtime.lock",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/mlx.metallib",
+          "name": "mlx.metallib",
+          "sha256": "2f149b1a4c8fccd585410c1ee4abb0e5a711a574935d4dcc24f4458f5c9951d4",
+          "bytes": 1666984
+        }
+      ]
+    },
+    {
+      "route": "vulkan",
+      "sha256": "5465a2de6c1fbd4af8ff8e221838f5c6b5df0f986ee252f24a733744ba484a43",
+      "elapsed_seconds": 4.419321666,
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434"
+      },
+      "stages": [
+        {
+          "order": "candidate-first",
+          "exit_code": 0,
+          "elapsed_seconds": 2.875529916,
+          "actual_loaded_modules": 486
+        },
+        {
+          "order": "baseline-first",
+          "exit_code": 0,
+          "elapsed_seconds": 1.1470109159999997,
+          "actual_loaded_modules": 486
+        }
+      ],
+      "runtime_files": []
+    }
+  ],
+  "runtime_checks": "For each profile/order: two own C-table images, all4 before/after full4M F32 oracles including both microbatches,8 successful State destroys, actual loaded module paths/hash, native completion/retirement and normal process exit. Air and Windows Vulkan retain original explicit unload (2 successful returns each order), not CUDA workaround. macOS dyld-shared-cache-only system libraries explicitly retain OS/cache identity, not invented per-file hashes.",
+  "cuda_pilot_workload_aa": {
+    "result_sha256": "aaadeedf4ff6aafb0bb190fca14c5394f3da1e45565ca686e2e6cefda0b43f64",
+    "gate": "PASS",
+    "elapsed_seconds": 18.40700000000652,
+    "processes": 8,
+    "workloads_per_process": 4,
+    "minimum_process_ratio": 0.9688989570059938,
+    "maximum_process_ratio": 1.0303465716420483,
+    "factor_summaries": {
+      "baseline:independent-cpu-first": {
+        "factor_medians": {
+          "all": 1.0015948537495913,
+          "execution_order=candidate-first": 1.0053550843860561,
+          "execution_order=peer-first": 1.0015948537495913,
+          "allocation_order=candidate-first": 1.0085331072981918,
+          "allocation_order=peer-first": 0.9984168308374559
+        },
+        "minimum_process_ratio": 0.9803635971300642,
+        "maximum_process_ratio": 1.0303465716420483
+      },
+      "baseline:independent-gpu-first": {
+        "factor_medians": {
+          "all": 0.9905739774249562,
+          "execution_order=candidate-first": 0.9876296419154482,
+          "execution_order=peer-first": 0.9938120601417599,
+          "allocation_order=candidate-first": 1.0059111501981195,
+          "allocation_order=peer-first": 0.9755305518590887
+        },
+        "minimum_process_ratio": 0.9725862163495805,
+        "maximum_process_ratio": 1.0091492329149232
+      },
+      "baseline:two-microbatches": {
+        "factor_medians": {
+          "all": 0.9952766191821572,
+          "execution_order=candidate-first": 0.9928244298991953,
+          "execution_order=peer-first": 1.002402082581198,
+          "allocation_order=candidate-first": 0.9952766191821572,
+          "allocation_order=peer-first": 0.9999498932982358
+        },
+        "minimum_process_ratio": 0.98421152748716,
+        "maximum_process_ratio": 1.0156882591093117
+      },
+      "baseline:serial-holdout": {
+        "factor_medians": {
+          "all": 0.9947783373085364,
+          "execution_order=candidate-first": 0.9987375266139262,
+          "execution_order=peer-first": 0.9947783373085364,
+          "allocation_order=candidate-first": 0.9862723701683349,
+          "allocation_order=peer-first": 1.0072434937541277
+        },
+        "minimum_process_ratio": 0.9851662404092072,
+        "maximum_process_ratio": 1.0123088128186453
+      },
+      "candidate:independent-cpu-first": {
+        "factor_medians": {
+          "all": 1.000939728711411,
+          "execution_order=candidate-first": 1.0158399073089126,
+          "execution_order=peer-first": 0.9853126824139185,
+          "allocation_order=candidate-first": 0.9964885175422091,
+          "allocation_order=peer-first": 1.004664072180622
+        },
+        "minimum_process_ratio": 0.9808614712447167,
+        "maximum_process_ratio": 1.0195642507781237
+      },
+      "candidate:independent-gpu-first": {
+        "factor_medians": {
+          "all": 0.9867910798255662,
+          "execution_order=candidate-first": 0.9981896238790737,
+          "execution_order=peer-first": 0.9814066877607477,
+          "allocation_order=candidate-first": 0.9867910798255662,
+          "allocation_order=peer-first": 0.9928052318142552
+        },
+        "minimum_process_ratio": 0.9688989570059938,
+        "maximum_process_ratio": 1.0167115066225165
+      },
+      "candidate:two-microbatches": {
+        "factor_medians": {
+          "all": 0.9816870911331399,
+          "execution_order=candidate-first": 0.9772796701040012,
+          "execution_order=peer-first": 0.9910242371338172,
+          "allocation_order=candidate-first": 0.9882166700462895,
+          "allocation_order=peer-first": 0.9800872371915288
+        },
+        "minimum_process_ratio": 0.97567981616239,
+        "maximum_process_ratio": 0.9975538160469667
+      },
+      "candidate:serial-holdout": {
+        "factor_medians": {
+          "all": 0.9972006424254637,
+          "execution_order=candidate-first": 0.9972006424254637,
+          "execution_order=peer-first": 0.990107650197322,
+          "allocation_order=candidate-first": 1.000590005283937,
+          "allocation_order=peer-first": 0.9867182873388489
+        },
+        "minimum_process_ratio": 0.9760358019344594,
+        "maximum_process_ratio": 1.0041794984601848
+      }
+    },
+    "binary": {
+      "path": "C:\\h7\\g09-p1-instrument\\cuda\\probe-build\\bin\\g09_pipeline_primary.exe",
+      "sha256": "26cbb903c11387e64772129674326975a6978caf7c0b834f3450fe7dc174c693"
+    },
+    "source_ledger_sha256": "51c9b6cf898a167d9252a9b77ebedbd7dfbb49af33ccd7c11f70d301a32a0eda",
+    "sampling_policy": {
+      "environment": "windows",
+      "affinity_mask": "0x14",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "sampling_topology": "native-runtime-pair",
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "caller_logical_cpu": 2,
+      "distinct_physical_cores": true,
+      "reserved_physical_core_count": 2,
+      "helper_placement": "native-runtime-managed"
+    },
+    "child_canary": {
+      "gate": "PASS",
+      "environment": "windows",
+      "mechanism": "inherited-process-policy-canary",
+      "affinity_mask": "0x14",
+      "ok": true,
+      "priority_class": "0x8000"
+    },
+    "rule": "Original fixed5% factor medians,10%gross process stop; baseline/candidate each all4 execution x allocation/load-order strata,2 distinct images.12 exact original paired rounds; no shape/epoch/iteration tuning.",
+    "identity_limit": "This preflight binds the actual probe executable hash and immutable private source. A fresh formal build does not automatically inherit it; unchanged original validator must bind the actual final artifact. No A/B samples or product speed verdict."
+  },
+  "argv_adapter": {
+    "state": "PRIVATE_CONSUMER_SOURCE_GIT_FROZEN_CUDA_AA_PASS_NOT_FORMAL_P1",
+    "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter",
+    "revision": "c6e7de71e25d7c6d25de77fb1f4eb7f7dd767a39",
+    "tree": "4ba378c100caeddd69c0e27c3c6239e983c39616",
+    "clean": true,
+    "ledger_sha256": "51c9b6cf898a167d9252a9b77ebedbd7dfbb49af33ccd7c11f70d301a32a0eda",
+    "windows_peer": "C:/h7/g09-p1-peer-9e2",
+    "air_peer": "/Users/kiro/hyle-scratch/compute-unified/g09-p1-peer-9e2",
+    "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "scope": "Git identity is PRIVATE CONSUMER source only, not HYLE product revision. Product candidate/source/archive bindings remain the frozen352/e09 SDK proofs."
+  },
+  "retained_failure": {
+    "path": "raw.zip:windows-vulkan-runtime/runtime-result.json",
+    "elapsed_seconds": 3.297000000020489,
+    "meaning": "First actual original Vulkan process/oracles/State destruction/unload succeeded. Metadata helper incorrectly derived nvvulkan.dll from CUDA string; asserted wrong name. Exact actual vulkan-1.dll guard correction reran only this finite diagnostic, retained old FAIL, changed no binary/source math."
+  },
+  "recorded_new_case_seconds": 85.03034949907125,
+  "cost_scope": "New case totals only, preserving the wrong-module assertion and same-tree argv incremental build. Prior387.998-second artifact checkpoint remains retained; no reset. Excludes orchestration/source/review/Git metadata preparation, not a total-wall-time claim.",
+  "formal_product_samples": 0,
+  "remaining": [
+    "Complete unchanged hyle-perf finite contract/provenance binding of private source and original static SDK peer identities; two immutable sparse baseline Git worktrees are prepared without product builds",
+    "Final native dispatch/copy/full completion ledger and final wrapper/control/source/artifact preflight before formal A/B",
+    "Actual final-artifact workload A/A on every selected native profile, original common A/A/delta5/delta10/timer-floor; code padding/link-order NOT_APPLICABLE to fixed bulk4M journey was declared before any A/A, address risk covered by allocation/load order",
+    "Original5%/n15-to31 formal four-profile P1 then G09 independent final review/seven gates/LOC; G10 unstarted"
+  ],
+  "archive": {
+    "path": "raw.zip",
+    "sha256": "e6d29722c29cfa91a48b47cee25b41b2e4258062b3aa68096b4c9aefa2d377f7",
+    "bytes": 9623892,
+    "entries": [
+      {
+        "path": "windows-vulkan-baseline/build.log",
+        "sha256": "643a17d238c33cbf1f424b6d9db8d6d287dd158ce0113f901038f45a38e280b8",
+        "bytes": 721
+      },
+      {
+        "path": "windows-vulkan-baseline/compile-commands.json",
+        "sha256": "d7974e7c6ab43dd7af067f6f1a4b931ce6358924f2d88284b0ec6fbdbffc808e",
+        "bytes": 3038
+      },
+      {
+        "path": "windows-vulkan-baseline/configure.log",
+        "sha256": "e7d72a11ecfcc87ff197b65e2d1b66ad021febf08af2b36de8c8d23f73bb538b",
+        "bytes": 1179
+      },
+      {
+        "path": "windows-vulkan-baseline/dry-run.log",
+        "sha256": "36b3fd148caef5f1b591177d599ef447757302ce384698e96b75adc0537a264e",
+        "bytes": 721
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_1-dependents.log",
+        "sha256": "9798d59b42f6b9eb7ed50370c78ba4ea5532e92d233a74399151c22a25661776",
+        "bytes": 859
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_1-exports.log",
+        "sha256": "7a52fee47769d9ba84dbd65563fec37af41995bc5afdb8079432078eacf2bf37",
+        "bytes": 8876
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_1-headers.log",
+        "sha256": "1e30839f38373acc4073af8177dfed700c4ce7a0fff5ab312884bd7f6aef7d98",
+        "bytes": 5964
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_1-imports.log",
+        "sha256": "5a5a5b7062d84ce37449c6e553691617eaef596b2928318b799e45a50379d1c5",
+        "bytes": 44430
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_1.map",
+        "sha256": "d51a891a6dcbb04264df7c7dd44845091c56d9d0e22425e1002e1953afa1c359",
+        "bytes": 29586467
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_2-dependents.log",
+        "sha256": "11e0e3d0633e9e7d768b03efb4c11956f1e6096074c3c938cd9219abb24bc4c2",
+        "bytes": 859
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_2-exports.log",
+        "sha256": "c94e5e1649c52d4d945597d3bd3ae6cf4c894ca56997eb4c7e40d707bbb25618",
+        "bytes": 8876
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_2-headers.log",
+        "sha256": "1419600401c5180fbfdad1f390a96c99523c10badce687282060ea610e3ab410",
+        "bytes": 5964
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_2-imports.log",
+        "sha256": "e4c161d6d4d399265a4db282fd64ca507aad8ab05d3f916aa3bf05476002b313",
+        "bytes": 44430
+      },
+      {
+        "path": "windows-vulkan-baseline/g09_vulkan_baseline_2.map",
+        "sha256": "b3d5049f72cf9fcd67bdf50d5a149860f7a0263c5e08eed0c085199ebc5582dd",
+        "bytes": 29586467
+      },
+      {
+        "path": "windows-vulkan-baseline/manifest.log",
+        "sha256": "09b8b811dd3c48bac6983fdec756e27dc551a4f86d3c6f1100bef99c2e144be9",
+        "bytes": 81
+      },
+      {
+        "path": "windows-vulkan-baseline/result.json",
+        "sha256": "13b73afb68cf41695aeb8e6cb2c79bdf73eedb4097b8974ef5d6416670c9c242",
+        "bytes": 143333
+      },
+      {
+        "path": "windows-vulkan-baseline/runner.py",
+        "sha256": "ceb35a5debc9b1228d229f12f3bfb23049f2e360195be1d009f4368a78ae22b8",
+        "bytes": 12248
+      },
+      {
+        "path": "windows-vulkan-candidate/build.log",
+        "sha256": "d5feeffbe2e0de56c2a439d10b89ec9c2ded602dc1e8bac4b37b3d594d27a677",
+        "bytes": 1042
+      },
+      {
+        "path": "windows-vulkan-candidate/compile-commands.json",
+        "sha256": "62df7ba8b21f8f6c2650b800e4b3ce3fcd5025d34ba9705cbc548c7b28fb7e30",
+        "bytes": 4629
+      },
+      {
+        "path": "windows-vulkan-candidate/configure.log",
+        "sha256": "fbd88750c6d8534660573244d6dbc445c0f27d58641dc220e71945781175dd67",
+        "bytes": 1180
+      },
+      {
+        "path": "windows-vulkan-candidate/dry-run.log",
+        "sha256": "0bb968c6626d488305ac67e91930ae84380d92a0c48cbb489f5910eca53e5217",
+        "bytes": 1042
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_1-dependents.log",
+        "sha256": "1f4df17c2aab7adc3014ff503aa79dc0c51f839e8cc823cd023a039ea774ec8d",
+        "bytes": 861
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_1-exports.log",
+        "sha256": "b08f7220567b307620a8fd5525ac0be7c58cb920bfe2e3fae9aa90636ba68c73",
+        "bytes": 8879
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_1-headers.log",
+        "sha256": "1966db2be72b0bf74f91bb3ae2c80da3a54b89a703beb642743cac78346a6736",
+        "bytes": 5966
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_1-imports.log",
+        "sha256": "04ba5d9c3b3f5eef4292d5a950bd26715ece0468f0b366b88fafc86f678f88c1",
+        "bytes": 44432
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_1.map",
+        "sha256": "72d04a5c9a61f5c0c70c05cd85a39f4d4161c6737a4d420ef40a9f198d7012d7",
+        "bytes": 29664410
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_2-dependents.log",
+        "sha256": "d8f6b77d8f7591d0b48966315ec9849bb3adb2fb3a20f5de054749644edac286",
+        "bytes": 861
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_2-exports.log",
+        "sha256": "01dabe36dd33e30b0c0f81980a9f412dd06079d1e641c1cbb5f9848c94615ff6",
+        "bytes": 8879
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_2-headers.log",
+        "sha256": "b2d1d203aa59afdb47f5405dfd28244f77deff2ab141f44cc5e28c8225d6b521",
+        "bytes": 5966
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_2-imports.log",
+        "sha256": "cfd1261a982732dc1dd91a5e85efd2725e6afada6e853799ab0fa4bf503794fc",
+        "bytes": 44432
+      },
+      {
+        "path": "windows-vulkan-candidate/g09_vulkan_candidate_2.map",
+        "sha256": "3fa2dfa8f7695b20368621fda77c2bbc87de6d9152056127f8aed5b3b18bda9e",
+        "bytes": 29664411
+      },
+      {
+        "path": "windows-vulkan-candidate/manifest.log",
+        "sha256": "775c117fcd33055903337251e4d4c1f2c8d3d70cd28b9065b9a5459a821b9b67",
+        "bytes": 82
+      },
+      {
+        "path": "windows-vulkan-candidate/result.json",
+        "sha256": "9b037a87082ef43850f99b348bc67b12665e64b0fa05ca8fed3140fc18c651a3",
+        "bytes": 143591
+      },
+      {
+        "path": "windows-vulkan-candidate/runner.py",
+        "sha256": "ceb35a5debc9b1228d229f12f3bfb23049f2e360195be1d009f4368a78ae22b8",
+        "bytes": 12248
+      },
+      {
+        "path": "windows-vulkan-runtime/candidate-first.log",
+        "sha256": "883e290ad6da0aa1b147e74c29eaecb99534a151b74aa8d3fd910f6e52e82756",
+        "bytes": 29077
+      },
+      {
+        "path": "windows-vulkan-runtime/freeze.json",
+        "sha256": "250e28228341c620b6851d170ca7add09ce3276aca21d9025bd6b3cc7b9df97f",
+        "bytes": 40103
+      },
+      {
+        "path": "windows-vulkan-runtime/module-name-check-correction/baseline-first.log",
+        "sha256": "4abb806e812b2e18bcce075e0805e76e43f1e69d8f84d893cb4c19ef86a21e27",
+        "bytes": 28188
+      },
+      {
+        "path": "windows-vulkan-runtime/module-name-check-correction/candidate-first.log",
+        "sha256": "1e43d49e12605b73f891f5f7be5cfb1af72c951803c953bb2fe6414f1f66c219",
+        "bytes": 28213
+      },
+      {
+        "path": "windows-vulkan-runtime/module-name-check-correction/runtime-result.json",
+        "sha256": "9e782345edb95b8cd47a2159bb6e6c5428b6b19df6b316c9dd93a58158c04e0b",
+        "bytes": 31478
+      },
+      {
+        "path": "windows-vulkan-runtime/runner-freeze.py",
+        "sha256": "ad7af051bf33b3cb54749e2d66a862233f8dd7a3bf2fcc3629816559ebd1ecf3",
+        "bytes": 8398
+      },
+      {
+        "path": "windows-vulkan-runtime/runtime-result.json",
+        "sha256": "edd0f2823de2be6ec6712078391c6b878c781c12c5fcb7b87fa0f939d1d2d5ae",
+        "bytes": 16174
+      },
+      {
+        "path": "air-runtime/apple/baseline-first.log",
+        "sha256": "a68df673a3915f5692c0a161e6dbeff6fb9b07a8ed9fe0179e664ac63d8ae152",
+        "bytes": 219398
+      },
+      {
+        "path": "air-runtime/apple/candidate-first.log",
+        "sha256": "3916f037926f81ba1e9d4e011d653423dfcdec55c10402c5cdc641cbb7bbc226",
+        "bytes": 219407
+      },
+      {
+        "path": "air-runtime/apple/freeze.json",
+        "sha256": "c157a8005b47bd4b95d1b7bfef7e14191625ed9e6fbe0e62a84089b61bf460b8",
+        "bytes": 4347
+      },
+      {
+        "path": "air-runtime/apple/result.json",
+        "sha256": "0f71f72363711a14f173cf8b518c1ea088975063e333655961b074f22b17c82d",
+        "bytes": 209528
+      },
+      {
+        "path": "air-runtime/vulkan/baseline-first.log",
+        "sha256": "2e186da00603b44e861207c9304613a72644daac848871e79b03cb129626dab2",
+        "bytes": 219869
+      },
+      {
+        "path": "air-runtime/vulkan/candidate-first.log",
+        "sha256": "7b126d77a1ee1d9900c5cf7393c911ffdca2ca5f7aafefb82a3ef3fad07b4157",
+        "bytes": 219875
+      },
+      {
+        "path": "air-runtime/vulkan/freeze.json",
+        "sha256": "34547df3b5d06540c070e0f7055e2f382b43bbac2226161e3917f0d6712d53c9",
+        "bytes": 3277
+      },
+      {
+        "path": "air-runtime/vulkan/result.json",
+        "sha256": "5465a2de6c1fbd4af8ff8e221838f5c6b5df0f986ee252f24a733744ba484a43",
+        "bytes": 209062
+      },
+      {
+        "path": "argv-adapter-source/CMakeLists.txt",
+        "sha256": "66cda4c10e246806c47a18465f4acbc9212fba2740e104c10d23f83d65a320a8",
+        "bytes": 3576
+      },
+      {
+        "path": "argv-adapter-source/driver.cc",
+        "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+        "bytes": 11711
+      },
+      {
+        "path": "argv-adapter-source/facade_api.h",
+        "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+        "bytes": 905
+      },
+      {
+        "path": "argv-adapter-source/instrument/bench/common/perf_process.h",
+        "sha256": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+        "bytes": 3323
+      },
+      {
+        "path": "argv-adapter-source/instrument/bench/integration/perf_control_bench.cc",
+        "sha256": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada",
+        "bytes": 5720
+      },
+      {
+        "path": "argv-adapter-source/instrument/bench/nanobench_impl.cc",
+        "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+        "bytes": 271
+      },
+      {
+        "path": "argv-adapter-source/instrument/third_party/nanobench/nanobench.h",
+        "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+        "bytes": 194934
+      },
+      {
+        "path": "argv-adapter-source/source-ledger-before-launcher-policy.json",
+        "sha256": "dbf839900bc9b6986fdca2f557ce779b255562cf8b6fa90653415db85e92fc7a",
+        "bytes": 5065
+      },
+      {
+        "path": "argv-adapter-source/source-ledger-initial.json",
+        "sha256": "1471c16e14ce353b7fbd7f8bf3ceba3e0beb1d1bf15cb322a3f12d0f4820989e",
+        "bytes": 4766
+      },
+      {
+        "path": "argv-adapter-source/source-ledger.json",
+        "sha256": "51c9b6cf898a167d9252a9b77ebedbd7dfbb49af33ccd7c11f70d301a32a0eda",
+        "bytes": 5638
+      },
+      {
+        "path": "argv-adapter-source/wrapper.cc",
+        "sha256": "b0057be32be8c64cc8bfc701e46a75ff933b6abc26a38bd5dba4822047419151",
+        "bytes": 1211
+      },
+      {
+        "path": "windows-cuda-argv-build/build-result.json",
+        "sha256": "132da7448b8a15335678f4fd995f608ff6207d0f2441a5437a972ba7067c5d38",
+        "bytes": 2527
+      },
+      {
+        "path": "windows-cuda-argv-build/build.log",
+        "sha256": "e0f4ab98f996e223deaa6407ab74a914f525790c0833989163b011f6594a3471",
+        "bytes": 461
+      },
+      {
+        "path": "windows-cuda-argv-build/compile-commands.json",
+        "sha256": "e339ee889338f85e0f14a74e46ccb86723c8fb0a6a154a830717908ffdf22351",
+        "bytes": 3353
+      },
+      {
+        "path": "windows-cuda-argv-build/configure.log",
+        "sha256": "25f7bc31783e2c818478addbeb1e3e8b136b0790015502676e04ea6bb2134d96",
+        "bytes": 489
+      },
+      {
+        "path": "windows-cuda-argv-build/imports.log",
+        "sha256": "dadfb2e11e72438f657c233fb2d07a98bbacf5bd545a3b187c32e876c5eb5193",
+        "bytes": 15485
+      },
+      {
+        "path": "windows-cuda-argv-build/initial-argv-build-result.json",
+        "sha256": "9a66a814f45d7cec1e5237edf54b58322eee8582aa7192877e7e7c78bc7c2a8e",
+        "bytes": 1829
+      },
+      {
+        "path": "windows-cuda-argv-build/launcher-policy-build.log",
+        "sha256": "2ed7962c0fc8a74691b1fcd3c5d49fd9c7496b507321915564d6a1ba4267bc67",
+        "bytes": 30801
+      },
+      {
+        "path": "windows-cuda-workload-aa/baseline-execute-0-allocate-0.log",
+        "sha256": "24f0b8d5bde2b53751d2492cfc215c73fc2971eba69bd268f0b0d7d407da53ae",
+        "bytes": 37232
+      },
+      {
+        "path": "windows-cuda-workload-aa/baseline-execute-0-allocate-1.log",
+        "sha256": "47e296592ca818bda8a7e0e112dc7ce65ed92d2a7667ec822074088243e8219c",
+        "bytes": 37222
+      },
+      {
+        "path": "windows-cuda-workload-aa/baseline-execute-1-allocate-0.log",
+        "sha256": "84827cbf8aec07256dce110c4e30edb4faa8c20d82e064867e4ecf96778e2394",
+        "bytes": 37222
+      },
+      {
+        "path": "windows-cuda-workload-aa/baseline-execute-1-allocate-1.log",
+        "sha256": "babd6630f4686b32920a4c4a633de37bb1effd1a4963910ec2deea7f3e3fd61b",
+        "bytes": 37213
+      },
+      {
+        "path": "windows-cuda-workload-aa/candidate-execute-0-allocate-0.log",
+        "sha256": "d566a778699e74c179d44207bbfaf3701adabde6693abbcaf1d5ace276b668a4",
+        "bytes": 37324
+      },
+      {
+        "path": "windows-cuda-workload-aa/candidate-execute-0-allocate-1.log",
+        "sha256": "cfd8abeb3381b3835fbd4baa2751afca8c78edb6bec9e4ee6de4fc17ac37f58b",
+        "bytes": 37339
+      },
+      {
+        "path": "windows-cuda-workload-aa/candidate-execute-1-allocate-0.log",
+        "sha256": "68ea5fd6421d02438b6c2bb58d52d36bd4cb7e88b59677b87f85ec6a7e398568",
+        "bytes": 37339
+      },
+      {
+        "path": "windows-cuda-workload-aa/candidate-execute-1-allocate-1.log",
+        "sha256": "4cb55012066e85fd2ca2b95b9d189a97fb13b52aaeea90266bbb00db94d7dda6",
+        "bytes": 37329
+      },
+      {
+        "path": "windows-cuda-workload-aa/no-argv-verify.log",
+        "sha256": "cd44c36efd4ad26fef4b9b8b071c018a19d651d2bf267da6c0d1367239936292",
+        "bytes": 34440
+      },
+      {
+        "path": "windows-cuda-workload-aa/result.json",
+        "sha256": "aaadeedf4ff6aafb0bb190fca14c5394f3da1e45565ca686e2e6cefda0b43f64",
+        "bytes": 20868
+      },
+      {
+        "path": "private-tools/g09-vulkan-pe-vendor-provenance.json",
+        "sha256": "658819ca030b72e28d74ea0b5fdd29068b72667c6abd7697eca79a67d126cb96",
+        "bytes": 9139
+      },
+      {
+        "path": "private-tools/g09-p1-instrument-source-git.json",
+        "sha256": "b372307d3caeba232d05b43d80c2e32d12889c94831f9307e2df0ccd7eff0ee5",
+        "bytes": 747
+      },
+      {
+        "path": "private-tools/g09_p1_verify_air.py",
+        "sha256": "ea3bca8d26cb8b84f77774295cd42c1896fec9796fb119236a2ae8f4b53c5884",
+        "bytes": 5505
+      },
+      {
+        "path": "private-tools/g09_p1_vulkan_verify_windows.py",
+        "sha256": "5c0342fd441c044077d25a0754eabe654df54c059bd73d2af307b1b128330dfb",
+        "bytes": 9313
+      },
+      {
+        "path": "private-tools/g09_vulkan_pe_vendor_provenance.py",
+        "sha256": "ca0e4317759daae02c288d9acf0c071883c9507a7712d2fce02b3340d4014ed1",
+        "bytes": 3089
+      },
+      {
+        "path": "private-tools/g09_p1_build_windows.py",
+        "sha256": "ceb35a5debc9b1228d229f12f3bfb23049f2e360195be1d009f4368a78ae22b8",
+        "bytes": 12248
+      },
+      {
+        "path": "private-tools/g09_prepare_instrument_adapter.py",
+        "sha256": "9302505870c3c8547258cfc0b4b9533d9144c12ec61cd4f403513bbfc045b686",
+        "bytes": 6451
+      },
+      {
+        "path": "private-tools/g09_prepare_adapter_build_helper.py",
+        "sha256": "64e3768981f96909431fc1741831a217b77f3d05a045481ac928dbcb05b6f720",
+        "bytes": 2372
+      },
+      {
+        "path": "private-tools/g09_build_instrument_adapter_windows.py",
+        "sha256": "85d52a6f7944ce141f1538c62945edd31838c0b3fa64b49bf50b1ce83d67f6f8",
+        "bytes": 3922
+      },
+      {
+        "path": "private-tools/g09_finish_adapter_launcher.py",
+        "sha256": "42e4640e5f0fa71de59c6deca48d88c4834c4ed15bbaf77b9a8b35bc25c5d8d8",
+        "bytes": 3240
+      },
+      {
+        "path": "private-tools/g09_run_aa_windows.py",
+        "sha256": "800d1e20dc0ed95ad1cd997dc2a84c156be5120528d623d97785484cb20a538e",
+        "bytes": 5860
+      }
+    ]
+  },
+  "nonclaims": "All15 selected source/static/shared deliveries remain accepted, not rerun. G09 remains CANDIDATE, goal still2/4 accepted. No new product FIX, all-mode performance symmetry or engine tokens/s conclusion."
+}

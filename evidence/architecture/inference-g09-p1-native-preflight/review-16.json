@@ -1,0 +1,1561 @@
+{
+  "schema": "hyle.bounded-independent-artifact-review.v1",
+  "review": "R16 Air Apple/Vulkan static artifacts",
+  "reviewed_at_utc": "2026-10-17T01:05:38.025Z",
+  "decision": "ALLOW_VERIFY_ONLY_LOADER_MATH_COMPLETION_RETIREMENT_DIAGNOSTICS_NOT_AA_OR_P1",
+  "scope": "Eight actual Mach-O images, four immutable SDK image sets, same fixed public consumer and instrument. Only local reads and low-load remote metadata/hash/nm/dyld_info/finite-disassembly commands ran. No dylib/driver execution, build, GPU, A/A, benchmark, P1, product or public-tool change.",
+  "checks": {
+    "eight_actual_image_hashes": true,
+    "only_c_getter_export": true,
+    "no_hyle_private_external_binding": true,
+    "twolevel_no_defined_weak_exports": true,
+    "static_tools_success": true,
+    "key_archives_identity": true,
+    "driver_identity": true,
+    "original_source_and_phase_ledger": true,
+    "baseline_qualification_reuse": true
+  },
+  "artifact_groups": [
+    {
+      "route": "apple",
+      "arm": "baseline",
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib",
+          "sha256": "0c0c48b8bf43d006b82c19f257cf3e7e0c5f9d4608c12ec65f62d98c5ec38f5b",
+          "recorded_hash_match": true,
+          "bytes": 12565856,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x3d40",
+            "bytes": 6214640,
+            "offset": 15680,
+            "sha256": "3ee330aaeaf6d5e7eb847532713346d0dd95040c2939f930b6b0b639f76f384b"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+            "/System/Library/Frameworks/Metal.framework/Versions/A/Metal",
+            "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit",
+            "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore",
+            "/usr/lib/libc++.1.dylib",
+            "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+            "/usr/lib/libobjc.A.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_apple_baseline_1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Metal.framework/Versions/A/Metal"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libobjc.A.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000003d40 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6238,
+          "nm_hyle_external": [
+            "0000000000003d40 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 614,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 1685,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 7144,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "7fc0a703d660edddc767859292d839f538f01fb4b9f454f6c4d9906637cf3311",
+            "imports": "bb1340a3557779b72e35914427af78b950104147a8286ea3322f4897e280a7b3",
+            "fixups": "9c95d5a6752cca75309b2c59b9c200b81a011285d6c5aec1f94ee868cdc32ce1"
+          },
+          "map_sha256": "b18e81a716b3b581f52afd90426248f991cc664101c5d7c07a5020c2486b9a08",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libhyle_graph_route_cpu_apple.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00003D40\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000003d40 <_hyle_g09_facade_v1>:\n    3d40: b0003d20     \tadrp\tx0, 0x7a8000 <__ZN12_GLOBAL__N_13apiE>\n    3d44: 91000000     \tadd\tx0, x0, #0x0\n    3d48: d65f03c0     \tret",
+              "raw_stdout_sha256": "2377dc333109f93e4013c1d674274bf59de60405ec68334244886d6b52ad5971"
+            }
+          ]
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_2.dylib",
+          "sha256": "5cf9b6bd7aaa0701ef5a7f43735b7007c95e73aed932babe4d2547eb53ba3ab5",
+          "recorded_hash_match": true,
+          "bytes": 12565856,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x3d40",
+            "bytes": 6214640,
+            "offset": 15680,
+            "sha256": "3ee330aaeaf6d5e7eb847532713346d0dd95040c2939f930b6b0b639f76f384b"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+            "/System/Library/Frameworks/Metal.framework/Versions/A/Metal",
+            "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit",
+            "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore",
+            "/usr/lib/libc++.1.dylib",
+            "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+            "/usr/lib/libobjc.A.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_apple_baseline_2.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Metal.framework/Versions/A/Metal"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libobjc.A.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000003d40 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6238,
+          "nm_hyle_external": [
+            "0000000000003d40 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 614,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 1685,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 7144,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "7fc0a703d660edddc767859292d839f538f01fb4b9f454f6c4d9906637cf3311",
+            "imports": "921b08b78e1bb01a02059193b1d049578a5deea35f55f24fdb75d07b33c81702",
+            "fixups": "3e97c4e5801bbbcc72c792cdd2577be9d245394b058623f363211ea233ec146a"
+          },
+          "map_sha256": "5534df9a6f19ac4c3cf06accf29b4b1541b39d7cd85d4cdbeeca559909537387",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libhyle_graph_route_cpu_apple.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00003D40\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_2.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000003d40 <_hyle_g09_facade_v1>:\n    3d40: b0003d20     \tadrp\tx0, 0x7a8000 <__ZN12_GLOBAL__N_13apiE>\n    3d44: 91000000     \tadd\tx0, x0, #0x0\n    3d48: d65f03c0     \tret",
+              "raw_stdout_sha256": "2118c1e91ab6bb9067004877c55aae1569f943a34e3e6ee321084b447bfee5ee"
+            }
+          ]
+        }
+      ],
+      "archives": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libhyle_compute_provider_native.a",
+          "sha256": "4a280ae81339431f466e3cc762dbfa4808a90dc6111c08715c1d14128a862d34",
+          "bytes": 567424,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libhyle_compute_route_apple.a",
+          "sha256": "34c17f08d7c919c080330a2c0281b945b319204e888ebf26b8c8149e3b0fda56",
+          "bytes": 1368608,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libhyle_graph.a",
+          "sha256": "37df1d2100894180d93c4d0cd09076e90977251ba75e51ef8de917e390f5ad26",
+          "bytes": 769496,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libhyle_graph_route_cpu_apple.a",
+          "sha256": "db54a480798fcc02aab6684e25d3d7374af267bb02c2fe92c3f0519466eeb0f8",
+          "bytes": 297816,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libhyle_sched.a",
+          "sha256": "11144794304c6ed94b1a10726aab17b2efbed4607a677b44a694b0fd6af14acc",
+          "bytes": 254456,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated/lib/libmlx.a",
+          "sha256": "9232d79a674511d0d3ba6a743a253719e6f821adfa262720df0ea4a92e4b83f3",
+          "bytes": 11510304,
+          "installed_manifest_match": true
+        }
+      ],
+      "clone_text_bytes_equal": true
+    },
+    {
+      "route": "apple",
+      "arm": "candidate",
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/libg09_apple_candidate_1.dylib",
+          "sha256": "3faf5144fa193ac7ccadeea1ef32b27914febab4835c29f1647f43841f10546a",
+          "recorded_hash_match": true,
+          "bytes": 12615488,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x3d40",
+            "bytes": 6238092,
+            "offset": 15680,
+            "sha256": "f2bbb0f51ea8fc64a98661a02ff348248488dad7f54b72935c4df5e660be31d5"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+            "/System/Library/Frameworks/Metal.framework/Versions/A/Metal",
+            "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit",
+            "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore",
+            "/usr/lib/libc++.1.dylib",
+            "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+            "/usr/lib/libobjc.A.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_apple_candidate_1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Metal.framework/Versions/A/Metal"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libobjc.A.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000003d40 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6354,
+          "nm_hyle_external": [
+            "0000000000003d40 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 614,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 1685,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 7144,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "644686a16751703eb7a6c45491449816ba01a26a4cf083e4be0593ef094d0d79",
+            "imports": "4218e1690ae54bdb4beba0bda7549592df8a9f904531ad7ad8022aff8f449fed",
+            "fixups": "c528bfd36bc678be346ea5b3b91ead5ad4b1cabeddb53c11758fc518711428fd"
+          },
+          "map_sha256": "838274d0fcfbf68d52344d958478572b180adc7f37f440421ea5303944138db4",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libhyle_graph_route_cpu_apple.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00003D40\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/libg09_apple_candidate_1.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000003d40 <_hyle_g09_facade_v1>:\n    3d40: b0003d60     \tadrp\tx0, 0x7b0000 <__ZN12_GLOBAL__N_13apiE>\n    3d44: 91000000     \tadd\tx0, x0, #0x0\n    3d48: d65f03c0     \tret",
+              "raw_stdout_sha256": "fc2202baf80e9551945e7cdd1d43be79fad9c964cd676a9841f8351a9a9bc89f"
+            },
+            {
+              "map_line": "0x00023F88\t0x000003B4\t[  3] __ZZN4hyle5graph9cpu_apple12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm",
+              "exit": 0,
+              "disassembly": "Disassembly of section __TEXT,__text:\n\n0000000000023f88 <__ZZN4hyle5graph9cpu_apple12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm>:\n   23f88: d10343ff     \tsub\tsp, sp, #0xd0\n   23f8c: a9095ff8     \tstp\tx24, x23, [sp, #0x90]\n   23f90: a90a57f6     \tstp\tx22, x21, [sp, #0xa0]\n   23f94: a90b4ff4     \tstp\tx20, x19, [sp, #0xb0]\n   23f98: a90c7bfd     \tstp\tx29, x30, [sp, #0xc0]\n   23f9c: 910303fd     \tadd\tx29, sp, #0xc0\n   23fa0: aa0203f4     \tmov\tx20, x2\n   23fa4: aa0103f3     \tmov\tx19, x1\n   23fa8: aa0003f5     \tmov\tx21, x0\n   23fac: 39003fff     \tstrb\twzr, [sp, #0xf]\n   23fb0: f9400428     \tldr\tx8, [x1, #0x8]\n   23fb4: f9414508     \tldr\tx8, [x8, #0x288]\n   23fb8: 52800309     \tmov\tw9, #0x18               ; =24\n   23fbc: 9b092058     \tmadd\tx24, x2, x9, x8\n   23fc0: 39400308     \tldrb\tw8, [x24]\n   23fc4: 71000d1f     \tcmp\tw8, #0x3",
+              "raw_stdout_sha256": "da6d97874edb2a7cf7473eb615c80ddd73de1cc70eb2eed7c7df6951459c6f2e"
+            }
+          ]
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/libg09_apple_candidate_2.dylib",
+          "sha256": "f9fd1f316711f10611a387d01065c90a0032d047360372831f2badeb7866de52",
+          "recorded_hash_match": true,
+          "bytes": 12615488,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x3d40",
+            "bytes": 6238092,
+            "offset": 15680,
+            "sha256": "f2bbb0f51ea8fc64a98661a02ff348248488dad7f54b72935c4df5e660be31d5"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+            "/System/Library/Frameworks/Metal.framework/Versions/A/Metal",
+            "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit",
+            "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore",
+            "/usr/lib/libc++.1.dylib",
+            "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+            "/usr/lib/libobjc.A.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_apple_candidate_2.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/Metal.framework/Versions/A/Metal"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libobjc.A.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000003d40 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6354,
+          "nm_hyle_external": [
+            "0000000000003d40 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 614,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 1685,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 7144,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "644686a16751703eb7a6c45491449816ba01a26a4cf083e4be0593ef094d0d79",
+            "imports": "a8b19087481a5db00de08daa1438d75b23e87cc9c998f7f97d1cd93a691a637c",
+            "fixups": "40988a44effb36cd0bf9db8089fa14370ca43339b36816164567eb634322ce44"
+          },
+          "map_sha256": "60fc7ef1e36da7033a5725061e321296014abb84d0522dcaba87324223d05d03",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libhyle_graph_route_cpu_apple.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00003D40\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/libg09_apple_candidate_2.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000003d40 <_hyle_g09_facade_v1>:\n    3d40: b0003d60     \tadrp\tx0, 0x7b0000 <__ZN12_GLOBAL__N_13apiE>\n    3d44: 91000000     \tadd\tx0, x0, #0x0\n    3d48: d65f03c0     \tret",
+              "raw_stdout_sha256": "808dab08c0393d5a7a53ddb970cc60c62cb5f2daabcb4dfd5da30737d72fb6ec"
+            },
+            {
+              "map_line": "0x00023F88\t0x000003B4\t[  3] __ZZN4hyle5graph9cpu_apple12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm",
+              "exit": 0,
+              "disassembly": "Disassembly of section __TEXT,__text:\n\n0000000000023f88 <__ZZN4hyle5graph9cpu_apple12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm>:\n   23f88: d10343ff     \tsub\tsp, sp, #0xd0\n   23f8c: a9095ff8     \tstp\tx24, x23, [sp, #0x90]\n   23f90: a90a57f6     \tstp\tx22, x21, [sp, #0xa0]\n   23f94: a90b4ff4     \tstp\tx20, x19, [sp, #0xb0]\n   23f98: a90c7bfd     \tstp\tx29, x30, [sp, #0xc0]\n   23f9c: 910303fd     \tadd\tx29, sp, #0xc0\n   23fa0: aa0203f4     \tmov\tx20, x2\n   23fa4: aa0103f3     \tmov\tx19, x1\n   23fa8: aa0003f5     \tmov\tx21, x0\n   23fac: 39003fff     \tstrb\twzr, [sp, #0xf]\n   23fb0: f9400428     \tldr\tx8, [x1, #0x8]\n   23fb4: f9414508     \tldr\tx8, [x8, #0x288]\n   23fb8: 52800309     \tmov\tw9, #0x18               ; =24\n   23fbc: 9b092058     \tmadd\tx24, x2, x9, x8\n   23fc0: 39400308     \tldrb\tw8, [x24]\n   23fc4: 71000d1f     \tcmp\tw8, #0x3",
+              "raw_stdout_sha256": "41f1abb9fe0a4728857462e987621336329ea7e55952bd2847928ad540363820"
+            }
+          ]
+        }
+      ],
+      "archives": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libhyle_compute_provider_native.a",
+          "sha256": "70ba76d7c404b239597da249b1a9d4a8cfa198921576088aa84f18a4aeab377a",
+          "bytes": 567424,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libhyle_compute_route_apple.a",
+          "sha256": "61b240dc00aae5cf8f594ed2e15dc72115947f602993ef88b060df74908edf48",
+          "bytes": 1368608,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libhyle_graph.a",
+          "sha256": "e5a79676d1e3f64ea7b5d751ed6e8279057571e2f22b0a0022e2aa7356cf4aeb",
+          "bytes": 775272,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libhyle_graph_route_cpu_apple.a",
+          "sha256": "b3963654a359c2a2f332a891f3f506bfd5de7b9c5845ddf2f7b3caa97b703b42",
+          "bytes": 355088,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libhyle_sched.a",
+          "sha256": "4727f42f26039519c3dc4b0cf2739b03580cb6520488bdacbee9b17adb03510c",
+          "bytes": 254456,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated/lib/libmlx.a",
+          "sha256": "7dc10380724f7666eb04c318b12cdb9794052b321deafc1345d1429b874c83ce",
+          "bytes": 11510304,
+          "installed_manifest_match": true
+        }
+      ],
+      "driver": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/g09_pipeline_driver",
+        "sha256": "1277fe8d7e790d2cc07724e0532987287dfda8d984bd4f436939bee3b17004f9",
+        "recorded_hash_match": true,
+        "bytes": 249488,
+        "dependencies": [
+          "\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)",
+          "\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)"
+        ],
+        "hyle_product_undefined": [],
+        "dlclose_import": true,
+        "inspection_exits": [
+          0,
+          0
+        ]
+      },
+      "clone_text_bytes_equal": true
+    },
+    {
+      "route": "vulkan",
+      "arm": "baseline",
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib",
+          "sha256": "132b43c7600b79d5f54e4a5c6ef08da9b6ba1033eae6065e9146b0df4dc51411",
+          "recorded_hash_match": true,
+          "bytes": 50802000,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x2130",
+            "bytes": 5217632,
+            "offset": 8496,
+            "sha256": "244a11c128d441dee4a344dc2f767c2cd356fbfb2fa6ea72f902ee0519eccf47"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/usr/lib/libc++.1.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_vulkan_baseline_1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000002130 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6405,
+          "nm_hyle_external": [
+            "0000000000002130 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 519,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 736,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 3607,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "7fd1eac2432d08a3679099754733e5749513afe53344fc7464c759774c4d210d",
+            "imports": "11caf581c54b3fac068675a40aaec817362e693af6ac22db9ad025000ff57a76",
+            "fixups": "50500630de326369ff5ebcbd3779356dd831fdee4b1c5b3f00a42f7c721b3877"
+          },
+          "map_sha256": "2d0a38b18142a533e3ccd83a6671e97bf33013fe8d7eb4b65cd02069eb620b18",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libhyle_graph_route_cpu_vulkan.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00002130\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000002130 <_hyle_g09_facade_v1>:\n    2130: d00174a0     \tadrp\tx0, 0x2e98000 <__ZN12_GLOBAL__N_13apiE>\n    2134: 91000000     \tadd\tx0, x0, #0x0\n    2138: d65f03c0     \tret",
+              "raw_stdout_sha256": "db72c897dd6ddae6cac98a7b15c1599581aaba8cbff1e5ae1c0d0d89b058eca6"
+            }
+          ]
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_2.dylib",
+          "sha256": "3e390d1237e326e439753bf843e4f1d60ea2791fd2af63a310b583cc9fe2c50f",
+          "recorded_hash_match": true,
+          "bytes": 50802000,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x2130",
+            "bytes": 5217632,
+            "offset": 8496,
+            "sha256": "244a11c128d441dee4a344dc2f767c2cd356fbfb2fa6ea72f902ee0519eccf47"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/usr/lib/libc++.1.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_vulkan_baseline_2.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000002130 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6405,
+          "nm_hyle_external": [
+            "0000000000002130 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 519,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 736,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 3607,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "7fd1eac2432d08a3679099754733e5749513afe53344fc7464c759774c4d210d",
+            "imports": "d4da4d1f05c9663168920395efccadf0565f5f7cbaf117e025a8422238a07a2a",
+            "fixups": "687adbf0fe3176ad1d5293cb8c8e0b6d64453b2544676fe0292736a1310de42a"
+          },
+          "map_sha256": "1222b030bd58d4c0787b50f2de9cbe17ec16c4e6e874347a09bc8cbccec72f50",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libhyle_graph_route_cpu_vulkan.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00002130\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_2.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000002130 <_hyle_g09_facade_v1>:\n    2130: d00174a0     \tadrp\tx0, 0x2e98000 <__ZN12_GLOBAL__N_13apiE>\n    2134: 91000000     \tadd\tx0, x0, #0x0\n    2138: d65f03c0     \tret",
+              "raw_stdout_sha256": "ece4683609a1dc1b53c4acfa3d462955e29a29c800feb8b4def2a8b5228096b5"
+            }
+          ]
+        }
+      ],
+      "archives": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libggml-vulkan.a",
+          "sha256": "05bb65f122d889ccbdad7655352015eba87466e35e32719e3418d7af53891ee6",
+          "bytes": 44614464,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libhyle_compute_provider_ggml_vulkan.a",
+          "sha256": "ac72db116ae916ab227ffd5b61fef418b485c33933f4710aff0754bebd547f47",
+          "bytes": 129984,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libhyle_compute_provider_native.a",
+          "sha256": "4f1d84bfd273fb02c8345a37a1202aaa56eea67c4828bc179080aa37e8eadb64",
+          "bytes": 567424,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libhyle_graph.a",
+          "sha256": "03a7fc3a026fecc86fc90f03c468b1a50fbf555a6817921b335780e47e3e0c4f",
+          "bytes": 769496,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libhyle_graph_route_cpu_vulkan.a",
+          "sha256": "c2d3ed8bca090135aa9cef03fec8e0c44538ea8887955c851586c3aee7621039",
+          "bytes": 312616,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated/lib/libhyle_sched.a",
+          "sha256": "7c48eeae2185c645ebc1e5db8d6cd7e884e7d24cb2652798f9314f803b6153a2",
+          "bytes": 254456,
+          "installed_manifest_match": true
+        }
+      ],
+      "clone_text_bytes_equal": true
+    },
+    {
+      "route": "vulkan",
+      "arm": "candidate",
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/libg09_vulkan_candidate_1.dylib",
+          "sha256": "86f1dafab6f46228f6b6212dfd8802d5356b3d9a8e6dd10cb9006a3ebf02278f",
+          "recorded_hash_match": true,
+          "bytes": 50852368,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x2130",
+            "bytes": 5253100,
+            "offset": 8496,
+            "sha256": "39d003a086d3fec63697734acc7fd7a3e20fd5712f27f6b635ba9bb5b45274f5"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/usr/lib/libc++.1.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_vulkan_candidate_1.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000002130 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6525,
+          "nm_hyle_external": [
+            "0000000000002130 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 519,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 736,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 3607,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "886269633a66909034932ca27efb6b1277e696a58e1f8018112b0c989f1d2a55",
+            "imports": "40bb70b5f2a337f31f948b597bdd9910a5b7df00df1c382489b9fbe290d950c6",
+            "fixups": "d61a6c6b1f036449374f89ee90d4bfb29b59bbddb872e5b0c44d6bd38b614203"
+          },
+          "map_sha256": "6982b61503cb8cb00db9c42afae95948dbadf978f311ed3be42ec894a53e01cb",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libhyle_graph_route_cpu_vulkan.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00002130\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/libg09_vulkan_candidate_1.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000002130 <_hyle_g09_facade_v1>:\n    2130: d00174e0     \tadrp\tx0, 0x2ea0000 <__ZN12_GLOBAL__N_13apiE>\n    2134: 91000000     \tadd\tx0, x0, #0x0\n    2138: d65f03c0     \tret",
+              "raw_stdout_sha256": "7ca233ffecdbe4261bc41b78bcf797a14417d48388dee6c1f80ea87739c2f167"
+            },
+            {
+              "map_line": "0x000258B0\t0x00000AB8\t[  3] __ZZN4hyle5graph10cpu_vulkan12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm",
+              "exit": 0,
+              "disassembly": "Disassembly of section __TEXT,__text:\n\n00000000000258b0 <__ZZN4hyle5graph10cpu_vulkan12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm>:\n   258b0: a9ba6ffc     \tstp\tx28, x27, [sp, #-0x60]!\n   258b4: a90167fa     \tstp\tx26, x25, [sp, #0x10]\n   258b8: a9025ff8     \tstp\tx24, x23, [sp, #0x20]\n   258bc: a90357f6     \tstp\tx22, x21, [sp, #0x30]\n   258c0: a9044ff4     \tstp\tx20, x19, [sp, #0x40]\n   258c4: a9057bfd     \tstp\tx29, x30, [sp, #0x50]\n   258c8: 910143fd     \tadd\tx29, sp, #0x50\n   258cc: d10b43ff     \tsub\tsp, sp, #0x2d0\n   258d0: aa0203fa     \tmov\tx26, x2\n   258d4: aa0103f3     \tmov\tx19, x1\n   258d8: aa0003f5     \tmov\tx21, x0\n   258dc: 9100c3f8     \tadd\tx24, sp, #0x30\n   258e0: d0017428     \tadrp\tx8, 0x2eab000 <__ZZN4hyle8platform16cpu_feature_nameENS0_10CpuFeatureEE6kNames+0x178>\n   258e4: f942d508     \tldr\tx8, [x8, #0x5a8]\n   258e8: f9400108     \tldr\tx8, [x8]\n   258ec: f81983a8     \tstur\tx8, [x29, #-0x68]",
+              "raw_stdout_sha256": "e0565630c9d09e1c3a76a0aba169bb3aa057052acf59e5d49ba0f93990299676"
+            }
+          ]
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/libg09_vulkan_candidate_2.dylib",
+          "sha256": "b89fac547f0f71d5dabb44d45e624407d3449a31d497204ad0d40c975ca78eaf",
+          "recorded_hash_match": true,
+          "bytes": 50852368,
+          "header": {
+            "magic": "0xfeedfacf",
+            "cpu": "0x100000c",
+            "filetype": 6,
+            "flags": "0x910085",
+            "twolevel": true,
+            "weak_defines": false,
+            "binds_to_weak": true
+          },
+          "text": {
+            "addr": "0x2130",
+            "bytes": 5253100,
+            "offset": 8496,
+            "sha256": "39d003a086d3fec63697734acc7fd7a3e20fd5712f27f6b635ba9bb5b45274f5"
+          },
+          "dependencies": [
+            "@rpath/libtorch.dylib",
+            "@rpath/libtorch_cpu.dylib",
+            "@rpath/libc10.dylib",
+            "/usr/lib/libSystem.B.dylib",
+            "/usr/lib/libc++.1.dylib"
+          ],
+          "dylib_commands": [
+            {
+              "cmd": "0xd",
+              "name": "@rpath/libg09_vulkan_candidate_2.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libtorch_cpu.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "@rpath/libc10.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libSystem.B.dylib"
+            },
+            {
+              "cmd": "0xc",
+              "name": "/usr/lib/libc++.1.dylib"
+            }
+          ],
+          "fixup_commands": [
+            "0x80000034"
+          ],
+          "exports": [
+            "0000000000002130 T _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_total": 6525,
+          "nm_hyle_external": [
+            "0000000000002130 (__TEXT,__text) external _hyle_g09_facade_v1"
+          ],
+          "nm_hyle_undefined": [],
+          "defined_weak_external": [],
+          "imports_count": 519,
+          "imports_hyle_flat_or_facade": [],
+          "fixup_bind_count": 736,
+          "bad_hyle_facade_bind": [],
+          "fixup_rebase_count": 3607,
+          "static_tool_exits": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "static_metadata_hashes": {
+            "nm": "886269633a66909034932ca27efb6b1277e696a58e1f8018112b0c989f1d2a55",
+            "imports": "f4bd22dffe5dc08bc61e0f0348dcd1d87ef4bc58ee50549d515930f25244e02b",
+            "fixups": "1217dbcd2116a278a33153be8bbbc8a9d09cd8be2d30eaa3f05dbf9489e5d98d"
+          },
+          "map_sha256": "f9cbe897396a97734c1755fecc272e49a3fe5c31dce039b0f95397745ccf79b7",
+          "recorded_map_match": true,
+          "map_invocation_owner": [
+            "[  3] /Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libhyle_graph_route_cpu_vulkan.a(invocation.cc.o)"
+          ],
+          "finite_disassembly": [
+            {
+              "map_line": "0x00002130\t0x0000000C\t[  1] _hyle_g09_facade_v1",
+              "exit": 0,
+              "disassembly": "\n/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/libg09_vulkan_candidate_2.dylib:\tfile format mach-o arm64\n\nDisassembly of section __TEXT,__text:\n\n0000000000002130 <_hyle_g09_facade_v1>:\n    2130: d00174e0     \tadrp\tx0, 0x2ea0000 <__ZN12_GLOBAL__N_13apiE>\n    2134: 91000000     \tadd\tx0, x0, #0x0\n    2138: d65f03c0     \tret",
+              "raw_stdout_sha256": "dba19a7df81dd972349c67daba922bcebf1cb6f36c65d0ce107fc1876d3048e2"
+            },
+            {
+              "map_line": "0x000258B0\t0x00000AB8\t[  3] __ZZN4hyle5graph10cpu_vulkan12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm",
+              "exit": 0,
+              "disassembly": "Disassembly of section __TEXT,__text:\n\n00000000000258b0 <__ZZN4hyle5graph10cpu_vulkan12_GLOBAL__N_117drive_native_laneERNS1_6detail8RunStateEENK3$_1clEm>:\n   258b0: a9ba6ffc     \tstp\tx28, x27, [sp, #-0x60]!\n   258b4: a90167fa     \tstp\tx26, x25, [sp, #0x10]\n   258b8: a9025ff8     \tstp\tx24, x23, [sp, #0x20]\n   258bc: a90357f6     \tstp\tx22, x21, [sp, #0x30]\n   258c0: a9044ff4     \tstp\tx20, x19, [sp, #0x40]\n   258c4: a9057bfd     \tstp\tx29, x30, [sp, #0x50]\n   258c8: 910143fd     \tadd\tx29, sp, #0x50\n   258cc: d10b43ff     \tsub\tsp, sp, #0x2d0\n   258d0: aa0203fa     \tmov\tx26, x2\n   258d4: aa0103f3     \tmov\tx19, x1\n   258d8: aa0003f5     \tmov\tx21, x0\n   258dc: 9100c3f8     \tadd\tx24, sp, #0x30\n   258e0: d0017428     \tadrp\tx8, 0x2eab000 <__ZZN4hyle8platform16cpu_feature_nameENS0_10CpuFeatureEE6kNames+0x178>\n   258e4: f942d508     \tldr\tx8, [x8, #0x5a8]\n   258e8: f9400108     \tldr\tx8, [x8]\n   258ec: f81983a8     \tstur\tx8, [x29, #-0x68]",
+              "raw_stdout_sha256": "98c562e8689d271751074dd6f6f89e3ed81fc855e242cfb914af1b212ce9fad8"
+            }
+          ]
+        }
+      ],
+      "archives": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libggml-vulkan.a",
+          "sha256": "19d63eee25f784c6f7e297f4a86703f123d086d193136f43e07faa392007877d",
+          "bytes": 44614464,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libhyle_compute_provider_ggml_vulkan.a",
+          "sha256": "62273b0c97befd9aa355b09c328eec6389f3f6802c4cdd706db46e07678a6570",
+          "bytes": 129984,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libhyle_compute_provider_native.a",
+          "sha256": "fbded1ba7827c1ee456c687002cdb55dad9d3bb192f8b3dd3284b2a52d380f68",
+          "bytes": 567424,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libhyle_graph.a",
+          "sha256": "f652a9bb5ab929d04b79af586c1cfc824a87584435c873db3773b8ade5c861c5",
+          "bytes": 775272,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libhyle_graph_route_cpu_vulkan.a",
+          "sha256": "1364eeac97ac3d80e4b8ad099ecdc0c130d911ea04fa39fc7e8abd0bcaab5596",
+          "bytes": 373912,
+          "installed_manifest_match": true
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated/lib/libhyle_sched.a",
+          "sha256": "522e7aef54254ecf6bddacf247cc791ac17e3fefda4b3be61822eade3da7dacf",
+          "bytes": 254456,
+          "installed_manifest_match": true
+        }
+      ],
+      "driver": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/g09_pipeline_driver",
+        "sha256": "e6b291de84c19c80dc83377957c7d35689c1494bd8946906b127ffc71b9a57ff",
+        "recorded_hash_match": true,
+        "bytes": 249488,
+        "dependencies": [
+          "\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)",
+          "\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)"
+        ],
+        "hyle_product_undefined": [],
+        "dlclose_import": true,
+        "inspection_exits": [
+          0,
+          0
+        ]
+      },
+      "clone_text_bytes_equal": true
+    }
+  ],
+  "local_source_build_binding": [
+    {
+      "route": "apple",
+      "arm": "baseline",
+      "result": {
+        "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-baseline\\result.json",
+        "sha256": "cbaaee2c9c76479f228657954751275332b98c701213e0e98319db8ef9e59862",
+        "bytes": 171257
+      },
+      "state": "TWO_PRIVATE_IMAGES_BUILT_C_ONLY_EXPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated",
+      "refs": {
+        "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+        "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+        "upload_sha256": "38390a08ab43cb7a0d47ff4363d181470353b57631d6825fa891b5e1859cb1eb"
+      },
+      "source": [
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade_api.h",
+          "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+          "bytes": 905,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade.cc",
+          "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+          "bytes": 13430,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/driver.cc",
+          "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+          "bytes": 11337,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/CMakeLists.txt",
+          "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+          "bytes": 3208,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/runtime_probe.cc",
+          "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+          "bytes": 100,
+          "record_matches": true
+        }
+      ],
+      "ledger": {
+        "path": ".scratch\\inference-gaps\\g09-p1-draft\\phase-ledger.json",
+        "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+        "bytes": 6639,
+        "record_matches": true
+      },
+      "elapsed_seconds": 2.472467167,
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "local_metadata": [
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-baseline\\g09_apple_baseline_1-exports.log",
+          "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-baseline\\g09_apple_baseline_1.map",
+          "sha256": "b18e81a716b3b581f52afd90426248f991cc664101c5d7c07a5020c2486b9a08",
+          "bytes": 3361690
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-baseline\\g09_apple_baseline_2-exports.log",
+          "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-baseline\\g09_apple_baseline_2.map",
+          "sha256": "5534df9a6f19ac4c3cf06accf29b4b1541b39d7cd85d4cdbeeca559909537387",
+          "bytes": 3361690
+        }
+      ]
+    },
+    {
+      "route": "apple",
+      "arm": "candidate",
+      "result": {
+        "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-candidate\\result.json",
+        "sha256": "fdae1d8e469379db30ed3abd98876ce1f6a73b14115297398ece1c0e9662e7f9",
+        "bytes": 171531
+      },
+      "state": "TWO_PRIVATE_IMAGES_BUILT_C_ONLY_EXPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated",
+      "refs": {
+        "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+        "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+        "upload_sha256": "38390a08ab43cb7a0d47ff4363d181470353b57631d6825fa891b5e1859cb1eb"
+      },
+      "source": [
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade_api.h",
+          "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+          "bytes": 905,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade.cc",
+          "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+          "bytes": 13430,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/driver.cc",
+          "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+          "bytes": 11337,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/CMakeLists.txt",
+          "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+          "bytes": 3208,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/runtime_probe.cc",
+          "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+          "bytes": 100,
+          "record_matches": true
+        }
+      ],
+      "ledger": {
+        "path": ".scratch\\inference-gaps\\g09-p1-draft\\phase-ledger.json",
+        "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+        "bytes": 6639,
+        "record_matches": true
+      },
+      "elapsed_seconds": 2.95915,
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "local_metadata": [
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-candidate\\g09_apple_candidate_1-exports.log",
+          "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-candidate\\g09_apple_candidate_1.map",
+          "sha256": "838274d0fcfbf68d52344d958478572b180adc7f37f440421ea5303944138db4",
+          "bytes": 3382286
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-candidate\\g09_apple_candidate_2-exports.log",
+          "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-apple-candidate\\g09_apple_candidate_2.map",
+          "sha256": "60fc7ef1e36da7033a5725061e321296014abb84d0522dcaba87324223d05d03",
+          "bytes": 3382286
+        }
+      ]
+    },
+    {
+      "route": "vulkan",
+      "arm": "baseline",
+      "result": {
+        "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-baseline\\result.json",
+        "sha256": "abb6253d93fce8aeccf8d64965856a8affe7bf114e716048603a6d7e00827711",
+        "bytes": 116391
+      },
+      "state": "TWO_PRIVATE_IMAGES_BUILT_C_ONLY_EXPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated",
+      "refs": {
+        "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+        "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+        "upload_sha256": "38390a08ab43cb7a0d47ff4363d181470353b57631d6825fa891b5e1859cb1eb"
+      },
+      "source": [
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade_api.h",
+          "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+          "bytes": 905,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade.cc",
+          "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+          "bytes": 13430,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/driver.cc",
+          "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+          "bytes": 11337,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/CMakeLists.txt",
+          "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+          "bytes": 3208,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/runtime_probe.cc",
+          "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+          "bytes": 100,
+          "record_matches": true
+        }
+      ],
+      "ledger": {
+        "path": ".scratch\\inference-gaps\\g09-p1-draft\\phase-ledger.json",
+        "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+        "bytes": 6639,
+        "record_matches": true
+      },
+      "elapsed_seconds": 2.502987792,
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "local_metadata": [
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-baseline\\g09_vulkan_baseline_1-exports.log",
+          "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-baseline\\g09_vulkan_baseline_1.map",
+          "sha256": "2d0a38b18142a533e3ccd83a6671e97bf33013fe8d7eb4b65cd02069eb620b18",
+          "bytes": 2436083
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-baseline\\g09_vulkan_baseline_2-exports.log",
+          "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-baseline\\g09_vulkan_baseline_2.map",
+          "sha256": "1222b030bd58d4c0787b50f2de9cbe17ec16c4e6e874347a09bc8cbccec72f50",
+          "bytes": 2436083
+        }
+      ]
+    },
+    {
+      "route": "vulkan",
+      "arm": "candidate",
+      "result": {
+        "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-candidate\\result.json",
+        "sha256": "760fa61ebf45976d5654a6059d767deffc319c646d2f95c7f2742666b9ae3bef",
+        "bytes": 116683
+      },
+      "state": "TWO_PRIVATE_IMAGES_BUILT_C_ONLY_EXPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated",
+      "refs": {
+        "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+        "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+        "upload_sha256": "38390a08ab43cb7a0d47ff4363d181470353b57631d6825fa891b5e1859cb1eb"
+      },
+      "source": [
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade_api.h",
+          "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+          "bytes": 905,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/facade.cc",
+          "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+          "bytes": 13430,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/driver.cc",
+          "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+          "bytes": 11337,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/CMakeLists.txt",
+          "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+          "bytes": 3208,
+          "record_matches": true
+        },
+        {
+          "path": ".scratch/inference-gaps/g09-p1-draft/runtime_probe.cc",
+          "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+          "bytes": 100,
+          "record_matches": true
+        }
+      ],
+      "ledger": {
+        "path": ".scratch\\inference-gaps\\g09-p1-draft\\phase-ledger.json",
+        "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+        "bytes": 6639,
+        "record_matches": true
+      },
+      "elapsed_seconds": 2.970336375,
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "local_metadata": [
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-candidate\\g09_vulkan_candidate_1-exports.log",
+          "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-candidate\\g09_vulkan_candidate_1.map",
+          "sha256": "6982b61503cb8cb00db9c42afae95948dbadf978f311ed3be42ec894a53e01cb",
+          "bytes": 2457403
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-candidate\\g09_vulkan_candidate_2-exports.log",
+          "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+          "bytes": 39
+        },
+        {
+          "path": ".scratch\\inference-gaps\\g09-p1-air-collected\\g09-p1-builds\\air-vulkan-candidate\\g09_vulkan_candidate_2.map",
+          "sha256": "f9cbe897396a97734c1755fecc272e49a3fe5c31dce039b0f95397745ccf79b7",
+          "bytes": 2457403
+        }
+      ]
+    }
+  ],
+  "baseline_qualification": [
+    {
+      "route": "apple",
+      "receipt": {
+        "path": ".scratch\\inference-gaps\\g08-p1-draft\\qualified-sdk-apple.json",
+        "sha256": "209e80622754a66f9a1bc1755185722e2594daf309b443d37c82c9b9fe2ee69d",
+        "bytes": 236097
+      },
+      "state": "QUALIFIED_G08_STATIC_SDK_FROZEN_FOR_P1_NOT_P1_PASS",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated",
+      "owner_artifacts": 909,
+      "matched_to_current_baseline_manifest": 909,
+      "mismatched": [],
+      "not_in_sdk_manifest": [],
+      "baseline_candidate_public_headers_equal": true,
+      "public_header_count": 597,
+      "baseline_candidate_instrument_equal": true,
+      "instrument_files_count": 3
+    },
+    {
+      "route": "vulkan",
+      "receipt": {
+        "path": ".scratch\\inference-gaps\\g08-p1-draft\\qualified-sdk-vulkan.json",
+        "sha256": "615a04dc546c35860cdabc18af45dabf498735984518454ba8abfab814a86ef7",
+        "bytes": 157464
+      },
+      "state": "QUALIFIED_G08_STATIC_SDK_FROZEN_FOR_P1_NOT_P1_PASS",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated",
+      "owner_artifacts": 601,
+      "matched_to_current_baseline_manifest": 601,
+      "mismatched": [],
+      "not_in_sdk_manifest": [],
+      "baseline_candidate_public_headers_equal": true,
+      "public_header_count": 285,
+      "baseline_candidate_instrument_equal": true,
+      "instrument_files_count": 3
+    }
+  ],
+  "current_candidate_delivery_receipt": {
+    "path": "evidence\\delivery\\inference-g09-air-sdk-checkpoint\\receipt.json",
+    "sha256": "5e2818491b5c72ac02c9fa705768487e1932578bfdf1ea18837eeff5f696f6be",
+    "bytes": 17498
+  },
+  "interpretation": {
+    "private_hyle": "All actual HYLE symbols other than the C getter are non-external; this includes hidden weak C++ templates, RTTI/vtables, static data and TLS. No HYLE private symbol imports, dynamic fixup binds, or opposite-facade dylib dependencies were found. Same-arm clones have identical __TEXT,__text bytes, though full image hashes differ as expected from image IDs/tags.",
+    "weak_and_twolevel": "All eight arm64 DYLIB headers have flags0x910085: TWOLEVEL and BINDS_TO_WEAK, without WEAK_DEFINES. The latter is not itself a private-HYLE leak: named vendor/system/Metal weak imports remain possible, while actual defined weak external count is zero and no HYLE import/bind is present. Link source used exported_symbol plus no_weak_exports; actual nm/dyld metadata, not that option alone, supports the boundary.",
+    "selected_code": "Finite real getter disassembly returns the image-local private api table. Candidate own Graph native-lane symbols are present in actual code and attributed by map to the original installed CPU+Apple/Vulkan invocation object. This proves identity/presence only, not full code equivalence, mathematics, overlap, completion or performance.",
+    "sdk_reuse": "Original G08-qualified baseline owner manifests match every corresponding current baseline SDK manifest entry (909 Apple, 601 Vulkan). Public include manifests are identical across each baseline/candidate (597 Apple and 285 Vulkan installed include files); original three instrument inputs also match. Six relevant actual archives per group were independently rehashed on Air against each construction manifest. This reuses exact existing qualification, not a new blanket requalification.",
+    "source": "All four construction result source hashes and phase-ledger match canonical fixed draft. The existing R12 legal executable runtime-probe staging seam is retained; driver links no HYLE product. G08 static SDK reuse for baseline9e2 relies on already reviewed exact src/include/cmake/root-CMake equivalence; current G09 delivery receipt is bound separately.",
+    "actual_runtime_unknown": "RPATH dependency names and metadata cannot prove which vendor dylib, CPU program, Vulkan loader or Metal assets dyld will actually select; no loader/math/registry/private-state runtime outcome is signed. Same vendor dependencies may intentionally be process-global; no C++ HYLE ownership or private layout may cross the POD table.",
+    "lifetime": "Both Air drivers still import and call dlclose in Image destruction. Windows R15 process-lifetime recommendation is not applied or signed here. Successful public user-state retirement and eventual dlclose/process exit must be observed separately; a hang or nonzero diagnostic exit stays FAIL even if preceding mathematics passes."
+  },
+  "text_deltas_bytes": {
+    "apple": 23452,
+    "vulkan": 35468
+  },
+  "inspection_commands": {
+    "machine": "ssh kiro@172.22.10.198 (Mac16,12 Apple M4, actual build identity in bound receipts)",
+    "images": [
+      "sha256 actual image and __TEXT,__text Mach-O section",
+      "nm -gU <image>",
+      "nm -m <image>",
+      "dyld_info -imports <image>",
+      "dyld_info -fixups <image>",
+      "xcrun llvm-objdump --disassemble --start-address=<actual-map-VA> --stop-address=<VA+up-to64B> <image>"
+    ],
+    "archives": "sha256 six actual installed SDK archives per group; paths and expected-manifest comparisons above",
+    "retained_limit": "Full nm/import/fixup streams were inspected in memory, with exact stdout SHA256 and reproducible argv above. Existing original result/nm/otool/map logs are bound. No new instrument framework or runtime fixture was added.",
+    "help_probe": "dyld_info -help returned unknown option. Subsequent dyld_info without arguments returned actual usage; supported -imports and -fixups both exited0 for all eight images. nm -h, otool -h usage and xcrun llvm-objdump --help were read statically."
+  },
+  "next_allowed": "Only original verify-only diagnostics, both load/allocation orders, actual loaded-module/native-asset path+hash checks, complete pre/post oracle, output/lease completion and user-state retirement, then actual unload/normal process exit. No A/A or formal sampling permitted by this review alone.",
+  "pending": [
+    "Actual dyld module/path/hash and native runtime asset selection",
+    "Runtime opaque-state isolation/registry and complete four-shape mathematics",
+    "Actual native completion, output observation and state retirement",
+    "Air dlclose and normal process exit",
+    "Original workload-matched A/A, controls and formal P1"
+  ],
+  "product_must_found": [],
+  "additional_static_metadata_must": [],
+  "stop": "Finite R16 complete; no new source audit, functional scope or performance claim."
+}

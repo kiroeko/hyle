@@ -427,3 +427,37 @@ WCT观察主线程等待另一线程，cycle=false；原baseline/candidate相同
 尚无Bench::compare、workload A/A或正式P1样本。剩余Windows Vulkan产物、Air实际绑定/运行、
 原A1–A5与同拓扑A/A/仪器控制、四组profile正式P1和终审/LOC依旧待证。
 G09保持固定CANDIDATE，G07–G10 goal仍为已接受2/4，G10未开始；已通过15项交付不重跑。
+
+### 四组实际运行补齐与首批A/A，2026-10-17
+
+[四组运行及CUDA A/A原件](../../../../evidence/architecture/inference-g09-p1-native-preflight/receipt.json)
+现补齐Windows Vulkan baseline/candidate两套消费者，全部八套、十六份private facade均已真实构造。
+独立R16签Air八映像的内部HYLE符号/无外部weak或fixup绑定、TWOLEVEL、关键archives、有限反汇编
+与text；R17签Windows Vulkan四PE、精确77项原ATen导出及BigObj/directive、private binding与text。
+这些静态审查分别只准入后续diagnostic，没有代签A/A/P1。
+
+Air Apple/Vulkan和Windows Vulkan均实际通过两种加载/分配顺序：四场景前后完整4M oracle、
+每进程八次State销毁、原显式dlclose/FreeLibrary返回及正常进程退出，实际模块路径/hash保留。
+结合前一检查点Windows CUDA的对称process-exit映像寿命，四组native profile的基本运行检查已齐。
+Windows Vulkan首个运行实际成功，随后helper错误期待`nvvulkan.dll`而FAIL；仅纠正为实际
+`vulkan-1.dll`并复测本diagnostic，原失败及费用保留，未改任何compiled artifact或产品。
+
+原hyle-perf只启动无参数可执行，因此新增的private argv封装仅向原main传四个既有facade路径，
+复制原nanobench/perf_process/common-control源码，未改公共工具或热路径。原Windows CPU C-ABI
+program和Air `mlx.metallib`按原查找合同放到消费者旁；相同两侧native文件身份已有冻结。
+Windows使用原`native-runtime-pair`：两个真实physical cores与caller singleton，原Scheduler2
+仍由runtime管理，不宣称worker singleton/count资格；Air按原profile使用UI QoS，不制造硬pin。
+极短code-padding/link-order风险对固定bulk4M数学/搬运旅程不适用的理由，已在任何A/A数据前固定；
+地址/owner风险仍由完整allocation/load order覆盖。没有为适配仪器改产品API或Sched默认行为。
+
+Windows CUDA具名probe binary的完整workload A/A现已运行通过：baseline/candidate各四种
+execution×allocation/load order，共八进程×四负载，原5%factor medians和10%gross-stop全部PASS；
+各进程速度比范围0.968899–1.030347。原12 paired rounds/exact iteration1及4M输入不变。
+原caller/parent-mask/priority canary通过；私有源冻结为Git `c6e7de71`，是benchmark source身份，
+不替代产品candidate `3524413272`/实现`e09f30925`。正式新build不自动继承probe binary的A/A资格。
+
+本检查点新case累计85.030秒，先前387.998秒及原失败保持；不含源码/编排/审查与Git准备。
+两机原baseline `9e2f25c4` 的只读用途稀疏worktree已准备，未触发产品构建。
+尚无新旧版本A/B正式样本：原仪器有限contract/provenance、完整dispatch/copy账、最终产物预检、
+其余实际A/A与common controls、四组5%/n15–31 P1和终审/LOC仍待证。产品仍固定CANDIDATE，
+goal已接受2/4、G10未开始；不重跑15项交付或追加产品FIX/缺口扫描。

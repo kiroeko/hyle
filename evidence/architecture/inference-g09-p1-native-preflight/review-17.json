@@ -1,0 +1,706 @@
+{
+  "schema": "hyle.bounded-independent-artifact-review.v1",
+  "review": "R17 Windows Vulkan PE static preflight",
+  "reviewed_at_utc": "2026-10-17T01:10:06.704Z",
+  "decision": "ALLOW_ORIGINAL_DRIVER_VERIFY_ONLY_AFTER_EXISTING_STAGED_RUNTIME_FREEZE_NOT_AA_OR_P1",
+  "scope": "Four actual Vulkan PE facades, original fixed R12 public consumer and stager, only static file/hash/PE/map/archive/finite-disassembly inspection. No DLL/driver execution, build, GPU, A/A or sampling. No source re-audit/product/benchmark/tool modification.",
+  "checks": {
+    "actual_four_hash_and_maps": true,
+    "exact_c_getter_plus_original77": true,
+    "no_private_hyle_or_cross_facade_imports": true,
+    "original_vulkan_object_and_directives": true,
+    "source_ledger_instrument": true,
+    "sdk_archives_headers": true,
+    "clone_text_equal": true,
+    "finite_disassembly": true,
+    "driver_metadata": true,
+    "no_linked_cuda_reaper": true
+  },
+  "artifact_evidence": {
+    "provenance": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-pe-vendor-provenance.json",
+      "sha256": "658819ca030b72e28d74ea0b5fdd29068b72667c6abd7697eca79a67d126cb96",
+      "bytes": 9139
+    },
+    "r13": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-pe-vendor-export-review-13.json",
+      "sha256": "3612325962ad2575e7a5b096a112624393edc72d59545f12c6bb58d0c7abf291",
+      "bytes": 19864
+    },
+    "exact_vendor_list_equal_r13": true,
+    "groups": [
+      {
+        "arm": "baseline",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-builds\\windows-vulkan-baseline\\result.json",
+          "sha256": "13b73afb68cf41695aeb8e6cb2c79bdf73eedb4097b8974ef5d6416670c9c242",
+          "bytes": 143333
+        },
+        "state": "TWO_PRIVATE_IMAGES_BUILT_EXPORT_IMPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+        "prefix": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated",
+        "source_snapshot": "6392342999d23338d93db3b8832d32f74579cf91",
+        "refs": {
+          "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+          "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+          "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158"
+        },
+        "elapsed_seconds": 21.469000000040978,
+        "identity": {
+          "host": "KIRO-WORKSTATIO",
+          "compiler": "14.50.35717",
+          "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+        },
+        "images": [
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-baseline\\bin\\g09_vulkan_baseline_1.dll",
+            "sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+            "bytes": 66030080,
+            "recorded_hash_match": true,
+            "exports": {
+              "exit": 0,
+              "count": 78,
+              "exact_getter_plus_77": true,
+              "recorded_match": true,
+              "unexpected": [],
+              "hyle_private": [],
+              "forwarders": false,
+              "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4"
+            },
+            "imports": {
+              "exit": 0,
+              "dlls": [
+                "torch_cpu.dll",
+                "c10.dll",
+                "api-ms-win-core-synch-l1-2-0.dll",
+                "KERNEL32.dll",
+                "ADVAPI32.dll",
+                "MSVCP140.dll",
+                "MSVCP140_ATOMIC_WAIT.dll",
+                "VCRUNTIME140.dll",
+                "VCRUNTIME140_1.dll",
+                "api-ms-win-crt-heap-l1-1-0.dll",
+                "api-ms-win-crt-runtime-l1-1-0.dll",
+                "api-ms-win-crt-stdio-l1-1-0.dll",
+                "api-ms-win-crt-string-l1-1-0.dll",
+                "api-ms-win-crt-math-l1-1-0.dll",
+                "api-ms-win-crt-convert-l1-1-0.dll",
+                "api-ms-win-crt-time-l1-1-0.dll",
+                "api-ms-win-crt-environment-l1-1-0.dll",
+                "api-ms-win-crt-filesystem-l1-1-0.dll",
+                "WS2_32.dll"
+              ],
+              "recorded_match": true,
+              "hyle_private": [],
+              "hyle_or_facade_dlls": []
+            },
+            "map": {
+              "path": "C:\\h7\\g09-p1\\vulkan-baseline\\g09_vulkan_baseline_1.map",
+              "sha256": "d51a891a6dcbb04264df7c7dd44845091c56d9d0e22425e1002e1953afa1c359",
+              "bytes": 29586467,
+              "recorded_match": true
+            },
+            "map_owners": {
+              "matched_exports": 78,
+              "all77_original_aten": true,
+              "getter": "facade.cc.obj",
+              "cuda_reaper_any_entry": false
+            },
+            "text": {
+              "virtual_bytes": 20685315,
+              "raw_bytes": 20685824,
+              "rva": "0x1000",
+              "sha256": "8c88e8767109995a5576f2db33a278cf6c42956447498462a56bfeb08b2daf00"
+            },
+            "bound_import": [
+              0,
+              0
+            ],
+            "delay_import": [
+              0,
+              0
+            ],
+            "finite_disassembly": [
+              {
+                "symbol": "hyle_g09_facade_v1",
+                "va": "0x0000000180009300",
+                "owner": "facade.cc.obj",
+                "end": "0x180009310",
+                "exit": 0,
+                "nonempty": true,
+                "instructions": [
+                  "0000000180009300: 48 8D 05 B9 43 3B  lea         rax,[00000001813BD6C0h]",
+                  "0000000180009307: C3                 ret",
+                  "0000000180009308: CC                 int         3",
+                  "0000000180009309: CC                 int         3",
+                  "000000018000930A: CC                 int         3",
+                  "000000018000930B: CC                 int         3",
+                  "000000018000930C: CC                 int         3",
+                  "000000018000930D: CC                 int         3",
+                  "000000018000930E: CC                 int         3",
+                  "000000018000930F: CC                 int         3",
+                  "0000000180009310: 4C"
+                ],
+                "stdout_sha256": "abf2baa64c95f7f1597d0b1fc3f25dd296a0c61e67a4a2092f52c020e5fd2afe"
+              },
+              {
+                "symbol": "?drive_graph@?A0x882dc95f@cpu_vulkan@graph@hyle@@YA?AVStatus@4@AEAURunState@detail@234@AEA_N@Z",
+                "va": "0x0000000180013060",
+                "owner": "hyle_graph_route_cpu_vulkan:invocation.cc.obj",
+                "end": "0x1800130c0",
+                "exit": 0,
+                "nonempty": true,
+                "instructions": [
+                  "0000000180013060: 48 8B C4           mov         rax,rsp",
+                  "0000000180013063: 48 89 58 20        mov         qword ptr [rax+20h],rbx",
+                  "0000000180013067: 55                 push        rbp",
+                  "0000000180013068: 56                 push        rsi",
+                  "0000000180013069: 57                 push        rdi",
+                  "000000018001306A: 41 54              push        r12",
+                  "000000018001306C: 41 55              push        r13",
+                  "000000018001306E: 41 56              push        r14",
+                  "0000000180013070: 41 57              push        r15",
+                  "0000000180013072: 48 8D A8 C8 F9 FF  lea         rbp,[rax+FFFFFFFFFFFFF9C8h]",
+                  "0000000180013079: 48 81 EC 00 07 00  sub         rsp,700h",
+                  "0000000180013080: 0F 29 70 B8        movaps      xmmword ptr [rax-48h],xmm6",
+                  "0000000180013084: 0F 29 78 A8        movaps      xmmword ptr [rax-58h],xmm7",
+                  "0000000180013088: 44 0F 29 40 98     movaps      xmmword ptr [rax-68h],xmm8"
+                ],
+                "stdout_sha256": "7dd01ea5983915c51653f7598c901affc24125de11fb08a795efc92ceee24281"
+              }
+            ]
+          },
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-baseline\\bin\\g09_vulkan_baseline_2.dll",
+            "sha256": "9e3fbd6d2a28050e3711e43d5140e5e6dad37af00ed2dcb5856768f81efb75b4",
+            "bytes": 66030080,
+            "recorded_hash_match": true,
+            "exports": {
+              "exit": 0,
+              "count": 78,
+              "exact_getter_plus_77": true,
+              "recorded_match": true,
+              "unexpected": [],
+              "hyle_private": [],
+              "forwarders": false,
+              "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4"
+            },
+            "imports": {
+              "exit": 0,
+              "dlls": [
+                "torch_cpu.dll",
+                "c10.dll",
+                "api-ms-win-core-synch-l1-2-0.dll",
+                "KERNEL32.dll",
+                "ADVAPI32.dll",
+                "MSVCP140.dll",
+                "MSVCP140_ATOMIC_WAIT.dll",
+                "VCRUNTIME140.dll",
+                "VCRUNTIME140_1.dll",
+                "api-ms-win-crt-heap-l1-1-0.dll",
+                "api-ms-win-crt-runtime-l1-1-0.dll",
+                "api-ms-win-crt-stdio-l1-1-0.dll",
+                "api-ms-win-crt-string-l1-1-0.dll",
+                "api-ms-win-crt-math-l1-1-0.dll",
+                "api-ms-win-crt-convert-l1-1-0.dll",
+                "api-ms-win-crt-time-l1-1-0.dll",
+                "api-ms-win-crt-environment-l1-1-0.dll",
+                "api-ms-win-crt-filesystem-l1-1-0.dll",
+                "WS2_32.dll"
+              ],
+              "recorded_match": true,
+              "hyle_private": [],
+              "hyle_or_facade_dlls": []
+            },
+            "map": {
+              "path": "C:\\h7\\g09-p1\\vulkan-baseline\\g09_vulkan_baseline_2.map",
+              "sha256": "b3d5049f72cf9fcd67bdf50d5a149860f7a0263c5e08eed0c085199ebc5582dd",
+              "bytes": 29586467,
+              "recorded_match": true
+            },
+            "map_owners": {
+              "matched_exports": 78,
+              "all77_original_aten": true,
+              "getter": "facade.cc.obj",
+              "cuda_reaper_any_entry": false
+            },
+            "text": {
+              "virtual_bytes": 20685315,
+              "raw_bytes": 20685824,
+              "rva": "0x1000",
+              "sha256": "8c88e8767109995a5576f2db33a278cf6c42956447498462a56bfeb08b2daf00"
+            },
+            "bound_import": [
+              0,
+              0
+            ],
+            "delay_import": [
+              0,
+              0
+            ]
+          }
+        ],
+        "archives": [
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph.lib",
+            "sha256": "546c8d0410c476cbf438683ec1251bac2620797ca0448d1f0ff6f88435cd25f8",
+            "bytes": 5951368,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_route_cpu_vulkan.lib",
+            "sha256": "3cf6d0fa1c3b6dddde2f67a496ba8fb1f30fb10d3e3ed33b92ec6357ac28cd31",
+            "bytes": 3378160,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_route_vulkan.lib",
+            "sha256": "c26d98f3b0828b7227d558f78c217fefc1487cf8babfbd4b63a097c65dc2b1b2",
+            "bytes": 889368,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\hyle_sched.lib",
+            "sha256": "6f458568a76530dc118ed666dcaec30eaa5e7afc7eb8cf8c11cf8203ea5beaf5",
+            "bytes": 1643718,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_native.lib",
+            "sha256": "63d8cdb66b4fc8cc0c929f8c7d64550e3e886d931f69629ace336f5e190e32b3",
+            "bytes": 5027482,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_route_vulkan.lib",
+            "sha256": "82eed5f04d785f89f3efc75582008c0543cf026074be2bce318a18574ec3f717",
+            "bytes": 14754558,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_ggml_vulkan.lib",
+            "sha256": "564088a47f13266a91b6bdc3662317517426d473279d77c33203f4bd160da9b4",
+            "bytes": 1374074,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\relocated\\lib\\ggml-vulkan.lib",
+            "sha256": "519ec0a79ac67b92c5c830656129d7ad7731c40527aa0aa4a1cba21fb6cdaeda",
+            "bytes": 52581296,
+            "manifest_match": true
+          }
+        ],
+        "clone_text_equal": true
+      },
+      {
+        "arm": "candidate",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-builds\\windows-vulkan-candidate\\result.json",
+          "sha256": "9b037a87082ef43850f99b348bc67b12665e64b0fa05ca8fed3140fc18c651a3",
+          "bytes": 143591
+        },
+        "state": "TWO_PRIVATE_IMAGES_BUILT_EXPORT_IMPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+        "prefix": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated",
+        "source_snapshot": "6392342999d23338d93db3b8832d32f74579cf91",
+        "refs": {
+          "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+          "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+          "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158"
+        },
+        "elapsed_seconds": 21.10899999999674,
+        "identity": {
+          "host": "KIRO-WORKSTATIO",
+          "compiler": "14.50.35717",
+          "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+        },
+        "images": [
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-candidate\\bin\\g09_vulkan_candidate_1.dll",
+            "sha256": "fd8fb031a0c801e934743f9e99e9e8e60f55c77487fb7b6f03ac4b2adef3e1f1",
+            "bytes": 66067456,
+            "recorded_hash_match": true,
+            "exports": {
+              "exit": 0,
+              "count": 78,
+              "exact_getter_plus_77": true,
+              "recorded_match": true,
+              "unexpected": [],
+              "hyle_private": [],
+              "forwarders": false,
+              "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4"
+            },
+            "imports": {
+              "exit": 0,
+              "dlls": [
+                "torch_cpu.dll",
+                "c10.dll",
+                "api-ms-win-core-synch-l1-2-0.dll",
+                "KERNEL32.dll",
+                "ADVAPI32.dll",
+                "MSVCP140.dll",
+                "MSVCP140_ATOMIC_WAIT.dll",
+                "VCRUNTIME140.dll",
+                "VCRUNTIME140_1.dll",
+                "api-ms-win-crt-heap-l1-1-0.dll",
+                "api-ms-win-crt-runtime-l1-1-0.dll",
+                "api-ms-win-crt-stdio-l1-1-0.dll",
+                "api-ms-win-crt-string-l1-1-0.dll",
+                "api-ms-win-crt-math-l1-1-0.dll",
+                "api-ms-win-crt-convert-l1-1-0.dll",
+                "api-ms-win-crt-time-l1-1-0.dll",
+                "api-ms-win-crt-environment-l1-1-0.dll",
+                "api-ms-win-crt-filesystem-l1-1-0.dll",
+                "WS2_32.dll"
+              ],
+              "recorded_match": true,
+              "hyle_private": [],
+              "hyle_or_facade_dlls": []
+            },
+            "map": {
+              "path": "C:\\h7\\g09-p1\\vulkan-candidate\\g09_vulkan_candidate_1.map",
+              "sha256": "72d04a5c9a61f5c0c70c05cd85a39f4d4161c6737a4d420ef40a9f198d7012d7",
+              "bytes": 29664410,
+              "recorded_match": true
+            },
+            "map_owners": {
+              "matched_exports": 78,
+              "all77_original_aten": true,
+              "getter": "facade.cc.obj",
+              "cuda_reaper_any_entry": false
+            },
+            "text": {
+              "virtual_bytes": 20718947,
+              "raw_bytes": 20719104,
+              "rva": "0x1000",
+              "sha256": "eb55caaffe798123c7ab35872a8a1609905761afdf1b94fa4b24607ff3ea7766"
+            },
+            "bound_import": [
+              0,
+              0
+            ],
+            "delay_import": [
+              0,
+              0
+            ],
+            "finite_disassembly": [
+              {
+                "symbol": "hyle_g09_facade_v1",
+                "va": "0x0000000180009300",
+                "owner": "facade.cc.obj",
+                "end": "0x180009310",
+                "exit": 0,
+                "nonempty": true,
+                "instructions": [
+                  "0000000180009300: 48 8D 05 B9 C3 3B  lea         rax,[00000001813C56C0h]",
+                  "0000000180009307: C3                 ret",
+                  "0000000180009308: CC                 int         3",
+                  "0000000180009309: CC                 int         3",
+                  "000000018000930A: CC                 int         3",
+                  "000000018000930B: CC                 int         3",
+                  "000000018000930C: CC                 int         3",
+                  "000000018000930D: CC                 int         3",
+                  "000000018000930E: CC                 int         3",
+                  "000000018000930F: CC                 int         3",
+                  "0000000180009310: 4C"
+                ],
+                "stdout_sha256": "65ecfdc44799f4d35315d05400ad462f983f0896866a113a012ef8132af41a48"
+              },
+              {
+                "symbol": "?advance_native_stage@?A0x882dc95f@cpu_vulkan@graph@hyle@@YA?AV?$Result@_N@4@AEAURunState@detail@234@_KAEA_N@Z",
+                "va": "0x0000000180010f10",
+                "owner": "hyle_graph_route_cpu_vulkan:invocation.cc.obj",
+                "end": "0x180010f70",
+                "exit": 0,
+                "nonempty": true,
+                "instructions": [
+                  "0000000180010F10: 48 8B C4           mov         rax,rsp",
+                  "0000000180010F13: 48 89 58 08        mov         qword ptr [rax+8],rbx",
+                  "0000000180010F17: 55                 push        rbp",
+                  "0000000180010F18: 56                 push        rsi",
+                  "0000000180010F19: 57                 push        rdi",
+                  "0000000180010F1A: 41 54              push        r12",
+                  "0000000180010F1C: 41 55              push        r13",
+                  "0000000180010F1E: 41 56              push        r14",
+                  "0000000180010F20: 41 57              push        r15",
+                  "0000000180010F22: 48 8D A8 08 FD FF  lea         rbp,[rax+FFFFFFFFFFFFFD08h]",
+                  "0000000180010F29: 48 81 EC C0 03 00  sub         rsp,3C0h",
+                  "0000000180010F30: 0F 29 70 B8        movaps      xmmword ptr [rax-48h],xmm6",
+                  "0000000180010F34: 0F 29 78 A8        movaps      xmmword ptr [rax-58h],xmm7",
+                  "0000000180010F38: 44 0F 29 40 98     movaps      xmmword ptr [rax-68h],xmm8"
+                ],
+                "stdout_sha256": "4c935ef8f12a6a4c3947af398dfc0298a67c054a937669df4768f49bf700e9ca"
+              },
+              {
+                "symbol": "?drive_graph@?A0x882dc95f@cpu_vulkan@graph@hyle@@YA?AVStatus@4@AEAURunState@detail@234@AEA_N@Z",
+                "va": "0x00000001800160e0",
+                "owner": "hyle_graph_route_cpu_vulkan:invocation.cc.obj",
+                "end": "0x180016140",
+                "exit": 0,
+                "nonempty": true,
+                "instructions": [
+                  "00000001800160E0: 48 89 5C 24 08     mov         qword ptr [rsp+8],rbx",
+                  "00000001800160E5: 55                 push        rbp",
+                  "00000001800160E6: 56                 push        rsi",
+                  "00000001800160E7: 57                 push        rdi",
+                  "00000001800160E8: 41 54              push        r12",
+                  "00000001800160EA: 41 55              push        r13",
+                  "00000001800160EC: 41 56              push        r14",
+                  "00000001800160EE: 41 57              push        r15",
+                  "00000001800160F0: 48 8D 6C 24 D9     lea         rbp,[rsp-27h]",
+                  "00000001800160F5: 48 81 EC C0 00 00  sub         rsp,0C0h",
+                  "00000001800160FC: 0F 29 B4 24 B0 00  movaps      xmmword ptr [rsp+00000000000000B0h],xmm6",
+                  "0000000180016104: 4D 8B F8           mov         r15,r8",
+                  "0000000180016107: 48 8B DA           mov         rbx,rdx",
+                  "000000018001610A: 4C 8B E9           mov         r13,rcx"
+                ],
+                "stdout_sha256": "c74931fe004cacc445c90a5a8edf39318098e40a6b87f45a015bad1a84997212"
+              }
+            ]
+          },
+          {
+            "path": "C:\\h7\\g09-p1\\vulkan-candidate\\bin\\g09_vulkan_candidate_2.dll",
+            "sha256": "2995b8ca2f2a4a80030099c861ae6884956d862e1418173585b95f5d5ab48046",
+            "bytes": 66067456,
+            "recorded_hash_match": true,
+            "exports": {
+              "exit": 0,
+              "count": 78,
+              "exact_getter_plus_77": true,
+              "recorded_match": true,
+              "unexpected": [],
+              "hyle_private": [],
+              "forwarders": false,
+              "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4"
+            },
+            "imports": {
+              "exit": 0,
+              "dlls": [
+                "torch_cpu.dll",
+                "c10.dll",
+                "api-ms-win-core-synch-l1-2-0.dll",
+                "KERNEL32.dll",
+                "ADVAPI32.dll",
+                "MSVCP140.dll",
+                "MSVCP140_ATOMIC_WAIT.dll",
+                "VCRUNTIME140.dll",
+                "VCRUNTIME140_1.dll",
+                "api-ms-win-crt-heap-l1-1-0.dll",
+                "api-ms-win-crt-runtime-l1-1-0.dll",
+                "api-ms-win-crt-stdio-l1-1-0.dll",
+                "api-ms-win-crt-string-l1-1-0.dll",
+                "api-ms-win-crt-math-l1-1-0.dll",
+                "api-ms-win-crt-convert-l1-1-0.dll",
+                "api-ms-win-crt-time-l1-1-0.dll",
+                "api-ms-win-crt-environment-l1-1-0.dll",
+                "api-ms-win-crt-filesystem-l1-1-0.dll",
+                "WS2_32.dll"
+              ],
+              "recorded_match": true,
+              "hyle_private": [],
+              "hyle_or_facade_dlls": []
+            },
+            "map": {
+              "path": "C:\\h7\\g09-p1\\vulkan-candidate\\g09_vulkan_candidate_2.map",
+              "sha256": "3fa2dfa8f7695b20368621fda77c2bbc87de6d9152056127f8aed5b3b18bda9e",
+              "bytes": 29664411,
+              "recorded_match": true
+            },
+            "map_owners": {
+              "matched_exports": 78,
+              "all77_original_aten": true,
+              "getter": "facade.cc.obj",
+              "cuda_reaper_any_entry": false
+            },
+            "text": {
+              "virtual_bytes": 20718947,
+              "raw_bytes": 20719104,
+              "rva": "0x1000",
+              "sha256": "eb55caaffe798123c7ab35872a8a1609905761afdf1b94fa4b24607ff3ea7766"
+            },
+            "bound_import": [
+              0,
+              0
+            ],
+            "delay_import": [
+              0,
+              0
+            ]
+          }
+        ],
+        "archives": [
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph.lib",
+            "sha256": "07468b2d7151a61f56fed8ee375b42116699f82a53bf53ac6db782572d4c31ed",
+            "bytes": 5975326,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_route_cpu_vulkan.lib",
+            "sha256": "eef925644f515a224823d0a22a2d6b6462517dc531b488ede31076ed51ef6434",
+            "bytes": 3891598,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_route_vulkan.lib",
+            "sha256": "13c982dfbdbb165a9a61eb690d2245f205d37d97bed6248be1e101a0ef03f5a1",
+            "bytes": 889368,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_sched.lib",
+            "sha256": "6f458568a76530dc118ed666dcaec30eaa5e7afc7eb8cf8c11cf8203ea5beaf5",
+            "bytes": 1643718,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_native.lib",
+            "sha256": "63d8cdb66b4fc8cc0c929f8c7d64550e3e886d931f69629ace336f5e190e32b3",
+            "bytes": 5027482,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_route_vulkan.lib",
+            "sha256": "82eed5f04d785f89f3efc75582008c0543cf026074be2bce318a18574ec3f717",
+            "bytes": 14754558,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_ggml_vulkan.lib",
+            "sha256": "564088a47f13266a91b6bdc3662317517426d473279d77c33203f4bd160da9b4",
+            "bytes": 1374074,
+            "manifest_match": true
+          },
+          {
+            "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\ggml-vulkan.lib",
+            "sha256": "519ec0a79ac67b92c5c830656129d7ad7731c40527aa0aa4a1cba21fb6cdaeda",
+            "bytes": 52581296,
+            "manifest_match": true
+          }
+        ],
+        "driver": {
+          "path": "C:\\h7\\g09-p1\\vulkan-candidate\\bin\\g09_pipeline_driver.exe",
+          "sha256": "3249ed4e99e35493435594c6f3e039f0b7ee5b9abf2e4ac64e273cb567d72ee3",
+          "bytes": 133120,
+          "recorded_match": true,
+          "imports_exit": 0,
+          "import_dlls": [
+            "KERNEL32.dll",
+            "MSVCP140.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-filesystem-l1-1-0.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-locale-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll"
+          ],
+          "hyle_vendor_imports": [],
+          "FreeLibrary_import": true
+        },
+        "clone_text_equal": true
+      }
+    ],
+    "source": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\facade_api.h",
+        "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+        "bytes": 905,
+        "both_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\facade.cc",
+        "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+        "bytes": 13430,
+        "both_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\driver.cc",
+        "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+        "bytes": 11337,
+        "both_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\CMakeLists.txt",
+        "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+        "bytes": 3208,
+        "both_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\runtime_probe.cc",
+        "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+        "bytes": 100,
+        "both_match": true
+      }
+    ],
+    "instruments": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\bench\\nanobench_impl.cc",
+        "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+        "bytes": 271,
+        "both_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\nanobench\\nanobench.h",
+        "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+        "bytes": 194934,
+        "both_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\bench\\common\\perf_process.h",
+        "sha256": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+        "bytes": 3323,
+        "both_match": true
+      }
+    ],
+    "ledger": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\phase-ledger.json",
+      "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+      "bytes": 6639,
+      "both_match": true
+    },
+    "header_count": 321,
+    "same_header_manifests": true,
+    "actual_original_object": {
+      "format": "COFF BigObj",
+      "member": "src\\compute_provider_native\\CMakeFiles\\hyle_compute_provider_native.dir\\aten_cpu_provider.cc.obj",
+      "sha256": "5df8b396332a682871a787b1665e9a3aba8ea683a7f0bc37dec8bafa642e2231",
+      "expected_match": true,
+      "directive_sha256": "f9da4eb02b2225d8da66c024c81f4ad9a900474dfab86bf62b1cfa42c00e61fb",
+      "directive_envelope_match": true,
+      "directive_r13_match": true,
+      "directive_exact_77": true,
+      "provenance_limit": "Actual baseline member independently extracted. Actual old/new whole provider archives independently rehashed identical, proving candidate member identity. Vulkan object differs from CUDA object; no cross-route object substitution."
+    },
+    "runtime_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-vulkan-runtime-preflight\\freeze.json",
+      "present": false,
+      "status": "parent preparing; actual loaded module selection not observed"
+    }
+  },
+  "interpretation": {
+    "vendor_exception": "Exactly the original R13 77-name set plus the sole C getter appears in each actual export table. Every vendor function/data/type export maps to unchanged original aten_cpu_provider.cc.obj. No namespace wildcard or count-only allowance was used.",
+    "original_object": "Vulkan old/new provider archive SHA63d8cdb66b4fc8cc0c929f8c7d64550e3e886d931f69629ace336f5e190e32b3 is identical. Independently extracted Vulkan BigObj SHA5df8b396332a682871a787b1665e9a3aba8ea683a7f0bc37dec8bafa642e2231 differs from CUDA; its original .drectve SHA f9da4eb02b2225d8da66c024c81f4ad9a900474dfab86bf62b1cfa42c00e61fb and exact77 export set match R13. No cross-route object reuse was inferred.",
+    "private_abi": "No HYLE private function/data/RTTI export/import, opposite facade dependency, export forwarding or bound/delay import metadata was found. R13 PE named-DLL import reasoning applies: extra named vendor exports do not create flat ELF symbol preemption between private HYLE layouts. The opaque C table continues to own allocation, destruction and exceptions inside the creator image.",
+    "text": "Same-arm clones have exactly equal .text raw bytes. Candidate .text virtual bytes exceed baseline by 33632. Finite actual getter and original Graph advancement code are bound by VA/instructions/map owners. Different baseline/candidate text is expected for G09 and is not a fairness failure; inspection is not proof of math or performance.",
+    "sdk_source": "Eight relevant installed archives per arm were independently rehashed against actual build manifests. Both arms have identical 321-file public include manifests, the same five fixed consumer sources, phase ledger and three original instrument inputs. R12 fix uses the unexecuted private EXECUTABLE runtime probe for legal hyle_stage_runtime; driver remains free of HYLE/vendor product linkage. Baseline9e2 SDK source equivalence and current candidate delivery qualification are reused from existing bounded audits, not re-signed as a new full SDK test.",
+    "lifecycle": "Original Windows Vulkan driver still imports FreeLibrary. No CUDA CompletionReaper map entry exists. R15 CUDA-specific explicit-unload HANG neither predicts nor qualifies Vulkan unload. Actual Vulkan load/order mathematics, user-state retirement, final unload and process exit all remain pending.",
+    "runtime": "No runtime path selection has been observed in this review. Original vendor/CPU-program/Vulkan-loader/driver/registry identities must be captured by the already planned both-order verify-only diagnostic. Staged runtime freeze was not yet present at the read snapshot; parent is preparing that original gate. No new instrument or broader evidence requirement is introduced."
+  },
+  "retained_limits": {
+    "construction_results": "Existing build terminal remains initial metadata qualification, not final artifact/runtime/P1 PASS. Reported construction costs baseline21.469s and candidate21.109s retained in bound receipts.",
+    "reviewer_parser": "First read-only object parser assumed ordinary COFF and did not find .drectve. Corrected parsing recognizes the actual COFF BigObj header (section table starts56). No object mutation/rebuild or product failure occurred.",
+    "air": "Parent separately reports both-order Air Apple/Vulkan oracle/state/unload/process-exit PASS. Not independently adjudicated by this Windows artifact review and not substituted for Windows Vulkan runtime.",
+    "must": [],
+    "pending": [
+      "Existing staged runtime identity freeze",
+      "Both actual load/allocation-order loader/native-runtime path+hash and registry checks",
+      "Full four-shape public mathematics/output completion and State retirement",
+      "Actual original FreeLibrary and normal process exit",
+      "Original workload-matched A/A, controls and formal P1"
+    ]
+  },
+  "next_allowed": "After the already planned staged runtime freeze, run only the original both-order driver verify-only diagnostic. Preserve any FAIL/HANG and costs. This review does not authorize or qualify A/A/formal sampling.",
+  "stop": "Finite R17 complete. No product change, new capability or further source scan."
+}
