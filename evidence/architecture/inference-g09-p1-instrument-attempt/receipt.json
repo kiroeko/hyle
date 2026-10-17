@@ -1,0 +1,1978 @@
+{
+  "schema": "hyle.g09.p1-instrument-attempt/v1",
+  "state": "FOUR_FIXED_NATIVE_CONTRACTS_AND_REVIEWED_PROBES_WITH_RECORDED_FORMAL_ATTEMPTS",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "private_source_revision": "35ec95dbfb7012c746c4a4114c5b3bcffaf3d12e",
+  "scope": "Four fixed original hyle-perf contracts/provenance, actual reviewed wrapper/control probes; original SDKs and16 facade images unchanged. No product/native/math/public performance-tool changes. Fresh final executable must match reviewed text and frozen facade path root/assets, then its own complete same-topology workload A/A before original n15-to31 A/B and common controls.",
+  "independent_reviews": {
+    "18": {
+      "path": "18.json",
+      "sha256": "62c044fb6081434171fd3941fd259a8550d89b27ecdad555c7e94b62cbf0feec"
+    },
+    "cuda-native-prefix": {
+      "path": "cuda-native-prefix.json",
+      "sha256": "b2b080c39cbd4eb7755eed37d4cffcc5a57457322c8aa3fc90fba0c3e14fdfc2"
+    }
+  },
+  "authorization_sha256": "b811021521fb276055b9482062b85772d6239fa4b189536b4b58579bba2fd4fd",
+  "contracts": [
+    {
+      "profile": "air-apple",
+      "sha256": "e296d112b1b1059b77acd114cc730e7bc0e4f7445424181906a9c333ad773294"
+    },
+    {
+      "profile": "air-vulkan",
+      "sha256": "0076d7bdc028c9afa52bc5eccf976a9e7c9bcccefb643c8f5a6e377c6e3a3cf9"
+    },
+    {
+      "profile": "windows-cuda",
+      "sha256": "024c2b768ee4774a2d9ae540af07ad9c5477e1be34d84909c02a5684b07d1424"
+    },
+    {
+      "profile": "windows-vulkan",
+      "sha256": "25a85764b3d91b69ddbd08a06503bc772b45a451733890424a2ed00e162280c0"
+    }
+  ],
+  "formal_attempts": [
+    {
+      "profile": "windows-cuda",
+      "run_result_sha256": "174dd823cfa1de926204f2078e61b04d5c2cf2c105fb1cd6399efeaa006550fb",
+      "elapsed_seconds": 522.1560000000172,
+      "exit_code": 0,
+      "manifests": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-cuda\\evidence\\manifest.json",
+          "sha256": "175335eaa9f32c6a5807aaff6dd693d89851224807c29531c12314bba4d6250e"
+        }
+      ],
+      "qualification": "QUALIFIED",
+      "validator_results": [
+        {
+          "details": {
+            "artifact_count": 5,
+            "kind": "artifact-identity"
+          },
+          "gate": "PASS",
+          "id": "artifact-identity"
+        },
+        {
+          "details": {
+            "architecture_matches_profile": true,
+            "compiler_id": "MSVC",
+            "compiler_matches_profile": true,
+            "compiler_version": "19.50.35728.0",
+            "configuration": "Release",
+            "configuration_observation": {
+              "available": [
+                "Release"
+              ],
+              "mechanism": "CMAKE_BUILD_TYPE",
+              "proven": true,
+              "value": "Release"
+            },
+            "expected_compiler_id": "MSVC",
+            "expected_compiler_version_prefix": "19.50",
+            "formal_toolchain": {
+              "mismatches": {},
+              "proven": false,
+              "reason": "machine runner profile has no pinned formal_toolchain",
+              "required": false
+            },
+            "fresh": true,
+            "generator_matches_profile": true,
+            "isa": "portable",
+            "kind": "build-contract",
+            "linkage": "static",
+            "lto": "off",
+            "toolchain": {
+              "cmake_compiler_record_sha256": "a77cb365ed187165573135bfafa1988828b17d71fd0b6206c55895a405fdb38f",
+              "compiler_frontend_variant": "MSVC",
+              "compiler_id": "MSVC",
+              "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+              "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+              "compiler_target": "unknown",
+              "compiler_version": "19.50.35728.0",
+              "formal_identity_complete": false,
+              "linker_id": "MSVC",
+              "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+              "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+              "linker_version": "14.50.35728.0",
+              "schema": "hyle.perf.toolchain-record/v1",
+              "sdk": "unknown",
+              "stdlib": "msvc-stl:14.50.35717",
+              "system_name": "Windows",
+              "system_processor": "AMD64",
+              "system_version": "10.0.26200"
+            },
+            "toolchain_attested": true
+          },
+          "gate": "PASS",
+          "id": "build-contract"
+        },
+        {
+          "details": {
+            "exit_code": 0,
+            "kind": "command",
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-cuda\\evidence\\validators\\pipeline-aa.log",
+            "log_sha256": "93ab1e0143082e6f3550813c18616658264bbf8e98579c86e9304a8ede3ed3f3"
+          },
+          "gate": "PASS",
+          "id": "pipeline-aa"
+        }
+      ],
+      "controls": [
+        {
+          "details": {
+            "kind": "aa",
+            "maximum_bias_percent": 5.0,
+            "orders": {
+              "candidate-first": {
+                "equivalence_band": [
+                  0.9523809523809523,
+                  1.05
+                ],
+                "estimate": {
+                  "confidence_interval": [
+                    0.9880736245435909,
+                    1.0058923846181715
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 0.9991109039105576,
+                  "sample_count": 15
+                },
+                "reason": "median-ci-inside-equivalence-band",
+                "verdict": "PARITY"
+              },
+              "peer-first": {
+                "equivalence_band": [
+                  0.9523809523809523,
+                  1.05
+                ],
+                "estimate": {
+                  "confidence_interval": [
+                    0.9881789627671621,
+                    1.004761438695566
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 0.9983360552563793,
+                  "sample_count": 15
+                },
+                "reason": "median-ci-inside-equivalence-band",
+                "verdict": "PARITY"
+              }
+            }
+          },
+          "gate": "PASS",
+          "id": "aa"
+        },
+        {
+          "details": {
+            "accepted_median_band": [
+              1.025,
+              1.075
+            ],
+            "kind": "known-delta",
+            "monotonic_5_to_10": true,
+            "nominal_percent": 5.0,
+            "orders": {
+              "candidate-first": {
+                "confidence_interval": [
+                  1.042610466335068,
+                  1.0603663963687762
+                ],
+                "confidence_level": 0.99261474609375,
+                "estimator": "process-median",
+                "independent_clusters": 15,
+                "median_advantage_ratio": 1.051042363789137,
+                "sample_count": 15
+              },
+              "peer-first": {
+                "confidence_interval": [
+                  1.029339385882568,
+                  1.061879138200216
+                ],
+                "confidence_level": 0.99261474609375,
+                "estimator": "process-median",
+                "independent_clusters": 15,
+                "median_advantage_ratio": 1.0521498925776671,
+                "sample_count": 15
+              }
+            },
+            "relative_tolerance_percent": 50.0
+          },
+          "gate": "PASS",
+          "id": "delta5"
+        },
+        {
+          "details": {
+            "accepted_median_band": [
+              1.05,
+              1.15
+            ],
+            "kind": "known-delta",
+            "monotonic_5_to_10": true,
+            "nominal_percent": 10.0,
+            "orders": {
+              "candidate-first": {
+                "confidence_interval": [
+                  1.0891506551349341,
+                  1.1072771269112376
+                ],
+                "confidence_level": 0.99261474609375,
+                "estimator": "process-median",
+                "independent_clusters": 15,
+                "median_advantage_ratio": 1.098831252660882,
+                "sample_count": 15
+              },
+              "peer-first": {
+                "confidence_interval": [
+                  1.0927126092444117,
+                  1.1048535390948733
+                ],
+                "confidence_level": 0.99261474609375,
+                "estimator": "process-median",
+                "independent_clusters": 15,
+                "median_advantage_ratio": 1.0972761945809417,
+                "sample_count": 15
+              }
+            },
+            "relative_tolerance_percent": 50.0
+          },
+          "gate": "PASS",
+          "id": "delta10"
+        },
+        {
+          "details": {
+            "kind": "timer-floor",
+            "minimum_workload_floor_multiple": 20.0,
+            "workloads": [
+              {
+                "candidate_median_ns_per_op": 4893804.549057405,
+                "conservative_floor_ns_per_op": 0.20298495657701962,
+                "gate": "PASS",
+                "id": "independent-cpu-first",
+                "measurement_batch": 1,
+                "observed_multiple": 24109198.196667958,
+                "orders": {
+                  "candidate-first": {
+                    "candidate_median_ns_per_op": 0.20298495657701962,
+                    "peer_median_ns_per_op": 0.20115753299918093
+                  },
+                  "peer-first": {
+                    "candidate_median_ns_per_op": 0.20135192844886982,
+                    "peer_median_ns_per_op": 0.20156739111121488
+                  }
+                },
+                "peer_median_ns_per_op": 5595814.370305566
+              },
+              {
+                "candidate_median_ns_per_op": 4963641.574920787,
+                "conservative_floor_ns_per_op": 0.20298495657701962,
+                "gate": "PASS",
+                "id": "independent-gpu-first",
+                "measurement_batch": 1,
+                "observed_multiple": 24453248.450642727,
+                "orders": {
+                  "candidate-first": {
+                    "candidate_median_ns_per_op": 0.20298495657701962,
+                    "peer_median_ns_per_op": 0.20115753299918093
+                  },
+                  "peer-first": {
+                    "candidate_median_ns_per_op": 0.20135192844886982,
+                    "peer_median_ns_per_op": 0.20156739111121488
+                  }
+                },
+                "peer_median_ns_per_op": 5545389.844626989
+              },
+              {
+                "candidate_median_ns_per_op": 9769450.512121161,
+                "conservative_floor_ns_per_op": 0.20298495657701962,
+                "gate": "PASS",
+                "id": "two-microbatches",
+                "measurement_batch": 1,
+                "observed_multiple": 48128938.601488374,
+                "orders": {
+                  "candidate-first": {
+                    "candidate_median_ns_per_op": 0.20298495657701962,
+                    "peer_median_ns_per_op": 0.20115753299918093
+                  },
+                  "peer-first": {
+                    "candidate_median_ns_per_op": 0.20135192844886982,
+                    "peer_median_ns_per_op": 0.20156739111121488
+                  }
+                },
+                "peer_median_ns_per_op": 9808757.042774146
+              },
+              {
+                "candidate_median_ns_per_op": 7231442.320622945,
+                "conservative_floor_ns_per_op": 0.20298495657701962,
+                "gate": "PASS",
+                "id": "serial-holdout",
+                "measurement_batch": 1,
+                "observed_multiple": 35324092.234180816,
+                "orders": {
+                  "candidate-first": {
+                    "candidate_median_ns_per_op": 0.20298495657701962,
+                    "peer_median_ns_per_op": 0.20115753299918093
+                  },
+                  "peer-first": {
+                    "candidate_median_ns_per_op": 0.20135192844886982,
+                    "peer_median_ns_per_op": 0.20156739111121488
+                  }
+                },
+                "peer_median_ns_per_op": 7170259.328277828
+              }
+            ]
+          },
+          "gate": "PASS",
+          "id": "timer-floor"
+        }
+      ],
+      "summary": {
+        "contract_sha256": "910581df196b35f986c158ef92841ef67856dff657f1be2c22ef9b4f73aacd63",
+        "experiment_id": "inference-g09-windows-cuda-pipeline-p1-v1",
+        "qualification": "QUALIFIED",
+        "ratio_definition": "candidate/peer for higher-is-better; peer/candidate for lower-is-better; greater than one favors candidate",
+        "record": "hyle_perf_summary",
+        "schema": "hyle.perf.summary/v1",
+        "workloads": [
+          {
+            "combined_exact_verdict": "WIN",
+            "combined_noninferiority_gate": "PASS",
+            "comparability": "COMPARABLE",
+            "id": "independent-cpu-first",
+            "strata": [
+              {
+                "absolute": {
+                  "candidate_median": 206.3,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 178.48,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.1136081918620317,
+                    1.1620573355817874
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.1366176550377083,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-candidate-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 204.82,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 180.31,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.1283679328621907,
+                    1.158527837554489
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.14548061545249,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-candidate-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 205.24,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 179.7,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.1172563962983126,
+                    1.163662051426957
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.1408309135581862,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-peer-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 199.67,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 177.81,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.1018707576844544,
+                    1.1659712563745943
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.1408271591286077,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-peer-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              }
+            ]
+          },
+          {
+            "combined_exact_verdict": "WIN",
+            "combined_noninferiority_gate": "PASS",
+            "comparability": "COMPARABLE",
+            "id": "independent-gpu-first",
+            "strata": [
+              {
+                "absolute": {
+                  "candidate_median": 202.27,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 179.18,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.1101704481318433,
+                    1.1584774705299108
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.1183147907607163,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-candidate-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 200.36,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 179.07,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.0943898332699722,
+                    1.1445872607826335
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.1172105205718652,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-candidate-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 204.51,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 183.89,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.0705699259418269,
+                    1.136901891442962
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.1167775717246646,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-peer-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 199.03,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 180.26,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.0915899256629313,
+                    1.1512605042016808
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.1248158640226629,
+                  "sample_count": 15
+                },
+                "exact_reason": "candidate-faster-outside-margin",
+                "exact_verdict": "WIN",
+                "id": "primary-peer-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              }
+            ]
+          },
+          {
+            "combined_exact_verdict": "PARITY",
+            "combined_noninferiority_gate": "PASS",
+            "comparability": "COMPARABLE",
+            "id": "two-microbatches",
+            "strata": [
+              {
+                "absolute": {
+                  "candidate_median": 101.56,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 98.7,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    1.0073421439060206,
+                    1.0429679526433966
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.0239798488664986,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-candidate-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 102.53,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 102.12,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    0.9825616355983163,
+                    1.0200744222483353
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 0.9947059389739148,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-candidate-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 103.45,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 103.92,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    0.9827111237769546,
+                    0.997135217723453
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 0.994653937947494,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-peer-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 101.75,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 101.15,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    0.986045557151652,
+                    1.017993079584775
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.0,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-peer-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              }
+            ]
+          },
+          {
+            "combined_exact_verdict": "PARITY",
+            "combined_noninferiority_gate": "PASS",
+            "comparability": "COMPARABLE",
+            "id": "serial-holdout",
+            "strata": [
+              {
+                "absolute": {
+                  "candidate_median": 137.05,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 137.67,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    0.9794860401392282,
+                    1.0059817556452817
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 0.9915942643215371,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-candidate-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 137.24,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 139.0,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    0.9856356749803472,
+                    1.00930498890559
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 0.9964020853219766,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-candidate-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 139.25,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 140.3,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    0.9964828362408554,
+                    1.0139809218670355
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 1.0030594094628245,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-peer-first-candidate-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              },
+              {
+                "absolute": {
+                  "candidate_median": 138.31,
+                  "independent_runs": 15,
+                  "paired_observations": 15,
+                  "peer_median": 140.14,
+                  "unit": "op/s"
+                },
+                "estimate": {
+                  "confidence_interval": [
+                    0.9800070896845089,
+                    1.0058688806183795
+                  ],
+                  "confidence_level": 0.99261474609375,
+                  "estimator": "process-median",
+                  "independent_clusters": 15,
+                  "median_advantage_ratio": 0.9869416297987728,
+                  "sample_count": 15
+                },
+                "exact_reason": "median-ci-inside-equivalence-band",
+                "exact_verdict": "PARITY",
+                "id": "primary-peer-first-peer-allocation-first",
+                "noninferiority_gate": "PASS",
+                "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "profile": "windows-vulkan",
+      "run_result_sha256": "0e2cc6a25e506d43db2f9fa912fceba9abb02a4e2fd448c87e830c1956d690a0",
+      "elapsed_seconds": 32.65599999995902,
+      "exit_code": 1,
+      "manifests": [],
+      "aa_gate": "FAIL",
+      "aa_errors": [
+        "candidate/independent-cpu-first: factor median bias"
+      ],
+      "aa_exception": null
+    },
+    {
+      "profile": "air-apple",
+      "run_result_sha256": "bd403354d6934f4b1c4ac2fbfbbb8af8508082a77845da0bff240e688bba2324",
+      "elapsed_seconds": 14.723681749999999,
+      "exit_code": 1,
+      "manifests": [],
+      "aa_gate": "FAIL",
+      "aa_errors": [
+        "candidate/two-microbatches: gross instability"
+      ],
+      "aa_exception": null
+    },
+    {
+      "profile": "air-vulkan",
+      "run_result_sha256": "987f3326dceb2ae7ae9497dcf5f6872b0711d384ff843f633de230a583d04fa3",
+      "elapsed_seconds": 26.921213958,
+      "exit_code": 1,
+      "manifests": [],
+      "aa_gate": "FAIL",
+      "aa_errors": [
+        "baseline/independent-cpu-first: gross instability",
+        "baseline/independent-cpu-first: factor median bias",
+        "baseline/independent-gpu-first: gross instability",
+        "baseline/independent-gpu-first: factor median bias",
+        "candidate/independent-gpu-first: gross instability",
+        "candidate/independent-gpu-first: factor median bias",
+        "candidate/two-microbatches: gross instability",
+        "candidate/two-microbatches: factor median bias"
+      ],
+      "aa_exception": null
+    }
+  ],
+  "retained_native_trace": "CUDA CUPTI diagnostic FAIL_HANG at process exit after all full oracles/8State destroys.100kernel records/99 valid GPU intervals;164 valid16MiB copies,105buffers,drop0/errors0. Original child terminated by verified identity. Per-API/replay full attribution and1kernel timestamp UNKNOWN; not exit or timing PASS. Existing uninstrumented runtime verdicts retain their own identities.",
+  "prospective_controls": "Four execution/allocation-load strata. Original n15->31,5%,tailalpha.01; original commonAA/delta5/delta10/timerfloor. Code-padding/link-order applicability NOT_APPLICABLE was frozen before pilot AA, not selected from timing. Four4M F32 shapes and original12 paired rounds/exact1 unchanged.",
+  "costs": {
+    "new_recorded_adapter_build_seconds": 8.03681016598277,
+    "formal_attempt_seconds": 596.4568957079763,
+    "native_trace_seconds": 96.45199999999022,
+    "boundary": "Original setup/diagnostic failures and costs preserved. Previous387.998+85.030 seconds not reset; no total orchestration/review/wall-time claim."
+  },
+  "remaining": [
+    "Any unrun or unqualified selected native P1 profile, then independent G09 terminal review/seven gates/LOC",
+    "G10 remains unstarted; G07/G08 accepted2/4"
+  ],
+  "archive": {
+    "path": "raw.zip",
+    "sha256": "45ef86592e0d8b3823fad65c3ca93965966f22c9700683e852494eabe0388f58",
+    "bytes": 2556868,
+    "entries": [
+      {
+        "path": "private-source/artifacts-air-apple.json",
+        "sha256": "4416b532f28d6d2eca418b440c4924cdd14e09c06334eccea58298e5cbc22bf9",
+        "bytes": 5730
+      },
+      {
+        "path": "private-source/artifacts-air-vulkan.json",
+        "sha256": "8b0daa2d93c0576e695fa5742bde6a0b6dc58752fea37c2a316e92c2cf95fb40",
+        "bytes": 4827
+      },
+      {
+        "path": "private-source/artifacts-windows-cuda.json",
+        "sha256": "e5744d80ee0fdb922b09bfde0ecae40cd267456e0e40c122e6d65228652c6fba",
+        "bytes": 20108
+      },
+      {
+        "path": "private-source/artifacts-windows-vulkan.json",
+        "sha256": "14112253e3822566e7cfb7ffbb37773925d96036fb5d6083e5dc5fe8e3550400",
+        "bytes": 7869
+      },
+      {
+        "path": "private-source/CMakeLists.txt",
+        "sha256": "66cda4c10e246806c47a18465f4acbc9212fba2740e104c10d23f83d65a320a8",
+        "bytes": 3576
+      },
+      {
+        "path": "private-source/consumer-provenance.json",
+        "sha256": "3d58347db524d0afe8378f23c58c63b3b0d8d27c6d3849ca7997c1198a4812c6",
+        "bytes": 1230
+      },
+      {
+        "path": "private-source/contract-air-apple.json",
+        "sha256": "e296d112b1b1059b77acd114cc730e7bc0e4f7445424181906a9c333ad773294",
+        "bytes": 21945
+      },
+      {
+        "path": "private-source/contract-air-vulkan.json",
+        "sha256": "0076d7bdc028c9afa52bc5eccf976a9e7c9bcccefb643c8f5a6e377c6e3a3cf9",
+        "bytes": 21952
+      },
+      {
+        "path": "private-source/contract-windows-cuda.json",
+        "sha256": "024c2b768ee4774a2d9ae540af07ad9c5477e1be34d84909c02a5684b07d1424",
+        "bytes": 21947
+      },
+      {
+        "path": "private-source/contract-windows-vulkan.json",
+        "sha256": "25a85764b3d91b69ddbd08a06503bc772b45a451733890424a2ed00e162280c0",
+        "bytes": 21961
+      },
+      {
+        "path": "private-source/driver.cc",
+        "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+        "bytes": 11711
+      },
+      {
+        "path": "private-source/facade_api.h",
+        "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+        "bytes": 905
+      },
+      {
+        "path": "private-source/instrument/bench/common/perf_process.h",
+        "sha256": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+        "bytes": 3323
+      },
+      {
+        "path": "private-source/instrument/bench/integration/perf_control_bench.cc",
+        "sha256": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada",
+        "bytes": 5720
+      },
+      {
+        "path": "private-source/instrument/bench/nanobench_impl.cc",
+        "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+        "bytes": 271
+      },
+      {
+        "path": "private-source/instrument/third_party/nanobench/nanobench.h",
+        "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+        "bytes": 194934
+      },
+      {
+        "path": "private-source/retained/facade.cc",
+        "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+        "bytes": 13430
+      },
+      {
+        "path": "private-source/retained/phase-ledger.json",
+        "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+        "bytes": 6639
+      },
+      {
+        "path": "private-source/retained/prospective.json",
+        "sha256": "cd1313900da629a38d98cceda97604d19b3484b3bb8043ac1911fe5b5e0303a6",
+        "bytes": 10298
+      },
+      {
+        "path": "private-source/review-authorization.json",
+        "sha256": "b811021521fb276055b9482062b85772d6239fa4b189536b4b58579bba2fd4fd",
+        "bytes": 6248
+      },
+      {
+        "path": "private-source/source-ledger-before-launcher-policy.json",
+        "sha256": "dbf839900bc9b6986fdca2f557ce779b255562cf8b6fa90653415db85e92fc7a",
+        "bytes": 5065
+      },
+      {
+        "path": "private-source/source-ledger-initial.json",
+        "sha256": "1471c16e14ce353b7fbd7f8bf3ceba3e0beb1d1bf15cb322a3f12d0f4820989e",
+        "bytes": 4766
+      },
+      {
+        "path": "private-source/source-ledger.json",
+        "sha256": "51c9b6cf898a167d9252a9b77ebedbd7dfbb49af33ccd7c11f70d301a32a0eda",
+        "bytes": 5638
+      },
+      {
+        "path": "private-source/validate_aa.py",
+        "sha256": "1b72362ddf5189a5fc5df7eaa8034b8ae57df0ba0dfe1437867e380757e28ecf",
+        "bytes": 13070
+      },
+      {
+        "path": "private-source/wrapper.cc",
+        "sha256": "b0057be32be8c64cc8bfc701e46a75ff933b6abc26a38bd5dba4822047419151",
+        "bytes": 1211
+      },
+      {
+        "path": "probe-inspection-windows-cuda/build-result.json",
+        "sha256": "cf31c7b28862d3bad656b0dad45de03b75afeb7068cf3b7ec3fc4b34f7c90861",
+        "bytes": 773
+      },
+      {
+        "path": "probe-inspection-windows-cuda/compile-commands.json",
+        "sha256": "1260f89fd80cfa13d754e87ce29e7f96e748c8d7749874debefeb8a770f93006",
+        "bytes": 3317
+      },
+      {
+        "path": "probe-inspection-windows-cuda/control-disasm.log",
+        "sha256": "d6a0990dedae682c6a2af8ef134e10418ad46c74e7512f8ea7f51b4148947feb",
+        "bytes": 1031128
+      },
+      {
+        "path": "probe-inspection-windows-cuda/control-imports.log",
+        "sha256": "7c6d7ce1fd090cb8963d038595d0bb9e8201453d7d2f7b67757bbb954b1c46f5",
+        "bytes": 10920
+      },
+      {
+        "path": "probe-inspection-windows-cuda/primary-disasm.log",
+        "sha256": "d533dff489eebc8538d04a45599e7f91b6a20261c5617e0ffa87383a8f926cdb",
+        "bytes": 1620867
+      },
+      {
+        "path": "probe-inspection-windows-cuda/primary-imports.log",
+        "sha256": "7d033522e4f5298bb118aa6acac33f0407d865fde525d3e7cdd3485edf7f110f",
+        "bytes": 15851
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/build-result.json",
+        "sha256": "12ae0b4b0f714a10c4bf8719775604c2848f61895bc63788c681f40d15babb81",
+        "bytes": 3599
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/build.log",
+        "sha256": "ad81f4076ce74a57caeb961df3f03b2d3eabd6bbd7818a78d656f9965bafe56a",
+        "bytes": 461
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/compile-commands.json",
+        "sha256": "ca8b9e81e689c0547ce945c2da65c42f46f86f9d19c14386cb9347d3b3af6b5c",
+        "bytes": 3385
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/configure.log",
+        "sha256": "6b91bf2189d751934a2a92af80e33f42c5ec6da9edef54ce6d36d080a4db94fd",
+        "bytes": 491
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/control-disassembly.log",
+        "sha256": "dea3467ba6d3939349359b3ef0f1acf725f6840c1f2a6400399886dada238574",
+        "bytes": 1031130
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/control-imports.log",
+        "sha256": "e857946db095ae7f00d32821a339c1840effdd0239677214c790d6a7502dbb3c",
+        "bytes": 10922
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/primary-disassembly.log",
+        "sha256": "7d83c631e8c2cc9a5d71359a1cd4f44b1343e2262b466aaa09f6872588272953",
+        "bytes": 1620869
+      },
+      {
+        "path": "probe-inspection-windows-vulkan/primary-imports.log",
+        "sha256": "12571f78adccd6a9782433326b3d250f9b96c5a008e098ca9db23dc05948ea8d",
+        "bytes": 15853
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/build-result.json",
+        "sha256": "96ac10b166d2e1d2974cfef72483e554508f33e0e9c341bf84d0b47ed7b6b2fb",
+        "bytes": 3948
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/build.log",
+        "sha256": "d2a7ffc2d2dd3050f64154fcccb851895a764de7a3464b1d52cc93d2c0a955eb",
+        "bytes": 442
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/compile-commands.json",
+        "sha256": "df89a37066f025e4ed87d068d9d340081128372e152289163cdccdc4ba04f0b7",
+        "bytes": 3079
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/configure.log",
+        "sha256": "49f39b0ba4e32a92f98df3a49aca191332c72403de128e348b31c54d553fd4e6",
+        "bytes": 442
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/control-dependencies.log",
+        "sha256": "6b061024703e33adcfed3d89e36d07653eea20925c75b054f56f9a8b0243378e",
+        "bytes": 269
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/control-disassembly.log",
+        "sha256": "6da3a0fa824b22607c9122c686c205d9dffba1087cf8395724c1cc68e5e686bb",
+        "bytes": 1210745
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/control-symbols.log",
+        "sha256": "7b97ef4ed08e03ba1fc6d5596787286208dbf2ec26b0576e5cc35f07b8af1235",
+        "bytes": 74499
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/primary-dependencies.log",
+        "sha256": "5102edd651ec1295e696512bc9acd41ab339c0eb442102500b1e93bef57c6990",
+        "bytes": 269
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/primary-disassembly.log",
+        "sha256": "c1a3fc9608c0f4d2ed2c6737e87488fb39a07ad81fc5edb918fdfa3e5fd5a1bf",
+        "bytes": 1243925
+      },
+      {
+        "path": "probe-inspection-air/air-apple-probe/primary-symbols.log",
+        "sha256": "ffb4b38cf7d3ba2bf5a1f2f352265cbac4f572815642465c1f0668267433a96e",
+        "bytes": 75394
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/build-result.json",
+        "sha256": "d92c22457f2801c1029597f8ce8bb30ff2a84dc6c113cb3f97a4e80a07131a1f",
+        "bytes": 3966
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/build.log",
+        "sha256": "149800b1c0cedf5584a9f9709678d957bfaac5dbeec7154780d6d193ed8f4c77",
+        "bytes": 442
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/compile-commands.json",
+        "sha256": "9cb99fad8242ecd72b72a5f2a06e9e240701050c06e83d01d743a7f18a2c2b5d",
+        "bytes": 3095
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/configure.log",
+        "sha256": "ceb690ce4ede9b4cda1aa1a0814f96087f64df3faebea92087b1de9d0a8d0342",
+        "bytes": 443
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/control-dependencies.log",
+        "sha256": "be9c6630f025f0b55d887a2f30e9e976d0521123641fb304ea5e200804dc5592",
+        "bytes": 270
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/control-disassembly.log",
+        "sha256": "41d3aaade36adaa19b7dfd819ceb8f444c5149ab393e0a81230feb2b67de3b70",
+        "bytes": 1210746
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/control-symbols.log",
+        "sha256": "7b97ef4ed08e03ba1fc6d5596787286208dbf2ec26b0576e5cc35f07b8af1235",
+        "bytes": 74499
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/primary-dependencies.log",
+        "sha256": "84d995cb3437201eaa3911621634941a561799089101d19e4898bb80c51020d7",
+        "bytes": 270
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/primary-disassembly.log",
+        "sha256": "cf2c25913092c046b379eed4f7fb0bdf9ec1a7dc48328b843026161a7f6533aa",
+        "bytes": 1243967
+      },
+      {
+        "path": "probe-inspection-air/air-vulkan-probe/primary-symbols.log",
+        "sha256": "b26d89242fc1beb9d7ce3c56a1875116c9e3387c877741f3380089252583ae1e",
+        "bytes": 75394
+      },
+      {
+        "path": "cuda-native-prefix/activities.ndjson",
+        "sha256": "4a2be078d912d53cd7d7e084c68ed233e8211bdfda56f2d20777b4969d363fc5",
+        "bytes": 280243
+      },
+      {
+        "path": "cuda-native-prefix/analyze.py",
+        "sha256": "2a913f9c6471bcf05a6ebdb4fcfd9790cf64a853b0d69ef1876d39eefedcbacd",
+        "bytes": 11699
+      },
+      {
+        "path": "cuda-native-prefix/build-private-injection.log",
+        "sha256": "ac6a0c8e80c30c08a9e17e577c267d2af1fd34e5961f95a02bde9c366fb8dc9e",
+        "bytes": 1501
+      },
+      {
+        "path": "cuda-native-prefix/execution-attempt2.json",
+        "sha256": "e925f87f849585874a0709f39073760e694eb15dab9cf473c7fa56b197cfcbc2",
+        "bytes": 7922
+      },
+      {
+        "path": "cuda-native-prefix/execution.json",
+        "sha256": "6329614afd861c8d2c4ddcd7521a2e28beab9bc4e3a42b3d383c423acd94325d",
+        "bytes": 3651
+      },
+      {
+        "path": "cuda-native-prefix/hang-termination.json",
+        "sha256": "5cab9c7bb3c488bf9d159ff582a737f636456485b092162694c0e744e0934b25",
+        "bytes": 562
+      },
+      {
+        "path": "cuda-native-prefix/injector.cc",
+        "sha256": "a87b4e3f951894c7638fe48de4bd9a533386e781db6ae83b0945b1b76596dd60",
+        "bytes": 7365
+      },
+      {
+        "path": "cuda-native-prefix/run.py",
+        "sha256": "e600dfb6d19e709107effc572f842432d90307ba8216e0dee6cd857380806864",
+        "bytes": 6279
+      },
+      {
+        "path": "cuda-native-prefix/verify-only.log",
+        "sha256": "4cc96449489dc6458e072a0d14e0626667a525045e24f085042284dac6722cae",
+        "bytes": 35244
+      },
+      {
+        "path": "formal-windows-cuda/evidence/contract-lock.json",
+        "sha256": "0cfb42eb3fc46f614a2c199fe2587d1ff2d3510a1de5360a4a555b2cf8466e18",
+        "bytes": 23233
+      },
+      {
+        "path": "formal-windows-cuda/evidence/control-observations.json",
+        "sha256": "5b445bf844ff6d51a9f6cebe37ff6607500392c14d3b0f3cb38e7f06c29a0583",
+        "bytes": 57364
+      },
+      {
+        "path": "formal-windows-cuda/evidence/controls.json",
+        "sha256": "88c1982b028dde48d0d90aa226eb6e78c4f195c81a176b424a7aedddfacc94e2",
+        "bytes": 6647
+      },
+      {
+        "path": "formal-windows-cuda/evidence/host-probe.json",
+        "sha256": "ad52ad7dfe6079f3bbd0240f9aaa17e6bec6a61046c445da237821c4a6f36944",
+        "bytes": 22459
+      },
+      {
+        "path": "formal-windows-cuda/evidence/manifest.json",
+        "sha256": "175335eaa9f32c6a5807aaff6dd693d89851224807c29531c12314bba4d6250e",
+        "bytes": 48796
+      },
+      {
+        "path": "formal-windows-cuda/evidence/observations.jsonl",
+        "sha256": "3c7f0a3050f83d038a3e4314213333b3030126c62a10141d5223a8963d3c7962",
+        "bytes": 130256
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/baseline-0-0.log",
+        "sha256": "e768d387d3208bfb56117ec4ddd50593d1d5ef41280ca556a38f39d7ab5940d1",
+        "bytes": 37264
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/baseline-0-1.log",
+        "sha256": "d4662277a186952161ea197ac99e09b1425bbd39462084150648d8b2bc1521c1",
+        "bytes": 37254
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/baseline-1-0.log",
+        "sha256": "3823b27d074b10eeb27513893baac36853882c9e8ad9534cebdf3895dd11722c",
+        "bytes": 37254
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/baseline-1-1.log",
+        "sha256": "769cecdf8315302954f76e58e8bd2a6841bd19acebc49402f1886c34836a8fc1",
+        "bytes": 37219
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/candidate-0-0.log",
+        "sha256": "167c7bd89aa8d0ec80c9358e50cd0cbfd2f8294153aafb984cea8b46db2cb7b5",
+        "bytes": 37355
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/candidate-0-1.log",
+        "sha256": "69c0b86a5c23f92e1574570535499dad04b3792b5a049390d0ddf59741f173fb",
+        "bytes": 37371
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/candidate-1-0.log",
+        "sha256": "09e41c9b0112a3aae4f65da63eabd2cf6f30b0aaae5b0d0d4d466a571386133c",
+        "bytes": 37371
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/candidate-1-1.log",
+        "sha256": "3adda315be03a56914d0d39a1f6dce6fd2cf0984967a68a206d95ebbf6631960",
+        "bytes": 37336
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa-raw/verify.log",
+        "sha256": "3a53b2d3d1d82039796cf8c5ef4ad88a7236f8367daa88fac689deaa537f75cd",
+        "bytes": 34472
+      },
+      {
+        "path": "formal-windows-cuda/evidence/pipeline-aa.json",
+        "sha256": "27aacbec3b641950afd00b0263e0f447a6f874f4825c036c7b01fed469454be9",
+        "bytes": 34006
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-01.log",
+        "sha256": "0afac4d08e6ba7cb6d84c549861bde57160090bec02f821c08d18dcfae669e27",
+        "bytes": 6466
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-02.log",
+        "sha256": "14fefb33f8605eb6962721487e292e4f8fcc458514721c2f002958e69e48fc32",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-03.log",
+        "sha256": "6d0245595a202f4d128cb0fce1a9ca00906b86d7dc3e1d9bf0b1baf2ed9af1d5",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-04.log",
+        "sha256": "5a62040e7c9c0dc2e78da0fce42b308817b6dfabb7db95e76cc100050d190ffc",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-05.log",
+        "sha256": "b66a945be546f39bb4745b3185d9b314f203fdbd9579cf77071f01d223fccc86",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-06.log",
+        "sha256": "45b17f68c1d60c0193967ee59a608a6790ce9d31cac8e3a3e3546646199216ec",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-07.log",
+        "sha256": "4a942c267f95b1d75c262524bd929ebbb9d450e8e7aecc84871adc70a34639f1",
+        "bytes": 6466
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-08.log",
+        "sha256": "5b7207e1b09ef49c642759812431234d628f0e8c098ec4c3da667f82a3917539",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-09.log",
+        "sha256": "1de55196e83cf07809c00957684318840d8b7427c79aea83c50a18af516ab0f9",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-10.log",
+        "sha256": "f9cc5c4820e0ddbbae9a6264e56e5bd06988c93676f4f4aaf879de91f431349d",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-11.log",
+        "sha256": "b218896a1fd3d1d2153a7db00ef7343e9fbd5f75dfd6d814714bea2d0565ccaa",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-12.log",
+        "sha256": "2272e64179fa68568f01f02256ded3c3193d02590ad7da0c591a674309a2556d",
+        "bytes": 6466
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-13.log",
+        "sha256": "2543980c7579914032730270db3288c18381d43653a87e7d0de47ee22db85de1",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-14.log",
+        "sha256": "9396eb567618a856a3317e65626e2390f9b3950e15c44f775451bad0fafb3820",
+        "bytes": 6468
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-candidate-first-run-15.log",
+        "sha256": "e125a28530cc9c5aac1dc44c9476efea4c870b578a9163b3c4c5170965519201",
+        "bytes": 6466
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-01.log",
+        "sha256": "670defe161e5076ea163f5971d913b50a9ce7438b23196558e2de76f582a91f4",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-02.log",
+        "sha256": "41ee16d9649dd5be23132e313ed28fb9fbdfaed12295aa897ac23634804f1132",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-03.log",
+        "sha256": "f6f9e2dc6bfa2f3ce2a2d7397194ed6e097ed1ba5508e0c46f626101d7195746",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-04.log",
+        "sha256": "777abbe262c3a5be23fe2c9b267826399d6466ffe2b610f3b406100c934f5b89",
+        "bytes": 6461
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-05.log",
+        "sha256": "c159073cb6591484415deccdc79ac0ef37185456523be174039e40bd5e59c77f",
+        "bytes": 6461
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-06.log",
+        "sha256": "404f29877b7c07bb042a8da7ae6d9a5d74e037bb610b45938cd4c9bf45120fd2",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-07.log",
+        "sha256": "cd86d544f0334bbaf85881081d05fb78f459e090c0cb42b1e0a104e7783b4a2e",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-08.log",
+        "sha256": "2eee82cf6722bda5c58e045e5850f70d337fc8f0123665e490fb4d750612b497",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-09.log",
+        "sha256": "8514770551d8e99a56a991ac02c2cae20b44003b1817884d65583c92f5aee94d",
+        "bytes": 6461
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-10.log",
+        "sha256": "7af452e94b922efea380242a633067c1c4e8df02612d1d9bf2db9ad6b6d5d3b1",
+        "bytes": 6560
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-11.log",
+        "sha256": "65ea78a2335ee11739046ab6a77eb1603acc1646cc4a89f45c80b30c92af7d16",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-12.log",
+        "sha256": "775bea105556b4992cf20cae6c70ef9ddb2467bd8f150c9bc45030087c908ad8",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-13.log",
+        "sha256": "b76c72592f60199c750e50b4fe276cf006952cd5347891bec73aceb86ce06d3d",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-14.log",
+        "sha256": "676c6a6390f2ac797c242be211bb51ebe935692183585e9a9e2d9c72b14b7d9d",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/control-peer-first-run-15.log",
+        "sha256": "b06c6db77f2384d4679a9ea7e5e8d74991943fda5618807e7dbef43c37bcd10e",
+        "bytes": 6463
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-01.log",
+        "sha256": "935d741f5f525e1756b2340731713562456379ecc325395a7d55a0ce23a77965",
+        "bytes": 37296
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-02.log",
+        "sha256": "6f66ebdbcee733ea76223dbf3688bbd0abe76038697fa7272c21ef8fe9e35f63",
+        "bytes": 37270
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-03.log",
+        "sha256": "c3648b2fd9346e261ba5e11ec61d51d873cd468fabc93c1d3b2dd24581a6c936",
+        "bytes": 37270
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-04.log",
+        "sha256": "fa3ba04efee9f04de903f671d17ab6a85e331edff9ec43a56ae39d6859136528",
+        "bytes": 37270
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-05.log",
+        "sha256": "025acb0de380afd5c968eaea4193ec68cd526fdaa35d17f3ba29bcbe390b57eb",
+        "bytes": 37296
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-06.log",
+        "sha256": "8573a4c2c771d3d0e3bc926c8340506d974647386b1a607a7a68c02cdd8258b7",
+        "bytes": 37271
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-07.log",
+        "sha256": "c6894320b5eff6703b2127ac83a0342450c49d3941e46054c52e3d17901c6539",
+        "bytes": 37296
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-08.log",
+        "sha256": "34a44eea1c70fe7775ea5107047684f615fe361c54b8797555aba43ad0469053",
+        "bytes": 37270
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-09.log",
+        "sha256": "5500cbff27c4b766614da11cb70b2ca4e31b6757122f771236d4e274f5ae3900",
+        "bytes": 37270
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-10.log",
+        "sha256": "0a808190fc9729ada216f2ceb16582256b1d695743d8c58f71661fc85d86e50d",
+        "bytes": 37322
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-11.log",
+        "sha256": "c3d41ca2eefc372f07955eca4cf75f669cde072ad48284f5f06b1451ce88a794",
+        "bytes": 37296
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-12.log",
+        "sha256": "3845f6e2dca439dd18e234816e9552ce678da93e6a130db46f73fe50191d2fa2",
+        "bytes": 37296
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-13.log",
+        "sha256": "7a72dbc02d17527fd475f2dc182396fbfc8493f0a2c9647147b4896055782a5d",
+        "bytes": 37322
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-14.log",
+        "sha256": "2d225b25ba275622cf466e83a1a2c0c3d5ffab7e17b83d32cfafc2c0a0a60cb0",
+        "bytes": 37296
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-15.log",
+        "sha256": "b19ece8726379f06fba74cc1b06f05a492f09d60f88721ad61564ace4615cdc5",
+        "bytes": 37296
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-01.log",
+        "sha256": "032016b626265467d4af87de39c892b4ddc3e9ec6d068a691083fdae85290f32",
+        "bytes": 37219
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-02.log",
+        "sha256": "d524118d3a060cca1199f4268d9a2d66e41cd197283c9732372f09b0054c7dea",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-03.log",
+        "sha256": "43f6480c18319e2ad1d85b9cb35b80b5bd1392a0ea3876fd66ee22dd2c65a2d2",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-04.log",
+        "sha256": "a67eb37c27cbc598eb39d4ffc67a9bb31f634c4ff551a2ecaf46f968b9763f84",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-05.log",
+        "sha256": "a339d0313b39713e9ca6fa2df7d57d2a2d7ec70556ec4660153133d39d5b0559",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-06.log",
+        "sha256": "edb6f87bf2305abc643b5c2a52e01c30b54f9da069a5f1e684442eee55e0d3d8",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-07.log",
+        "sha256": "0d4e1005381ba5a17c6d296ef8beed70ce44231a53712f5eac43a798fb6aedc2",
+        "bytes": 37244
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-08.log",
+        "sha256": "1a2e762e058d0b248b114255f2da9709027498676c459f54500f62e329fcdbbe",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-09.log",
+        "sha256": "aab87d74bd48119eed28f0ea0e3d8c2132e3fd81793c57b3d457ecb13768ce70",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-10.log",
+        "sha256": "e9cd56636cdc9a7e0dc4fe9b56a2b07732b3d847a08c8a6c28d84551e315bd61",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-11.log",
+        "sha256": "7edaf64b6164ecd3c9130b6c3f0867aaab686615a0bfff9ee4b5334f86eb73d9",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-12.log",
+        "sha256": "de295e93bc538322b3ac1cca57385512deeced397f76cf6e033d9034763c930d",
+        "bytes": 37244
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-13.log",
+        "sha256": "cc7092eaa31387c8002de9c6a51cfd23eeb5da730a1a65cda4d5e46bdcc1d9ed",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-14.log",
+        "sha256": "e8a436718634d5c17e11f8c2dff6b150b35ee2c4b4b5f8fce197ee226ec21cec",
+        "bytes": 37218
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-candidate-first-peer-allocation-first-pipeline-primary-run-15.log",
+        "sha256": "dfe43dc1a76ec04a1cd1e953b9c80a8b1cfd563567a246bb3e0107818d0ad161",
+        "bytes": 37219
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-01.log",
+        "sha256": "e64b1245c7f1eb6b82768c33207cd9e822b6f5b6664aa26e447b7ea743539ba7",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-02.log",
+        "sha256": "0716578decf6364c78a5ece39f01dec5f459cc902b5bdd2c6ff6051ba5061e99",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-03.log",
+        "sha256": "46e511467ea53471928d3041f37aaee001c508c5ffaff19290df419cde68a7e0",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-04.log",
+        "sha256": "4a44ec14dbeec659f4347cb18341c3e7adc57a9694d2be7e306c91b2d085c487",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-05.log",
+        "sha256": "93827476f18fc08a927f012886f9e9aa4b2727d62041fa0b3d19d30595716563",
+        "bytes": 37338
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-06.log",
+        "sha256": "211d0279d38791f325cb8f79f13978fe7260176c78a45b0a77c2dde84aa4ba73",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-07.log",
+        "sha256": "54cb09f1dc3d47a9075f03f6c3063164356c3cc4861a3bf51bfbbb1b8ad70946",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-08.log",
+        "sha256": "97405cee4f7261031995cfb6cc3355a3dcebada910cffeaccca289e1e5af12d3",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-09.log",
+        "sha256": "303e4e5ca77aa5a00e029182514cd5637596a124f327a53519c83250c476e37c",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-10.log",
+        "sha256": "e1c4ea089371b302d3cdf241c5278eb3a38df0e9878e8521a6faefed600ab30a",
+        "bytes": 37312
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-11.log",
+        "sha256": "b3177f514e72750a3dfc70975567ddb0ea89c6d12abb86451c6e8795988b35aa",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-12.log",
+        "sha256": "8dc3ba18a612917bc94e59b2d98f24431e95af039b319509b45c0f5770b0597e",
+        "bytes": 37287
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-13.log",
+        "sha256": "da607ba8d2899f344b7cf5a9deacc9e562ee6c56f3b047438c5a4b5cd295691a",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-14.log",
+        "sha256": "b4c1a1038754e16887fdf69ac334813b8717930bfac856c4509404017191fe7d",
+        "bytes": 37286
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-candidate-allocation-first-pipeline-primary-run-15.log",
+        "sha256": "d2a03a6016da08da1cfa099343ea5ae246728ee3b41400c3e20ec79497e2fc13",
+        "bytes": 37287
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-01.log",
+        "sha256": "e2f73a8161bf43a982bfc8bcc89de6506abc519f5894eb16fbb025d29ab9c42d",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-02.log",
+        "sha256": "09ad482659bad5aa7421b576603cee90b4b2d23bb23e1d23e910717ff0294332",
+        "bytes": 37234
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-03.log",
+        "sha256": "1438f4b0f1b9a900b37fe876e0a55e4f12faad6d20b2a6ea34f8ae6b89d6ae12",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-04.log",
+        "sha256": "f116a0787658a4a156b622069ac9b89d3644a8e2b5c5965e96f4035c58b2e984",
+        "bytes": 37235
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-05.log",
+        "sha256": "4943b71499cb6efb1211f80717b089e77775f9ed5f4e90583dbb4881aefb003b",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-06.log",
+        "sha256": "4beec156ee88ab45546a84d669be6485b1341def6baa431d4be32d3b55d7cd54",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-07.log",
+        "sha256": "e54e782622cabe12caac4885e029c03c79d6cd8e1b590031ed6fabea3ba4383a",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-08.log",
+        "sha256": "df3f24bc1de0524035a9471842c918ea4905f02e4d1cd5be053c4070710e1a50",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-09.log",
+        "sha256": "3e0cb2f82c456a2f01ef7fb80f92410af866a7f1b5e349f4af605d3bf1a29f55",
+        "bytes": 37234
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-10.log",
+        "sha256": "04dfd41e7e48e26580c431e9d506a07757554dc86506669d2a28305da7b1bd59",
+        "bytes": 37209
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-11.log",
+        "sha256": "3a3da23bbc6612c6fc805c1f652c52db20db1770b8bfe85b0b729054178c5a19",
+        "bytes": 37183
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-12.log",
+        "sha256": "c3a345afabdef36196bcd6b3a79bd9683a8c9d2490cab76991b05b2dc1fc63eb",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-13.log",
+        "sha256": "ac97ba58b9c0e5615cebd5b38a065c5cf11cebfc6271fe43cf3d566b76a4a5ed",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-14.log",
+        "sha256": "53820c8cdfc10e6cad8009f6c448c080601de4d38874b1c6bf68570a3309840a",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw/n-15/product-primary-peer-first-peer-allocation-first-pipeline-primary-run-15.log",
+        "sha256": "edf411184ea23c92df8fd110b6fc1c4eac10abfd918a40733d1f348220e110c6",
+        "bytes": 37208
+      },
+      {
+        "path": "formal-windows-cuda/evidence/raw-log-index.json",
+        "sha256": "d6cf608b686356c231936a2339065d0f1a23f107163b86d0c01ec5b13dc032d6",
+        "bytes": 47563
+      },
+      {
+        "path": "formal-windows-cuda/evidence/summary.json",
+        "sha256": "5133386a7ec76b25eb31b6daddf11777ed26649fea113f9e10227533ae30ff97",
+        "bytes": 15962
+      },
+      {
+        "path": "formal-windows-cuda/evidence/validators/pipeline-aa.log",
+        "sha256": "93ab1e0143082e6f3550813c18616658264bbf8e98579c86e9304a8ede3ed3f3",
+        "bytes": 65
+      },
+      {
+        "path": "formal-windows-cuda/instrument.log",
+        "sha256": "d64ba72e6f66ee03bf89f924ab942f13acb676d0cef03dec5e90bb9cf7b2852e",
+        "bytes": 198
+      },
+      {
+        "path": "formal-windows-cuda/run-result.json",
+        "sha256": "174dd823cfa1de926204f2078e61b04d5c2cf2c105fb1cd6399efeaa006550fb",
+        "bytes": 1210
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/baseline-0-0.log",
+        "sha256": "f0c7b94713176b0ec306a3034187deeca983b3c2c328d0ff34a2a3e60d735a4e",
+        "bytes": 31851
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/baseline-0-1.log",
+        "sha256": "a4cc747f575686c08877a99a17cd32548b86a624af847de9ee785f6bd0687ff3",
+        "bytes": 31841
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/baseline-1-0.log",
+        "sha256": "aa0531f0e56ed129e4758f657a4974e413b83448f8fe27e3d01096353a6b5470",
+        "bytes": 31841
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/baseline-1-1.log",
+        "sha256": "fcf3cd6bc18c1d32391042de826f5f22c9381373710e96f7ea971a062add9b2b",
+        "bytes": 31831
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/candidate-0-0.log",
+        "sha256": "25060caba21e0b400070ec6f85ee693af7018e9afbe299c3c748430f2e8542ad",
+        "bytes": 31920
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/candidate-0-1.log",
+        "sha256": "8650d25d98ae75e1eab0b0bdf2b78e83ebb7193cc6385a564c011e8ec6e87eb0",
+        "bytes": 31910
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/candidate-1-0.log",
+        "sha256": "6df3b818f7fcada5bdc694fff41df146d400e86ed6f9c66c4f09fa31c33f3154",
+        "bytes": 31884
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/candidate-1-1.log",
+        "sha256": "b0f79e1fa3ce8e335d683288536ee50d5799a74cc2fe2d9e638ccc6899031800",
+        "bytes": 31900
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa-raw/verify.log",
+        "sha256": "0f583503c08264bba3bf513daf1eb608947a2d6bda3b503aa868b3db029c1ad8",
+        "bytes": 29555
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/pipeline-aa.json",
+        "sha256": "15cc4c40a8aa73b2eff10fa7bfa277770ddade17181c7735fa99eb9ee55b7dc3",
+        "bytes": 21186
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-01.log",
+        "sha256": "d0dddc01f9e257afad2bf1385c53cca340d727a92ff2182e197ea7ebb3547fb3",
+        "bytes": 341
+      },
+      {
+        "path": "formal-windows-vulkan/evidence/validators/pipeline-aa.log",
+        "sha256": "9022cef98c0d1d39627f3fe2547896019f763a0b5f2a87c4080689ad5c0e60a3",
+        "bytes": 349
+      },
+      {
+        "path": "formal-windows-vulkan/instrument.log",
+        "sha256": "98fe5793387aa0b9e00cf4b36eca0d1e1c2e486f5d5fcc5952ff40687b224d2a",
+        "bytes": 228
+      },
+      {
+        "path": "formal-windows-vulkan/run-result.json",
+        "sha256": "0e2cc6a25e506d43db2f9fa912fceba9abb02a4e2fd448c87e830c1956d690a0",
+        "bytes": 1218
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/baseline-0-0.log",
+        "sha256": "e4b88e6602ef44c86e1c6c5bf422f473299ae67a11fc3b6e36fe94ccbe53eb36",
+        "bytes": 222904
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/baseline-0-1.log",
+        "sha256": "e323924c1579cf816fc641ca6ffc32243e7d55211831b1605c2ba34ed175e96c",
+        "bytes": 222864
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/baseline-1-0.log",
+        "sha256": "a2e5e6d0e683f7334aa6d858e75f8ad05f9cc4a8eb297dfdf2ca387983ed301e",
+        "bytes": 222890
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/baseline-1-1.log",
+        "sha256": "b682d9d5af07ac24049216bdf924c959ff4bbea4e4228b9adc496fa5933b5849",
+        "bytes": 222878
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/candidate-0-0.log",
+        "sha256": "1005b580d554d97b27fc43c4181561f22601453bc6d205e9f4e456b1bf4104ca",
+        "bytes": 222923
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/candidate-0-1.log",
+        "sha256": "a2dae95f806928f5fbeb4cbbcc8c7565b0ba75533291ec577ef99392b3e056e8",
+        "bytes": 222938
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/candidate-1-0.log",
+        "sha256": "8822c2cf152c5ac1d967c2a62e561a22371bc2f7733dc49c79a9cee3f84b167c",
+        "bytes": 222938
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/candidate-1-1.log",
+        "sha256": "239fdc86734610e574f5fb4c5eb21331d6a8c31fc6ac197376b5343bf5227b26",
+        "bytes": 222903
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa-raw/verify.log",
+        "sha256": "65b0b5d55ad99b19081e3a330da5caf9d1d129a2b66b19ac75f1648d908e142e",
+        "bytes": 219765
+      },
+      {
+        "path": "formal-air-apple/evidence/pipeline-aa.json",
+        "sha256": "69626150a048acc20e1e078406fa9f2cefc52b1a7281b1b536d03750b6df19c3",
+        "bytes": 17053
+      },
+      {
+        "path": "formal-air-apple/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-01.log",
+        "sha256": "461bc9aa728e0c52912ba7391432726dc6dc493a023b713a28077869a718dbb0",
+        "bytes": 321
+      },
+      {
+        "path": "formal-air-apple/evidence/validators/pipeline-aa.log",
+        "sha256": "d0a8761ddd4c69bd69cf8f905fc0a8c878e780584b923efa6d5fdddfbd9905c7",
+        "bytes": 294
+      },
+      {
+        "path": "formal-air-apple/instrument.log",
+        "sha256": "2b72eec0bb0320ef05e94f12d6b162102c3e008216a3477a4fc3ae12770aa313",
+        "bytes": 211
+      },
+      {
+        "path": "formal-air-apple/run-result.json",
+        "sha256": "bd403354d6934f4b1c4ac2fbfbbb8af8508082a77845da0bff240e688bba2324",
+        "bytes": 1224
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/baseline-0-0.log",
+        "sha256": "1e6ef1e849adb5ba664a40a394f537b0b66240ad12406055ab1928e0401775e6",
+        "bytes": 223378
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/baseline-0-1.log",
+        "sha256": "bce2a22e1f93109f060ffa16fcb9543d027809131d69a571b8be6f785d8bb36f",
+        "bytes": 223367
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/baseline-1-0.log",
+        "sha256": "c20ea5f230995a60ee25853558365ec42016615767a88bb0f4af108d17c5a4b2",
+        "bytes": 223341
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/baseline-1-1.log",
+        "sha256": "958fb5673e97666b634dec5a2725e963ba7b0b3dc771a84c7f3b83f312988731",
+        "bytes": 223357
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/candidate-0-0.log",
+        "sha256": "fe644b304151f6402656de64487a84faf2cb94c4b4aabc11c0baa983f6563748",
+        "bytes": 223426
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/candidate-0-1.log",
+        "sha256": "b55beab76405569f46679b062a49eea83e9c7a80f26a21b80b7a58a273c008b8",
+        "bytes": 223416
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/candidate-1-0.log",
+        "sha256": "557f2b3a5860b8ce01395acfcab88a767d33005e3125c677c53d5f8539fc4837",
+        "bytes": 223416
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/candidate-1-1.log",
+        "sha256": "e1e1d73037868ca93998f768d158442397b846bb78422ea4405aa3cb0f271460",
+        "bytes": 223406
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa-raw/verify.log",
+        "sha256": "ef5c5f27c8fe5d6577892b0cee91575500a7344843c3383de8c9a94ead798a56",
+        "bytes": 220236
+      },
+      {
+        "path": "formal-air-vulkan/evidence/pipeline-aa.json",
+        "sha256": "02df7282a1213adb40cdb3b06bc41947f1a09ede44007608bf9bf88809a4988f",
+        "bytes": 16519
+      },
+      {
+        "path": "formal-air-vulkan/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-01.log",
+        "sha256": "45a4b615bade3306877750c770e2aa22719c3f41b8a37d54d30da508eec1059f",
+        "bytes": 321
+      },
+      {
+        "path": "formal-air-vulkan/evidence/validators/pipeline-aa.log",
+        "sha256": "8c8e0f65d58cccb73465a6dd4b56966838d489f8d62af811c382e9148ef4b0a2",
+        "bytes": 675
+      },
+      {
+        "path": "formal-air-vulkan/instrument.log",
+        "sha256": "31cb4d88964d752fac406dc698689d3b2fc55d0546075e4512568d28b0389eed",
+        "bytes": 212
+      },
+      {
+        "path": "formal-air-vulkan/run-result.json",
+        "sha256": "987f3326dceb2ae7ae9497dcf5f6872b0711d384ff843f633de230a583d04fa3",
+        "bytes": 1222
+      },
+      {
+        "path": "private-tools/g09_prepare_p1_contracts.py",
+        "sha256": "c139d998b36f1534c0f872fe1959881a4bed7524b99c9622f8f8c9c0542edb4b",
+        "bytes": 10881
+      },
+      {
+        "path": "private-tools/g09_build_p1_adapter_profiles.py",
+        "sha256": "4b759ebfb6916789194a387f73dcd8f93d59e34efca6854a05a974a5aa8caeb1",
+        "bytes": 5655
+      },
+      {
+        "path": "private-tools/g09_collect_adapter_review.py",
+        "sha256": "d8147770eda8ddbbf5daa3a3ef053d535445a8c06b80dec1f8b289bc2aba4677",
+        "bytes": 2350
+      },
+      {
+        "path": "private-tools/g09_stage_p1_adapter_air.py",
+        "sha256": "7b98a28cb1401d306c443fae96ed18f962a9763e71a4fa487968b94e5b9dee8d",
+        "bytes": 1509
+      },
+      {
+        "path": "private-tools/g09_run_p1_native.py",
+        "sha256": "c3bc824ff4826afd15169313960ec8afff9d650e970b6d62195ca9b9e98a83bf",
+        "bytes": 4453
+      },
+      {
+        "path": "private-tools/g09-p1-instrument-final-artifacts.json",
+        "sha256": "c1768b3c3934696fe9988b7dfbb0ce6814d7f29b0f59fb6f1828b8cd5c810fad",
+        "bytes": 4871
+      }
+    ]
+  }
+}

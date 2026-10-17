@@ -1,0 +1,847 @@
+{
+  "schema": "hyle.g09.cupti-native-prefix-ledger.v1",
+  "reviewed_at_utc": "2026-10-17T01:42:15.612682+00:00",
+  "state": "DIAGNOSTIC_HANG_TERMINATED_COMPLETED_PREFIX_OBSERVED_NOT_PROCESS_EXIT_PASS",
+  "scope": "One unchanged no-argv P1 binary in VERIFY_ONLY=1, original four fixed 4M F32 journeys and original facade/SDK. Private one-TU CUPTI injection built; no native/kernel/SDK build, no A/A or A/B/formal performance samples. Instrumentation overhead is not performance evidence.",
+  "qualification": {
+    "whole_diagnostic": "FAIL_HANG",
+    "completed_public_journey": {
+      "before": 4,
+      "after": 4,
+      "destroy_status0": 8,
+      "measurement_rows": 0
+    },
+    "actual_observed_kernel_records": 100,
+    "valid_gpu_kernel_intervals": 99,
+    "memcpy_records": 164,
+    "valid_memcpy_intervals": 164,
+    "dropped_records_reported": 0,
+    "cupti_errors_reported": 0,
+    "activity_buffers_requested": 105,
+    "activity_buffers_completed": 105,
+    "balance_applies_at": "Last successful original checked boundary, before vendor process-exit PrimaryCtxRelease ENTER. Not a claim about unobserved teardown or zero private costs."
+  },
+  "immutable_input_identity": {
+    "exe_before": {
+      "path": "C:\\h7\\g09-p1-instrument\\cuda\\probe-build\\bin\\g09_pipeline_primary.exe",
+      "sha256": "26cbb903c11387e64772129674326975a6978caf7c0b834f3450fe7dc174c693",
+      "bytes": 134144
+    },
+    "exe_after": {
+      "path": "C:\\h7\\g09-p1-instrument\\cuda\\probe-build\\bin\\g09_pipeline_primary.exe",
+      "sha256": "26cbb903c11387e64772129674326975a6978caf7c0b834f3450fe7dc174c693",
+      "bytes": 134144
+    },
+    "facades_before": [
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_1.dll",
+        "sha256": "5f3ee813851833d696be0138a16d4af922383f3cda456b48a071e2c3599023ad",
+        "bytes": 126718976
+      },
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_2.dll",
+        "sha256": "c0a0c58993f0e137d1f00052c7a941dd7bc40af9bdf506ad08d9242299d46fde",
+        "bytes": 126718976
+      },
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_1.dll",
+        "sha256": "e18943becc90d6d210ba7f1fb82c8b492b87e9e66ad07ab659ea6aa73845c3fd",
+        "bytes": 126739968
+      },
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_2.dll",
+        "sha256": "04e8b4cf4ff2c676487fe46a6d91e94e620625166a0c425882423dc710315bd8",
+        "bytes": 126739968
+      }
+    ],
+    "facades_after": [
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_1.dll",
+        "sha256": "5f3ee813851833d696be0138a16d4af922383f3cda456b48a071e2c3599023ad",
+        "bytes": 126718976
+      },
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_2.dll",
+        "sha256": "c0a0c58993f0e137d1f00052c7a941dd7bc40af9bdf506ad08d9242299d46fde",
+        "bytes": 126718976
+      },
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_1.dll",
+        "sha256": "e18943becc90d6d210ba7f1fb82c8b492b87e9e66ad07ab659ea6aa73845c3fd",
+        "bytes": 126739968
+      },
+      {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_2.dll",
+        "sha256": "04e8b4cf4ff2c676487fe46a6d91e94e620625166a0c425882423dc710315bd8",
+        "bytes": 126739968
+      }
+    ],
+    "all_unchanged": true
+  },
+  "actual_kernel": {
+    "name_counts": {
+      "_Z15unary_op_kernelIXadL_ZN38_INTERNAL_5cb8d911_8_unary_cu_eb6d53666op_negEfEEfEvPKT0_PS1_i": 100
+    },
+    "grid": [
+      16384,
+      1,
+      1
+    ],
+    "block": [
+      256,
+      1,
+      1
+    ],
+    "interpretation": "Recorded original ggml CUDA F32 op_neg kernel, consistent with original selected provider; not a new native kernel. Do not infer other provider or whole-engine throughput."
+  },
+  "actual_memcpy_totals": [
+    {
+      "direction": "HtoD",
+      "records": 64,
+      "total_bytes": 1073741824
+    },
+    {
+      "direction": "DtoH",
+      "records": 100,
+      "total_bytes": 1677721600
+    }
+  ],
+  "shape_and_arm_ledger": [
+    {
+      "shape": 0,
+      "arm": "candidate-1",
+      "kernel_records": 10,
+      "valid_kernel_intervals": 10,
+      "streams": [
+        14
+      ],
+      "memcpy": [
+        {
+          "role": "cold-initial-resident-upload",
+          "direction": "HtoD",
+          "records": 1,
+          "bytes_per_record": 16777216,
+          "total_bytes": 16777216
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "arm": "baseline-1",
+      "kernel_records": 10,
+      "valid_kernel_intervals": 10,
+      "streams": [
+        16
+      ],
+      "memcpy": [
+        {
+          "role": "cold-initial-resident-upload",
+          "direction": "HtoD",
+          "records": 1,
+          "bytes_per_record": 16777216,
+          "total_bytes": 16777216
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "arm": "candidate-1",
+      "kernel_records": 10,
+      "valid_kernel_intervals": 10,
+      "streams": [
+        20
+      ],
+      "memcpy": [
+        {
+          "role": "cold-initial-resident-upload",
+          "direction": "HtoD",
+          "records": 1,
+          "bytes_per_record": 16777216,
+          "total_bytes": 16777216
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "arm": "baseline-1",
+      "kernel_records": 10,
+      "valid_kernel_intervals": 10,
+      "streams": [
+        22
+      ],
+      "memcpy": [
+        {
+          "role": "cold-initial-resident-upload",
+          "direction": "HtoD",
+          "records": 1,
+          "bytes_per_record": 16777216,
+          "total_bytes": 16777216
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "arm": "candidate-1",
+      "kernel_records": 20,
+      "valid_kernel_intervals": 19,
+      "streams": [
+        26,
+        28
+      ],
+      "memcpy": [
+        {
+          "role": "original-replay-transfer",
+          "direction": "HtoD",
+          "records": 20,
+          "bytes_per_record": 16777216,
+          "total_bytes": 335544320
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 20,
+          "bytes_per_record": 16777216,
+          "total_bytes": 335544320
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "arm": "baseline-1",
+      "kernel_records": 20,
+      "valid_kernel_intervals": 20,
+      "streams": [
+        30,
+        32
+      ],
+      "memcpy": [
+        {
+          "role": "original-replay-transfer",
+          "direction": "HtoD",
+          "records": 20,
+          "bytes_per_record": 16777216,
+          "total_bytes": 335544320
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 20,
+          "bytes_per_record": 16777216,
+          "total_bytes": 335544320
+        }
+      ]
+    },
+    {
+      "shape": 3,
+      "arm": "candidate-1",
+      "kernel_records": 10,
+      "valid_kernel_intervals": 10,
+      "streams": [
+        38
+      ],
+      "memcpy": [
+        {
+          "role": "original-replay-transfer",
+          "direction": "HtoD",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        }
+      ]
+    },
+    {
+      "shape": 3,
+      "arm": "baseline-1",
+      "kernel_records": 10,
+      "valid_kernel_intervals": 10,
+      "streams": [
+        40
+      ],
+      "memcpy": [
+        {
+          "role": "original-replay-transfer",
+          "direction": "HtoD",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        },
+        {
+          "role": "original-replay-transfer",
+          "direction": "DtoH",
+          "records": 10,
+          "bytes_per_record": 16777216,
+          "total_bytes": 167772160
+        }
+      ]
+    }
+  ],
+  "attribution_method": {
+    "arm": "Recorded raw driver callback stack PCs fall within each actual ASLR facade image range. Getter RVA0x7930 is fixed by original map; actual image hashes and bases bound below. No nearest-symbol guess is used as source proof.",
+    "state_boundaries": "Eight actual cuDevicePrimaryCtxRelease_v2 entry timestamps, four per arm, are correlated via facade stack PC. Original source closes and destroys each State after its entire shape before the next shape; ordinal0-3 gives finite shape boundaries.",
+    "copies": "Every one of164 actual memcpy activity correlation IDs matches recorded driver API. Original synchronous cuMemcpyHtoD_v2 four records are cold resident-input uploads;160 cuMemcpyAsync records are original replay transfers. Classification uses actual APIs and original lifetime order, not planned reports.",
+    "kernels": "Ten context/stream pairs each have a first kernel activity matching a recorded direct launch API/arm/state. Remaining records on the same unique live context/stream inherit that State. All99 valid kernel intervals lie before matching original State retirement and after preceding State retirement. This is state-level ownership, not independently marked individual replay phases.",
+    "limits": "90 kernel records do not match the selected driver API rows. The small filter did not log cuGraphLaunch; the exact API association of these records was not measured.20 LaunchKernel callbacks were recorded, and no complete API-to-device correlation claim follows. No complete per-API or per-replay GPU graph dispatch bill is claimed. The one zero-timestamp kernel is retained and never counted as a valid GPU interval."
+  },
+  "aslr_image_ranges": [
+    {
+      "tag": "candidate-1",
+      "base": 140737333493760,
+      "end": 140737461166080,
+      "image": {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_1.dll",
+        "sha256": "e18943becc90d6d210ba7f1fb82c8b492b87e9e66ad07ab659ea6aa73845c3fd",
+        "bytes": 126739968
+      },
+      "getter_rva": "0x7930",
+      "image_size": 127672320
+    },
+    {
+      "tag": "baseline-1",
+      "base": 140733262790656,
+      "end": 140733390446592,
+      "image": {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_1.dll",
+        "sha256": "5f3ee813851833d696be0138a16d4af922383f3cda456b48a071e2c3599023ad",
+        "bytes": 126718976
+      },
+      "getter_rva": "0x7930",
+      "image_size": 127655936
+    }
+  ],
+  "state_retirement_markers": {
+    "candidate-1": [
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423777716987500,
+        "correlation": 2215,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7ffff7d5f3ce",
+          "0x7ffff7d67d3b",
+          "0x7ffff6c5215d",
+          "0x7ffff6c51460",
+          "0x7ff66d746554",
+          "0x7ff66d747914",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      },
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423778001449400,
+        "correlation": 2750,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7ffff7d5f3ce",
+          "0x7ffff7d67d3b",
+          "0x7ffff6c5215d",
+          "0x7ffff6c51460",
+          "0x7ff66d746554",
+          "0x7ff66d747914",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      },
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423778410255800,
+        "correlation": 3827,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7ffff7d5f3ce",
+          "0x7ffff7d67d3b",
+          "0x7ffff6c5215d",
+          "0x7ffff6c51460",
+          "0x7ff66d746554",
+          "0x7ff66d747914",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      },
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423778649601200,
+        "correlation": 4466,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7ffff7d5f3ce",
+          "0x7ffff7d67d3b",
+          "0x7ffff6c5215d",
+          "0x7ffff6c51460",
+          "0x7ff66d746554",
+          "0x7ff66d747914",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      }
+    ],
+    "baseline-1": [
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423777720046500,
+        "correlation": 2262,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7fff0533ab3e",
+          "0x7fff0534367b",
+          "0x7fff0423215d",
+          "0x7fff04231460",
+          "0x7ff66d746554",
+          "0x7ff66d74791e",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      },
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423778004771200,
+        "correlation": 2797,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7fff0533ab3e",
+          "0x7fff0534367b",
+          "0x7fff0423215d",
+          "0x7fff04231460",
+          "0x7ff66d746554",
+          "0x7ff66d74791e",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      },
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423778415325100,
+        "correlation": 3920,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7fff0533ab3e",
+          "0x7fff0534367b",
+          "0x7fff0423215d",
+          "0x7fff04231460",
+          "0x7ff66d746554",
+          "0x7ff66d74791e",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      },
+      {
+        "type": "api_enter",
+        "name": "cuDevicePrimaryCtxRelease_v2",
+        "timestamp": 423778652845500,
+        "correlation": 4513,
+        "context": 0,
+        "thread": 49368,
+        "frames": [
+          "0x7ff921bd113a",
+          "0x7ff87dcd16d8",
+          "0x7ff87dd91109",
+          "0x7ff87dd8fd8f",
+          "0x7ff87dd8f9d8",
+          "0x7ff87dd90432",
+          "0x7ff87dd906e5",
+          "0x7ff87dd76b42",
+          "0x7ff87dd76622",
+          "0x7ff8f32af8ba",
+          "0x7ff8f32afa35",
+          "0x7fff0533ab3e",
+          "0x7fff0534367b",
+          "0x7fff0423215d",
+          "0x7fff04231460",
+          "0x7ff66d746554",
+          "0x7ff66d74791e",
+          "0x7ff66d746f17",
+          "0x7ff66d748e77",
+          "0x7ff66d75432c",
+          "0x7ff94ee9cd87",
+          "0x7ff94f94caec"
+        ]
+      }
+    ]
+  },
+  "invalid_gpu_intervals": [
+    {
+      "type": "kernel",
+      "name": "_Z15unary_op_kernelIXadL_ZN38_INTERNAL_5cb8d911_8_unary_cu_eb6d53666op_negEfEEfEvPKT0_PS1_i",
+      "start": 0,
+      "end": 0,
+      "device": 0,
+      "context": 1,
+      "stream": 28,
+      "correlation": 3043,
+      "grid": [
+        16384,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "arm": "candidate-1",
+      "shape": 2,
+      "valid_gpu_interval": false,
+      "inside_original_state_retirement_boundaries": null,
+      "direct_selected_api_correlation": true
+    }
+  ],
+  "last_successful_flush": {
+    "type": "flush",
+    "boundary": "cuDevicePrimaryCtxRelease_v2",
+    "timestamp": 423778652859100,
+    "status": 0,
+    "driver_result": 0,
+    "requested": 105,
+    "completed": 105,
+    "kernels": 100,
+    "memcopies": 164,
+    "dropped": 0,
+    "errors": 0
+  },
+  "final_unreturned_api": {
+    "type": "api_enter",
+    "name": "cuDevicePrimaryCtxRelease",
+    "timestamp": 423778661716600,
+    "correlation": 4518,
+    "context": 0,
+    "thread": 49368,
+    "frames": [
+      "0x7ff921bd113a",
+      "0x7ff87dcd16d8",
+      "0x7ff87dd91109",
+      "0x7ff87dd8fd8f",
+      "0x7ff87dd8f9d8",
+      "0x7ff87dd90432",
+      "0x7ff87dd906e5",
+      "0x7ff87dd76b42",
+      "0x7ff87dd76622",
+      "0x7ff8f33660f3",
+      "0x7ff8f3366275",
+      "0x7ff8a169c19d",
+      "0x7ff8a16b556d",
+      "0x7ff8a17308a3",
+      "0x7ff8a17304f5",
+      "0x7ff8a17309a9",
+      "0x7ff8a172ea57",
+      "0x7ff8a172e919",
+      "0x7ff8a172ebb7",
+      "0x7ff8a170009b",
+      "0x7ff8a170049d",
+      "0x7ff8a17005c2",
+      "0x7ff94f9beada",
+      "0x7ff94f8b0c33",
+      "0x7ff94f94df1f",
+      "0x7ff94f94cc2e",
+      "0x7ff94eeb141b",
+      "0x7ff94cf50813"
+    ]
+  },
+  "exit_failure": {
+    "hang_observation": {
+      "state": "DIAGNOSTIC_HANG_IDENTITY_VERIFIED_OWN_CHILD_TERMINATED",
+      "pid": 82900,
+      "exe": "C:\\h7\\g09-p1-instrument\\cuda\\probe-build\\bin\\g09_pipeline_primary.exe",
+      "sha256": "26cbb903c11387e64772129674326975a6978caf7c0b834f3450fe7dc174c693",
+      "process_wait_before": 258,
+      "reason": "All public oracles/state destruction complete; process still unsignaled at vendor PrimaryCtxRelease ENTER without EXIT; parent explicitly requested stop without further WCT or GPU run.",
+      "process_wait_after": 0,
+      "requested_termination_code": 57005
+    },
+    "termination": "Only own identity-verified child PID82900 stopped, code57005. Process wait then signaled. Original executable and all facades remain byte-identical.",
+    "attribution_limit": "Hang was observed after all public oracle/state completion and last successful v2 primary-context release, at non-v2 cuDevicePrimaryCtxRelease ENTER with no EXIT. No exact WCT/stack or causality verdict was added; no new G09 product defect is signed. Official injection sample warns Windows teardown needs a pre-exit hook. No Detours framework, exit workaround or second GPU run was added."
+  },
+  "instrument_lifecycle": {
+    "official_sample_read": "CUDA13.3 extras/CUPTI/samples/cupti_trace_injection README and source: CUDA_INJECTION64_PATH loads DLL and calls InitializeInjection, success return1. Its Windows cleanup warning was read before construction.",
+    "activity_structs": "CUpti_ActivityKernel12 and CUpti_ActivityMemcpy6 per actual installed13.3 header; this is a13.3-only private diagnostic.",
+    "flush": "ActivityFlushAll(FORCED) at original checked sync/free/primary-release API exit. No CUDA call registered in own DllMain/atexit. Such forced collection permits incomplete timestamps; the one invalid interval remains explicit.",
+    "counters": "105 requested/completed buffers, zero reported drops/errors at last completed boundary. This does not cure the failed process exit or prove arbitrary extreme/other-domain coverage."
+  },
+  "cost_and_failed_attempts": {
+    "setup_attempt": {
+      "state": "DIAGNOSTIC_FAIL",
+      "elapsed_seconds": 0.7339999999967404,
+      "error": "CalledProcessError(1, ['cmd', '/d', '/s', '/c', '\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Enterprise\\\\VC\\\\Auxiliary\\\\Build\\\\vcvars64.bat\" >nul && set'])",
+      "gpu_runs": 0
+    },
+    "actual_attempt_state": "DIAGNOSTIC_FAIL",
+    "actual_attempt_elapsed_seconds": 95.71799999999348,
+    "total_elapsed_seconds": 96.45199999999022,
+    "stage_costs": [
+      {
+        "stage": "build-private-injection",
+        "argv": [
+          "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "/nologo",
+          "/LD",
+          "/MD",
+          "/O2",
+          "/std:c++20",
+          "/EHsc",
+          "/W4",
+          "/IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+          "/IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\injector.cc",
+          "/link",
+          "/LIBPATH:C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\lib64",
+          "cupti.lib",
+          "/OUT:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\g09_cupti_injection.dll"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.28100000001722947,
+        "log": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\build-private-injection.log",
+          "sha256": "ac6a0c8e80c30c08a9e17e577c267d2af1fd34e5961f95a02bde9c366fb8dc9e",
+          "bytes": 1501
+        }
+      },
+      {
+        "stage": "verify-only",
+        "argv": [
+          "C:\\h7\\g09-p1-instrument\\cuda\\probe-build\\bin\\g09_pipeline_primary.exe"
+        ],
+        "exit_code": 57005,
+        "elapsed_seconds": 92.71899999998277,
+        "log": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\verify-only.log",
+          "sha256": "4cc96449489dc6458e072a0d14e0626667a525045e24f085042284dac6722cae",
+          "bytes": 35244
+        }
+      }
+    ],
+    "resource_policy": {
+      "priority": "BelowNormal",
+      "logical_cpu_affinity_mask": "0xf",
+      "max_build_jobs": 1
+    },
+    "gpu_runs_total": 1,
+    "formal_samples": 0,
+    "timeouts_reset": false
+  },
+  "proof_boundaries": [
+    "Completed public prefix does not turn diagnostic HANG into PASS",
+    "99 valid device kernel intervals, not100",
+    "No CPU/native overlap qualification, ranking, P1 confidence or throughput result",
+    "No individual warm iteration/oracle split: original verify run contains pre-oracle,8 warmups and post-oracle per arm; state-level actual totals only",
+    "No actual allocation/private workspace/driver memory/hidden vendor cache bill; UNKNOWN",
+    "No guarantee of unobserved process-detach operations or zero remaining vendor work"
+  ],
+  "heavy_reservation": {
+    "state": "RELEASED",
+    "detail": "Parent notified immediately after own child termination. Subsequent work was only offline parsing/hash/sealing; no more build or GPU execution."
+  },
+  "raw": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\activities.ndjson",
+      "sha256": "4a2be078d912d53cd7d7e084c68ed233e8211bdfda56f2d20777b4969d363fc5",
+      "bytes": 280243
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\analyze.py",
+      "sha256": "2a913f9c6471bcf05a6ebdb4fcfd9790cf64a853b0d69ef1876d39eefedcbacd",
+      "bytes": 11699
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\build-private-injection.log",
+      "sha256": "ac6a0c8e80c30c08a9e17e577c267d2af1fd34e5961f95a02bde9c366fb8dc9e",
+      "bytes": 1501
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\execution-attempt2.json",
+      "sha256": "e925f87f849585874a0709f39073760e694eb15dab9cf473c7fa56b197cfcbc2",
+      "bytes": 7922
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\execution.json",
+      "sha256": "6329614afd861c8d2c4ddcd7521a2e28beab9bc4e3a42b3d383c423acd94325d",
+      "bytes": 3651
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\g09_cupti_injection.dll",
+      "sha256": "859f3650d772d3ec6732bd9653a92e6125c8571b7b065dbcea46031089b0abe7",
+      "bytes": 16384
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\hang-termination.json",
+      "sha256": "5cab9c7bb3c488bf9d159ff582a737f636456485b092162694c0e744e0934b25",
+      "bytes": 562
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\injector.cc",
+      "sha256": "a87b4e3f951894c7638fe48de4bd9a533386e781db6ae83b0945b1b76596dd60",
+      "bytes": 7365
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\injector.exp",
+      "sha256": "b80f27e9370ecd2b843b017219f986f542f6e2aaea349839831536c5a0f27470",
+      "bytes": 766
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\injector.lib",
+      "sha256": "180e4e63de29f7fce58eb677ad3be7ff945a93a84c407d431a43af77e233e09f",
+      "bytes": 1984
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\injector.obj",
+      "sha256": "f890dfb0e78c2481e413711c57ce6a36ee42faf3ee2e44d839edfc243c20eb06",
+      "bytes": 28106
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\run.py",
+      "sha256": "e600dfb6d19e709107effc572f842432d90307ba8216e0dee6cd857380806864",
+      "bytes": 6279
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-native-ledger-raw\\verify-only.log",
+      "sha256": "4cc96449489dc6458e072a0d14e0626667a525045e24f085042284dac6722cae",
+      "bytes": 35244
+    }
+  ],
+  "stop": "Bounded A4 terminal reached with a retained technical limitation. No second GPU run or broader instrument construction."
+}

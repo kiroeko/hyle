@@ -1,9 +1,9 @@
 # G09 单CPU与单GPU联合流水
 
-状态：**CANDIDATE，2026-10-17；API、算法和产品形状冻结，选定交付已通过，P1/终审尚未验收**。
+状态：**BLOCKED-from-CANDIDATE，2026-10-17；产品形状冻结，选定交付及 CUDA P1 已通过，另三组 A/A 资格未通过，聚合 P1/终审未验收**。
 baseline为`9e2f25c469634a6f723e76eaf1aa2db5973bca9a`。
 candidate为`3524413272cb52d06af5e64d634edbfef09b9864`；产品实现自`e09f30925`未再变化。
-G07/G08已接受，当前G07–G10 goal完成2/4；G10和完整文本CLI未开始。
+G07/G08已接受，当前G07–G10 goal完成2/4；G10已另卡SCOPED，完整文本CLI未开始。
 
 ## 需求、真实事实与owner
 
@@ -461,3 +461,69 @@ execution×allocation/load order，共八进程×四负载，原5%factor medians
 尚无新旧版本A/B正式样本：原仪器有限contract/provenance、完整dispatch/copy账、最终产物预检、
 其余实际A/A与common controls、四组5%/n15–31 P1和终审/LOC仍待证。产品仍固定CANDIDATE，
 goal已接受2/4、G10未开始；不重跑15项交付或追加产品FIX/缺口扫描。
+
+### 正式仪器合同与实际入口冻结，2026-10-17
+
+四组native profile现已各自接入未改动的原`hyle-perf`：固定四负载、四种execution×allocation/load
+顺序、原n15→31/5%和原A/A、delta5、delta10、timer-floor。四份contract通过原schema/runner
+校验；code-padding/link-order不适用的理由仍沿首批A/A前的冻结声明，不按样本改合同。
+其余三个无参数入口各仅编译wrapper、原nanobench和原control三个C++单元；CUDA沿原具名probe
+重读实际text/imports。没有重编产品、SDK、数学或native kernel。
+
+独立R18检查实际四组primary/control的text、imports/dependencies、commands和有限反汇编，
+并冻结22份输入。唯一MUST是fresh产物不仅须匹配text，还须检查`G09_BASE`确为冻结的facade根，
+防止等长路径替换只改只读数据而绕过text身份；现已仅在private validator补上此检查。
+正式fresh build必须重核原16份facade及所需native资源、具名text和源码，再通过自身完整verify及
+两SDK各四顺序的workload A/A才允许A/B，不能继承旧probe的A/A。原公共统计/构建工具未修改。
+
+CUDA额外一次CUPTI补账保持独立的`DIAGNOSTIC_HANG`：四场景完整前后oracle及八次State destroy
+均完成，实收100条kernel记录，其中99条具有效GPU时间区间；164条16MiB memcpy均有有效区间，
+HtoD合计1GiB、DtoH合计1.5625GiB，105个buffer全回收，reported drop/errors均为0。
+一条kernel时间戳无效、90条kernel没有所选direct-launch API关联，逐API/逐replay完整归属仍UNKNOWN。
+进程最后停在vendor teardown的PrimaryCtxRelease ENTER，未观察到EXIT；核对原exe/PID身份后
+仅终止该owned child。原setup失败、挂起、96.452秒case费用及全部限制保留，不签正常退出或性能PASS，
+也不推翻此前各自身份下未注入诊断的正常退出结果；不再为该可选逐API细节增加GPU运行。
+
+原正式流程现先在Windows CUDA运行，随后按Windows Vulkan、Air Apple、Air Vulkan串行推进。
+此节只记录合同/产物入口准入，不预签尚未终态的控制、统计性能、G09终审或G10。
+
+### 四组正式入口终态与本轮停止，2026-10-17
+
+[正式尝试及原件](../../../../evidence/architecture/inference-g09-p1-instrument-attempt/receipt.json)
+和[独立 R19](../../../../evidence/architecture/inference-g09-p1-instrument-attempt/19.json)保存四组唯一尝试。
+所有产品、16份facade、原统计核心与冻结形状未改；没有盲重复或删除失败样本。
+
+| profile | workload A/A | 正式资格/性能 | 本次case秒 |
+|---|---|---|---:|
+| Windows CUDA | PASS，正式fresh binary独立8进程 | QUALIFIED；原n15 P1工程门PASS | 522.156 |
+| Windows Vulkan | FAIL，candidate CPU-first 的peer-allocation因子比0.94695274低于1/1.05 | DIAGNOSTIC，NI未决/方向INCONCLUSIVE；有效A/B为0 | 32.656 |
+| Air Apple | FAIL，candidate双microbatch一进程比0.89615083低于1/1.10 | DIAGNOSTIC，NI未决/方向INCONCLUSIVE；有效A/B为0 | 14.724 |
+| Air Vulkan | FAIL，baseline/candidate多项gross与factor；全进程比范围0.853571–1.259887 | DIAGNOSTIC，NI未决/方向INCONCLUSIVE；有效A/B为0 | 26.921 |
+
+CUDA四个execution×allocation/load strata各15个独立进程，四个common control与三个validator均PASS，
+source/peer/artifact/host稳定性均为真，原`hyle-perf verify`已核manifest、全部路径及资格。
+独立CPU-first/GPU-first两行均为WIN：各stratum中位candidate/peer速度比分别为1.1366–1.1455、
+1.1168–1.1248；双microbatch和serial holdout为原5%合同PARITY，全部NI门PASS，不追加n31。
+这里比较的是本卡完整warm消费者与旧HYLE，不是llama.cpp或推理token/s。
+
+另三组完成各8个A/A进程，但未获准进入产品比较；ready guard在首个A/B入口的compare前拒绝。
+R19独立重算24份日志与原op/s判据一致，完整前后oracle/8次State destroy也逐份成立。
+paired relative/CI与两行各自median elapsed倒数之比是不同估计量，不是列解析错误，不能换度量消除失败。
+当前没有证实可修产品回归或具名工具/宿主机制；这些A/A偏差不写成产品LOSS，更不写PASS。
+
+依收口方法§6/§7，本卡在资格拒绝处停止，四owner记`BLOCKED-from-CANDIDATE`，聚合
+engineering_performance为`INCONCLUSIVE`；阶段功能/风险/P0、15项交付和CUDA合格P1不作废。
+最终聚合red-team、完整P1及CLOSED仍未完成。阻塞owner和唯一合法恢复条件由
+[独立工具卡](../tooling/inference-g09-native-workload-aa.md)固定：先证明具体instrument/host/contract
+机制并独立审查修正，在新测量前冻结入口，再取得原阈值/四顺序下缺失的资格和P1。
+追加epochs/warmups/n、放宽带宽、换尺寸/Provider/估计量、丢样本或同配置再试均不是恢复条件。
+
+固定candidate上的[统一LOC原件](../../../../evidence/architecture/inference-g09-p1-instrument-attempt/loc.json)
+为全库3,832,220、自实现不含测试183,364、本轮Graph与三个hybrid实现边界19,704行；
+由原`loc-report.py --commit 3524413272`及显式五个路径给出，不计scratch/benchmark为产品实现。
+[本轮selected验证](../../../../evidence/architecture/inference-g09-p1-instrument-attempt/validation.json)
+仅docs/closure，146项skip/reuse；带原registry revision的64组件/schema4检查、文档链接和diff检查通过。
+初次生成状态投影过期的FAIL及纠正记录保留；没有触发全局构建。
+
+本goal保持active，验收仍为2/4；[G10](../compute/inference-g10-cpu-thread-budget.md)进入独立SCOPED
+审计，未写产品代码，不以它代签G09。全部重型进程已终态，本轮不再启动性能采样。

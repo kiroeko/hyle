@@ -1,0 +1,607 @@
+{
+  "schema": "hyle.bounded-independent-review.v1",
+  "review": "R18 fixed contract / actual equivalent consumer pre-sampling entry",
+  "decision": "ALLOW_FIXED_CONTRACTS_AND_REVIEWED_EQUIVALENT_CONSUMER_TEXT_ONLY",
+  "reviewed_at_utc": "2026-10-17T01:46:57.931Z",
+  "scope": "Offline source/contract/validator review plus actual existing PE/Mach-O artifact metadata, hashes and code inspection. No R18 build, driver, GPU, A/A or A/B execution. Fixed G09 scope only; R11–17 prior evidence reused by exact identity.",
+  "source_git": "37db8ab3e15bce8e681cb4738af2ff23cecbbaf1",
+  "artifacts": {
+    "source_git": "37db8ab3e15bce8e681cb4738af2ff23cecbbaf1",
+    "source_files": [
+      {
+        "path": "CMakeLists.txt",
+        "sha256": "66cda4c10e246806c47a18465f4acbc9212fba2740e104c10d23f83d65a320a8",
+        "bytes": 3576
+      },
+      {
+        "path": "artifacts-air-apple.json",
+        "sha256": "4416b532f28d6d2eca418b440c4924cdd14e09c06334eccea58298e5cbc22bf9",
+        "bytes": 5730
+      },
+      {
+        "path": "artifacts-air-vulkan.json",
+        "sha256": "8b0daa2d93c0576e695fa5742bde6a0b6dc58752fea37c2a316e92c2cf95fb40",
+        "bytes": 4827
+      },
+      {
+        "path": "artifacts-windows-cuda.json",
+        "sha256": "e5744d80ee0fdb922b09bfde0ecae40cd267456e0e40c122e6d65228652c6fba",
+        "bytes": 20108
+      },
+      {
+        "path": "artifacts-windows-vulkan.json",
+        "sha256": "14112253e3822566e7cfb7ffbb37773925d96036fb5d6083e5dc5fe8e3550400",
+        "bytes": 7869
+      },
+      {
+        "path": "consumer-provenance.json",
+        "sha256": "3d58347db524d0afe8378f23c58c63b3b0d8d27c6d3849ca7997c1198a4812c6",
+        "bytes": 1230
+      },
+      {
+        "path": "contract-air-apple.json",
+        "sha256": "e296d112b1b1059b77acd114cc730e7bc0e4f7445424181906a9c333ad773294",
+        "bytes": 21945
+      },
+      {
+        "path": "contract-air-vulkan.json",
+        "sha256": "0076d7bdc028c9afa52bc5eccf976a9e7c9bcccefb643c8f5a6e377c6e3a3cf9",
+        "bytes": 21952
+      },
+      {
+        "path": "contract-windows-cuda.json",
+        "sha256": "024c2b768ee4774a2d9ae540af07ad9c5477e1be34d84909c02a5684b07d1424",
+        "bytes": 21947
+      },
+      {
+        "path": "contract-windows-vulkan.json",
+        "sha256": "25a85764b3d91b69ddbd08a06503bc772b45a451733890424a2ed00e162280c0",
+        "bytes": 21961
+      },
+      {
+        "path": "driver.cc",
+        "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+        "bytes": 11711
+      },
+      {
+        "path": "facade_api.h",
+        "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+        "bytes": 905
+      },
+      {
+        "path": "instrument/bench/common/perf_process.h",
+        "sha256": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+        "bytes": 3323
+      },
+      {
+        "path": "instrument/bench/integration/perf_control_bench.cc",
+        "sha256": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada",
+        "bytes": 5720
+      },
+      {
+        "path": "instrument/bench/nanobench_impl.cc",
+        "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+        "bytes": 271
+      },
+      {
+        "path": "instrument/third_party/nanobench/nanobench.h",
+        "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+        "bytes": 194934
+      },
+      {
+        "path": "retained/facade.cc",
+        "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+        "bytes": 13430
+      },
+      {
+        "path": "retained/phase-ledger.json",
+        "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+        "bytes": 6639
+      },
+      {
+        "path": "retained/prospective.json",
+        "sha256": "cd1313900da629a38d98cceda97604d19b3484b3bb8043ac1911fe5b5e0303a6",
+        "bytes": 10298
+      },
+      {
+        "path": "source-ledger.json",
+        "sha256": "51c9b6cf898a167d9252a9b77ebedbd7dfbb49af33ccd7c11f70d301a32a0eda",
+        "bytes": 5638
+      },
+      {
+        "path": "validate_aa.py",
+        "sha256": "1b72362ddf5189a5fc5df7eaa8034b8ae57df0ba0dfe1437867e380757e28ecf",
+        "bytes": 13070
+      },
+      {
+        "path": "wrapper.cc",
+        "sha256": "b0057be32be8c64cc8bfc701e46a75ff933b6abc26a38bd5dba4822047419151",
+        "bytes": 1211
+      }
+    ],
+    "artifact_index": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-final-artifacts.json",
+      "sha256": "c1768b3c3934696fe9988b7dfbb0ce6814d7f29b0f59fb6f1828b8cd5c810fad",
+      "bytes": 4871
+    },
+    "profiles": {
+      "windows-cuda": {
+        "primary_text_sha256": "92e4d55c6975b94788f8077b0417a46be22ee44c9a47eacbe8af6c81dd10b1f3",
+        "control_text_sha256": "dda66f2605af1ac822b05365f601d76345858dff212a6cfcf9f6d58e481e0a9f"
+      },
+      "windows-vulkan": {
+        "primary_text_sha256": "7c54fe0b9b997f1a4bb02996fd052e62601caebf0bf70909581e4baa895f3b28",
+        "control_text_sha256": "dda66f2605af1ac822b05365f601d76345858dff212a6cfcf9f6d58e481e0a9f"
+      },
+      "air-apple": {
+        "primary_text_sha256": "e10b172d560b79b6dfd9799b2b15cc244b7bfa8b18430707edffd6c2ab8d4a3c",
+        "control_text_sha256": "0315581c50799b21b9d35386bb4d7377570ec0bcf1419c11b8437a64f4adb646"
+      },
+      "air-vulkan": {
+        "primary_text_sha256": "99f5a30709d427d3a788c6d833d86740e432b94670339b8040e2ca1e6628685d",
+        "control_text_sha256": "0315581c50799b21b9d35386bb4d7377570ec0bcf1419c11b8437a64f4adb646"
+      }
+    },
+    "contract_checks": {
+      "windows-cuda": {
+        "four_workloads": true,
+        "four_execution_allocation_strata": true,
+        "schedule": [
+          15,
+          31
+        ],
+        "controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "source_provenance_hash": "3d58347db524d0afe8378f23c58c63b3b0d8d27c6d3849ca7997c1198a4812c6",
+        "frozen_facade_runtime_count": 82,
+        "source_authorization_before_sampling": true,
+        "compiled_source_names": [
+          "nanobench_impl.cc",
+          "wrapper.cc",
+          "perf_control_bench.cc"
+        ],
+        "runtime_receipt_sha256": "64d7ab6d0dcc4ff833362a2a33a63acec5f5cc73240d3cd5069644705167cad7"
+      },
+      "windows-vulkan": {
+        "four_workloads": true,
+        "four_execution_allocation_strata": true,
+        "schedule": [
+          15,
+          31
+        ],
+        "controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "source_provenance_hash": "3d58347db524d0afe8378f23c58c63b3b0d8d27c6d3849ca7997c1198a4812c6",
+        "frozen_facade_runtime_count": 20,
+        "source_authorization_before_sampling": true,
+        "compiled_source_names": [
+          "nanobench_impl.cc",
+          "wrapper.cc",
+          "perf_control_bench.cc"
+        ],
+        "runtime_receipt_sha256": "250e28228341c620b6851d170ca7add09ce3276aca21d9025bd6b3cc7b9df97f"
+      },
+      "air-apple": {
+        "four_workloads": true,
+        "four_execution_allocation_strata": true,
+        "schedule": [
+          15,
+          31
+        ],
+        "controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "source_provenance_hash": "3d58347db524d0afe8378f23c58c63b3b0d8d27c6d3849ca7997c1198a4812c6",
+        "frozen_facade_runtime_count": 8,
+        "source_authorization_before_sampling": true,
+        "compiled_source_names": [
+          "nanobench_impl.cc",
+          "wrapper.cc",
+          "perf_control_bench.cc"
+        ],
+        "runtime_receipt_sha256": "0f71f72363711a14f173cf8b518c1ea088975063e333655961b074f22b17c82d"
+      },
+      "air-vulkan": {
+        "four_workloads": true,
+        "four_execution_allocation_strata": true,
+        "schedule": [
+          15,
+          31
+        ],
+        "controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "source_provenance_hash": "3d58347db524d0afe8378f23c58c63b3b0d8d27c6d3849ca7997c1198a4812c6",
+        "frozen_facade_runtime_count": 4,
+        "source_authorization_before_sampling": true,
+        "compiled_source_names": [
+          "nanobench_impl.cc",
+          "wrapper.cc",
+          "perf_control_bench.cc"
+        ],
+        "runtime_receipt_sha256": "5465a2de6c1fbd4af8ff8e221838f5c6b5df0f986ee252f24a733744ba484a43"
+      }
+    },
+    "metadata": {
+      "windows-cuda": {
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-cuda-final-inspection\\build-result.json",
+          "sha256": "cf31c7b28862d3bad656b0dad45de03b75afeb7068cf3b7ec3fc4b34f7c90861",
+          "bytes": 773
+        },
+        "compile_commands": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-cuda-final-inspection\\compile-commands.json",
+          "sha256": "1260f89fd80cfa13d754e87ce29e7f96e748c8d7749874debefeb8a770f93006",
+          "bytes": 3317
+        },
+        "raw": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-cuda-final-inspection\\primary-imports.log",
+            "sha256": "7d033522e4f5298bb118aa6acac33f0407d865fde525d3e7cdd3485edf7f110f",
+            "bytes": 15851
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-cuda-final-inspection\\primary-disasm.log",
+            "sha256": "d533dff489eebc8538d04a45599e7f91b6a20261c5617e0ffa87383a8f926cdb",
+            "bytes": 1620867
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-cuda-final-inspection\\control-imports.log",
+            "sha256": "7c6d7ce1fd090cb8963d038595d0bb9e8201453d7d2f7b67757bbb954b1c46f5",
+            "bytes": 10920
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-cuda-final-inspection\\control-disasm.log",
+            "sha256": "d6a0990dedae682c6a2af8ef134e10418ad46c74e7512f8ea7f51b4148947feb",
+            "bytes": 1031128
+          }
+        ],
+        "actual_artifacts": {
+          "primary": {
+            "path": "C:\\h7\\g09-p1-instrument\\cuda\\probe-build\\bin\\g09_pipeline_primary.exe",
+            "sha256": "26cbb903c11387e64772129674326975a6978caf7c0b834f3450fe7dc174c693",
+            "bytes": 134144,
+            "text_sha256": "92e4d55c6975b94788f8077b0417a46be22ee44c9a47eacbe8af6c81dd10b1f3"
+          },
+          "control": {
+            "path": "C:\\h7\\g09-p1-instrument\\cuda\\probe-build\\bin\\g09_pipeline_control.exe",
+            "sha256": "c057a10929cfa7c36d94a663d92798555cf1c6e8fbcc9c6ce8926c30134d4631",
+            "bytes": 88576,
+            "text_sha256": "dda66f2605af1ac822b05365f601d76345858dff212a6cfcf9f6d58e481e0a9f"
+          }
+        },
+        "imports": [
+          {
+            "kind": "primary",
+            "dependencies": [
+              "KERNEL32.dll",
+              "MSVCP140.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-filesystem-l1-1-0.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-locale-l1-1-0.dll"
+            ]
+          },
+          {
+            "kind": "control",
+            "dependencies": [
+              "KERNEL32.dll",
+              "MSVCP140.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-locale-l1-1-0.dll"
+            ]
+          }
+        ],
+        "state": "ORIGINAL_EXISTING_CUDA_PROBE_REINSPECTED_NOT_REBUILT_OR_EXECUTED",
+        "tuple_count": 3
+      },
+      "windows-vulkan": {
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-vulkan-probe\\build-result.json",
+          "sha256": "12ae0b4b0f714a10c4bf8719775604c2848f61895bc63788c681f40d15babb81",
+          "bytes": 3599
+        },
+        "compile_commands": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-vulkan-probe\\compile-commands.json",
+          "sha256": "ca8b9e81e689c0547ce945c2da65c42f46f86f9d19c14386cb9347d3b3af6b5c",
+          "bytes": 3385
+        },
+        "raw": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-vulkan-probe\\primary-imports.log",
+            "sha256": "12571f78adccd6a9782433326b3d250f9b96c5a008e098ca9db23dc05948ea8d",
+            "bytes": 15853
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-vulkan-probe\\primary-disassembly.log",
+            "sha256": "7d83c631e8c2cc9a5d71359a1cd4f44b1343e2262b466aaa09f6872588272953",
+            "bytes": 1620869
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-vulkan-probe\\control-imports.log",
+            "sha256": "e857946db095ae7f00d32821a339c1840effdd0239677214c790d6a7502dbb3c",
+            "bytes": 10922
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-builds\\windows-vulkan-probe\\control-disassembly.log",
+            "sha256": "dea3467ba6d3939349359b3ef0f1acf725f6840c1f2a6400399886dada238574",
+            "bytes": 1031130
+          }
+        ],
+        "actual_artifacts": {
+          "primary": {
+            "path": "C:\\h7\\g09-p1-instrument\\vulkan\\probe-build\\bin\\g09_pipeline_primary.exe",
+            "sha256": "aa2f7b8e240ac2d6b3bdd50b8758cd6a8b9ce78e3f5a24b574d1fe18cad28494",
+            "bytes": 134144,
+            "text_sha256": "7c54fe0b9b997f1a4bb02996fd052e62601caebf0bf70909581e4baa895f3b28"
+          },
+          "control": {
+            "path": "C:\\h7\\g09-p1-instrument\\vulkan\\probe-build\\bin\\g09_pipeline_control.exe",
+            "sha256": "7b0b695e70e1f756557a16d134a9adbc139046ed7a7611ba44cdd993be6e7e55",
+            "bytes": 88576,
+            "text_sha256": "dda66f2605af1ac822b05365f601d76345858dff212a6cfcf9f6d58e481e0a9f"
+          }
+        },
+        "imports": [
+          {
+            "kind": "primary",
+            "dependencies": [
+              "KERNEL32.dll",
+              "MSVCP140.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-filesystem-l1-1-0.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-locale-l1-1-0.dll"
+            ]
+          },
+          {
+            "kind": "control",
+            "dependencies": [
+              "KERNEL32.dll",
+              "MSVCP140.dll",
+              "VCRUNTIME140.dll",
+              "VCRUNTIME140_1.dll",
+              "api-ms-win-crt-stdio-l1-1-0.dll",
+              "api-ms-win-crt-heap-l1-1-0.dll",
+              "api-ms-win-crt-runtime-l1-1-0.dll",
+              "api-ms-win-crt-convert-l1-1-0.dll",
+              "api-ms-win-crt-environment-l1-1-0.dll",
+              "api-ms-win-crt-string-l1-1-0.dll",
+              "api-ms-win-crt-math-l1-1-0.dll",
+              "api-ms-win-crt-locale-l1-1-0.dll"
+            ]
+          }
+        ],
+        "state": "ORIGINAL_THREE_CPP_ARGV_ADAPTER_AND_CONTROL_BUILT_CODEGEN_INSPECTED_NOT_EXECUTED",
+        "tuple_count": 3
+      },
+      "air-apple": {
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\build-result.json",
+          "sha256": "96ac10b166d2e1d2974cfef72483e554508f33e0e9c341bf84d0b47ed7b6b2fb",
+          "bytes": 3948
+        },
+        "compile_commands": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\compile-commands.json",
+          "sha256": "df89a37066f025e4ed87d068d9d340081128372e152289163cdccdc4ba04f0b7",
+          "bytes": 3079
+        },
+        "raw": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\primary-dependencies.log",
+            "sha256": "5102edd651ec1295e696512bc9acd41ab339c0eb442102500b1e93bef57c6990",
+            "bytes": 269
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\primary-disassembly.log",
+            "sha256": "c1a3fc9608c0f4d2ed2c6737e87488fb39a07ad81fc5edb918fdfa3e5fd5a1bf",
+            "bytes": 1243925
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\primary-symbols.log",
+            "sha256": "ffb4b38cf7d3ba2bf5a1f2f352265cbac4f572815642465c1f0668267433a96e",
+            "bytes": 75394
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\control-dependencies.log",
+            "sha256": "6b061024703e33adcfed3d89e36d07653eea20925c75b054f56f9a8b0243378e",
+            "bytes": 269
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\control-disassembly.log",
+            "sha256": "6da3a0fa824b22607c9122c686c205d9dffba1087cf8395724c1cc68e5e686bb",
+            "bytes": 1210745
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-apple-probe\\control-symbols.log",
+            "sha256": "7b97ef4ed08e03ba1fc6d5596787286208dbf2ec26b0576e5cc35f07b8af1235",
+            "bytes": 74499
+          }
+        ],
+        "actual_artifacts": {
+          "primary": {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1-instrument/apple/probe-build/bin/g09_pipeline_primary",
+            "sha256": "4ff3e5c9c0c56574f60e9795f53dbb58abe478a09bd292c8047a9ef3d48296ee",
+            "bytes": 249704,
+            "text_sha256": "e10b172d560b79b6dfd9799b2b15cc244b7bfa8b18430707edffd6c2ab8d4a3c"
+          },
+          "control": {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1-instrument/apple/probe-build/bin/g09_pipeline_control",
+            "sha256": "8a8523372075d3496c9060a52dfb2db008503a2ecee44d87e204e11d252815e4",
+            "bytes": 248520,
+            "text_sha256": "0315581c50799b21b9d35386bb4d7377570ec0bcf1419c11b8437a64f4adb646"
+          }
+        },
+        "imports": [
+          {
+            "kind": "primary",
+            "dependencies": [
+              "\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)",
+              "\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)"
+            ]
+          },
+          {
+            "kind": "control",
+            "dependencies": [
+              "\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)",
+              "\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)"
+            ]
+          }
+        ],
+        "state": "ORIGINAL_THREE_CPP_ARGV_ADAPTER_AND_CONTROL_BUILT_CODEGEN_INSPECTED_NOT_EXECUTED",
+        "tuple_count": 3
+      },
+      "air-vulkan": {
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\build-result.json",
+          "sha256": "d92c22457f2801c1029597f8ce8bb30ff2a84dc6c113cb3f97a4e80a07131a1f",
+          "bytes": 3966
+        },
+        "compile_commands": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\compile-commands.json",
+          "sha256": "9cb99fad8242ecd72b72a5f2a06e9e240701050c06e83d01d743a7f18a2c2b5d",
+          "bytes": 3095
+        },
+        "raw": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\primary-dependencies.log",
+            "sha256": "84d995cb3437201eaa3911621634941a561799089101d19e4898bb80c51020d7",
+            "bytes": 270
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\primary-disassembly.log",
+            "sha256": "cf2c25913092c046b379eed4f7fb0bdf9ec1a7dc48328b843026161a7f6533aa",
+            "bytes": 1243967
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\primary-symbols.log",
+            "sha256": "b26d89242fc1beb9d7ce3c56a1875116c9e3387c877741f3380089252583ae1e",
+            "bytes": 75394
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\control-dependencies.log",
+            "sha256": "be9c6630f025f0b55d887a2f30e9e976d0521123641fb304ea5e200804dc5592",
+            "bytes": 270
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\control-disassembly.log",
+            "sha256": "41d3aaade36adaa19b7dfd819ceb8f444c5149ab393e0a81230feb2b67de3b70",
+            "bytes": 1210746
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-air-collected\\air-vulkan-probe\\control-symbols.log",
+            "sha256": "7b97ef4ed08e03ba1fc6d5596787286208dbf2ec26b0576e5cc35f07b8af1235",
+            "bytes": 74499
+          }
+        ],
+        "actual_artifacts": {
+          "primary": {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1-instrument/vulkan/probe-build/bin/g09_pipeline_primary",
+            "sha256": "a8e060afc1090618bd39f4a8b01ef03ea64b08231d6e3904a34227600f3e4f60",
+            "bytes": 249704,
+            "text_sha256": "99f5a30709d427d3a788c6d833d86740e432b94670339b8040e2ca1e6628685d"
+          },
+          "control": {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1-instrument/vulkan/probe-build/bin/g09_pipeline_control",
+            "sha256": "8a8523372075d3496c9060a52dfb2db008503a2ecee44d87e204e11d252815e4",
+            "bytes": 248520,
+            "text_sha256": "0315581c50799b21b9d35386bb4d7377570ec0bcf1419c11b8437a64f4adb646"
+          }
+        },
+        "imports": [
+          {
+            "kind": "primary",
+            "dependencies": [
+              "\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)",
+              "\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)"
+            ]
+          },
+          {
+            "kind": "control",
+            "dependencies": [
+              "\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)",
+              "\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)"
+            ]
+          }
+        ],
+        "state": "ORIGINAL_THREE_CPP_ARGV_ADAPTER_AND_CONTROL_BUILT_CODEGEN_INSPECTED_NOT_EXECUTED",
+        "tuple_count": 3
+      }
+    }
+  },
+  "must_found_and_resolved": [
+    {
+      "issue": "Future fresh consumer .text identity did not bind the facade path root.",
+      "evidence": "Before correction validate_aa.py checked G09_ROUTE and G09_PEER_SOURCE but not G09_BASE. G09_BASE controls four CMake-generated no-argv facade paths. An equal-length C:/h7 -> C:/h8 change can alter .rdata while preserving .text; hashing expected h7 artifacts would not establish the binary actually loads them.",
+      "correction": "Private validator now asserts Path(cache['G09_BASE:PATH']).resolve() == BASE.resolve(), matching the original canonical machine root. Read at source Git37db8ab3e15bce8e681cb4738af2ff23cecbbaf1.",
+      "result": "RESOLVED_SOURCE_CHECK; original eight compiled inputs did not change. No new consumer/native/SDK rebuild or GPU run required."
+    }
+  ],
+  "contract_judgment": {
+    "result": "PASS_FOR_FIXED_COMPARISON_ENTRY",
+    "workloads": "Four frozen4M F32 fragments: independent CPU-first and GPU-first DAGs with join; two slots submitted before either wait; serial one-slot holdout. These are finite public consumer fragments, not engine traffic or token/s.",
+    "same_boundary": "Both private SDK images execute the same reviewed public C++ consumer. Warm includes bind/prepare, original math/bridge/copies, checked native completion, CPU4B observation while original ResultLease is alive, all step-owner release and Scheduler::drain. Independent full4M before/after replays are untimed, retain their leases, and are not described as the last timed output.",
+    "lifetime": "Persistent contexts/Graph/invocations/backing/native caches, first touch/init and final State/image teardown are cold/deferred symmetrically. Windows mappings persist to process exit; Air uses original dlclose. No cold5%, total cache reclamation or zero private allocation claim.",
+    "experiment": "Four execution/allocation strata for each of four workload rows; original n15->31,5% comparison, original AA/delta5/delta10/timer-floor and original11-requested/12-actual rounds fixed. No threshold, shape, data, provider or sample changes.",
+    "code_placement": "The same NOT_APPLICABLE bulk4M short-code-risk reasoning was present in the initial pre-pilot source ledger, not selected from timings. Address/owner placement remains applicable via both allocation/load orders."
+  },
+  "actual_artifact_judgment": {
+    "result": "PASS_STATIC_CONSUMER_EQUIVALENCE; EXECUTION_GATES_PENDING",
+    "construction": "All four actual primary/control metadata sets contain exactly three C++ TUs: wrapper, unchanged nanobench implementation, unchanged control. Release/noLTO/platform compiler commands match finite build roles; no native/product/facade rebuild is inferred or needed.",
+    "imports": "Actual PE primary/control import only system/CRT. Actual Mach-O primary/control depend only libc++/libSystem and have no HYLE product undefined import. This is the independent opaque-table driver, not a mixed private Graph ABI.",
+    "code": "Actual finite entry/disassembly and whole executable text reviewed. Both actual Windows primary/control hashes/text were independently recalculated locally. Four actual Air binary hashes/text were independently recalculated over SSH with read-only Mach-O parsing; exact four facade path C strings have no embedded quote and match fixed profiles.",
+    "binary_scope": "Reviewed profile text hashes are exact, not cross-platform text equality. Windows controls have identical text across CUDA/Vulkan; Air controls are the same actual binary. Distinct primary text/rodata selections remain keyed by profile.",
+    "source_boundary": "Exactly22 current source inputs are frozen: source-ledger.json,8 compiled inputs,4 contracts,4 artifact manifests, consumer-provenance,3 retained contract/source inputs and validator. Excludes .git, authorization itself and historical source-ledgers to avoid self-reference or false requalification."
+  },
+  "required_before_sampling": {
+    "existing_boundary_evidence": "Sufficient for this fixed same-contract warm journey: original four-profile uninstrumented verify full oracle/actual-module/native-completion/State-retirement/normal-terminal receipts; exact R13–17 image/SDK identities; actual resident upload and unchanged native CPU/math/transfer code; existing actual overlap originals. No additional perfect per-API or per-replay trace requirement is introduced.",
+    "a4_supplement": "CUPTI A4 observed100 kernel records(99 valid intervals),164 valid memcpy records and completed original public oracle/State prefix with buffers105/105/drop0, then diagnostic HANG at vendor exit. Retained FAIL and UNKNOWN; not a normal-exit or performance PASS, and not evidence of a new G09 correctness failure.",
+    "still_required": "Each actual fresh consumer must meet exact text/source/canonical root/artifact identity, original verify-only and original workload A/A; formal original controls and fixed n15->31 analysis follow. R18 does not pre-sign those results.",
+    "provenance": "Runtime receipt hashes are frozen per profile in bound artifacts manifests. Parent-supplied actual runtime results are not replaced by R18 static metadata or by the failed A4 instrumentation run."
+  },
+  "authorization_path": ".scratch/inference-gaps/g09-p1-instrument-adapter/review-authorization.json",
+  "negative_space": [
+    "No G01–G08 reopen or new consumer domain",
+    "No product API/layout/algorithm or public performance-tool change",
+    "No kernel/API count promise beyond observed A4 prefix",
+    "No A/A or performance PASS from static code review",
+    "No absolute whole-library completeness or inference-engine throughput claim"
+  ],
+  "stop": "Finite R18 completed; original fixed gates may proceed under authorization conditions."
+}

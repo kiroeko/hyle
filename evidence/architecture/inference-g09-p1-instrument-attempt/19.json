@@ -1,0 +1,1298 @@
+{
+  "schema": "hyle.bounded-aa-failure-review.v1",
+  "review": "R19 three unqualified routes: Windows Vulkan, Air Apple and Air Vulkan",
+  "reviewed_at_utc": "2026-10-17T02:01:11.209751+00:00",
+  "decision": "RETAIN_AA_FAIL_DIAGNOSTIC_AND_PERFORMANCE_INCONCLUSIVE_NO_CURRENT_PRODUCT_OR_INSTRUMENT_FIX_JUSTIFIED",
+  "scope": "Existing logs/source/rules only. No build, GPU, benchmark, rerun, new samples, threshold/shape change or source edit. No module reopen/status mutation.",
+  "profiles": [
+    {
+      "profile": "windows-vulkan",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa.json",
+        "sha256": "15cc4c40a8aa73b2eff10fa7bfa277770ddade17181c7735fa99eb9ee55b7dc3",
+        "bytes": 21186
+      },
+      "gate": "FAIL",
+      "errors": [
+        "candidate/independent-cpu-first: factor median bias"
+      ],
+      "aa_elapsed_seconds": 27.03100000001723,
+      "runs": [
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\baseline-0-0.log",
+            "sha256": "f0c7b94713176b0ec306a3034187deeca983b3c2c328d0ff34a2a3e60d735a4e",
+            "bytes": 31851
+          },
+          "sdk": "baseline",
+          "execution_order": "candidate-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.996630024873626,
+            "independent-gpu-first": 1.0204063604240283,
+            "two-microbatches": 0.9959016393442625,
+            "serial-holdout": 1.0162320095227788
+          },
+          "elapsed_seconds": 2.9839999999967404,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\baseline-0-1.log",
+            "sha256": "a4cc747f575686c08877a99a17cd32548b86a624af847de9ee785f6bd0687ff3",
+            "bytes": 31841
+          },
+          "sdk": "baseline",
+          "execution_order": "candidate-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.9686337914308811,
+            "independent-gpu-first": 1.0261657162026165,
+            "two-microbatches": 1.003070910106086,
+            "serial-holdout": 1.0564846216816746
+          },
+          "elapsed_seconds": 3.0,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\baseline-1-0.log",
+            "sha256": "aa0531f0e56ed129e4758f657a4974e413b83448f8fe27e3d01096353a6b5470",
+            "bytes": 31841
+          },
+          "sdk": "baseline",
+          "execution_order": "peer-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9919847631140385,
+            "independent-gpu-first": 1.056402950050285,
+            "two-microbatches": 0.9746136865342163,
+            "serial-holdout": 0.9941760138050044
+          },
+          "elapsed_seconds": 2.98499999998603,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\baseline-1-1.log",
+            "sha256": "fcf3cd6bc18c1d32391042de826f5f22c9381373710e96f7ea971a062add9b2b",
+            "bytes": 31831
+          },
+          "sdk": "baseline",
+          "execution_order": "peer-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.9549237742068397,
+            "independent-gpu-first": 1.0212630041978463,
+            "two-microbatches": 0.9447551493657073,
+            "serial-holdout": 1.040375
+          },
+          "elapsed_seconds": 3.125,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\candidate-0-0.log",
+            "sha256": "25060caba21e0b400070ec6f85ee693af7018e9afbe299c3c748430f2e8542ad",
+            "bytes": 31920
+          },
+          "sdk": "candidate",
+          "execution_order": "candidate-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9965764331210192,
+            "independent-gpu-first": 1.0790387364694671,
+            "two-microbatches": 0.9952566964285714,
+            "serial-holdout": 1.0073165240882485
+          },
+          "elapsed_seconds": 2.937000000034459,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\candidate-0-1.log",
+            "sha256": "8650d25d98ae75e1eab0b0bdf2b78e83ebb7193cc6385a564c011e8ec6e87eb0",
+            "bytes": 31910
+          },
+          "sdk": "candidate",
+          "execution_order": "candidate-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.9105849412624019,
+            "independent-gpu-first": 1.0050970534841501,
+            "two-microbatches": 0.9772696152266193,
+            "serial-holdout": 1.0254198819791194
+          },
+          "elapsed_seconds": 2.9219999999622814,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\candidate-1-0.log",
+            "sha256": "6df3b818f7fcada5bdc694fff41df146d400e86ed6f9c66c4f09fa31c33f3154",
+            "bytes": 31884
+          },
+          "sdk": "candidate",
+          "execution_order": "peer-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 1.0197581212206441,
+            "independent-gpu-first": 0.973894176931691,
+            "two-microbatches": 0.9751396648044692,
+            "serial-holdout": 1.0285187594881804
+          },
+          "elapsed_seconds": 2.8589999999967404,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\pipeline-aa-raw\\candidate-1-1.log",
+            "sha256": "b0f79e1fa3ce8e335d683288536ee50d5799a74cc2fe2d9e638ccc6899031800",
+            "bytes": 31900
+          },
+          "sdk": "candidate",
+          "execution_order": "peer-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.9833205387675344,
+            "independent-gpu-first": 1.0550341868883226,
+            "two-microbatches": 1.0431944444444445,
+            "serial-holdout": 0.9924645835426504
+          },
+          "elapsed_seconds": 2.844000000040978,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        }
+      ],
+      "summaries": {
+        "baseline/independent-cpu-first": {
+          "ratios": [
+            0.996630024873626,
+            0.9686337914308811,
+            0.9919847631140385,
+            0.9549237742068397
+          ],
+          "factor_medians": {
+            "all": 0.9803092772724598,
+            "execution_order=candidate-first": 0.9826319081522535,
+            "execution_order=peer-first": 0.973454268660439,
+            "allocation_order=candidate-first": 0.9943073939938323,
+            "allocation_order=peer-first": 0.9617787828188604
+          }
+        },
+        "baseline/independent-gpu-first": {
+          "ratios": [
+            1.0204063604240283,
+            1.0261657162026165,
+            1.056402950050285,
+            1.0212630041978463
+          ],
+          "factor_medians": {
+            "all": 1.0237143602002314,
+            "execution_order=candidate-first": 1.0232860383133224,
+            "execution_order=peer-first": 1.0388329771240656,
+            "allocation_order=candidate-first": 1.0384046552371566,
+            "allocation_order=peer-first": 1.0237143602002314
+          }
+        },
+        "baseline/two-microbatches": {
+          "ratios": [
+            0.9959016393442625,
+            1.003070910106086,
+            0.9746136865342163,
+            0.9447551493657073
+          ],
+          "factor_medians": {
+            "all": 0.9852576629392393,
+            "execution_order=candidate-first": 0.9994862747251743,
+            "execution_order=peer-first": 0.9596844179499617,
+            "allocation_order=candidate-first": 0.9852576629392393,
+            "allocation_order=peer-first": 0.9739130297358967
+          }
+        },
+        "baseline/serial-holdout": {
+          "ratios": [
+            1.0162320095227788,
+            1.0564846216816746,
+            0.9941760138050044,
+            1.040375
+          ],
+          "factor_medians": {
+            "all": 1.0283035047613893,
+            "execution_order=candidate-first": 1.0363583156022267,
+            "execution_order=peer-first": 1.0172755069025023,
+            "allocation_order=candidate-first": 1.0052040116638916,
+            "allocation_order=peer-first": 1.0484298108408372
+          }
+        },
+        "candidate/independent-cpu-first": {
+          "ratios": [
+            0.9965764331210192,
+            0.9105849412624019,
+            1.0197581212206441,
+            0.9833205387675344
+          ],
+          "factor_medians": {
+            "all": 0.9899484859442769,
+            "execution_order=candidate-first": 0.9535806871917105,
+            "execution_order=peer-first": 1.0015393299940893,
+            "allocation_order=candidate-first": 1.0081672771708317,
+            "allocation_order=peer-first": 0.9469527400149682
+          }
+        },
+        "candidate/independent-gpu-first": {
+          "ratios": [
+            1.0790387364694671,
+            1.0050970534841501,
+            0.973894176931691,
+            1.0550341868883226
+          ],
+          "factor_medians": {
+            "all": 1.0300656201862364,
+            "execution_order=candidate-first": 1.0420678949768085,
+            "execution_order=peer-first": 1.0144641819100069,
+            "allocation_order=candidate-first": 1.026466456700579,
+            "allocation_order=peer-first": 1.0300656201862364
+          }
+        },
+        "candidate/two-microbatches": {
+          "ratios": [
+            0.9952566964285714,
+            0.9772696152266193,
+            0.9751396648044692,
+            1.0431944444444445
+          ],
+          "factor_medians": {
+            "all": 0.9862631558275954,
+            "execution_order=candidate-first": 0.9862631558275954,
+            "execution_order=peer-first": 1.0091670546244569,
+            "allocation_order=candidate-first": 0.9851981806165203,
+            "allocation_order=peer-first": 1.0102320298355318
+          }
+        },
+        "candidate/serial-holdout": {
+          "ratios": [
+            1.0073165240882485,
+            1.0254198819791194,
+            1.0285187594881804,
+            0.9924645835426504
+          ],
+          "factor_medians": {
+            "all": 1.016368203033684,
+            "execution_order=candidate-first": 1.016368203033684,
+            "execution_order=peer-first": 1.0104916715154153,
+            "allocation_order=candidate-first": 1.0179176417882143,
+            "allocation_order=peer-first": 1.008942232760885
+          }
+        }
+      },
+      "sampling_policy": {
+        "environment": "windows",
+        "affinity_mask": "0x14",
+        "logical_cpu": 2,
+        "cpu_set_id": 258,
+        "required_efficiency_class": "maximum",
+        "smt_sibling_logical_cpu": 3,
+        "priority": "above-normal",
+        "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+        "sampling_topology": "native-runtime-pair",
+        "logical_cpus": [
+          2,
+          4
+        ],
+        "cpu_set_ids": [
+          258,
+          260
+        ],
+        "physical_core_indices": [
+          2,
+          4
+        ],
+        "caller_logical_cpu": 2,
+        "distinct_physical_cores": true,
+        "reserved_physical_core_count": 2,
+        "helper_placement": "native-runtime-managed"
+      },
+      "identity": {
+        "executable_sha256": "9640665ebd947bc80da927a03cd27fdbfc3434177fceba3e7d4b5c7d1180c20c",
+        "control_sha256": "ae18c223c4163dcf092e28fc86929fbbbf46ffc4d906e483dfe44e2921bc2ff9",
+        "artifact_specification_sha256": "14112253e3822566e7cfb7ffbb37773925d96036fb5d6083e5dc5fe8e3550400",
+        "authorization_sha256": "b811021521fb276055b9482062b85772d6239fa4b189536b4b58579bba2fd4fd",
+        "physical_machine": {
+          "schema": "hyle-perf-physical-host-identity-v1",
+          "profile_id": "W1-WIN",
+          "physical_host_id": "W1",
+          "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+          "environment": "windows",
+          "independent_hardware": true,
+          "profile_provisioned": true,
+          "registration_state": "REGISTERED_MATCH",
+          "stable_machine_id_source": "windows-machine-guid-sha256",
+          "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+          "stable_machine_id_matches_registered": true,
+          "required_host_facts_match": true,
+          "mismatched_host_facts": [],
+          "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+          "raw_identifier_recorded": false
+        }
+      }
+    },
+    {
+      "profile": "air-apple",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa.json",
+        "sha256": "69626150a048acc20e1e078406fa9f2cefc52b1a7281b1b536d03750b6df19c3",
+        "bytes": 17053
+      },
+      "gate": "FAIL",
+      "errors": [
+        "candidate/two-microbatches: gross instability"
+      ],
+      "aa_elapsed_seconds": 12.243911749999999,
+      "runs": [
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\baseline-0-0.log",
+            "sha256": "e4b88e6602ef44c86e1c6c5bf422f473299ae67a11fc3b6e36fe94ccbe53eb36",
+            "bytes": 222904
+          },
+          "sdk": "baseline",
+          "execution_order": "candidate-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9771089229519845,
+            "independent-gpu-first": 1.0043997485857952,
+            "two-microbatches": 0.9918032786885247,
+            "serial-holdout": 0.9888535919300006
+          },
+          "elapsed_seconds": 1.906158042,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\baseline-0-1.log",
+            "sha256": "e323924c1579cf816fc641ca6ffc32243e7d55211831b1605c2ba34ed175e96c",
+            "bytes": 222864
+          },
+          "sdk": "baseline",
+          "execution_order": "candidate-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.997416319605121,
+            "independent-gpu-first": 1.0344719850031243,
+            "two-microbatches": 0.9513538023059982,
+            "serial-holdout": 0.9888671328671328
+          },
+          "elapsed_seconds": 1.3402066660000003,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\baseline-1-0.log",
+            "sha256": "a2e5e6d0e683f7334aa6d858e75f8ad05f9cc4a8eb297dfdf2ca387983ed301e",
+            "bytes": 222890
+          },
+          "sdk": "baseline",
+          "execution_order": "peer-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9809758193679441,
+            "independent-gpu-first": 1.0192706627361066,
+            "two-microbatches": 1.0377333333333334,
+            "serial-holdout": 0.9859147088297517
+          },
+          "elapsed_seconds": 1.3607925420000004,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\baseline-1-1.log",
+            "sha256": "b682d9d5af07ac24049216bdf924c959ff4bbea4e4228b9adc496fa5933b5849",
+            "bytes": 222878
+          },
+          "sdk": "baseline",
+          "execution_order": "peer-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 1.0011932699574402,
+            "independent-gpu-first": 1.0550657033960977,
+            "two-microbatches": 0.9796048845981715,
+            "serial-holdout": 1.0684332260659695
+          },
+          "elapsed_seconds": 1.2898660409999998,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\candidate-0-0.log",
+            "sha256": "1005b580d554d97b27fc43c4181561f22601453bc6d205e9f4e456b1bf4104ca",
+            "bytes": 222923
+          },
+          "sdk": "candidate",
+          "execution_order": "candidate-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9736537223771722,
+            "independent-gpu-first": 1.002849002849003,
+            "two-microbatches": 1.0140505820955439,
+            "serial-holdout": 1.0095637583892616
+          },
+          "elapsed_seconds": 1.7775981659999998,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\candidate-0-1.log",
+            "sha256": "a2dae95f806928f5fbeb4cbbcc8c7565b0ba75533291ec577ef99392b3e056e8",
+            "bytes": 222938
+          },
+          "sdk": "candidate",
+          "execution_order": "candidate-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.9920725983102118,
+            "independent-gpu-first": 1.0297215409031886,
+            "two-microbatches": 1.0707668399976094,
+            "serial-holdout": 1.00494972125254
+          },
+          "elapsed_seconds": 1.1091570829999995,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\candidate-1-0.log",
+            "sha256": "8822c2cf152c5ac1d967c2a62e561a22371bc2f7733dc49c79a9cee3f84b167c",
+            "bytes": 222938
+          },
+          "sdk": "candidate",
+          "execution_order": "peer-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9982054171361796,
+            "independent-gpu-first": 0.9885607709045694,
+            "two-microbatches": 1.0463302210140646,
+            "serial-holdout": 0.9848542631435576
+          },
+          "elapsed_seconds": 1.0846213749999993,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-apple-collected\\evidence\\pipeline-aa-raw\\candidate-1-1.log",
+            "sha256": "239fdc86734610e574f5fb4c5eb21331d6a8c31fc6ac197376b5343bf5227b26",
+            "bytes": 222903
+          },
+          "sdk": "candidate",
+          "execution_order": "peer-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 1.0047793732313175,
+            "independent-gpu-first": 1.0072120896300156,
+            "two-microbatches": 0.8961508342870913,
+            "serial-holdout": 1.0263187556357078
+          },
+          "elapsed_seconds": 1.0867210840000006,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        }
+      ],
+      "summaries": {
+        "baseline/independent-cpu-first": {
+          "ratios": [
+            0.9771089229519845,
+            0.997416319605121,
+            0.9809758193679441,
+            1.0011932699574402
+          ],
+          "factor_medians": {
+            "all": 0.9891960694865325,
+            "execution_order=candidate-first": 0.9872626212785527,
+            "execution_order=peer-first": 0.9910845446626921,
+            "allocation_order=candidate-first": 0.9790423711599643,
+            "allocation_order=peer-first": 0.9993047947812805
+          }
+        },
+        "baseline/independent-gpu-first": {
+          "ratios": [
+            1.0043997485857952,
+            1.0344719850031243,
+            1.0192706627361066,
+            1.0550657033960977
+          ],
+          "factor_medians": {
+            "all": 1.0268713238696154,
+            "execution_order=candidate-first": 1.0194358667944599,
+            "execution_order=peer-first": 1.0371681830661021,
+            "allocation_order=candidate-first": 1.011835205660951,
+            "allocation_order=peer-first": 1.044768844199611
+          }
+        },
+        "baseline/two-microbatches": {
+          "ratios": [
+            0.9918032786885247,
+            0.9513538023059982,
+            1.0377333333333334,
+            0.9796048845981715
+          ],
+          "factor_medians": {
+            "all": 0.9857040816433481,
+            "execution_order=candidate-first": 0.9715785404972614,
+            "execution_order=peer-first": 1.0086691089657525,
+            "allocation_order=candidate-first": 1.0147683060109292,
+            "allocation_order=peer-first": 0.9654793434520849
+          }
+        },
+        "baseline/serial-holdout": {
+          "ratios": [
+            0.9888535919300006,
+            0.9888671328671328,
+            0.9859147088297517,
+            1.0684332260659695
+          ],
+          "factor_medians": {
+            "all": 0.9888603623985667,
+            "execution_order=candidate-first": 0.9888603623985667,
+            "execution_order=peer-first": 1.0271739674478606,
+            "allocation_order=candidate-first": 0.9873841503798761,
+            "allocation_order=peer-first": 1.0286501794665512
+          }
+        },
+        "candidate/independent-cpu-first": {
+          "ratios": [
+            0.9736537223771722,
+            0.9920725983102118,
+            0.9982054171361796,
+            1.0047793732313175
+          ],
+          "factor_medians": {
+            "all": 0.9951390077231956,
+            "execution_order=candidate-first": 0.9828631603436919,
+            "execution_order=peer-first": 1.0014923951837487,
+            "allocation_order=candidate-first": 0.9859295697566759,
+            "allocation_order=peer-first": 0.9984259857707647
+          }
+        },
+        "candidate/independent-gpu-first": {
+          "ratios": [
+            1.002849002849003,
+            1.0297215409031886,
+            0.9885607709045694,
+            1.0072120896300156
+          ],
+          "factor_medians": {
+            "all": 1.0050305462395093,
+            "execution_order=candidate-first": 1.0162852718760957,
+            "execution_order=peer-first": 0.9978864302672925,
+            "allocation_order=candidate-first": 0.9957048868767862,
+            "allocation_order=peer-first": 1.018466815266602
+          }
+        },
+        "candidate/two-microbatches": {
+          "ratios": [
+            1.0140505820955439,
+            1.0707668399976094,
+            1.0463302210140646,
+            0.8961508342870913
+          ],
+          "factor_medians": {
+            "all": 1.0301904015548042,
+            "execution_order=candidate-first": 1.0424087110465767,
+            "execution_order=peer-first": 0.971240527650578,
+            "allocation_order=candidate-first": 1.0301904015548042,
+            "allocation_order=peer-first": 0.9834588371423503
+          }
+        },
+        "candidate/serial-holdout": {
+          "ratios": [
+            1.0095637583892616,
+            1.00494972125254,
+            0.9848542631435576,
+            1.0263187556357078
+          ],
+          "factor_medians": {
+            "all": 1.007256739820901,
+            "execution_order=candidate-first": 1.007256739820901,
+            "execution_order=peer-first": 1.0055865093896328,
+            "allocation_order=candidate-first": 0.9972090107664096,
+            "allocation_order=peer-first": 1.015634238444124
+          }
+        }
+      },
+      "sampling_policy": {
+        "environment": "macos",
+        "hard_affinity_supported": false,
+        "qos": "interactive",
+        "applied_by": "benchmark-child"
+      },
+      "identity": {
+        "executable_sha256": "4ff3e5c9c0c56574f60e9795f53dbb58abe478a09bd292c8047a9ef3d48296ee",
+        "control_sha256": "8a8523372075d3496c9060a52dfb2db008503a2ecee44d87e204e11d252815e4",
+        "artifact_specification_sha256": "4416b532f28d6d2eca418b440c4924cdd14e09c06334eccea58298e5cbc22bf9",
+        "authorization_sha256": "b811021521fb276055b9482062b85772d6239fa4b189536b4b58579bba2fd4fd",
+        "physical_machine": {
+          "schema": "hyle-perf-physical-host-identity-v1",
+          "profile_id": "M1-MAC",
+          "physical_host_id": "M1",
+          "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+          "environment": "macos",
+          "independent_hardware": true,
+          "profile_provisioned": true,
+          "registration_state": "UNREGISTERED",
+          "stable_machine_id_source": "macos-platform-uuid-sha256",
+          "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+          "stable_machine_id_matches_registered": false,
+          "required_host_facts_match": false,
+          "mismatched_host_facts": [],
+          "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+          "raw_identifier_recorded": false
+        }
+      }
+    },
+    {
+      "profile": "air-vulkan",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa.json",
+        "sha256": "02df7282a1213adb40cdb3b06bc41947f1a09ede44007608bf9bf88809a4988f",
+        "bytes": 16519
+      },
+      "gate": "FAIL",
+      "errors": [
+        "baseline/independent-cpu-first: gross instability",
+        "baseline/independent-cpu-first: factor median bias",
+        "baseline/independent-gpu-first: gross instability",
+        "baseline/independent-gpu-first: factor median bias",
+        "candidate/independent-gpu-first: gross instability",
+        "candidate/independent-gpu-first: factor median bias",
+        "candidate/two-microbatches: gross instability",
+        "candidate/two-microbatches: factor median bias"
+      ],
+      "aa_elapsed_seconds": 24.563099042,
+      "runs": [
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\baseline-0-0.log",
+            "sha256": "1e6ef1e849adb5ba664a40a394f537b0b66240ad12406055ab1928e0401775e6",
+            "bytes": 223378
+          },
+          "sdk": "baseline",
+          "execution_order": "candidate-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9189017279762537,
+            "independent-gpu-first": 1.0304926612811467,
+            "two-microbatches": 0.991816431322208,
+            "serial-holdout": 1.0032488628979856
+          },
+          "elapsed_seconds": 3.5425752920000004,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\baseline-0-1.log",
+            "sha256": "bce2a22e1f93109f060ffa16fcb9543d027809131d69a571b8be6f785d8bb36f",
+            "bytes": 223367
+          },
+          "sdk": "baseline",
+          "execution_order": "candidate-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.9855880496528507,
+            "independent-gpu-first": 1.0271570014144271,
+            "two-microbatches": 0.9522742363877822,
+            "serial-holdout": 1.0607183121275567
+          },
+          "elapsed_seconds": 2.5838275,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\baseline-1-0.log",
+            "sha256": "c20ea5f230995a60ee25853558365ec42016615767a88bb0f4af108d17c5a4b2",
+            "bytes": 223341
+          },
+          "sdk": "baseline",
+          "execution_order": "peer-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9010263929618768,
+            "independent-gpu-first": 0.9359752162127276,
+            "two-microbatches": 1.0730118829981719,
+            "serial-holdout": 0.9335049984853075
+          },
+          "elapsed_seconds": 2.5917433340000002,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\baseline-1-1.log",
+            "sha256": "958fb5673e97666b634dec5a2725e963ba7b0b3dc771a84c7f3b83f312988731",
+            "bytes": 223357
+          },
+          "sdk": "baseline",
+          "execution_order": "peer-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.8535714285714286,
+            "independent-gpu-first": 1.1233393930918751,
+            "two-microbatches": 0.9744742334243057,
+            "serial-holdout": 0.9970547201984187
+          },
+          "elapsed_seconds": 2.817283709,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\candidate-0-0.log",
+            "sha256": "fe644b304151f6402656de64487a84faf2cb94c4b4aabc11c0baa983f6563748",
+            "bytes": 223426
+          },
+          "sdk": "candidate",
+          "execution_order": "candidate-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 0.9996089931573803,
+            "independent-gpu-first": 1.0776112967554166,
+            "two-microbatches": 1.2598870056497176,
+            "serial-holdout": 1.0969051243023846
+          },
+          "elapsed_seconds": 3.133497458000001,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\candidate-0-1.log",
+            "sha256": "b55beab76405569f46679b062a49eea83e9c7a80f26a21b80b7a58a273c008b8",
+            "bytes": 223416
+          },
+          "sdk": "candidate",
+          "execution_order": "candidate-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 1.004511130724723,
+            "independent-gpu-first": 0.9823390894819467,
+            "two-microbatches": 1.0129529431054272,
+            "serial-holdout": 0.949445324881141
+          },
+          "elapsed_seconds": 2.727935000000002,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\candidate-1-0.log",
+            "sha256": "557f2b3a5860b8ce01395acfcab88a767d33005e3125c677c53d5f8539fc4837",
+            "bytes": 223416
+          },
+          "sdk": "candidate",
+          "execution_order": "peer-first",
+          "allocation_order": "candidate-first",
+          "ratios": {
+            "independent-cpu-first": 1.0133545943791111,
+            "independent-gpu-first": 1.0231964030247291,
+            "two-microbatches": 0.8933593206181262,
+            "serial-holdout": 0.9880952380952381
+          },
+          "elapsed_seconds": 2.715202957999999,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        },
+        {
+          "log": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal-air-vulkan-collected\\evidence\\pipeline-aa-raw\\candidate-1-1.log",
+            "sha256": "e1e1d73037868ca93998f768d158442397b846bb78422ea4405aa3cb0f271460",
+            "bytes": 223406
+          },
+          "sdk": "candidate",
+          "execution_order": "peer-first",
+          "allocation_order": "peer-first",
+          "ratios": {
+            "independent-cpu-first": 0.99940499801666,
+            "independent-gpu-first": 1.185684161199625,
+            "two-microbatches": 1.1833354406372487,
+            "serial-holdout": 0.9558393599015234
+          },
+          "elapsed_seconds": 2.550835708000001,
+          "public_completion_counts": {
+            "before": 4,
+            "after": 4,
+            "destroy_status0": 8,
+            "measurement_markers": 4
+          }
+        }
+      ],
+      "summaries": {
+        "baseline/independent-cpu-first": {
+          "ratios": [
+            0.9189017279762537,
+            0.9855880496528507,
+            0.9010263929618768,
+            0.8535714285714286
+          ],
+          "factor_medians": {
+            "all": 0.9099640604690653,
+            "execution_order=candidate-first": 0.9522448888145523,
+            "execution_order=peer-first": 0.8772989107666527,
+            "allocation_order=candidate-first": 0.9099640604690653,
+            "allocation_order=peer-first": 0.9195797391121396
+          }
+        },
+        "baseline/independent-gpu-first": {
+          "ratios": [
+            1.0304926612811467,
+            1.0271570014144271,
+            0.9359752162127276,
+            1.1233393930918751
+          ],
+          "factor_medians": {
+            "all": 1.0288248313477868,
+            "execution_order=candidate-first": 1.0288248313477868,
+            "execution_order=peer-first": 1.0296573046523014,
+            "allocation_order=candidate-first": 0.9832339387469371,
+            "allocation_order=peer-first": 1.0752481972531511
+          }
+        },
+        "baseline/two-microbatches": {
+          "ratios": [
+            0.991816431322208,
+            0.9522742363877822,
+            1.0730118829981719,
+            0.9744742334243057
+          ],
+          "factor_medians": {
+            "all": 0.9831453323732569,
+            "execution_order=candidate-first": 0.972045333854995,
+            "execution_order=peer-first": 1.0237430582112388,
+            "allocation_order=candidate-first": 1.03241415716019,
+            "allocation_order=peer-first": 0.9633742349060439
+          }
+        },
+        "baseline/serial-holdout": {
+          "ratios": [
+            1.0032488628979856,
+            1.0607183121275567,
+            0.9335049984853075,
+            0.9970547201984187
+          ],
+          "factor_medians": {
+            "all": 1.000151791548202,
+            "execution_order=candidate-first": 1.0319835875127712,
+            "execution_order=peer-first": 0.9652798593418631,
+            "allocation_order=candidate-first": 0.9683769306916465,
+            "allocation_order=peer-first": 1.0288865161629877
+          }
+        },
+        "candidate/independent-cpu-first": {
+          "ratios": [
+            0.9996089931573803,
+            1.004511130724723,
+            1.0133545943791111,
+            0.99940499801666
+          ],
+          "factor_medians": {
+            "all": 1.0020600619410516,
+            "execution_order=candidate-first": 1.0020600619410516,
+            "execution_order=peer-first": 1.0063797961978855,
+            "allocation_order=candidate-first": 1.0064817937682458,
+            "allocation_order=peer-first": 1.0019580643706916
+          }
+        },
+        "candidate/independent-gpu-first": {
+          "ratios": [
+            1.0776112967554166,
+            0.9823390894819467,
+            1.0231964030247291,
+            1.185684161199625
+          ],
+          "factor_medians": {
+            "all": 1.0504038498900727,
+            "execution_order=candidate-first": 1.0299751931186816,
+            "execution_order=peer-first": 1.104440282112177,
+            "allocation_order=candidate-first": 1.0504038498900727,
+            "allocation_order=peer-first": 1.0840116253407859
+          }
+        },
+        "candidate/two-microbatches": {
+          "ratios": [
+            1.2598870056497176,
+            1.0129529431054272,
+            0.8933593206181262,
+            1.1833354406372487
+          ],
+          "factor_medians": {
+            "all": 1.098144191871338,
+            "execution_order=candidate-first": 1.1364199743775725,
+            "execution_order=peer-first": 1.0383473806276875,
+            "allocation_order=candidate-first": 1.0766231631339218,
+            "allocation_order=peer-first": 1.098144191871338
+          }
+        },
+        "candidate/serial-holdout": {
+          "ratios": [
+            1.0969051243023846,
+            0.949445324881141,
+            0.9880952380952381,
+            0.9558393599015234
+          ],
+          "factor_medians": {
+            "all": 0.9719672989983807,
+            "execution_order=candidate-first": 1.0231752245917627,
+            "execution_order=peer-first": 0.9719672989983807,
+            "allocation_order=candidate-first": 1.0425001811988115,
+            "allocation_order=peer-first": 0.9526423423913322
+          }
+        }
+      },
+      "sampling_policy": {
+        "environment": "macos",
+        "hard_affinity_supported": false,
+        "qos": "interactive",
+        "applied_by": "benchmark-child"
+      },
+      "identity": {
+        "executable_sha256": "a8e060afc1090618bd39f4a8b01ef03ea64b08231d6e3904a34227600f3e4f60",
+        "control_sha256": "8a8523372075d3496c9060a52dfb2db008503a2ecee44d87e204e11d252815e4",
+        "artifact_specification_sha256": "8b0daa2d93c0576e695fa5742bde6a0b6dc58752fea37c2a316e92c2cf95fb40",
+        "authorization_sha256": "b811021521fb276055b9482062b85772d6239fa4b189536b4b58579bba2fd4fd",
+        "physical_machine": {
+          "schema": "hyle-perf-physical-host-identity-v1",
+          "profile_id": "M1-MAC",
+          "physical_host_id": "M1",
+          "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+          "environment": "macos",
+          "independent_hardware": true,
+          "profile_provisioned": true,
+          "registration_state": "UNREGISTERED",
+          "stable_machine_id_source": "macos-platform-uuid-sha256",
+          "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+          "stable_machine_id_matches_registered": false,
+          "required_host_facts_match": false,
+          "mismatched_host_facts": [],
+          "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+          "raw_identifier_recorded": false
+        }
+      }
+    }
+  ],
+  "threshold_reconciliation": {
+    "narrow_lower": 0.9523809523809523,
+    "gross_lower": 0.9090909090909091,
+    "windows_vulkan": {
+      "failed_shape": "candidate/independent-cpu-first",
+      "failed_factor": "allocation_order=peer-first",
+      "observed_factor_median": 0.9469527400149682,
+      "values": [
+        0.9105849412624019,
+        0.9833205387675344
+      ],
+      "recomputed_median": 0.9469527400149682,
+      "judgment": "Correctly below1/1.05. Worst process remains above1/1.10, but passing gross is not a replacement for the independent5% factor gate."
+    },
+    "air_apple": {
+      "failed_shape": "candidate/two-microbatches",
+      "failed_factor": "per-process gross",
+      "observed": 0.8961508342870913,
+      "values": [
+        1.0140505820955439,
+        1.0707668399976094,
+        1.0463302210140646,
+        0.8961508342870913
+      ],
+      "judgment": "Correctly below1/1.10. Every factor median remaining inside5% cannot override the separate original gross gate."
+    },
+    "air_vulkan": {
+      "errors": [
+        "baseline/independent-cpu-first: gross instability",
+        "baseline/independent-cpu-first: factor median bias",
+        "baseline/independent-gpu-first: gross instability",
+        "baseline/independent-gpu-first: factor median bias",
+        "candidate/independent-gpu-first: gross instability",
+        "candidate/independent-gpu-first: factor median bias",
+        "candidate/two-microbatches: gross instability",
+        "candidate/two-microbatches: factor median bias"
+      ],
+      "recomputed_all_process_ratios_match_declared_ops_rows": true,
+      "judgment": "Original per-process gross and factor gates reject as recorded; retain every original failure. No estimator, threshold, data or sample-count correction is justified."
+    }
+  },
+  "parser_and_estimator": {
+    "result": "NO_WRONG_COLUMN_OR_ARITHMETIC_DEFECT_FOUND",
+    "anchors": [
+      "third_party/nanobench/nanobench.h:3838-3861 pairedLogRatios pairs elapsed values by round",
+      "third_party/nanobench/nanobench.h:4249-4252 relative and CI exponentiate median/interval of paired log ratios",
+      "third_party/nanobench/nanobench.h:3991-4004 op/s uses inverse of each result elapsed median, separately from relative/CI",
+      "scripts/hyle_perf/nanobench.py:43-81 locates op/s by header and validates positive finite values",
+      ".scratch/inference-gaps/g09-p1-instrument-adapter/validate_aa.py:186-211 ratios named rows and checks independent factor/gross bands"
+    ],
+    "example_windows": {
+      "candidate_ns_per_op": 6684600.0,
+      "peer_ns_per_op": 6086900.0,
+      "candidate_printed_ops": 149.6,
+      "peer_printed_ops": 164.29,
+      "marginal_ops_ratio": 0.9105849412624019,
+      "paired_relative_printed_peer": 1.03,
+      "paired_relative_ci_peer": [
+        0.961,
+        1.148
+      ],
+      "row_error_percent": [
+        8.2,
+        7.4
+      ]
+    },
+    "example_air": {
+      "candidate_ns_per_op": 6721812.5,
+      "peer_ns_per_op": 6023895.5,
+      "candidate_printed_ops": 148.77,
+      "peer_printed_ops": 166.01,
+      "marginal_ops_ratio": 0.8961508342870913,
+      "paired_relative_printed_candidate": 0.963,
+      "paired_relative_ci_candidate": [
+        0.826,
+        1.178
+      ],
+      "row_error_percent": [
+        5.8,
+        9.1
+      ]
+    },
+    "interpretation": "Ratio of marginal row medians and median of paired round ratios are different estimands; nonlinearity and common variation can make them disagree. This is not evidence of a parser error. Every stored A/A ratio in all24 process logs independently recomputed exactly from its declared op/s rows. Error% and wide paired intervals corroborate limited resolution but do not identify DVFS/OS/driver/cache cause.",
+    "prohibited_repair": "Do not replace the frozen op/s estimator with relative/CI after seeing the failure, choose whichever passes, drop the process, relax bands or add epochs/samples."
+  },
+  "binding_and_completion": {
+    "result": "NO_NEW_BINDING_OR_VISIBLE_COMPLETION_DEFECT_FOUND",
+    "basis": "R13-R18 exact source/text/private image/native asset identity and original public lifetime review retained. Existing AA logs select the correct same-SDK1/2 private images, named rows and order/allocation telemetry; all24 A/A process logs have4pre+4post full4M oracle PASS and8State-destroy0. Different cold first/second creation durations are explicitly outside warm timing; logs do not prove residual cold work leaked into timed execution.",
+    "limits": "Existing aggregates contain no new per-round raw durations, native clock/power timeline or scheduler attribution that proves the source of the exceptional process. Do not infer thermal/background/UMA/ASLR/queue/lazy-init cause just from variance. No new product mechanism is established."
+  },
+  "fail_closed_path": {
+    "windows_first_ab_entry": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-formal\\windows-vulkan\\evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-01.log",
+      "sha256": "d0dddc01f9e257afad2bf1385c53cca340d727a92ff2182e197ea7ebb3547fb3",
+      "bytes": 341
+    },
+    "observed": "Original readyFAIL guard rejects before compare. Windows first child raw has telemetry/failure only, no measurement marker. Parent reports the same before-compare rejection for both Air routes.0valid A/B samples across all three unqualified profiles.",
+    "runner_anchor": "C:/h7/g09-p1-peer-9e2/scripts/hyle_perf/runner.py:2210-2225 records pre-sampling validators and rebinds artifacts/source without an immediate all-gates-PASS raise. The original driver ready guard is the effective last barrier here.",
+    "judgment": "This explains why the top-level command reports a first child failure after AA_FAIL. It does not explain A/A ratios, cure qualification, or create an accepted product sample. A future separate tool fail-fast clarification could improve reporting; it is not a G09 product fix or a recovery key for this performance result."
+  },
+  "three_separate_axes": {
+    "engineering_qualification": "DIAGNOSTIC; required workload-AA FAIL, not QUALIFIED on these three harness/machine/profile combinations.",
+    "engineering_noninferiority": "UNRESOLVED/no qualified product comparison. Do not reinterpret failure of same-implementation AA as a product NI FAIL or PASS.",
+    "direction": "INCONCLUSIVE: no qualified A/B observations establish candidate relative to baseline. Do not record the AA clone bias as product LOSS.",
+    "product_change_authorization": "ABSENT. Neither a source/counter-proven material product mechanism nor an attributable real consumer regression is established. Correctness, SDK and other closed evidence stay intact; no automatic product reopen."
+  },
+  "finite_recovery": {
+    "current_action": "Stop the affected identical-configuration P1 attempt and retain all A/A/raw/fail costs. Current evidence gives no defensible targeted product or measurement correction that restores qualification.",
+    "not_a_resume_condition": [
+      "Blind repeat of the same8process AA",
+      "Increase epochs, warmups or n to find PASS",
+      "Drop the outlier, pool other factors/platforms or waive the gross/narrow gate",
+      "Switch metric estimator, workload size/provider or margins based on the failed result",
+      "Change product code/layout based on same-implementation variance"
+    ],
+    "only_legal_reentry": "A separately identified concrete instrument/host/contract mechanism and an explained correction, frozen before any new measurement, may support a new bounded validation entry while retaining this failed attempt. No such mechanism is demonstrated by the current aggregate logs. This review does not authorize broader investigation or a new run.",
+    "independent_profiles": "Qualified CUDA n15/original verify evidence is retained only for that profile, without pooling or transfer. Windows Vulkan, Air Apple and Air Vulkan each exhausted their one original A/A attempt without qualification; all three retain FAIL/DIAGNOSTIC/INCONCLUSIVE and no blind repeat."
+  },
+  "rules": [
+    {
+      "path": "docs/developer/review/module-closure-methodology.md",
+      "anchors": "6:143-155 preflight stops before n15 on unresolved order/noise; controls/engineering/direction/product keys separate"
+    },
+    {
+      "path": "docs/developer/performance/benchmark-evidence-standard.md",
+      "anchors": "3.2/4.1/4.5/4.6: same-topology AA, complete factors, fail closed;7: mechanism and consumer keys both required"
+    }
+  ],
+  "source_bindings": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\review\\module-closure-methodology.md",
+      "sha256": "558ae336f2fb960db5e2089a8c148e683888bb674e80d6aaaf5d81f6b20e9823",
+      "bytes": 13389
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\performance\\benchmark-evidence-standard.md",
+      "sha256": "e1b1e352bb99d447d728cdc4bc1cf8122a708dfd956efc03459e116ff8d3a88d",
+      "bytes": 25819
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\nanobench\\nanobench.h",
+      "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+      "bytes": 194934
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\scripts\\hyle_perf\\nanobench.py",
+      "sha256": "c3e3ee5ebbff830dc608643bd885e0016af5e8207e59413ac45c6fe57e8dd585",
+      "bytes": 5081
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\validate_aa.py",
+      "sha256": "1b72362ddf5189a5fc5df7eaa8034b8ae57df0ba0dfe1437867e380757e28ecf",
+      "bytes": 13070
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\driver.cc",
+      "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+      "bytes": 11711
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\runner.py",
+      "sha256": "df415c5bb04c1096c568cae75c84e83672d2282ef43c7965d905f3ba1d21e022",
+      "bytes": 115468
+    }
+  ],
+  "stop": "Finite R19 completed. No source modification, build/GPU/retry or new tool/framework.",
+  "updated_at_utc": "2026-10-17T02:01:43.130590+00:00",
+  "terminal_matrix": [
+    {
+      "profile": "windows-vulkan",
+      "workload_aa": "FAIL",
+      "qualification": "DIAGNOSTIC",
+      "engineering_ni": "UNRESOLVED",
+      "direction": "INCONCLUSIVE",
+      "ab_samples": 0,
+      "product_fix_must_proven": false
+    },
+    {
+      "profile": "air-apple",
+      "workload_aa": "FAIL",
+      "qualification": "DIAGNOSTIC",
+      "engineering_ni": "UNRESOLVED",
+      "direction": "INCONCLUSIVE",
+      "ab_samples": 0,
+      "product_fix_must_proven": false
+    },
+    {
+      "profile": "air-vulkan",
+      "workload_aa": "FAIL",
+      "qualification": "DIAGNOSTIC",
+      "engineering_ni": "UNRESOLVED",
+      "direction": "INCONCLUSIVE",
+      "ab_samples": 0,
+      "product_fix_must_proven": false
+    }
+  ],
+  "aggregate_attempt_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-p1-instrument-attempt\\receipt.json",
+    "sha256": "0eaf29dcc6e661c46af7bc7715937c80768c7a144258a667833281f811ae07df",
+    "bytes": 85384
+  },
+  "aggregate_raw_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-p1-instrument-attempt\\raw.zip",
+    "identity": "Use the bound aggregate receipt for archive hash; original archive preserved, not unpacked/re-executed by this offline review."
+  },
+  "parent_supplied_total_attempt_seconds": {
+    "windows_vulkan": 32.656,
+    "air_apple": 14.724,
+    "air_vulkan": 26.921
+  },
+  "no_new_product_must": true
+}

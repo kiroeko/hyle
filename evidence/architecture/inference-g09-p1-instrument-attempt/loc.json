@@ -1,0 +1,108 @@
+{
+  "schema": 3,
+  "repository": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "commit": "3524413272cb52d06af5e64d634edbfef09b9864",
+    "dirty": false,
+    "tracked_regular_files": 15426,
+    "tracked_missing_files": []
+  },
+  "policy": {
+    "snapshot": "immutable Git commit tree",
+    "untracked": "not applicable to immutable commit tree",
+    "self_written_languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ],
+    "self_written_excludes": [
+      "bench",
+      "docs",
+      "third_party",
+      "samples",
+      "cmake/build/package scripts",
+      "all build/cache/scratch directories"
+    ],
+    "module_excludes": [
+      "tests",
+      "bench",
+      "docs",
+      "third_party",
+      "CMake"
+    ]
+  },
+  "tool": {
+    "cloc": "2.08"
+  },
+  "module": {
+    "name": "graph",
+    "boundary": "explicit",
+    "paths": [
+      "src/graph",
+      "include/hyle/graph",
+      "src/graph_route_cpu_cuda",
+      "src/graph_route_cpu_apple",
+      "src/graph_route_cpu_vulkan"
+    ],
+    "modules": null
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 3832220,
+      "files": 7591,
+      "selected_files": 15426,
+      "paths": [
+        "Git-tracked files at immutable commit"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 183364,
+      "files": 761,
+      "selected_files": 849,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (graph)",
+      "code": 19704,
+      "files": 48,
+      "selected_files": 52,
+      "paths": [
+        "src/graph",
+        "include/hyle/graph",
+        "src/graph_route_cpu_cuda",
+        "src/graph_route_cpu_apple",
+        "src/graph_route_cpu_vulkan"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ]
+}
