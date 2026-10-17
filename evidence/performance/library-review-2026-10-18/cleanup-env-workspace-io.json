@@ -1,0 +1,21 @@
+{
+  "windows": {
+    "bytes": 37438277,
+    "files": 37
+  },
+  "wsl": {
+    "phase": "remove",
+    "files": 38,
+    "bytes": 15539424
+  },
+  "total_files": 75,
+  "total_bytes": 52977701,
+  "retained_cpu_files": 4,
+  "retained_cpu_bytes": 4281627,
+  "plan_sha256": "8138d629eb564aa2d4b54893b509a190ea647856626aac0e3c4a4685a7946cbf",
+  "note": "Source, logs, result archives and original SDK/native/foundation caches retained.",
+  "script": {
+    "path": ".scratch\\perf-review-2026-10-18\\cleanup-env-workspace-io.ps1",
+    "sha256": "6f6b68d14da514ec0cd0ea658fa3f8fae1b01c0075ec08e1f453b5c0aa7fed8a"
+  }
+}

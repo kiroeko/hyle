@@ -4,7 +4,7 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple其余fallback等空间项；CUDA长域F32探针的既有精度超差。
+**仍未解决**：HTTP2相对手工单loop的大报文慢点（后续header布局纠错后未重测吞吐）；Apple其余fallback等空间项；CUDA长域F32探针的既有精度超差。
 普通CPU及多节点CacheEncode已复用生命周期，普通/私有paged/ragged causal冷mask已移除；动态PagedRead保留旧arena边界。
 Apple已知无NAX硬件的受限F32 D256 causal已融合，旧Q2048失败形状在新路线通过；旧失败记录仍保留。
 其余queue政策和旧小输仍缺当前同责数据。CPU/Vulkan math attention、Apple受限长Q fallback与CPU Hadamard冷矩阵已修，bounded queue当前未复现输项。
@@ -21,7 +21,7 @@ Apple已知无NAX硬件的受限F32 D256 causal已融合，旧Q2048失败形状�
 | CUDA variadic Concat重复复制前缀 | [lowering](../../../src/compute_provider_ggml_cuda/tensor_program.cc) 线性链保留每个累积前缀；64个各1 MiB输入会额外保留2016 MiB前缀，最终输出仅64 MiB | 已改为原生平衡树，保持Graph依赖。同输入图的private分配请求2016→320 MiB；消除二次项，不宣称一次写完的最优线性算法 |
 | CUDA Hadamard平方矩阵 | [准备与lowering](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原来保存并上传W²矩阵；W4096时主机/设备各64 MiB | 1024/2048/4096已分解为两个小变换；4096常量两侧各降至16 KiB，实际private208 KiB，两对同工延迟13.26–15.36×。≤512保留原矩阵及执行路线，融合仍可能读取它 |
 | CUDA声明F32但实际缩精度 | ggml默认cuBLAS handle启用TF32；F16 flash的PV为Half累加且不读PREC_F32 | 显式F32源请求局部切DEFAULT_MATH并恢复；ggml F16改F32 math再转最终端口。未把旧低精度速度作同合同输项 |
-| io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
+| io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；后续accept空位计数/close提交去重扫描也已消除，实际fixed-slot assignment找空位仍线性。计时与后续访问计数分开记录 |
 | Linux watch重复close-write唤醒 | [inotify mask](../../../src/io_watch/watch_linux.cc) 同时订阅IN_MODIFY和IN_CLOSE_WRITE；公开接口只提供内容变化提示，未承诺writer-close。即使最终忽略sibling名称，额外通知也会唤醒owner | 已去冗余close订阅；实际减少约1.97次上下文切换/发布。16项watch测试通过，剩余小负样本未声称全部解决 |
 | TaskScope读写状态布局 | [私有State](../../../src/sched/task_scope.cc) 的cancel token与admission写入共用cache line；32-child消费者当前复现小输 | 已分隔control字段。scope-only绝对时间有改善信号，代价为本机每scope冷状态增加48 B；31项测试通过，未直接测硬件cache事件或跨平台收益 |
 | BlockingPool每次受理扫描所有线程 | [reap_retired](../../../src/sched/blocking.cc) 即使没有退休记录也扫描所有保留句柄，每次submit均付O(live threads)查找 | 同锁下以现有存活数/句柄数跳过无退休扫描，无新增状态；18项测试通过。32 busy-worker同工提交两对约46.5/50.6→43.7/44.5 ns，见下；不是round-trip或外部排名 |
@@ -39,6 +39,10 @@ Apple已知无NAX硬件的受限F32 D256 causal已融合，旧Q2048失败形状�
 | CPU私有paged/ragged causal冷mask | 非boxed Q>1仍构造并保留Q×逻辑KV的Half seed，batch admission还收取旧mask下界 | 复用同一HYCA逻辑行边界；两pin各6项通过。冷plan移除64 MiB seed，generic workspace pool仍单独保留，见下 |
 | TimerQueue空闲advance重复扫描 | 每次dispatch观察未到期timer，都会重扫最近bucket全部节点；相同N节点、M次空闲轮询可付O(N·M) | 缓存仍有效的最近deadline，取消最小值后只刷新一次；不改下次advance刷新取消值的合同。27项通过，节点访问计数见下 |
 | CPU算术链末端编码禁用生命周期复用 | 只要含CacheEncode，普通多节点recipe仍保留所有中间payload，退回Θ(N·M) | 移除该排除，保留callback/invalid传播/退休顺序与动态PagedRead排除；冷64Neg→Q8私有请求68112224→3100744 B，见下 |
+| CPU batch重复预留scratch | common pool按float及两份int上限分配实际backing，CPU native完全不用这些views，却另行分配实际workspace | 私有provider契约允许native owner省略三块scratch；同预算样本少144 MiB/slot，原native预算检查不变，见下 |
+| Process环境变更重复比较 | 公共duplicate检查为M²，POSIX/Windows继承合并逐entry扫描全部M变更；Windows还重复做M²不敏感校验 | 排序名字索引改为MlogM+ElogM，保留平台大小写与序列化结果；Windows/WSL回归和同工计数见下，不称完整spawn排名 |
+| HTTP2多header/trailer视图错误 | StoredHeader内嵌view有stride，却以连续HttpHeader span发布；现有性能consumer只有一条regular header而未暴露 | 同块中分开放连续refs/views，不增默认分配容量或次数；多header回归旧失败、新14项及epoll通过，没有新的性能排名 |
+| io_uring direct槽位合同与重复扫描 | accept误传CLOEXEC导致EINVAL，close少编码+1会误关其它slot/进程fd；accept按table扫描、close按pending列表查重 | 先修native合同，再以free计数/slot状态消除两处扫描；保留close/accept完成乱序下的新owner，原误关stdin失败及实际访问计数见下 |
 
 原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
 这条分支已因实际Half累加问题替换，不能仅凭主kernel融合推断整个调用空间或精度。
@@ -441,7 +445,7 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 该运行波动可重现原小负对的量级，目前不足以认定稳定小回退，也不证明严格等价；不将其冒充时钟量化问题。
 
 [构建与回归](io-cqe/checks.json)：25项Proactor测试23通过、2跳过；statx失败/retry、混合批次与取消ack/target分离实际通过。
-当前kernel对direct accept返回-EINVAL，成功slot/批量close生命周期仍未实测。
+当时direct accept返回-EINVAL而跳过成功slot/批量close；后续复核确认传入了不允许的CLOEXEC标志，不能据此判断该内核不支持，见本轮direct-slot纠正。
 索引保留statx的稳定kernel输出地址、原token/取消/slot和失败回滚；无special记录的普通CQE直接跳过哈希。
 代价是更多冷host索引容量，并可能因tombstone回收重分配，未声称空间减小或永久无分配。
 
@@ -459,7 +463,7 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 | FlatHash近阈值rolling churn / Queue政策 | map增长策略已修；bounded queue已完成容量/重试/完成合同对齐，其余政策不相同 | bounded 4P/4C冷trace四进程未复现Hyle更慢；A/A漂移仍明显，不能外推其它queue或warm吞吐 |
 
 - Core/Error/Obs/Math/Time/TimerQueue/Platform/Thread/FS/Process/Util：查现有证据与机制；
-  TimerQueue发现并修复空闲advance的重复扫描，27项回归及同工节点计数见下；其余许多冷查询只有结构依据，未建立新的外部排名。
+  TimerQueue空闲advance及Process多环境变更的重复扫描已修，有相关回归和同工计数；其余许多冷查询只有结构依据，未建立新的外部排名。
 - Mem/VM/Reclaim、Container/Intrusive/Concurrent/Queue/Text：查容量、生命周期、查找/删除机制与现有数据；
   UTF、membership、Error success等轻微负点值CI跨1。hash churn、并发erase、各queue政策及其它规模仍缺现版本充分数据。
 - SIMD：查原逐操作结果到当前 provider 的映射、row/dtype/activation/inference kernels；
@@ -783,7 +787,7 @@ Q2048/逻辑KV16384用两个physical pages及1024个重复refs，8 MiB预算可p
 旧版新增预算测试按预期失败，未将失败隐去。
 
 同128 MiB预算、预建generic pool后各一次public prepare_batch，普通global new请求67111611→2684 B，少64 MiB seed及63 B vector开销；
-known native68378352→1269488 B，恰少64 MiB。**generic float-workspace pool仍保留相同128 MiB**，未测RSS/峰值/执行吞吐。
+known native68378352→1269488 B，恰少64 MiB。**当批generic float-workspace pool仍保留相同128 MiB**，后续已单独修复未使用的common scratch预留，见下；未测RSS/峰值/执行吞吐。
 只重编相关host TUs，复用两pin现存HYCA模块；应用源码仅比实测快照少一行重复include，未为此重编。
 [摘要](cpu-paged-causal/summary.json)/[源码原始包](cpu-paged-causal/raw.zip)保留全部失败、命令和实测/应用区别。
 
@@ -840,3 +844,67 @@ F32[256,1024]、64Neg→Q8，冷create_invocation实际增量AllocatorRef live�
 本批两次均先写根目录`test.ps1`，对全部目标核路径/size/SHA后清理；Windows62文件76785932 B、WSL5文件2669392 B、Air16文件64399080 B，
 合计83文件143854404 B（约137.2 MiB）。期间重建的2个Python bytecode也逐次计入实际删除；原SDK/native缓存、源码、日志与压缩数据保留。
 继续保留4个最小CPU native对象/DLL共4281627 B。没有全库configure、CI或为追逐名次追加计时矩阵。
+
+## CPU batch：不为native owner重复预留上限scratch
+
+LeasePool创建时即分配实际resource backing，CPU native plan/run却不使用common float/device-int/host-int views，实际native workspace另外受理、计费。
+私有BatchProviderVTable追加uses_caller_workspace，默认true，CPU显式false；extension升为3以拒绝旧二进制table，公开API/options及CpuProgram ABI2不变。
+core只为需要这些views的provider创建/登记三scratch，output/metadata/staging及owner/completion寿命保留；FlashInfer默认仍取得三块完整scratch。
+不按provider名字分支，不减少传入budget或放宽最终native已知workspace检查。
+
+两pin各4项CPU回归通过；default=true/false mock核实际backing及视图写入、旧extension拒绝、output跨控制owner释放后的寿命。
+真实Graph batch wrapper也核转发false、一native region和256个外部output。未重测真实FlashInfer/CUDA capture，不能用mock替代其完整运行结论。
+F16 Q2048/逻辑KV16384、两physical pages、128 MiB float/8 MiB int同预算，创建期实际backing请求151266920→271976 B，恰少144 MiB/slot。
+同输入的native plan仍报告1269488 B，少1 B预算仍在最终actual check拒绝。默认64 MiB/8 MiB预算由同规则推得省80 MiB，未另采样。
+旧allocation-policy core以当前ABI3头和同native table编译；计数resource只用于创建，实际upload/plan另用system_resource，未绕过physical-identity gate。
+不是RSS/瞬时peak/大形状执行或模型tokens/s；两次测试fixture失败和修正均保留，仅重相关host TUs，4个native缓存原样复用。
+[摘要](cpu-batch-workspace/summary.json)/[源码原始包](cpu-batch-workspace/raw.zip)记录边界及完整失败。
+
+## Process：环境变更按名字索引，不反复扫描
+
+公共校验用16项inline的借用string_view索引排序/相邻查重，POSIX继承entry只找一次separator再binary_search；原追加顺序不变。
+Windows复用原UTF16 changes metadata排序，以原长度及CompareStringOrdinal(TRUE)比较，保留Unicode不敏感重复判断、特殊=C:entry解析和最终环境排序。
+名字工作由M²+E·M降为MlogM+ElogM；默认inherit且零变更仍跳过环境构建，不能据旧“spawn线性”描述或此修复泛化所有进程启动。
+
+Windows21/21、WSL23/23通过，含128变更、unset/replace、平台Unicode差异、重复拒绝/OOM后重试和已有管道/并发/回收。
+隔离scratch源内计数M1024：公共名字比较523776→10639（MSVC）/9353（GCC）；native环境名比较Windows1444608→21942、POSIX919808→19621。
+POSIX separator查找919808→1026；N16/N1024的旧新最终环境块均逐字节相同，Windows含特殊entry，未新增计时或裸spawn外部排名。
+小N16公共校验仍零allocator调用；大N1024新增一次可失败索引分配，已测typed OOM/恢复。多项无效输入的错误消息优先级可能改变。
+只编相关平台源/helper/test，复用实际toolchain/foundation；macOS未跑，不能因共用POSIX文件称已验证。
+[摘要](process-env/summary.json)/[源码原始包](process-env/source-results.zip)保留全部命令、库身份、原始比较与环境块。
+
+## HTTP2：先修多header视图，再保留性能残差
+
+StoredHeader的FieldRef与HttpHeader是交错布局，原span在第二项便按错误stride读取。现在同一allocation中先放refs数组，再放对齐且连续的HttpHeader数组。
+默认每块仍128×56=7168 B，header/trailer各一次分配，无新增Stream指针；部分OOM只析构已构造的数组，容量和backing不变。
+新回归双向3条regular header、2条trailer，逐项迭代/find，并保留head view跨body/trailer和trailer view跨terminal read。
+before同回归失败；candidate14/14及定向强制epoll通过，未修改正式bench/driver或追加计时。
+只读复查未确认当前body热路径的渐进扫描：native user-data获取本身也查nghttp2 map，简单替换Hyle lookup不能凭空消掉一次hash。
+explicit drain有retained-stream扫描，但正式holdout不走此路径，不能把它当作当前大body根因。旧manual-loop排名保留，修后完整吞吐未复测。
+[摘要](http2/header-storage/summary.json)/[源码与只读依据](http2/header-storage/source-results.zip)记录空间布局和残差边界。
+
+## io_uring direct槽位：先纠正native合同，再去掉受理扫描
+
+此前的EINVAL源于direct accept误传SOCK_CLOEXEC；direct close的file_index还须编码为slot+1，零表示普通process fd。
+依据[liburing accept说明](https://github.com/axboe/liburing/blob/master/man/io_uring_prep_accept.3#L182)和[原始编码实现](https://github.com/axboe/liburing/blob/master/src/include/liburing.h#L541)。
+原cached测试跳过2项；仅修accept的中间版随即复现活连接recv EBADF、误关stdin。两处修正后25/25通过，不能再称该WSL内核不支持direct accept。
+
+受理期改为free_file_slots计数及pending-close槽状态，completion索引直接保存close_slot，不再扫描/维护旧pending-close vector。
+取消/失败不提前释放目标，原target CQE才更新计数；FILES_UPDATE拒绝负控制值/不可表示fd，未观察accept期间不覆写未知kernel slot。
+关闭中的descriptor拒绝新recv/send；若kernel先复用该槽、新accept先被观察，则保留新owner，旧close CQE不能清掉新连接。
+新owner可收发，但在旧close退休前拒绝同槽第二次close，不新增generation表、公开helper或用户设置。
+
+同native内核/相同完整accept→close episode，baseline先含上述两处编码修正，之后只比较受理算法；没有计时。
+table/batch为64/32、1024/64、4096/128，源内定义的accept扫描访问2048/65536/524288→0，close查重496/2016/8128→0。
+两侧各形状的全部连接、CQE、inflight归零和槽复用通过；这不是CPU指令数、延迟或外部peer排名，map本身工作仍存在。
+该计数发生在最终fd/乱序保护前，相同有效fd普通路径不变；没有为后续保护重跑矩阵。
+
+受理初版26/26通过，负fd保护补后1项通过；最终版本只跑2项相关回归，未声称最终全26项重跑。
+另一个单次scratch probe完整交换两个真实、未消费的close/accept CQE：原kernel顺序close→accept，模拟观察顺序accept→close。
+核新连接在旧CQE前后payload/reply、pending第二close拒绝、其它free slot、最终两个slot复用、3个raw fd关闭及stdin保留。
+这是受控CQ观察次序模拟，未声称自然复现竞态；原CQE的token/result/flags和全部探针源码保留。
+只编相关host TUs，原io-watch/foundation库与SDK未覆盖；未跑Windows/macOS，未测吞吐或注入所有native失败/取消路径。
+[摘要](io-direct-slots/summary.json)/[分阶段源码与原始结果](io-direct-slots/source-results.zip)记录全部阶段、资源边界和最终实测/应用区别。
+
+本批先写`test.ps1`、对全部精确目标核路径/size/SHA后清理：Windows37文件37438277 B、WSL38文件15539424 B，
+合计75文件52977701 B（约50.5 MiB）。源码、日志、原始包、原SDK/foundation及4个最小CPU native复用文件保留。
