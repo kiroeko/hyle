@@ -1,0 +1,6 @@
+{
+  "bytes": 2843408,
+  "sha256": "be29efe0e0c115a51d87a6aac52cceeea914efae38c8fc529e1542ceb4c2722a",
+  "members": 102,
+  "root_verified": "final product hash, allocation arithmetic/full-output budget, final4-test log, ZIP CRC/no binaries; source/guard independently reviewed"
+}

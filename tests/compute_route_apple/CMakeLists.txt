@@ -8,7 +8,7 @@ if(_HYLE_COMPUTE_HAVE_APPLE)
   hyle_add_test(compute_route_apple NAME packed_consumer SOURCES packed_resident_consumer.cc)
   hyle_stage_runtime(hyle_compute_route_apple_packed_consumer_test)
   hyle_add_test(compute_route_apple SOURCES copy_program_test.cc copy_recording_test.cc context_test.cc operations_test.cc
-    d5_qwen35_execution_test.cc fp8_tile_test.cc tensor_test.cc reduction_test.cc indexing_test.cc
+    d5_qwen35_execution_test.cc fp8_tile_test.cc tensor_test.cc attention_test.cc reduction_test.cc indexing_test.cc
     scatter_test.cc lifecycle_test.cc recurrent_test.cc mlx_quantized_test.cc mature_overlap_test.cc native_ragged_test.cc native_cache_test.cc)
   target_link_libraries(hyle_compute_route_apple_test PRIVATE ggml)
   target_include_directories(hyle_compute_route_apple_test PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")

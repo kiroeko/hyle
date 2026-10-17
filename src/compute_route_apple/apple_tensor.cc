@@ -319,9 +319,23 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
   } else if (attention.causal) {
     mask_mode = "causal";
   }
+  // The locked MLX heuristic materializes scores for these prefill depths,
+  // even though the narrow-dtype full fused kernel supports them. Its F32
+  // online accumulation also retains weak probabilities before the value
+  // product. F32 kernels exceed the 32 KiB threadgroup budget on some devices;
+  // keep those, empty batches/KV, other depths and causal Q > KV on fallback.
+  // Keep explicit masks there too: a fully masked boolean row has different fused
+  // semantics, and no mask contents are read to choose a lowering path.
+  const bool force_fused = stream.device == mx::Device::gpu &&
+      (query.dtype() == mx::float16 || query.dtype() == mx::bfloat16) &&
+      attention.mask == MaskKind::kNone &&
+      query.shape(0) > 0 && query.shape(2) > 8 && key.shape(2) > 0 &&
+      query.shape(3) == value.shape(3) &&
+      (query.shape(3) == 192 || query.shape(3) == 256) &&
+      (!attention.causal || query.shape(2) <= key.shape(2));
   auto result = mx::fast::scaled_dot_product_attention(
-      query, key, value, attention.scale, mask_mode, mask, std::nullopt, false,
-      stream);
+      query, key, value, attention.scale, mask_mode, mask, std::nullopt,
+      force_fused, stream);
   return sequence_first ? mx::transpose(result, {0, 2, 1, 3}, stream) : result;
 }
 } // namespace
