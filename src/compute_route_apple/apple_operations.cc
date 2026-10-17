@@ -290,12 +290,23 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
   }
 }
 
+bool detail::is_mlx_sink_blocks(const Operation &operation,
+    std::span<const TensorDesc> inputs) noexcept {
+  const auto sink=operation.custom_as<model_ops::SinkAttention>();
+  if (!sink) return false;
+  std::array<TensorDesc,1> outputs;
+  if (!sink->infer_output_descriptions(inputs,outputs).ok()) return false;
+  const auto rows=inputs[0].dimensions()[1],keys=inputs[1].dimensions()[1];
+  return rows>=1024 && (rows-128)*keys>2*rows*512;
+}
+
 Result<Program>
 Context::prepare(const Operation &operation,
                  std::span<const mx::array> examples,
   const WorkloadContext &workload) const noexcept {
   try {
-    if (fixed_ggml_model_operation(operation) ||
+    if (operation.custom_as<model_ops::SinkAttention>() ||
+        fixed_ggml_model_operation(operation) ||
         detail::is_mlx_float_operation(operation, {})) {
       std::vector<InputSpec> specs;
       specs.reserve(examples.size());
@@ -336,11 +347,12 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
           [operation, descriptions](const auto &values, mx::Stream stream) {
             return detail::lower_mlx_float(operation, descriptions, values, stream);
           }, inputs, workload);
-    if (ggml_model_operation(operation, descriptions)) {
+    const bool sink_blocks=detail::is_mlx_sink_blocks(operation,descriptions);
+    if (sink_blocks || ggml_model_operation(operation, descriptions)) {
       detail::RegionPlan plan;
       plan.workload = workload;
       detail::Region region;
-      region.kind = detail::RegionKind::kGgml;
+      region.kind = sink_blocks ? detail::RegionKind::kSinkBlocks : detail::RegionKind::kGgml;
       region.operation = operation;
       for (std::size_t i = 0; i < inputs.size(); ++i) {
         region.native_inputs.push_back(descriptions[i]);

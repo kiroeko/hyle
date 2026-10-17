@@ -333,9 +333,16 @@ Status evaluate_mlx(const MlxProgram &program,
   return algorithm_status(code);
 }
 
+struct SinkBlocks {
+  MlxProgram full;
+  std::optional<MlxProgram> tail;
+  int rows=0;
+};
+
 struct PreparedPlan {
   RegionPlan description;
   std::vector<std::optional<MlxProgram>> mlx;
+  std::vector<std::optional<SinkBlocks>> sinks;
   std::vector<std::size_t> last_use;
 };
 
@@ -361,6 +368,7 @@ struct InvocationState : Job {
   std::vector<std::optional<mx::array>> native_values;
   std::vector<mx::array> arguments;
   std::vector<mx::array> region_outputs;
+  std::vector<mx::array> sink_arguments, sink_outputs, sink_blocks;
   std::mutex binding_mutex;
   std::mutex completion_mutex;
   std::atomic<std::uint32_t> done{1};
@@ -406,6 +414,37 @@ Status evaluate_batch(RuntimeBatchInvocationState& state, mx::Stream stream) {
   state.values->arrays.pop_back();return algorithm_status(code);
 }
 
+Status evaluate_sink_blocks(const SinkBlocks &program, InvocationState &state,
+                            mx::Stream stream) {
+  const auto &ports=state.arguments;
+  auto &args=state.sink_arguments;
+  auto &outputs=state.sink_outputs;
+  auto &blocks=state.sink_blocks;
+  blocks.clear();
+  for (int begin=0;begin<program.rows;) {
+    const int end=begin+std::min(128,program.rows-begin);
+    args.clear();
+    auto first=mx::Shape(4,0),last=ports[0].shape();
+    first[1]=begin;last[1]=end;
+    args.push_back(mx::slice(ports[0],first,last,stream));
+    args.push_back(ports[1]);args.push_back(ports[2]);
+    args.push_back(mx::slice(ports[3],{begin,0},{end,ports[3].shape(1)},stream));
+    args.push_back(ports[4]);
+    const auto &part=end-begin==128 ? program.full : *program.tail;
+    HYLE_RETURN_IF_ERROR(evaluate_mlx(part,args,outputs,stream));
+    blocks.push_back(std::move(outputs[0]));
+    outputs.clear();args.clear();
+    begin=end;
+  }
+  state.region_outputs.clear();
+  state.region_outputs.push_back(mx::concatenate(blocks,1,stream));
+  mx::async_eval(state.region_outputs);
+  mx::synchronize(stream);
+  for(auto &output:state.region_outputs)output.wait();
+  blocks.clear();
+  return Status::Ok();
+}
+
 Status execute_plan(InvocationState &state, mx::Stream stream) {
   const auto &prepared = *state.program->native;
   const auto &plan = prepared.description;
@@ -422,6 +461,8 @@ Status execute_plan(InvocationState &state, mx::Stream stream) {
     if (region.kind == RegionKind::kMlx) {
       HYLE_RETURN_IF_ERROR(evaluate_mlx(*prepared.mlx[i], state.arguments,
                                         state.region_outputs, stream));
+    } else if (region.kind == RegionKind::kSinkBlocks) {
+      HYLE_RETURN_IF_ERROR(evaluate_sink_blocks(*prepared.sinks[i],state,stream));
     } else {
       HYLE_ASSIGN_OR_RETURN(state.region_outputs,
                             state.recurrent[i]->run(state.arguments, stream));
@@ -514,6 +555,9 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
       terminal =
           Status::Cancelled("Apple submission cancelled after native drain");
   }
+  // evaluate_mlx/execute_with have drained every accepted prefix before
+  // temporary block owners are released. Whole-Job ports/uses retire in finish.
+  state.sink_arguments.clear();state.sink_outputs.clear();state.sink_blocks.clear();
   finish(state, std::move(terminal));
   release(&state); // admitted worker reference
 }
@@ -775,15 +819,19 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
       if (region.kind == RegionKind::kMlx) {
         if (!region.mlx)
           return std::unexpected(Status::InvalidArgument("Apple MLX region has no native callable"));
-      } else if (region.kind == RegionKind::kGgml) {
+      } else if (region.kind == RegionKind::kGgml || region.kind == RegionKind::kSinkBlocks) {
         const auto traits = operation_traits(region.operation);
         if (!traits.inputs.accepts(region.inputs.size()) ||
             region.outputs.size() != traits.outputs ||
             region.native_inputs.size() != region.inputs.size())
           return std::unexpected(
-              Status::InvalidArgument("Apple ggml region arity mismatch"));
-        HYLE_RETURN_IF_ERROR(ggml_metal::NativeProgram::validate(
-            region.operation, region.native_inputs));
+              Status::InvalidArgument("Apple native region arity mismatch"));
+        if(region.kind==RegionKind::kGgml) {
+          HYLE_RETURN_IF_ERROR(ggml_metal::NativeProgram::validate(
+              region.operation, region.native_inputs));
+        } else if(!is_mlx_sink_blocks(region.operation,region.native_inputs)) {
+          return std::unexpected(Status::InvalidArgument("invalid Apple Sink block region"));
+        }
         std::vector<TensorDesc> outputs(traits.outputs);
         HYLE_RETURN_IF_ERROR(infer_output_descriptions(
             region.operation, region.native_inputs, outputs));
@@ -814,6 +862,7 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
     }
     prepared.description = std::move(plan);
     prepared.mlx.resize(prepared.description.regions.size());
+    prepared.sinks.resize(prepared.description.regions.size());
     auto prepare = std::make_shared<ColdJob>([&]() -> Status {
       const auto stream = *context.state_->stream;
       try {
@@ -830,6 +879,28 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
           std::vector<InputSpec> specs;
           for (auto id : region.inputs)
             specs.push_back(prepared.description.values[id]);
+          if(region.kind==RegionKind::kSinkBlocks) {
+            auto &sink=prepared.sinks[i].emplace();
+            sink.rows=specs[0].shape[1];
+            auto build=[operation=region.operation,workload=program->workload]
+                (const auto &args,mx::Stream native_stream) {
+              return lower(operation,args,native_stream,workload);
+            };
+            const auto prepare_part=[&](MlxProgram &part,int rows) -> Status {
+              auto part_specs=specs;
+              part_specs[0].shape[1]=rows;part_specs[0].logical_description={};
+              part_specs[3].shape[0]=rows;part_specs[3].logical_description={};
+              auto outputs=prepare_mlx(part,build,part_specs,stream);
+              if(outputs.size()!=1 || outputs[0].shape()!=part_specs[0].shape ||
+                 outputs[0].dtype()!=mx::float32)
+                return Status::InvalidArgument("Apple Sink block schema mismatch");
+              return Status::Ok();
+            };
+            HYLE_RETURN_IF_ERROR(prepare_part(sink.full,128));
+            if(const int tail=sink.rows%128;tail!=0)
+              HYLE_RETURN_IF_ERROR(prepare_part(sink.tail.emplace(),tail));
+            continue;
+          }
           auto &mlx = prepared.mlx[i].emplace();
           auto outputs = prepare_mlx(mlx, std::move(region.mlx), specs, stream);
           if (outputs.size() != region.outputs.size())
@@ -882,6 +953,12 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
       for (const auto &region : plan.regions)
         max_inputs = (std::max)(max_inputs, region.inputs.size());
       state->arguments.reserve(max_inputs);
+      state->sink_arguments.reserve(5);state->sink_outputs.reserve(1);
+      std::size_t max_sink_blocks=0;
+      for(const auto &sink:state_->native->sinks)
+        if(sink)max_sink_blocks=std::max(max_sink_blocks,
+            static_cast<std::size_t>((sink->rows-1)/128+1));
+      state->sink_blocks.reserve(max_sink_blocks);
       auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
         for (std::size_t i = 0; i < plan.regions.size(); ++i)
           if (plan.regions[i].kind == detail::RegionKind::kGgml) {

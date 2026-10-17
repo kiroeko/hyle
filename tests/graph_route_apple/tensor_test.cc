@@ -218,3 +218,51 @@ TEST(AppleGraph, HalfNormGateResidualAndViewsRetainIndependentNativeResults) {
   }
 }
 } // namespace
+
+#include "../compute_route_apple/sink_attention_test_support.h"
+
+namespace {
+using namespace apple_tensor_test;
+namespace sink_graph=hyle::graph;
+namespace sink_graph_apple=sink_graph::apple;
+
+TEST(AppleSinkGraph, PublishedCopySinkAndNegativeCrossPrivateBoundary) {
+  constexpr int queries=1025,keys=2049,heads=64;
+  auto inputs=sink_ports(queries,keys,heads,0);
+  auto reference=sink_reference(queries,keys,heads,0);
+  auto negative=reference;
+  for(auto &row:negative){row.weighted=-row.weighted;row.mass=-row.mass;}
+  auto builder=sink_graph::GraphBuilder::create().value();
+  std::array<sink_graph::ValueId,5> ports;
+  for(std::size_t i=0;i<ports.size();++i) {
+    std::vector<std::int64_t> shape(inputs[i].shape().begin(),inputs[i].shape().end());
+    auto desc=c::TensorDesc::dense(c::DataType::kFloat32,shape).value();
+    ports[i]=builder.input(desc).value();
+  }
+  auto copied=builder.add(c::Copy{},ports[0]).value();
+  auto sink_ports_ids=ports;sink_ports_ids[0]=copied;
+  auto sink=builder.add(c::model_ops::sink_attention(kSinkScale),
+      sink_ports_ids[0],sink_ports_ids[1],sink_ports_ids[2],sink_ports_ids[3],sink_ports_ids[4]).value();
+  auto neg=builder.add(c::Unary{c::UnaryKind::kNeg},sink).value();
+  ASSERT_TRUE(builder.publish(copied).ok());
+  ASSERT_TRUE(builder.publish(sink).ok());
+  ASSERT_TRUE(builder.publish(neg).ok());
+  auto graph=std::move(builder).finish().value();
+  auto context=a::Context::create().value();
+  auto compiled=sink_graph_apple::compile(context,graph,{});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto slot=compiled->create_invocation().value();
+  ASSERT_TRUE(slot.bind(inputs).ok());
+  const auto original_hash=sink_output_hash(inputs[0]);
+  auto accepted=slot.submit();
+  ASSERT_TRUE(accepted) << accepted.error().message();
+  auto finished=accepted->wait();
+  ASSERT_TRUE(finished) << finished.error().message();
+  const auto outputs=finished->get()->arrays();
+  ASSERT_EQ(outputs.size(),3U);
+  EXPECT_EQ(outputs[0].shape(),inputs[0].shape());
+  EXPECT_EQ(sink_output_hash(outputs[0]),original_hash);
+  check_sink(outputs[1],reference);
+  check_sink(outputs[2],negative);
+}
+}
