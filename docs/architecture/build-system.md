@@ -1,6 +1,6 @@
 # 构建与组装架构
 
-本文定义 HYLE 的构建原则和机器真相边界。当前可选项、依赖身份和组件边分别由 CMake/JSON 合同
+本文定义 HYLE 的构建原则和配置边界。当前可选项、依赖身份和组件边分别由 CMake/JSON 声明
 给出，不在本文复制易漂移的列表。用户操作见[三种交付](../user/distribution.md)，维护环境见
 [setup](../developer/setup/README.md)。
 
@@ -37,8 +37,8 @@ link verifier、安装 metadata、产品反向依赖或 tests-off 源码交付�
 CPU backend/Native fallback 做真实测试，而不会谎称其工厂 API 或 artifact 在产品上依赖这些实现。
 
 中央 resolver 必须拒绝未知依赖、指向不可构建 identity 的边和 cycle，并以 O(V+E) 得到稳定拓扑。
-factor 身份通常只追加；合法更名需要一对一迁移任务和状态证据。实时 factor/product 数量及边只能从
-中央声明查询，architecture 不维护快照表。
+增加、删除或更名 factor 时同步更新声明与引用。实时 factor/product 数量及边只能从中央声明查询，
+architecture 不维护快照表。
 
 ## Target 与传播
 
@@ -92,25 +92,36 @@ build-local 源码，不静默修改缓存或依赖 checkout。关闭路线时�
 
 CUDA Toolkit 等系统 SDK 不属于 FetchContent 源码资源：由用户按平台安装，HYLE 只在所选 backend/
 Provider 需要时发现并检查版本/targets，不代管安装器。backend 可用不等于它的全部算子 Provider 可用；
-新增 Provider 的 SDK link、runtime staging、许可与三交付在该 factor 的基础接入卡验收，不留到完整
-模型阶段。精确开关仍由 owning CMake 定义，不在本页另列名单或因计划创建空 target。
+新增 Provider 的 SDK link、runtime staging、许可与交付在 owning factor 接入时处理，不留到完整
+模型阶段。不因计划创建空 target，也不将厂商库的内部开关转成 HYLE 用户选项。
 
 ## Option 语义
 
-选项只表达用户需要控制且能稳定解释的产品选择：
+配置分四层，三平台沿用相同含义，不再为每种 CPU/GPU 组合增加一套开关：
+
+| 层次 | 责任与入口 |
+|---|---|
+| 产品与交付 | `HYLE_COMPONENTS`、`HYLE_COMPUTE_ROUTES`、`HYLE_STATIC`、`HYLE_INSTALL`，以及 IO 等真实可选能力 |
+| 开发与诊断 | tests、bench、sanitizer、trace；精确 factor、ISA 与测试插桩属于维护入口 |
+| 工具与依赖位置 | 使用 CMake 工具链、SDK 路径、依赖缓存与离线覆盖；高级路径不参与产品选择 |
+| 内部派生事实 | factor 闭包、Provider 集合、可用能力和宏，由所选目标与平台产生，不是用户开关 |
+
+选项只表达用户需要控制且能稳定解释的选择：
 
 - 普通布尔开关使用 `ON/OFF`；
 - 允许探测降级的系统能力使用 `AUTO/ON/OFF`，`ON` 缺失即失败、`OFF` 不探测；
 - developer/test/benchmark 开关不得改变 shipping ABI；
 - 后端只有一个实现时不保留空 selector；
-- option 只在 owning 产品进入选择闭包时出现或生效。
+- 产品专属 option 只在 owner 进入选择闭包时生效；明确的不合法请求给出错误，不能让 cache 显示
+  ON 而实际用同名普通变量静默关闭。
 
 新增 option 前必须证明它不是从平台、编译器、组件选择或 feature presence 可导出的重复状态。正式 CI/
 交付要显式固定重要 feature 集，不能依赖宿主偶然探测结果。
 
-Compute 的 CPU/CUDA/Apple/Vulkan 构建配置只组合真实 backend/provider feature。
-[统一配置](compute-next-stage.md#2-唯一普通构建入口)用一个路线集合替换原分散的开关，
-内部 feature 从唯一集合和中央图派生，不保留双轨选择，也不增加 CPU+GPU 联合推理布尔开关。
+Compute 的 CPU/CUDA/Apple/Vulkan 由一个路线集合选择，不保留分散的 Provider 开关，也不增加
+CPU+GPU 联合推理布尔开关。[`HyleComputeRoutes.cmake`](../../cmake/HyleComputeRoutes.cmake)
+集中声明路线根、公开专家工厂、CPU+GPU 桥接和平台适用性，Compute/Graph 按所选路线正向组装；
+factor 之间的真实依赖仍只在中央 DAG 声明。脚本查询完整候选目录，实际构建与安装使用选中闭包。
 当前命令见用户文档。未选路线不探测 SDK、不编译原生实现；已选路线也不等于全部
 算子可用。四条路线可独立编译并采用不同执行器；宏/flags 归 owning target，只有公开头确实需要的
 usage requirement 才传播，不能用消费者宏改变同一公开对象布局。SDK 版本/feature 集在 configure 中
@@ -118,13 +129,26 @@ usage requirement 才传播，不能用消费者宏改变同一公开对象布�
 尚未实现的路线不为文档先创建空 option/target；具体边界见
 [Compute 四路线设计](compute-routes.md#1-隔离边界)。
 
-选路线不等于让用户挑算子库。标准发行配置应包含该路线默认优选规则所需且已验收的实现，并在正常
-C++ 入口自动组装。统一配置实施后，普通产品不再提供必要 Provider 的裁剪/禁用；
+选路线不等于让用户挑算子库。标准发行配置包含该路线默认优选规则所需的实现，并在正常
+C++ 入口自动组装。普通产品不提供必要 Provider 的裁剪/禁用；
 维护隔离只在内部 fixture，真实 expert kernel/Provider 扩展仍有其能力约束，不是逐 op 性能选择。规则与可用实现必须
 由同一构建闭包投影，source/static/shared 不出现“规则指向未交付实现”。裁剪后的合法基线或明确
 能力缺失须可解释；平台不承载的 Provider 由实际资格派生为不可用，不成为普通用户手动开启的负担。
 不自动启用尚未验收的实现，也不在 configure 时跑性能比赛。best-of 的责任见
 [Compute 规则](compute-design.md#41-开发时验证-best-of准备时应用规则)。
+
+一致性由以下边界保持：
+
+- Windows/Linux/macOS 的差异来自实际目标与工具链；Apple 显式架构和 VS `-A` 优先于宿主架构。
+  当前每个 build tree 只支持一个目标架构，macOS 多架构应分别配置。
+- 后端集合表示编译能力；CPU、单 GPU、CPU+GPU 的执行选择仍由引擎请求决定，精度、放置和预算
+  不变成 CMake 的 Provider 排名或逐算子开关。
+- `_HYLE_COMPUTE_REQUEST_*` 只是路线集合的派生值，`_HYLE_COMPUTE_HAVE_*` 表示实际可用结果；
+  CPU Provider 的平台条件复用同一查询，不再单独保存 Provider 请求布尔值。
+- 能力以 owning target 的 `HYLE_COMPUTE_CAPABILITIES` 记录，公开头确有需要时才传播
+  `HYLE_COMPUTE_*` 存在性宏；测试和 package metadata 读取同一能力声明，不另存启用属性。
+- 源码嵌入与安装包使用相同 `hyle::<product>`、能力含义、链接和运行资源描述。消费者只链接目标，
+  不补内部宏、Provider 库名或仓库私有路径。
 
 Compute/Graph 的产品聚合按所选路线生成真实依赖闭包，不固定附带 CPU 算子或 oneDNN；公共语义核
 不引入任何 GPU SDK。隔离继续传入 vendor backend 选择，不能只禁用 HYLE 外层 target 而仍构建依赖

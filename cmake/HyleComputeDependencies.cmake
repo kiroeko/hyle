@@ -1,6 +1,5 @@
 include_guard(GLOBAL)
-
-# Private availability is derived from the selected DAG by HyleComputeRoutes.
+include("${CMAKE_CURRENT_LIST_DIR}/HyleComputeRoutes.cmake")
 
 macro(_hyle_onednn_option name value)
   # Upstream still reads legacy aliases internally. Both spellings must shadow
@@ -17,21 +16,11 @@ function(hyle_configure_compute_dependencies)
     return()
   endif()
 
-  set(_supported FALSE)
-  if(CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux|Darwin)$" AND
-     HYLE_TARGET_PROCESSOR STREQUAL "x86_64")
-    set(_supported TRUE)
-  endif()
-
-  if(_HYLE_COMPUTE_REQUEST_ONEDNN STREQUAL "OFF")
-    message(STATUS "HYLE: oneDNN provider OFF -- dependency download skipped")
+  _hyle_compute_cpu_provider_supported(onednn _supported)
+  if(NOT _supported)
+    message(STATUS "HYLE: oneDNN unavailable on ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}")
     set(_HYLE_COMPUTE_HAVE_ONEDNN OFF PARENT_SCOPE)
     return()
-  endif()
-  if(NOT _supported)
-    message(FATAL_ERROR
-      "The selected oneDNN provider is unsupported for "
-      "${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}")
   endif()
 
   include(FetchContent)

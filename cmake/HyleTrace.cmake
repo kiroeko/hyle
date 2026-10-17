@@ -30,6 +30,7 @@ if(HYLE_TRACE)
   # public/tracy/Tracy.hpp). Empty means resolve the locked shared-cache source.
   set(HYLE_TRACY_DIR "" CACHE PATH
       "optional locked Tracy source override")
+  mark_as_advanced(HYLE_TRACY_DIR)
 else()
   set(HYLE_TRACY_DIR "")
 endif()

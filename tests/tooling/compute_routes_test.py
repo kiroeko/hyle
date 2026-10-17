@@ -37,7 +37,7 @@ class ComputeRoutesTest(unittest.TestCase):
             + body + '\n'
             + f'file(WRITE "{output.as_posix()}" "${{HYLE_COMPUTE_ROUTE_LIST}}|'
               '${_HYLE_COMPUTE_REQUEST_CPU}|${_HYLE_COMPUTE_REQUEST_CUDA}|${_HYLE_COMPUTE_REQUEST_APPLE}|'
-              '${_HYLE_COMPUTE_REQUEST_VULKAN}|${_HYLE_COMPUTE_REQUEST_ONEDNN}|${_HYLE_COMPUTE_REQUEST_TORCH_CPU}")\n',
+              '${_HYLE_COMPUTE_REQUEST_VULKAN}")\n',
             encoding="utf-8")
         result = subprocess.run(["cmake", "-P", str(script)], capture_output=True,
                                 text=True, timeout=15, **NO_WINDOW)
@@ -46,15 +46,15 @@ class ComputeRoutesTest(unittest.TestCase):
 
     def test_complete_cpu_default_and_gpu_only_isolation(self):
         self.assertEqual(self.resolve('hyle_resolve_compute_product_routes("graph")'),
-                         "cpu|ON|OFF|OFF|OFF|ON|ON")
+                         "cpu|ON|OFF|OFF|OFF")
         self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES cuda)\n'
                                      'hyle_resolve_compute_product_routes("graph")'),
-                         "cuda|OFF|ON|OFF|OFF|OFF|OFF")
+                         "cuda|OFF|ON|OFF|OFF")
 
     def test_set_canonicalization_is_not_priority(self):
         self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES " CUDA ;cpu;CUDA;vulkan")\n'
                                      'hyle_resolve_compute_product_routes("compute;graph")'),
-                         "cpu;cuda;vulkan|ON|ON|OFF|ON|ON|ON")
+                         "cpu;cuda;vulkan|ON|ON|OFF|ON")
 
     def test_invalid_set_and_old_cache_or_parent_variables(self):
         for value in ("", "AUTO", "gpu", "cpu;;cuda", ";cpu", "cpu;"):
@@ -73,7 +73,7 @@ class ComputeRoutesTest(unittest.TestCase):
         self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES "apple;cpu")\n'
                                      'hyle_resolve_compute_product_routes("graph")',
                                      system="Darwin", processor="aarch64"),
-                         "cpu;apple|ON|OFF|ON|OFF|OFF|ON")
+                         "cpu;apple|ON|OFF|ON|OFF")
         self.resolve('set(HYLE_COMPUTE_ROUTES apple)\n'
                      'hyle_resolve_compute_product_routes("graph")', success=False)
         self.resolve('set(HYLE_COMPUTE_ROUTES cuda)\n'
@@ -85,16 +85,16 @@ class ComputeRoutesTest(unittest.TestCase):
 
     def test_unrelated_products_do_not_acquire_compute(self):
         self.assertEqual(self.resolve('hyle_resolve_compute_product_routes("core;mem")'),
-                         "|OFF|OFF|OFF|OFF|OFF|OFF")
+                         "|OFF|OFF|OFF|OFF")
 
     def test_developer_factor_closure_and_platform_off_headers(self):
         body = ('set(HYLE_BUILD_COMPUTE_BACKEND_CPU ON)\n'
                 'set(HYLE_BUILD_COMPUTE_BACKEND_CUDA ON)\n'
                 'set(HYLE_BUILD_COMPUTE_ROUTE_APPLE ON)\n'
                 'hyle_resolve_compute_factor_routes()')
-        self.assertEqual(self.resolve(body), "cpu;cuda|ON|ON|OFF|OFF|ON|ON")
+        self.assertEqual(self.resolve(body), "cpu;cuda|ON|ON|OFF|OFF")
         self.assertEqual(self.resolve(body, system="Darwin", processor="aarch64"),
-                         "cpu;apple|ON|OFF|ON|OFF|OFF|ON")
+                         "cpu;apple|ON|OFF|ON|OFF")
         self.resolve('set(HYLE_COMPUTE_ROUTES cpu)\n'
                      'hyle_resolve_compute_factor_routes()', success=False)
 
@@ -109,6 +109,8 @@ class ComputeRoutesTest(unittest.TestCase):
              "compute_backend_cpu;compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda"),
             ("cpu;cuda", "graph_route_cpu_cuda;graph_route_cpu;graph_route_cuda;sched;compute_provider_onednn",
              "compute_route_vulkan;compute_route_apple"),
+            ("cpu;vulkan", "graph_route_cpu_vulkan;graph_route_cpu;graph_route_vulkan;sched",
+             "compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda"),
         ):
             with self.subTest(routes=routes):
                 source = self.directory / routes.replace(";", "-")

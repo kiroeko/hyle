@@ -73,6 +73,11 @@ function(_hyle_processor_identity_probe label compiler_arch generator_arch
 "set(MSVC_CXX_ARCHITECTURE_ID \"${compiler_arch}\")\n"
 "set(CMAKE_GENERATOR_PLATFORM \"${generator_arch}\")\n"
 "set(CMAKE_SYSTEM_PROCESSOR \"${system_arch}\")\n"
+"set(CMAKE_SYSTEM_NAME \"${ARGV5}\")\n"
+"if(CMAKE_SYSTEM_NAME STREQUAL \"Darwin\")\n"
+"  set(APPLE TRUE)\n"
+"endif()\n"
+"set(CMAKE_OSX_ARCHITECTURES \"${ARGV6}\")\n"
 "include(\"${HYLE_SOURCE_DIR}/cmake/HyleTargetPlatform.cmake\")\n"
 "if(NOT HYLE_TARGET_PROCESSOR STREQUAL \"${expected}\")\n"
 "  message(FATAL_ERROR \"expected target '${expected}', got '\${HYLE_TARGET_PROCESSOR}'\")\n"
@@ -82,6 +87,13 @@ function(_hyle_processor_identity_probe label compiler_arch generator_arch
     RESULT_VARIABLE _result
     OUTPUT_VARIABLE _stdout
     ERROR_VARIABLE _stderr)
+  if(ARGC GREATER 7)
+    if(_result EQUAL 0 OR NOT "${_stdout}\n${_stderr}" MATCHES "${ARGV7}")
+      message(FATAL_ERROR
+        "target identity '${label}' lost its expected rejection:\n${_stdout}\n${_stderr}")
+    endif()
+    return()
+  endif()
   if(NOT _result EQUAL 0)
     message(FATAL_ERROR
       "target identity '${label}' failed:\n${_stdout}\n${_stderr}")
@@ -96,6 +108,15 @@ _hyle_processor_identity_probe(
   "generator-arm64" "" "ARM64" "AMD64" "aarch64")
 _hyle_processor_identity_probe(
   "toolchain-riscv64" "" "" "riscv64" "riscv64")
+_hyle_processor_identity_probe(
+  "mac-intel-over-arm-host" "" "" "arm64" "x86_64" "Darwin" "x86_64")
+_hyle_processor_identity_probe(
+  "mac-arm-over-intel-host" "" "" "x86_64" "aarch64" "Darwin" "arm64")
+_hyle_processor_identity_probe(
+  "mac-toolchain-default" "" "" "arm64" "aarch64" "Darwin" "")
+_hyle_processor_identity_probe(
+  "mac-universal-rejected" "" "" "arm64" "" "Darwin" "arm64;x86_64"
+  "requires one target architecture")
 
 # io/compute/graph currently expose sched types in their public API. Even on a
 # target without fcontext, the graph must select sched so root configuration can

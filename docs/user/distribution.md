@@ -155,7 +155,7 @@ Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 
 
 裸 CMake、源码嵌入和安装配置的测试、基准默认关闭；开发 preset 显式开启测试。
 需要同时构建普通测试和安装包时设置 `HYLE_BUILD_TESTS=ON`、`HYLE_INSTALL=ON`。
-内部测试插桩 `HYLE_TEST_INSTRUMENTATION=ON` 不用于安装包。
+内部测试插桩 `HYLE_TEST_INSTRUMENTATION=ON` 要求同时开启测试，不能用于安装包。
 
 | 交付能力 | `HYLE_COMPUTE_ROUTES` |
 |---|---|
@@ -164,10 +164,13 @@ Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 
 | CPU 与一个 GPU 的 SDK | cpu;cuda / cpu;apple / cpu;vulkan |
 
 这些值由源码父工程在 `add_subdirectory()` 前设置，或由 SDK producer 的 CMake 配置选择。
+CPU+GPU 所需桥接和第三方算子实现自动带入；不需要选择 Provider 或定义其宏。
 源码与安装消费者都从公开 `hyle::compute` 或 `hyle::graph` target 的 `HYLE_COMPUTE_ROUTES`
 属性查询实际路线。链接 target 自动传播相应 C++ 存在性宏，不需要手工定义宏、追加头路径或枚举内部库。
 未选 native/provider 的头、空实现 target、SDK 查找与运行库不进入安装包。
 路线集合顺序不是 preference；空、未知、AUTO 和不支持的平台组合明确拒绝。
+目标平台使用 CMake 工具链选择；macOS 显式设置 `CMAKE_OSX_ARCHITECTURES` 时每个构建目录只选
+一个架构。当前不支持在同一 build tree 配置 universal 多架构库。
 旧六个 CPU/CUDA/Apple/Vulkan/oneDNN/Torch CPU 开关不再接受；按配置错误提示用 `cmake -U`
 移除旧 cache 项后选择路线，不必为迁移复制依赖或新建整棵构建目录。
 presence 宏由 target 传播，不能在 consumer 手写宏创建未交付能力。

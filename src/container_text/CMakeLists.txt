@@ -5,13 +5,10 @@ include(HyleDispatch)
 
 set(_container_text_highway_targets scalar sse4 avx2 neon)
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  set(HYLE_CONTAINER_TEXT_X64 TRUE)
   if(NOT (MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
     list(APPEND _container_text_highway_targets avx512)
     set(HYLE_CONTAINER_TEXT_HAS_AVX512 TRUE)
   endif()
-elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-  set(HYLE_CONTAINER_TEXT_ARM64 TRUE)
 endif()
 
 hyle_add_module(container_text

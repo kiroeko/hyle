@@ -152,11 +152,12 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION VERS
 endif()
 
 # ---- global options ---------------------------------------------------------
-if(HYLE_BUILD_TESTS)
-  option(HYLE_TEST_INSTRUMENTATION
-    "compile test-only fault injection and structural diagnostics" OFF)
-else()
-  set(HYLE_TEST_INSTRUMENTATION OFF)
+option(HYLE_TEST_INSTRUMENTATION
+  "compile test-only fault injection and structural diagnostics" OFF)
+if(HYLE_TEST_INSTRUMENTATION AND NOT HYLE_BUILD_TESTS)
+  message(FATAL_ERROR
+    "HYLE_TEST_INSTRUMENTATION=ON requires HYLE_BUILD_TESTS=ON. Enable tests "
+    "or set HYLE_TEST_INSTRUMENTATION=OFF; refusing to silently ignore the request.")
 endif()
 option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
 option(HYLE_INSTALL "generate install rules and a relocatable CMake package" OFF)
@@ -237,6 +238,7 @@ if(HYLE_BUILD_SIMD)
   set(HYLE_SIMD_EXACT_TARGET "${_hyle_simd_exact_target}")
   set_property(CACHE HYLE_SIMD_EXACT_TARGET PROPERTY STRINGS
                "" SCALAR SSE4 AVX2 AVX512 NEON SVE RVV)
+  mark_as_advanced(HYLE_SIMD_EXACT_TARGET)
   unset(_hyle_simd_exact_target)
 else()
   set(HYLE_SIMD_EXACT_TARGET "")

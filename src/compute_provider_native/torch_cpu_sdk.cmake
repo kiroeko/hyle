@@ -3,14 +3,15 @@ include_guard(GLOBAL)
 # Complete CPU products require this SDK; exact factors derive private
 # availability from their selected DAG. There is no public Provider option.
 set(_HYLE_COMPUTE_HAVE_TORCH_CPU OFF)
-if(_HYLE_COMPUTE_REQUEST_TORCH_CPU STREQUAL "OFF")
+if(DEFINED _HYLE_COMPUTE_REQUEST_CPU AND NOT _HYLE_COMPUTE_REQUEST_CPU)
   return()
 endif()
-if(NOT (CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$" AND
-        HYLE_TARGET_PROCESSOR STREQUAL "x86_64") AND
-   NOT (CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND
-        HYLE_TARGET_PROCESSOR STREQUAL "aarch64"))
-  message(FATAL_ERROR "The TorchAO CPU adapter requires Windows/Linux x86_64 or macOS ARM64")
+include("${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake")
+_hyle_compute_cpu_provider_supported(torch_cpu _hyle_torch_supported)
+if(NOT _hyle_torch_supported)
+  # Complete CPU products already fail route admission; exact maintenance
+  # factors can still use their native implementation without this SDK.
+  return()
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/torch_cpu_fetch.cmake")

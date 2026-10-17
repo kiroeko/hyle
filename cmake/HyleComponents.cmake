@@ -608,12 +608,14 @@ _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
-_hyle_declare_product(compute FACTORS
-  compute compute_state compute_batch compute_route_cpu compute_route_cuda compute_route_apple compute_route_vulkan compute_backend_cpu compute_backend_cuda compute_provider_native
-  compute_provider_onednn compute_provider_ggml)
-_hyle_declare_product(graph FACTORS
-  graph graph_batch graph_route_cpu graph_route_cuda graph_route_apple graph_route_vulkan compute_backend_cpu compute_backend_cuda compute_provider_native
-  compute_provider_onednn compute_provider_ggml graph_provider_onednn)
+include("${CMAKE_CURRENT_LIST_DIR}/HyleComputeRoutes.cmake")
+# Metadata scripts see the complete candidate catalog. Real product builds
+# replace these roots with the selected routes before traversing the DAG.
+_hyle_compute_route_names(_hyle_catalog_routes)
+foreach(_product IN ITEMS compute graph)
+  hyle_compute_product_roots("${_product}" "${_hyle_catalog_routes}" _roots)
+  _hyle_declare_product("${_product}" FACTORS ${_roots})
+endforeach()
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream
@@ -636,6 +638,7 @@ if(DEFINED HYLE_DEV_FACTORS)
   set(_hyle_selection_input "${HYLE_DEV_FACTORS}")
   set(HYLE_DEV_FACTORS "${_hyle_selection_input}" CACHE STRING
       "HYLE internal factor roots for top-level maintenance only" FORCE)
+  mark_as_advanced(HYLE_DEV_FACTORS)
 else()
   set(_hyle_selection_mode product)
   if(DEFINED HYLE_COMPONENTS)
@@ -721,53 +724,14 @@ else()
   endif()
 endif()
 
-# Metadata-only scripts keep declarations unchanged. Real projects filter
-# routes before following the one product/test DAG; no SDK work happens here.
+# Assemble selected routes before following the one product/test DAG. No SDK
+# work happens here; expert factories and CPU+GPU bridges share route metadata.
 if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
-  include("${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake")
   hyle_resolve_compute_product_routes("${_hyle_requested_products}")
-  if("cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
-    # Public expert factories belong to the product just like the default
-    # context. Root them at the facade so both their presence defines and their
-    # shared-library link requirements reach consumers; route composition stays
-    # an implementation-private edge.
-    set(_hyle_cuda_experts compute_provider_cublas compute_provider_cuda
-      compute_provider_ggml_cuda compute_provider_torch_cuda)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-      list(APPEND _hyle_cuda_experts compute_provider_flashinfer)
-    endif()
-    list(APPEND _HYLE_PRODUCT_FACTORS_COMPUTE ${_hyle_cuda_experts})
-    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH ${_hyle_cuda_experts}
-      graph_provider_ggml_cuda)
-    unset(_hyle_cuda_experts)
-  endif()
-  if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
-     "cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
-    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_cuda)
-  endif()
-  if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
-     "apple" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
-    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_apple)
-  endif()
-  if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
-     "vulkan" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
-    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_vulkan)
-  endif()
-  foreach(_product IN ITEMS COMPUTE GRAPH)
-    foreach(_route IN ITEMS cpu cuda apple vulkan)
-      if(NOT _route IN_LIST HYLE_COMPUTE_ROUTE_LIST)
-        list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product}
-          compute_route_${_route} graph_route_${_route})
-      endif()
-    endforeach()
-    if(NOT "cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
-      list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product}
-        compute_backend_cpu compute_provider_native
-        compute_provider_onednn compute_provider_ggml graph_provider_onednn)
-    endif()
-    if(NOT "cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
-      list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product} compute_backend_cuda)
-    endif()
+  foreach(_product IN ITEMS compute graph)
+    string(TOUPPER "${_product}" _product_upper)
+    hyle_compute_product_roots("${_product}" "${HYLE_COMPUTE_ROUTE_LIST}"
+      _HYLE_PRODUCT_FACTORS_${_product_upper})
   endforeach()
   set(_hyle_requested_roots "")
   foreach(_product IN LISTS _hyle_requested_products)

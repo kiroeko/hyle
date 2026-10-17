@@ -84,7 +84,7 @@ if(NOT _before STREQUAL _after)
 endif()
 
 # Exercise the real source entry and source/installed dependency shims too.
-set(_HYLE_COMPUTE_REQUEST_TORCH_CPU ON)
+set(_HYLE_COMPUTE_REQUEST_CPU ON)
 include("${HYLE_SOURCE_DIR}/src/compute_provider_native/torch_cpu_sdk.cmake")
 set(_shim "${CMAKE_CURRENT_BINARY_DIR}/shim")
 file(MAKE_DIRECTORY "${_shim}")

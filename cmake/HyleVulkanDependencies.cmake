@@ -12,6 +12,7 @@ function(hyle_configure_vulkan_dependencies)
   # and physical device. Installed binary SDKs contain embedded SPIR-V.
   find_program(HYLE_VULKAN_GLSLANG NAMES glslangValidator glslang
     HINTS "$ENV{VULKAN_SDK}" PATH_SUFFIXES Bin bin)
+  mark_as_advanced(HYLE_VULKAN_GLSLANG)
   if(NOT HYLE_VULKAN_GLSLANG)
     message(FATAL_ERROR "Vulkan source builds require host glslangValidator (HYLE_VULKAN_GLSLANG)")
   endif()

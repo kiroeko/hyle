@@ -16,8 +16,9 @@ target_link_libraries(hyle_compute_route_cpu_test PRIVATE ggml)
 target_include_directories(hyle_compute_route_cpu_test SYSTEM PRIVATE
   "${HYLE_GGML_SOURCE_DIR}/src")
 hyle_stage_runtime(hyle_compute_route_cpu_test)
-get_target_property(_hyle_torch_cpu hyle_compute_provider_native HYLE_TORCH_CPU_ENABLED)
-if(_hyle_torch_cpu)
+get_target_property(_hyle_native_capabilities hyle_compute_provider_native
+  HYLE_COMPUTE_CAPABILITIES)
+if("torch_cpu" IN_LIST _hyle_native_capabilities)
   target_compile_definitions(hyle_compute_route_cpu_test PRIVATE HYLE_TEST_TORCH_CPU=1)
 endif()
 
@@ -30,7 +31,7 @@ hyle_add_test(compute_route_cpu NAME thread_runtime NO_AUTORUN
   SOURCES thread_runtime_consumer.cc DEPS hyle_compute_provider_native
   hyle_compute_provider_ggml)
 hyle_stage_runtime(hyle_compute_route_cpu_thread_runtime_test)
-if(_hyle_torch_cpu)
+if("torch_cpu" IN_LIST _hyle_native_capabilities)
   set(_hyle_runtime_scenarios startup query-first late-native late-aten race-use race-config metadata-oom)
   hyle_add_test(compute_route_cpu NAME thread_runtime_vendor NO_AUTORUN
     SOURCES thread_runtime_consumer.cc DEPS hyle_compute_provider_native
