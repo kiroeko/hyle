@@ -181,7 +181,7 @@ Completion 或执行线程。Context、Queue、资源与 allocator 须活到所�
 普通用户不能由 update 得到 pending ReadLease 或 host 可读 view。内部 receiver 借用的
 原 native prefix 与 mutable geometry 必须先核实际 endpoint/ordering，并保持原 update
 到后继实际退休；借用期间不能另观察、回收或销毁 source。完整 pending 页到 attention
-仍按[活动组合卡](../implementation/tasks/compute/inference-g03-pending-page-consumption.md)
+仍按[组合实现记录](../implementation/tasks/compute/inference-g03-pending-page-consumption.md)
 施工；本接口的验收进展见[source卡](../implementation/tasks/compute/inference-g03-copy-update-owner.md)。
 
 ## CPU 多请求 ragged attention
@@ -212,7 +212,7 @@ auto output = slot.output().value();
 本档不接原生 paged/capture。普通 Direct 的 source/static/shared 与宿主风险已验证，
 安装的 `ggml_cpu::provider()` 已能通过普通compute/graph target交付给原Graph batch桥，
 source/static/shared的双region消费已验证；batch 性能及其它路线多请求资格仍见
-[活动卡](../implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
+[实施记录](../implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
 
 ## CPU 准确页直接读取
 
@@ -220,7 +220,7 @@ source/static/shared的双region消费已验证；batch 性能及其它路线多
 `BatchStorage::kPaged`、`PagedArena` 和同一个 `BatchLayoutVersion`。当前验证域是
 F16/BF16、GQA8/2、D64/128/256、page_size16；页表可重排、跨请求共享物理页，尾长
 只表示最后一页的有效行数。source/static/shared与宿主风险已通过，此路径仍为候选，局部性能裁决见
-[分页活动卡](../implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。
+[分页实施记录](../implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。
 
 K/V arena 按容量持有连续物理 NHD 页；发布每页 writer 后，用该 layout 所引用的
 准确 ready page 集合构造 frame，不能传多余页或把 arena 当作一个普通 ReadLease：
@@ -244,17 +244,10 @@ packed-capacity Q/K/V read ports，内部逐 request 检查实际子范围，不
 metadata/workspace 仍计费，private pool 上界未知。CPU capture、增量 producer、低成本
 增长规划及 GPU/联合分页的资格各有独立范围，不由此 CPU 路径推导。
 
-> 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
-> 标准 CPU 构建使用 `HYLE_COMPUTE_ROUTES=cpu`，自动接入该平台所需的合格 Provider。
-> 统一配置正在执行交付验收，当前状态见 registry；数学与接口资格不因此外推。
-> CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
-> command capture 基础运行时。普通路线已接入 ggml CUDA、cuBLASLt、SGLang、CCCL 与有限 HYLE CUDA Provider，
-> 普通 CUDA Direct/Graph、固定模型原计算与Win/WSL三交付已接通；当前版本按算子、真实端口和资源应用成熟默认，
-> 并在精确环境中应用23个已测叶操作优选。资格及限制见[CUDA优选任务](../implementation/tasks/compute/cuda-best-of-completion.md)。
-> Apple MLX/Metal 的原生 Direct/Graph、三交付和 M4 限定性能验收已完成；
-> Vulkan/SPIR-V 的 R6 也已完成真实计算、三交付与已测设备/版本域的有限性能验收。
-> HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
+普通 CPU 入口自动组合已构建的 oneDNN、ggml、ATen 和 Native 实现，
+标准 CPU 配置使用 `HYLE_COMPUTE_ROUTES=cpu`。CUDA 提供 device/context/queue、memory resource、
+stream interop、传输、Completion 和 capture，并接入 ggml CUDA、cuBLASLt、SGLang、CCCL 及有限原生实现。
+Apple 与 Vulkan 的用法和设备限制分别见对应指南；HIP/ROCm 当前没有实现。
 
 当前22个固定模型画像的Direct/Graph结果、逐路线限制及三交付/P1范围见
 [模型片段覆盖](model-fragment-coverage.md)。下文R4/R5/R6基础验收不代签后来新增的全部模型域。
@@ -538,7 +531,7 @@ dtype `[M,N]`。它显式包含动态量化，普通 `MatMul` 不暗中量化输
 字节、4字节对齐；没有 host 同步或常驻展开权重。普通scale输入需要16字节对齐，BF16幂次
 scale输入需要2字节对齐；Graph规划会应用这些要求，手动绑定的错位输入在提交前拒绝。
 该接口不加载模型。完整官方模型画像及三交付/P1状态见
-[当前验收卡](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
+[当前验证记录](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
 
 ### CPU 非 GGUF 原格式与压缩专家
 
@@ -640,7 +633,8 @@ Windows 从已初始化的 developer shell 执行上述命令，或用既有
 CPU+CUDA SDK 可在 configure 时显式覆盖 `"-DHYLE_COMPUTE_ROUTES=cpu;cuda"`；static、install、目标 arch
 按普通 CMake 参数选，不需要内部 Provider flags 或排序。源码与安装包均链接 `hyle::compute`，
 应用链接后调用 `hyle_stage_runtime(app)`，Windows 把依赖 DLL 邻置 exe。
-构建选择不代替具体模型／格式／精度请求的准备与运行资格，当前新增合同仍按 owner 卡验收。
+构建选择不代替具体输入的支持检查；prepare 按实际模型格式、dtype、布局、设备和资源约束绑定实现，
+不满足条件时返回明确错误。
 
 不用 preset 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_ROUTES=cuda`。自然 C++ 入口如下：
 
@@ -931,7 +925,7 @@ Q/K 已归一化，negative_a 是负 decay coefficient；它不修改输入状�
 初始描述域为 plain dense F32、B=1、T=1、D=128、V 头数16/48/128，K头数16或与V相同。
 a/b/negative_a/dt_bias 均为 `[1,1,Hv,1]`，其它 shape 沿用上面的 GDN 合同。
 模型专用片段按最终输出和状态资格化，不公开中间 g/beta，也不改变普通 Softplus 的精度要求。
-四路线普通入口及精确数值资格进展见[当前验收卡](../implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md)；
+四路线普通入口及精确数值资格进展见[当前验证记录](../implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md)；
 此接口描述不代替整模型或尚未运行的交付/性能验收。
 
 `model_ops::clamp(minimum, maximum)` 为 MoE 归一化下限、clamped SwiGLU 等模型程序绑定原生
@@ -1039,7 +1033,7 @@ MX 每组先点积后缩放。它在调用方 Queue 上直接解码到寄存器�
 允许修改绑定权重后再次提交。该 Provider 仍不接受 external capture 或严格私有内存硬预算；
 driver/code image 的进程费用不由数学 workspace 的零字节结论覆盖。
 显式 artifact 解码和 Softplus 保留 ATen managed 分配及原完成边界。
-这次 packed 实现的当前资格见 [G07 收口卡](../implementation/tasks/compute/inference-g07-packed-weights.md)。
+这次 packed 实现的当前资格见 [G07 实现记录](../implementation/tasks/compute/inference-g07-packed-weights.md)。
 
 ### Grouped Q4 的逻辑描述
 
@@ -1401,8 +1395,7 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 F32 norm 后的最多4个 Add/Mul 可由 oneDNN region 绑定原生 post-ops，支持 scalar、
 末轴向量及单行的完整同形状操作数。批量完整同形状 Add/Mul 保留为后续节点，使此前的归一化/
 广播前缀继续使用优化内核；冷准备拒绝已识别的通用慢速融合实现。中间输出被发布或分叉时
-保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状已获性能优选资格，当前验收
-状态见模块 registry 和对应任务记录。
+保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状都更快，支持范围和数值按实际输入与环境验证。
 
 旧ggml0.26／oneDNN3.13.2的17格证书不属于当前规则。当前全候选比较和适用条件见本页开头；
 Copy的partial WIN不足以证明相对全部成熟候选的完整优势，独有动态／严格资源消费另按实际能力裁决。
@@ -1454,7 +1447,7 @@ stride须是元素对齐、正值且保row-major不重叠padding。K/V沿原fuse
 不会因每个query/head复制全部历史。query必要F32转换与causal F16 `Q×K` mask仍计入
 成本；mask在冷准备，默认不代表paged/page-table资格。任意stride或未资格组合仍由其他
 明确支持的Provider处理或拒绝。当前验收范围见
-[驻留SDPA活动卡](../implementation/tasks/compute/inference-g01-resident-sdpa.md)，整个G01未完成。
+[驻留SDPA实施记录](../implementation/tasks/compute/inference-g01-resident-sdpa.md)，整个G01未完成。
 
 同一 Provider 也接受上文十种精确 GGUF/ggml block storage 作为 MatMul RHS，或 `[E,N,K]`
 GroupedMatMul weight；直接把 caller-owned packed bytes 交给原版 `MUL_MAT`/`MUL_MAT_ID`，不经过
@@ -1634,7 +1627,7 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   冷路径 finalize/generate；每个 Invocation 映射调用方 workspace，steady submit 不创建 descriptor、
   stream、memory handle、JIT artifact，不 packing/copy，也不执行 route search。当前闭包的六个推理形状
   曾证明 warm `submit()+wait()` 无 C++ 动态分配；这些是既有 exact 路线的历史证据，当前 foundation
-  proposal/Graph 迁移仍由 registry 指向的活动卡验收，不能把它们推广为新合同或 MLX 已通过。
+  proposal/Graph 的其他路线需要各自验证，不能据此推导新合同或 MLX 已通过。
 - oneDNN ukernel C API 在锁定版本中仍标记 experimental。它完全私有于 provider，并由精确版本断言保护；
   用户不应直接依赖其 header 或 ABI。升级 oneDNN 必须重做源码、符号、分配和正确性审计。
 

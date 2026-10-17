@@ -1,9 +1,5 @@
 # IO 使用指南
 
-> IO 当前只提供 C++ 产品面；七个内部
-> factor 的终态以 `module-status.json` 为准。本页适用于 C++23 source/static/shared 三种交付，
-> 不描述 C API 或跨语言调用层。
-
 普通 C++ 程序使用 `IoContext` 与 RAII/`co_await` 封装。`Proactor`、native
 completion token 和负错误码已经收进 `detail` 后端，不是公开产品面；不要 include
 `<hyle/io/detail/...>`，也不要依赖共享库中为公开 inline awaitable 保留的内部符号。

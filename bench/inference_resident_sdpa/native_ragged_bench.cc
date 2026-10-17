@@ -13,8 +13,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -137,11 +135,7 @@ void measure(int q1,int q2,int k1,int k2,int depth,bool causal){Data data(q1,q2,
   else (void)bench.compare(candidate_name,selected,peer_name,original);
 }
 }
-int main(int,char **argv){const auto qos=hyle::bench::perf::configure_thread_qos();
-  if(!set("HYLE_BENCH_VERIFY_ONLY")&&!set("HYLE_BENCH_AA_ROUTE")&&set("HYLE_PERF_RUN_NONCE")){
-    std::string ready;std::ifstream(std::filesystem::absolute(argv[0]).parent_path()/"g01_native_ragged_aa.ready")>>ready;
-    if(ready!="PASS")check(hyle::Status::FailedPrecondition("native ragged A/A has not passed for this build"));
-  }
+int main(int,char **){const auto qos=hyle::bench::perf::configure_thread_qos();
   const auto *aa=std::getenv("HYLE_BENCH_AA_ROUTE");
   std::fprintf(stderr,"# HYLE_NATIVE_RAGGED_RUN run_nonce=%s apple_qos=%s qos_ok=%s backend=%s verify_only=%d paired_rounds=16 placement=%d execution_order=%s allocation_order=%s aa_route=%s\n",hyle::bench::perf::run_nonce(),qos.name,qos.ok,backend,set("HYLE_BENCH_VERIFY_ONLY"),HYLE_RESIDENT_PLACEMENT,set("HYLE_BENCH_RIVAL_FIRST")?"peer-first":"candidate-first",set("HYLE_BENCH_PEER_ALLOCATION_FIRST")?"peer-first":"candidate-first",aa&&*aa?aa:"none");
   measure(1,17,1024,768,256,true);measure(64,128,1024,768,256,true);measure(1,17,31,47,64,false);

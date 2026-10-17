@@ -1,18 +1,13 @@
 # IO 架构：Scheduler 上的完成式 I/O
 
-本页只说明当前长期设计。实际 C++ 用法见 [IO 用户指南](../user/io.md)，组件状态和当前性能证据见
-[`module-status.json`](../implementation/module-status.json)。实现过程、旧测试数字和被否决路线由当前
-record 或 Git 历史追溯，不复制到这里。
-
 ## 设计目标
 
 HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 I/O：socket、文件、文件变化流、
 DNS、signal、TLS、HTTP/1.1、HTTP/2、WebSocket 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
 一套线程或 coroutine runtime。
 
-WebSocket 的公开可依赖状态、file-region streaming/HTTP file body、TLS credential source 与 recursive
-tree watch 的终态都以 registry 为准。file-region streaming 归 `io_core + io_http`，而不是制品发布语义
-不同的 `io_transfer`。
+file-region streaming 归 `io_core + io_http`，而不是制品发布语义不同的 `io_transfer`。
+WebSocket、TLS 和 recursive tree watch 的具体用法和限制见[IO 指南](../user/io.md)。
 
 ```text
 Tcp/Udp/Local/File/DNS/Signal/TLS/HTTP/WebSocket/Transfer

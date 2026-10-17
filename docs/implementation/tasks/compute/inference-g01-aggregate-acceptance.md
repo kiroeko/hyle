@@ -2,7 +2,7 @@
 
 状态：**G01 已完成，2026-10-15**。本记录聚合原 G01 的有限施工与既有完整路线，
 不启动产品修改或重复采样。它是 goal 工作项裁决；当前模块状态仍由
-[registry](../../module-status.json)唯一决定，G04/G05 的活动 CANDIDATE 不在此关闭。
+registry（已删除的历史文件：`docs/implementation/module-status.json`）唯一决定，G04/G05 的活动 CANDIDATE 不在此关闭。
 
 原需求见[单机审计 G01](../project/inference-single-machine-foundation-audit-2026-10.md#驻留attention和参考档成本)：
 直接消费驻留 cache/有效长度或精确页，消除按 Q/head 重复物化全 KV 的默认成本，

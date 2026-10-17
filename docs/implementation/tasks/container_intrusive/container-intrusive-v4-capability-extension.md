@@ -6,7 +6,7 @@
 > Terminal verdict：`CLOSED`。本页保存本轮用户任务、能力账本、预算、验证与关闭 receipt；不可变候选为
 > `58431ddbef6f54f9d4275b0fea2d317cba00b9f3` / tree
 > `8df2b7d7806918d03b5bb5c31611adb196f30c7f`。权威状态是
-> [`module-status.json`](../../module-status.json)。
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。
 
 ## Reopen trigger
 
@@ -289,7 +289,7 @@ AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实�
 ## Candidate LOC
 
 `scripts/loc-report.py` 的旧 canonical boundary 遗漏三个 v4 split header；独立工具任务
-[LOC 边界同步](../project/loc-report-container-intrusive-v4-boundary.md)只同步 CMake 已拥有的四个实现头，
+LOC 边界同步（已删除的历史文件：`docs/implementation/tasks/project/loc-report-container-intrusive-v4-boundary.md`）只同步 CMake 已拥有的四个实现头，
 没有改变 candidate tree。随后执行：
 
 ```text

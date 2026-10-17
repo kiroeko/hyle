@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 类型／owner：CUDA goal 只读协调审计；当前实际产品 owner 不变，见 [registry](../../module-status.json)。
+- 类型／owner：CUDA goal 只读协调审计；当前实际产品 owner 不变，见 registry（已删除的历史文件：`docs/implementation/module-status.json`）。
 - baseline：`f5f137f1b3e48bdd56acd42f7471d3c412c7b6e3`；Windows canonical。
 - trigger：用户要求覆盖当前算子表。具体反例：CPU 扩充的 GGUF 类型在 CUDA
   `native_quantized_type` 明确 default decline；旧 GPU 验收不覆盖当前 104 制品／新版 sidecar。

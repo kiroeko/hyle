@@ -1,9 +1,5 @@
 # ggml provider 的 storage 与执行边界
 
-> 本页记录一条长期 adapter 规则，不选择 Compute 的唯一实现。`compute` 当前是否可用只查
-> [`module-status.json`](../implementation/module-status.json)。旧 compute-05 调试证明“伪造 ggml device
-> buffer metadata”不可接受，但当时的 ggml/CUDA 行为不是所有版本、backend 和 provider 的永久事实。
-
 ## 稳定结论
 
 借第三方算子时，HYLE 不能假定自己拥有对方内部的 device storage、allocator、stream、graph capture

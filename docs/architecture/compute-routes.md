@@ -14,8 +14,8 @@ CPU、CUDA、Apple MLX/Metal、Vulkan 各自实现冷编译、执行制品、运
 计算/数值描述、错误、资源访问、结果/完成与必要计划事实，不强制一个 segment loop、统一 native
 handle 或逐 kernel 虚调用。独立实现不是把 Error、Mem 等同义基础设施复制四份。
 
-已收口基础阶段未包含模型CPU+GPU联合计算；用户新要求另进入[下一阶段设计](compute-next-stage.md)，
-尚未交付。用户选计算路线，HYLE 按研发时已验证的规则绑定路线内实现；
+CPU＋单 GPU 组合通过[组合接口](compute-next-stage.md)显式选择；
+单路线请求按已验证的规则绑定路线内实现。
 缺少 GPU 算子或资源时明确拒绝，不借 CPU fallback 绕过配置。host 控制、权重准备、上传下载和回收
 不属于这种混合。
 
@@ -32,7 +32,7 @@ handle 或逐 kernel 虚调用。独立实现不是把 Error、Mem 等同义基�
   允许 CPU 模型计算；如果 vendor 无法关闭所需的隐式模型 fallback，该路径不能冒充纯 GPU。
 - 多路线同 SDK 可选并存，不代表一个模型可跨 CPU/GPU联合执行。
   [统一配置](compute-next-stage.md#2-唯一普通构建入口)用一个路线集合替换分散选择，
-  native feature 由它派生，不保留第二套全局路线开关；当前候选的交付验收仍按活动卡。
+  native feature 由它派生，不保留第二套全局路线开关；具体环境限制见各后端用户指南。
   实际程序在冷准备期绑定，不每次运行检查构建配置。
 
 MLX 有独立的 CPU/Metal/CUDA 开关，默认 tests/examples、文件格式功能和 nested Metal-C++ 下载也须
@@ -56,7 +56,7 @@ SDK 和 Provider 版本；还须满足数值、格式、shape、资源与融合�
 它不发现、排序或运行 Provider，各路线仍拥有原生环境、规则次序和程序。
 
 SOTA/胜出结论只覆盖证据绑定的硬件与软件组合；驱动、Toolkit 或 Provider 升级影响某条规则时，
-定向复核该规则及其真实消费链，不重开全部架构，也不把单 kernel 优势直接当作整图收益。
+定向复核该规则及其真实消费链，不扩展为全库检查，也不把单 kernel 优势直接当作整图收益。
 
 ### 1.2 模型条件与完整片段路由
 

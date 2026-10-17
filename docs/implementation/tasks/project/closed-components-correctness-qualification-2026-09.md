@@ -1,7 +1,7 @@
 # CLOSED 组件全库正确性资格审计（2026-09）
 
 本记录是一项横向 correctness qualification，不是模块 closure card，也不创建第二套模块状态。
-组件当前状态始终只看 [`module-status.json`](../../module-status.json)。本页只回答：当前 29 个
+组件当前状态始终只看 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本页只回答：当前 29 个
 `CLOSED` 组件的公开能力，有哪些语义已被直接证据证明，哪些仍是 `UNPROVEN`。
 
 ## 任务卡
@@ -9,7 +9,7 @@
 - baseline：`53dc0bd89105334f78ece6452fc287487d34fcbc`；Windows checkout 是产品改动唯一来源；
 - trigger：模块局部测试数量不少，但仓库没有全库 line/branch discovery，也没有统一的逐能力语义
   覆盖账本；历史上已经由真实 deadlock 暴露过“测试通过”不等于完整生命周期正确；
-- objective：按 [`closure-correctness-v1`](../../../developer/review/correctness-profile-v1.md) 对全部
+- objective：按 `closure-correctness-v1`（已删除的历史文件：`docs/developer/review/correctness-profile-v1.md`） 对全部
   `CLOSED` 组件建立可复现的 public-API 正确性证据，补齐真正缺失的原子、组合和平台风险测试；
 - scope：`module-status.json` 中除 `compute`、`graph` 外的 29 个 `CLOSED` factor，测试、测试专用
   fault seam、coverage discovery、sanitizer/backend/delivery qualification、跨模块 public journey、

@@ -162,7 +162,7 @@ the transaction and resume safety contract cannot be weakened.
 
 两台 Mac 的 OpenSSL deployment-target linker warning 是已知环境差异；真实 transfer 运行通过。远程/WSL
 副本只用于验证，没有反向覆盖 canonical Windows checkout。构建、sanitizer 与三交付完成后，候选 API、
-algorithm、buffer/durability contract 和 [`io-transfer-p1-v1`](../../../../bench/contracts/io-transfer-p1-v1.json)
+algorithm、buffer/durability contract 和 `io-transfer-p1-v1`（已删除的历史文件：`bench/contracts/io-transfer-p1-v1.json`）
 从此不可变。
 
 ## Current decision

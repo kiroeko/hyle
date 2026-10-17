@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
-> 当前机械状态只看 [`module-status.json`](../../module-status.json)。本轮由已关闭候选之后发生的
+> 当前机械状态只看 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本轮由已关闭候选之后发生的
 > Container 公开字符串/索引合同替换触发；在进入 `AUDITED` 并冻结有限 `FIX` 集前不得修改产品实现。
 
 ## Reopen intake

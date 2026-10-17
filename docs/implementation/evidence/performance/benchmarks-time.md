@@ -1,7 +1,7 @@
 # Time / timer_queue 当前工程性能证据
 
 
-> 当前状态与精确证据绑定只看 [`module-status.json`](../../module-status.json)。`time` 与
+> 当前状态与精确证据绑定只看 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。`time` 与
 > `timer_queue` 是两个 factor：当前 Time v5 是 P0，证据直接位于
 > [`time-v5 task`](../../tasks/time/time-v5-interoperability.md)；本页的 P1 数值只签
 > `timer_queue` v1。旧 Time v4 host-clock P1 receipt 不续签成 Time v5 的当前 verdict。
@@ -15,7 +15,7 @@ operation 都是 O(1)、零分配/锁/syscall 的纯转换或算术；native clo
 
 ## timer_queue v1：同合同 P1 `WIN`
 
-冻结合同 [`timer-queue-consumer-v1.json`](../../../../bench/contracts/timer-queue-consumer-v1.json) 使用
+冻结合同 `timer-queue-consumer-v1.json`（已删除的历史文件：`bench/contracts/timer-queue-consumer-v1.json`） 使用
 Scheduler N=64 完整 lifecycle：64 次 arm、45 次 cancel、64 个 advance tick、19 个 delivery 与 callback
 state observation。candidate `381eb4b195973ed35ed23ca63c05f9605a132f9b` / tree
 `a5d48a259161c1a60e19450e42b4a6eac9a1a712` 与 Seastar

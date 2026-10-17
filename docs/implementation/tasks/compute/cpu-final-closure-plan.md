@@ -2,7 +2,7 @@
 
 2026-10-07用户明确授权新的goal处理构建/规则/预编译、全面best-of/自研清退、三平台真实模型计算覆盖。
 启动基线 `167cb5ff6f9edac8a9aaa77c41e6720bd3c377d2`，Windows工作树干净；后续提交与用户修改保留。
-当前模块状态只读[registry](../../module-status.json)，旧goal已完成，不恢复旧百分比或施工队列。
+当前模块状态只读registry（已删除的历史文件：`docs/implementation/module-status.json`），旧goal已完成，不恢复旧百分比或施工队列。
 
 ## 目标与固定范围
 

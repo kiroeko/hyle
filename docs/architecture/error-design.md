@@ -1,10 +1,5 @@
 # error 设计：值语义失败与模块接缝
 
-> 本页描述 consumer-driven 的 Error 长期产品边界；候选、验证或终态只由 machine-readable registry
-> 裁决。当前只提供 C++23 source/static/shared；Native FFI 为 `N/A`。公开 C schema、bridge、C-shaped
-> 动态导出和 managed fixture 不属于产品。用户写法见
-> [user/error](../user/error.md)，施工状态只看 [implementation/status](../implementation/status.md)。
-
 ## 0. 职责与依赖位置
 
 error 位于运行时依赖图底部，负责把**可恢复的运营失败**作为值在函数、模块和线程之间传递。
@@ -223,7 +218,7 @@ retain/release；成员、引用参数或仍需保留的 lvalue 不得这样移�
 
 需要收集全部错误、并行错误排序或结构化日志时，所属模块使用 caller-owned
 `std::vector<Status>`、固定容量报告或已有容器，并显式定义顺序、上限与收集 OOM；结构化遥测交给
-obs。只有多个真实模块重复同一 bounded collection/ordering 合同时才重开公共 `MultiError`，不要
+obs。只有多个真实模块重复同一 bounded collection/ordering 合同时再考虑公共 `MultiError`，不要
 把 Status 变成全局 error list 或自动 logger。
 
 ## 3. 交付与 Native FFI 边界
@@ -278,7 +273,7 @@ revision、candidate 和结果属于 current closure/performance evidence，不�
 负空间固定为：多独立 machine detail、可遍历/序列化的 structured cause、公共 MultiError、
 跨进程序列化、任意 runtime category registry、反向 error-code round-trip、source location/
 backtrace、异常层级与 Native FFI construction/callback。只有具名消费者证明当前 code/native/
-context、caller-owned aggregate 或 borrowed-result 组合无法表达需求时才重开；参考库 API 更多、
+context、caller-owned aggregate 或 borrowed-result 组合无法表达需求时再扩展；参考库 API 更多、
 LOC 更大或某个微基准容易赢都不是功能授权。
 
 ## 6. 采用与模块边界
@@ -292,14 +287,8 @@ syscall operation override 归 platform/io，error 只拥有公共 taxonomy 和 
 async completion 等正常协议状态继续用紧凑值/枚举。旧模块私有 TLS last-error 或 bool+诊断若在
 模块复审中被发现，应迁移到这套 C++ 错误系统；这不授权扩大 error API。
 
-## 7. 冻结与重开
+## 7. 验证范围
 
-error 签署必须同时具备：C++ correctness/三平台、适用的同合同性能门、
-shared/static/source C++ 交付、已审底座 adoption、正确文档和可追踪 raw evidence。
-
-当前资格、原始证据身份与有限结论从 [status](../implementation/status.md) 的 Engineering performance
-链接进入。任何公开面、正常成本或消费者 provenance 的 material 改变都必须产生新的 qualification，
-不能从旧证据外推；mechanism diagnostic 不授权改变 Status 的正常产品形状。
-
-签署后只因 correctness/security/ABI bug、真实 consumer 能力缺口、同合同强 peer 证明实质算法/
-性能落后，或发布形状改变而局部重开。
+相关修改检查错误传播、所有权、OOM、异常边界、平台映射及受影响的下游消费者。
+涉及公开布局或导出时验证静态和共享安装消费；性能比较对齐错误语义与完成边界。
+不以固定审批、资格卡或重开流程作为修改前提。

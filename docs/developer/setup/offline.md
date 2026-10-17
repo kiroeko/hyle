@@ -158,7 +158,7 @@ D:\hyle-offline\vs-layout\vs_BuildTools.exe --noWeb --wait `
 ```
 
 另外携带 CMake 官方二进制包；使用 `windows-ninja` 时再带 Ninja。若离线机还要运行
-`windows-clangcl` 可移植性门，准备 layout 时必须把 Visual Studio 的「C++ Clang tools for Windows」
+`windows-clangcl` 可移植性验证，准备 layout 时必须把 Visual Studio 的「C++ Clang tools for Windows」
 一并纳入（或携带组织批准的 LLVM 18+ 离线包），安装后确认 `clang-cl --version` 与 PATH；普通
 MSVC workload 不保证包含该 frontend。完整测试带 Python 3，制作源码包带 Git。Visual Studio layout
 路径保持较短并保留在稳定位置，安装器后续维护会记住该位置。官方入口：
@@ -221,8 +221,8 @@ scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 ```
 
 制作不含测试的 CPU SDK 时可设 `HYLE_BUILD_TESTS=OFF`，此时连 googletest/Python 也不需要。若启用
-HTTP/2 或 TLS 时，按上表补齐依赖并把开关明确设为 `ON`。未来 backend/provider 的离线合同只在其
-factor closure card 通过后加入。
+HTTP/2 或 TLS 时，按上表补齐依赖并把开关明确设为 `ON`。新 backend/provider 接入时同步补齐
+离线依赖与实际构建验证。
 
 OpenSSL 及未来 GPU SDK/driver 是环境 SDK 或运行时，不是会被 HYLE 编译进产品的
 源码 checkout，因此不写伪 commit、也不放进 `deps/`。它们必须由已审查的离线安装介质、toolchain/

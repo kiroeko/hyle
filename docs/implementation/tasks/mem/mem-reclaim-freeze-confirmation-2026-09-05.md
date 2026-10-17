@@ -4,7 +4,7 @@
 
 > 这是对既有 `CLOSED` factor 的只读确认，不是无触发重开，不建立新 product candidate，也不替换
 > [`mem-reclaim-v2-inference-resume`](mem-reclaim-v2-inference-resume.md) 的 terminal record。当前状态真相
-> 仍是 [`module-status.json`](../../module-status.json)；其中的 `freeze_confirmation` 把本次确认绑定到
+> 仍是 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）；其中的 `freeze_confirmation` 把本次确认绑定到
 > 明确仓库快照和本文证据。
 
 ## 绑定身份与范围

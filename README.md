@@ -1,65 +1,42 @@
 # HYLE
 
-项目治理已按用户要求于2026-10-17停用，直到用户明确恢复。旧模块状态、收口卡、预算、审批及
-强制验证流程保留为历史，不再阻挡开发。日常直接实现任务并运行相关测试，详见[开发约定](AGENTS.md)。
+HYLE（HYbrid LEvels）是面向本地 AI 推理、异构计算、资源流送和低延迟服务的 C++23 基础加速库。
+它提供可组合的内存、数据结构、SIMD、调度、I/O、Compute 和 Graph；模型格式、tokenizer、
+采样、KV 缓存策略和 serving 政策由推理引擎拥有。
 
-HYLE（HYbrid LEvels）是面向 AI 推理、异构渲染/资源流送、低延迟服务与工程计算的 C++23 基础
-加速库。它希望让内存、数据结构、
-SIMD、调度、I/O 和异构计算在同一套依赖与生命周期合同下组合，而不是让每个子系统各自维护
-线程池、allocator 和事件循环。
-
-当前最先落地的需求锚是可执行的本地量化推理引擎，但功能完整性由推理、渲染/资源流送、批处理数值
-管线和低延迟服务的纵切组合共同约束。HYLE 只提供
-可复用机制，模型格式、token/KV 语义、batching 和 serving 策略留在消费方。项目仍处于预发布
-重审期，不能把旧 benchmark 或历史“已收口”记录当成当前证书。
-
-## 产品边界
-
-HYLE 面向 C++ 用户提供三种交付形式：
-
-- 完整源码；
-- headers + static libraries；
-- headers + shared libraries。
-
-三者都是 C++ 交付，不承诺跨编译器/STL 的 C++ 二进制 ABI。项目没有独立的原生 C 产品，也
-暂不提供 Native FFI；早期公开 C schema、bridge 和 managed probe 已从当前产品树移除。真实
-外语消费者出现后，再用窄的运行时类型擦除边界单独设计和验证。
-
-性能目标不是“每个微基准都赢”，而是逐能力达到合理的算法复杂度，在真实合同、正常 workload
-和强 peer 下排除有意义的劣势，并明确延迟、吞吐、内存和可移植性的取舍。未通过仪器资格与
-消费者相关性门的亚纳秒差异只用于诊断，不能塑造公共 API。
+当前推理目标是多系统上的单机 CPU、CPU＋一张 GPU、单 GPU。
+项目仍处于预发布阶段，支持范围和限制以对应接口、后端及实际验证环境为准。
 
 ## 开始使用
 
 - [C++ 使用指南](docs/user/usage-guide.md)
-- [三种交付与集成](docs/user/distribution.md)
+- [源码、静态库与共享库集成](docs/user/distribution.md)
 - [可运行样例](samples/README.md)
 - [开发环境与离线依赖](docs/developer/setup/README.md)
 
-## 项目文档
+三种形式均为 C++ 交付，不承诺跨编译器/STL 的二进制 ABI；当前没有独立 C API 或外语绑定。
 
-所有人读文档按职责分为四类，详见 [文档入口](docs/README.md)：
+## 开发与文档
 
-- [architecture](docs/architecture/README.md)：背景、愿景、架构和决策依据；
-- [implementation](docs/implementation/README.md)：任务、调查、结果与当前施工状态；
-- [developer](docs/developer/README.md)：维护规则、review、构建测试、性能仪器和排障；
-- [user](docs/user/README.md)：C++ 用户的选型、用法、生命周期与陷阱。
+- [开发约定](AGENTS.md)
+- [当前工作主线](docs/developer/current-work.md)
+- [文档入口](docs/README.md)
+- [架构与产品边界](docs/architecture/README.md)
 
-自动化维护者先读仓库级 [开发约定](AGENTS.md)。
-[implementation/status](docs/implementation/status.md)及其机器源保留停用前的历史状态，开发不受这些状态约束。
-真实消费者边界见[inference engine north star](docs/architecture/inference-engine-north-star.md)。
+旧治理流程、状态机和审批工具已删除。直接实现任务，运行相关构建、测试或性能实验，
+如实说明结果与未验证项。历史实验和原始数据保留用于追溯。
 
 ## 仓库结构
 
 ```text
 include/hyle/   C++ 公开头
-src/            按模块组织的实现
-tests/          正确性、并发与构建合同测试
-bench/          归因与同合同性能实验
-samples/        独立 C++ 消费工程及内部 conformance fixtures
-cmake/          组件图、依赖与发布机器合同
-scripts/        构建、审查、性能和文档工具
-docs/           四类人读文档
-evidence/       与候选绑定的原始 CSV/JSON/log
-third_party/    已审查的 vendored/ported 资产
+src/            模块实现
+tests/          正确性、并发与构建测试
+bench/          性能实验
+samples/        C++ 消费者工程
+cmake/          组件、依赖和安装规则
+scripts/        构建、依赖和诊断工具
+docs/           用户、开发、架构和历史记录
+evidence/       原始实验数据
+third_party/    第三方源码与适配
 ```

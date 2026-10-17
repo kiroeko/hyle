@@ -9,7 +9,7 @@
   为什么选择 HYLE”，而不是继续用“5% 门已通过”代替性能方向或宣称全库绝对 SOTA。
 - baseline：`bbd1eebada1be72d5b33c07e8c0763b16196d3fb`；canonical checkout 为
   `C:\public\project-hyle\hyle`。
-- 状态输入：[`module-status.json`](../../module-status.json) 中除 `compute`、`graph` 外的全部
+- 状态输入：`module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`） 中除 `compute`、`graph` 外的全部
   `CLOSED` factor。横向 build/package 只审交付成本，不伪造 runtime workload。
 - 输入：当前 registry 选择的性能 evidence、仍可机械重放的 raw/summary/manifest、P0 结构记录、
   当前产品源码与强 peer 源码；历史失效证据只作 provenance，不自动续签。
@@ -75,7 +75,7 @@
   用户当前选择 HYLE 的可辩护理由是成熟 provider 广度、有限已证赢家和跨模块低税组合；
   compute/graph 和首个真实推理消费者完成后，再依法触发 P2。
 - terminal verdict：**`CLOSED`**。完整性检查器
-  [`check-performance-scorecard.py`](../../../../scripts/check-performance-scorecard.py) 的 SHA-256 为
+  `check-performance-scorecard.py`（已删除的历史文件：`scripts/check-performance-scorecard.py`） 的 SHA-256 为
   `0878a41dadb09d5d267e84828b4ae820c6e1a803b6ed3f4f1d47a76cdb68d436`；最终验证命令与结果见下方。
 
 ## 最终验证

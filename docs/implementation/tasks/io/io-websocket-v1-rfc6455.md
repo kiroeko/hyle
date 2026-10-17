@@ -164,7 +164,7 @@ extension rejection、close、同方向误用、OOM coroutine、deadline 与 can
 
 ### P1 sampling preflight
 
-冻结合同为 [`io-websocket-mask-p1-v1.json`](../../../../bench/contracts/io-websocket-mask-p1-v1.json)，
+冻结合同为 `io-websocket-mask-p1-v1.json`（已删除的历史文件：`bench/contracts/io-websocket-mask-p1-v1.json`），
 consumer matrix 为 [`consumer_shapes_v1.json`](../../../../bench/io_websocket/consumer_shapes_v1.json)。它是
 WebSocket client 每帧必经的 component replay，不把 HYLE runtime 与 Asio 排成伪同合同：
 

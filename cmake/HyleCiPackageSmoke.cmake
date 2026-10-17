@@ -1,9 +1,9 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
-# shared and static all-CLOSED-product CPU SDKs, then configures/builds/runs
+# shared and static CPU SDKs, then configures/builds/runs
 # source-independent consumers against each install prefix. The general sample
 # exercises the native mem C++ API and every exported target; module-owned
 # focused probes under samples/package are discovered automatically and
-# exercise each strictly closed module's real installed API and package edge.
+# exercise each selected product's real installed API and package edge.
 # Optional SDK/hardware feature matrices remain release checks, not per-commit
 # fan heaters.
 
@@ -18,9 +18,9 @@ endif()
 
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
-include("${HYLE_SOURCE_DIR}/cmake/HyleCiClosedProducts.cmake")
+include("${HYLE_SOURCE_DIR}/cmake/HyleCiSmokeComponents.cmake")
 include("${HYLE_SOURCE_DIR}/cmake/HyleCiSharedExportHygiene.cmake")
-hyle_ci_closed_product_csv(_hyle_closed_products)
+hyle_ci_smoke_component_csv(_hyle_smoke_components)
 
 file(STRINGS "${HYLE_SOURCE_DIR}/include/hyle/version.h"
   _hyle_version_lines REGEX
@@ -70,7 +70,7 @@ foreach(_linkage IN ITEMS shared static)
   else()
     set(_static OFF)
   endif()
-  set(_components "${_hyle_closed_products}")
+  set(_components "${_hyle_smoke_components}")
   set(_build "${HYLE_SMOKE_ROOT}/package-${_linkage}")
   set(_prefix "${HYLE_SMOKE_ROOT}/prefix-${_linkage}")
   set(_consumer "${HYLE_SMOKE_ROOT}/consumer-${_linkage}")
@@ -94,7 +94,7 @@ foreach(_linkage IN ITEMS shared static)
     "${CMAKE_COMMAND}" --install "${_build}" --config Release)
   if(_linkage STREQUAL "shared")
     hyle_ci_check_shared_export_hygiene("${_prefix}"
-      LABEL "all-CLOSED-products shared SDK")
+      LABEL "selected-product shared SDK")
   endif()
   file(GLOB _hyle_installed_version_files
     "${_prefix}/*/cmake/Hyle/HyleConfigVersion.cmake")
@@ -139,7 +139,7 @@ foreach(_linkage IN ITEMS shared static)
     LIST_DIRECTORIES FALSE
     "${_focused_probe_root}/*/CMakeLists.txt")
   list(SORT _focused_probe_cmake_files)
-  string(REPLACE "," ";" _hyle_closed_product_list "${_components}")
+  string(REPLACE "," ";" _hyle_smoke_component_list "${_components}")
   foreach(_focused_probe_cmake IN LISTS _focused_probe_cmake_files)
     get_filename_component(_focused_probe_source
       "${_focused_probe_cmake}" DIRECTORY)
@@ -153,8 +153,8 @@ foreach(_linkage IN ITEMS shared static)
     if(_focused_probe_product STREQUAL "util_core")
       set(_focused_probe_product "util")
     endif()
-    if(NOT "all" IN_LIST _hyle_closed_product_list AND
-       NOT _focused_probe_product IN_LIST _hyle_closed_product_list)
+    if(NOT "all" IN_LIST _hyle_smoke_component_list AND
+       NOT _focused_probe_product IN_LIST _hyle_smoke_component_list)
       message(STATUS
         "skip focused probe '${_focused_probe_name}': product "
         "'${_focused_probe_product}' is not selected for this SDK")
@@ -179,6 +179,6 @@ foreach(_linkage IN ITEMS shared static)
       "${CMAKE_CTEST_COMMAND}" --test-dir "${_focused_probe_build}"
       -C Release --output-on-failure)
   endforeach()
-  unset(_hyle_closed_product_list)
+  unset(_hyle_smoke_component_list)
 
 endforeach()

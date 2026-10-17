@@ -9,8 +9,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <limits>
 #include <memory>
 #include <span>
@@ -458,7 +456,8 @@ void measure(Problem &problem, std::string_view journey, std::string_view aa,
 }
 } // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char **) {
+  (void)argc;
 #if HYLE_NORM_PLACEMENT
   nb::doNotOptimizeAway(hyle_normalization_placement_prefix(argc));
 #endif
@@ -473,15 +472,6 @@ int main(int argc, char **argv) {
       (!environment("ONEDNN_JIT_DUMP").empty() ||
        !environment("DNNL_JIT_DUMP").empty()))
     fail("vendor JIT dump is confined to A/A observations");
-  if (aa.empty() && !environment("HYLE_PERF_RUN_NONCE").empty()) {
-    if (argc < 1)
-      fail("locate workload A/A receipt");
-    std::ifstream status(std::filesystem::path(argv[0]).parent_path() /
-                         "hyle-normalization-workload-aa.status");
-    std::string verdict;
-    if (!(status >> verdict) || verdict != "PASS")
-      fail("workload A/A must pass before sampling");
-  }
   const bool peer_first = !environment("HYLE_BENCH_RIVAL_FIRST").empty();
   const bool peer_allocation_first =
       !environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty();

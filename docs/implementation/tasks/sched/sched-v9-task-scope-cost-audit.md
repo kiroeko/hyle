@@ -158,7 +158,7 @@ control-plane snapshot。修正不增加 benchmark-only 入口或常态 metadata
 
 ### Qualified P1
 
-合同是 [`sched-v8-task-scope-cleanup-p1-v2`](../../../../bench/contracts/sched-v8-task-scope-cleanup-p1-v2.json)，
+合同是 `sched-v8-task-scope-cleanup-p1-v2`（已删除的历史文件：`bench/contracts/sched-v8-task-scope-cleanup-p1-v2.json`），
 peer 是 exact `37b62460` public manual `spawn_task + JoinHandle + Scheduler::drain` 组合；两侧在同一
 source-built consumer 中保持 32-child owner、四 worker、allocator、完整 finish-hook/stack cleanup 与 owner
 teardown，只有自然 API 不同。候选/peer advantage ratio 大于 1 表示 HYLE 占优：

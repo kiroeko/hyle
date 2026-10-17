@@ -1,9 +1,5 @@
 # HYLE sched：什么情况选择什么
 
-> 本页描述当前 Sched C++ 产品面，适用于 C++23 source/static/shared 三种交付；不描述 C API、
-> Native FFI 或内部 worker-loop bridge。机械施工状态见
-> [`module-status.json`](../implementation/module-status.json)。
-
 `sched` 是单进程 CPU runtime：少量 OS worker 承载大量可协作挂起的 Fiber，并把 timer、I/O、GPU
 completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要 `Scheduler`、任务入口和同步/消息
 原语；不要从 `Fiber`、fcontext 或 `sched/detail` 开始。

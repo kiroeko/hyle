@@ -238,7 +238,7 @@ CE02集中迁移schema/K/V/output/page role、layout数学分层、Graph与原co
 
 本次selector的product_authorization七个实际修改owner均AUDITED、issues为空；仅10个
 既有共享bench API迁移路径为unknown，原BLOCKED plan保留。按
-[独立工具记录](../build/validation-selector-shared-bench-paths.md)续记此既有条件，模块不改
+独立工具记录（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-shared-bench-paths.md`）续记此既有条件，模块不改
 selector/policy或工具core。执行本卡预声明的共同factor/直接consumer/逐头编译并留真实结果；
 其余公共头对应消费者与交付等门在共同批固定后完成，未运行不签PASS。
 
@@ -543,7 +543,7 @@ Invocation::output 固定以 FailedPrecondition 拒绝失败结果；公开合�
 
 新增 FlashInfer patch 只登记唯一 owner 数据，没有改 selector 算法。工具检查发现两项
 既有消费者闭包期望过时，换回 baseline policy 后原样重现，作为
-[独立测试维护任务](../build/validation-selector-consumer-expectations-2026-10.md)处理；
+独立测试维护任务（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-consumer-expectations-2026-10.md`）处理；
 仅更新两个期望集合后两项定向测试通过，原失败保留。
 
 ### CE04/07 CUDA 有限修复与实际组合 source 通过
@@ -841,7 +841,7 @@ GPU peer 的编译/oracle/性能、dirty producer 性能与 CUDA 新域 host 风
 本轮 selector 因六个 shared benchmark/合同输入没有 owner 映射仍为 BLOCKED，原计划
 `.scratch/inference-gaps/g04-g05/candidate-cost-plan.json` 保留；product_authorization 无
 issues，selected docs/closure 和146 skipped reasons保留。沿既有
-[工具归属记录](../build/validation-selector-shared-bench-paths.md)追加实际反例；本轮只做
+工具归属记录（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-shared-bench-paths.md`）追加实际反例；本轮只做
 上述 adapter 数值/合同与必要维护检查，不重写 selector、公共仪器或产品构建系统。
 
 
@@ -2020,7 +2020,7 @@ SDK成功预写A/A或吞吐PASS。
 
 本次ce21-sdk-binding-plan仍因原shared benchmark路径族的三个JSON/Python输入unknown而
 BLOCKED；product_authorization无owner/issue，docs/closure及146 skipped reasons均保留。
-沿[既有独立工具记录](../build/validation-selector-shared-bench-paths.md)分账，按本卡原有限
+沿既有独立工具记录（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-shared-bench-paths.md`）分账，按本卡原有限
 门继续，不改selector、公共性能核心或产品，也不将该工具归属状态写成验证PASS。
 
 CE21[ASan地址facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-host-asan/receipt.json)
@@ -2228,7 +2228,7 @@ Ninja依赖freshness与前后SHA核验复用；shared计划0个CUDA重编边，�
 身份预检实际PASS；这不是numeric/A-A/吞吐PASS。三形状、原peer两屏障派生、16AA、
 8strata、n15,31、5%与全部旧FAIL不变。
 
-ce24-sdk-binding-plan沿[原独立工具事项](../build/validation-selector-shared-bench-paths.md)
+ce24-sdk-binding-plan沿原独立工具事项（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-shared-bench-paths.md`）
 因既有shared benchmark的三unknown路径BLOCKED，product_authorization无owner/issue；
 docs/closure及146 skipped reasons保留，按本卡有限门继续。不在模块内改selector或公共
 性能核心，也不把该工具归属状态写PASS。接下来三host facets串行批验，随后新numeric/

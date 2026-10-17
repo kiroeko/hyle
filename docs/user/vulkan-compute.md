@@ -27,9 +27,9 @@ Windows和Air M4/MoltenVK的source/static/shared已验证普通Direct/Graph代�
 causal `Q×K` mask与float shared scratch仍是真成本，没有capture或全dtype/shape吞吐
 宣称。其他既有SDPA档保其原承载/费用，不因此签arbitrary page-table或整G01完成。
 当前交付资格与后续风险/性能门见
-[驻留SDPA活动卡](../implementation/tasks/compute/inference-g01-resident-sdpa.md)与
-[端口资格卡](../implementation/tasks/compute/inference-g01-vulkan-resident-ports.md)；当前端口
-修正的Air source数学/复制次数已实跑，候选完整交付/风险/性能仍按活动卡逐项验收。
+[驻留SDPA实施记录](../implementation/tasks/compute/inference-g01-resident-sdpa.md)与
+[端口验证记录](../implementation/tasks/compute/inference-g01-vulkan-resident-ports.md)；当前端口
+修正的Air source数学/复制次数已实跑，其他交付、风险与性能需要按实际改动验证。
 
 ## 构建与运行条件
 

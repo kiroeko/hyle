@@ -37,7 +37,7 @@ public:
 
   void start() {
     if (!enabled())
-      fail("two-worker qualification requires a physical CPU assignment");
+      fail("two-worker benchmark requires an explicit CPU assignment");
     const char *cursor = cpu_list_.c_str();
     for (std::size_t i = 0; i < cpus_.size(); ++i) {
       char *end = nullptr;

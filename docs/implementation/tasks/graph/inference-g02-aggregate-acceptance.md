@@ -4,7 +4,7 @@
 CPU+Apple/Vulkan 原生联合分页，以及原 Windows 未决门和补验发现的有限修正。
 [聚合收据](../../../../evidence/correctness/inference-g02-aggregate-acceptance/receipt.json)
 逐份绑定 13 项证据。它是 goal 工作项裁决；当前模块状态仍由
-[registry](../../module-status.json)决定，G04/G05 的活动候选不在此一并关闭。
+registry（已删除的历史文件：`docs/implementation/module-status.json`）决定，G04/G05 的活动候选不在此一并关闭。
 
 ## 原要求与实际证据
 

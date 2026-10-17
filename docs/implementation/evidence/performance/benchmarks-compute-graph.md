@@ -79,7 +79,7 @@ python scripts/hyle-perf.py verify `
 
 ## x64 oneDNN provider P1
 
-[`compute-onednn-provider-p1-v1`](../../../../bench/contracts/compute-onednn-provider-p1-v1.json) 不把
+`compute-onednn-provider-p1-v1`（已删除的历史文件：`bench/contracts/compute-onednn-provider-p1-v1.json`） 不把
 HYLE native kernel 和 oneDNN 算法混成一场胜负。两侧都是 oneDNN v3.13.2 同参数、预生成的 x64 f32
 BRGEMM ukernel，使用独立但同值的 64-byte-aligned caller storage、相同 caller scratch、串行 full-N
 执行、overwrite output 和 hardware-context set/release。candidate 额外且完整计入普通用户真正支付的
@@ -125,7 +125,7 @@ python scripts/hyle-perf.py verify `
 
 ## Graph v2 三节点 composition-tax P1
 
-[`graph-multi-op-tax-p1-v1`](../../../../bench/contracts/graph-multi-op-tax-p1-v1.json) 测量公开 Graph
+`graph-multi-op-tax-p1-v1`（已删除的历史文件：`bench/contracts/graph-multi-op-tax-p1-v1.json`） 测量公开 Graph
 真正承诺的组合成本，而不重新裁决三个 leaf kernel。candidate 是预编译、预绑定的三节点
 RMSNorm → transpose-view MatMul → packed SiluAndMul `Invocation`；peer 是完全相同三类 HYLE-native
 `PreparedOperation` 在同一 Context/Queue、TensorDesc、输入/权重和同步 Completion 边界上的手写 direct
@@ -172,7 +172,7 @@ operator catalog、provider partition、异步/GPU graph 或端到端 Transforme
 
 ## Compute v2 shipping CPU route P1
 
-[`compute-cpu-route-p1-v2`](../../../../bench/contracts/compute-cpu-route-p1-v2.json) 验证用户实际得到的
+`compute-cpu-route-p1-v2`（已删除的历史文件：`bench/contracts/compute-cpu-route-p1-v2.json`） 验证用户实际得到的
 CPU route selection，而不是把完整 Compute API 与裸 kernel 作苹果/橘子式排名。candidate 是启用已关闭
 oneDNN provider 的 Compute v2，peer 是强制 native 的同一产品；两侧使用相同公开 Tensor/Buffer/Queue/
 PreparedOperation/Invocation/Completion、caller-owned 输入输出、串行执行和精度合同。prepare、allocation、
@@ -220,7 +220,7 @@ python scripts/hyle-perf.py verify `
 
 ## Graph oneDNN gated-MLP region P1/P2
 
-[`graph-onednn-region-p1-v1`](../../../../bench/contracts/graph-onednn-region-p1-v1.json)
+`graph-onednn-region-p1-v1`（已删除的历史文件：`bench/contracts/graph-onednn-region-p1-v1.json`）
 把同一个四节点 `gate/up MatMul -> SwiGLU -> down MatMul` 任务拆成两个不能混淆的比较：
 
 1. P1 abstraction 行与已经手工融合的 direct route 使用相同两份 oneDNN 3.13.2 BRGEMM plan、相同
@@ -277,13 +277,13 @@ specialization、placement 或 replay 需求自然改变公共 submit path，并
 RTX 4070、CUDA 13.3、MSVC 19.50、Release static、LTO off 上于 `n=15` 按规则停止；artifact identity、
 fresh build、A/A、5%/10% known-delta、timer floor、placement 和全部产品门均为 `PASS`。
 
-[`compute-cuda-runtime-p1-v1`](../../../../bench/contracts/compute-cuda-runtime-p1-v1.json) 比较一份 1 MiB
+`compute-cuda-runtime-p1-v1`（已删除的历史文件：`bench/contracts/compute-cuda-runtime-p1-v1.json`） 比较一份 1 MiB
 resident D2D copy：两侧使用 non-blocking stream、独立但等价的 device buffers，以及相同的一次 event record
 和 terminal wait。HYLE 侧只额外承担公开 BufferView 验证和预留 Completion slot 管理。八个执行顺序、
 分配顺序与 placement strata 的 median ratio 为 `0.98967--1.02142`，八行均为 `PARITY/PASS`，综合
 exact verdict=`PARITY`、non-inferiority=`PASS`。因此没有把随姿势反转的点值解释成固定输赢。
 
-[`graph-cuda-pipeline-p2-v1`](../../../../bench/contracts/graph-cuda-pipeline-p2-v1.json) 比较同一 4 MiB
+`graph-cuda-pipeline-p2-v1`（已删除的历史文件：`bench/contracts/graph-cuda-pipeline-p2-v1.json`） 比较同一 4 MiB
 CUDA D2H → native CPU Unary → CUDA H2D 任务。Graph 与 direct route 使用相同 TensorDesc、CUDA/CPU
 Context 和 Queue、device/pinned storage、leaf operation、依赖与最终 terminal contract；compile、prepare、
 allocation、bind、first touch 和 warmup 都在计时外。Graph 使用冷路径已验证的 exact route 与内部

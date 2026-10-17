@@ -1,40 +1,39 @@
-# Vulkan complete-FFN qualification
+# Vulkan complete-FFN benchmark
 
-The [R6 performance contract](../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)
-freezes the consumer, peer, ownership, precision and finite budget before timing.
-`consumer_shapes_v1.json` records the registered M1/M16, K4096/H11008/O4096 shapes.
+The Direct and Graph consumers compare complete FFN execution with independently
+compiled original ggml shaders from `456172ec733a135778adcd32d00e576a58232e45`.
+`consumer_shapes_v1.json` describes M1/M16, K4096/H11008/O4096 inputs.
 
-`route_p1_bench.cc` uses ordinary typed Direct or Graph APIs. `reference_shaders.py`
-compiles original shaders from a separate, clean ggml checkout at
-`456172ec733a135778adcd32d00e576a58232e45`; it does not reuse product-generated SPIR-V.
-The reference independently describes packing, push constants, specialization and
-the four-dispatch FFN. Both arms pay the same native admission/completion lifecycle.
-Graph's private benchmark adapter also pays the same output lease and slot costs.
-This qualifies mature implementation integration, not an HYLE algorithm win.
+`reference_shaders.py` compiles a separate ggml checkout instead of reusing product
+SPIR-V. The reference independently describes packing, push constants, specialization
+and four-dispatch FFN execution. Both arms include native admission/completion;
+Graph also includes its output lease and slot lifetime. This measures integration of
+the mature implementation, not an independent HYLE algorithm win.
 
-`HYLE_BENCH_VERIFY_ONLY=1` checks both inputs and every output against an independent
-double oracle, rounded to F32 at operation boundaries. Timing also compares the two
-arms and rejects invariant outputs or changing resident allocation counts. Cold
-preparation time, peak and resident VkDeviceMemory bytes are reported separately;
-these counts exclude driver/pipeline-private allocation.
+In an existing static Release build with Vulkan benchmarks enabled, provide
+`HYLE_VULKAN_REFERENCE_SOURCE_DIR` for the pinned checkout and build the relevant targets:
 
-`validate_aa.py` uses the existing machine policy and nanobench parser for one finite
-16-process qualification per entry/profile: selected/reference implementations,
-execution order, allocation order and placement. The placement executable adds one
-cold prefix object; it does not pad hot functions or alter the product library.
-Link maps record actual symbol positions. Both Windows DLL staging and popup
-suppression happen before execution. M1-MAC means the MacBook Air, with measured
-interactive QoS, not hard CPU affinity.
+```text
+cmake --build <build-dir> --target hyle_compute_route_vulkan_bench hyle_graph_route_vulkan_bench
+```
 
-Four `bench/contracts/*-vulkan-ffn-*-p1-v1.json` contracts drive the unmodified common
-runner. Run only after API/algorithm freeze and candidate registration. Windows uses
-the registered two-P-core native-runtime budget with a pinned caller; MoltenVK has
-its own machine and toolchain contract. Exact reference inputs/SPIR-V, executable,
-machine and child-policy identities bind A/A reuse. A failed finite attempt cannot
-be silently repeated by the validator.
+The `_placement` variants add a cold prefix object rather than padding hot functions.
+Link maps record symbol positions. Use the built executable directly, with the normal
+Vulkan loader and staged runtime available.
 
-R7 retired `*_vulkan_native_cost_bench` and the raw submission branch. Its checked
-fence wait lacked cancellation, abandoned-work quarantine and owning output
-leases, so the pair cannot establish a public-route NI verdict. Historical R6
-raw observations remain at their frozen source/evidence identity. Current
-same-service shader references and independent oracles remain; R7 does not run P1.
+- `HYLE_BENCH_VERIFY_ONLY=1` checks inputs and every output against a double oracle,
+  rounded to F32 at operation boundaries. Timing also rejects invariant outputs or
+  changing resident allocation counts.
+- `HYLE_BENCH_AA_ROUTE=selected|native` runs workload-matched A/A. Execution and
+  allocation order can be exchanged with `HYLE_BENCH_RIVAL_FIRST=1` and
+  `HYLE_BENCH_PEER_ALLOCATION_FIRST=1`.
+- Save repeated output and analyze A/A, both orders and placement using
+  [the measurement methods](../../docs/developer/performance/README.md).
+
+Cold preparation, peak and resident VkDeviceMemory are separate outputs; driver and
+pipeline-private allocations are excluded. Record actual caller placement and resources.
+MoltenVK on the MacBook Air uses observed QoS, not hard P/E-core affinity.
+
+The retired raw native-cost branch lacked cancellation, abandoned-work quarantine and
+owning output leases. Its historical timings do not rank equivalent public routes.
+Original experiment details remain in the [implementation history](../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md).

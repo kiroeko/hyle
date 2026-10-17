@@ -2,8 +2,8 @@
 
 > **候选验收（2026-08-26）。** 本页记录项目级工具施工事实，不是产品模块状态。engineering
 > 仪器已完成本轮校准；Formal 长期保留层仍是独立 blocker。模块当前状态只读
-> [`module-status.json`](../../module-status.json)。规则见
-> [模块重构与收口协议](../../../developer/review/module-closure-methodology.md)，性能协议见
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。规则见
+> 模块重构与收口协议（已删除的历史文件：`docs/developer/review/module-closure-methodology.md`），性能协议见
 > [统一性能仪器 v1](../../../developer/performance/instrument-v1.md)，机器角色见
 > [性能机器合同](../../../developer/performance/machines.md)。
 

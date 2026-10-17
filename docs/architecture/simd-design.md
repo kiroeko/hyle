@@ -1,11 +1,5 @@
 # HYLE SIMD 设计
 
-本文只描述 SIMD 的长期产品边界、ownership 和调用成本。当前施工状态以
-[`module status`](../implementation/status.md) 为准，并从该表进入当前 closure/performance evidence。
-用户可依赖的接口和陷阱见
-[`SIMD 使用指南`](../user/simd-usage.md)。旧实现、实验点值和阶段结论只保留在 implementation/evidence，
-不得从历史任务反推当前承诺。
-
 SIMD 当前是 C++23 source/static/shared 组件。它不提供 Native FFI，也不承诺跨任意 C++ 工具链 ABI。
 
 ## 产品目标
@@ -64,7 +58,7 @@ HYLE 不把“引入 vendor”解释为删除全部自研，也不把“保留�
    统一采用 Highway；真正显著的优化会在有界证据中明显胜出；
 4. route 必须由模板、宏、target namespace 或生成特化在编译期消失，build system 负责给每个 target body
    正确的 provider、依赖和 ISA flags。未来真实 consumer 暴露新热点时，可以加入一个 HYLE candidate 并只
-   重签受影响 scope，逐步替换 vendor，而不重建平行 register 库。
+   验证受影响 scope，逐步替换 vendor，而不重建平行 register 库。
 
 路由清单是内部机器合同，不是用户 ABI。fixed/exact 构建把选择落实为宏、模板特化或直接 target symbol，
 因此操作调用本身没有函数指针、分支或 CPU 探测。unknown-CPU ordinary/source-fat 仍只在 whole-buffer kernel
@@ -74,25 +68,10 @@ HYLE 不把“引入 vendor”解释为删除全部自研，也不把“保留�
 dispatch 或额外指令的 adapter 才可准入，否则把优势算法改写为当前 kernel 的 native lowering，或在更高的
 whole-buffer 边界选择另一套完整 body。
 
-历史 register 面机械提取出的每一个 operation 都必须在迁移账本中出现。逐项审计不等于运行
-`operation × overload × size × ISA` 的无限笛卡尔积：相同实现和相同 codegen 可以共享一个资格化 evidence
-group，但每项都必须显式引用该组；alias、selector、constant 和 composition 也必须有结构证明。任何漏项或
-`PENDING` 都禁止删除旧实现和冻结候选。
-
-账本把“候选发现”和“合同资格”分开。vendor 源码中的同名 symbol、operator 或 token 只说明值得审查，
-不能证明 lane type、mask、NaN、fault suppression、rounding、alias 或资源语义相同。387 个 operation 的每个
-route scope 都分别保存 HYLE、Highway、xsimd 三方的合同结论；三方未全部成为具证据的
-`SAME_CONTRACT`、`ADAPTED_SAME_CONTRACT`、`COMPOSED_SAME_CONTRACT`、`NOT_AVAILABLE` 或
-`NOT_COMPARABLE` 前，该 scope 仍是 `PENDING`。因此“不支持”也是逐项审计后的结论，不是没测到就省略。
-
-同合同后的选择顺序固定为：先比较复杂度、遍历/临时存储和语义强弱，再看 material 的 consumer 或 P1
-性能差异，最后才处理等价实现。Highway 是标准 primitive 的维护性默认值：合格的 `TIE`、最终 codegen
-等价、低于 5% material margin、顺序/编译器反转，或在有界资格化后仍无法分出赢家时，均选择 Highway，
-而不是继续保留一套平行 HYLE backend 等待更多微基准。只有同合同证据在可表达的 type × ISA/platform
-scope 上证明 HYLE 或 xsimd 有可复现的 material 优势时，才为该有限 scope 建立例外；Highway 没有能力或
-合同确实不同则保留 HYLE。未知项采用 Highway 不等于声称 Highway 全局最快，后续真实 consumer、依赖升级
-或新硬件上的 material 证据可以触发具名 route 重签。这个规则允许实现逐项替换，也防止为微基准噪声维护
-无意义的第四套形状。
+实现选择先比较语义、精度、复杂度、遍历和临时存储，再比较完整调用成本。
+Highway 是标准 primitive 的维护默认；已有 HYLE/xsimd 优化在相应类型、ISA 和工具链范围内保留。
+默认值不表示所有未来硬件上都最快。发现稳定的小幅差距也继续调查，是否替换根据真实收益和维护成本决定。
+依赖升级或新硬件影响路由时检查相关实现与消费者，不需要整轮模块认证。
 
 ### 普通 whole-buffer 路径
 
@@ -276,19 +255,18 @@ Highway/xsimd 的原生 namespace 是专家层本身：HYLE 不把其完整函�
 - P0 先检查 O(n) 下界、遍历次数、临时 storage、dispatch 次数和可选 feature gate。
 - P1 candidate 与对应 Highway/xsimd peer 必须同 ISA、同 TU 或等价 codegen 边界，并对齐 alias、rounding、
   accuracy、dispatch 和资源合同；运行 A/A、正反顺序和真实 size distribution。
-- 5% 是 SIMD 当前 family 的 material margin。亚纳秒点值、地址或顺序翻转、单次结果不能修改公共 API、
-  layout 或常态 metadata。
+- 排除计时分辨率、噪声和漂移后，稳定的小幅输项也如实记录和调查。
+  公共 API、layout 和常态 metadata 的改动需要真实消费者与机制证据。
 - fixed/fat codegen 必须确认最终 loop 没有 HYLE wrapper、逐元素 callback 或第二次 vendor dispatch。
 - SVE/RVV 模拟器只签 correctness 和 codegen；性能必须来自对应真机。
 
-性能仪器与停止规则见
+性能实验方法见
 [`SIMD benchmark methodology`](../developer/performance/simd-op-benchmark-methodology.md)。
 
 ## 明确负空间
 
 Native FFI、稳定跨工具链 C++ ABI、per-ISA DLL、公开 register façade、逐 lane runtime callback、tensor/
-model operator 和 GPU backend 均不因 SIMD vendor 集成进入本组件。真实 consumer 改变边界时，按模块收口
-方法登记新事实并 reopen；benchmark 新增一行不构成 reopen trigger。
+model operator 和 GPU backend 均不因 SIMD vendor 集成进入本组件。真实消费者暴露问题时直接调整相关接口和实现，benchmark 不能单独定义产品范围。
 
 ## 参考
 

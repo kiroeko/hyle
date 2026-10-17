@@ -157,7 +157,7 @@ guarded stack。没有新增 persistent metadata、result copy、atomic、lock �
 `valid()`/worker 范围检查；`spawn_task_impl<true>` 的 admission 通过 `if constexpr` 静态落到既有
 `Scheduler::spawn_on`，resume、yield、timer/IO/foreign wake 全部复用已有 owner/reinject 路线。
 
-正式 P1 使用 [`sched-v6-pinned-task-p1-v1`](../../../../bench/contracts/sched-v6-pinned-task-p1-v1.json)
+正式 P1 使用 `sched-v6-pinned-task-p1-v1`（已删除的历史文件：`bench/contracts/sched-v6-pinned-task-p1-v1.json`）
 （SHA-256 `1424330e6f359cd34e8fdefbd29afbcb9a317397a095b70586685f7cd4b7c93b`），比较相同的
 pinned+suspending+typed completion episode：HYLE 新入口对 baseline 公共 API 手工组合。W1-WIN、
 MSVC 19.50、Release/static、portable ISA、31 个独立进程、双执行顺序与独立 placement 变体；A/A、

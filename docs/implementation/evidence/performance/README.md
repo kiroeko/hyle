@@ -6,7 +6,7 @@
 - 仪器与判定规则见
   [benchmark evidence standard](../../../developer/performance/benchmark-evidence-standard.md)。
 - 原始 CSV/JSON/log 放在仓库根级 [`evidence/performance/`](../../../../evidence/performance/)。
-- 当前模块证书与可信度见 [施工状态](../../status.md)。
+- 当前模块证书与可信度见 施工状态（已删除的历史文件：`docs/implementation/status.md`）。
 
 每份有效报告必须绑定实现 commit、构建/依赖 manifest、公开或内部合同卡、平台与 affinity、
 输入分布、强 peer 版本、计费边界、原始数据和 verdict。缺少任一关键项的旧报告仍可用于定位
@@ -26,8 +26,8 @@ engineering bundle 可通过精确 hash renewal 链回放并报告 `REVIEWED_NON
 ## 当前证据怎样查
 
 不要在本目录维护第二份容易漂移的“当前版本列表”。当前模块、工程性能 verdict 和精确证据
-链接统一由 [`module-status.json`](../../module-status.json) 投影到
-[`status.md`](../../status.md)；状态表中的 Engineering performance 单元格可直接进入该模块当前证据。
+链接统一由 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`） 投影到
+`status.md`（已删除的历史文件：`docs/implementation/status.md`）；状态表中的 Engineering performance 单元格可直接进入该模块当前证据。
 同一个报告可以服务多个拆分 factor，例如 Platform 三个 factor；这不会创造第二个产品状态。
 
 registry 的 `performance.evidence` 路径是当前工程证据的唯一选择器。旧候选页面应写 `HISTORICAL`

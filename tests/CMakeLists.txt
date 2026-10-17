@@ -122,8 +122,6 @@ function(hyle_add_header_self_contained_test module)
   unset(_hyle_extra_include_dir)
 endfunction()
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-# Governance tooling remains in tests/tooling for history, but is not part of
-# ordinary product test registration while governance is disabled.
 add_test(NAME hyle_shared_export_hygiene_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/shared_export_hygiene_test.py")

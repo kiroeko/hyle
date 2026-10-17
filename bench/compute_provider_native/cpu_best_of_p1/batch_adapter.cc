@@ -20,7 +20,7 @@ bool forward(const std::filesystem::path &path,FILE *out) {
 int main() {
   SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
   const auto *nonce=std::getenv("HYLE_PERF_RUN_NONCE");
-  if(!nonce)return 70;
+  if(!nonce || !*nonce)nonce="unmanaged";
   DWORD_PTR process_mask=0,system_mask=0;
   if(!GetProcessAffinityMask(GetCurrentProcess(),&process_mask,&system_mask) || !process_mask ||
       (process_mask&(process_mask-1))!=0)return 71;

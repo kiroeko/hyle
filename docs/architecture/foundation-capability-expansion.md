@@ -1,9 +1,5 @@
 # 基础能力扩展范围
 
-> 决策状态：`ACCEPTED`，2026-09-10。本文冻结本轮基础能力的产品范围、语义下限、owner 与负空间；
-> 它不修改模块状态，也不授权产品施工。每项能力仍须建立 closure card，依次完成
-> `SCOPED -> AUDITED` 后才能改代码。
-
 ## 为什么需要本决策
 
 HYLE 已经有较宽的内存、容器、调度和 I/O 原子面，但“原子存在”不等于真实用户旅程完整。本轮以
@@ -11,7 +7,7 @@ ggml/llama.cpp、ds4、vLLM、SGLang 的推理基座为主需求锚，并用渲�
 反偏置；实现形状再与 Folly、oneTBB、Boost、libuv、nginx、simdutf 和 OpenSSL 对账。
 
 参考库用于确认已经成熟的问题语义，不用于求 API 并集。准入仍须同时满足
-[HYLE 七道产品边界](hyle-scope.md#可执行的产品边界)：真实任务成立、HYLE 有集成价值、owner 与 DAG
+[产品范围](hyle-scope.md)：真实任务成立、HYLE 有集成价值、owner 与 DAG
 自然、实现可持续、默认成本可隔离、C++ 旅程完整。
 
 版本化 consumer、peer 和 HYLE 现状证据保存在
@@ -19,20 +15,18 @@ ggml/llama.cpp、ds4、vLLM、SGLang 的推理基座为主需求锚，并用渲�
 
 ## 裁决
 
-本轮准入八个能力包。它们是八个独立的产品问题，不是一张必须一次完成的巨型施工卡。
+这里记录八项基础能力及其技术边界。
 
 | ID | 已准入用户任务 | semantic owner / 承载 | 执行状态 / 当前缺口 |
 |---|---|---|---|
 | `G01` | bulk Base64/Base64URL size、caller-buffer encode/decode 与明确校验策略 | `container_text`；`BORROW` 已锁定 simdutf algorithm core | 公开 `<hyle/container/base64.h>` 路线已交付；后续 G04 直接复用，不复制 codec |
 | `G02` | runtime-sized structured task scope：动态 spawn、cancel、close、join/drain | `sched`；`SELF`，复用现有 Task/JoinHandle/CancelToken | 已交付 `TaskScope`；普通 spawn 不承担 tracking 成本 |
 | `G03` | managed child process：spawn、stdio、async wait、timeout/cancel、tree termination、reap | `process` factor/product；HYLE 拥有语义和 scheduler-native lifecycle，OS mechanism 自有 | 已交付 `ProcessRuntime`/`ChildProcess`、三平台非轮询 carrier、HYLE async pipe、tree termination 与可靠 reap |
-| `G04` | WebSocket client/server handshake、HTTP handoff、message/frame/control/close | 新 `io_websocket` factor + 定向重开 `io_http`；协议状态机归 HYLE | 已交付协议无关 HTTP Upgrade owner 与 RFC 6455 client/server、streaming message、control/close、limits 和 plain/TLS 路线 |
+| `G04` | WebSocket client/server handshake、HTTP handoff、message/frame/control/close | `io_websocket` 与 `io_http`；协议状态机归 HYLE | 已交付协议无关 HTTP Upgrade owner 与 RFC 6455 client/server、streaming message、control/close、limits 和 plain/TLS 路线 |
 | `G05` | recursive directory-tree change stream | `io_watch`；`SELF` 三平台 backend | 已交付显式 `directory_tree`、root-relative batch、rescan/cap 与三平台 backend |
 | `G06` | async file-region to byte-stream + HTTP file body，支持时走 kernel fast path | `io_core` + `io_http`；`SELF` OS fast path 和 portable fallback | 已交付 `FileRegion/send_file_region` 与 HTTP file-body；plain 使用三平台 native fast path，TLS/unsupported 使用一次有界 fallback |
 | `G07` | TLS credential source closure：file/borrowed PEM、encrypted-key password/callback | `io_tls`；`BORROW` OpenSSL credential mechanism，HYLE 拥有 provider-neutral C++ 形状 | 已交付 file/borrowed PEM、encrypted-key password/callback、client/server identity 与 mTLS |
 | `G08` | opt-in low/normal/high non-preemptive execution priority | `sched`；`SELF`，独立于 OS thread priority 和应用 request policy | 已交付 opt-in 三档、继承/覆盖和全 wake/admission 路由；默认 normal-only 成本隔离 |
-
-八项之外没有隐含的“顺手补齐”。发现新的真实缺口时，先回到能力准入，而不是扩大某一张 closure card。
 
 ## 各能力的最低合同
 
@@ -92,8 +86,8 @@ Boost.Process v2 和 libuv 都证明 portable process owner 的语义，但分�
   `hyle-service` 或应用；`permessage-deflate` 本轮不准入。
 
 Boost.Beast 的 handshake-buffer、message/partial operation 和 control/close 模型作为强 peer；它依赖
-Boost.Asio，不能直接成为 HYLE 的第二 I/O runtime。协议需要的 Base64 复用 G01；G04 的 AUDITED card
-必须选择不带第二 runtime 的窄 SHA-1 mechanism（可借成熟小实现），不为 WebSocket 新建通用 crypto 产品。
+Boost.Asio，不能直接成为 HYLE 的第二 I/O runtime。协议需要的 Base64 复用 G01；G04 的实现需要
+选择不带第二 runtime 的窄 SHA-1 mechanism（可借成熟小实现），不为 WebSocket 新建通用 crypto 产品。
 
 ### G05：recursive watch
 
@@ -163,21 +157,6 @@ request priority、KV/preemption 和 cache-aware policy 只是 consumer evidence
 证明，不能直接照抄一份 vLLM ring。SlotMap 与 trie 同理：专用实现可以继续存在，公共泛型只有在真正消除两个 owner 的重复实现时
 才准入。
 
-## 实施顺序
-
-每行建立独立 closure round；同一模块的两项也不合并成无界任务。
-
-1. `G01 container_text/Base64`：先交付 WebSocket 和协议共同依赖；
-2. `G07 io_tls/credential source`：配置冷路，独立验证 secret lifetime；
-3. `G02 sched/TaskScope`；
-4. `G08 sched/execution priority`：只在 G02 candidate 已稳定后单独重开；
-5. `G05 io_watch/recursive tree`；
-6. `G06 io_core + io_http/file-region`；
-7. `G03 process`：先登记新 factor，再在 AUDITED 前裁决三平台 carrier 细节；
-8. `G04 io_websocket + io_http handoff`：最后复用 Base64、TLS、IO 与 Sched 稳定合同。
-
-前一项完成不自动授权后一项。新 factor 必须先进入中央 component graph 和 registry `QUEUED`；重开已有
-factor 必须保存 baseline、建立 card 并按 registry 合法迁移。
 
 ## 验收与性能边界
 
@@ -187,11 +166,4 @@ factor 必须保存 baseline、建立 card 并按 registry 合法迁移。
 - 对比必须同 alphabet/strictness、同 lifecycle、同 buffer ownership、同 completion 和 teardown。raw
   syscall 对完整 façade、plain 对 TLS、detach 对 drain 都不是性能 verdict；
 - HYLE adapter 调用已借算法时，目标是 release codegen/吞吐与直接依赖调用没有 material wrapper tax；
-- 任一能力在有限预算内无法证明跨平台合同，应裁决 `BLOCKED`，不能降低语义后冒充完成，也不能扩建
-  一套无限性能仪器。
-
-## 变更规则
-
-本页是当前范围真相；历史 task 只保存发现过程。新增 consumer、标准变化或强 peer 可以形成具体 trigger，
-但不得因为“某库还有一个类型”重扫和重开全库。候选晋级时必须同时更新本页、
-[观察清单](inference-engine-capability-watchlist.md)和对应 closure card，避免多份互相冲突的 backlog。
+- 未验证或不支持的跨平台合同明确说明，不降低语义后冒充完成。

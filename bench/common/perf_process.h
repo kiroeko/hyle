@@ -27,7 +27,7 @@ struct ThreadAffinityState {
   const char *ok;
 };
 
-// Multi-thread contracts let the launcher constrain the process to a reviewed
+// Multi-thread benchmarks let the launcher constrain the process to a selected
 // CPU set, then ask each benchmark role to pin itself inside that set. Process
 // affinity alone is insufficient: Windows may place both threads on one CPU,
 // which changes a park/unpark experiment by an order of magnitude. The role
@@ -56,9 +56,9 @@ inline ThreadAffinityState configure_thread_affinity(
 }
 
 // Darwin has no supported hard P/E-core affinity API. Every benchmark using
-// the common qualification runner therefore selects and reports an explicit
+// the common benchmark helper therefore selects and reports an explicit
 // QoS class in the child process. Other platforms report N/A and rely on the
-// launcher affinity/priority policy recorded in the evidence manifest.
+// launcher affinity/priority settings.
 inline ThreadQosState configure_thread_qos(
     const char *environment_name = "HYLE_PERF_APPLE_QOS") {
 #if defined(__APPLE__)
@@ -83,9 +83,8 @@ inline ThreadQosState configure_thread_qos(
 #endif
 }
 
-// The qualification runner assigns a different opaque token to every child
-// process.  Manual benchmark launches remain usable, but their telemetry is
-// deliberately distinguishable from evidence collected by the runner.
+// A launcher can assign an opaque token to correlate each child's telemetry.
+// Manual benchmark launches use the default token.
 inline const char *run_nonce(
     const char *environment_name = "HYLE_PERF_RUN_NONCE") noexcept {
   const char *value = std::getenv(environment_name);

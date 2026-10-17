@@ -1,14 +1,5 @@
 # 显式状态版本、分页计算与四路线组合设计
 
-> 决策：ACCEPTED，原有限A/F4/F5已于2026-10-13按
-> [完整完成审计](../implementation/tasks/project/foundation-f45-completion-audit.md)验收。
-> 下文保留原设计草图；当前公开接口以[state指南](../user/state-versions.md)和
-> [batch指南](../user/batch-attention.md)为准，不外推所有native性能/capture/general。
-> 来源为用户要求的F4/F5与四路线不对称研究；
-> [源码研究与固定身份](../implementation/tasks/project/foundation-f45-reference-research-2026-10.md)
-> 及[原缺口](../implementation/tasks/project/inference-foundation-gap-research-2026-10.md)。
-> F1–F3已在原有限范围CLOSED；本页不改变registry、不授权跳过SCOPED/AUDITED、不证明实现或性能。
-
 设计分成三个独立验收包：F4显式集合版本、F5真实paged/ragged数学、A四路线Graph语义接缝。
 需要共同的功能合同，执行和资源owner保留各route原生类型。不会把CUDA Queue、MLX Runtime、
 Vk command/fence塞进一个万能executor，也不会重写Mem分页、F1/F2/F3或现有数学kernel。
@@ -172,11 +163,6 @@ Graph新增opt-in BatchInvocation协调器（拟议），复用原Executable/Inv
 原19版region合同和普通调用者无条件常态成本不变。native region invocation、metadata/workspace
 地址和PreparedBatch必须是同一slot，不能外部规划A却让Graph提交B。
 
-这是真实新接缝，需要Graph/Provider owner另定界与反证；当前region的pure tensor ports与
-propose/compile本身不能被写成已支持动态host规划。只改CompileOptions.workload也无效：workload
-只在冷资格读取，不是每步metadata通道。版本化extension与协调器的实现API在SCOPED/AUDITED
-时以最小native prototype固定，不先增加一个所有Provider都必须实现的大vtable。
-
 只读attention不需要外部effect。写入KV的原append/scatter才声明mutable effect和writer权限：
 无格式变化的布局可由原F2 byte ranges承载；需要融合/repack/quantize就借已审native operation，
 不能把索引拷贝误当数学转换。共享page先由F4明确clone/私有化；成功后发布新state/layout版本。
@@ -230,34 +216,11 @@ capture/command/host wait、并发slot、external output ownership与已知/未�
 外部mutable输出只在真实消费者需要且native资源权限可表达时单独接入；保留原native owned
 result作为自然默认，不能为了C++签名相同引入shadow tensor/额外CPU copy。
 
-## 6. 有限后续包、顺序与停止
+## 6. 接口组合
 
-这些是设计ledger，尚未进入当前模块施工，不创建空target或改CLOSED状态：
-
-| ID | 有限工作与验收锚 |
-|---|---|
-| A-01 | 共享已有静态合法性/owner模型；同一纯图/错误control/effect在三hybrid给同语义裁决，native artifact不变 |
-| A-02 | 有限exact variants、独立warm slots及coverage/overflow/OOM/缺variant；general另外按真实native证据准入 |
-| A-03 | pure control ordering及cross-region dependency、禁止host wait时拒绝；无warm DAG遍历/重compile |
-| A-04 | supported effect/权限/alias真实传递与显式拒绝、旧result保活；不抹掉native边界 |
-| F4-01 | schema/opaque身份/版本目录/硬容量、完整成员发现与host sidecar拥有 |
-| F4-02 | share/replace及dirty clone，用原F1/F2而非全量复制；编码/alias/跨资源非法拒绝 |
-| F4-03 | 全成员成功ready、expected-base发布冲突与旧版本保活；不解释业务rollback |
-| F4-04 | producer/partial failure/cancel/abandon/未知/未启动suffix、记录与backing实际回收 |
-| F4-05 | pure recurrent+conv+paged布局的消费草图及正交资产集合，当前opaque snapshot前提与恢复限制 |
-| F4-06 | 四route自然入口、source/static/shared/新头/缺席、P0已知/未知账与指南 |
-| F5-01 | paged/ragged端口、容量/有效区、host snapshot/同版本device metadata及数学定义 |
-| F5-02 | 原FlashInfer C++ planning/run与独立slots、平台/资源资格；不升级锁或引入Python runtime |
-| F5-03 | prepare_batch失效/失败/metadata上传/native依赖及actual retirement，capture topology单独证明 |
-| F5-04 | opt-in版本化BatchPlanning+Graph协调器，与原region slot/权限/workspace对接；普通Invocation不变 |
-| F5-05 | native与explicit materialize分类、append/read/version闭环、独立dense oracle/成本；缺native格明确pending |
-| F5-06 | ordinary Direct+Graph三交付、新头/缺席/迁址、真实机器、资源/旧结果/错误与指南 |
-
-首轮先做小型consumer/prototype证明端口和owner：pure state collection不依赖effect解禁；
-CUDA paged Direct不依赖完整Graph域泛化。A-01静态约束可先并行设计，A-03/04与F5-04共同审计
-真实mutable页写入接缝；F4/F5各自绑定有限card，不能合成无边界大实现goal。
-次序建议：消费者状态集合/metadata ABI→F4基础与A有限shape/control→F5 Linux CUDA Direct→
-F5 Graph及明确参考档→剩余native Provider资格。只有peer/consumer证明的缺口才重开实际owner。
+版本集合、分页算子和 Graph 控制/效果边界分别拥有自己的合同。
+实现时用真实消费者验证端口、资源权限、版本提交和异步依赖；共享元数据 ABI 和寿命规则，
+不把不支持的 native 路径强行转换成同一执行器。
 
 ## 7. 验收设计
 
@@ -274,12 +237,5 @@ capture更换topology应拒绝/重准备，未资格路径不宣称captured；�
 A：exact/general coverage真实区分、未覆盖shape拒绝；控制边虽无数据依赖也有顺序；conflicting
 effects、readonly/mutable alias、old result与native桥接；每route自己的native/cost事实单列。
 
-运行按实际改动owner、直接consumer和新package seam选择，不全库回放。研究阶段不构建/P1；
-实施阶段首轮P0，只有稳定候选+真实hotspot+同合同才按有限card执行P1。四路线资格为CPU
-Win/WSL/Air、CUDA Win/WSL（FlashInfer native首轮仅Linux待验证）、Apple Air、Vulkan Win/Air；
-WSL软件Vulkan仅签适用构建/包门。库构建按实际内存j4/j2/j1、测试1，各重型门串行，缓存身份
-匹配才复用，不能重置失败预算或让native分支缺席变成语义上的NOT_APPLICABLE。
-
-本设计至此停止。尚无产品代码、ABI、runtime正确性、native prototype或性能资格；当前registry
-仍是F1–F3的CLOSED。实施前按实际consumer和本ledger完成SCOPED/AUDITED，冻结API名称/owner/
-预算与适用门，再进入一次有界实现与验收。
+按实际修改检查相关消费者和安装边界。真机计算、构建安装和软件模拟结果分别说明；
+选择并行度时考虑实际资源，复用身份匹配的缓存。缺少 native 实现或未运行不能写成通过。

@@ -1,7 +1,7 @@
 # Mem v6 host-storage 工程性能证据
 
 
-> 当前机械状态只见 [`module-status.json`](../../module-status.json)。本页只绑定候选
+> 当前机械状态只见 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本页只绑定候选
 > `9604bf4a33f13bd5f84ef78fedce55f305ac9d50` / tree
 > `57adb69f185cf02d42ab7f220ebeccbb91170b1b` 与下述冻结任务；不把一个 host
 > allocator 路线外推成 Mem 全能力、全尺寸、全线程或端到端推理的“SOTA”。
@@ -21,7 +21,7 @@ free 都计费；failure、thread-safety、owner lifetime、alignment 和 alloca
 因此该行是 `SAME_CONTRACT`，回答的是 HYLE runtime-erased owner/adapter 是否带来 material wrapper
 损失。它不拿 system heap 对 arena、cached pool 对 general allocator、bulk release 对 individual free，
 也不拿更少检查/更弱失败语义的路线来排名。冻结合同是
-[`mem-v6-host-allocation-p1-v1.json`](../../../../bench/contracts/mem-v6-host-allocation-p1-v1.json)。
+`mem-v6-host-allocation-p1-v1.json`（已删除的历史文件：`bench/contracts/mem-v6-host-allocation-p1-v1.json`）。
 
 `SystemMemorySnapshot`、large-page arena reserve、BufferPool policy cleanup 和 LifetimePlanner 没有被
 伪造为纳秒任务：它们分别按公开 OS/vendor 事实、side-effect/resource contract 与既有复杂度作 P0

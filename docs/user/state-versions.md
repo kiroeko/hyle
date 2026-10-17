@@ -1,7 +1,7 @@
 # 显式只读集合版本与 dirty clone
 
 当前F4已按[终局记录](../implementation/tasks/compute/foundation-f4-final-closure.md)收口，
-共同层与四route消费者、适用native风险和三交付已有证据；范围仍以registry/终局记录为准。
+共同层与四route消费者、适用native风险和三交付已有证据；具体环境和限制见相应实施记录。
 入口在[State API](../../include/hyle/compute/state_versions.h)及
 [typed clone API](../../include/hyle/compute/state_clone.h)，产品target为hyle::compute。
 与Graph组合的普通consumer选择compute和graph两个产品及实际route。

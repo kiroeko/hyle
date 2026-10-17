@@ -3,7 +3,7 @@
 <!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 > **记录性质：`HISTORICAL CLOSURE EVIDENCE`。** 本任务当时使用 `SIGNED` 作为结果词，不代表
-> 当前机械状态；当前状态只见 [`module-status.json`](../../module-status.json)。本任务不继承已删除
+> 当前机械状态；当前状态只见 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本任务不继承已删除
 > 旧 closure 文档的绿色状态。本记录按 v1 规则归类为 `LEGACY_IMPORT`：原 end commit 没有后来新增的
 > exact `MODULE CLOSURE RECEIPT` marker，不能倒写成当时已存在。建立账本时检查的基线为
 > `87c831d228e4e2f7844e60a3e9fd167cef4992b9`；最终产品候选为

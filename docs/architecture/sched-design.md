@@ -4,10 +4,6 @@
 等完成事件统一成一次 `Waker` 唤醒。它服务推理引擎的请求并发、异步 completion、后台阻塞工作和
 动态 fan-out，也服务普通工程程序；它不拥有模型、tensor、kernel、网络协议或 serving policy。
 
-本页只记录长期需求、边界和设计理由。当前施工状态与证据以
-[module-status](../implementation/status.md)及其 closure task 为准；用户应从
-[sched 使用指南](../user/sched.md)选择公开入口。
-
 ## 产品边界
 
 Sched 拥有：
@@ -116,14 +112,9 @@ record 集完成 fiber/thread-aware drain。terminal owner claim 后逐项观察
 completion line 做 RMW；失败才进入 scope 的首错控制锁。record 由 scope 与 publisher 各持一个内部引用，
 因此 waiter 观察完成后立刻析构 owner 也不能释放仍在 `signal()` 中的记录。
 
-这个取舍明确把资源从共享 cache-line 争用换成 terminal owner 观察前的 O(N) 小记录保留：单次 admission 和
-completion 仍为 O(1)，close 为 O(1)，完整 drain 为 O(N)，与 owner 必须回收 N 个 child 的任务一致；
-普通 task 仍是零新增 metadata/分支。旧同合同 manual owner 的分散 JoinState 已在相同 32-child workload
-中给出这种成本方向的直接机制证据；v9 不靠设计说明预签性能，而是在 workload-matched A/A 通过后，对
-不可变候选完成一次 qualified P1，四个双顺序/placement strata 均为 `PARITY` 且通过 5% 非劣门。完整身份、
-区间和限制见当前 registry 指向的 terminal record。固定分片 counter、close 后轮询和无界重采样均被
-否决：前者按 worker 数放大每个 request 的常态 metadata 且仍有末项握手，后两者分别破坏阻塞语义和性能
-证据停止规则。
+这个取舍把共享 cache-line 争用换成 terminal owner 观察前的 O(N) 小记录保留：
+单次 admission/completion 和 close 为 O(1)，完整 drain 为 O(N)，普通 task 无新增 metadata。
+相关历史实验保存在实施记录；不从该局部结果推导其他工作负载的性能。
 
 ## Worker 与队列
 
@@ -256,8 +247,6 @@ Sched 以 C++23 source、installed static 和 installed shared 三种形状交�
 依赖；`sched/detail`、fcontext shim 和汇编是 build/private 资产，不进入安装 SDK。当前没有 C API 或
 Native FFI；decorated C++ symbol 和私有 fcontext `extern "C"` 都不构成跨语言承诺。
 
-动态 TaskScope 与 low/normal/high 非抢占 execution priority 都由独立 closure round 管理；是否已经达到
-可依赖状态只看中央 registry，架构页不重复施工结论。默认 Scheduler 始终只有 normal lane，三档必须由
-owner 显式启用。多个 completion source、caller-participating SPMD、不同 stack strategy，
+默认 Scheduler 只有 normal lane，low/normal/high 三档由 owner 显式启用。多个 completion source、caller-participating SPMD、不同 stack strategy，
 或现有 lifetime/backpressure 合同无法表达的需求仍须先进入 capability decision，不能从 benchmark 行直接
 长成公共类型。

@@ -1,11 +1,6 @@
 # util 架构：两个依赖层，一个产品边界
 
-> 本页描述长期设计；施工/签证状态与当前性能证据只从中央
-> [`module status`](../implementation/status.md) 进入。当前只提供 C++23 source/static/shared，Native
-> FFI 为 `N/A`；公开 C schema、bridge、动态导出和 managed fixture 不属于产品。用户选型见
-> [user/util](../user/util.md)。
-
-Util 不是随手堆 helper 的杂物目录。产品入口 `hyle::util` 聚合两个分别收口的因子：
+Util 不是随手堆 helper 的杂物目录。产品入口 `hyle::util` 聚合两个内部组件：
 `util_core` 是 header-only foundation；util-runtime 的机器 ID 为 `util_runtime`，内部 target 为
 `hyle_util_runtime`。两者都不是独立用户产品，也不表示 util_core 被重新打开。
 
@@ -152,13 +147,12 @@ core、error、mem、container 和 container_text；
 target link 生成/验证。
 
 下游审查仍按实际临界区和生命周期判断，不能把类型名当证据。sched 内锁下 move/construct
-泛型 `T` 的路径仍由 sched 自己收口，不反向污染 util 结论。
+泛型 `T` 的路径仍由 sched 自己验证，不反向污染 util 结论。
 
-## 维护闸门
+## 验证要点
 
 1. util-core 公开头必须逐头 self-contained，并可通过 `HYLE_DEV_FACTORS=util_core` 独立构建；禁止
    include runtime 头。用户安装包只通过 `util` 产品请求和 `hyle::util` façade 取得两层能力。
-   当前收口证据与 reopen triggers 只看中央 registry 指向的 closure record。
 2. Registry 修改必须复验 raw nullable/`Result<T>`、mutable/frozen、reentrant callback、freeze
    race、allocator failure、TSan 和 installed source/shared/static C++23 consumer。
 3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。

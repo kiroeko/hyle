@@ -42,12 +42,8 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **契约**：经 `mem::system_allocator()`（mimalloc 后端）分配的内存，**可以在任意线程释放**——fiber 在 worker A 分配、迁移后在 worker B 释放是**安全且支持**的核心用例。
 
-**为什么安全**：当前 backing 锁定 mimalloc `v3.5.1`，分配器封在 `AllocatorRef` vtable（函数指针）后、
-且实现跨 `.so` 边界（`hyle_mem`）。fiber 体调 `deallocate()` 是**不透明调用**——`-O3` 无法把
-`mi_free` 内部的 TLS heap 读提升/缓存到 fiber 体的 yield 之上，每次在**当前线程**重新解析。即第 1
-条的危险模式在默认 shared 交付的分配器路径上天然不成立。跨线程释放、allocator ownership、
-三种交付和 sanitizer 的当前证据只从[模块状态](../implementation/status.md)进入；旧 mimalloc
-版本或旧压力次数不构成用户合同。
+当前 system allocator 使用锁定的 mimalloc v3.5.1。`AllocatorRef` 通过函数指针调用，
+分配和释放遵守实际 allocator 的跨线程合同；不要把可迁移 fiber 的线程本地状态缓存跨越 yield。
 
 `AllocatorRef`、`SystemAllocator`、PMR adapter 与 `Heap::allocator()` 都是 sized-free 路线：成功分配
 后，deallocate/reallocate 必须带回原 logical size/alignment。实现会把普通 `<16B` 请求的 16B 实际

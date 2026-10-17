@@ -2,7 +2,7 @@
 
 2026-10-06；baseline `653a91d1eb28f65dbeda380ebeb0a9c400162f80`，Windows canonical。
 这是用户要求的需求盘点，**不创建 goal、不重新打开模块、不授权自研数学、不增加运行 PASS**。
-当前状态仍以 [module-status](../../module-status.json) 为准；当前执行资格仍在
+当前状态仍以 module-status（已删除的历史文件：`docs/implementation/module-status.json`） 为准；当前执行资格仍在
 [D5 ledger](llm-moe-d5-acceptance-ledger.json)。机器可读逐版本/文件列表见
 [本清单 JSON](cpu-popular-quant-mtp-gap-list.json)。
 用户随后要求的CPU接入顺序已写入[新计划](cpu-quant-mtp-coverage-expansion-plan.md)及五张计划卡；

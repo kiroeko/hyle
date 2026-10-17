@@ -1,9 +1,7 @@
 # 故障排查
 
-当前产品 blocker 只看 [`module-status.json`](../../implementation/module-status.json) 中的 `BLOCKED`
-记录；没有 `BLOCKED` 就不维护第二份“已知问题”清单。构建、依赖和平台问题先查看
-[setup](../setup/README.md)，已经发生过且仍有复用价值的复杂诊断见
-[debugging](../debugging/README.md)。
+构建、依赖和平台问题先查[环境准备](../setup/README.md)；复杂问题的复现、观测点与排除方法见
+[调试案例](../debugging/README.md)。
 
-新问题进入对应 closure card；解决后把可复用的“症状 → 检查 → 定位 → 恢复”沉淀到这里或 debugging，
-一次性时间线留在 task/Git 历史。
+记录问题时保留症状、环境、最短复现和错误输出。解决后只沉淀可复用的诊断与恢复方法；一次性
+时间线和原始日志留在实验结果或 Git 历史，不建立状态清单或审批流程。

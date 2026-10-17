@@ -71,8 +71,8 @@ Graph 已有 cold provider-index 优先规则可消费同一组合，不改共�
   覆盖18个成熟 FP16/FP32 shape 组合、特殊值、双槽变化输入、对齐/alias 拒绝后继续使用、
   原 HYLE 2/4字节对齐能力、OOM/保活/关闭、普通 Direct 与实际 Graph capture 的默认和回退域。
   完整日志暂存 `C:/hyle-scratch/r4-cuda-20260916/mature-rule/`，尚不冒充全部 S4。
-- 最终默认 P1 使用 [Direct v3](../../../../bench/contracts/compute-cuda-ffn-p1-v3.json) 与
-  [Graph v3](../../../../bench/contracts/graph-cuda-ffn-p1-v3.json)：只更新最终实现身份/claim；
+- 最终默认 P1 使用 Direct v3（已删除的历史文件：`bench/contracts/compute-cuda-ffn-p1-v3.json`） 与
+  Graph v3（已删除的历史文件：`bench/contracts/graph-cuda-ffn-p1-v3.json`）：只更新最终实现身份/claim；
   原 v2 不覆盖，workload、8 strata、control、5%门及 n=15→31 预算原样保留。尚未启动。
 - selector 对新增 dependency lock / vendored input 要求 package 闭包检查；沿现有规则执行，
   仅登记 `third_party/sglang_activation/ -> compute_provider_cuda`，不更改 selector 算法。

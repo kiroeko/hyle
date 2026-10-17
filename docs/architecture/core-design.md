@@ -1,11 +1,5 @@
 # Core 架构：header-only 编译与布局地基
 
-> 本页描述当前长期设计，不是验收证书。当前产品状态只见
-> [`module-status.json`](../implementation/module-status.json)，并由其中的 `record` 指向当前轮
-> task；历史施工、三平台、codegen、package 与红队记录只作追溯。性能结论边界见
-> [`benchmarks-core`](../implementation/evidence/performance/benchmarks-core.md)，用法见
-> [`user/core`](../user/core.md)。
-
 ## 定位
 
 Core 是 HYLE 组件图最底层的 C++ header-only 组件。它只承载两类在任何 runtime 建立前就必须
@@ -182,14 +176,14 @@ artifact 的模块或 package loader 持有；不恢复“C++ header parity”�
 三种形状使用同一公开头。改变 compiler/cache/version header 后必须重编消费者；替换其他 shared
 module 不能更新已经内联进 consumer 的 Core 代码。
 
-## 明确负空间与重开条件
+## 范围与扩展
 
 Core 不拥有 runtime CPU/cache/NUMA/OS discovery、allocator、container、clock、同步、日志、
 recoverable error、backtrace/signal/minidump crash policy、ABI compatibility probe 或
 foreign-language binding。它不承诺
 具体 cache residency、精确机器 cache-line size、force-inline 必然发生，或对失效地址安全 prefetch。
 
-只有以下事实足以重开这个边界：真实 consumer 需要一种在所有 runtime 之前可用的跨模块 primitive；
+需要扩展时考虑实际依据：真实 consumer 需要一种在所有 runtime 之前可用的跨模块 primitive；
 受支持 compiler/target 使现有合同错误；直接消费者出现 material codegen/correctness 问题；或成熟
 peer 在相同语义下证明更好的复杂度/可移植形状。LOC、macro 数量、单条 hint benchmark 或亚纳秒
-差异不是重开理由。
+差异不能单独定义公共接口。

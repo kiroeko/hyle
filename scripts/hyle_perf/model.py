@@ -1,9 +1,4 @@
-"""Shared data model for HYLE performance evidence v1.
-
-The model intentionally keeps the statistical verdict, comparison-contract
-status, and evidence qualification as separate axes.  In particular,
-``NOT_COMPARABLE`` is not a fifth statistical verdict.
-"""
+"""Paired measurements and statistical results, independent of project state."""
 
 from __future__ import annotations
 
@@ -49,11 +44,6 @@ class NonInferiorityGate(_StringEnum):
     FAIL = "FAIL"
     UNRESOLVED = "UNRESOLVED"
     NOT_APPLICABLE = "N/A"
-
-
-class Qualification(_StringEnum):
-    QUALIFIED = "QUALIFIED"
-    DIAGNOSTIC = "DIAGNOSTIC"
 
 
 _ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]*$")

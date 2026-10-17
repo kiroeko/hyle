@@ -60,4 +60,4 @@ Context、resource、Queue、Scheduler、allocator 和外部 tensor backing 的�
 
 示例包含16KiB普通主存CPU权重的真实MatMul、最多512字节的图暂存与CUDA矩阵/CPU结果消费，
 另有CPU normalization/casts→CUDA gated FFN→CPU；没有把所有CPU权重转存到pinned。
-实际实现和适用运行验收状态见[当前 H1 卡](../../../../docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md)。
+示例的实测环境与限制见[实现记录](../../../../docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md)。

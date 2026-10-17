@@ -5,7 +5,7 @@
 ## 范围与判别
 
 - baseline：`ddf0cb89c2bb17028538a2e92dac428d77fd5b4b`；
-- 状态输入：[`module-status.json`](../../module-status.json) 中带新 `freeze_confirmation.marker=FROZEN`
+- 状态输入：`module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`） 中带新 `freeze_confirmation.marker=FROZEN`
   的 8 个组件；
 - “固定方向落后”只表示一个 workload 的全部必需 order/placement/allocation strata 中位
   `advantage_ratio < 1`。它不是 `LOSE` 的同义词，也不覆盖 CI、material margin、comparison class 或

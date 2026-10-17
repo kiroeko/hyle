@@ -1,17 +1,18 @@
-# HYLE 维护者文档
+# 开发说明
 
-> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../../AGENTS.md)；普通编译、测试与诚实报告继续。
+按实际问题实现，运行与改动相关的构建、测试或性能实验，说明结果与未验证项。旧治理流程及其
+状态、审批、调查预算和收口规则已删除；历史记录不决定开发权限或下一步工作。
 
-本目录帮助维护者下一次正确、快速地完成工作。一次任务做了什么属于
-[implementation](../implementation/README.md)；这里保存从任务中提炼出的可重复规则和工具。
+- [环境准备](setup/README.md)：Windows、Linux/WSL、macOS、依赖与离线构建。
+- [编码与接口约定](standards/coding-conventions.md)：模块边界、错误、寿命、并发和交付。
+- [性能比较](performance/README.md)：公平比较、统计、仪器误差与实际硬件限制。
+- [维护操作](maintenance/README.md)：实现速查、SIMD 路由与生成物。
+- [调试案例](debugging/README.md)与[故障排查](troubleshooting/README.md)：可复用的诊断方法。
+- [维护脚本](../../scripts/README.md)：构建和诊断工具。
+- [当前工作主线](current-work.md)：用户确认的工作范围与优先事项。
 
-- [开发标准](standards/README.md)：工程章程、编码与公开面规则。
-- [模块 review](review/README.md)：怎样从需求、功能、设计、性能、易用性和文档重新审一个模块。
-- [性能工程](performance/README.md)：benchmark 仪器资格、统计、证据和专项方法。
-- [环境与依赖](setup/README.md)：Windows、Linux/WSL、macOS、离线依赖。
-- [维护操作](maintenance/README.md)：日常速查、SIMD dispatch 等专门维护说明。
-- [调试案例](debugging/README.md)：棘手问题的症状、证据链和可复用诊断方法。
-- [故障排查](troubleshooting/README.md)：已知问题、快速定位和恢复路径。
+用户用法放在 [user](../user/README.md)，设计解释放在 [architecture](../architecture/README.md)。
+实验报告链接原始数据和复现命令即可，不要求填模板、登记状态或维护重复账本。
 
-新增文档前先问：它是否能指导下一位维护者重复完成某项工作？若只描述一次任务的状态或结果，
-应放 implementation；若在解释产品为什么这样设计，应放 architecture。
+[CI](../../.github/workflows/build.yml) 直接运行三系统基础组件构建、CTest、统计解析及 SIMD
+配置生成检查；不代表 Compute/Graph 或 GPU 已全部验证。设备测试与性能实验按实际改动运行。

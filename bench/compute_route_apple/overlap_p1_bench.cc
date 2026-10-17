@@ -16,9 +16,6 @@
 #include <string>
 #include <vector>
 #include <pthread.h>
-#include <mach-o/dyld.h>
-#include <filesystem>
-#include <fstream>
 
 #include "../common/perf_process.h"
 #include "hyle/compute/apple.h"
@@ -155,14 +152,6 @@ int main() {
     const bool verify=enabled("HYLE_BENCH_VERIFY_ONLY");
     const char *raw=std::getenv("HYLE_BENCH_AA_ROUTE");const std::string aa=raw?raw:"";
     if(!aa.empty()&&aa!="selected"&&aa!="native") throw std::runtime_error("invalid AA route");
-    if(!verify&&aa.empty()&&!enabled("HYLE_PERF_RUN_NONCE"))
-      throw std::runtime_error("formal measurement requires the unified runner");
-    if(!verify&&aa.empty()) {
-      std::uint32_t size=0;(void)_NSGetExecutablePath(nullptr,&size);std::string path(size,'\0');
-      if(_NSGetExecutablePath(path.data(),&size)!=0) throw std::runtime_error("cannot locate AA receipt");
-      std::ifstream ready_file(std::filesystem::path(path.c_str()).parent_path()/"hyle_apple_overlap_aa.ready");
-      std::string state;ready_file>>state;if(state!="PASS") throw std::runtime_error("overlap AA not qualified");
-    }
     const auto qos=hyle::bench::perf::configure_thread_qos();
     const bool rival=enabled("HYLE_BENCH_RIVAL_FIRST"),allocate=enabled("HYLE_BENCH_PEER_ALLOCATION_FIRST");
     std::fprintf(stderr,"# HYLE_APPLE_OVERLAP_RUN apple_qos=%s qos_ok=%s aa=%s verify=%d execution_order=%s allocation_order=%s run_nonce=%s\n",

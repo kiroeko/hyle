@@ -16,7 +16,7 @@
   test CMake 误扩产品 seam、全库 P1 claim 作用域错误、native context 缺少真实 compiler/stdlib/flags
   强制约束，以及真实小 factor native 集成尚未执行。后续独立 selector 修复轮处理这三项和一次有限
   native 集成；本轮不改工具、不签 native PASS，既有性能审计不因此失效。
-- 权威输入：[registry](../../module-status.json) 自动筛选
+- 权威输入：registry（已删除的历史文件：`docs/implementation/module-status.json`） 自动筛选
   `freeze_confirmation.marker == FROZEN`，得到 19 个 `CLOSED` 模块。只读取这些记录指向的
   当前 closure task、CURRENT 性能证据及其锁定合同、manifest、必要的机制与消费者来源。
   历史 rejected 数据只解释已失效命题，不补充当前性能格。

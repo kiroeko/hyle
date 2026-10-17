@@ -1,10 +1,5 @@
 # Paged / ragged attention 与显式批次准备
 
-本页描述当前 C++ surface。当前资格与限制以[模块状态](../implementation/module-status.json)
-及[G06终审](../implementation/tasks/compute/inference-g06-final-closure.md)为准；
-这页不承诺各平台相同吞吐、capture或全部native paged。普通接入只选Compute/Graph产品，
-不依赖内部factor target。
-
 ## 选择执行路线
 
 G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
@@ -14,7 +9,7 @@ F16增量分页/Graph消费已有有限source证据；CPU/CUDA/Apple的BF16增�
 已通过，独立头联合23个；Apple/Vulkan另有[六组原生host sanitizer](../../evidence/correctness/inference-g06-final-native-host-sanitizers/receipt.json)。
 宿主检查保留原TSan边界模型及LSan/shader/driver限制。G06工程性能结论为P0结构；
 CPU/Apple/Vulkan原有限P1已过，CUDA prefill非劣仍UNRESOLVED。进度与原计时合同见
-[活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
+[实施记录](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
 
@@ -196,8 +191,7 @@ cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入�
 
 ## Apple / Vulkan 原生 page16 接入
 
-当前实现与未决资格按[G01 活动卡](../implementation/tasks/compute/inference-g01-native-paged-read.md)
-和模块状态核验。两路线使用相同 owned schema/layout/table 与确切 frame 合同，保留各自
+两路线使用相同 owned schema/layout/table 与确切 frame 合同，保留各自
 原生 Context/MemoryResource/Results。完整可编译入口见
 [Apple 消费者](../../tests/compute_batch/native_paged_apple_consumer.cc)与
 [Vulkan 消费者](../../tests/compute_batch/native_paged_vulkan_consumer.cc)。普通 consumer
@@ -313,7 +307,7 @@ CPU query完成及原upload之后才接入原page数学；每episode消耗一次
 prepare/reset；cancel/close/放弃只有已接纳prefix实际退休后才释放所有引用页权限。
 未引用页可独立更新。`replay_report`给页fragment数、table uploaded/backing bytes和
 metadata host waits；Q/结果copy、冷native/transfer更新、wrapper metadata及native private
-UNKNOWN分别按原报告/活动卡计，不声明零warm allocation或总GPU内存硬上界。
+UNKNOWN分别按原报告/实施记录计，不声明零warm allocation或总GPU内存硬上界。
 
 ## Graph 的执行 lane 绑定
 

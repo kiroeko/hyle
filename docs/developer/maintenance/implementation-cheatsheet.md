@@ -1,57 +1,11 @@
-# HYLE 实现速查表
+# 实现速查
 
-> 日常入口。需要完整判据时阅读
-> [module closure methodology](../review/module-closure-methodology.md) 与
-> [engineering charter](../standards/engineering-charter.md)。
+1. 先确认实际调用、所属模块和接口语义，检查现有 HYLE、标准库和成熟依赖是否已能自然满足。
+2. 在声明附近说明 ownership、寿命、错误、并发、容量与必要转换；按[编码约定](../standards/coding-conventions.md)
+   实现，避免让用户了解内部 provider 或手配内部宏。
+3. 运行相关测试；影响公开头、构建或安装时验证实际消费者。性能改动按
+   [比较方法](../performance/README.md)确认工作量与计时边界，保留完整样本。
+4. 更新受影响的用法或设计说明，运行 `git diff --check`，报告结果与未验证项。
 
-## 写代码前
-
-1. 先按用户任务列能力族和正常旅程，再写 demand/defect ID、最相关的具名产品纵切与正常规模；
-   API 容易被该纵切特化时，再选一个正交纵切作反偏置检查。
-2. 裁决 owner module、public/internal、直接依赖和不做什么。
-3. 查成熟 peer 的能力与算法；同时反向枚举现有公开面，已有函数也要检查语义变体、互操作、边界和
-   teardown 是否完整，不从现有 benchmark 反推 API。
-4. 写 ownership、lifetime、concurrency、failure、capacity、复杂度和常态 metadata。
-5. 确认该需求不是自然组合、成熟依赖或更高层策略已经覆盖。
-
-## 写代码时
-
-- C++23；公开形状优先 RAII、owner/view、span/range、strong type；依赖层级允许时使用
-  `Status/Result`。
-- 可恢复失败走 error，不变量才 fail-fast；error/bootstrap 层不得制造循环依赖；外来异常只在
-  adapter 转换。
-- OS/CPU/topology/VM/thread 机制走 platform；allocator/placement 走 mem；clock/deadline 走 time。
-- HYLE 内部直接使用 C++ API，不绕旧 C bridge。Native FFI 默认 `N/A`。
-- 中央 component manifest 是内部依赖源；真实 target edge由它投影，外部依赖由模块一处登记。
-- 不增加 benchmark-only public symbol、常态字段、padding、索引或非自然调用顺序。
-- 业界常用且改善复杂度档的 tree/index/cache/batch 不能因“怕 benchmark 化”而漏掉。
-
-## 性能判断
-
-1. 先复杂度、copy/allocation/syscall/contention，再少量指令。
-2. 冻结 contract、candidate、peer、输入、计费边界和 material margin。
-3. A/A、known-delta、timer floor、order/placement、最终 codegen 先证明仪器有资格。
-4. consumer/trace replay 签产品影响，microbench 只归因。
-5. 改产品需要机制证据与 material 消费影响两把钥匙；稳定 0.5 ns 不够。
-6. 结论绑定 capability/contract/hardware/delivery/candidate，不写模块全局 SOTA。
-
-## 写完后
-
-- 正常、边界、OOM/系统失败、move/destroy、并发/取消/关闭按风险测试。
-- 跑适用 sanitizer、property/differential/fuzz/stress 和真 ISA/backend。
-- 验证 public headers、component-only build 及真实适用的 source/installed static/installed shared
-  C++ consumer；header-only 不制造 binary journey。
-- 扫描上下游是否绕过 error/platform/mem/time 等底座，检查中央图与 package 闭包。
-- 更新四类文档各自唯一事实，运行 `python scripts/check-docs.py`。
-- 独立红队逐项 `fixed/disproved/accepted/out-of-scope`。
-- 终止轮使用
-  `python scripts/loc-report.py --module <name> --commit <full-snapshot-commit> --self-check --json`
-  记录三项 LOC；不带 `--commit` 只观察当前工作树，不能写入 terminal 记录。
-- `git status --short`、`git diff --check`、提交真实文件；低 CI 价值的纯文档提交使用 `[skip ci]`。
-
-## 环境提醒
-
-- 完整环境见 [setup](../setup/README.md)，离线见 [offline](../setup/offline.md)。
-- Windows、Linux/WSL、macOS 是独立验证环境；WSL 的 Windows 挂载盘不适合重 I/O/压力基准。
-- 混合大小核必须固定 affinity/QoS，不能把线程迁移噪声解释成实现差异。
-- 远程 Mac/WSL checkout 是验证副本；有价值的工作以 Windows 主仓库为准，除非任务明确另行约定。
+完整环境见 [setup](../setup/README.md)。验证副本使用独占 build 目录和本地文件系统，不反向覆盖
+Windows 产品工作树；Windows 与同机 WSL 的性能实验错开运行。

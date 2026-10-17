@@ -37,9 +37,9 @@ compares every stored original byte in bounded chunks, then reloads and repeats 
 route's original Direct/Graph interfaces. Windows CPU/CUDA/Vulkan, WSL CPU/CUDA and Air CPU/Apple/Vulkan
 source and relocated static/shared roundtrips have passed on the recorded machines. Apple retains dense
 original Metal input and forms the transposed view inside the original native Direct region or Graph view node.
-Exact qualification and limits are recorded in the [F3 closure](../../../../docs/implementation/tasks/compute/foundation-f3-final-closure.md).
-WSL Vulkan has only a software device: its ordinary source/SDK builds, headers and package checks are qualified;
-GPU mathematics is not qualified there.
+The tested environment and limits are recorded in the [F3 implementation history](../../../../docs/implementation/tasks/compute/foundation-f3-final-closure.md).
+WSL Vulkan has only a software device: source/SDK builds, headers and package checks passed;
+real GPU mathematics was not run there.
 
 Cancellation and deadlines stop later chunks; already accepted file/native work must retire.
 They cannot safely interrupt a blocking file operation. Native contexts, queues, resources and

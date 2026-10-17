@@ -13,7 +13,7 @@ endif()
 
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
-include("${HYLE_SOURCE_DIR}/cmake/HyleCiClosedProducts.cmake")
+include("${HYLE_SOURCE_DIR}/cmake/HyleCiSmokeComponents.cmake")
 
 function(_hyle_product_shape_run label)
   execute_process(
@@ -32,9 +32,8 @@ endif()
 
 set(_hyle_build "${HYLE_SMOKE_ROOT}/product-shape")
 file(REMOVE_RECURSE "${_hyle_build}")
-# Qualify exactly the public products whose complete factor closure is CLOSED.
-# The projection also fails when a CLOSED factor has no such product route.
-hyle_ci_closed_product_csv(_hyle_shipping_components)
+# Build the selected public products, or all products when none are specified.
+hyle_ci_smoke_component_csv(_hyle_shipping_components)
 _hyle_product_shape_run("configure production-shape tests"
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}" -B "${_hyle_build}"
   ${_hyle_generator_args}

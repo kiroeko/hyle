@@ -4,7 +4,7 @@
 <!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
 > 本轮由 Platform v7 冻结后得到的可复现产品事实定向触发。当前状态只认
-> [`module-status.json`](../../module-status.json)；本记录中的计划在进入相应状态以前不授权产品修改。
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）；本记录中的计划在进入相应状态以前不授权产品修改。
 
 ## Reopen evidence（`REOPENED`）
 

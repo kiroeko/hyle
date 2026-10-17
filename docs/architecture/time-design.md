@@ -5,10 +5,6 @@ Time 产品统一 HYLE 内部和 C++ 用户的时钟域、deadline 算术、Unix
 caller-owned node/data-structure `timer_queue` factor；用户仍只选择 `hyle::time`。两者都不拥有
 executor、线程间路由、周期任务策略、日历、时区或文本协议。
 
-当前状态、closure record 与工程性能证据只从
-[`implementation/status`](../implementation/status.md) 进入；用户选型见
-[`guide/time`](../user/time.md)。本页只保存稳定设计与决策。
-
 ## 边界与依赖
 
 host-clock `time` 只直接公开依赖 `core`；header-only `timer_queue` 直接公开依赖 `core`、`time` 和
@@ -165,18 +161,15 @@ one queue owns linked membership
 5. 需要取得取消节点时显式 `cancel_all(out)` 并 drain；只想放弃整批时可让 queue 析构自动 detach。
 6. wrong-owner、monotonic advance 倒退和未 drain 的 re-arm/destroy 都 fail-fast。
 
-## 性能与变更门禁
+## 性能比较
 
 - API 先由具名用户旅程和成熟实现确定；benchmark 不得发明产品类型、节点 metadata 或特殊入口。
 - host-clock 产品门使用 64 个真实 runtime phase 的 begin/end、elapsed 和饱和 deadline 批次，对照
   同工具链、同 OS route 的标准 `steady_clock`；不使用单个 inline wrapper 的亚纳秒点值驱动实现。
 - timer_queue 产品门使用 stable scattered nodes、真实 arm/cancel/advance/drain、约 70% cancel 的
   deterministic replay；faithful Seastar peer 与 HYLE 保持相同 ownership 和计费边界。
-- P1/P2 工程性能使用中央登记机器、预声明 material margin、独立进程、双执行顺序和适用的
-  allocation/placement strata；A/A、known delta、timer floor、artifact/build/source identity 都是
-  前置门。具体机器、样本和数字属于 performance evidence。
+- 比较检查计时分辨率、噪声和漂移，注明机器、工具链、输入、源码与计时边界。
 - clock、sleep、Common queue 和极端 cardinality 可作 mechanism diagnostic，不能混成“time 总分”。
 - native/unit interop 以 P0 的 O(1)、零分配/锁/syscall、checked overflow 与 code shape 验证；没有 profile
   证明其为热点时不为几个整数运算制造亚纳秒 benchmark，也不得据此改变 value layout。
-- 任何算法、公开 API、layout、直接依赖、source/static/shared delivery 或首席 consumer 改变都重开；
-  单次点值、亚纳秒摆动或某一地址姿势翻转本身不能改变产品形状。
+- 修改实现、接口或交付时运行相关验证；计时分辨率以下的差异不能决定产品形状。

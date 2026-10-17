@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
-project(hyle_cuda_matrix_qualified LANGUAGES CXX)
+project(hyle_cuda_matrix_controls LANGUAGES CXX)
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS core)
 get_filename_component(_root "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
 if(NOT EXISTS "${CUDA_MATRIX_IMAGE}/hyle_cuda_matrix_bench.exe")
-  message(FATAL_ERROR "Provide the frozen, AA-qualified matrix image directory")
+  message(FATAL_ERROR "Provide the matrix benchmark executable directory")
 endif()
 # Preserve the exact measured image and staged DLL bytes. Product math is not
 # rebuilt by the instrumentation/control project.

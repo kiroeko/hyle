@@ -1,11 +1,5 @@
 # util：什么情况选什么
 
-> **当前边界：**当前 Registry lookup/create
-> 合同和 demangle owning/buffer 形状的签证状态只看中央
-> [`module status`](../implementation/status.md)。
-> util 当前只提供 C++ 产品面，
-> 适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
-
 `util` 提供几种彼此独立的基础能力，不存在一个需要整体 include 的“万能工具箱”。C++ 用户
 按场景包含 `hyle/util/<capability>.h`，构建时统一选择 Util 产品 façade：
 
@@ -376,10 +370,7 @@ Registry 不提供 unregister：已经创建对象、函数指针和并发 reade
 module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活过所有 `FrozenView` 和在途操作；
 析构前由调用方让使用者静止。
 
-## 分层与证据入口
+## 内部组件
 
-header-only `util_core` 作为独立内部 factor 构建和收口，但通过 `hyle::util` 产品 façade 交付；Registry
-和 demangle 属于 util-runtime（registry ID `util_runtime`），不能用其中一条状态替代整个 Util 产品的状态。
-该分层避免低层 mem/container 为一个运行时 Registry 反向链接 runtime
-factor，用户仍只选择一个 Util 产品。唯一当前状态、closure record 与性能证据入口见
-[`module status`](../implementation/status.md)；旧 task、commit 和点值只属于历史记录。
+`util_core` 是 header-only 内部组件，Registry 和 demangle 位于 util runtime。
+两者通过 `hyle::util` 交付，用户只选择 Util 产品；底层组件无需因使用小工具而链接 runtime。

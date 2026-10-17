@@ -1,9 +1,8 @@
-# Compatibility helper for smoke component selection. The historical function
-# name has no lifecycle/state meaning while governance is disabled.
+# Select public products for standalone build and packaging smoke checks.
 
 include_guard(GLOBAL)
 
-function(hyle_ci_closed_product_csv out_variable)
+function(hyle_ci_smoke_component_csv out_variable)
   if(DEFINED HYLE_SMOKE_COMPONENTS AND NOT HYLE_SMOKE_COMPONENTS STREQUAL "")
     string(REPLACE ";" "," _hyle_smoke_components "${HYLE_SMOKE_COMPONENTS}")
   else()

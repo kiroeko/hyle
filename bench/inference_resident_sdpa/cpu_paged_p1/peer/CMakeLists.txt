@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(g01_cpu_paged_original LANGUAGES C CXX)
 if(NOT WIN32)
-  message(FATAL_ERROR "This isolated original comparator is the finite W1-WIN artifact")
+  message(FATAL_ERROR "This original comparator currently uses Windows DLL exports")
 endif()
 set(HYLE_CPU_ORIGINAL_REFERENCE_SOURCE "" CACHE PATH "Pristine authenticated ffa4e8b8 source")
 get_filename_component(HYLE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)

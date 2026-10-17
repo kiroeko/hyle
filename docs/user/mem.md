@@ -1,11 +1,7 @@
 # HYLE mem：什么情况选择什么
 
-> 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及当前
-> provider-neutral Buffer、mapping、transient BufferPool 和 tensor-free lifetime planner 路线。
-> Tensor 描述、operation 和 execution 由 [Compute](compute.md) 拥有，DAG 与 compiled artifact 由
-> [Graph](graph.md) 拥有；本页只解释它们共同依赖的 storage/lifetime 边界。
-> 适用于 C++23 source/static/shared 三种交付；不描述 C API 或跨语言调用层。机械收口状态见
-> [`module-status.json`](../implementation/module-status.json)。
+本页适用于 C++23 源码、静态库和共享库。Tensor 和执行由 [Compute](compute.md) 拥有，
+计算 DAG 由 [Graph](graph.md) 拥有。
 
 mem 是 HYLE 的 storage foundation：host raw allocation 只是其中一层，跨 provider 的
 Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务猜生命周期，也不把某个 benchmark 的最优
@@ -794,8 +790,4 @@ alignment、failure 和完整 allocate/touch/free；后者必须对齐 mapping�
 Formal 证书。性能数字只回答明确列出的 ownership、资源和 charged phase，不外推 planner、所有 OS 或
 端到端推理 SOTA，更不能靠更少 syscall 或更弱持久化保证做苹果对橘子排名。
 
-当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
-[`module status`](../implementation/status.md)；其中 Engineering performance 链接是当前精确证据，
-历史 task 和旧版本性能页不构成当前证书。
-安装包的最小默认/组合写法也作为可执行 C++ 消费者保存在
-[`../../samples/package/mem`](../../samples/package/mem)。
+设计见[Mem 架构](../architecture/mem-design.md)，可运行消费者见[样例](../../samples/package/mem)。

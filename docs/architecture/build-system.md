@@ -111,7 +111,7 @@ Provider 需要时发现并检查版本/targets，不代管安装器。backend �
 Compute 的 CPU/CUDA/Apple/Vulkan 构建配置只组合真实 backend/provider feature。
 [统一配置](compute-next-stage.md#2-唯一普通构建入口)用一个路线集合替换原分散的开关，
 内部 feature 从唯一集合和中央图派生，不保留双轨选择，也不增加 CPU+GPU 联合推理布尔开关。
-候选已接线、适用交付待验；当前命令见 user 文档与活动卡。未选路线不探测 SDK、不编译原生实现；已选路线也不等于全部
+当前命令见用户文档。未选路线不探测 SDK、不编译原生实现；已选路线也不等于全部
 算子可用。四条路线可独立编译并采用不同执行器；宏/flags 归 owning target，只有公开头确实需要的
 usage requirement 才传播，不能用消费者宏改变同一公开对象布局。SDK 版本/feature 集在 configure 中
 选定并记录，交付说明保留对应要求；实际模型/device/shape 路线在准备阶段绑定，不是每次执行的 CMake/宏选择。
@@ -155,38 +155,17 @@ PE/ELF/Mach-O artifact，拒绝退役 `hyle_*` C 入口、vendored allocator 符
 
 ## 验证与 CI
 
-[`validation-select.py`](../../scripts/validation-select.py) 根据两份 Git 快照选择 owner、直接消费者、公开
-闭包、逐头和交付门，并机械拒绝未经 `AUDITED` 授权的产品提交。文档、状态、格式和测试维护不启动
-产品全量构建或 P1；P1 只接受 closure card 明确绑定的不可变候选。
+按实际改动运行相关配置、编译、测试和安装后消费者；不读取模块治理状态，也不要求审批或资格卡。
+后端、工具链和交付方式分别验证，未运行的环境明确说明。源码可编译不代表真实 GPU 运行成功。
+不同工具链使用独立构建目录，优先复用身份匹配的依赖和缓存。
 
-PR/main CI 运行 Linux change-impact 合同。Windows、macOS、AArch64 cross、完整 source/package 和可选
-feature 矩阵由显式 full workflow 运行；sanitizer、真实 GPU 与 SVE/RVV 执行仍按模块风险和机器合同
-调度，不能由一次 all-components compile 冒充。
+## 新组件接入
 
-横向 CLOSED 资格与发布 smoke 不使用手写产品名单，也不把仍为 `QUEUED` 的产品混入 verdict；它从
-中央 factor/product 图与唯一 lifecycle registry 投影完整依赖闭包均为 `CLOSED` 的公开产品，并机械
-验证这些产品的 factor union 没有漏掉任何 CLOSED owner。一般开发者仍可显式选择 `all` 构建当前整个
-源码树，但这种构建不构成 CLOSED 产品资格证据。
+1. 确定职责与实际消费者，在中央组件声明中增加真实依赖。
+2. 使用 `hyle_add_module()` 声明源码和外部依赖，避免第二份内部链接图。
+3. 第三方源码加入依赖锁和许可证，保持唯一归属。
+4. 增加公共接口用例与相关测试；影响安装边界时验证静态和共享消费者。
 
-每个 session 使用独占绝对 build/scratch 目录，不复用另一会话或另一工具链的 CMake cache。产品交付
-使用 selected-component smoke 同时验证 source/static/shared 及 relocated consumer；factor 维护只跑
-自己的 target、适用消费者和 card 预声明风险。
-
-## 新 factor / product 接入
-
-1. 先按能力和质因数方法确定 semantic owner；在 registry 以 `QUEUED` 登记 identity。
-2. 在中央 manifest 追加 factor、真实边和必要 split headers；若用户确需新的独立问题域，再单独登记
-   product façade。
-3. 用 `hyle_add_module()` 列本地源码/外部依赖，增加 factor test；需要时才增加 benchmark。
-4. 外部源码先进入 dependency lock、许可证和唯一 owner。
-5. 增加自然 C++ source consumer 与适用 static/shared relocation smoke。
-6. 按 closure card 验证图、headers、产品形状、离线/feature 风险；构建通过不等于模块关闭。
-
-维护者不得因为新 factor 改写旧 identity 顺序、复制依赖表、向普通用户公开所有 factor，或顺手扩大
-CI/P1。当前限制与活动状态只写 registry/record，不在本文追加阶段性“已完成列表”。
-
-无源码、公开入口、target 或依赖的 QUEUED 预留名称可以按需求撤回；
-[本次清理与验证](../implementation/tasks/build/queued-compute-sched-retirement.md)说明具体边界。中央 manifest 与 registry
-同时删除，保留存续身份顺序。该动作不改变已实现产品的图、交付或运行时，不触发全库构建/P1。
-Compute 借用调用方执行器时，通过 `ParallelExecutorRef` 组合现有 Sched；普通入口无需专门
-的 Compute 调度模块，实际用法见[公开样例](../../samples/package/graph/cpu_executor/main.cc)。
+删除未使用组件时同步移除其源码、target 和引用。构建成功不代替数值、内存寿命、并发和性能验证。
+Compute 借用调用方执行器时可组合 `ParallelExecutorRef` 与 Sched，见
+[样例](../../samples/package/graph/cpu_executor/main.cc)。

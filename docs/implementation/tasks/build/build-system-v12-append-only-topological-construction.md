@@ -4,7 +4,7 @@
 
 > Build/package 是横向开发单元，不进入 `module-status.json`。本轮由 Obs v4 对已冻结
 > `mem_reclaim` 的真实复用边触发；Obs 状态仍只由
-> [`module-status.json`](../../module-status.json) 决定。
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`） 决定。
 
 ## Closure card
 

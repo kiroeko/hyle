@@ -14,4 +14,4 @@ HYLE 的一部分早期代码来自 clay。来源解释历史，不赋予代码�
 2026-07 的逐文件资产盘点已迁到
 [历史任务记录](../implementation/tasks/project/clay-asset-liability-2026-07.md)；更大范围的覆盖调查见
 [clay coverage map](../implementation/tasks/project/clay-coverage-map.md)。它们可用于追溯来源和避免重复
-调查，但不得覆盖当前 [能力完整性决策](capability-completeness.md)、[组件路线](roadmap.md)或 registry。
+调查，但不得覆盖当前 [能力完整性决策](capability-completeness.md)、[组件路线](roadmap.md)。

@@ -1,5 +1,5 @@
 {
-  "schema": "hyle.simd.family-routing/v1",
+  "schema": "hyle.simd.family-routing/v2",
   "provider_revisions": {
     "HIGHWAY": "18e449b642599b8f51c03ca10173fdc59864e4f2",
     "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
@@ -21,7 +21,9 @@
               "lane": "f32",
               "contract_tags": []
             },
-            "runtime_targets": ["AVX2"],
+            "runtime_targets": [
+              "AVX2"
+            ],
             "compiler_ranges": [
               {
                 "kind": "MSVC",
@@ -29,10 +31,7 @@
                 "max": 195099999
               }
             ]
-          },
-          "evidence": [
-            "evidence/performance/simd-15-w1-win-msvc-avx2-xsimd-tanh.json"
-          ]
+          }
         }
       ]
     },
@@ -52,7 +51,9 @@
               "lane": "f32",
               "contract_tags": []
             },
-            "runtime_targets": ["AVX2"],
+            "runtime_targets": [
+              "AVX2"
+            ],
             "compiler_ranges": [
               {
                 "kind": "MSVC",
@@ -60,10 +61,7 @@
                 "max": 195099999
               }
             ]
-          },
-          "evidence": [
-            "evidence/performance/simd-15-w1-win-msvc-avx2-xsimd-tanh.json"
-          ]
+          }
         }
       ]
     }

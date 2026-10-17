@@ -1,32 +1,26 @@
-# CPU final F4 bounded provider consumer
+# CPU Provider 比较消费者
 
-Owning task: [F4](../../../docs/implementation/tasks/compute/cpu-final-f4-best-of.md).
-This is development qualification code; ordinary users still select CPU only.
-The development consumer explicitly links the SDK's already exported ggml
-implementation target to receive its factory feature definition; ordinary
-CPU routing already includes that implementation through its private closure.
+这个开发消费者比较独立 Native/oneDNN/ggml/ATen factory；普通用户仍选择 CPU 路线。
+消费者显式链接 SDK 导出的 ggml implementation target 以取得 factory feature definition；普通
+CPU 路线通过私有依赖包含实现，不要求用户选择 Provider。本工程不添加 operator 数学。
 
-`--probe` prepares the exact same descriptions and data with independently named
-Native/oneDNN/ggml/ATen factories, records real declines and resource facts, runs
-accepted programs and prints pairwise numerical checks. A decline is not a
-performance loss. MatMul/SDPA have no self candidate; borrowed Native programs
-are tracked separately by the task. This consumer does not add operator math.
+使用包含 compute/graph 的 SDK 配置本目录，构建 `hyle_cpu_best_of_bench`。直接运行：
 
-Normal/holdout use real inner widths 2048/4096, token/small prefill 1/32, F2
-F32 projection K=16384/N=4 or 24, and Qwen BF16 projection K=2048/N=6144.
-Dense and physically transposed weights are separate requests. All conversion,
-copy, temporary storage, checks and true terminal completion remain charged.
+- `--probe`：逐项 prepare、记录实际拒绝与资源信息，运行接受的程序并做数值比较。
+- `--pair <case> <candidate> <peer>`：用现有 nanobench adapter 测量选定 pair。
+  具体 case 和 family 名称以源码及 probe 输出为准。
 
-`--pair <case> <candidate> <peer>` measures one prequalified pair with the existing
-nanobench paired adapter. Allocation/order strata use existing environment
-controls. It may only run under the frozen F4 contract and unified runner after
-preflight; the CLI alone does not produce a WIN, PASS or product certificate.
-Single-carrier domains receive correctness/resources/P0, not a timing race.
+拒绝不等于性能落后；只有一个实际承载方时检查正确性和资源，不捏造速度比。
+同一 pair 保留双执行顺序、双分配顺序和适用 A/A，保存完整原始输出并使用
+[统计与公平比较方法](../../../docs/developer/performance/README.md)分析。按实际调用控制 OMP/MKL
+线程数与调用线程落点，并记录配置。
 
-The final same-process batch reads a fixed pair-list input asset. Its exact path
-and SHA are bound by the contract and module validator, as with a model fixture;
-it is not an online provider search or measurement-control override. Common
-runner policy still owns OMP/MKL and caller affinity. The runner copies the
-already qualified batch image/DLLs and validates their hashes before sampling.
-The retired per-pair process transport is retained only in evidence; its changed
-process lifecycle and 99.281-second cost did not acquire performance qualification.
+normal/holdout 使用 inner widths 2048/4096、token/small prefill 1/32、F32 projection
+K16384/N4 或 24、Qwen BF16 projection K2048/N6144。dense 与物理转置权重分开请求；
+转换、copy、临时空间、检查和真实完成均在相应测量边界内。
+
+若本地有 `qualified_pairs.h`，还会构建 `hyle_cpu_best_of_batch`；它使用固定 pair 表，
+`HYLE_CPU_BESTOF_PAIR_FILE` 可选择已有条目，不是在线 Provider 搜索。旧 sealed adapter 是特定
+Windows artifact 的传输方式，不能把其启动成本当作同进程调用成本。
+
+原实验及实际 revision 见[实现历史](../../../docs/implementation/tasks/compute/cpu-final-f4-best-of.md)。

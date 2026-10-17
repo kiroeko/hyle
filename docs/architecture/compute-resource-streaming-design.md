@@ -1,13 +1,11 @@
 # Compute 资源租约、批量搬运与文件管线设计
 
-> 本页固定F1–F3的机制范围与owner，施工与验收以registry及各任务记录为准：
+> 本页说明资源租约、批量搬运和文件管线的机制范围。历史实现记录：
 > [F1](../implementation/tasks/compute/foundation-f1-resource-leases.md)、
 > [F2](../implementation/tasks/compute/foundation-f2-final-closure.md)、
 > [F3](../implementation/tasks/compute/foundation-f3-final-closure.md)。
 > 后续F4/F5与四路线接缝另见[状态/分页设计](compute-state-paged-design.md)，不恢复本页历史实施顺序。
 > 精确环境、未测硬件与条件资格边界不向完整推理引擎外推。
-> 用户要求充分调研成熟推理引擎，确定完整常用范围和有限施工卡，再建立实施 goal。
-> 基线 `edb2714384037b12a3d1e69839aa895fea17cec1`；产品状态仍以 registry 为准。
 
 ## 1. 范围与三个工作包
 
@@ -51,21 +49,6 @@ llama.cpp `23b0202a189c44a54625aadcb37a946dd1d6278d`。
 不新增自研复制/数学 kernel；有明确 native 能力缺口才另行定界，不能把此卡当算子扩张授权。
 
 ## 3. Owner 与构建方向
-
-- F1：共同资源控制由既有 `compute` 拥有，四路线保留 native backing/retirement。
-  Direct lease-aware 提交适配归其 Compute owner，Graph lease-aware binding/result 适配归 Graph owner。
-  Mem 不引入 Compute/Event/Queue，原 borrow API 不添加无关常驻控制状态。
-- F2：共同范围值/校验/成本报告归 `compute`；CPU 与 CUDA/Apple/Vulkan 各拥有自己的 prepared copy program。
-  使用既有 native Queue/command/stream；不建立万能 executor 或逐 kernel vtable。
-- F3：拟新增内部 compiled factor `compute_stream`，公开入口仍属于 Compute。
-  它依赖 `compute`、`io_core`、`sched`、`mem`，native factory/adapter 按实际 public/private 类型确定边。
-  Direct Compute 核不反向依赖这个复合层，不创建第二个 IO loop/Scheduler。
-- 普通 Compute/Graph SDK 的所选路线闭包包含这些已实施能力，仍只用 `HYLE_COMPUTE_ROUTES`。
-  不新增 lease/batch/stream/provider 开关，不让用户手选内部 factor。
-  包含 pipeline 的 SDK 增加 IO/Sched 库依赖是交付成本，不代表创建 Context 就启动这些服务。
-  CUDA-only 不拉 CPU 数学 Provider；文件读取/host 准备不算 CPU 数学。
-- 这里只固定设计。启动实施时先由中央声明登记新 factor QUEUED，再绑定当前 owner 的新记录，
-  按 SCOPED→AUDITED 固定有限 FIX；本轮不改 CMake/registry、不制造空 target。
 
 ## 4. F1：租约与最后使用
 
@@ -175,22 +158,8 @@ GGUF 可借现有 ggml 格式核；本地原始 Safetensors 样例由官方工�
 模型级 auto placement、多 GPU/分布式、HIP、GDS/cuFile、GPU ID compaction kernel、新算子目录。
 已存在的 cold plan/shape variants、ResourceBudget、IO 原子发布和 Mem 分配器不重写。
 
-## 8. 实施与验证节奏
+## 8. 验证要点
 
-- 三张卡固定有限 FIX，先集中完成可独立审阅的产品接线，API/算法稳定后冻结候选再集中验证。
-- 共享宿主流程/相同 fixture 批量编译运行；三条 GPU 保持原生资源和执行，不逐边调核。
-- 新能力以 P0 成本/生命周期为工程门：计数证明无热分配、每批完成/提交数量、有限拷贝及预算。
-  不宣称性能赢家；需要原生路线性能裁决时另固定一个同合同完整旅程和有界 P1，不为本轮空跑算子全集。
-- 真实四路线 source/static/shared，SDK 迁址、新头 ON/OFF、依赖/DLL 同目录按 selected seam 一次验收。
-  CPU 三平台；CUDA Windows/WSL；Apple Air；Vulkan Windows/Air，WSL native GPU 资格按实际设备记录，
-  旧 accepted UNQUALIFIED 不自动代签新能力。无合格 GPU时列未验事实及具体决策，不假 PASS。
-- build1/test1，重型运行串行；启动前确认内存余量，沿已有 cgroup/job 限额，禁止为此新增庞大验证管理器。
-- 同产品树、合同、工具链/机器、fixture/adapter 身份匹配的原 Provider 数学证据可复用；新 lifetime/transfer
-  接缝必须新验。文档/状态变化不构建、不重跑 P1，局部失败只重验影响部分。
-- 完成基础机制后停止；F4/F5 和完整推理引擎另定界。
-
-本轮设计与三卡共固定 23 项有限 FIX（F1 8、F2 7、F3 8）；没有产品/API/组件图/依赖锁/registry 修改。
-只执行 docs/closure 与 selector，构建和性能均未运行。Compute+Graph 实现与
-[前轮统一 LOC 收据](../../evidence/architecture/inference-foundation-gap-research/loc-current.json)
-同一产品内容：68,204 行/301 文件；全库非测试实现163,431行/652文件。
-这些数字不包含新文档，不表示本轮机制已经实现。
+通过实际消费者检查租约、最后使用、部分接纳、异步失败、取消、关闭和资源回收。
+报告分配、复制、提交与等待成本；GPU 路线使用真实设备，未运行的系统和交付形式明确说明。
+已有数学证据只覆盖原数值合同，新 lifetime/transfer 接缝需要针对性验证。

@@ -1,7 +1,7 @@
 # Platform 当前工程性能证据
 
 
-> 当前状态与精确 closure record 只看 [`module-status.json`](../../module-status.json)。本页同时服务
+> 当前状态与精确 closure record 只看 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本页同时服务
 > `platform`、`platform_thread` 和 `platform_fs` 三个内部 factor；共享报告不把它们合成一个分数，
 > 也不改变普通用户只选择 Platform 产品 façade 的心智。
 
@@ -18,7 +18,7 @@
 
 ## `platform`：host-planning P1
 
-冻结合同 [`platform-host-p1-v3.json`](../../../../bench/contracts/platform-host-p1-v3.json) 比较完整的
+冻结合同 `platform-host-p1-v3.json`（已删除的历史文件：`bench/contracts/platform-host-p1-v3.json`） 比较完整的
 process-visible CPU/package/NUMA/cache 与 host-memory planning snapshot。candidate 和 direct Win32 peer
 都返回同一 HYLE value record 与 `Result` 失败形状；CPU-set、topology、physical/commit memory query、
 scratch setup/teardown 和组合均计费。oneTBB
@@ -50,7 +50,7 @@ memory-order 同源、无新增 allocation/lock/syscall/metadata，三平台 cor
 
 ## `platform_fs`：warm-file P1
 
-冻结合同 [`platform-fs-p1-v2.json`](../../../../bench/contracts/platform-fs-p1-v2.json) 对一个 warmed
+冻结合同 `platform-fs-p1-v2.json`（已删除的历史文件：`bench/contracts/platform-fs-p1-v2.json`） 对一个 warmed
 4 MiB regular file 执行相同 open、完整 read/checksum 和 close；两侧各自的 caller buffer allocation order
 在计时外受控，failure、ownership、sharing flags、完整读取循环与 teardown 相同。Folly
 `65749da412d92fe27d87ae45a8ef670720712858` 锁定 `File` lineage，计时 peer 是同一 OS ABI 的 faithful

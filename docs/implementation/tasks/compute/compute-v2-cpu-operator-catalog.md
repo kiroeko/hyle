@@ -173,7 +173,7 @@ source/static/shared 复核、终局七问与红队仍须完成。若 P1 证明 
 
 ## Final CPU route P1 preflight（2026-09-12）
 
-正式合同为 [`compute-cpu-route-p1-v1`](../../../../bench/contracts/compute-cpu-route-p1-v1.json)，真实形状
+正式合同为 `compute-cpu-route-p1-v1`（已删除的历史文件：`bench/contracts/compute-cpu-route-p1-v1.json`），真实形状
 账本为 [`consumer_shapes_v1.json`](../../../../bench/compute/consumer_shapes_v1.json)。它不再把完整 Compute
 安全合同与裸指针 GEMM 混成一个胜负：candidate 是显式启用已关闭 oneDNN provider 的普通 Compute
 Context，peer 是 provider-empty 的同一 Compute v2 candidate；两侧使用完全相同的 Tensor/Buffer/Queue/
@@ -203,7 +203,7 @@ M=32 的 selected/native op/s 比约 `1.05--1.11`，其余同 body 行随单次�
 不得用于阻塞产品、签 non-inferiority，或靠追加样本寻找 PASS。
 
 纠正后的新实验是
-[`compute-cpu-route-p1-v2`](../../../../bench/contracts/compute-cpu-route-p1-v2.json)：
+`compute-cpu-route-p1-v2`（已删除的历史文件：`bench/contracts/compute-cpu-route-p1-v2.json`）：
 
 - 两侧依次覆盖同一组 caller-owned input/output tensor；Context、prepared artifact 和 invocation 仍独立，
   因而测到的是真实 route/algorithm 差异，不是两份 4 MiB 权重与输出地址的 cache/page-color 差异；

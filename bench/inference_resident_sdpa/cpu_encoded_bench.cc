@@ -15,8 +15,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <chrono>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -155,12 +153,8 @@ void measure(int q1,int q2,int k1,int k2,int dk,int dv,bool causal,int window){D
   else (void)bench.compare("HYLE CPU encoded paged",selected,"Original CPU Q8 contiguous immutable lifecycle",original);
 }
 }
-int main(int,char **argv){const auto qos=hyle::bench::perf::configure_thread_qos();const auto affinity=hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
+int main(int,char **){const auto qos=hyle::bench::perf::configure_thread_qos();const auto affinity=hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
   const bool verify_only=set("HYLE_BENCH_VERIFY_ONLY");
-  if(!verify_only&&!set("HYLE_BENCH_AA_ROUTE")&&set("HYLE_PERF_RUN_NONCE")){
-    std::string ready;std::ifstream(std::filesystem::absolute(argv[0]).parent_path()/"g04_cpu_encoded_aa.ready")>>ready;
-    if(ready!="PASS")fail(hyle::Status::FailedPrecondition("ragged finite workload AA not passed for this build"));
-  }
   std::string parent_mask="not-applicable",priority="not-applicable";
 #if defined(_WIN32)
   DWORD_PTR mask=0,system_mask=0;if(!GetProcessAffinityMask(GetCurrentProcess(),&mask,&system_mask))fail(hyle::Status::Internal("ragged process affinity observation"));

@@ -8,8 +8,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <span>
 #include <stdexcept>
@@ -171,12 +169,9 @@ void measure(int m){
   if(set("HYLE_BENCH_RIVAL_FIRST"))(void)bench.compare(pn,b,cn,a);else(void)bench.compare(cn,a,pn,b);
 }
 }
-int main(int,char** argv){
+int main(int,char **){
   try{
     const auto qos=hyle::bench::perf::configure_thread_qos();
-    if(!set("HYLE_BENCH_VERIFY_ONLY")&&!set("HYLE_BENCH_AA_ROUTE")&&set("HYLE_PERF_RUN_NONCE")){
-      std::string ready;std::ifstream(std::filesystem::absolute(argv[0]).parent_path()/"g07_packed_aa.ready")>>ready;
-      if(ready!="PASS")throw std::runtime_error("packed A/A not qualified");}
     std::fprintf(stderr,"# HYLE_PACKED_RUN run_nonce=%s apple_qos=%s qos_ok=%s route=%s verify_only=%d paired_rounds=%d placement=%d execution_order=%s allocation_order=%s aa_route=%s\n",
       hyle::bench::perf::run_nonce(),qos.name,qos.ok,route,set("HYLE_BENCH_VERIFY_ONLY"),paired_rounds,HYLE_G07_PLACEMENT,
       set("HYLE_BENCH_RIVAL_FIRST")?"peer-first":"candidate-first",set("HYLE_BENCH_PEER_ALLOCATION_FIRST")?"peer-first":"candidate-first",

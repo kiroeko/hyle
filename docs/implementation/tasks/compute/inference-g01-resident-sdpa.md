@@ -207,7 +207,7 @@ benchmark步骤160.39s，三个独立oracle/readonly/双slots预检3.42s通过�
 保留实际日志、源SHA、原peer真实Git pin及selector BLOCKED计划，不签正式P1。
 [CPU时序/成本/资格账](../../../../bench/inference_resident_sdpa/cpu_p1/README.md)固定双方
 完整完成边界、warm费用和UNKNOWN；它不替代实际A/A或全样本裁决。
-共享bench目录的selector归属缺口已另记[独立工具任务](../build/validation-selector-shared-bench-paths.md)，
+共享bench目录的selector归属缺口已另记独立工具任务（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-shared-bench-paths.md`），
 原BLOCKED计划保留；本模块不修改公共工具，适用入口按上述有限合同直接取证。
 
 RR[正式P1](../../../../evidence/performance/inference-g01-resident-vulkan-replay-m1-p1/README.md)

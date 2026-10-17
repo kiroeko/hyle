@@ -14,9 +14,8 @@
 | **Tracy** | 启用 trace 时自动取得的外部源码树 | `HYLE_TRACE=ON` 才取得并编译；任意/脏/被改写的覆盖源码会配置失败 | lock pin `v0.14.1`；`HYLE_TRACY_DIR` 仍可显式覆盖 |
 | **OpenSSL 3.0+** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失或低于 3.0 即配置失败 | `find_package(OpenSSL 3.0 QUIET)` |
 
-**“可选能力 = 可选依赖”铁律**：已签发 feature 的 ON 要求依赖存在，OFF 不探测；正式 SDK/CI 写死
-能力集合，避免环境暗中改变产物。尚未实现的 backend/provider 不提供预留开关或恒失败 target；待其
-独立 closure card 审计后再登记依赖。
+可选能力的 ON 要求依赖存在，OFF 不探测；SDK/CI 明确能力集合，避免环境暗中改变产物。
+尚未实现的 backend/provider 不提供预留开关或恒失败 target；实际接入时再登记依赖并验证。
 
 ---
 
@@ -114,7 +113,7 @@ cmake -DHYLE_DEP_ACTION=prune -DHYLE_DEP_PRUNE_CONFIRM=YES \
 fail closed，只有具名依赖加 `HYLE_DEP_REPAIR=YES` 才删除其损坏展开树，并优先从仍通过 SHA-256 的
 cache archive 重建。`check-updates` 只给维护者 upstream 差异输入；`prune` 只删除带 HYLE cache marker
 且不由当前 lock 引用的旧 identity，并要求明确确认。版本升级仍必须原子修改
-lock/provenance/license 并重跑受影响模块门。
+lock/provenance/license 并运行受影响模块的相关测试。
 
 源码树已提供根文件 `hyle-offline-deps.cmake`。制作 offline source bundle 时，把依赖分别放在
 `deps/<lock-name>/`。目录可以是 lock commit 的**干净 Git checkout**，也可以是 lock 中官方 archive

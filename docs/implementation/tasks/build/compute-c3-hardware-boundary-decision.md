@@ -24,7 +24,7 @@
 ## 原阻塞事实与补齐资格的条件
 
 blocker：本WSL Vulkan loader仅枚举type4 llvmpipe，普通路线拒绝软件设备；
-十二项真实GPU数学适用验证没有运行。按[收口协议](../../../developer/review/module-closure-methodology.md)
+十二项真实GPU数学适用验证没有运行。按收口协议（已删除的历史文件：`docs/developer/review/module-closure-methodology.md`）
 “适用但未完成就是BLOCKED/INCONCLUSIVE”，C3整体correctness/delivery为INCONCLUSIVE，
 不能签全CLOSED。原C3共享owner及承接F32/CPU loader的runtime owner记录BLOCKED。
 macOS loader与CPU+Apple许可证登记两项限定修复已各完成自己的门，可独立CLOSED，

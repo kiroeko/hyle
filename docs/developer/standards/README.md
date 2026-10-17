@@ -1,7 +1,4 @@
-# 开发标准
+# 开发约定
 
-- [工程章程](engineering-charter.md)
-- [编码规范](coding-conventions.md)
-
-这里的规则适用于后续实现和 review。改变产品方向或模块边界时，必须同时更新 architecture 中的
-正式决策；本目录不能私自创造第二套架构。
+[编码与接口约定](coding-conventions.md)集中说明必要的工程要求。
+产品结构与依赖设计见 [architecture](../../architecture/README.md)。

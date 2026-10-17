@@ -449,9 +449,9 @@ if(HYLE_BUILD_SCHED)
   endif()
 endif()
 
-# The append-only catalog is an identity ledger, not a construction schedule.
-# Build the selected closure in its resolved topological order so natural new
-# lower-level edges do not require forbidden component-history reordering.
+# Component declaration order is independent of dependency order.
+# Build the selected closure in topological order so dependencies are configured
+# before their consumers.
 foreach(_component IN LISTS HYLE_RESOLVED_COMPONENT_LIST)
   string(TOUPPER "${_component}" _component_upper)
   if(HYLE_BUILD_${_component_upper})

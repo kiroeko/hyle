@@ -1,0 +1,85 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  foundation:
+    name: Foundation / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+      CTEST_PARALLEL_LEVEL: 2
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/cache@v5
+        with:
+          path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
+          key: ${{ runner.os }}-hyle-sources-${{ hashFiles('cmake/HyleDependencyLock.json') }}
+      - name: Install Linux compiler
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 ninja-build
+      - name: Configure (Unix)
+        if: runner.os != 'Windows'
+        run: >-
+          ./scripts/hyle-unix.sh cmake -S . -B build-ci -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          "-DHYLE_COMPONENTS=core,error,platform,time,mem,container"
+          -DHYLE_BUILD_TESTS=ON -DHYLE_BUILD_BENCH=OFF
+          -DHYLE_STATIC=ON -DHYLE_INSTALL=OFF
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: >-
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
+          -BinaryDir "${{ github.workspace }}/build-ci"
+          "-DHYLE_COMPONENTS=core,error,platform,time,mem,container"
+          -DHYLE_BUILD_TESTS=ON -DHYLE_BUILD_BENCH=OFF
+          -DHYLE_STATIC=ON -DHYLE_INSTALL=OFF
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
+        run: cmake --build build-ci --target hyle_tests --config Release
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: >-
+          ./scripts/hyle-windows.ps1 -Action Build
+          -BinaryDir "${{ github.workspace }}/build-ci"
+          --target hyle_tests --config Release
+      - name: Test (Unix)
+        if: runner.os != 'Windows'
+        run: ctest --test-dir build-ci -C Release --output-on-failure --no-tests=error
+      - name: Test (Windows)
+        if: runner.os == 'Windows'
+        run: >-
+          ./scripts/hyle-windows.ps1 -Action Test
+          -BinaryDir "${{ github.workspace }}/build-ci"
+          --build-config Release --output-on-failure --no-tests=error
+      - name: Benchmark parser
+        run: python tests/tooling/bench_stat_parser_test.py
+      - name: Paired statistics
+        run: python tests/tooling/hyle_perf_core_test.py
+      - name: Nanobench parser
+        run: python tests/tooling/hyle_perf_nanobench_test.py
+      - name: SIMD route generation
+        run: python scripts/simd-op-coverage.py --check
+      - name: SIMD configuration errors
+        run: python tests/tooling/simd_routes_test.py

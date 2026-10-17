@@ -30,7 +30,7 @@ reload/drain；相互重叠的机制才有充分理由下沉为通用能力。
 这不是要求每个模块机械扫描四个行业，也不是要求 HYLE 自己制造模型、渲染器或 Web 框架。模块选择
 最相关的主纵切，并在 API 可能被领域特化时选择一个正交纵切；项目级审计再走完整的跨模块 public
 journey，专门发现单模块清单看不见的 glue 缺口。详细准入和路由规则见
-[能力完整性决策](capability-completeness.md#消费者纵切组合与反偏置)。
+[能力完整性决策](capability-completeness.md)。
 
 ## 首个可执行锚：本地量化推理引擎
 
@@ -119,11 +119,11 @@ recurrent-depth Transformer 的一般机制已有公开研究：前置层把输�
 消失，只会要求行为监控、状态探针和授权边界承认自然语言 CoT 不是完整内部状态。
 
 HYLE 将 recurrent/hybrid decode 作为 Compute/推理引擎的一个**泛化压力形状**，而不是新闻驱动的
-feature list 或重开已关闭底层模块的理由。执行层应允许已编译计算区域低开销重复、循环不变量常驻、
+feature list 的理由。执行层应允许已编译计算区域低开销重复、循环不变量常驻、
 loop-carried state 复用和动态 active-set 整理；具体模型的循环次数、停止策略与 latent-state 语义仍由
 推理引擎拥有。只有真实模型或至少两个独立成熟消费者证明通用形状后，相应机制才可通过语义擦除进入
 公共基础 API。具体 workload 与模块边界见
-[推理引擎北极星](inference-engine-north-star.md#31-固定深度之外的执行形状)。
+[推理引擎北极星](inference-engine-north-star.md)。
 
 模型格式、tokenizer、sampling、KV/prefix-cache 策略、continuous batching 和 serving policy
 属于推理引擎。HYLE 只下沉去掉模型语义后仍自然的通用机制。详细边界见
@@ -160,7 +160,7 @@ HYLE 成功不是因为仓库达到某个行数，也不是因为每个操作都
 4. correctness、OOM、取消、并发、平台 fallback 和资源成本可复现；
 5. source/static/shared 三种 C++ 交付都能在独立工程中使用；
 6. 文档与机器合同让后来维护者知道为什么、做过什么、怎样验证和用户怎样使用；
-7. 模块达到证书后能停止关注，只被明确的新事实重新打开。
+7. 用真实消费者持续检验能力和接口，按新证据解决实际问题。
 
 ## 主要风险
 
@@ -171,6 +171,3 @@ HYLE 成功不是因为仓库达到某个行数，也不是因为每个操作都
 - compute/graph 等未稳定层过早冻结；
 - 把 shared C++ library 误当跨语言稳定 ABI；
 - 文档保存大量旧结论却没有可信度和当前状态。
-
-当前的应对是：多消费者纵切组合、逐模块收口审查、仪器资格、独立红队、四类文档和机器合同。
-具体方法见 [module closure methodology](../developer/review/module-closure-methodology.md)。

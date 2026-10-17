@@ -2,7 +2,7 @@
 
 > 终态：`PROJECT AUDIT: CLOSED`。本轮把此前“每个 factor 一行”的扫描提高为能力族、已交付头反向追溯和
 > 四条完整消费者纵切三重校验。它只校准需求事实和文档，不修改
-> [`module-status.json`](../../module-status.json)，不授权产品施工，也不续签任何模块的 correctness、性能或
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`），不授权产品施工，也不续签任何模块的 correctness、性能或
 > source/static/shared 证据。
 >
 > 后续[范围稳定任务](foundation-capability-expansion-scope-2026-09.md)继续对照成熟实现，并形成当前

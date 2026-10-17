@@ -32,8 +32,8 @@ Apple 与 Torch CUDA 当前 G07 SCOPED 保持，不为聚合收口重开或代�
 
 这是一轮经用户选择的**验收范围重定界**，不是原 5% 门通过。依据是原 comparator
 具有额外完整 BF16 驻留和 BF16 partial，与选定压缩/数值合同不同；按
-[工程章程](../../../developer/standards/engineering-charter.md)及
-[收口方法](../../../developer/review/module-closure-methodology.md)，这种比较只能说明
+工程章程（已删除的历史文件：`docs/developer/standards/engineering-charter.md`）及
+收口方法（已删除的历史文件：`docs/developer/review/module-closure-methodology.md`），这种比较只能说明
 自然方案取舍，不能签同约束实现非劣或据此追改产品。
 
 本轮预声明工程性能 **P0**：检查已冻结的压缩驻留、tile 解码、F32 中间结果、dirty

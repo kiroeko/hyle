@@ -1,9 +1,5 @@
 # container_intrusive 架构：稳定节点的零分配 membership
 
-> 本页记录长期产品边界，不签署当前状态或性能。施工状态只看
-> [module-status](../implementation/module-status.json)，普通用法看
-> [Container intrusive 指南](../user/container-intrusive.md)。
-
 ## 为什么是一个内部 factor
 
 Timer、scheduler callback、arena object chain、LRU/wait-set 等对象已经由别的 owner 持有；若只为排队

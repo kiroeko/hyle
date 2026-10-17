@@ -5,7 +5,7 @@
 
 > 终态：`CLOSED`。八项冻结 `FIX` 已落在不可变产品候选并通过三平台 correctness、delivery、P0
 > code-shape、文档与红队验证；本 task 只作历史证据，不再授权新增 API 或 benchmark。权威状态见
-> [`module-status.json`](../../module-status.json)。
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。
 
 ## Reopen trigger
 

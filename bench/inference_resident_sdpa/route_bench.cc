@@ -7,8 +7,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <nanobench.h>
 #include <span>
@@ -268,7 +266,7 @@ void measure(int rows, int keys, int depth, bool causal, bool verify_only) {
                         run_candidate);
 }
 } // namespace
-int main(int argc, char **argv) {
+int main(int argc, char **) {
   (void)argc;
 #if HYLE_RESIDENT_PLACEMENT
   nb::doNotOptimizeAway(g01_resident_placement_prefix(11));
@@ -291,15 +289,6 @@ int main(int argc, char **argv) {
   priority = std::to_string(actual_priority);
 #endif
   const bool verify_only = !env("HYLE_BENCH_VERIFY_ONLY").empty();
-  if (!verify_only && env("HYLE_BENCH_AA_ROUTE").empty() &&
-      !env("HYLE_PERF_RUN_NONCE").empty()) {
-    std::string ready;
-    std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
-                  "g01_resident_aa.ready") >>
-        ready;
-    if (ready != "PASS")
-      fail("finite workload A/A has not passed for this build");
-  }
   std::fprintf(
       stderr,
       "# HYLE_RESIDENT_RUN run_nonce=%s apple_qos=%s qos_ok=%s "

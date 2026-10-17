@@ -1,7 +1,7 @@
 # G09 纠正预算接续与 Metal 失败归属审计
 
 状态：**AUDITED（M1F1 有限产品纠正），2026-10-17**。用户明确要求“改一下机制，要不改一下上限”，并追问 Metal
-断言与 32,768 字节的含义。本卡按[按根因记账规则](../../../developer/review/module-closure-methodology.md#31-纠正预算按根因记账)
+断言与 32,768 字节的含义。本卡按按根因记账规则（已删除的历史文件：`docs/developer/review/module-closure-methodology.md`）
 接续审计。原 SCOPED checkpoint 为 `9b09b57af`；此前只读阶段事实保留。
 M1Q1诊断已完成。当前仅解锁末节冻结的M1F1产品实现与源码审核；新普通入口仍须独审后另行GO，性能尚未解锁。
 

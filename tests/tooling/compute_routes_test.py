@@ -102,11 +102,11 @@ class ComputeRoutesTest(unittest.TestCase):
         # Actual manifest/configure path, no SDK stubs and no provider mock.
         for routes, expected, absent in (
             ("cpu", "compute_route_cpu;graph_route_cpu;compute_provider_native",
-             "compute_backend_cuda;compute_route_vulkan;compute_route_apple;graph_route_cpu_cuda;sched"),
+             "compute_backend_cuda;compute_route_vulkan;compute_route_apple;graph_route_cpu_cuda"),
             ("cuda", "compute_backend_cuda;compute_route_cuda;graph_route_cuda",
-             "compute_backend_cpu;compute_provider_native;compute_route_vulkan;graph_route_cpu_cuda;sched"),
+             "compute_backend_cpu;compute_provider_native;compute_route_vulkan;graph_route_cpu_cuda"),
             ("vulkan", "compute_route_vulkan;graph_route_vulkan;compute_provider_iree_vulkan",
-             "compute_backend_cpu;compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda;sched"),
+             "compute_backend_cpu;compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda"),
             ("cpu;cuda", "graph_route_cpu_cuda;graph_route_cpu;graph_route_cuda;sched;compute_provider_onednn",
              "compute_route_vulkan;compute_route_apple"),
         ):
@@ -159,8 +159,8 @@ class ComputeRoutesTest(unittest.TestCase):
                     'message(FATAL_ERROR "CPU+Apple factor selection differs")\nendif()\n'
                     + ('if(NOT HYLE_BUILD_SCHED OR NOT HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
                        'message(FATAL_ERROR "composition lacks CPU progress")\nendif()\n' if expected else
-                       'if(HYLE_BUILD_SCHED OR HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
-                       'message(FATAL_ERROR "single Apple route acquired CPU/Sched")\nendif()\n'),
+                       'if(HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
+                       'message(FATAL_ERROR "single Apple route acquired CPU route")\nendif()\n'),
                     encoding="utf-8")
                 result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / "build")],
                                         capture_output=True, text=True, timeout=20, **NO_WINDOW)

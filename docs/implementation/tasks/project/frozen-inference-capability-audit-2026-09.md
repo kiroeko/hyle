@@ -8,7 +8,7 @@
   `FROZEN-INFERENCE-CAPABILITY-2026-09-07`。
 - baseline：`9864c187d4e6caff8606a176e78ba40d234fafae`，canonical checkout 为
   `C:\public\project-hyle\hyle`。开始时工作树干净，main、origin/main 与远端 main 一致。
-- 前置：[selector v2](../build/validation-selector-v2-factor-context.md) 为 `PROJECT UNIT REVIEW: CLOSED`，
+- 前置：selector v2（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-v2-factor-context.md`） 为 `PROJECT UNIT REVIEW: CLOSED`，
   实现提交 `66897618aeb2b0c043a4904d205f11abf8b5b892`、终态/证据提交
   `1df0edb0854ae4995f883e7136c7baa76fcd505d` 及行尾修正已推送；
   [性能审计](frozen-performance-opportunity-audit-2026-09.md) 为 `PROJECT AUDIT: CLOSED`，提交
@@ -16,7 +16,7 @@
   不复议微性能结论。
 - 权威阅读：AGENTS、README、完整 registry、module-closure-methodology、capability-completeness、
   module-review-template、engineering-charter、coding-conventions、roadmap、build-system。
-  模块当前状态仅由 [registry](../../module-status.json) 决定，历史 task 和 architecture WATCH
+  模块当前状态仅由 registry（已删除的历史文件：`docs/implementation/module-status.json`） 决定，历史 task 和 architecture WATCH
   只作事实/边界输入，不作为当前能力、状态或修改授权。
 - 范围：自动筛选 `product_state == CLOSED` 且 `freeze_confirmation.marker == FROZEN` 的 19 因子，
   从其当前公开 C++ 头、用户指南、architecture 与当前 closure task 对照五个真实参考仓库。

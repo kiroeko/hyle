@@ -3,7 +3,7 @@
 本页是
 [`CLOSED 组件全库正确性资格审计`](../../tasks/project/closed-components-correctness-qualification-2026-09.md)
 Q10 的终局红队记录。它裁决证据是否足以支持当前公开合同，不修改
-[`module-status.json`](../../module-status.json)，也不声称有限测试能够证明程序绝无缺陷。
+`module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`），也不声称有限测试能够证明程序绝无缺陷。
 
 ## 红队检查
 

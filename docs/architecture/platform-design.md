@@ -4,10 +4,6 @@
 > `N/A`，早期 C schema、bridge、动态导出和 fixture 已删除。验收状态与一次性事实由
 > implementation 记录维护，不写进架构真相。
 
-> 用户当前选型见 [user/platform](../user/platform.md)；当前 closure record 与工程性能证据只从
-> [implementation/status](../implementation/status.md) 进入。历史候选和定向重开保留在 implementation
-> task/evidence，不写入长期架构。
-
 ## 1. 定位与依赖
 
 platform 把 Windows、Linux 和 macOS 的不同系统调用收敛成可组合的**机制**，供 HYLE
@@ -452,7 +448,7 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 多个基础库用户反复需要、能形成跨平台诚实合同、且归不到已有高层生命周期 owner 的机制，
 才进入 platform 公共面。
 
-## 12. 维护闸门
+## 12. 设计与验证要点
 
 改变 platform 公共形状时必须同时回答：
 

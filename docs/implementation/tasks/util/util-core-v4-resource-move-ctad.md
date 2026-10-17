@@ -4,7 +4,7 @@
 <!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 终态：`CLOSED`。前段状态和候选纠正按时序保留为历史事实，不再授权继续修改；当前状态只认
-> [`module-status.json`](../../module-status.json)。
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。
 
 ## Reopen evidence（`REOPENED`）
 

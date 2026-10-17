@@ -287,6 +287,3 @@ single-owner，不是带锁的跨线程 timeout service。
 反过来的 entry-first shutdown 仍是 bug：armed entry 或仍链接在 delivery list 的 entry 不能先析构。
 delivery 后必须先 pop/drain 再 re-arm 或 destroy。wrong owner、倒退的 advance 和违反这些 lifetime
 合同会 fail-fast；不可信输入应由上层先验证，不能把程序员合同当 recoverable parsing error。
-
-稳定设计见 [`time-design`](../architecture/time-design.md)；当前 `time` 与 `timer_queue` 的状态、closure
-record 和精确性能证据从 [`module status`](../implementation/status.md) 进入。

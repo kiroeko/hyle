@@ -1,66 +1,27 @@
-# HYLE 架构、愿景与决策
+# 架构与设计
 
-> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../../AGENTS.md)；普通编译、测试与诚实报告继续。
+HYLE 提供可组合的基础机制；模型和业务策略留在消费者。
+设计页说明产品边界和实现理由，具体用法与支持限制见[用户文档](../user/README.md)，
+当前安排见[工作主线](../developer/current-work.md)。
 
-本目录描述 HYLE 为什么存在、需要解决什么问题、应当具有什么形状，以及长期决策为什么如此。
-它引领开发方向，但不保存施工流水和一次性测量数字。
+## 产品与系统
 
-HYLE 是面向 AI 推理、异构渲染/资源流送、低延迟服务和工程计算的 C++23 基础加速库。推理引擎是
-首个可执行需求与性能锚，但不是唯一产品定义。HYLE 提供通用的内存、数据结构、SIMD、调度、I/O
-和异构计算机制，而模型格式、tokenizer、sampling、KV 策略与 serving policy 留在推理引擎；材质、
-场景、渲染算法与窗口/present policy 留在渲染产品。渲染/资源流送、批处理数值管线和低延迟服务
-共同防止公共 API 被单一模型或框架过拟合。
+- [产品范围](hyle-scope.md)、[动机](motivation.md)、[推理引擎需求](inference-engine-north-star.md)
+- [能力完整性](capability-completeness.md)、[组件与依赖](capability-factorization.md)、[分层](roadmap.md)
+- [性能比较](performance-strategy.md)、[生命周期和失败](lifecycle-design.md)
+- [构建与交付](build-system.md)、[许可](licensing.md)、[FFI 边界](native-ffi-policy.md)
+- [参考实现](references.md)、[模型与格式需求](model-compute-catalogue.md)
 
-## 项目背景和方向
+## 模块
 
-- [动机与消费者纵切](motivation.md)
-- [推理引擎需求锚](inference-engine-north-star.md)
-- [目标模型／算子／实际量化格式共同目录](model-compute-catalogue.md)：CPU 与各 GPU 路线共用的固定需求与 MTP／DSpark，不代签路线支持。
-- [已收口单元的推理能力观察清单](inference-engine-capability-watchlist.md)
-- [项目范围](hyle-scope.md)
-- [架构方向与依赖原则](roadmap.md)
-- [clay 起源与资产判断](clay-asset-liability.md)
-- [参考库与参考职责](references.md)
+- [Core](core-design.md)、[Error](error-design.md)、[Platform](platform-design.md)
+- [Mem](mem-design.md)、[Time](time-design.md)、[Obs](obs-design.md)、[Util](util-design.md)
+- [Container](container-design.md)、[侵入式容器](container-intrusive-design.md)
+- [SIMD](simd-design.md)、[SIMD 第三方边界](simd-vendor-surface.md)、[Math](math-design.md)
+- [Sched](sched-design.md)、[IO](io-design.md)、[Process](process-design.md)
+- [Compute](compute-design.md)、[Graph](graph-design.md)、[后端路线](compute-routes.md)
+- [冷路由](compute-routing-system.md)、[CPU/GPU 组合](compute-next-stage.md)
+- [资源与流送](compute-resource-streaming-design.md)、[版本状态与分页](compute-state-paged-design.md)
 
-## 系统级决策
-
-- [基础库能力完整性](capability-completeness.md)
-- [性能定位与可证明价值](performance-strategy.md)
-- [当前基础能力扩展范围](foundation-capability-expansion.md)
-- [能力展开与组件质因数分解](capability-factorization.md)
-- [构建与打包架构](build-system.md)
-- [生命周期、取消和失败边界](lifecycle-design.md)
-- [Native FFI 准入策略](native-ffi-policy.md)
-- [许可与第三方边界](licensing.md)
-- [ggml 内存边界借鉴](borrowing-ggml-memory-model.md)
-
-## 模块设计
-
-- [core](core-design.md)
-- [error](error-design.md)
-- [platform](platform-design.md)
-- [mem](mem-design.md)
-- [time](time-design.md)
-- [obs](obs-design.md)
-- [util](util-design.md)
-- [container_intrusive](container-intrusive-design.md)：内部独立的双向/count/forward/hlist 侵入式 factor
-- [container](container-design.md)：完整数据结构产品；公开 façade 聚合 intrusive 与普通容器 factor
-- [simd](simd-design.md) 与 [vendor 边界](simd-vendor-surface.md)
-- [math 边界](math-design.md)
-- [sched](sched-design.md)
-- [io](io-design.md)
-- [process](process-design.md)
-- [compute：异构执行与算子 provider](compute-design.md)
-- [graph：计算 DAG、编译与可复用执行计划](graph-design.md)
-- [Compute/Graph 冷路由：真实模型画像、计算事实与确定性绑定](compute-routing-system.md)
-- [Compute/Graph 四路线：隔离、原生资源与 Provider 接入](compute-routes.md)
-- [下一阶段：统一计算配置、冷路由与CPU/GPU组合](compute-next-stage.md)：新设计 goal 的入口与有限施工；增量依赖图只登记待办，不代签当前实现。
-- [资源租约、批量搬运与文件管线设计](compute-resource-streaming-design.md)：F1–F3 的完整常用范围、成熟来源、owner与实施卡。
-- [状态版本、分页计算与四路线组合](compute-state-paged-design.md)：F4/F5 与 CPU+CUDA、Apple/Vulkan 消费差异的源码依据、拟议合同与有限后续包；仅设计，尚未实施。
-
-## 可信度边界
-
-architecture 页面只说明长期需求、边界和决策，不声明当前模块阶段或验收结果。唯一施工状态见
-[implementation/status](../implementation/status.md)；设计页存在不代表模块已经取得功能、性能、
-易用性或交付证书。模块轮到重审时，应删去设计页中的历史验收、旧点值和施工叙事，只保留仍约束
-实现的内容。
+已有范围讨论还包括[基础能力](foundation-capability-expansion.md)和
+[候选通用机制](inference-engine-capability-watchlist.md)。它们记录设计需求，不构成完成声明或自动待办。

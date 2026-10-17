@@ -16,7 +16,7 @@
 #include "../common/perf_process.h"
 
 #if !defined(_WIN32)
-#error "The sched P1 qualification replay is currently qualified on W1-WIN only"
+#error "This scheduler benchmark currently uses the Windows API"
 #endif
 
 #define WIN32_LEAN_AND_MEAN

@@ -1,23 +1,8 @@
 # 尚未准入的基础能力观察清单
 
-> 本页只保存仍可能晋级、但当前证据不足的长期候选。它不是 backlog、状态表、施工授权或功能缺口清单。
-> 当前模块状态只看 [`module-status.json`](../implementation/module-status.json)；当前能力覆盖、已确认缺口与
-> 路由见[能力族深度复审](../implementation/tasks/project/hyle-capability-family-deep-audit-2026-09.md)，已准入
-> 但尚未施工的当前范围只看[基础能力扩展决策](foundation-capability-expansion.md)。
-
-## 使用规则
-
-观察项只有同时完成以下工作，才可以成为模块 reopen trigger：
-
-1. 绑定版本化真实 consumer 的对象、规模、操作序列、失败和关闭路径；
-2. 去掉 model/token/route/material 等领域名后，仍是稳定通用机制；
-3. 证明标准库、成熟依赖、现有 HYLE 原语或上层 owner 没有自然完整路线；
-4. 冻结 semantic、mechanism、decision 与 delivery owner，并保持 factor DAG 无环；
-5. 登记默认 metadata/allocation/copy/lock/syscall/dispatch、复杂度和三交付影响；
-6. 新建 closure card，完成 `SCOPED -> AUDITED` 后才改产品代码。
-
-仅出现新库、新 API 名、更多 LOC、一次 benchmark 或“以后可能用”都不能晋级。候选若已有成熟完整路线，
-直接从本页删除或改为 architecture/user 中的 `ROUTED`，不长期囤积。
+本页保留尚需真实消费者和跨平台合同支持的通用机制候选，不是自动待办。
+模型、服务与领域策略留给上层；已有成熟路线优先复用。当前计划见
+[工作主线](../developer/current-work.md)。
 
 ## 当前候选
 
@@ -52,8 +37,8 @@
 - 已经落地的 Util owning creator、Result reference、checked scalar math、Obs metrics、SIMD route 等不再保留
   “曾经待办”的兼容叙述，历史由 Git 和对应 terminal record 追溯。
 
-## 维护边界
+## 记录范围
 
-Architecture 只保存候选语义和晋级门，不复制 commit、LOC、点值或当前 module state。一次项目审计发现
+这里只保存候选语义，不维护状态机。实际调查发现
 新信号时先在 implementation task 中保存版本化事实；只有它仍未准入且值得后续观察，才在这里新增或
 更新一行。候选晋级、被路由或被否决时，应在同轮移除旧表述，避免旧文档冒充第二套状态真相。

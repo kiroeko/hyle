@@ -1,15 +1,5 @@
 # HYLE Mem：统一 storage foundation
 
-> 本页记录 Mem 的长期产品边界与设计理由；当前已可依赖的实现以
-> [user/mem](../user/mem.md) 与中央 registry 为准，不会因 architecture 写了目标就提前变成
-> shipping 能力。`mem_reclaim` 由普通 Mem façade 聚合，而不是公开内部 factor target；它的机械
-> 收口状态仍只读中央 registry。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
-> C schema、bridge、动态导出和 fixture。机械收口状态见
-> [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
-
-> 用户当前选型见 [user/mem](../user/mem.md)；当前 closure record 与性能证据只从
-> [implementation/status](../implementation/status.md) 进入。
-
 ## 1. 边界
 
 Mem 是 HYLE 唯一 storage-semantics owner，目标产品面同时覆盖：
@@ -69,11 +59,6 @@ C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮
 `ConcurrentNodeHashMap` 保持零 guard 的有界 retained 路线；持续增长 consumer 显式选择服务期回收，
 避免把内存与 latency 取舍伪装成唯一合同。RCU 与 Container 分别拥有 reader lifetime 和 table/node
 语义，形成真实直接依赖而不互相复制。
-
-明确负空间包括 hazard pointer、executor/GPU-fence affine callback、自动分配 retire node 和业务 snapshot
-schema。一个 stalled reader 必须不能阻塞无关回收时，才以真实 consumer 另开 hazard-pointer 能力轮；
-GPU completion 属 Compute/Sched owner 组合，不反向塞进 Mem。历史恢复过程保留在 closure task，当前状态
-只读 [`module-status.json`](../implementation/module-status.json)。
 
 ## 2. 需求基线
 
@@ -402,31 +387,12 @@ shared name 同样保留 native namespace identity：POSIX 仅规范化前导 `/
 GrowableObjectPool/LargeMapping` 固定到上表的借用、arena、heap、block-pool、object-pool 与
 mapping 心智；旧类型名已经删除，不留 deprecated alias。
 
-## 11. 收口定义与重开边界
+## 11. 公共接口与验证范围
 
-本节裁决完整 Mem façade；`mem_reclaim` 仍由独立 factor/card 对自己的算法与性能负责，Mem 聚合轮只证明
-用户入口和 source/static/shared 交付，不替它代签。
-
-Mem 进入预发布冻结必须同时满足：
-
-1. host allocator/heap/arena/pool、mapping/residency、开放 resource、Buffer/View/import/
-   composite、sync operation、pool/stats 与 lifetime plan 全部有自然的用户路线；
-   Compute/Graph/IO 只保留本文明确的 mechanism/policy/completion 语义，不因 benchmark
-   参数新增 `fast/light` 类型。
-2. 保持 `Native FFI=N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略单独立项，
-   不能在 mem 修改中顺手恢复旧 C schema。
-3. 最终候选通过 Windows/Linux/macOS、OOM/overflow 和适用的 ASan/UBSan/TSan，并验证
-   source/static/shared C++23 消费路径。
-4. throughput-oriented 能力有正常 workload、同合同成熟 peer、throughput 与 whole-operation
-   latency；空间型能力有 peak/retention/fragmentation 证据。没有同合同 peer 时只报告绝对成本
-   和较弱合同参照，不制造 SOTA 结论。
-5. architecture、user guide、performance 与 implementation task 各守自己的文档职责，
-   不复制状态表；旧 host-only/Compute-owned Buffer/Graph-owned planner 文字已清理。
-
-五项通过即冻结。性能稳定性必须由多进程重复、paired sign/spread、长寿命 epoch 与结构复杂度
-门禁共同建立，不能靠一次很短的 microbenchmark；通过已定义证据后也不无限等待。冻结后只有 correctness/security、真实消费者
-暴露能力缺失、新平台使合同失效或既定 harness 确认的持续性能回归可以重开；LOC、命名偏好、
-亚纳秒波动和无 workload 的猜测不能重开。
+Mem façade 聚合存储能力，独立算法仍由相应组件拥有。
+普通用户应能完成分配、映射、借用、复用和关闭，资源及失败可观察。
+相关修改检查溢出、OOM、寿命、并发，以及受影响系统和安装消费者；不要求重新认证整个模块。
+性能比较对齐 ownership、资源与完整操作，分别报告延迟、吞吐、峰值、保留和碎片。
 
 ## 12. 验证边界
 
@@ -435,16 +401,12 @@ Mem 进入预发布冻结必须同时满足：
   move/reset/import 与 range overflow；native handle 不得冒充 mapped pointer；host direct 与
   non-coherent flush/invalidate 差分；CUDA/Vulkan/host 真实路线各自验证，硬件未提供的
   driver 路径明确 skip，不用 synthetic 冒充硬件 PASS。
-- bump/arena：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback；多 block 长寿命复用用结构门禁证明每 epoch 至多线性考察，并用 32→2048 blocks 的跨进程 scaling 证书防回归。
+- bump/arena：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback；多 block 长寿命复用用结构门禁证明每 epoch 至多线性考察，并用 32→2048 blocks 的跨进程 scaling 实验检查退化。
 - fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan；FixedHeap 另验证大 alignment/overflow、随机 realloc/碎片回收和与 free-block 数量无关的至多两候选查找。
 - logical ranges：zero/overflow/>4 GiB/alignment、metadata OOM 回滚与上限、随机 non-overlap、split/coalesce、owner/lease move、bulk generation reset 和 stale lease；P1 只能比较 peer 也拥有的相同 offset/ownership/alignment 子合同。
 - object pools：Reconstruct + move-only Loan、早退/异常自动归还、hard/soft handoff；Preserve 一次构析与状态保留。
 - diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令；LeakTracker metadata OOM 必须留下 dropped/complete 证据，不能静默伪称完整。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
-
-当前工程性能证据从 [status](../implementation/status.md) 的链接进入；未进入当前 P1/P2 合同的固定池
-能力只签复杂度、资源、correctness 与交付门，不冒充数值 SOTA。历史候选与性能轮只留在
-implementation task/evidence 和 Git 中。
 
 ## 参考
 

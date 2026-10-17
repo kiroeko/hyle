@@ -128,7 +128,7 @@ inline void pin_and_boost() {
   const int actual_cpu = -1;
   const int core_class = -1;
 #endif
-  // Machine-readable run metadata for op-parity-report -- certification needs both layout banks.
+  // Machine-readable run metadata for op-parity-report's order/layout checks.
   // HYLE_BENCH_HWYFIRST does more than swap temporal order: run_round selects the alternate
   // RepTag bank (R vs R+8), so the two orders jointly sample eight distinct code instances/side.
   std::printf("# HYLE_OP_PARITY order=%s replicas=%d layout_bank=%d pin_ok=%d priority_ok=%d "

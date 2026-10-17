@@ -4,7 +4,7 @@ get_filename_component(HYLE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSO
 find_package(Hyle CONFIG REQUIRED COMPONENTS compute graph)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 if(NOT Hyle_STATIC OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  message(FATAL_ERROR "Use the qualified Linux CUDA static SDK")
+  message(FATAL_ERROR "The private original provider adapter requires a Linux CUDA static SDK")
 endif()
 set(HYLE_FLASHINFER_ORIGINAL_SOURCE "" CACHE PATH "Pristine authenticated FlashInfer69ff checkout")
 execute_process(COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_LIST_DIR}/verify_source.py"

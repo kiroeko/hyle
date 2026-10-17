@@ -94,8 +94,7 @@ function Get-LatestSupportedVs2022Toolset {
     }
 }
 
-function Get-HyleClosedProducts {
-    # Compatibility name only: no lifecycle registry or governance projection.
+function Get-HyleSmokeComponents {
     if ($Component) {
         return $Component
     }
@@ -266,7 +265,7 @@ switch ($Action) {
             throw 'Action PackageSmoke requires -SmokeRoot <scratch-directory>.'
         }
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiPackageSmoke.cmake'
-        $smokeComponents = Get-HyleClosedProducts
+        $smokeComponents = Get-HyleSmokeComponents
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             "-DHYLE_SMOKE_COMPONENTS=$smokeComponents" `
             -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
@@ -276,7 +275,7 @@ switch ($Action) {
             throw 'Action ProductShapeSmoke requires -SmokeRoot <scratch-directory>.'
         }
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiProductShapeSmoke.cmake'
-        $smokeComponents = Get-HyleClosedProducts
+        $smokeComponents = Get-HyleSmokeComponents
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             "-DHYLE_SMOKE_COMPONENTS=$smokeComponents" `
             -DHYLE_SMOKE_GENERATOR=Ninja @ExtraArgs -P $smokeScript
@@ -287,10 +286,10 @@ switch ($Action) {
         }
         $packageBuild = Join-Path $SmokeRoot 'package-driver'
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiSourcePackageSmoke.cmake'
-        $closedProducts = Get-HyleClosedProducts
+        $smokeComponents = Get-HyleSmokeComponents
         & cmake -S $sourceDir -B $packageBuild -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
-            "-DHYLE_COMPONENTS=$closedProducts" `
+            "-DHYLE_COMPONENTS=$smokeComponents" `
             -DHYLE_BUILD_TESTS=OFF `
             -DHYLE_BUILD_BENCH=OFF `
             -DHYLE_IO_TLS=OFF `
@@ -299,7 +298,7 @@ switch ($Action) {
             & cmake "-DHYLE_SOURCE_DIR=$sourceDir" `
                 "-DHYLE_PACKAGE_BUILD=$packageBuild" `
                 "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
-                "-DHYLE_SMOKE_COMPONENTS=$closedProducts" `
+                "-DHYLE_SMOKE_COMPONENTS=$smokeComponents" `
                 -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
         }
     }

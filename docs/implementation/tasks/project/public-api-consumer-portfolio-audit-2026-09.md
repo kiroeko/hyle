@@ -1,7 +1,7 @@
 # Public C++ 消费者纵切组合审计（2026-09）
 
 本记录保存一次项目级只读能力审计的事实，不是模块 closure card，也不创建第二套生命周期状态。
-当前状态仍只看 [`module-status.json`](../../module-status.json)。发现只有建立具名 trigger、为 owner 创建新
+当前状态仍只看 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。发现只有建立具名 trigger、为 owner 创建新
 card 并完成 `CLOSED -> SCOPED` 后，才授权修改产品代码。
 
 ## 范围与证据身份

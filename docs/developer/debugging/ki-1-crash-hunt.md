@@ -1,7 +1,6 @@
 # KI-1 Crash Hunt（fiber × mimalloc 跨线程 free 崩溃——调查日志）
 
-> 已结案的历史诊断。它不再是当前 known issue；当前 blocker 只看
-> [`module-status.json`](../../implementation/module-status.json)。本页保留可复用的复现与排除方法。
+> 历史诊断，保留可复用的复现与排除方法；是否适用于当前版本需按实际症状验证。
 
 ## 0. 被查崩溃（KI-1 摘要）
 

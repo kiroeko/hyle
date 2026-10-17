@@ -7,7 +7,7 @@
 
 > 终态：`PROJECT AUDIT: CLOSED`。本记录冻结新的产品准入边界，并对 Compute/Graph 之外 27 个已实现
 > factor 与 build/package 做一次只读能力扫描。它不修改
-> [`module-status.json`](../../module-status.json)，不授权产品施工，也不续签既有 correctness、性能或
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`），不授权产品施工，也不续签既有 correctness、性能或
 > 三交付证据。
 
 ## 1. 范围与基线

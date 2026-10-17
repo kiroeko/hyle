@@ -259,7 +259,7 @@ G04/G05/G07 由一期模型触发，未选编码/数学域后移；G08/G09/G10 �
 有限 FIX、API、预算与适用验证。owner 分批实现，不把十项做成一次全库重构。新 component
 只有自然机制确需独立身份时登记，不能按 G 编号机械拆十个模块。
 
-构建只按[change-impact selector](../../../developer/review/change-impact-validation.md)选择
+构建只按change-impact selector（已删除的历史文件：`docs/developer/review/change-impact-validation.md`）选择
 owner 和真实直接消费者；公共 API/package seam 才扩展对应验证。分批复用依赖树与缓存，
 不因每个 op 或每次文档更新重建全库。适用 source/static/shared、sanitizer/原生风险写入
 owner 卡；数学/API 固定的不可变 candidate 才按同合同启动定向 P1/P2。

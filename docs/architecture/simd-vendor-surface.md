@@ -1,8 +1,5 @@
 # SIMD vendor ownership
 
-本文只描述长期 ownership 和升级原则，不承担操作覆盖率、性能排名或任务状态。当前 product state 见
-[`module status`](../implementation/status.md)，并从该表进入当前 closure/performance evidence。
-
 ## 两种依赖必须分开说
 
 HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。当前目标把 Highway 与 xsimd 都作为中央锁定、
@@ -65,7 +62,7 @@ vendor register 类型、adapter、callback 或二次 dispatch 不得进入
 build system 必须把 route 当成编译合同而不是运行时服务：selected provider 的头、target namespace、
 compile definition 与 ISA options 在同一个 target 声明中产生；未选择的 candidate 不进入该实例化闭包。
 新增 HYLE 优化时先增加独立 candidate body，再以 correctness、复杂度、最终 codegen 和 material consumer
-证据重签有限 route；升级 Highway/xsimd 时也只重签受到源码或 target 变化影响的 group。这是可持续的
+证据更新相应 route；升级 Highway/xsimd 时也只验证受到源码或 target 变化影响的 group。这是可持续的
 “忒修斯之船”维护入口，不授权重新复制完整 vendor surface。
 
 机器链路为 `scripts/simd-op-routing.json` → 生成的 HYLE-internal
@@ -75,22 +72,9 @@ operation；`RouteFor<operation, lane, target, compiler, version>` 的 primary �
 outline 的路由函数。一个 provider candidate 是完整 body specialization，不能把共同 façade 误做成新的
 register DSL。
 
-route ledger 的 `candidate_audit` 只记录锁定源码中的候选形状，不能据此选择 provider。每个 route scope
-另有 HYLE/Highway/xsimd 三方 `provider_assessments`：同名 token 仍是 `PENDING`，必须以语义、类型/target、
-正确性和适用的结构/性能证据逐项落成终态。terminal verifier 会拒绝缺 provider、缺证据、缺 legacy site、
-未知 target、重复 scope ID 或任一 `PENDING`；所以 387 项不是抽样报告中的一个总数，而是删除门的逐行
-前置条件。
-
-终态不要求为每个 primitive 证明一个跨机器的绝对性能赢家。Highway 对同合同标准 primitive 是默认 route；
-HYLE/xsimd 只以已有、资格化且超过 5% 的 type × ISA/platform 证据建立有限例外。持平、最终 codegen 等价、
-顺序或编译器反转、差异不 material，以及有界资格化后仍无赢家，全部终结为 Highway。compiler 只在产品
-构建能够静态表达且差异可复现时成为例外维度，不能预先展开开放的 compiler 笛卡尔积。默认 route 的证据
-证明的是合同、复杂度和选择政策，不冒充“所有未来硬件上 Highway 都最快”。
-
-迁移账本以冻结 baseline 机械枚举全部旧 operation，并为每项记录 overload/source 分布、适用 target、
-同合同 peers、evidence group 和 `KEEP_HYLE/ROUTE_HIGHWAY/ROUTE_XSIMD/REMOVE_REDUNDANT`。允许多个项目共享
-一个相同实现/codegen 的证据组，但禁止隐式遗漏；账本存在缺项、未知映射或 `PENDING` 时，不得删除旧源或
-形成 candidate。
+路由事实和已验证范围保存在对应源文件与历史实验中。Highway 是标准 primitive 的维护默认，
+已有 HYLE/xsimd 优化按实际类型、ISA、平台和工具链保留。比较先确认语义，再查复杂度、codegen 与性能；
+稳定的小幅差距也如实记录和调查，不使用固定百分比、调查预算或审批控制修复。
 
 ## Dispatch 集成规则
 
@@ -118,10 +102,9 @@ HYLE/xsimd 只以已有、资格化且超过 5% 的 type × ISA/platform 证据�
 
 ## 升级规则
 
-1. 先冻结 Highway 与 xsimd 官方 commit，不追逐浮动 HEAD；同一 capability 的两个 strong peer 即这两者，
-   HYLE 是被裁决 candidate，不再临时加入第三个 peer。
+1. 固定 Highway 与 xsimd 依赖版本，记录 commit 和许可证。
 2. 先比较语义、accuracy、layout、alias、异常与 ISA，再比较性能。
-3. vendor 升级只重签 route manifest 标记为受影响的 implementation groups：广 correctness、当前 peer
+3. vendor 升级检查实际受影响的 implementation groups：广 correctness、当前 peer
    parity 与少量正常 consumer sentinel；不重跑未受影响的全笛卡尔积，但每个 operation 的 ledger 引用必须
    仍可解析。
 4. direct wrapper 可行时删除长期 port 与无优势平行 backend；若 port 必须存在，只移植与当前 origin family

@@ -2,7 +2,7 @@
 
 
 > 本页是工程性能证据，不声明模块状态；唯一权威状态见
-> [`module-status.json`](../../module-status.json)。当前 v4 candidate 3 在 W1-WIN 的四个冻结正常
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。当前 v4 candidate 3 在 W1-WIN 的四个冻结正常
 > consumer shape 上取得 5% material margin 的 P1 engineering `PASS`。这不是跨平台发布证书，也
 > 不是对所有 intrusive container、规模或编译器的普遍 SOTA 声明；`formal-release-v1` 仍为
 > `PENDING`。

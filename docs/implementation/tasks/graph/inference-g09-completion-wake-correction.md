@@ -172,7 +172,7 @@ owner 已真实编译链接。首个完整 fixture build 随后因新私有 CMak
 产品算法/API/正常成本与 W1–W4 不变，既有失败、三轮定向修复及四小时检查点预算均继承。
 
 本轮 selector 静态计划另揭示 Windows 错选 Apple hybrid correctness 的既有 policy 漏项。
-由[独立维护工具任务](../tooling/validation-selector-apple-hybrid-platform.md)单列一行 Darwin
+由独立维护工具任务（已删除的历史文件：`docs/implementation/tasks/tooling/validation-selector-apple-hybrid-platform.md`）单列一行 Darwin
 适用性修正与既有平台表测试，旧 policy 的 Windows/Linux 两项红证据及完整 60 tests 绿证据已存。
 不以空 target 签 correctness，也不将工具单测代签 G09；后续用真实 VS 环境重新 plan/run。
 
@@ -217,7 +217,7 @@ SDK 八项加公开头与所有身份/152 DATA guard 不变。两次入口独立
 实际 configure/plan/build/device 仍分阶段裁决，不将入口静态审查当 correctness PASS。
 
 有限性能入口的原公共 runner 在预验证非 PASS 后仍尝试首个 formal child，历史依赖私有
-ready guard 拦截。以[独立工具任务](../tooling/performance-qualification-failfast.md)补唯一
+ready guard 拦截。以独立工具任务（已删除的历史文件：`docs/implementation/tasks/tooling/performance-qualification-failfast.md`）补唯一
 qualify fail-fast 边界，保留 probe/PASS、统计和 manifest；相关65项 Python 测试通过，不由此
 启动 P1 或签发 G09 性能资格。
 

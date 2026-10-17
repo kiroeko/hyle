@@ -1,7 +1,7 @@
 # 调试案例与方法
 
 这些记录来自已经处理过的棘手问题，用于快速识别相同症状、选择观测点并避免重复走弯路。
-它们是维护经验，不是当前产品状态或性能证书。
+它们是维护经验，是否适用于当前版本需按实际症状确认。
 
 - [io_uring DEFER_TASKRUN](defer-taskrun-reenable-hunt.md)
 - [ggml 零拷贝空 buffer](ggml-zerocopy-null-buffer-hunt.md)

@@ -2,8 +2,7 @@
 
 本文面向维护者，说明当前 SIMD 实现怎样选择 ISA/provider、怎样增加或升级实现，以及怎样验证没有把
 benchmark 噪声写进产品。长期边界见 [`simd-design.md`](../../architecture/simd-design.md)，用户用法见
-[`simd-usage.md`](../../user/simd-usage.md)，当前状态只看
-[`module-status.json`](../../implementation/module-status.json)。
+[`simd-usage.md`](../../user/simd-usage.md)。
 
 ## 当前结构
 
@@ -21,13 +20,14 @@ HYLE 只保留有限且有证据的 target-native body。
 主要 owner：
 
 - `src/simd/**/kernel_impl.h`：ordinary family 的 Highway target body；
-- `src/simd/math/highway_math_kernel-inl.h`：Highway math 与已签 xsimd family route；
+- `src/simd/math/highway_math_kernel-inl.h`：Highway math 与 xsimd family route；
 - `src/simd/sort/vqsort_hyle/**`：保留的 Highway VQSort algorithm adaptation，内部直接使用锁定 Highway
   register 类型；
 - `include/hyle/simd/provider/hyle_winners_{avx2,neon}-inl.h`：有限 HYLE winner body；不提供 fallback，
   不构成公共寄存器 API；
-- `scripts/simd-op-routing.json`：冻结的 387-operation baseline 与终态 provider 账；
-- `include/hyle/simd/provider/{operation_manifest,routes_generated}.h`：由账本机械生成的 source-only 合同；
+- `scripts/simd-op-routing.json`：操作清单与 Provider 选择；
+- `scripts/simd-family-routing.json`：whole-buffer family 默认路线与编译器/ISA 例外；
+- `include/hyle/simd/provider/{operation_manifest,routes_generated}.h`：由配置生成的 source-only 头；
 - `include/hyle/simd/provider/route.h`：失败关闭的编译期选择类型，不包含运行时路由函数。
 
 Platform 是 CPU/OS facts 的唯一 owner。SIMD 只把 Platform facts、当前编译器可生成的 target 和 family policy
@@ -50,18 +50,18 @@ pointer/POD kernel 边界选择一次。不同 provider 必须各自拥有完整
 
 ## Route policy
 
-Highway 是同合同标准 primitive 的默认实现。以下情况直接选 Highway并停止测量：
+Highway 是同合同标准 primitive 的默认实现。以下情况优先保留 Highway，避免引入缺乏依据的专用实现：
 
 - 最终汇编相同；
-- 合格批次持平或差异小于 5%；
+- 相同工作量下没有可复现的实际收益；
 - 执行顺序、地址位置、编译器或相邻批次反转；
-- 冻结的有限资格化仍不能分出 material winner。
+- 当前分辨率无法区分双方。
 
 xsimd/HYLE 只有在语义、复杂度和适用的 type × target × compiler scope 都明确，且 current evidence 显示
 material 优势时才能成为例外。例外不能以 buffer size、benchmark title、地址或采样顺序为 route 维度。
 
-当前 operation 账本已终态；它是旧实现迁移与未来重签索引，不是普通用户 API。`RouteFor` primary 保持
-`PENDING`，生成器只为已签 operation/family 建特化。`REMOVE_REDUNDANT` 的 route 不可调用；
+操作与 family 配置是代码生成输入。`RouteFor` primary 保持 `PENDING`，生成器为配置中的路线建立
+特化；每项需要完整默认路线，编译器/ISA 例外不得重叠。`REMOVE_REDUNDANT` 的 route 不可调用；
 `QualifiedProviderFor` 会失败关闭。
 
 `Stream` 是一个重要示例：AVX2 最终 codegen 相同且测量反转，因此默认 Highway；AppleClang 21/NEON
@@ -76,8 +76,8 @@ mutex 或其他同步，不得把 store fence 当成线程同步协议。
    不进入 ordinary API。
 3. 先在锁定 Highway 上实现完整 provider-coherent body；Highway 缺合同或真实热点存在时，再加入 xsimd/HYLE
    candidate。
-4. P0 先比较语义、复杂度、遍历数、allocation/dispatch；P1 才跑同合同真实 size workload。
-5. route 只能在机器账本中落为 `ROUTE_HIGHWAY`、`ROUTE_XSIMD`、`KEEP_HYLE` 或
+4. 先比较语义、复杂度、遍历数、allocation/dispatch，再测相同工作量下的实际规模。
+5. 配置中的 route 使用 `ROUTE_HIGHWAY`、`ROUTE_XSIMD`、`KEEP_HYLE` 或
    `REMOVE_REDUNDANT`；不得留下隐含 fallback。
 6. target-bound correctness、最终 codegen 和普通 consumer 验证通过后再接入 family；不要先改公共 layout。
 
@@ -89,33 +89,29 @@ SIMD 只接收可复用的连续数据或 target-kernel primitive。
 
 1. 在中央 vendor lock 更新官方 commit；benchmark checkout 仍只是 peer，不能代替产品依赖。
 2. 重算 integrated source hash 和 notices/license 投影。
-3. 用 route ledger 找出受上游源码/target 影响的 implementation groups，只重签这些组与正常 consumer
-   sentinels；不要重跑 387 × type × size × ISA 的开放笛卡尔积。
+3. 找出受上游源码/target 影响的操作和 family，验证其适用 ISA 与正常消费者。
 4. 对 HYLE 例外重新确认其 material 优势。优势消失就路由回 Highway并删除 body；出现新的显著优势则新增
    一个有限 candidate，不复制整个 vendor surface。
 5. 对 VQSort adaptation 移植相关 upstream 修复，核对 origin、local delta 和内容 hash。
-6. 完成三平台与 source/static/shared 回归后才更新 candidate/terminal record。
+6. 按受影响平台、构建与交付方式运行回归，记录真实结果。
 
-## 账本与生成物
+## 配置与生成物
 
-迁移完成后，旧源码不存在是预期状态。只用冻结账本验证，不再从已删除文件重建 inventory：
-
-```text
-python scripts/simd-op-coverage.py --check-ledger \
-  --require-route-decisions --check-provider-routes
-```
-
-修改终态账本后机械生成 route：
+生成器读取操作配置、family 配置及中央依赖锁，检查名称、完整默认路线、selector 重叠和 Provider
+revision，并核对两个生成头是否与配置一致：
 
 ```text
-python scripts/simd-op-coverage.py --write-provider-routes
-python scripts/simd-op-coverage.py --check-ledger \
-  --require-route-decisions --check-provider-routes
+python scripts/simd-op-coverage.py --check
 ```
 
-`--check` 与 `--reports` 是旧 register-source coverage 模式；物理删除后会明确失败，不能用于当前产品
-verdict。基线 definition site 仍以 ledger 中的 commit/digest 定位，不得把缺少当前文件误报成 inventory
-丢失。
+修改配置后重新生成并检查：
+
+```text
+python scripts/simd-op-coverage.py --write-provider-manifest --write-provider-routes
+python scripts/simd-op-coverage.py --check
+```
+
+不要手工修改生成头。配置检查不执行 benchmark，也不证明数值或性能；这些用实际测试与消费者验证。
 
 ## 构建 seam
 
@@ -139,7 +135,7 @@ entry 必须是相同的 pointer/count/POD 函数类型。impl header 内可以�
 xsimd；vendor 类型不能出现在 entry、公共类 layout、installed header 或 shared ABI 中。
 
 经典 cl.exe 被锁定 Highway blocklist 禁止 AVX3：fixed/exact AVX-512 必须 configure fail-fast，fat build
-明确封顶 AVX2。clang-cl/GCC/Clang 可按各自资格化 target 构建。canonical x86 tier 不隐含 AES/PCLMUL；
+明确封顶 AVX2。clang-cl/GCC/Clang 按支持的 target 构建。canonical x86 tier 不隐含 AES/PCLMUL；
 专用 crypto kernel 必须有独立 feature 合同。
 
 ## 最小验证
@@ -147,12 +143,9 @@ xsimd；vendor 类型不能出现在 entry、公共类 layout、installed header
 每次 route/body/consumer 变更至少运行：
 
 ```text
-python scripts/simd-op-coverage.py --check-ledger \
-  --require-route-decisions --check-provider-routes
+python scripts/simd-op-coverage.py --check
 cmake --build <build> --target hyle_simd_tests
 ctest --test-dir <build> -L simd --output-on-failure
-python scripts/check-module-closure.py --previous-ref <revision-before-transition>
-python scripts/check-docs.py
 ```
 
 其中 SIMD suite 必须覆盖 ordinary API、route static assertions、有限 winner correctness、provider codegen
@@ -164,8 +157,8 @@ probe 与当前 ordering target。涉及 target/build seam 时还要验证：
 - 受影响的 direct consumer；
 - WSL ASan/UBSan（只有共享可变状态时才需要 TSan）。
 
-性能只运行 closure card 冻结的 ordinary/inference whole-buffer groups。微观 route 已有终态证据时不因一次
-小波动重开；新结果只有在合同合格、超过 material margin、正反顺序和机制检查一致时才可改变 route。
+性能使用与改动相关的 ordinary/inference whole-buffer workload。小幅落后也检查；先排除工作量、
+仪器分辨率、顺序和位置偏差，再根据实现原因与真实收益调整 route。
 
 ## 交付与负空间
 

@@ -224,7 +224,7 @@ normal-only loop、对象布局和 allocation 数不变。红队发现的唯一�
 
 ## Qualified engineering P1
 
-合同是 [`sched-p1-v2`](../../../../bench/contracts/sched-p1-v2.json)，Marl 固定为
+合同是 `sched-p1-v2`（已删除的历史文件：`bench/contracts/sched-p1-v2.json`），Marl 固定为
 `b8406ab0a82524170ead6dd6c371b579bbc28b3e`。双方使用四个独占 P-core worker、一个外部 caller、相同
 输入/计算/容量/完成边界；只有两个 `COMPARABLE + product` 行参与 5% 非劣门。typed structured 行明确
 具有不同 ownership，只作诊断。ratio 大于 1 表示 HYLE 占优：

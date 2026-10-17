@@ -7,15 +7,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <mach-o/dyld.h>
 #include <mlx/compile.h>
 #include <mlx/memory.h>
 #include <mlx/ops.h>
@@ -382,23 +379,6 @@ void measure(int rows, bool peer_first, bool allocation_first,
                     Runner{peer.get()});
 }
 
-void require_aa(bool aa, bool verify) {
-  if (aa || verify || env("HYLE_PERF_RUN_NONCE").empty())
-    return;
-  std::uint32_t size = 0;
-  (void)_NSGetExecutablePath(nullptr, &size);
-  std::string buffer(size, '\0');
-  if (_NSGetExecutablePath(buffer.data(), &size) != 0)
-    fail("locate A/A receipt");
-  const auto path = std::filesystem::path(buffer.c_str()).parent_path() /
-                    (HYLE_APPLE_GRAPH_BENCH ? "hyle_apple_graph_aa.ready"
-                                            : "hyle_apple_compute_aa.ready");
-  std::string status;
-  std::ifstream file(path);
-  file >> status;
-  if (status != "PASS")
-    fail("A/A has not passed for this artifact");
-}
 } // namespace
 
 int main() {
@@ -411,7 +391,6 @@ int main() {
     const auto aa = env("HYLE_BENCH_AA_ROUTE");
     if (!aa.empty() && aa != "native" && aa != "selected")
       fail("invalid A/A route");
-    require_aa(!aa.empty(), verify_only);
     std::fprintf(
         stderr,
         "# HYLE_APPLE_FFN_RUN mode=%s execution_order=%s allocation_order=%s "

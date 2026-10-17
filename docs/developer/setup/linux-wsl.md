@@ -1,6 +1,6 @@
 # Linux / WSL 环境准备（GCC14 + Sanitizer）
 
-> **lock-free 代码的 TSan 唯一闸门在这**（Windows 跑不了 TSan）。本仓库开发用 WSL Ubuntu 24.04。
+> 本仓库使用 WSL Ubuntu 24.04 验证 Linux 路线和 TSan；Windows 本身不提供 TSan。
 > 覆盖：构建 / 测试 / 性能测试 + TSan + 9p 铁律 + 依赖（OpenSSL）。
 > 无网机器的 repository mirror、依赖介质与断网验收见 [`offline.md`](offline.md)。
 
@@ -44,8 +44,8 @@ nvcc --version
 ## 二、⚠️ 9p 铁律（血泪，最重要）
 
 **把 WSL 当一个独立执行环境，用它自己的原生 ext4，绝不在 `/mnt/c` 上构建/测试。** 它与
-Windows 共享同一物理主机，不是独立性能机，也不能替代 native-Linux formal 证书；角色边界见
-[性能机器合同](../performance/machines.md)。
+Windows 共享同一物理主机，不是独立性能机，结果也不能直接外推 bare-metal Linux；限制见
+[验证环境](../performance/machines.md)。
 
 - `/mnt/c/...` 是 **9p 网络挂载**（Windows 盘），不稳、慢、CPU 打不饱和——重 IO / 构建 / 压力测试在上面**性能数字全废**，还可能触发诡异卡顿。
 - **唯一权威源是 Windows 工作树** `C:\public\project-hyle\hyle`；`/root/hyle` 只是可丢弃、可覆盖的原生 ext4 执行镜像，不从 WSL 目录反向恢复或合并代码。

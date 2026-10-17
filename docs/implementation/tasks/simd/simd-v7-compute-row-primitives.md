@@ -112,7 +112,7 @@ NaN/Inf/subnormal、四种 zero 顺序、非 0 condition byte 和 public zero/nu
 stack、零 allocation/lock/syscall/临时 mask buffer；fixed/exact 是直接 symbol call，fat 仍为一次缓存的
 whole-row function-pointer hop。
 
-P1 合同为 [`simd-compute-row-p1-v1.json`](../../../../bench/contracts/simd-compute-row-p1-v1.json)，lock
+P1 合同为 `simd-compute-row-p1-v1.json`（已删除的历史文件：`bench/contracts/simd-compute-row-p1-v1.json`），lock
 SHA-256 `deb10651fcb559cc4a08eddb0da8f675af19ea10da569eb268541032d87ebdf1`；语义矩阵 SHA-256 为
 `8cfdbb926fd2b6ec1287eaff1596787875fa87b4ae9c7c884db10e65e51705b6`。候选前只运行了 primary 两顺序
 smoke：四项 correctness oracle 均通过，但 select 等点值随执行顺序反转，因此没有从 smoke 产生性能

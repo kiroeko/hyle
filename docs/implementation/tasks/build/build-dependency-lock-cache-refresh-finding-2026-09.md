@@ -2,7 +2,7 @@
 
 状态：`FINDING`（2026-09-06）。本页只记录可复现事实，不授权在 SIMD v6 内修改公共构建系统。
 Build/package 的当前产品状态仍只以
-[`module-status.json`](../../module-status.json) 为准。
+`module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`） 为准。
 
 ## 复现事实
 

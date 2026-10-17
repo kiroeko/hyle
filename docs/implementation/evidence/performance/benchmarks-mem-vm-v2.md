@@ -1,7 +1,7 @@
 # Mem-VM v2 model-loader 工程性能证据
 
 
-> 当前机械状态只见 [`module-status.json`](../../module-status.json)。本页绑定候选
+> 当前机械状态只见 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本页绑定候选
 > `9604bf4a33f13bd5f84ef78fedce55f305ac9d50` / tree
 > `57adb69f185cf02d42ab7f220ebeccbb91170b1b`，只裁决 Linux model-loader 的 sparse mapping
 > journey；WSL2 结果不冒充 native-Linux Formal 证书。
@@ -20,7 +20,7 @@ bytes 与 65 个 survivor fragments，最后逐片 teardown。candidate 用
 
 两边 native mapping、advice、release、remaining teardown 的 syscall 数和页效果一致；只比较 bookkeeping
 算法与 HYLE public batch route，因此是 `SAME_CONTRACT`。合同见
-[`mem-vm-model-loader-p1-v2.json`](../../../../bench/contracts/mem-vm-model-loader-p1-v2.json)。Windows
+`mem-vm-model-loader-p1-v2.json`（已删除的历史文件：`bench/contracts/mem-vm-model-loader-p1-v2.json`）。Windows
 没有安全的 partial-unmap 同合同，本轮不把 whole-view API 或更少 syscall 的路线混入该排名。
 
 ## W1-WSL 结果

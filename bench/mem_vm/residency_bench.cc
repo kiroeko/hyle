@@ -1,5 +1,5 @@
 #if !defined(_WIN32)
-#  error "mem_vm residency qualification currently has a W1-WIN contract"
+#  error "mem_vm residency benchmark currently uses the Windows API"
 #endif
 
 #define WIN32_LEAN_AND_MEAN

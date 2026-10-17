@@ -3,8 +3,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <filesystem>
-#include <fstream>
 #include <nanobench.h>
 #include "perf_process.h"
 
@@ -48,13 +46,9 @@ void measure(int rows,int count) {
 }
 } // namespace
 
-int main(int,char **argv) {
+int main(int,char **) {
   try {
     const auto qos=hyle::bench::perf::configure_thread_qos();
-    if (!enabled("HYLE_BENCH_VERIFY_ONLY")&&!enabled("HYLE_BENCH_AA_ROUTE")&&enabled("HYLE_PERF_RUN_NONCE")) {
-      std::string ready;std::ifstream(std::filesystem::absolute(argv[0]).parent_path()/"g08_topk_aa.ready")>>ready;
-      if (ready!="PASS") throw std::runtime_error("TopK workload-matched A/A not qualified");
-    }
     std::fprintf(stderr,"# HYLE_TOPK_RUN run_nonce=%s apple_qos=%s qos_ok=%s route=%s verify_only=%d paired_rounds=%d placement=%d execution_order=%s allocation_order=%s aa_route=%s\n",
       hyle::bench::perf::run_nonce(),qos.name,qos.ok,HYLE_G08_ROUTE_NAME,enabled("HYLE_BENCH_VERIFY_ONLY"),
       HYLE_G08_PAIRED_ROUNDS,HYLE_G08_PLACEMENT,enabled("HYLE_BENCH_RIVAL_FIRST")?"peer-first":"candidate-first",

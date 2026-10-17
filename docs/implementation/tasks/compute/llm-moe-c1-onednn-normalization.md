@@ -155,7 +155,7 @@ vendor metadata 已归因为成熟 primitive C API 的固定成本，不能用�
 
 ### 对比程序准备事实
 
-[固定合同](../../../../bench/contracts/onednn-normalization-p1-v1.json)及
+固定合同（已删除的历史文件：`bench/contracts/onednn-normalization-p1-v1.json`）及
 [消费形状来源](../../../../bench/graph_provider_onednn/normalization_shapes_v1.json)已登记。
 W1 Release/WERROR 的 primary/placement 两份程序已编译，16个 workload 的双方完整路径都通过
 独立 FP64 oracle（`HYLE_BENCH_VERIFY_ONLY=1`，没有计时）。placement 仅增加48-byte `.text`，

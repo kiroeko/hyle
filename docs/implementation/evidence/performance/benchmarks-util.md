@@ -1,7 +1,7 @@
 # Util-runtime 工程性能证据
 
 
-> 当前状态和证据绑定只看 [`module-status.json`](../../module-status.json)。本页只承担 `util` runtime
+> 当前状态和证据绑定只看 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本页只承担 `util` runtime
 > factor 的 P0 结构证据；`util_core` 的当前 P1 证据在
 > [`benchmarks-util-core-v4.md`](benchmarks-util-core-v4.md)。
 

@@ -239,7 +239,7 @@ syscall 数；只有冻结 model-loader replay 复现 material tail/throughput �
 ### 性能与同合同前置门
 
 冻结合同为
-[`mem-vm-model-loader-p1-v2.json`](../../../../bench/contracts/mem-vm-model-loader-p1-v2.json)，完整结果见
+`mem-vm-model-loader-p1-v2.json`（已删除的历史文件：`bench/contracts/mem-vm-model-loader-p1-v2.json`），完整结果见
 [`benchmarks-mem-vm-v2.md`](../../evidence/performance/benchmarks-mem-vm-v2.md)。W1-WSL ext4 evidence 位于
 `/tmp/hyle-mem-vm-perf-evidence-r1`，Windows 归档 SHA-256 为
 `EFD00C22451D0E2D6E9CA500FCCA2ABE343E454EE2ED0F28DDA4234D57C81A0E`；contract-lock / manifest /

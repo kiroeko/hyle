@@ -1,7 +1,7 @@
 # sched 性能证据
 
 
-> 当前产品状态只见 [`module-status.json`](../../module-status.json)。当前工程结论以紧接的 sched-v6
+> 当前产品状态只见 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。当前工程结论以紧接的 sched-v6
 > 小节为准；后续各轮数据只解释对应候选，不能拼成全操作、跨平台或 Formal SOTA。
 
 ## sched-v6 pinned structured task 工程证据（2026-09-09，`PASS`）
@@ -12,7 +12,7 @@
 `TaskDriver`、`JoinState`、`Fiber` layout，没有新增常态 allocation、atomic、lock、syscall 或每次 wake
 成本；一次性的 scheduler/worker 合法性检查属于公开失败合同。
 
-资格化合同是 [`sched-v6-pinned-task-p1-v1`](../../../../bench/contracts/sched-v6-pinned-task-p1-v1.json)
+资格化合同是 `sched-v6-pinned-task-p1-v1`（已删除的历史文件：`bench/contracts/sched-v6-pinned-task-p1-v1.json`）
 （SHA-256 `1424330e6f359cd34e8fdefbd29afbcb9a317397a095b70586685f7cd4b7c93b`）。双方执行相同的
 pinned+suspending+typed completion episode：HYLE 新入口对旧公共 API 的手工
 `Task + spawn_detached_on + typed slot + WaitGroup` 组合；没有拿 unpinned、detached 或
@@ -45,7 +45,7 @@ validator 的计数缺陷，修复事实见[独立工具记录](../../tasks/proj
 in-flight IO 时仍走既有 searcher 路线；公共 API、layout、依赖、allocation、lock、metadata 与 syscall
 种类均未变化。
 
-冻结的真实 consumer gate 是 [`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json)。W1-WSL、
+冻结的真实 consumer gate 是 `io-tls-p1-v1`（已删除的历史文件：`bench/contracts/io-tls-p1-v1.json`）。W1-WSL、
 GCC 14.2、Release/static、portable ISA、OpenSSL 3.0.13；clean verification source 为
 `b38aa34cf75cd89b179f0ee32449bfeb4ff0cb59`，产品目录相对 candidate 无差异。对 Asio
 `8806a6803cde7054c3049d3666d3ec36786568c5` 的双顺序 5% non-inferiority 四门全部 `PASS`：verified

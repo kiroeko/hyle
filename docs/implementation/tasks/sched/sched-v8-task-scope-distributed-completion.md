@@ -164,7 +164,7 @@ retained 120 B state + 已发布后异步清理的 184 B driver 只是生命周�
 判断分散 record 是否非劣。
 
 证据修正不改变产品 candidate。新合同
-[`sched-v8-task-scope-cleanup-p1-v2`](../../../../bench/contracts/sched-v8-task-scope-cleanup-p1-v2.json)
+`sched-v8-task-scope-cleanup-p1-v2`（已删除的历史文件：`bench/contracts/sched-v8-task-scope-cleanup-p1-v2.json`）
 在双方 owner 返回前都调用公开 `Scheduler::drain()`；candidate 路线该 fence 已满足，peer 路线等待
 dispatch finish hook。随后两侧都在 lambda 返回前析构各自 retained owner records。旧 v7 executable/contract
 保留为历史事实；v8 使用独立 target 与 consumer provenance，避免改写旧 bundle。

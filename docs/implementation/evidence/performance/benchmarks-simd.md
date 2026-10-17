@@ -1,7 +1,7 @@
 # SIMD 工程性能证据
 
 
-> 当前产品状态只看 [`module-status.json`](../../module-status.json)。本页首先记录 SIMD v7
+> 当前产品状态只看 `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。本页首先记录 SIMD v7
 > Compute-real row primitive 和 v6 推理整行合同的当前有限工程证据，随后保留 v3 路由基线；它们都不承诺“全部操作、全部 CPU、
 > 全部编译器均为 SOTA”。架构与停止规则见
 > [`simd-design`](../../../architecture/simd-design.md) 和
@@ -72,7 +72,7 @@ non-inferiority、SOTA、`PASS` 或模块冻结。修正后的合同和新证据
 
 候选固定为 `5d7349502311b622d6263ca68071d62dff125b67` / tree
 `9a995bbaa0ea43e67f3889682c647cf7907a7bfb`。冻结合同
-[`simd-inference-row-p1-v1.json`](../../../../bench/contracts/simd-inference-row-p1-v1.json)
+`simd-inference-row-p1-v1.json`（已删除的历史文件：`bench/contracts/simd-inference-row-p1-v1.json`）
 原计划比较本轮新增的三个完整 row：
 
 - split f32 SwiGLU，`n=11008`，HYLE 与 direct Highway 都计算 `silu(gate[i])*value[i]`；

@@ -2,7 +2,7 @@
 """Aggregate op_parity_* output and separate real candidates from measurement ambiguity.
 
 The benchmark emits four code replicas per side. HYLE_BENCH_HWYFIRST also selects an alternate
-RepTag/layout bank, so a certification run is two repetitions of each order: four independent run
+RepTag/layout bank. Two repetitions of each order give four independent run
 clusters, each containing four correlated code-placement samples per op. This report:
 
   * refuses verdicts when source-verified 1.00 anchors miss the calibration gate;
@@ -13,10 +13,10 @@ clusters, each containing four correlated code-placement samples per op. This re
   * distinguishes INCONCLUSIVE from TIE instead of hiding a 0.93 point estimate behind spread.
 
 Usage:
-  op-parity-report.py [--gate 0.06] [--certify] out1.txt out2.txt ...
+  op-parity-report.py [--gate 0.06] [--check-orders] out1.txt out2.txt ...
 
---certify requires metadata from the current harness and >=2 complete files per order. Without it,
-old two-file reports remain readable but are explicitly marked PROVISIONAL.
+--check-orders checks current-harness metadata and >=2 distinct complete files per order.
+Without it, incomplete and older inputs remain readable as limited reports.
 """
 
 import argparse
@@ -165,7 +165,7 @@ def bootstrap_cluster_median_ci(clusters, key, rounds=5000):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--gate', type=float, default=GATE_DEFAULT)
-    ap.add_argument('--certify', action='store_true',
+    ap.add_argument('--check-orders', action='store_true',
                     help='require >=2 current-harness files for each execution/layout order')
     ap.add_argument('files', nargs='+')
     args = ap.parse_args()
@@ -230,7 +230,7 @@ def main():
         with open(meta['path'], 'rb') as src:
             input_digests.append(hashlib.sha256(src.read()).digest())
     distinct_inputs = distinct_paths and len(set(input_digests)) == len(input_digests)
-    certification_ok = (metadata_complete and order_counts['HYLE_FIRST'] >= 2 and
+    comparison_complete = (metadata_complete and order_counts['HYLE_FIRST'] >= 2 and
                         order_counts['HWY_FIRST'] >= 2 and layout_ok and distinct_inputs)
     print(f'run set: HYLE_FIRST={order_counts["HYLE_FIRST"]}, '
           f'HWY_FIRST={order_counts["HWY_FIRST"]}, metadata={"ok" if metadata_complete else "legacy"}, '
@@ -245,7 +245,7 @@ def main():
         priority_ok = all(m['priority_ok'] for m in metas)
         pin_supported_ok = all(m['pin_ok'] or m['cpu'] == -1 for m in metas)
         execution_ok = priority_ok and pin_supported_ok and cpu_consistent and class_consistent
-        certification_ok = certification_ok and execution_ok
+        comparison_complete = comparison_complete and execution_ok
         cpu_text = ','.join(str(value) for value in sorted({m['cpu'] for m in pinned})) or 'n/a'
         class_text = ','.join(str(value) for value in sorted(class_values)) or 'unknown'
         pin_text = 'n/a' if all(m['cpu'] == -1 for m in metas) else ('ok' if pin_supported_ok else 'FAIL')
@@ -255,16 +255,16 @@ def main():
               f'core_class={"consistent" if class_consistent else "MIXED"}({class_text})')
     else:
         print('execution audit: legacy metadata (pin/core class not recorded)')
-        certification_ok = False
-    if args.certify:
-        print('CERTIFICATION PASS' if certification_ok else
-              '!! CERTIFICATION INSUFFICIENT (need >=2 current-harness files per order and a '
+        comparison_complete = False
+    if args.check_orders:
+        print('ORDER COVERAGE COMPLETE' if comparison_complete else
+              '!! ORDER COVERAGE INSUFFICIENT (need >=2 current-harness files per order and a '
               'consistent execution audit)')
     else:
-        print('PROVISIONAL REPORT (pass --certify with >=2 files/order for authoritative verdicts)')
+        print('LIMITED REPORT (use --check-orders to check distinct inputs and execution orders)')
     print()
 
-    suppress = not calibration_ok or (args.certify and not certification_ok)
+    suppress = not calibration_ok or (args.check_orders and not comparison_complete)
     print('op\tratio_paired\tci95_lo\tci95_hi\tratio_med\tspreadH\tspreadG\tplace_u\tverdict')
     rows = []
     for op in ops:

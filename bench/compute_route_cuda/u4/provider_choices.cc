@@ -6,8 +6,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <span>
 #include <stdexcept>
@@ -185,18 +183,10 @@ void measure(const Recipe &recipe, bool verify_only) {
     (void)bench.compare("Mature provider", selected, "HYLE native", reference);
   candidate->verify(); peer->verify();
 }
-int main(int argc, char **argv) {
+int main(int argc, char **) {
   try {
     (void)argc;
     const bool verify = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
-    if (!verify && !environment("HYLE_PERF_RUN_NONCE").empty() &&
-        environment("HYLE_BENCH_AA_ROUTE").empty()) {
-      std::string ready;
-      std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
-                    "u4-cuda-choices-aa.ready") >> ready;
-      if (ready != "PASS")
-        throw std::runtime_error("this artifact has no passing workload A/A receipt");
-    }
     const auto affinity = hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
 #if HYLE_OS_WINDOWS
     DWORD_PTR parent = 0, system = 0;

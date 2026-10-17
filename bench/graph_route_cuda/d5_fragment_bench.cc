@@ -14,8 +14,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -388,24 +386,15 @@ int main(int argc, char **argv) {
   try {
     ::testing::InitGoogleTest(&argc, argv);
     const bool verify = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
-    const bool managed = !environment("HYLE_PERF_RUN_NONCE").empty();
     const auto aa = environment("HYLE_BENCH_AA_ROUTE");
-    if (!verify && !managed && environment("HYLE_D5_DIAGNOSTIC") != "1")
-      throw std::runtime_error("sampling requires the instrument or explicit diagnostic mode");
-    if (!verify && managed && aa.empty()) {
-      std::string ready;
-      std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
-                    "d5-cuda-fragment-aa.ready") >> ready;
-      if (ready != "PASS")
-        throw std::runtime_error("this artifact has no passing workload A/A receipt");
-    }
     const auto affinity = hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
 #if defined(_WIN32)
     DWORD_PTR mask = 0, system_mask = 0;
     if (!GetProcessAffinityMask(GetCurrentProcess(), &mask, &system_mask))
       throw std::runtime_error("cannot read process affinity");
     const auto priority = GetPriorityClass(GetCurrentProcess());
-    if (managed && GetCurrentProcessorNumber() != std::stoul(affinity.cpu))
+    if (std::strcmp(affinity.ok, "1") == 0 &&
+        GetCurrentProcessorNumber() != std::stoul(affinity.cpu))
       throw std::runtime_error("caller did not land on the declared CPU");
     std::fprintf(stderr,
         "# HYLE_D5_CUDA_RUN execution_order=%s allocation_order=%s aa_route=%s "

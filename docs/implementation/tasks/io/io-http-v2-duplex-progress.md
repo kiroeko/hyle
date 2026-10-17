@@ -8,7 +8,7 @@
   `io-http-v2-duplex-progress`；task kind：`REOPEN`；baseline：
   `720c055b4e4bcf98556641acb77f82ad689c10cc`；
 - trigger：`IOHTTP-REOPEN-H2-DUPLEX-01`。冻结在
-  [`io-http2-p1-v1`](../../../../bench/contracts/io-http2-p1-v1.json) 的同合同
+  `io-http2-p1-v1`（已删除的历史文件：`bench/contracts/io-http2-p1-v1.json`） 的同合同
   4 KiB socket-buffer、双向 HTTP/2 flow-control holdout，在
   `HYLE_IO_FORCE_EPOLL=1 HYLE_BENCH_SMOKE=1` 下可重复停止进展；系统调用轨迹证明
   双端各有待写数据时，现有协议驱动只等待可写而没有继续吸收已到达输入；
@@ -139,7 +139,7 @@ parser/message/body surface：
 
 `VERIFIED`。有限 FIX、P0、三平台 correctness、exact sanitizer、source/static/shared、TLS/h2c 分类、
 易用性/文档与红队均通过；plain HTTP2 的已冻结 P1 由逐字节等价直接继承。不可变候选在 W1-WSL clean
-EXT4 上完成唯一一次 [`io-http-p1-v1`](../../../../bench/contracts/io-http-p1-v1.json) 回放：1 KiB
+EXT4 上完成唯一一次 `io-http-p1-v1`（已删除的历史文件：`bench/contracts/io-http-p1-v1.json`） 回放：1 KiB
 REST/stream 双顺序为 `PARITY`，64 KiB fragmented 双顺序为约 3.03x/3.07x `WIN`，所有 5% 非劣门与
 controls 为 `PASS`。严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`；完整
 receipt 见 [`benchmarks-io.md`](../../evidence/performance/benchmarks-io.md) 和

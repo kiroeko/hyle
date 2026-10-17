@@ -51,7 +51,7 @@ multi正式累计2789.077s，全部原jobs/raw及diagnostic/compile失败保留�
 
 宿主ASan detect_leaks=0，原平台限制不签LSan/shader/driver/privateGPU内存；实际
 Windows仅定向编译，不借Air性能签Windows/NVIDIA。selector净diff introducing-commit
-归因BLOCKED独立保[工具记录](../build/validation-selector-shared-bench-paths.md)，合法
+归因BLOCKED独立保工具记录（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-shared-bench-paths.md`），合法
 scope/audit提交和真实对应门替代取证，不修改公共工具/不重开无改动模块。其结果不
 改名PASS，也不让模块无限扩仪器；普通docs/closure均实际通过。
 

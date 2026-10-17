@@ -16,7 +16,7 @@ set(_HYLE_SPLIT_PUBLIC_HEADERS "")
 set(_HYLE_SPLIT_PUBLIC_HEADER_OWNERS "")
 
 function(_hyle_declare_component name)
-  cmake_parse_arguments(ARG "TRACE;QUEUED" ""
+  cmake_parse_arguments(ARG "TRACE" ""
     "PRIVATE_DEPS;PUBLIC_DEPS;PUBLIC_TYPE_DEPS;PRIVATE_BUILD_DEPS;TEST_DEPS;SPLIT_PUBLIC_HEADERS"
     ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
@@ -28,15 +28,6 @@ function(_hyle_declare_component name)
     message(FATAL_ERROR
       "HYLE component '${name}' has manifest keywords missing values: "
       "${ARG_KEYWORDS_MISSING_VALUES}")
-  endif()
-  if(ARG_QUEUED)
-    if(ARG_TRACE OR ARG_PRIVATE_DEPS OR ARG_PUBLIC_DEPS OR
-       ARG_PUBLIC_TYPE_DEPS OR ARG_PRIVATE_BUILD_DEPS OR ARG_TEST_DEPS OR
-       ARG_SPLIT_PUBLIC_HEADERS)
-      message(FATAL_ERROR
-        "HYLE QUEUED component '${name}' is an identity reservation only and "
-        "cannot declare target metadata before its own closure round")
-    endif()
   endif()
   if(name IN_LIST HYLE_KNOWN_COMPONENTS)
     message(FATAL_ERROR "HYLE component '${name}' is declared more than once")
@@ -116,7 +107,6 @@ function(_hyle_declare_component name)
       "${_split_public_headers}" PARENT_SCOPE)
   set(_HYLE_DEPS_${_component_upper} "${_all}" PARENT_SCOPE)
   set(_HYLE_TRACE_${_component_upper} "${ARG_TRACE}" PARENT_SCOPE)
-  set(_HYLE_QUEUED_${_component_upper} "${ARG_QUEUED}" PARENT_SCOPE)
   set(_HYLE_SPLIT_PUBLIC_HEADERS
       "${_all_split_public_headers}" PARENT_SCOPE)
   set(_HYLE_SPLIT_PUBLIC_HEADER_OWNERS
@@ -124,22 +114,12 @@ function(_hyle_declare_component name)
   set(_known_components ${HYLE_KNOWN_COMPONENTS})
   list(APPEND _known_components "${name}")
   set(HYLE_KNOWN_COMPONENTS "${_known_components}" PARENT_SCOPE)
-  if(NOT ARG_QUEUED)
-    set(_implemented_components ${HYLE_IMPLEMENTED_COMPONENTS})
-    list(APPEND _implemented_components "${name}")
-    set(HYLE_IMPLEMENTED_COMPONENTS
-        "${_implemented_components}" PARENT_SCOPE)
-  endif()
 endfunction()
 
 set(HYLE_KNOWN_COMPONENTS "")
-set(HYLE_IMPLEMENTED_COMPONENTS "")
 
-# Declaration order preserves implemented component identities mirrored by
-# module-status.json. Target construction uses HYLE_RESOLVED_COMPONENT_LIST,
-# whose dependency closure is topologically sorted, so an older factor may
-# acquire a newly admitted lower-level dependency without rewriting registry
-# history.
+# Target construction uses HYLE_RESOLVED_COMPONENT_LIST, whose dependency
+# closure is topologically sorted independently of declaration order.
 # The visibility here is the visibility of the real hyle_<module> target edge.
 _hyle_declare_component(core)
 _hyle_declare_component(container_intrusive
@@ -510,7 +490,7 @@ _hyle_declare_component(compute_provider_ggml_metal
 _hyle_declare_component(compute_provider_iree_vulkan
   PRIVATE_DEPS core error mem compute_ops compute_provider_ggml_vulkan)
 
-# Mature CUDA ATen artifact carrier; reserve identity before its closure round.
+# Mature CUDA ATen artifact carrier.
 _hyle_declare_component(compute_provider_torch_cuda
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute
@@ -530,7 +510,7 @@ _hyle_declare_component(graph_route_cpu_apple
   PUBLIC_TYPE_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_apple.h)
 
-# Identity reservation for admitted native CPU+Vulkan coarse composition.
+# Native CPU+Vulkan coarse composition.
 _hyle_declare_component(graph_route_cpu_vulkan
   PRIVATE_DEPS util_core error mem compute_backend_cpu graph_route_cpu
   PUBLIC_DEPS core compute graph graph_batch graph_route_vulkan compute_route_vulkan sched
@@ -576,8 +556,8 @@ _hyle_declare_component(compute_state
     SPLIT_PUBLIC_HEADERS hyle/graph/batch.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
-# module status, or decision authority and must never be used by an internal
-# factor edge. A facade only selects the exact factor roots that make one
+# implementation, and must never be used by an internal factor edge. A facade
+# only selects the exact factor roots that make one
 # consumer-facing problem domain complete.
 function(_hyle_declare_product name)
   cmake_parse_arguments(ARG "" "" "FACTORS" ${ARGN})
@@ -603,12 +583,6 @@ function(_hyle_declare_product name)
     if(NOT _factor IN_LIST HYLE_KNOWN_COMPONENTS)
       message(FATAL_ERROR
         "HYLE product '${name}' names unknown factor '${_factor}'")
-    endif()
-    string(TOUPPER "${_factor}" _factor_upper)
-    if(_HYLE_QUEUED_${_factor_upper})
-      message(FATAL_ERROR
-        "HYLE product '${name}' cannot name QUEUED factor '${_factor}'; "
-        "implement and audit the factor before adding it to a product facade")
     endif()
   endforeach()
 
@@ -694,7 +668,7 @@ if("all" IN_LIST _hyle_requested)
       "use 'all' alone or list only the requested product roots")
   endif()
   if(_hyle_selection_mode STREQUAL "factor")
-    set(_hyle_requested_roots ${HYLE_IMPLEMENTED_COMPONENTS})
+    set(_hyle_requested_roots ${HYLE_KNOWN_COMPONENTS})
     set(_hyle_requested_products "")
   else()
     set(_hyle_requested_products ${HYLE_KNOWN_PRODUCTS})
@@ -727,12 +701,6 @@ else()
         message(FATAL_ERROR
           "Unknown HYLE internal factor '${_factor}'. Known factors: "
           "${_hyle_known_text}")
-      endif()
-      string(TOUPPER "${_factor}" _factor_upper)
-      if(_HYLE_QUEUED_${_factor_upper})
-        message(FATAL_ERROR
-          "HYLE internal factor '${_factor}' is registered but QUEUED and has "
-          "no build target yet")
       endif()
       list(APPEND _hyle_requested_roots "${_factor}")
     endforeach()
@@ -798,21 +766,10 @@ endif()
 # bounded manifest metadata work and does not read unrelated product source.
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   string(TOUPPER "${_component}" _component_upper)
-  if(_HYLE_QUEUED_${_component_upper} AND
-     _HYLE_DEPS_${_component_upper})
-    message(FATAL_ERROR
-      "HYLE QUEUED component '${_component}' cannot declare dependencies")
-  endif()
   foreach(_dependency IN LISTS _HYLE_DEPS_${_component_upper})
     if(NOT _dependency IN_LIST HYLE_KNOWN_COMPONENTS)
       message(FATAL_ERROR
         "HYLE component '${_component}' names unknown dependency '${_dependency}'")
-    endif()
-    string(TOUPPER "${_dependency}" _dependency_upper)
-    if(_HYLE_QUEUED_${_dependency_upper})
-      message(FATAL_ERROR
-        "HYLE implemented component '${_component}' cannot depend on QUEUED "
-        "component '${_dependency}'")
     endif()
   endforeach()
   foreach(_dependency IN LISTS _HYLE_TEST_DEPS_${_component_upper})
@@ -821,17 +778,10 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
         "HYLE component '${_component}' names unknown TEST_DEPS "
         "'${_dependency}'")
     endif()
-    string(TOUPPER "${_dependency}" _dependency_upper)
-    if(_HYLE_QUEUED_${_dependency_upper})
-      message(FATAL_ERROR
-        "HYLE implemented component '${_component}' cannot use QUEUED "
-        "TEST_DEPS '${_dependency}'")
-    endif()
   endforeach()
 endforeach()
 
-# Component identity order is append-only audit history, so it cannot also be
-# the mutable dependency order. Compute a stable topological order with a DFS;
+# Compute a stable topological order with a DFS;
 # catalog order remains the tie-breaker. The same walk rejects cycles before
 # any product source is inspected.
 function(_hyle_visit_component component)

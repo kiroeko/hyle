@@ -7,10 +7,10 @@
 >
 > 角色定义：**借** = 进 HYLE 构建（封 adapter 或 vendored）；**参考** = 读其设计/代码，自己实现，不引入依赖；**ROUTED** = 不进 HYLE 构建，由消费方拥有依赖和领域合同。
 
-## 严格收口对照矩阵
+## 按问题域查找参考
 
-每轮模块复审先从真实场景出发，再去本地 clone 查成熟形状、算法和负空间。下表是最低
-对照集，不表示要复制其全部功能，也不允许把参考库的 benchmark API 搬进 HYLE 产品面。
+从真实场景选择相关实现，查其成熟形状、算法和限制。下表是查找入口，不是强制审查清单，
+也不要求复制全部功能或 benchmark API。
 
 | HYLE 模块 | 首要本地参考 | 本轮主要核对什么 |
 |---|---|---|
@@ -77,7 +77,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **MLX** | Apple 首个资格化的 provider/interop 候选 | 审计 Apple Silicon [unified memory](https://ml-explore.github.io/mlx/build/html/usage/unified_memory.html)、Metal stream 与 [compiled execution](https://ml-explore.github.io/mlx/build/html/usage/compile.html)；MLX 有完整 C++ API，是上层 runtime/provider，不能与 Metal backend 混成一个枚举或直接泄漏其类型 |
 | **Core ML** | 高层 routed runtime 参考 | [Core ML](https://developer.apple.com/documentation/coreml/) 以模型为单位并可使用 CPU/GPU/Neural Engine；首轮不把它伪装成低层 op provider，只有模型级委托保留所需控制且有真实纵切时才建 adapter |
 | **CUDA / NVIDIA libraries** | NVIDIA 主要 backend/provider 参考 | device/context/stream/event、graph capture、external memory、kernel/module 与 vendor op；每项借用分别登记 allocation、threading、license 和 delivery，不用“CUDA available”代替算子证据 |
-| **ROCm / HIP** | 无限期 defer 的未来参考 | 当前没有 AMD 真机、明确消费者和维护预算，因而不建立 component、构建 gate 或空实现；三项恢复条件同时成立后才按 device/module/queue/completion、VMM、graph 和 operator 能力重新 scope，且不能让 CUDA 宏替换或 Vulkan fallback 冒充 ROCm 支持 |
+| **ROCm / HIP** | 无限期 defer 的未来参考 | 当前没有 AMD 真机、明确消费者和维护预算，因而不建立 component、构建 gate 或空实现；有实际需求和设备时再评估 device/module/queue/completion、VMM、graph 和 operator 能力，且不能让 CUDA 宏替换或 Vulkan fallback 冒充 ROCm 支持 |
 | **Vulkan / MoltenVK** | 正式保底 backend + renderer interop 参考 | llama.cpp 当前把 Vulkan 作为可构建、可运行的 GPU backend；HYLE 长期合同要覆盖 SPIR-V compute、queue/barrier/timeline、external memory/sync 和消费级设备。Windows/Linux 优先原生驱动；Apple 经 MoltenVK 翻译到 Metal，只签 portability，不替代 Apple 原生 Metal/MLX/MPS 路线 |
 | **OpenAI Jalapeño / InferenceX 结果** | 行业方向证据，不是 HYLE peer | inference-only 全栈 co-design 对 prefill/decode、KV locality、memory/network placement 与 latency-throughput-power Pareto 的公开案例；只使用其公开 workload/口径反查需求，不把厂商自测或封闭硬件当 HYLE SOTA 证明。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **Apple M5 Ultra** | 可获得统一内存平台方向，不是仅凭规格成立的性能 peer | 最高 512 GB unified memory、1.2 TB/s memory bandwidth 与 quad-die interconnect 使超出普通离散显存的本地量化模型成为正式 workload；HYLE 仍须实测 residency、跨 die locality、Metal/kernel 与端到端 token 指标。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
@@ -141,9 +141,8 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **fmt / ICU** | **ROUTED** | 通用 formatting/localization 路线；HYLE Error 的 bounded/no-throw formatter 只服务失败路径成本与可用性 |
 | **Eigen / GLM / Apache Arrow** | **ROUTED / 参考** | matrix/geometry 与 columnar schema 路线；HYLE Math/SIMD/Mem 只提供可组合原语和 backing，不复制领域数据模型 |
 
-`ROUTED` 不表示 HYLE 已把这些库下载、编译或导出；OpenSSL 只有在选择 IOTLS 时才由 HYLE package
-拥有，其它场景仍是消费方依赖。路线只说明 HYLE 不复制该成熟问题域。真正使用时由消费方拥有版本、
-构建和 schema，直到新的 closure card 证明一个 HYLE adapter 能提供 allocator、error、IO 或交付价值。
+这些消费方路线不表示 HYLE 会自动下载、编译或导出对应库，消费方拥有版本、构建和 schema。
+OpenSSL 仅在选择 IOTLS 等实际依赖时进入相应安装包。
 
 ### obs/（Tier 2 hook / Tier 3 重机器）
 | 库 | 角色 | 说明 |

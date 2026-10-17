@@ -11,8 +11,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <nanobench.h>
 #include <string>
@@ -244,19 +242,11 @@ void measure(int rows, int keys, int depth, bool causal, bool verify_only) {
                         "HYLE CPU resident", run_candidate);
 }
 } // namespace
-int main(int, char **argv) {
+int main(int, char **) {
   const auto qos = hyle::bench::perf::configure_thread_qos();
   const auto affinity =
       hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
   const bool verify_only = !env("HYLE_BENCH_VERIFY_ONLY").empty();
-  if (!verify_only && env("HYLE_BENCH_AA_ROUTE").empty() &&
-      !env("HYLE_PERF_RUN_NONCE").empty()) {
-    std::string ready;
-    std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
-                  "g01_cpu_resident_aa.ready") >> ready;
-    if (ready != "PASS")
-      fail("finite CPU workload A/A has not passed for this build");
-  }
   std::string parent_mask = "not-applicable", priority = "not-applicable";
 #if defined(_WIN32)
   DWORD_PTR mask = 0, system_mask = 0;

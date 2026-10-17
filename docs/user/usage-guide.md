@@ -1,8 +1,5 @@
 # HYLE 使用指南
 
-> 适用于预发布的 C++23 surface。模块可用性和稳定度见
-> [当前施工状态](../implementation/status.md)。
-
 ## 选择交付形式
 
 HYLE 支持三种 C++ 消费方式：
@@ -69,8 +66,8 @@ oneDNN MatMul provider。CUDA、Metal/MLX、Vulkan 和其他 provider 只有各�
 | 异步文件、网络和 protocol 机制 | [io](io.md) |
 | CPU task/fiber runtime、结构化任务、同步与消息 | [sched](sched.md) |
 | 本地 child process、stdio pipe、等待、tree termination 与 reap | [process](process.md) |
-| 显式 CPU execution、tensor binding、prepared normalization/batched MatMul/gated activation/attention 或 typed host kernel | [compute](compute.md)；状态以 registry 为准 |
-| 可复用 typed 多节点计算 DAG、workspace plan 与独占 Invocation | [graph](graph.md)；当前是 CPU static-shape slice，状态以 registry 为准 |
+| 显式 CPU execution、tensor binding、prepared normalization/batched MatMul/gated activation/attention 或 typed host kernel | [compute](compute.md) |
+| 可复用 typed 多节点计算 DAG、workspace plan 与独占 Invocation | [graph](graph.md) |
 
 模块页应告诉你何时使用、何时不要使用、ownership、线程安全、失败语义和常见坑。若页面没有
 回答这些问题，请把它当作文档缺陷，不要从 benchmark 名称反推产品 API。

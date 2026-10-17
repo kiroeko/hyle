@@ -170,7 +170,7 @@ feature 的 Context 不能创建需要更新绑定的 Invocation；固定 caller
 这避免在更新普通 descriptor 后误复用已失效 command buffer；pending 状态仍禁止更新。
 
 实际 selector 已正确确认两个产品 owner 为 AUDITED，但新 vendor 前缀和原生 ON 配置需要
-[独立的有限策略登记](../build/vulkan-r6-validation-policy-v1.md)。只登记既有 JSON 字段，不修改
+独立的有限策略登记（已删除的历史文件：`docs/implementation/tasks/build/vulkan-r6-validation-policy-v1.md`）。只登记既有 JSON 字段，不修改
 selector 执行引擎或性能仪器。上游两个 shader include 的末尾空行按原始 blob 保留；源码
 身份优先于重新格式化 vendor，产品自身的 diff 空白检查单独执行。
 

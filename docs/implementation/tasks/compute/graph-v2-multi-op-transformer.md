@@ -190,7 +190,7 @@ Graph 对同一 PreparedOperation direct sequence 的 P1 composition-tax、终�
 
 ## Multi-op P1 preflight（2026-09-12）
 
-正式合同为 [`graph-multi-op-tax-p1-v1`](../../../../bench/contracts/graph-multi-op-tax-p1-v1.json)，
+正式合同为 `graph-multi-op-tax-p1-v1`（已删除的历史文件：`bench/contracts/graph-multi-op-tax-p1-v1.json`），
 consumer shape provenance 固定在
 [`consumer_shapes_v2.json`](../../../../bench/graph/consumer_shapes_v2.json)。两条产品 workload 是五个已审
 推理来源共同拥有的 RMSNorm → transpose-view MatMul → packed SiluAndMul；`1x256x512` 保留 decode

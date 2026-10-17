@@ -6,15 +6,12 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <span>
 #include <string>
 #include <vector>
 
 #include "../common/perf_process.h"
-#include "../compute_route_cuda/host_policy.h"
 #include "reference.h"
 #if HYLE_VULKAN_GRAPH_BENCH
 #include "hyle/graph/vulkan.h"
@@ -355,13 +352,12 @@ void measure(int rows, bool peer_first, bool allocation_first,
 }
 } // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char **) {
   try {
     (void)argc;
     const auto qos = hyle::bench::perf::configure_thread_qos();
     const auto affinity =
         hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
-    const hyle::bench::cuda::HostPolicy host;
 #if HYLE_VULKAN_PLACEMENT
     nb::doNotOptimizeAway(hyle_vulkan_placement_prefix(11));
 #endif
@@ -372,28 +368,17 @@ int main(int argc, char **argv) {
     const auto aa = env("HYLE_BENCH_AA_ROUTE");
     if (!aa.empty() && aa != "native" && aa != "selected")
       fail("invalid A/A route");
-    if (!verify_only && aa.empty() && !env("HYLE_PERF_RUN_NONCE").empty()) {
-      std::string status;
-      const auto ready =
-          std::filesystem::absolute(argv[0]).parent_path() /
-          (HYLE_VULKAN_GRAPH_BENCH ? "hyle_vulkan_graph_aa.ready"
-                                   : "hyle_vulkan_compute_aa.ready");
-      std::ifstream(ready) >> status;
-      if (status != "PASS")
-        fail("A/A has not passed for this build");
-    }
     std::fprintf(
         stderr,
         "# HYLE_VULKAN_FFN_RUN mode=%s execution_order=%s allocation_order=%s "
         "aa_route=%s paired_mode=nanobench-compare apple_qos=%s qos_ok=%s "
-        "affinity_topology=%s caller_cpu=%s affinity_ok=%s parent_mask=%s "
-        "priority=%s "
+        "affinity_topology=%s caller_cpu=%s affinity_ok=%s "
         "run_nonce=%s verify_only=%d placement=%d\n",
         HYLE_VULKAN_GRAPH_BENCH ? "graph" : "direct",
         peer_first ? "peer-first" : "candidate-first",
         allocation_first ? "peer-first" : "candidate-first",
         aa.empty() ? "none" : aa.c_str(), qos.name, qos.ok, affinity.topology,
-        affinity.cpu, affinity.ok, host.mask.c_str(), host.priority,
+        affinity.cpu, affinity.ok,
         hyle::bench::perf::run_nonce(), verify_only, HYLE_VULKAN_PLACEMENT);
     measure(1, peer_first, allocation_first, aa, verify_only);
     measure(16, peer_first, allocation_first, aa, verify_only);

@@ -283,7 +283,7 @@ process。由此该 lock delta 对已冻结 Container 是 `NOT_MATERIAL/CONFIRME
   与 source/static/shared expert seam 的边界未被新 row 扭曲。
 
 初始合同为
-[`simd-inference-row-p1-v1.json`](../../../../bench/contracts/simd-inference-row-p1-v1.json)，SHA-256
+`simd-inference-row-p1-v1.json`（已删除的历史文件：`bench/contracts/simd-inference-row-p1-v1.json`），SHA-256
 `d5745aff4a0f7183310a1d4671cd05a472aef5f279cece78046feaf406a1c216`；完整解释见
 [`benchmarks-simd.md`](../../evidence/performance/benchmarks-simd.md)。W1-WIN、exact AVX2 static、
 LTO off、31 个独立进程样本、四个预冻结 order/placement strata 的结果为：

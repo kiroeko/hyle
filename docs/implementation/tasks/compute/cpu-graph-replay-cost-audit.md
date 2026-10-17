@@ -118,7 +118,7 @@ accepted-prefix/failure/异步 completion 回收路径未改；delegated 与已�
 新增测试分别覆盖 cold proof 与同地址替换 Queue，既有 async/失败/生命周期 suite 已实际通过。
 本遍源码复核没有发现需要退回产品的缺陷；平台与 sanitizer verdict 仍依实际运行填写。
 
-[Graph P1 v3 合同](../../../../bench/contracts/graph-cpu-route-p1-v3.json) 只更新合同 id 和
+Graph P1 v3 合同（已删除的历史文件：`bench/contracts/graph-cpu-route-p1-v3.json`） 只更新合同 id 和
 Native peer 的不可变来源到该产品提交；12 workload、两个 placement、执行/分配正反、实际 A/A、
 同一三 P 核拓扑/low-latency、5% 非劣门和 n=15→31 均逐字段继承 v2。合同提交不改变产品投影，
 实际 runner source revision 由新的 manifest 保留；不覆盖、不重跑原 v2。

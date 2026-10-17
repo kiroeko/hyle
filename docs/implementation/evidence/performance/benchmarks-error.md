@@ -8,7 +8,7 @@
 > success 为 `PARITY`，三个 owning failure handoff 与新增 registry borrow 为 `WIN`。这是冻结消费者范围的
 > P1 工程结论，不外推为 Error 所有操作、所有平台或 Formal SOTA。
 > 产品状态只看
-> [`module status`](../../status.md)。
+> `module status`（已删除的历史文件：`docs/implementation/status.md`）。
 
 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
 [error-design](../../../architecture/error-design.md)，用户选型见

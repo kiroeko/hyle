@@ -14,7 +14,7 @@ independent processes.)
 This script runs the exe N times, parses the op/s column per (title, variant),
 and reports the MEDIAN ns/op plus the run-to-run SPREAD ((max-min)/median). For
 any requested pair it computes a same-process op/s RATIO and a provisional,
-single-order statistical classification. A formal classification requires a
+single-order statistical classification. A classification requires a
 workload-specific equivalence margin declared before sampling:
 
     WIN / EQUIVALENT / LOSE / INCONCLUSIVE
@@ -25,18 +25,18 @@ BASELINE is the HYLE candidate and RIVAL is its peer. It never turns "not
 significant" into equivalence. A deliberately informational, unequal-contract
 pair is classified NOT_COMPARABLE before statistical evidence is considered.
 
-The same predeclared margin also drives a separate, one-sided SOTA
-non-inferiority gate.  That gate answers only whether the interval rules out
+The same margin also drives a separate, one-sided
+non-inferiority calculation. It answers only whether the interval rules out
 BASELINE being materially slower than RIVAL; it does not replace or rewrite
 the exact five-state verdict.  Consequently an exact INCONCLUSIVE interval
 that crosses only the WIN/EQUIVALENT boundary can still PASS non-inferiority.
 
 Absolute per-variant spread is printed as a diagnostic, not as an alternative
 verdict: machine noise is often correlated and cancels in the paired ratio.
-Formal evidence also repeats the experiment with variant order swapped and,
-for short aggregates, an equivalent code-shape/placement perturbation. This
-script labels a single order as provisional; the review certificate combines
-those external gates and decides whether the comparison contract is valid.
+Inspect variant order and, for short aggregates, equivalent code placement
+when interpreting the result. This script reports a single-order estimate;
+it does not issue certificates or authorize product changes. Compare matching
+work, input representations, numerical policies and completion boundaries.
 
 USAGE
 -----
@@ -48,8 +48,8 @@ USAGE
         --pair "HYLE IntrusiveList::consume_all" \
                "boost::intrusive auto_unlink clear_and_dispose"
 
-Run under `setarch -R` on Linux if the exe is built with a sanitizer. Per the
-9p rule, run from a native-ext4 checkout, never /mnt/c.
+Run under `setarch -R` on Linux if the selected sanitizer requires it. Record
+the execution environment and filesystem when they affect the measured work.
 """
 import argparse
 import datetime

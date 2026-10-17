@@ -11,7 +11,7 @@
 |---|---|---|
 | Visual Studio / Build Tools | C++ 工作负载（cl / MASM / Windows SDK） | VS Installer 勾「使用 C++ 的桌面开发」 |
 | MSVC 编译器 | 19.43+（VS 17.13+） | 随 VS，C++23 `std::expected` 需要 |
-| clang-cl frontend | 18+（仅 `windows-clangcl` 可移植性门） | VS Installer 安装「C++ Clang tools for Windows」，或使用受审 LLVM 安装，并确保 `clang-cl` 在 PATH |
+| clang-cl frontend | 18+（`windows-clangcl` 可移植性验证） | VS Installer 安装「C++ Clang tools for Windows」，或使用 LLVM 安装，并确保 `clang-cl` 在 PATH |
 | CMake | 3.25+ | `winget install Kitware.CMake` 或随 VS |
 | Generator | VS generator 自带；Ninja 可选 | 新版 MSVC 尚未被当前 CMake generator 识别时用 `winget install Ninja-build.Ninja` |
 | Git | Git-for-Windows（自带 git-bash） | `winget install Git.Git` |
@@ -172,7 +172,7 @@ build tree 也没有 MSVC 的 `INCLUDE`。仓库 wrapper 会为该次 Test 动�
 
 ### ASan
 
-Windows 的 sanitizer 门只支持 ASan；TSan/UBSan 应在 WSL/Linux 的独立构建中运行。cl.exe 与
+Windows 的 sanitizer 配置只支持 ASan；TSan/UBSan 应在 WSL/Linux 的独立构建中运行。cl.exe 与
 clang-cl 都必须使用 fresh、互不复用的 build tree：
 
 ```powershell
@@ -185,7 +185,7 @@ scripts/hyle-windows.ps1 -Action Test -BinaryDir $scratch `
   --output-on-failure -L platform
 ```
 
-把 preset 换成 `windows-clangcl` 即为 clang-cl 门。配置会从当前编译器安装中解析并链接匹配的
+把 preset 换成 `windows-clangcl` 即为 clang-cl 验证。配置会从当前编译器安装中解析并链接匹配的
 ASan dynamic runtime/thunk，生成可符号化调试信息，并把 runtime DLL 复制到 EXE/DLL 目录；因此
 验收不能只看 `/fsanitize=address` 是否出现在编译命令中，还要确认测试实际启动且产物导入
 `clang_rt.asan_dynamic-*`。若父工程预先提供 `GTest::gtest_main`，该 GoogleTest 也必须由父工程
@@ -209,8 +209,8 @@ cd build-bench\bin && hyle_sched_bench.exe
   `C:/public/project-hyle`，改目录时 CMake 也传 `-DHYLE_BENCH_VENDOR_DIR=<root>`。
 - bench 目标名：`hyle_add_bench(<mod>)` → `hyle_<mod>_bench`。
 - **Windows 性能数字注意**：Release + 关掉后台干扰；nanobench 自带统计。跨平台对标以 Linux 原生 ext4 为准（Windows NTFS 亦可信，但重 IO 对比看 Linux）。
-- 当前 Windows 与 WSL 是同一 `W1` 物理主机，性能采样必须互斥；Windows 的工程/formal 角色、
-  P-core、NTFS 与电源合同见[性能机器合同](../performance/machines.md)。
+- Windows 与 WSL 是同一物理主机，性能采样错开运行；P-core、NTFS 与电源设置见
+  [验证环境](../performance/machines.md)。
 
 ## 七、可选依赖：OpenSSL（TLS）
 

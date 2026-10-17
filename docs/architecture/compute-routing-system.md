@@ -1,9 +1,5 @@
 # Compute / Graph 冷路由系统
 
-本文定义 CPU、CUDA、Apple MLX/Metal、Vulkan 四条路线共同遵守的冷路由合同。它描述长期产品形状，
-不证明某条规则或某个模型已经交付；当前实现状态仍以
-[module-status](../implementation/module-status.json)及其活动施工卡为准。
-
 ## 1. 要解决的问题
 
 应用先选择一条计算路线，再提交一个 Direct operation 或 Graph DAG。HYLE 必须在不运行候选、不计时、
@@ -202,5 +198,4 @@ predicate。普通基线路径只在自身未要求这些事实时继续。
 - CPU、CUDA、Apple、Vulkan 普通入口和 source/static/shared 交付；
 - P0 账单证明新增分配、字符串比较、规则遍历、设备查询和 Provider 搜索都停留在冷路径。
 
-具体交付状态和有限 FIX 见活动
-[MR 施工卡](../implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md)。
+历史接入过程见[路由重构记录](../implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md)。。

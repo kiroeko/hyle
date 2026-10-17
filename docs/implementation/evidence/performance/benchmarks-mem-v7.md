@@ -22,7 +22,7 @@ peer 是 source-pinned OffsetAllocator
 `3610a7377088b1e8c8f1525f458c96038a4e6fc0`，外加上述零热路分配的安全适配器。其原生裸 handle
 路线没有这些生命周期、失败和统计语义，开发诊断中约快 14%--20%，但属于较弱合同，不能反向塑造
 HYLE API，也不进入本页排名。冻结合同为
-[`mem-v7-logical-range-p1-v1.json`](../../../../bench/contracts/mem-v7-logical-range-p1-v1.json)，
+`mem-v7-logical-range-p1-v1.json`（已删除的历史文件：`bench/contracts/mem-v7-logical-range-p1-v1.json`），
 只在双方交集的 `alignment=1`、32-bit capacity 上计时；64-bit capacity 与变化 alignment 由正确性
 holdout 证明。
 

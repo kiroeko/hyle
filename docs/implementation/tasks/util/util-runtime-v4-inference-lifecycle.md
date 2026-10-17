@@ -62,7 +62,7 @@
 每次 registry 状态变化之前把原字节保存到 checkout 外
 `C:\public\project-hyle\_validation\util-runtime-v4\state-before-<phase>.json`，运行
 `check-module-closure.py --previous <snapshot>`，并更新受检 status 投影。状态只以
-[`module-status.json`](../../module-status.json) 为真；本卡的 audit/candidate/receipt 是轮次证据。
+`module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`） 为真；本卡的 audit/candidate/receipt 是轮次证据。
 
 ## 审计进入条件
 

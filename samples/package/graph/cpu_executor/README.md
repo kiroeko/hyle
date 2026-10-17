@@ -3,7 +3,7 @@
 This executable composes the public `sched::Scheduler` and `bulk_execute` with
 Compute's borrowed `ParallelExecutorRef`. Graph does not create a second pool or
 acquire a product dependency on Sched. It runs RMS normalization and a gated MLP,
-using the ordinary CPU route and its qualified mature programs with the same executor.
+using the ordinary CPU route and its supported mature programs with the same executor.
 
 ```powershell
 cmake -S samples/package/graph/cpu_executor -B <build-dir> -G Ninja `
@@ -40,6 +40,7 @@ Native MatMul, a particular FFN region, or prepared-only replay.
   No observed replay allocation through Compute's allocator does **not** prove
   anything about oneDNN's private allocator, STL setup or driver storage.
 
-This is a correctness/P0 foundation consumer, not a new public executor type or
-a performance result. It does not implement cancellation of partially completed
-matrices, choose CPU affinity or provide automatic thread-count tuning.
+This sample checks numerical results, executor use and allocation behavior. It does not
+introduce a public executor type or establish a performance advantage. It does not
+implement cancellation of partially completed matrices, choose CPU affinity or
+provide automatic thread-count tuning.

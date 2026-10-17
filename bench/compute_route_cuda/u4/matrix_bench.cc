@@ -3,7 +3,6 @@
 #include <nanobench.h>
 #include <chrono>
 #include <cstdlib>
-#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -97,17 +96,12 @@ private:
   std::vector<Slot> slots_;
   std::size_t next_ = 0;
 };
-int main(int argc, char **argv) {
+int main(int argc, char **) {
   try {
     (void)argc;
     const bool verify = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
     const auto aa = environment("HYLE_BENCH_AA_ROUTE");
     if (!aa.empty() && aa != "selected" && aa != "peer") throw std::runtime_error("invalid AA route");
-    const auto base = std::filesystem::absolute(argv[0]).parent_path();
-    if (!verify && !environment("HYLE_PERF_RUN_NONCE").empty() && aa.empty()) {
-      std::string ready; std::ifstream(base / "matrix-aa.ready") >> ready;
-      if (ready != "PASS") throw std::runtime_error("matrix has no passing workload AA receipt");
-    }
     const auto affinity = hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
 #if HYLE_OS_WINDOWS
     DWORD_PTR mask = 0, system = 0;

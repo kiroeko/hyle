@@ -3,9 +3,9 @@
 > 用户授权的新范围。C1/C2/R1/C3在已接受边界内完成；WSL Vulkan十二项实GPU运行保留未资格而不阻塞。
 > CPU/GPU联合、异步、重叠和expert迁移按H1–H3独立实施验收，不借单路线资格代签。
 > 2026-10-10 用户授权补齐 offload 基础边界：普通 CPU 存储与有界传输暂存分离、组合资源账单与预算、
-> 准备后的传输/等待诊断；纳入原 H1–H3，不新增阶段。H1/H2/H3均已CLOSED，
+> 准备后的传输/等待诊断；纳入原 H1–H3，不新增阶段。CPU＋CUDA/Apple/Vulkan 组合已有实现，
 > 原生数学、重叠与三交付适用验收完成；WSL Vulkan实GPU运行继续UNQUALIFIED。
-> 当前 owner/验收见[实施卡](../implementation/tasks/build/compute-unified-delivery.md)和 registry；
+> 历史接入与环境见[实施记录](../implementation/tasks/build/compute-unified-delivery.md)；
 > [原设计卡](../implementation/tasks/build/compute-entry-design.md)保存入口统计与设计事实。
 > 通用增量依赖图只登记为 DEFER 待办，本轮不实施、不增加组件或热路径成本。
 
@@ -273,9 +273,7 @@ H1 首先补齐并验证，H2/H3 在各自 native 域兑现相同任务；不复
 [H3终局](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)完成适用交付，保留WSL实GPU未资格。
 旧候选或单路线证据只覆盖原合同，不代签这两个新组合。
 
-恢复后先批量完成三项产品接线，API/算法固定再冻结一个新候选，集中验收受影响 source/static/shared
-消费者。CUDA 重型编译改为 build1/test1，重型 run 串行，启动前确认内存余量；因内存暂停时不启动。
-只补缺门和真正受影响项，同身份已通过证据复用；本次文档/状态更新不构建、不跑 P1、不重启 C3。
+
 
 ## 5. 增量依赖图只登记待办
 
@@ -283,12 +281,3 @@ H1 首先补齐并验证，H2/H3 在各自 native 域兑现相同任务；不复
 未来为参数化建模/资产更新提供可选通用版本与失效层，计算节点可调用当前 Compute/Graph。
 当前 typed DAG 的编译复用不等于 dirty/result memo；AI decode 的 KV/prefix/模型状态仍由引擎解释。
 本轮不扫描历史增量方案，不选库、不创建空组件，不给普通推理 submit 加 dirty metadata。
-
-## 6. 实施顺序和停止
-
-用户已启动实施：C1统一路线→C2 SDK/资产→R1冷绑定校准→C3批量交付，
-随后 H1 CPU+CUDA→H2 CPU+Apple→H3 CPU+Vulkan；包括后续确认的异步重叠/专家搬运机制。
-有限 FIX/owner/验收由各活动卡维护，设计卡不作为新的当前队列。
-当前模块 terminal record 不回写，旧 goal/百分比/队列不恢复。
-新组合提出的新需求不受旧“模型 CPU+GPU 本轮范围外”永久禁止，也不能把新设计当旧证据里的完成。
-到达七包适用验收后停止，不自动扩算子、实现推理引擎或启动增量图。

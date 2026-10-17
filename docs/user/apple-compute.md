@@ -194,7 +194,7 @@ FP8 点积通过 MLX Safe custom Metal 程序直接读取 packed codes/scales，
 最后按 K block 顺序加入 F32 结果；不生成完整 F32 权重或全部 block dots 临时张量。
 量化、选中 codes/scales、scale 广播、结果和必要复制仍由 MLX 管理并计入费用，
 这不是硬件原生 FP8 GEMM 或零分配保证。编译/JIT 属于冷准备，Graph/native 完成与数组
-寿命仍由原 MLX owner 管理。当前资格见 [G07 收口卡](../implementation/tasks/compute/inference-g07-packed-weights.md)。
+寿命仍由原 MLX owner 管理。当前资格见 [G07 实现记录](../implementation/tasks/compute/inference-g07-packed-weights.md)。
 Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
 FP8 group64/128 roundtrip 也可用。FP4 group32 roundtrip接BF16二维输入，保留原E2M1
 最近偶数舍入、power2 scale/floor及最终BF16存储；极小值和零符号由GPU位视图适配保真。
@@ -248,7 +248,7 @@ codebook；结果[N,K]保留为ready常量，再用于成熟MatMul或Gather。HY
 
 当前共同目录的559 GGUF、34packed、45plain合同已在两普通入口取得样本数值/replay证据；
 大词表全行按4096-row shards验证，MoE仅共享有限专家witness，不代表巨型整模型驻留。
-新官方DSpark与Qwen/Flash量化MTP片段的准入见[当前Apple收口卡](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md)。
+新官方DSpark与Qwen/Flash量化MTP片段的准入见[当前Apple实现记录](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md)。
 官方F32-scale FP4的全部有限BF16存储值、正常/极小scale、中点邻域与符号零已通过精确保真
 验证；Pro0813/Flash0731完整压缩attention/indexer/FP4 MoE与三stage DSpark也已两入口验证。
 这些是实际算子/片段形状、状态与存储验收，不代表当前16GiB机器能驻留这些完整大模型。
@@ -260,7 +260,7 @@ codebook；结果[N,K]保留为ready常量，再用于成熟MatMul或Gather。HY
 `context.prepare(GatedDeltaNet{}, inputs)` 冷绑定锁定的 ggml Metal 完整递归程序。当前接入域为
 F32、相同 Q/K/V head 数、D=32/64/128、1≤T≤32767；输入及 packed 输出元素数不超过 INT32_MAX。
 该有限域的原生/资源验证和源码、静态、动态三交付已通过，机器与限制见
-[M1-A 验收卡](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
+[M1-A 验证记录](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
 
 六个输入按 Q、K、V、log-decay、beta、初态排列；Q/K/V 是 `[B,T,H,D]`，两种门是
 `[B,T,H,1]`，初态是 `[B,H,D,D]`（最后两轴为 value/key）。Q/K 是否归一化、beta 是否激活由

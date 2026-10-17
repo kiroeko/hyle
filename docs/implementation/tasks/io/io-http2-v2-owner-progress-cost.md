@@ -20,7 +20,7 @@
 - dependency / peer：产品依赖不变；nghttp2
   `85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2` 仍是唯一同合同 peer；
 - tier / machine / instrument：`P1`；`W1-WSL` + `closure-perf-v1` 为工程性能门；W1-WIN、W1-WSL、
-  M1-MAC 承担受影响 correctness/portability；原 [`io-http2-p1-v1`](../../../../bench/contracts/io-http2-p1-v1.json)
+  M1-MAC 承担受影响 correctness/portability；原 `io-http2-p1-v1`（已删除的历史文件：`bench/contracts/io-http2-p1-v1.json`）
   原样重放；
 - budget：一次 source/P0 机制审计；证明成立时至多一项 private correction；一个 immutable candidate；
   一次正式 P1（含合同既有精度升级，而非人工重跑）。不再追加第三项机制假说；
@@ -130,7 +130,7 @@ validation、teardown、owner lifetime、双顺序、31-run precision 和固定 
 
 ## Unique P1 receipt
 
-原合同 [`io-http2-p1-v1`](../../../../bench/contracts/io-http2-p1-v1.json) 在 W1-WSL、GCC 14.2、
+原合同 `io-http2-p1-v1`（已删除的历史文件：`bench/contracts/io-http2-p1-v1.json`） 在 W1-WSL、GCC 14.2、
 Release/static、portable ISA、EXT4 fresh build/evidence 路径上原样运行。candidate 与 nghttp2 peer 均为
 clean/exact，A/A、5%/10% known-delta、timer floor、artifact/build/consumer provenance 全部 `PASS`；n=15
 已经裁决，没有触发 n=31 精度升级：

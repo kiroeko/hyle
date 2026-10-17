@@ -1,13 +1,8 @@
 # HYLE Graph：编译并重复执行计算 DAG
 
-> 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
-> [`module-status.json`](../implementation/module-status.json) 为准；packed 制品共享的验证与终局范围见
-> [当前架构复核](../implementation/tasks/compute/six-point-architecture-review.md)。当前已经实现
-> exact symbolic specialization，execution target / storage domain / execution lane
-> 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
-> delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
-> event import 与 single-queue capture 已真机资格化；普通 CUDA dense FFN 与原生 GGUF 量化 MatMul 已通过实际
-> Provider 组合与 captured replay 验证，完整 R4 三交付及当前 SM89 工程性能验收已完成。
+Graph 提供 exact symbolic specialization、执行目标/存储域/执行 lane 放置、跨存储 copy、
+按 partial order 复用 workspace，以及显式 replay 准备。CUDA 可使用同 Context 多 stream 的 event 依赖与
+single-queue capture；实际支持由设备、Provider、输入布局和资源条件决定。
 
 [Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md) 分别完成 R5/R6 的真实计算、
 三交付与有限性能验收。两条路线各有冷编译、Program 与运行槽；本文后续 shared Queue、
@@ -50,7 +45,7 @@ CPU+CUDA 的既有 effect 能力保持原规则；其新增 `compile_variants` �
 general/capture、任意GPU mutation和整引擎性能仍按实际路线能力裁决。
 
 外部recurrent/conv/KV布局或资产集合的显式版本/dirty clone/成功发布属于
-[State集合接口](state-versions.md)，当前F4仍在实施与资格验证；普通Graph不解释模型状态。
+[State集合接口](state-versions.md)；普通 Graph 不解释模型状态，状态发布与旧版本寿命遵守该接口合同。
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整计划可行性规划、
@@ -289,7 +284,8 @@ dispatch 都允许明确 unknown，不能写零补齐。默认 `kAllowProviderRe
 最后才以覆盖数与 dispatch 打破等价次序。只有本次候选都声明 dispatch 时才比较该维度；否则按稳定
 候选顺序。它不会因为另一 Provider 的 region 更大或 dispatch 更少就绕过前排可用 leaf，也不是推理性能排名。
 旧的“相对本 Provider fallback 节省若干 ns”入口和 `kRequireEstimatedBenefit` 已移除，不保留别名。
-这套低层可行性规则保留真实资源约束；各路线的默认 Provider 组合与量化优选由研发资格确定。
+这套低层可行性规则保留真实资源约束；默认 Provider 和量化实现由已构建路线的规则匹配，
+prepare/compile 按实际 dtype、布局、设备及资源条件决定支持或拒绝。
 专家可显式筛选 Provider、约束具名节点或关闭 region，这些约束本身不证明性能最优。
 
 ### 指定某个节点的实现，其它节点仍可外包

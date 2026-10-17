@@ -16,4 +16,4 @@ ctest --test-dir C:/hyle-weights --output-on-failure -j 1
 `WeightSlotOptions`提供 metadata allocator及可选 `compute::ResourceBudget`；与Graph共享同一
 scope时传相同budget handle。预算的metadata allocator优先，native pinned/device两槽在分配前
 逐项预留，失败回滚，最后在途backing释放后才归还；Direct仍不依赖Graph/CPU数学/Sched。
-当前实际验收边界见[H1 卡](../../../../docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md)。
+实测环境与已知限制见[实现记录](../../../../docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md)。

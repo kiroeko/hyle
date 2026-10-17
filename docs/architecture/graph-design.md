@@ -3,9 +3,6 @@
 Graph 使用的模型制品画像、canonical boundary 条件、Provider 完整 DAG 资格化和确定性默认优选见
 [冷路由系统](compute-routing-system.md)。Graph 继续拥有边界与 whole-plan 规划，不复制第二套路由 IR。
 
-本文定义目标设计，不保留旧实现兼容要求，不签产品完成或 SOTA。当前接口见[用户指南](../user/graph.md)，
-状态见 [registry](../implementation/module-status.json)，证据与未完成项见[六项复核](../implementation/tasks/compute/six-point-architecture-review.md)。
-
 ## 1. Graph 解决什么问题
 
 Graph 把模型无关的逻辑 DAG 编译成可重复执行的程序：验证语义、应用已验证的实现/融合规则、决定
@@ -172,7 +169,7 @@ GPU region/内扩展；Vulkan 使用自己的 commands、descriptors、barrier �
 
 Graph 依赖 Compute 的计算/执行合同，不反向依赖；Mem 提供通用 backing/quota/lifetime 算法；
 Sched 提供 CPU executor/任务组合；Platform 提供硬件/OS 事实；SIMD 用于真正的 CPU 计算；Obs
-提供可关闭的事件。没有具体缺口不重开底层，也不为文档画图造空 bridge 因子。
+提供可关闭的事件。根据具体缺口修改相关底层能力，也不为文档画图造空 bridge 因子。
 
 公共语义核不取得 CUDA/Metal/Vulkan/oneDNN/ggml 全家桶；选定路线的 factor 才引入对应依赖，
 source/static/shared 同样隔离，见[构建规则](build-system.md)与[路线规则](compute-routes.md#1-隔离边界)。
@@ -189,13 +186,11 @@ Compile report 独立保存必要 metadata，不意外保活 payload；说明 ro
 线程/Queue、cold/warm 和成功完成边界；记录 allocation/copy/lock/wakeup/dispatch。不能拿裸 kernel
 对比含 prepare、copy 或同步的对手，也不能用宏或单次点值证明“几乎无成本”。
 
-## 9. 基础验收与停止点
+## 9. 验证范围
 
 四路线分别完成实际直接调用、图内成熟实现与 HYLE 扩展的组合、资源/同步/错误寿命、构建隔离与
 三交付，再取得相应完整性能证据，才叫基础实现/资格完成。Apple 同-runtime 组合不签任意外部
 MTLBuffer/Queue 互操作；Vulkan 单机探针不签其它厂商/MoltenVK；M4 不签 M5 NAX。
 
-架构研究只需要有限证据裁决系统约束，不为研究一次扩全算子、跑全故障×设备矩阵或宣称四路 SOTA。
-具体任务和缺口只由[六项复核](../implementation/tasks/compute/six-point-architecture-review.md)及后续活动卡
-记录，不复制第二张进度表。只有真实反例推翻共同语义/所有权/成本结构才重开架构；新 op、shape
-或 Provider 能在既定边界表达时局部演进。
+历史设计调查见[架构复核记录](../implementation/tasks/compute/six-point-architecture-review.md)。
+新算子、shape 或 Provider 按相应合同演进；真实反例暴露语义、所有权或成本问题时调整相关设计。

@@ -4,7 +4,7 @@
 [2026-09-15 六项架构复核](six-point-architecture-review.md)。长期需求只由
 [Compute](../../../architecture/compute-design.md)、[Graph](../../../architecture/graph-design.md) 与
 [四条原生路线](../../../architecture/compute-routes.md)持有；当前组件状态只见
-[registry](../../module-status.json)。本页不是 closure card，也不授权恢复旧 goal 或产品施工。
+registry（已删除的历史文件：`docs/implementation/module-status.json`）。本页不是 closure card，也不授权恢复旧 goal 或产品施工。
 
 旧页混合了研究事实、重复架构、已撤销的 CPU+GPU 联合计划和多代百分比/执行队列。本次保留必要
 决策与证据入口，移除失效的操作指令和进度表；完整历史可在

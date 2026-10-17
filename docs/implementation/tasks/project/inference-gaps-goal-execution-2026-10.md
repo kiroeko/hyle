@@ -9,7 +9,7 @@ CLI实现在本goal之外。原G01–G10的修正、成熟承载或完整路线�
 baseline：`5d46db5fd99322e2f75d3fe07553c61fadff8eb9`。创建时工作树干净，64 个 registry owner
 为 CLOSED；原有限验收与失败/未知费用保留。总卡是调度入口，**不代替 owner 的活动收口卡**，
 也不授权在 CLOSED 状态写产品代码。模块真实状态仍只看
-[module-status.json](../../module-status.json)。
+module-status.json（已删除的历史文件：`docs/implementation/module-status.json`）。
 
 用户本轮补充执行偏好：**不保旧接口兼容、增加合理编译并行、时间不要限制过死、治理轻量**。
 直接设计最终 API 并迁移仓库现有消费者，不添加旧签名转发/双轨实现/兼容层；必要旧入口
@@ -158,7 +158,7 @@ FAIL/TIMEOUT、elapsed与累计投入，不以新日志目录重置。停止依�
 发生工具/环境问题先查实际根因和替代合法验证；未运行不得写PASS，模块与goal的blocked
 裁决分别遵守原协议，不将缓慢或一次失败当成自动停止理由。
 
-验证按[selector](../../../developer/review/change-impact-validation.md)取 owner 与真实直接
+验证按selector（已删除的历史文件：`docs/developer/review/change-impact-validation.md`）取 owner 与真实直接
 消费者。公共头/API/package seam才扩对应门，不每个op全局构建。库依赖按实际CPU和可用
 内存提高并行并复用tree/cache；当前Win为24核/32线程、约42GiB可用，普通编译先用12 jobs，
 按观测峰值可提高到16或更多；大型CUDA/LibTorch编译按内存实际调节，不套旧j1/j2/j4限制。

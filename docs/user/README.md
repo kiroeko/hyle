@@ -10,9 +10,6 @@
 3. [调用安全合同](usage-contract.md)：热路径、线程、生命周期和内存边界。
 4. [`samples/`](../../samples/README.md)：可编译的 C++ 消费者工程。
 
-HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当前真实 C++ surface，但页面存在不构成
-稳定性或性能承诺；唯一当前状态见[施工状态](../implementation/status.md)。
-
 ## 模块指南
 
 - [Paged/ragged批次attention](batch-attention.md)：四路线选择、显式准备、精确页/F4发布与原生差异。
@@ -38,9 +35,8 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [Apple MLX/Metal](apple-compute.md)：原生 Direct/Graph region、结果 owner、资源随包交付与限制
 - [Vulkan](vulkan-compute.md)：原生录制、Direct/Graph、自定义 SPIR-V、结果寿命和三交付
 
-未列在上述模块指南中的组件可能还没有经过审查的正常用户 journey；以施工状态和实际用户页为准。
-仓库中的 header、sample 或历史任务不能替代用户合同。模块进入 `CLOSED` 前必须补齐适用的正常
-用户 journey。
+未列出的内部组件由公开产品聚合；正常用法以用户指南和可编译样例为准。
+支持限制按具体系统、设备、数据类型和布局说明，不从历史实验推导所有环境可用。
 
 当前产品没有面向原生 C 程序的独立 API，也没有可承诺的 Java、.NET、Python 或 Rust FFI。
 早期公开 C schema/bridge 已移除；source/static/shared 都是 C++ 交付形式。未来只有在出现已命名

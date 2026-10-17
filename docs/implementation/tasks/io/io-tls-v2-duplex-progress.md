@@ -167,7 +167,7 @@ TLS 配置、provider 选择、factor 依赖或 benchmark 合同：
 
 ## Unique P1 receipt
 
-冻结合同 [`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json) 在全新的 W1-WSL EXT4 checkout、
+冻结合同 `io-tls-p1-v1`（已删除的历史文件：`bench/contracts/io-tls-p1-v1.json`） 在全新的 W1-WSL EXT4 checkout、
 GCC 14.2、Release/static、portable ISA 上只运行一次。candidate 与 Asio peer 都是 clean/exact；双方使用
 同一 host OpenSSL、persistent single-worker async runtime、verified localhost、禁用 session/ticket，并对每个
 连接完整计入 TCP accept/connect、handshake、双向 `close_notify` 和 teardown。stream workload 另对称计入

@@ -24,6 +24,6 @@ RMSNorm→CPU。CPU 权重 16 KiB，而首条管线 native 边界仅 512 字节�
 
 源码：`cmake -S . -B build -DHYLE_SAMPLE_SOURCE=<hyle-source>`。
 安装包：`cmake -S . -B build -DCMAKE_PREFIX_PATH=<sdk>`；构建使用 `--parallel 1`。
-原候选的Windows/Air source/static/shared已验收；新增完成等待池入口的验证归
-[当前修复卡](../../../../docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md)。
-WSL原三交付编译/安装/链接已验，实GPU运行保持未资格。
+原候选的 Windows/Air source/static/shared 已实际运行；完成等待池入口的实测范围与限制见
+[实现记录](../../../../docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md)。
+WSL 的三种交付已验证编译、安装和链接，未运行真实 GPU 数学。

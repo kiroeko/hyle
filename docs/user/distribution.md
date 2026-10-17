@@ -55,10 +55,7 @@ cmake --build <build-dir> --target hyle_source_package
 tree，并先审计依赖版本；它不会把 `.git`、build cache 或未提交文件带给客户。制作方仍须按授权
 核对第三方许可证与接收者范围。
 
-接收者可以在解包目录设置 `HYLE_BUILD_TESTS=ON`，运行所选组件的产品与模块测试。因为归档刻意
-不含 `.git`，只服务于维护者 Git revision/LOC ownership 的自检不会注册；这不影响 header、模块、
-文档和 closure 合同。若需要运行该项维护自检，应使用真正的 Git checkout，而不是给归档伪造
-repository metadata。
+接收者可以在解包目录设置 `HYLE_BUILD_TESTS=ON`，运行所选组件的产品与模块测试。归档不含 `.git`；需要 Git 历史的开发诊断应在真实 checkout 运行。
 
 ## 2. 安装 headers + static libraries
 
@@ -156,7 +153,7 @@ target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额�
 
 Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 CPU。普通用户仍链接
 `hyle::compute/graph`；未选路线在取依赖闭包前排除，不影响 GPU 所需 host 控制和传输。
-统一配置正在按 owner 卡执行三交付验收，当前状态见 registry。配置示例：
+配置示例：
 
 裸 CMake 显式选择路线或 `HYLE_INSTALL=ON` 时，默认采用 tests OFF 的发行配置；
 不需要再手动关闭测试。维护 preset/调用方明确 `HYLE_BUILD_TESTS=ON` 仍有效；
@@ -209,14 +206,13 @@ CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE �
 找到。选择公开产品会接入 ggml CUDA、cuBLASLt、SGLang、DeepSeek 与 CCCL 等实现；Direct 使用
 `compute::cuda::create_context()`，Graph 使用 `graph::cuda::create_context/compile/prepare_replay()`。
 ggml 与 SGLang activation 的许可证/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。
-当前三交付/性能验收状态见 module-status。Windows 消费者在链接公开产品后调用
+Windows 消费者在链接公开产品后调用
 `hyle_stage_runtime(my_app)`，会把所需 HYLE、CUDA Runtime、cuBLAS 与 cuBLASLt
 DLL 放在 exe 同目录；源码、静态 SDK 和动态 SDK 使用同一入口。构建时仍需安装 CUDA Toolkit，
 运行机器需具备相应 NVIDIA 驱动与 VC runtime。
 Apple MLX/Metal 的构建、metallib 邻置与已验收边界见 [Apple 指南](apple-compute.md)。
 Vulkan 的 ON/OFF、系统 loader、嵌入 SPIR-V 与当前交付验收见 [Vulkan 指南](vulkan-compute.md)；
-开启 Vulkan 不取得 CPU/CUDA/MLX 实现，二进制 SDK 不要求 glslang。各路线的验收状态以 registry
-和当前卡为准。HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
+开启 Vulkan 不取得 CPU/CUDA/MLX 实现，二进制 SDK 不要求 glslang。各路线的具体设备与工具链限制见对应指南。HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
 当前 trace 只有 Tracy，不存在 `HYLE_TRACE_BACKEND` 选择项。
 
 ## 5. 配置合同
@@ -252,5 +248,5 @@ artifact repository 属发行流水线：对这个 prefix 归档并随附上面�
 - 需要多个同工具链 C++ 程序共享库或独立替换 artifact：shared SDK。
 - 需要 Java/.NET/Python/Rust：当前没有产品 FFI；不要把 shared SDK 的 C++ symbols 当成稳定边界。
 
-项目尚未发布。模块在新标准下达到 `CLOSED` 前，artifact 可以用于内部试验，但不应对外宣称该
-模块拥有稳定 API/ABI 或完整性能证书。
+项目尚未正式发布。API 和二进制兼容范围按版本与工具链说明，
+性能结论仅覆盖实际验证的环境与输入。

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(hyle_native_domain_consumer LANGUAGES CXX)
-set(HYLE_MATURE_PEER_ROOT "" CACHE PATH "Frozen source peer checked by the SDK qualification gate")
+set(HYLE_MATURE_PEER_ROOT "" CACHE PATH "Pinned source peer for the numerical comparison")
 find_package(Hyle CONFIG REQUIRED COMPONENTS compute)
 set(_hyle_root "${CMAKE_CURRENT_LIST_DIR}/../../..")
 add_library(nanobench STATIC "${_hyle_root}/bench/nanobench_impl.cc")

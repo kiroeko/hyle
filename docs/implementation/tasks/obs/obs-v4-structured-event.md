@@ -5,7 +5,7 @@
 
 > 本轮由旧 `obs-v3 CLOSED` 之后形成的新架构事实定向触发，不重做已经签署的调用点控制、同步 sink
 > 生命周期或 Tracy seam。当前唯一状态真相仍是
-> [`module-status.json`](../../module-status.json)。
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。
 
 > **终态后证据解释纠正（2026-09-05）：**structured v1 retained contract 把 concurrent-safe exact
 > limiter 与 single-owner scalar gate 错标为 `SAME_CONTRACT`。原始样本、artifact identity 和仪器资格仍是

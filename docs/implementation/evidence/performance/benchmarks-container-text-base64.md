@@ -3,7 +3,7 @@
 > 本页只签署 G01 的两个冻结正常 consumer shape。它证明 HYLE 公开 caller-buffer adapter 在
 > W1-WIN 上相对同 revision simdutf 的相同语义路线通过 5% P1 engineering non-inferiority；不声明
 > 跨平台绝对 SOTA，也不把 1%--4% 的 placement/order 点值写成稳定胜负。当前模块状态只看
-> [`module-status.json`](../../module-status.json)。
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）。
 
 设计、用法与施工边界分别见
 [`container-design`](../../../architecture/container-design.md)、

@@ -57,7 +57,7 @@ unknown观察装饰，attempt原native Direct root同配置/树/预算；并未�
 [故障TIMEOUT收据](../../../../evidence/correctness/foundation-f5-native-fault-timeout/README.md)：
 build PASS，consumer在断言前无stdout并TIMEOUT；consumer累计180.030/180秒。记录PID
 消失，全部本门stage终态。不能把TIMEOUT当作产品失败断言，也不能复写为PASS。
-按主卡“每gate原失败/时间累计…到达预算BLOCKED/INCONCLUSIVE”与[模块方法](../../../developer/review/module-closure-methodology.md)
+按主卡“每gate原失败/时间累计…到达预算BLOCKED/INCONCLUSIVE”与模块方法（已删除的历史文件：`docs/developer/review/module-closure-methodology.md`）
 “达到预算仍不能裁决时必须BLOCKED”停止；compute_batch BLOCKED from AUDITED，F5
 聚合INCONCLUSIVE。原已通过正常与append证据保持，A/F4不重开。
 

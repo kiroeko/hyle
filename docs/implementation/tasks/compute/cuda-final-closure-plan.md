@@ -3,7 +3,7 @@
 2026-10-07 用户授权新的 goal：按当前算子表审计 CUDA 覆盖与接线，处理普通构建／DLL／三交付，
 裁决成熟 Provider 重叠域、条件路由和冗余自研。启动 baseline
 `f5f137f1b3e48bdd56acd42f7471d3c412c7b6e3`；Windows 工作树干净，保留后续与用户修改。
-当前状态只看 [registry](../../module-status.json)，不恢复旧 goal、百分比或施工队列。
+当前状态只看 registry（已删除的历史文件：`docs/implementation/module-status.json`），不恢复旧 goal、百分比或施工队列。
 
 ## 本 goal 完成
 

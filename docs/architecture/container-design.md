@@ -4,9 +4,6 @@ Container 是 HYLE 的通用数据结构与低层文本原语组件。它服务�
 worker handoff、active set 与 loader staging，也服务普通 C++ 消费者。它不是“把标准库再抄一遍”，
 也不接受只为了 benchmark 出现的类型或常态元数据。
 
-当前可依赖的用法见[用户指南](../user/container.md)，当前状态见
-[`module-status.json`](../implementation/module-status.json)，每轮审查事实见对应 closure task。
-
 ## 设计目标
 
 Container 只在至少满足一项时提供新类型：
@@ -172,7 +169,7 @@ forgiving 默认不能越过 HYLE 的策略边界，provider types/options 也�
 必须先更新或确认 clean checkout 并记录准确 commit；不能用独立 ggml 的最新能力假装当前
 llama.cpp 已消费，也不能把 vLLM/SGLang 的 GPU、Triton 或 tensor-fusion 表面机械复制成 Container API。
 
-## 明确负空间和重开条件
+## 范围
 
 下列内容在没有新 consumer 证据时不进入 Container：
 
@@ -183,20 +180,16 @@ llama.cpp 已消费，也不能把 vLLM/SGLang 的 GPU、Triton 或 tensor-fusio
 - compressed bitmap、rank/select；
 - C ABI、Native FFI 或稳定 C++ ABI。
 
-只有具名真实 journey、可复现缺陷、标准变化或成熟 peer 的通用解决方案同时证明现有 route 不足，才可
-形成 reopen trigger。未来推理能力先登记到
-[能力观察清单](inference-engine-capability-watchlist.md)，不能直接改 CLOSED 产品。
+新需求根据真实消费者、缺陷和成熟实现判断，相关候选见
+[能力观察清单](inference-engine-capability-watchlist.md)。
 
 ## 维护与验证
-
-模块修改遵守[收口方法](../developer/review/module-closure-methodology.md)。最低要求包括：
 
 - public-header self-containment；
 - normal/empty/full/OOM/invalid/lifetime/invalidation 和适用并发 stress；
 - x86/arm64 fallback 与 sanitizer；
 - selected `container` 的 source、relocated static、relocated shared 消费；
-- 资格化性能只用统一仪器与锁定 peer；历史 breadth benchmark 只是诊断；
-- `python scripts/check-module-closure.py` 与 `python scripts/check-docs.py`。
+- 性能比较使用相同语义、输入和计时边界；历史结果只适用于其对应版本。
 
 当前性能事实只写在
 [Container 性能证据](../implementation/evidence/performance/benchmarks-container.md)，不回填到本架构文档。

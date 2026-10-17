@@ -4,7 +4,7 @@
 <!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是 `util-core-v2-capability-completion` 的活动冻结卡。当前机械状态只看
-> [`module-status.json`](../../module-status.json)；v1 与 capability replay 仅作为历史证据，不能覆盖
+> `module-status.json`（已删除的历史文件：`docs/implementation/module-status.json`）；v1 与 capability replay 仅作为历史证据，不能覆盖
 > 2026-09-01 已接受的全局 capability-factorization 结论。
 
 ## Closure card

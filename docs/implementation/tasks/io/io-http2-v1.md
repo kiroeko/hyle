@@ -183,7 +183,7 @@ stratum 在最大精度升级后仍为 `UNRESOLVED`。这不是 `FAIL`，也不�
 
 ### P1 receipt
 
-合同 [`io-http2-p1-v1`](../../../../bench/contracts/io-http2-p1-v1.json) 在 W1-WSL、GCC 14.2、
+合同 `io-http2-p1-v1`（已删除的历史文件：`bench/contracts/io-http2-p1-v1.json`） 在 W1-WSL、GCC 14.2、
 Release/static、portable ISA 上资格化；candidate 与 peer 均 clean/exact。A/A、5%/10% known delta、timer
 floor、artifact/build/consumer provenance 全部 `PASS`，15-run 结果依法升级到唯一允许的 31-run 阶段：
 

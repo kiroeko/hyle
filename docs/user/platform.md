@@ -610,7 +610,3 @@ aliases 自动线程安全。
 一份 loader reference，所以不会与另一个 owner 的 unload 竞争。`symbol_as<Pointer>` 只接受指针
 类型，函数签名仍由调用方负责；指针在 `close`/析构后失效。相对路径和搜索名属于进程加载信任
 边界，外部输入不得未经验证直接传入。需要观察 unload 诊断时显式检查 `close()`，析构只做兜底。
-
-当前三个 Platform factor 的 closure record、性能证据和限制从
-[`module status`](../implementation/status.md) 进入。不要把一个 OS 或一台机器的点值外推到另外两个
-OS；历史定向回放和被替换候选不构成当前证书。

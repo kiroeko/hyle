@@ -1,22 +1,14 @@
 # macOS 环境准备（Apple Silicon）
 
 > ARM/NEON + kqueue 真机验证平台。
-> 覆盖：构建 / 测试 / 性能测试 + 依赖。本仓库有两个独立 Apple Silicon 验证环境：MacBook Air
-> `Mac16,12`（`ssh kiro@172.22.10.198`）与 Mac mini `Mac16,10`
->（`ssh kiro@172.22.10.107`）。`M1-MAC` 性能 profile 当前只指前者；后者在单独登记身份前只作
-> correctness/portability 复核，不能把两台机器或两种 linkage 混为一个 Formal 证据。
+> 覆盖：构建 / 测试 / 性能测试 + 依赖。当前验证只使用 MacBook Air
+> `Mac16,12`（`ssh kiro@172.22.10.198`）；Mac mini 不可用。
 > 无网机器的 Command Line Tools/CMake 介质与断网验收见 [`offline.md`](offline.md)。
 
 从 Windows canonical workspace 连接时，MacBook Air 使用 OpenSSH 默认身份：
 
 ```powershell
 ssh kiro@172.22.10.198
-```
-
-Mac mini 使用它自己的专用身份；该 key 不能拿来判断 Air 是否可达：
-
-```powershell
-ssh -i C:\Users\kiro\.ssh\codex_mac_172_22_10_107_win kiro@172.22.10.107
 ```
 
 只记录 identity 的位置与连接方法，不把私钥内容、远端临时源码或构建产物提交进仓库。
@@ -81,27 +73,26 @@ scripts/fetch-bench-vendors.sh
 ```
 
 - mac 是本地磁盘（APFS），性能数字可信；ARM 侧数字与 x86 不直接可比（架构不同）。
-- macOS 无受支持的 hard affinity；工程/formal 数据必须记录实际 process QoS、交流电与 low-power
+- macOS 无受支持的 hard affinity；性能数据记录实际 process QoS、交流电与 low-power
   状态。默认 `interactive` 与 `utility` 是不同合同，不冒充 P/E-core pin；见
-  [性能机器合同](../performance/machines.md)。
+  [验证环境](../performance/machines.md)。
 - SIMD 产品从中央 lock 获取 Highway 源并直接编译进 HYLE target TU；
   `~/vendor/{highway,xsimd}` 的独立 checkout 只作 benchmark 对照。
 
 ## 五、同步工作流（SSH 开发机）
 
-- MacBook Air 的常驻 clone 在 `~/hyle`（`/Users/kiro/hyle`）。**同步走 git**：Windows 侧 commit + push → `cd ~/hyle && git fetch origin -q && git reset --hard origin/main -q`。
-- Mac mini 可能只有 Windows 到该主机的 SSH 身份，而没有主机到 GitHub 的仓库身份。此时不得手选文件
-  拼接源码；从 Windows canonical checkout 对候选 commit 生成完整 `git archive`，传输并展开为一次性 source
-  bundle，再记录候选 hash。该机已有验证工具时 CMake 位于 `~/hyle-verify-tools/bin/cmake`，不能假设存在
-  `/opt/homebrew/bin/cmake`。
-- ⚠️ **别用 scp 手选文件同步**——极易漏传 `src/` 内部 `.h`（如 vtable 头改了没传 → "no member" 编译错，或旧 build 假 PASS）。**优先 git fetch+reset**；必须传输时只传完整、可追溯的 archive，并核对测试总数与 Win/WSL 一致。
+- 当前只使用 MacBook Air `Mac16,12`：`ssh kiro@172.22.10.198`，Windows OpenSSH 默认身份；Mac mini 不可用。
+- Air 常驻 clone 在 `~/hyle`（`/Users/kiro/hyle`）。用 Git checkout 或从 Windows 产品工作树生成完整
+  archive，同步到独立验证目录并核对版本；不覆盖远端无关修改，不从验证副本反向恢复产品源码。
+- 不用 scp 手选文件拼接源码，避免漏传内部头或混合新旧实现。复用已有依赖 cache 与对应构建目录，
+  只重编受影响部分。
 - ⚠️ **SSH 免密不生效**：多半是 macOS sshd 权限严格检查——`chmod g-w,o-w ~` + `chmod 700 ~/.ssh` + `chmod 600 ~/.ssh/authorized_keys`。
 
 ## 六、可选依赖
 
 ### Apple Compute 的 Metal 工具
 
-两台验证机已有 Apple 签名的独立 Metal 17F109 组件，位置为
+Air 验证机已有 Apple 签名的独立 Metal 17F109 组件，位置为
 `~/hyle-verify-tools/metal-17F109/Metal.xctoolchain`。非交互验证脚本须把
 `~/hyle-verify-tools/metal-17F109/shim` 放在 PATH 最前；其中 `xcrun` 仅把
 `-sdk macosx metal/metallib` 转到此组件，其余调用仍转给 `/usr/bin/xcrun` 与当前 CLT SDK。

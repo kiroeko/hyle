@@ -400,6 +400,3 @@ native trace seam。
 - 不要在 writer 仍活跃时 reset/move/destroy metric state；并发 histogram snapshot 也只在 quiescence 后精确。
 - 不要把 metric name/label/registry 放回每个数值对象；schema 与 cardinality 属于宿主 exporter。
 - 不要把 runtime trace no-op 宣传成关闭态零指令；只有 `HYLE_TRACE_*` 宏具有这个合同。
-
-设计和并发细节见 [`../architecture/obs-design.md`](../architecture/obs-design.md)；当前 closure record 与
-工程性能证据从 [`module status`](../implementation/status.md) 进入。

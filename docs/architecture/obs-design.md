@@ -1,9 +1,5 @@
 # obs 设计：同步日志 + 数值指标 + 编译期追踪
 
-本页定义 obs 的长期产品边界和设计理由。当前轮次与未通过的门只看
-[`module-status.json`](../implementation/module-status.json)；当前公开用法只看
-[`user/obs`](../user/obs.md)。obs 只提供 C++23 source/static/shared，Native FFI 当前为 `N/A`。
-
 obs 有三条相互独立的产出通路：
 
 - **log** 面向运行中长期存在的诊断记录。它是同步、level-gated、结构化 fan-out；
@@ -237,14 +233,14 @@ full `strlen` 与 truncated allocation length 同时交给后端。source locati
 Fiber trace 名存放在 Fiber 自身的稳定进程期存储中，不能把临时字符串指针交给
 Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 
-## 7. 维护硬门
+## 7. 验证要点
 
 改日志 registry 时必须通过：
 
 1. 正常 C++ 测试 + 编译期 floor codegen；
 2. add/remove/log 并发压力与 remove-waits、自摘、跨摘拒绝测试；
 3. WSL ASan、UBSan、TSan；
-4. `closure-perf-v1` 在登记裁决机上的冻结正常 workload；其他平台做 correctness/交付，不池化点值；
+4. 性能使用相同输入、线程、所有权和计时边界，不混合不同平台点值；
 5. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项；
 6. installed source/shared/static package 中只请求 `COMPONENTS obs` 的 C++23 consumer。
 
@@ -254,7 +250,7 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 2. ON 构建 obs + 被埋点模块测试，并用超长 message/zone text/source components 验证截断；
 3. 共享构建的每个模块只依赖同一个 `hyle_tracy_client`；
 4. 名称和 zone token 的存储期/配对审计；
-5. Windows、Linux、macOS 各跑适用的 ON correctness/build；性能只按登记机器合同裁决。
+5. Windows、Linux、macOS 各跑适用的 ON correctness/build；性能结论注明实际机器和工具链。
 
 改 metrics 时必须通过：
 
@@ -269,7 +265,3 @@ trace-on 自动测试只需要本机 listener，CTest 因而给 Obs test process
 `TRACY_ONLY_LOCALHOST=1`。该变量不写入产品 target，也不改变普通 trace-on 程序的网络策略。锁定
 Tracy revision 的 runtime 开关只限制 listener；compile-time 同名宏才同时改变 discovery broadcast
 地址，所以维护文档不能把测试环境变量描述为“完全禁网”。具体 revision 属外部依赖账本。
-
-当前 closure record 与工程性能证据从
-[`implementation/status`](../implementation/status.md) 进入；历史 candidate、task 与数字不在架构页
-重复。

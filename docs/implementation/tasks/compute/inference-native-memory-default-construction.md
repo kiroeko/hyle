@@ -56,7 +56,7 @@ warning策略，原FAIL保留；按原生成compiler/linker输入补该既有选
 改用实际MSVC绝对link.exe路径；没有改产品/编译器规则或放宽其他警告。
 
 selector报告已归属且当前AUDITED，仍net product introducing-commit归因BLOCKED，
-与[既有工具记录](../build/validation-selector-shared-bench-paths.md)同类；原计划保留，
+与既有工具记录（已删除的历史文件：`docs/implementation/tasks/build/validation-selector-shared-bench-paths.md`）同类；原计划保留，
 实际授权顺序da440→a166→a3fa→a632与对应门直接可核，不改checker、不重开无改动模块。
 docs/closure/diff检查均实际通过。旧NR有限终审继续独立引用
 [Apple](inference-g01-apple-ragged-terminal.md)和[Vulkan](inference-g01-vulkan-ragged-terminal.md)，

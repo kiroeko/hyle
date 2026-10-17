@@ -284,7 +284,7 @@ shell 内把 `vm.mmap_rnd_bits` 从 32 临时置 28，并以 trap 恢复，最�
 
 ### 性能证据
 
-冻结合同为 [`mem-v6-host-allocation-p1-v1.json`](../../../../bench/contracts/mem-v6-host-allocation-p1-v1.json)，
+冻结合同为 `mem-v6-host-allocation-p1-v1.json`（已删除的历史文件：`bench/contracts/mem-v6-host-allocation-p1-v1.json`），
 完整结果见 [`benchmarks-mem-v6.md`](../../evidence/performance/benchmarks-mem-v6.md)。qualified r2 位于
 `C:\public\project-hyle\_validation\mem-v6-host-perf-evidence-r2`，contract-lock / manifest / summary
 SHA-256 分别为
