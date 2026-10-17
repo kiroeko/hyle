@@ -1,0 +1,376 @@
+{
+  "schema": "hyle.g09.completion-observation-attempts/v1",
+  "state": "FAILED_PARTIAL_TRACE_RETAINED",
+  "product_candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "first_frozen_commit": "9e8e2ede5",
+  "user_retry_frozen_commit": "12ffef9bc",
+  "first": {
+    "result": {
+      "state": "DIAGNOSTIC_FAIL",
+      "stages": [
+        {
+          "stage": "profile",
+          "command": [
+            "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+            "profile",
+            "--trace=vulkan,nvtx",
+            "--sample=none",
+            "--cpuctxsw=none",
+            "--backtrace=none",
+            "--vulkan-gpu-workload=batch",
+            "--wait=primary",
+            "--stop-on-exit=true",
+            "--kill=true",
+            "--show-output=true",
+            "--output",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run\\trace",
+            "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.25
+        }
+      ],
+      "qualification": "DIAGNOSTIC_ONLY",
+      "valid_formal_ab": 0,
+      "source_manifest_sha256": "742a0ef719e64baad3725db455a7b2ffbbcf86617bb3160132131cd03721379f",
+      "authorization_sha256": "f4086ce05d31e43d74cb6cc3a5a3985cbc6fc1f265ed2d8e927eeba9052403fc",
+      "physical_machine": {
+        "schema": "hyle-perf-physical-host-identity-v1",
+        "profile_id": "W1-WIN",
+        "physical_host_id": "W1",
+        "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+        "environment": "windows",
+        "independent_hardware": true,
+        "profile_provisioned": true,
+        "registration_state": "REGISTERED_MATCH",
+        "stable_machine_id_source": "windows-machine-guid-sha256",
+        "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+        "stable_machine_id_matches_registered": true,
+        "required_host_facts_match": true,
+        "mismatched_host_facts": [],
+        "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+        "raw_identifier_recorded": false
+      },
+      "policy": {
+        "environment": "windows",
+        "affinity_mask": "0x14",
+        "logical_cpu": 2,
+        "cpu_set_id": 258,
+        "required_efficiency_class": "maximum",
+        "smt_sibling_logical_cpu": 3,
+        "priority": "above-normal",
+        "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+        "sampling_topology": "native-runtime-pair",
+        "logical_cpus": [
+          2,
+          4
+        ],
+        "cpu_set_ids": [
+          258,
+          260
+        ],
+        "physical_core_indices": [
+          2,
+          4
+        ],
+        "caller_logical_cpu": 2,
+        "distinct_physical_cores": true,
+        "reserved_physical_core_count": 2,
+        "helper_placement": "native-runtime-managed"
+      },
+      "math_application_processes": 1,
+      "source_extra_os_threads": 0,
+      "profiler_threads": "UNKNOWN_NONPRODUCT",
+      "old_failures_preserved": true,
+      "applied_policy": {
+        "environment": "windows",
+        "affinity_mask": "0x14",
+        "logical_cpu": 2,
+        "cpu_set_id": 258,
+        "required_efficiency_class": "maximum",
+        "smt_sibling_logical_cpu": 3,
+        "priority": "above-normal",
+        "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+        "sampling_topology": "native-runtime-pair",
+        "logical_cpus": [
+          2,
+          4
+        ],
+        "cpu_set_ids": [
+          258,
+          260
+        ],
+        "physical_core_indices": [
+          2,
+          4
+        ],
+        "caller_logical_cpu": 2,
+        "distinct_physical_cores": true,
+        "reserved_physical_core_count": 2,
+        "helper_placement": "native-runtime-managed",
+        "launcher_applied": true,
+        "observed_affinity_mask": "0x14",
+        "previous_affinity_mask": "0xffffffff"
+      },
+      "child_canary": {
+        "gate": "PASS",
+        "environment": "windows",
+        "mechanism": "inherited-process-policy-canary",
+        "affinity_mask": "0x14",
+        "ok": true,
+        "priority_class": "0x8000"
+      },
+      "stage": "profile",
+      "elapsed_seconds": 0.3440000000409782,
+      "error": "RuntimeError('Failed to register Vulkan extension JSON file. This operation requires registry writing permissions.\\n')"
+    },
+    "valid_trace": 0,
+    "actual_application": "NOT_OBSERVED"
+  },
+  "retry": {
+    "result": {
+      "state": "DIAGNOSTIC_FAIL",
+      "stages": [
+        {
+          "stage": "profile",
+          "command": [
+            "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+            "profile",
+            "--trace=vulkan,nvtx",
+            "--sample=none",
+            "--cpuctxsw=none",
+            "--backtrace=none",
+            "--vulkan-gpu-workload=batch",
+            "--wait=primary",
+            "--stop-on-exit=true",
+            "--kill=true",
+            "--show-output=true",
+            "--output",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-admin-retry-1\\trace",
+            "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe"
+          ],
+          "exit_code": 3221225477,
+          "elapsed_seconds": 5.655999999959022
+        }
+      ],
+      "qualification": "DIAGNOSTIC_ONLY",
+      "valid_formal_ab": 0,
+      "source_manifest_sha256": "742a0ef719e64baad3725db455a7b2ffbbcf86617bb3160132131cd03721379f",
+      "authorization_sha256": "0e9ef4247f0a81033a0213d5d59741382c8bb3cba61ce4ace4502a035bca737a",
+      "physical_machine": {
+        "schema": "hyle-perf-physical-host-identity-v1",
+        "profile_id": "W1-WIN",
+        "physical_host_id": "W1",
+        "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+        "environment": "windows",
+        "independent_hardware": true,
+        "profile_provisioned": true,
+        "registration_state": "REGISTERED_MATCH",
+        "stable_machine_id_source": "windows-machine-guid-sha256",
+        "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+        "stable_machine_id_matches_registered": true,
+        "required_host_facts_match": true,
+        "mismatched_host_facts": [],
+        "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+        "raw_identifier_recorded": false
+      },
+      "policy": {
+        "environment": "windows",
+        "affinity_mask": "0x14",
+        "logical_cpu": 2,
+        "cpu_set_id": 258,
+        "required_efficiency_class": "maximum",
+        "smt_sibling_logical_cpu": 3,
+        "priority": "above-normal",
+        "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+        "sampling_topology": "native-runtime-pair",
+        "logical_cpus": [
+          2,
+          4
+        ],
+        "cpu_set_ids": [
+          258,
+          260
+        ],
+        "physical_core_indices": [
+          2,
+          4
+        ],
+        "caller_logical_cpu": 2,
+        "distinct_physical_cores": true,
+        "reserved_physical_core_count": 2,
+        "helper_placement": "native-runtime-managed"
+      },
+      "math_application_processes": 1,
+      "source_extra_os_threads": 0,
+      "profiler_threads": "UNKNOWN_NONPRODUCT",
+      "old_failures_preserved": true,
+      "applied_policy": {
+        "environment": "windows",
+        "affinity_mask": "0x14",
+        "logical_cpu": 2,
+        "cpu_set_id": 258,
+        "required_efficiency_class": "maximum",
+        "smt_sibling_logical_cpu": 3,
+        "priority": "above-normal",
+        "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+        "sampling_topology": "native-runtime-pair",
+        "logical_cpus": [
+          2,
+          4
+        ],
+        "cpu_set_ids": [
+          258,
+          260
+        ],
+        "physical_core_indices": [
+          2,
+          4
+        ],
+        "caller_logical_cpu": 2,
+        "distinct_physical_cores": true,
+        "reserved_physical_core_count": 2,
+        "helper_placement": "native-runtime-managed",
+        "launcher_applied": true,
+        "observed_affinity_mask": "0x14",
+        "previous_affinity_mask": "0xffffffff"
+      },
+      "child_canary": {
+        "gate": "PASS",
+        "environment": "windows",
+        "mechanism": "inherited-process-policy-canary",
+        "affinity_mask": "0x14",
+        "ok": true,
+        "priority_class": "0x8000"
+      },
+      "stage": "profile",
+      "elapsed_seconds": 5.73399999999674,
+      "error": "RuntimeError(\"Collecting data...\\nGenerating 'C:\\\\Users\\\\kiro\\\\AppData\\\\Local\\\\Temp\\\\nsys-report-9dd9.qdstrm'\\n\\n[1/1] [0%                          ] trace.nsys-rep\\n[1/1] [0%                          ] trace.nsys-rep\\n[1/1] [==========49%               ] trace.nsys-rep\\n[1/1] [========================100%] trace.nsys-rep\\n[1/1] [========================100%] trace.nsys-rep\\nGenerated:\\n\\tC:\\\\public\\\\project-hyle\\\\hyle\\\\.scratch\\\\inference-gaps\\\\g09-completion-observation-25\\\\run-admin-retry-1\\\\trace.nsys-rep\\n\")"
+    },
+    "actual_application": "OBSERVED: PID36596, actual policy/nonce and image identity in embedded stderr",
+    "complete_shapes": 2,
+    "requested_shapes": 4,
+    "oracle_before_count": 2,
+    "oracle_after_count": 2,
+    "retired_states": 4,
+    "normal_main_exit": false,
+    "recorder_blocks": 4,
+    "source_records": 3022,
+    "nvtx_events": 186,
+    "vulkan_api_records": 1466,
+    "dropped_record_status": "UNKNOWN; collector warns not all NVTX/Vulkan events might have been collected",
+    "crash_stack": "NOT_ACQUIRED; bounded WER/dump name queries returned no match; bounded Application event query returned no output/exit1. No fault module or stack established.",
+    "crash_cause": "UNKNOWN; neither profiler nor product causal attribution established",
+    "partial_clock_mapping": "BOUNDED_MATCH_FOR_RETAINED_MARKERS_ONLY",
+    "matched_clock_markers": 176,
+    "unmatched_partial_marker": 1,
+    "native_gpu_readiness": "UNKNOWN; no GPU workload table in actual trace; no completion-notice attribution"
+  },
+  "partial_host_observation": {
+    "scope": "First2shapes only;4retired image lifetimes/88complete replays. Per-block twelve measurement replays exclude2fulloracles/8warmups.",
+    "measurement_native_park_union_median_ms": [
+      3.1955,
+      3.80265,
+      3.93735,
+      4.301500000000001
+    ],
+    "measurement_native_park_fraction_median": [
+      0.5139497057690396,
+      0.5320943141731294,
+      0.5470273116274245,
+      0.541330454655941
+    ],
+    "unsignaled_progress_parks": 0,
+    "interpretation": "Native frontier parks materially occur. They include GPU/provider work, timer and scheduler; they do not prove avoidable delay or A/A causality. Caller finished-wait overlaps must not be added."
+  },
+  "additional_cost_seconds": {
+    "disposable_build": 70.89,
+    "first_failed_profile_total": 0.3440000000409782,
+    "user_authorized_retry_total": 5.73399999999674,
+    "offline_export": 0.047,
+    "build_plus_two_attempts": 76.96800000003772
+  },
+  "raw_files": [
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/24.json",
+      "bytes": 28223,
+      "sha256": "fb3e0c071bc1ee5397e95e0804bbb7a0c91c45420be24fcc85c9c69a6d986bde"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/25-source.json",
+      "bytes": 13104,
+      "sha256": "299df5e54c70a761b80f0df3374f7c199a4b305ae3fd68dd0b0679a39ef9e1b0"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/25.json",
+      "bytes": 24970,
+      "sha256": "86f1ce9691204a2ca9efbcdaa5d06af497cc66b0b96e0953477c3f37faf37f6e"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/authorization.json",
+      "bytes": 91881,
+      "sha256": "f4086ce05d31e43d74cb6cc3a5a3985cbc6fc1f265ed2d8e927eeba9052403fc"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/pre-run.zip",
+      "bytes": 4663266,
+      "sha256": "f988d9a1acdbd54565dc64bc8ec0aaa6d98eb53b6cec24431cbf4c1a1c4e7abd"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/raw.zip",
+      "bytes": 1772,
+      "sha256": "279d64ca3b088c5338c9ed99a38e794d13756b2615a72f546d5b90dd1a8303e1"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/retry-authorization.json",
+      "bytes": 94553,
+      "sha256": "0e9ef4247f0a81033a0213d5d59741382c8bb3cba61ce4ace4502a035bca737a"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/retry-raw.zip",
+      "bytes": 191813,
+      "sha256": "c24526acb9b26414469f979c79a1d61020b41507b5d3ee2bf6625d9cd275b9cf"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/retry-source.zip",
+      "bytes": 50275,
+      "sha256": "6a8a344226b7e156bc7dbcdfa860ca8e6b75f74b4034430fab4ef196a7f813df"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-completion-observation/source.zip",
+      "bytes": 82923,
+      "sha256": "e89ad1e62415d08d9a9ec8defef99c4cc470c5101a46660528dd43af1dba52be"
+    }
+  ],
+  "source_product_changes": 0,
+  "sdk_rebuilds": 0,
+  "valid_formal_ab": 0,
+  "original_receipt_sha256": "0eaf29dcc6e661c46af7bc7715937c80768c7a144258a667833281f811ae07df",
+  "original_qualifications": "UNCHANGED: CUDA n15 qualified/P1 PASS; Windows Vulkan/Air Apple/Air Vulkan workload AA FAIL; aggregate G09 acceptance incomplete",
+  "bounded_result_review": "PENDING_R26; delegated reviewer not yet initialized at receipt creation",
+  "current_goal": "ACTIVE_INCOMPLETE: G07/G08/G10 accepted; G09 outstanding; no CLI started",
+  "pre_run_metadata_preflight": "One relative-path collector hash check failed before auth/native execution, corrected; draft archives retained in .scratch/inference-gaps/g09-seal-preflight-1",
+  "post_run_fixed_input_check": {
+    "gate": "PASS_FIXED_INPUT_HASH_RETENTION",
+    "matched_live": 409,
+    "post_run_card_changes": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\graph\\inference-g09-joint-pipeline.md",
+        "state": "Only post-run result prose changed; exact pre-run card retained and matched",
+        "archive": "source.zip",
+        "member": "pre-run-cards/inference-g09-joint-pipeline.md",
+        "frozen_sha256": "e5fb087bacdf437e9db6b6de48e12416c220eb05f8595ad1ebeb24b8e33baee0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\tooling\\inference-g09-native-workload-aa.md",
+        "state": "Only post-run result prose changed; exact pre-run card retained and matched",
+        "archive": "retry-source.zip",
+        "member": "docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
+        "frozen_sha256": "86041a4d0bc2de2cc1d7772b2285174672a19b8cdae08cd996ff6e1152626ba7"
+      }
+    ],
+    "raw_run_result_unchanged": true,
+    "no_product_or_instrument_input_changed": true
+  },
+  "validation": "validation.json; validation-plan.json retains selector skipped reasons"
+}

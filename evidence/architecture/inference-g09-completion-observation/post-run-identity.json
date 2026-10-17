@@ -1,0 +1,22 @@
+{
+  "gate": "PASS_FIXED_INPUT_HASH_RETENTION",
+  "matched_live": 409,
+  "post_run_card_changes": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\graph\\inference-g09-joint-pipeline.md",
+      "state": "Only post-run result prose changed; exact pre-run card retained and matched",
+      "archive": "source.zip",
+      "member": "pre-run-cards/inference-g09-joint-pipeline.md",
+      "frozen_sha256": "e5fb087bacdf437e9db6b6de48e12416c220eb05f8595ad1ebeb24b8e33baee0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\tooling\\inference-g09-native-workload-aa.md",
+      "state": "Only post-run result prose changed; exact pre-run card retained and matched",
+      "archive": "retry-source.zip",
+      "member": "docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
+      "frozen_sha256": "86041a4d0bc2de2cc1d7772b2285174672a19b8cdae08cd996ff6e1152626ba7"
+    }
+  ],
+  "raw_run_result_unchanged": true,
+  "no_product_or_instrument_input_changed": true
+}

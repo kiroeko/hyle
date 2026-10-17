@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**AUDITED，2026-10-17；首次观察被 Nsight 注册权限拒绝；用户已明确授权在实际管理员 token 下重试，复用原产物和采集设置；产品/正式测量 FIX 集为空**。
+状态：**BLOCKED-from-AUDITED，2026-10-17；用户授权的管理员重试已执行，留下部分 trace，但以访问冲突退出；完成时延归属和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -152,3 +152,25 @@ Windows AboveNormal/0x14，避免 profiler 子进程默认优先级冒充原身�
 不重建。独立输出为 `g09-completion-observation-25/run-admin-retry-1`，原失败不覆盖；
 输入由[重试封存](../../../../evidence/architecture/inference-g09-completion-observation/retry-authorization.json)固定。
 采集之后仍须实际 oracle/退休/正常退出、记录完整度、时钟与 submission 归属裁决；不恢复 A/A/P1。
+
+### 两次观察的实际结果
+
+[结果及全部原件](../../../../evidence/architecture/inference-g09-completion-observation/receipt.json)
+保留首次权限失败和管理员重试。重试已越过注册限制，实际应用 PID/策略/映像及 nonce 在 trace
+内嵌 stderr 中可见；Nsight 的外层日志没有转发这些输出，不能据此说应用未启动。
+前两个形状的完整数学 oracle、四次 State 退休及四块无溢出记录通过，共 3022 条记录、88 次完整 replay；
+随后第三形状准备期间以 `0xC0000005` 退出，没有正常 main 退出标记或后两形状验收。
+此为新诊断入口的失败，尚无栈证明崩溃由 profiler 或产品引起。
+
+离线导出成功，实际表为 186 个 NVTX、1466 个 Vulkan API 记录；没有 GPU workload 表，
+collector 还提示 NVTX/Vulkan 事件可能不完整。176 个已退休 marker 的 QPC/NVTX 对齐区间一致，
+一个未退休 marker 无配对；它不补齐 native readiness 或同 submission 的完成归属。
+仅对前两形状各映像的原 12 次计量 replay（排除 oracle/warmup）计算：native frontier park
+并集的中位数为 3.196/3.803/3.937/4.302ms，占 replay 的中位比例为 51.4%/53.2%/54.7%/54.1%。
+旧 unsignaled progress park 在这些记录中为零。park 包含实际 GPU/provider 工作及调度等待，
+不能写成可消除开销，caller finished wait 也不得重复相加；原 A/A 因果仍 UNKNOWN。
+
+新增构建和两次尝试累计 76.968 秒，另离线导出 0.047 秒；原失败与成本完整保留，0 个有效 A/B，
+CUDA 原 P1 与三个未资格平台的结论均不变。两入口均已终止，没有追加采集。
+当前具体障碍为诊断入口访问冲突且没有独立 native readiness；须先取得可定位的故障/工具机制并
+复核有限纠正，才能冻结另一入口，不能由部分 host 记录直接修改产品等待或测量统计合同。

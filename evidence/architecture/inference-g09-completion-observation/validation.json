@@ -1,0 +1,17 @@
+{
+  "gate": "PASS",
+  "selected": [
+    "docs",
+    "closure"
+  ],
+  "skipped_or_reused": 146,
+  "checks": {
+    "closure": "PASS:64components/schema4",
+    "docs": "PASS:1258Markdown/6573relativeLinks",
+    "git_diff_check": "PASS"
+  },
+  "product_builds": 0,
+  "performance_runs": 0,
+  "registry_changed": false,
+  "scope": "Only diagnostic result documentation/evidence; no product source or API mutation."
+}
