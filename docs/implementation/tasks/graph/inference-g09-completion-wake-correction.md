@@ -219,3 +219,20 @@ SDK 八项加公开头与所有身份/152 DATA guard 不变。两次入口独立
 ready guard 拦截。以[独立工具任务](../tooling/performance-qualification-failfast.md)补唯一
 qualify fail-fast 边界，保留 probe/PASS、统计和 manifest；相关65项 Python 测试通过，不由此
 启动 P1 或签发 G09 性能资格。
+
+### 第三普通 checkpoint：实际 device FAIL 与最后纠正
+
+`adbe3a248` 的八个公开 consumer、三项 native GTest 在普通模式全部通过；设备层九进程
+和三项 encoded/三项 native GTest 的数学断言也通过，但 encoded 正常单请求纯 native
+分支出现一条真实 resetFenceInUse VUID，device 聚合必须 FAIL。
+[checkpoint 3](../../../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-3.json)
+保存九份实际层激活、唯一真实 VUID、176 行 raw loader 错误、原 receipt/身份及全部费用。
+累计命令 958.640 秒，所有 native 停止；Air 仅完成同源 sync，入口 PATH 缺目录的拒绝亦保留。
+
+原 native 子卡以 `3ed603a48` 预签最后 V4：跨 queue 的 compute handoff 不证明原 transfer
+fence signal 已结束；必须观察实际接纳的两枚 fence，拒绝 handoff 则去重为仅接纳的一枚。
+原 raw 不能唯一定位句柄，V4 由规范/可达源码的独立缺陷驱动，不能预签此次 VUID 已消失。
+实现限原两文件，增加确定主 ready/transfer proof withheld、真实双 fence wait、65 次变输入
+上传与 partial handoff 单 fence 的一项 native 回归；其余 V1–V3/W1–W4 不变。
+Windows/Air native 默认四项须全部 RUN，SKIP 不能通过；只有预先证实不适用才另冻结具名子集。
+下一 v4 继续原所有门与预算，再次普通失败即停止，不追加 profiler/环境/入口变体。

@@ -283,6 +283,16 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
   // Native fence waits do not hold the queue host mutex. A second producer
   // may submit its independent slot while this thread waits. observers prevents
   // fence reset/reuse until every concurrent observer has left the old run.
+  // The compute handoff waits on a semaphore whose signal precedes the
+  // transfer submit's fence signal. It cannot license resetting the separate
+  // transfer fence. Capture only actually submitted, distinct fences while
+  // this observer protects the episode, including a rejected handoff's prefix.
+  const VkFence fences[]{run->completion_fence, run->transfer_fence};
+  const std::uint32_t fence_count =
+      run->transfer_submitted && run->transfer_fence != run->completion_fence
+          ? 2U
+          : 1U;
+  Status observation;
   VkResult result = VK_NOT_READY;
   if (run->needs_drain) {
     if (device_lost(runtime.failure)) {
@@ -296,23 +306,33 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
   } else if (wait) {
     lock.unlock();
     result = device.fn.WaitForFences(
-        device.native.device, 1, &run->completion_fence, VK_TRUE,
+        device.native.device, fence_count, fences, VK_TRUE,
         (std::numeric_limits<std::uint64_t>::max)());
     lock.lock();
   } else {
     // A nonblocking poll and its retirement bookkeeping form one host critical
     // section. An independent collector must not leave a transient observer
     // behind after the owning wait returns and the caller rebinds its slot.
-    result =
-        device.fn.GetFenceStatus(device.native.device, run->completion_fence);
+    bool complete = true, lost = false;
+    for (std::uint32_t index = 0; index != fence_count; ++index) {
+      const auto state =
+          device.fn.GetFenceStatus(device.native.device, fences[index]);
+      complete = complete && state == VK_SUCCESS;
+      lost = lost || state == VK_ERROR_DEVICE_LOST;
+      // Observe every required fence. A Pending result must not mask another
+      // fence's first real error, nor a device-loss proof of termination.
+      if (!is_terminal(state) && state != VK_NOT_READY && state != VK_TIMEOUT &&
+          observation.ok())
+        observation = native_status(state, "vkGetFenceStatus");
+    }
+    result = lost ? VK_ERROR_DEVICE_LOST : complete ? VK_SUCCESS : VK_NOT_READY;
   }
-  Status observation;
   if (!is_terminal(result) && result != VK_NOT_READY && result != VK_TIMEOUT) {
     observation =
         native_status(result, wait ? "vkWaitForFences" : "vkGetFenceStatus");
-    if (run->observation_error.ok())
-      run->observation_error = observation;
   }
+  if (!observation.ok() && run->observation_error.ok())
+    run->observation_error = observation;
   if (result == VK_ERROR_DEVICE_LOST) {
     runtime.failure = native_status(result, "Vulkan submitted work lost");
     device.provider.note_device_lost();

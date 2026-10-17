@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "state": "PASS_SOURCE_REVIEW_ONLY_NOT_RUNTIME_OR_CAUSAL_VUID_VERDICT",
+  "timestamp_utc": "2026-10-17T07:40:49.776780+00:00",
+  "audited_checkpoint": "3ed603a48",
+  "inputs": [
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "sha256": "6f432bc851bfae1dc4c54cfd32a3f160e909c886657b405954e2870fc5f10361"
+    },
+    {
+      "path": "tests/compute_route_vulkan/lifecycle_test.cc",
+      "sha256": "4089e4eb7cc276eb128131b04ea08b2cc382761bea894fca1c41c81ba0709aa5"
+    }
+  ],
+  "independent_reviewer": "/root/graph_coverage_audit",
+  "independent_verdict": "PASS_SOURCE_ONLY_NO_MUST",
+  "root_verdict": "PASS_NO_MUST",
+  "design": "Observe completion_fence plus an actually submitted distinct transfer_fence. One outside-lock WaitForFences waitAll(count1/2), poll every required fence and retain first error/device-loss proof; V1-V3 retirement and publication unchanged.",
+  "cost": "Two-handle stack array; ordinary count1 unchanged; actual split adds one poll query or one more fence in the same wait. No layout/heap/thread/native marker/normal QueueWaitIdle.",
+  "test": "SplitTransferRequiresBothFenceSignals: real upload and original PFN proves both GPU fences before withholding only transfer observation; Pending/active1/no reset, then original WaitAll2 and65 changed uploads/readbacks; separate rejected handoff waits only its accepted transfer fence and preserves original OOM.",
+  "test_safety": "Original owners and DrainLeaseContext remain alive; forbidden unsubmitted-fence wait returns nonterminal API error solely to avoid regression hang and cannot fabricate successful proof.",
+  "limitations": [
+    "No binary old-red execution; deterministic original early-publication counterexample is source proven.",
+    "Original raw VUID fence0xe is not uniquely mapped to this Run/path.",
+    "Actual device/SDK/host/performance verdict remains pending."
+  ],
+  "runner": {
+    "sha256": "77d78e15ad8778afd36c7e3b482e0ec880919c549bbbec8c5a4fe74cf222309c",
+    "review": "Independent exact v3-to-v4 delta PASS; inherited checkpoint3/VUID/958.640, strict default four test names/count and original guards.",
+    "inherited_seconds": 958.64,
+    "failure_budget_reset": false
+  }
+}

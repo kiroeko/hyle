@@ -1,0 +1,814 @@
+{
+  "schema_version": 1,
+  "state": "WINDOWS_ORDINARY_NINE_EXIT_ZERO_DEVICE_REAL_VUID_FAIL_STOPPED_AIR_SYNC_ONLY_AGGREGATE_NOT_PASSED",
+  "product_checkpoint": "adbe3a248e74e30ba84a78bbd049d16903bd9398",
+  "audited_checkpoint": "6b26cd4b26488ce3dba451bffba415b7756e504a",
+  "archive": "ordinary-checkpoint-3.zip",
+  "archive_sha256": "3bb17d9ff727c4c10ad4e3c976a068c63cd1e64d7f1d6a7acd901eae9715153f",
+  "archive_bytes": 798203,
+  "members": [
+    {
+      "member": "air-entry-native-retirement-v3-transfer.json",
+      "sha256": "7990f94e1966a58937d3d9323dbdadff66c4e8a3bacc589d7ec496f97908a77b",
+      "bytes": 1416
+    },
+    {
+      "member": "air-source-entry-review.json",
+      "sha256": "3484f2cc3d4a00190ffaed8b0bff7d2c65d09f81802c349f0aaefa162132bf95",
+      "bytes": 52040
+    },
+    {
+      "member": "air-sync-path-refusal.json",
+      "sha256": "d5c04a34bd83c48bce558884bc282b1f6bdce7c6f8411ddd4b9a5188cada849f",
+      "bytes": 514
+    },
+    {
+      "member": "external-configured-cache/CMakeCache.txt",
+      "sha256": "a067a053b4fd597985ac0c10e6917b111197f7cd42a3a46e8d7136ed84f79e98",
+      "bytes": 70079
+    },
+    {
+      "member": "external-configured-cache/compile_commands.json",
+      "sha256": "b59cc6c8894a4fed6993630d68e1a098bb5fbbe3054d3794fe6d326d86a4aef3",
+      "bytes": 2207077
+    },
+    {
+      "member": "external-configured-cache/final-parent.cmake",
+      "sha256": "362431c1f2d6e193661fa9bef4ea91e052aff77619ec8d07b5fd1d60cca6a53b",
+      "bytes": 18898
+    },
+    {
+      "member": "external-configured-cache/windows-envcmd.cmd",
+      "sha256": "a5039583a3cd3b56471278ba40d918a624c675fce28ade93244562979af69548",
+      "bytes": 163
+    },
+    {
+      "member": "native-retirement-implementation.diff",
+      "sha256": "f1f47d4b8b857c0a5fb8eb54473d42d90b2c465e209486239b0c8f78bd2249e5",
+      "bytes": 26140
+    },
+    {
+      "member": "native-retirement-test-first.diff",
+      "sha256": "6799b15f5924d6a6f8a972523225f5c803fa5763612a4a96837f5f3738093f68",
+      "bytes": 13777
+    },
+    {
+      "member": "run-native-retirement-v3/air-apple/source/receipt.json",
+      "sha256": "9915c627d7bf71a8301684f01335c3715e3f517160f12e15b3b0b12f1a842bd1",
+      "bytes": 4849
+    },
+    {
+      "member": "run-native-retirement-v3/context-air.json",
+      "sha256": "f256f3fd18ec89f471f840cd78f217381c4034aa8a287fd8934b3a2e65d7c4d8",
+      "bytes": 504
+    },
+    {
+      "member": "run-native-retirement-v3/context-windows-vulkan.json",
+      "sha256": "b7975d82b4e8c475142d40740c6e792849918cd84adf8641ff66148738587de2",
+      "bytes": 541
+    },
+    {
+      "member": "run-native-retirement-v3/manifest.json",
+      "sha256": "aea6ea9073b95deef0dfd96b7a64155490d50341999b269c2f934e1f12adf848",
+      "bytes": 777068
+    },
+    {
+      "member": "run-native-retirement-v3/models/canonical-apple_weights.mm",
+      "sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+      "bytes": 16902
+    },
+    {
+      "member": "run-native-retirement-v3/models/modeled-apple_weights.mm",
+      "sha256": "ba7921e64331073e339c459af822f37f67fa81407c46f491e4ebe753f83e881d",
+      "bytes": 17034
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/GTestReuseTargets.cmake",
+      "sha256": "df98b4ad9c208a8e1819a957da1c6837dc7cc9870973414dd4a7b1bd2cd94ba5",
+      "bytes": 3793
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/build-build.log",
+      "sha256": "304846dfb3775b7b9ca54086c6de8734df8ea553db5af30ba1844aefd58de666",
+      "bytes": 13039
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/configure-configure.log",
+      "sha256": "bd418a49d511513c25eb9721692aa042fc4b7d8a7005ab719fdded0bbc0df1a7",
+      "bytes": 5038
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/configure-manifest.log",
+      "sha256": "a02c00d1d3837fb81f3667de26c9425006b68299ebdd2ce4dd95cfc42d7cb32e",
+      "bytes": 160
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-encoded.json",
+      "sha256": "48c328a506b450271da002548d642aa17b0c5367f10d6dff1cf4174cca5f1a8b",
+      "bytes": 1607
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-failure-stop.json",
+      "sha256": "c9be26a0965dfc7b40838bacd084de7dce080ac30409f9571c535b65e700ab14",
+      "bytes": 5682
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_contracts.log",
+      "sha256": "6c273d4b5cff85d19405f80b19470b30f1410e3c01e19da93167d28988439dc1",
+      "bytes": 77556
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_encoded.log",
+      "sha256": "9e9faf9a90a60155a96fe6113606fc753330dc1a12113f3fb17e7984880ddf00",
+      "bytes": 311567
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_paged_joint.log",
+      "sha256": "b0a71677ce609aff8b410057f01a5cfddc349eeb047be48a171c24e78bfcc2d1",
+      "bytes": 26120
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_pending.log",
+      "sha256": "f1d7bd65f0b9cc42bec9a1ec59610568c3fabe152fd5fc92e6eb3a3500f78d54",
+      "bytes": 26206
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_pipeline.log",
+      "sha256": "3edd97a1a5e3fd4bcc25180d4701d42900012a01d181b4194c39d1546fc29325",
+      "bytes": 28217
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_public_effect.log",
+      "sha256": "b9299cf4c1f33011e11db55786ffecaf36418576f1d77f76f3b23bb40d0c0b72",
+      "bytes": 25724
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_sampling.log",
+      "sha256": "155806e74326232c65fc21693ba0818b3d751c1aa6ec776ad6746218680aa315",
+      "bytes": 25792
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-g09_wake_v3_symmetry.log",
+      "sha256": "154373d0e61a2535a73d5aa239e3581f7524a55cdd5206388ba248bc4ab1fc34",
+      "bytes": 25737
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-native-unit.json",
+      "sha256": "82befdf07601f43b9eedeb96871254b7818bc15e4c4dd1591b788949ecfd88dc",
+      "bytes": 1875
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-native-unit.log",
+      "sha256": "04e650ea764b0700b43172732d49601302b72aff90aa7f9141c19385a23aa806",
+      "bytes": 189480
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-raw-preservation.json",
+      "sha256": "9e2429f71b7ef1885cfebd2a075453641eec4254dad212d46425042fa9a25397",
+      "bytes": 3154
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/device-raw-preservation.zip",
+      "sha256": "0d05a118c30df6129ad32d288b2c47344018ec2144da221e8ac9fce1cc1bd8e4",
+      "bytes": 41692
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/gtest-reuse-paths.txt",
+      "sha256": "1409c192ea26852a4b1749c7bd1488e859acfd9c07585c1acddb11a37bc5f3d1",
+      "bytes": 418
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/gtest-reuse.json",
+      "sha256": "7b23459108530470b664449786040d42439497041ee8839bde7efeb38d5f5384",
+      "bytes": 8580
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/original-parent.cmake",
+      "sha256": "8d4d0be0481c116cc2dc0766c9e2ace5d230ffe8516ee4089625c79d94690155",
+      "bytes": 12756
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/plan-dry-run.log",
+      "sha256": "a6252b8b719269ab0470fb569c2a2324ce9286ae1d16d65451c41084f1a8d564",
+      "bytes": 13548
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/plan-original-generator-freshness.log",
+      "sha256": "5bf847f717aec0811f9cbede931efd6ccffe934cb4834ee65458cf1d13295ce6",
+      "bytes": 159
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/plan.json",
+      "sha256": "b7f13c0f1a957859fa4b82051b508b9f8a57b4a0258ea9990f92278310726cbc",
+      "bytes": 3934338
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/preview.ninja",
+      "sha256": "26874fa92d95b787ca06def04280bf82f684eca3b3a1b5e39d8ef82869fce103",
+      "bytes": 5513074
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/receipt.json",
+      "sha256": "7692ea1859e66755651d95c6cccdb86943bfc91368a5c091704d85845fbf1b61",
+      "bytes": 45521
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-encoded.json",
+      "sha256": "304cd84f7d645bb68f832d213dc545f74cb26813bea0d5d618716b2834d2dc0f",
+      "bytes": 1605
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_contracts.log",
+      "sha256": "d83e101380bef8d001222dc8289cbe87fcf91fbcda5d16a26e80e74f2f516228",
+      "bytes": 504
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_encoded.log",
+      "sha256": "d2b93a397b3cd1233987629c07961bb932beb7130b576fbc12cebaa883363c74",
+      "bytes": 2866
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_paged_joint.log",
+      "sha256": "57b2ba5d59b9fcf85e73f9e5b8a7af7f3288c47dde44ef8b8a2c5630a95e4baf",
+      "bytes": 436
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_pending.log",
+      "sha256": "9a1ee0882ddef567d92267cf608ff3f9671fcfe97226080494ca5a4763863996",
+      "bytes": 522
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_pipeline.log",
+      "sha256": "37b81ac4eecf9e7f99e9475490de0b49ba8c32ffec776796d334d035a6140e2c",
+      "bytes": 2533
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_public_effect.log",
+      "sha256": "89b2c49365a0e257594d1e4f9d81f7990fa6150952ea38772c7514862f2492c5",
+      "bytes": 40
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_sampling.log",
+      "sha256": "60de3c3696cf39302dd19b63aa204e5af7fe22c1556395d40ed0feb6711bedf8",
+      "bytes": 108
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-g09_wake_v3_symmetry.log",
+      "sha256": "c9a5b1a0e133e4341c612c1f24082d9e0bb844a3d4922973d2269f98109fa135",
+      "bytes": 53
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-native-unit.json",
+      "sha256": "d926d5f6e6edc1a5bdb5200e520c2b28eee5370f788d1e37092e966a52fbb877",
+      "bytes": 1875
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/test-native-unit.log",
+      "sha256": "76ffd562063ebf3a286745228822471d2e55a39608ccdcf81b6670699bf7a182",
+      "bytes": 1260
+    },
+    {
+      "member": "run-native-retirement-v3/windows-vulkan/source/windows-source-device-review.json",
+      "sha256": "0208547d035db19cab947136abcca89c6e6124486e1e27e2c54ff019b6bc2fbc",
+      "bytes": 26483
+    },
+    {
+      "member": "selector-windows-v3-plan-command.log",
+      "sha256": "609bc4c8e04d3831f1a7b6e9b3d4b2bd48c2003d903486430d55445199f9dbb6",
+      "bytes": 331
+    },
+    {
+      "member": "selector-windows-v3-plan-preparation.json",
+      "sha256": "c9cb30fbf2bac5f0373d078e02a1ccab798c730da340bddfd31b9d39c98aed35",
+      "bytes": 2900
+    },
+    {
+      "member": "selector-windows-v3-plan-review.json",
+      "sha256": "e388366680638a8219e9dbc1f04728e6cbb33261449ed9767359ba851d25d1fb",
+      "bytes": 18886
+    },
+    {
+      "member": "selector-windows-v3-plan.json",
+      "sha256": "04266d59b94f38098f155f5fe5471b8cb6322e23bd05a2009d7dc9450d04be70",
+      "bytes": 1537042
+    },
+    {
+      "member": "verify-v3-independent-review.json",
+      "sha256": "57033aec28cff15a6de6fb9ab27ffe27803ad5aec967d1b9554c4ba331e24079",
+      "bytes": 2656
+    },
+    {
+      "member": "verify-v3-preparation.json",
+      "sha256": "adfc9ea33bdf8fb1f7f7acc4c6d8c27a6f90bc9d09f5e84cb67ba72c592f76e0",
+      "bytes": 1996
+    },
+    {
+      "member": "verify-v3-review.md",
+      "sha256": "7e4cf70cbc0f13922d0b0994088561afa44dc2c5666d792f92b7472ce9649b25",
+      "bytes": 7315
+    },
+    {
+      "member": "verify-v3-stage-preparation.json",
+      "sha256": "a401c27f009806bd2fed213b647342c1ff14427211fd19abba3c243e30473ae3",
+      "bytes": 2578
+    },
+    {
+      "member": "verify-v3.patch",
+      "sha256": "63134e294d7833e88721b41d7d853d3f8f8a1e68331d9b08ab8d12e7efb3ec84",
+      "bytes": 14585
+    },
+    {
+      "member": "verify-v3.py",
+      "sha256": "abfc40bb9e25ad07cbfa55f2e9513046f431fbcc16fe37067d1db4545cfd3e45",
+      "bytes": 43350
+    }
+  ],
+  "runner_sha256": "abfc40bb9e25ad07cbfa55f2e9513046f431fbcc16fe37067d1db4545cfd3e45",
+  "original_manifest_sha256": "aea6ea9073b95deef0dfd96b7a64155490d50341999b269c2f934e1f12adf848",
+  "ordinary": {
+    "aggregate": "PASS_EXECUTED_WINDOWS_SOURCE_SCOPE",
+    "public_fixture_processes": 8,
+    "private_native_unit_processes": 1,
+    "total_processes": 9,
+    "all_exit_zero": true,
+    "encoded_tests_run": 3,
+    "encoded_tests_passed": 3,
+    "native_selected_tests_run": 3,
+    "native_selected_tests_passed": 3,
+    "SDK_sanitizer_other_platform_claim": false
+  },
+  "device": {
+    "aggregate": "FAIL",
+    "executed_processes": 9,
+    "processes_exit_zero": 9,
+    "remaining_fixture_processes_not_run": 0,
+    "math_and_GTest_assertion_gate": "PASS_IN_THIS_EXECUTION_ONLY",
+    "native_selected_tests_run": 3,
+    "native_selected_tests_passed": 3,
+    "encoded_tests_run": 3,
+    "encoded_tests_passed": 3,
+    "actual_layer_and_sync_activation_verified_processes": 9,
+    "validation_error_events": 1,
+    "vuid": "VUID-vkResetFences-pFences-01123",
+    "failure_test": "EncodedNativePages.SingleRequestIncrementalConsumer",
+    "error_context": {
+      "test": "EncodedNativePages.SingleRequestIncrementalConsumer",
+      "test_run_line": 1418,
+      "test_ok_line": 2129,
+      "error_event_count": 1,
+      "vuid": "VUID-vkResetFences-pFences-01123",
+      "fence": "0xe000000000e",
+      "source_log_lines": [
+        {
+          "line": 1590,
+          "text": "Validation Error: [ VUID-vkResetFences-pFences-01123 ] | MessageID = 0x68a5074e"
+        },
+        {
+          "line": 1591,
+          "text": "vkResetFences(): pFences[0] (VkFence 0xe000000000e) is in use."
+        },
+        {
+          "line": 1592,
+          "text": "The Vulkan spec states: Each element of pFences must not be currently associated with any queue command that has not yet completed execution on that queue (https://docs.vulkan.org/spec/latest/chapters/synchronization.html#VUID-vkResetFences-pFences-01123)"
+        },
+        {
+          "line": 1593,
+          "text": "Objects: 1"
+        },
+        {
+          "line": 1594,
+          "text": "    [0] VkFence 0xe000000000e"
+        },
+        {
+          "line": 1595,
+          "text": ""
+        },
+        {
+          "line": 1596,
+          "text": "Vulkan native Q8 delta D64/128 PASS: 1 requests, six updates, paired/separate Graph encoders, final-only pending consumption, exact dirty bytes, old reader and shared/history bytes"
+        }
+      ],
+      "adjacent_stdout_line": 1596,
+      "claim_boundary": "One real fence reset while validation tracks it in use. The log identifies this consumer and native fence boundary; it does not by itself identify the exact Run, old/new barrier causality, or a source fix."
+    },
+    "raw_loader_error_lines": 176,
+    "zero_raw_error_claim": false,
+    "raw_loader_errors_separate_from_Khronos_errors": true
+  },
+  "failure_attribution": {
+    "native_fence_owner": "NOT_UNIQUELY_BOUND_BY_RAW_LOG",
+    "observed": "Resetting a fence still associated with incomplete queue work; normal single-request incremental consumer.",
+    "source_audit": "Separate source review established split transfer fence proof gap; this archived event does not uniquely identify the affected Run/fence or sole cause.",
+    "no_retry_or_native_run_after_stop": true
+  },
+  "air": {
+    "state": "SOURCE_SYNC_ONLY_NOT_CONFIGURED_NOT_BUILT_NOT_TESTED",
+    "candidate": "adbe3a248e74e30ba84a78bbd049d16903bd9398",
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\air-apple\\source\\receipt.json",
+      "sha256": "9915c627d7bf71a8301684f01335c3715e3f517160f12e15b3b0b12f1a842bd1",
+      "bytes": 4849
+    },
+    "steps": [
+      {
+        "stage": "sync",
+        "state": "STEP_COMPLETE_NOT_AGGREGATE",
+        "seconds": 0.657273833
+      }
+    ],
+    "measured_command_seconds": 0,
+    "sync_bookkeeping_seconds": 0.657273833,
+    "prior_entry_refusal": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\air-sync-path-refusal.json",
+      "sha256": "d5c04a34bd83c48bce558884bc282b1f6bdce7c6f8411ddd4b9a5188cada849f",
+      "bytes": 514
+    },
+    "prior_entry_refusal_reason": "Root invocation PATH omitted /usr/sbin; no profile receipt/configure/build/native before refusal.",
+    "source_transfer_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\air-entry-native-retirement-v3-transfer.json",
+      "sha256": "7990f94e1966a58937d3d9323dbdadff66c4e8a3bacc589d7ec496f97908a77b",
+      "bytes": 1416
+    },
+    "bundle": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\air-entry-native-retirement-v3.zip",
+      "sha256": "7da60472d8cd10dbb53c0a46de893a25d81b788aed60a4e91706aa7163085795",
+      "bytes": 10872326
+    },
+    "no_apple_or_vulkan_correctness_claim": true
+  },
+  "costs": {
+    "measured_command_seconds_this_checkpoint": 240.23500000004424,
+    "inherited_measured_command_seconds": 718.4049999999697,
+    "cumulative_measured_command_seconds": 958.640000000014,
+    "rounded_cumulative_seconds": 958.64,
+    "boundary": "Actual recorded command wall times only; Air sync bookkeeping0.657273833 and root PATH refusal not silently added or reset. Original step/command timings preserved."
+  },
+  "prior_checkpoint": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\inference-g09-completion-wake\\ordinary-checkpoint-2.json",
+      "sha256": "e68f1394abff83d742308b60657a9b5f87a822d6a41d1525fbe03d575bd452fc",
+      "bytes": 33347
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\inference-g09-completion-wake\\ordinary-checkpoint-2.zip",
+      "sha256": "d81e93cb7975730068a4e12eea4c622a5ede5329bd1b04f4f4883d50effc42cf",
+      "bytes": 815705
+    }
+  },
+  "inherited_failures": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-6c6222e51\\prepare-failure.json",
+      "sha256": "dc196b4a67cbe3468a87fe397fd2c0dad0a61a1030e565cfef6a15230be70233"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-6c6222e51-prepare-correction1\\windows-vulkan\\source\\receipt.json",
+      "sha256": "0031b3195092050efb80e70f9e3a4144f36e6afe5f3ad57ba6de6231cdccd83b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-6c6222e51-prepare-correction1\\windows-vulkan\\source\\explicit-build-test-continuation.json",
+      "sha256": "2aa5b67dfb9de7f9a4b25c8c5742e2ffcaf0acae3e512b78ef5a7bc8aa69b6da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\inference-g09-completion-wake\\ordinary-checkpoint-2.json",
+      "sha256": "e68f1394abff83d742308b60657a9b5f87a822d6a41d1525fbe03d575bd452fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\inference-g09-completion-wake\\ordinary-checkpoint-2.zip",
+      "sha256": "d81e93cb7975730068a4e12eea4c622a5ede5329bd1b04f4f4883d50effc42cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\receipt.json",
+      "sha256": "50a20df49cf0e5dc8960e7ae4b8ecc985ff940eb66550d0d7f466c99e486dc21"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\device-encoded.json",
+      "sha256": "dd78da98b89eb2223f1184f183b0708733677f63054ab402c478afe4cacf1090"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\device-g09_wake_v2_encoded.log",
+      "sha256": "04ee3a71480253eef5db26a3ef78e911743a3102a88fcc820f74ec3d3f7c7079"
+    }
+  ],
+  "binary_data_identity": {
+    "binaries_and_dlls_in_archive": false,
+    "all_built_artifact_hashes": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\.hyle-runtime-staging.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\asmjit.dll",
+        "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+        "bytes": 367104
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\c10.dll",
+        "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+        "bytes": 1046528
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\fbgemm.dll",
+        "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+        "bytes": 5721600
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_contracts.exe",
+        "sha256": "2c8119e19c78fb859f6d4864a642255f373b8e838a6ea597b223477f4d8ae44c",
+        "bytes": 176640
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_encoded.exe",
+        "sha256": "d87eecfcab3aa465ec26cbf6cadc7919255ec1225b4f01df8df823b427daf639",
+        "bytes": 645120
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_native_unit.exe",
+        "sha256": "9978f0004fbc4ff2649f0427b80f6d34b0fd1ecbdd504f9671516a24006d107d",
+        "bytes": 576512
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_paged_joint.exe",
+        "sha256": "c45ff02e56dcf76016df481d6b65878017571ffc0c3a0ced02fe79f7d699af6b",
+        "bytes": 66560
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_pending.exe",
+        "sha256": "4152bae3dd8f924aad7dfef757f88b9f889a80477fee15c26bc496dacce5766f",
+        "bytes": 108032
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_pipeline.exe",
+        "sha256": "76eba8031ee4150b432f4ae2e481ade70c10150a13be44b16892ab8fc53a0cce",
+        "bytes": 53248
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_public_effect.exe",
+        "sha256": "7c7752a341b13afea5bf17c2d7a5f6bc818e2c04a3f876931f8bd23e9856aaa2",
+        "bytes": 54272
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_sampling.exe",
+        "sha256": "2a2923eed8221bd860d143a825f73e18fda66334129b7ecbbda997ca147b4ce2",
+        "bytes": 41472
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\g09_wake_v3_symmetry.exe",
+        "sha256": "58ab43759753338691c18be87e1bdbef8a3be711b334b7ec8bdcc580044e6baf",
+        "bytes": 82944
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute.dll",
+        "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685",
+        "bytes": 338432
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_backend_cpu.dll",
+        "sha256": "bf2726dc7beceaf9686b371fa0a34fd08c2d4f9fc56b10973168778c2f60df66",
+        "bytes": 16384
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_batch.dll",
+        "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881",
+        "bytes": 236544
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_ggml_runtime.dll",
+        "sha256": "9e1700a4f8aade3ac1298b21079351b29af2051f0329a4cb4faa66a7283d7618",
+        "bytes": 1186816
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_ops.dll",
+        "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32",
+        "bytes": 83968
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_provider_ggml.dll",
+        "sha256": "06a9a3aaf6e627d9831fb827972686f1db2d4ba29794d499d18440dca3cae7b7",
+        "bytes": 459264
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+        "sha256": "f8f11e9ad4830df5a55b4a26da5ada45783b7f2c57b1c10640ee3a0a6b8839d5",
+        "bytes": 43787264
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_provider_iree_vulkan.dll",
+        "sha256": "89421d108f71057bcff26fe4f4f94c3f154c824e1d11b318a835f2b9ab30c9b2",
+        "bytes": 1382400
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_provider_native.dll",
+        "sha256": "3692d7fc7b1711316a3294c6f04aebe5d3ccfdbb1db00f8b5f1001322fb53a68",
+        "bytes": 354304
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_provider_onednn.dll",
+        "sha256": "3ae0ea5ed1393755c084e770ce88027f67175b1d1532a15d338619e02bbd94d3",
+        "bytes": 16674816
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_route_cpu.dll",
+        "sha256": "02ccad9083538cf153910d54a6f0a8899286062c9723d74111a66f43a069c822",
+        "bytes": 50176
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_route_vulkan.dll",
+        "sha256": "57fc3bc2bb27413720439288f028cdca57a4c6b3c2327b87e0bc32c182397186",
+        "bytes": 951296
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_state.dll",
+        "sha256": "1622650c2cddffaa4641e09dbb0050e38b507e7f843a2f88024cbaedabd9b782",
+        "bytes": 73728
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_compute_stream.dll",
+        "sha256": "249298e6bccd7b017f72b0bc9a1148c4b721752443ca4f2a5b6be0298e2655dd",
+        "bytes": 98816
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_container.dll",
+        "sha256": "a1312fa078ae2aeafe455bbbae368d4522892f627507e6b6313f5619421e803c",
+        "bytes": 41472
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_error.dll",
+        "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da",
+        "bytes": 28160
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_ggml_cpu_avx2_456172ec_5909b243d5fdb965.dll",
+        "sha256": "67334c6b76b880d3a7526d1b92290eec29fd986c85577625dd7fa3d66dd8593f",
+        "bytes": 1203712
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_graph.dll",
+        "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682",
+        "bytes": 601600
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_graph_batch.dll",
+        "sha256": "4d8b858725541cc0b04047912c501ceee943b087409f4ec88c7e4fc5523243c6",
+        "bytes": 125952
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_graph_provider_onednn.dll",
+        "sha256": "6e7c23643681a1c3b9c6faf6cb8022ff2fcc0eaab6085400846f705dc1b29407",
+        "bytes": 35328
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_graph_route_cpu.dll",
+        "sha256": "07659e962d06780a65bffe7cad47546a7f1612106197d7d1fd537a63511fd3aa",
+        "bytes": 45056
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_graph_route_cpu_vulkan.dll",
+        "sha256": "b5b48e646afe1625a28aaf84dc000f52795469acf3efb24d21b25eb28d72f4bb",
+        "bytes": 318464
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_graph_route_vulkan.dll",
+        "sha256": "90cdbb26ad6107eda7d9564f3de798b2687f07e43364810d7cc68e52de9cc3d6",
+        "bytes": 62464
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_io_core.dll",
+        "sha256": "60e1040f2339f7da155555df354465d43138ef674bccf03412799264fc389832",
+        "bytes": 230912
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_mem.dll",
+        "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c",
+        "bytes": 230912
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_mem_vm.dll",
+        "sha256": "d308e502fdcf5724f7e75cba045aae86b7121af0a5dc553620403b02a7b1084a",
+        "bytes": 36864
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_platform.dll",
+        "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98",
+        "bytes": 86528
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_platform_fs.dll",
+        "sha256": "f273afe9d2564c5d42ee5b311f86708c53b0d9e09a6ae10534e39fca7749977c",
+        "bytes": 53760
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_platform_thread.dll",
+        "sha256": "6a1bd95106a7c26b07da72e14c30594dbcc20f2ad35a8d1735c14e048915801c",
+        "bytes": 25088
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_sched.dll",
+        "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d",
+        "bytes": 145408
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_simd.dll",
+        "sha256": "36297d09557bece725b975a7e3dc2b1bbff43f1becc5f7e16ece026397d53132",
+        "bytes": 1571328
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\hyle_time.dll",
+        "sha256": "a4d6f78d233af94b20d5437592ccf4a58e705cbe583d5aa34b40fab3de618661",
+        "bytes": 20992
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\libiomp5md.dll",
+        "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+        "bytes": 1613680
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\torch.dll",
+        "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+        "bytes": 9728
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\torch_cpu.dll",
+        "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+        "bytes": 255948800
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\windows-vulkan\\source\\bin\\uv.dll",
+        "sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+        "bytes": 195072
+      }
+    ],
+    "artifact_count": 49,
+    "note": "49 original staged-artifact identities include48 PE exe/DLLs and one empty staging lock; binaries were rehashed but not packed.",
+    "generated_data_count": 152,
+    "full_post_stop_identity": {
+      "source_files": 2677,
+      "built_artifacts": 49,
+      "generated_data": 152,
+      "runner_bundle_context_parent_preview_build_ninja_all_matching": true,
+      "all_command_logs_hash_matching": true,
+      "process_check": "Read-only Get-Process g09_wake_v3*,cl,ninja returned no processes after all recorded children exit0"
+    }
+  },
+  "not_run": [
+    "Apple source configure/build/test",
+    "Air Vulkan ordinary",
+    "ASan/UBSan/TSan",
+    "new static/shared SDK journeys",
+    "P1/A-A/engine performance"
+  ],
+  "aggregate": "INCONCLUSIVE_DUE_TO_REAL_DEVICE_FAILURE_AND_UNRUN_APPLICABLE_GATES",
+  "budget_reset": false,
+  "original_receipts_unchanged": true,
+  "source_archive_references_only": {
+    "omitted_archives": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\air-entry-native-retirement-v3.zip",
+        "sha256": "7da60472d8cd10dbb53c0a46de893a25d81b788aed60a4e91706aa7163085795",
+        "bytes": 10872326,
+        "not_packed_in_durable_archive": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\source.git-archive.raw.zip",
+        "sha256": "e5e86b76eaecde3a048f264414a8a54990eb9cd2044f14891047c459c2524857",
+        "bytes": 10016160,
+        "not_packed_in_durable_archive": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-native-retirement-v3\\source.zip",
+        "sha256": "18e467e23d6e282577d36f4549963ecae7d756adf6bfba3b0189401bb0f4ac4f",
+        "bytes": 10016089,
+        "not_packed_in_durable_archive": true
+      }
+    ],
+    "immutable_product_commit": "adbe3a248e74e30ba84a78bbd049d16903bd9398",
+    "reconstruction_manifest": {
+      "member": "run-native-retirement-v3/manifest.json",
+      "sha256": "aea6ea9073b95deef0dfd96b7a64155490d50341999b269c2f934e1f12adf848",
+      "tracked_file_count": 2677,
+      "all_file_hashes_sizes_in_manifest": true,
+      "source_zip_sha256": "18e467e23d6e282577d36f4549963ecae7d756adf6bfba3b0189401bb0f4ac4f",
+      "raw_to_canonical_export_subst_mapping": {
+        "member": "SOURCE-MANIFEST.txt",
+        "tracked_attribute": "SOURCE-MANIFEST.txt export-subst",
+        "gitattributes_blob_sha256": "2e7b018743c46758415ab0ea99593df0589a891445cf73a3c3e12c57fc06a8b6",
+        "gitattributes_git_object": "ed7e6b41dcaa1daf1a051edc9d84d5f3085da9f0",
+        "candidate_original_blob_sha256": "aea766654dbe972b774fe6715bd7e43091f2015ec7b4e0653bbfc7be11c0d956",
+        "raw_export_subst_member_sha256": "7af7aa0279fdd187738b6d4c5a0d6e230b436a1827b4ab2c90a702d13ea59ea4",
+        "raw_archive_sha256": "e5e86b76eaecde3a048f264414a8a54990eb9cd2044f14891047c459c2524857",
+        "canonical_archive_sha256": "18e467e23d6e282577d36f4549963ecae7d756adf6bfba3b0189401bb0f4ac4f",
+        "all_other_members_byte_identical": true,
+        "prior_failed_bundle": "run-6c6222e51/prepare-failure.json",
+        "budget_reset": false
+      }
+    },
+    "method": "Reconstruct tracked source from immutable adbe3 commit using the archived exact export-subst metadata mapping and2677-file manifest; preserve original scratch archives untouched. Air entry carrier binds the archived frozen runner/contexts/models/source via its archived transfer record. No repeated whole-repository archives are packed in this ordinary checkpoint.",
+    "wide_preparation_not_published": {
+      "summary_path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\ordinary-checkpoint-3-wide-preparation.json",
+      "summary_sha256": "f43681453019802b4dbb827e5d7faef5d55df74e5030c59b7f0ad5f46a4ad045",
+      "archive_path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\ordinary-checkpoint-3-wide-preparation.zip",
+      "archive_sha256": "a909b2db1a2744e3d58407e7562da8586ef4e3941592e16c651bafb0e04f5f5f"
+    },
+    "unchanged_retained_member_count": 63
+  }
+}

@@ -82,6 +82,13 @@ struct NativeBoundary final {
   std::mutex wait_mutex;
   std::condition_variable wait_changed;
   unsigned completed_waits = 0;
+  VkFence withheld_fence = VK_NULL_HANDLE;
+  VkFence forbidden_wait_fence = VK_NULL_HANDLE;
+  bool withhold_fence_poll = false;
+  unsigned withheld_polls = 0;
+  std::uint32_t last_wait_count = 0;
+  VkBool32 last_wait_all = VK_FALSE;
+  std::array<VkFence, 2> last_wait_fences{};
   static inline NativeBoundary *active = nullptr;
 
   explicit NativeBoundary(const v::Context &context)
@@ -121,7 +128,13 @@ struct NativeBoundary final {
                                                   VkFence fence) {
     if (std::exchange(active->fail_poll, false))
       return VK_ERROR_OUT_OF_HOST_MEMORY;
-    return active->original.GetFenceStatus(device, fence);
+    const auto result = active->original.GetFenceStatus(device, fence);
+    if (active->withhold_fence_poll && fence == active->withheld_fence &&
+        result == VK_SUCCESS) {
+      ++active->withheld_polls;
+      return VK_NOT_READY; // Withhold proof; never fabricate native success.
+    }
+    return result;
   }
   static VKAPI_ATTR VkResult VKAPI_CALL wait_fences(VkDevice device,
                                                     std::uint32_t count,
@@ -129,6 +142,18 @@ struct NativeBoundary final {
                                                     VkBool32 all,
                                                     std::uint64_t timeout) {
     ++active->waits;
+    {
+      std::lock_guard lock(active->wait_mutex);
+      active->last_wait_count = count;
+      active->last_wait_all = all;
+      active->last_wait_fences = {count ? fences[0] : VK_NULL_HANDLE,
+                                 count > 1 ? fences[1] : VK_NULL_HANDLE};
+    }
+    // A regression must not hang on a fence whose submit was rejected. This
+    // nonterminal API failure still requires the original exceptional drain.
+    for (std::uint32_t index = 0; index != count; ++index)
+      if (fences[index] == active->forbidden_wait_fence)
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
     if (active->wait_gate && !active->wait_gate_taken.exchange(true)) {
       active->wait_gate->enter();
       if (active->fail_gated_wait)
@@ -1149,6 +1174,106 @@ TEST(VulkanRetirementPublication, LateObserverErrorPrecedesPermissionRetirement)
     auto published = writer.publish();
     ASSERT_FALSE(published);
     EXPECT_TRUE(published.error().IsResourceExhausted());
+  }
+}
+
+TEST(VulkanRetirementPublication, SplitTransferRequiresBothFenceSignals) {
+  const auto description = t::dense({2, 2});
+  {
+    auto context = t::context().value();
+    if (!context.environment().distinct_transfer_queue)
+      GTEST_SKIP() << "A distinct native transfer queue is required for this proof";
+    NativeBoundary boundary(context);
+    auto staging = v::MemoryResource::create(context, v::MemoryKind::kStaging).value();
+    auto device = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+    auto destination = device.allocate(description).value();
+    auto transfer = v::TransferSlot::create(context, staging, 16).value();
+    auto host = c::LeasePool::create(hyle::mem::system_resource(), 128).value();
+    auto uses = c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+    auto runtime = d::Access::runtime(context);
+    DrainLeaseContext drain{context};
+    for (unsigned replay = 0; replay != 65; ++replay) {
+      SCOPED_TRACE(replay);
+      const auto values = t::data(4, replay + 1);
+      auto writer = host.allocate(16, 64).value();
+      ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
+      auto source = writer.publish().value();
+      auto view = source.tensor(description).value();
+      auto batch = uses.begin().value();
+      ASSERT_TRUE(batch.read(source).ok());
+      auto work = transfer.upload(destination, view).value();
+      ASSERT_TRUE(batch.attach(work).ok());
+      const auto dependency = c::detail::CompletionAccess::dependency(work);
+      auto *run = static_cast<d::Run *>(dependency.state);
+      ASSERT_TRUE(run->transfer_submitted);
+      ASSERT_NE(run->completion_fence, run->transfer_fence);
+      if (replay == 0) {
+        const std::array fences{run->completion_fence, run->transfer_fence};
+        // Execute the real upload fully. Only the host's second observation is
+        // withheld below: the old one-fence owner deterministically publishes.
+        ASSERT_EQ(boundary.original.WaitForFences(runtime->device->native.device,
+            2, fences.data(), VK_TRUE, UINT64_MAX), VK_SUCCESS);
+        boundary.withheld_fence = run->transfer_fence;
+        boundary.withhold_fence_poll = true;
+        const auto polled = work.poll();
+        ASSERT_TRUE(polled);
+        ASSERT_EQ(*polled, c::CompletionPoll::kPending);
+        EXPECT_EQ(boundary.withheld_polls, 1U);
+        EXPECT_EQ(uses.active_batches(), 1U);
+        EXPECT_TRUE(run->pending);
+        EXPECT_NE(run->previous, nullptr);
+        const auto resets = boundary.resets.load();
+        EXPECT_FALSE(transfer.upload(destination, view));
+        EXPECT_EQ(boundary.resets.load(), resets);
+        boundary.withhold_fence_poll = false;
+      }
+      ASSERT_TRUE(work.wait().ok());
+      EXPECT_EQ(boundary.last_wait_count, 2U);
+      EXPECT_EQ(boundary.last_wait_all, VK_TRUE);
+      EXPECT_EQ(boundary.last_wait_fences[0], run->completion_fence);
+      EXPECT_EQ(boundary.last_wait_fences[1], run->transfer_fence);
+      EXPECT_EQ(uses.active_batches(), 0U);
+      EXPECT_EQ(t::read(context, destination).value(), values);
+    }
+    EXPECT_TRUE(context.close().ok());
+  }
+
+  // Reject only the handoff: its main fence was never submitted. Retirement
+  // must deduplicate the accepted transfer fence and preserve the real OOM.
+  {
+    auto rejected_context = t::context().value();
+    NativeBoundary rejected_boundary(rejected_context);
+    auto rejected_staging = v::MemoryResource::create(rejected_context, v::MemoryKind::kStaging).value();
+    auto rejected_device = v::MemoryResource::create(rejected_context, v::MemoryKind::kDevice).value();
+    auto rejected_destination = rejected_device.allocate(description).value();
+    auto rejected_transfer = v::TransferSlot::create(rejected_context, rejected_staging, 16).value();
+    auto host = c::LeasePool::create(hyle::mem::system_resource(), 128).value();
+    auto writer = host.allocate(16, 64).value();
+    const auto values = t::data(4, 91);
+    ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
+    auto source = writer.publish().value();
+    auto view = source.tensor(description).value();
+    DrainLeaseContext rejected_drain{rejected_context};
+    rejected_boundary.fail_submit_on = 2;
+    auto work = rejected_transfer.upload(rejected_destination, view).value();
+    const auto dependency = c::detail::CompletionAccess::dependency(work);
+    auto *run = static_cast<d::Run *>(dependency.state);
+    ASSERT_TRUE(run->transfer_submitted);
+    EXPECT_EQ(rejected_boundary.submissions, 2);
+    EXPECT_EQ(run->completion_fence, run->transfer_fence);
+    EXPECT_NE(run->completion_fence, run->fence);
+    rejected_boundary.forbidden_wait_fence = run->fence;
+    const auto status = work.wait();
+    EXPECT_TRUE(status.IsResourceExhausted());
+    EXPECT_EQ(rejected_boundary.last_wait_count, 1U);
+    EXPECT_EQ(rejected_boundary.last_wait_all, VK_TRUE);
+    EXPECT_EQ(rejected_boundary.last_wait_fences[0], run->transfer_fence);
+    EXPECT_FALSE(run->pending);
+    auto retry = rejected_transfer.upload(rejected_destination, view);
+    ASSERT_FALSE(retry);
+    EXPECT_TRUE(retry.error().IsResourceExhausted());
+    EXPECT_EQ(retry.error().native_error(), status.native_error());
+    EXPECT_TRUE(rejected_context.close().ok());
   }
 }
 
