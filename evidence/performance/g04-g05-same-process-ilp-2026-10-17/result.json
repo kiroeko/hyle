@@ -1,0 +1,59 @@
+{
+  "conclusion": "DO_NOT_ADOPT_LOAD_ILP_PATCH_NO_STABLE_COMPLETE_EPISODE_BENEFIT",
+  "ordinary_run": "/mnt/c/public/project-hyle/hyle/.scratch/g04-same-process-ilp/run-ordinary-1",
+  "primary": "Complete episode: update_batch reused plan -> prepared.run -> checked Completion.wait -> owning output acquire/reset, arithmetic mean for each paired block of64, all tails retained. No oracle/logging timed.",
+  "sample_plan": "1 ordinary process; 2 allocation x 2 execution orders x3 original shapes x8groups x64 paired episodes=6144pairs=12288 measured episodes;64warm perarm perstratum. Partialtail numerical-only.",
+  "prefill_delta_pct_by_alloc_execution": [
+    {
+      "alloc": 0,
+      "order": 0,
+      "delta_pct": -0.2633827643
+    },
+    {
+      "alloc": 0,
+      "order": 1,
+      "delta_pct": 3.0558602166
+    },
+    {
+      "alloc": 1,
+      "order": 0,
+      "delta_pct": -0.1319919064
+    },
+    {
+      "alloc": 1,
+      "order": 1,
+      "delta_pct": 1.901516552
+    }
+  ],
+  "prefill_pooled_delta_pct": 1.0819913277897886,
+  "correctness": "PASS independent double oracle all outputs finite, <=8e-3; original packed FP8 KV all bytes readonly; control/treatment output difference0;2 rotating invocation slots; destructor closes/drains both contexts.",
+  "identity": "Both arms clone original provider/native_batch/native_cache objects symmetrically. Defined GLOBAL/WEAK/UNIQUE and all COMDAT signatures renamed by arm; inter-object undefined references remapped, externals unchanged. No original archive provider/batch/cache member extracted. Fatbin bytes hash-identical before/after objcopy. Actual cudaFuncGetAttributes and timed CUPTI prefill each establish248 control/250 treatment registers; no local spill, block128,dynamic shared49152.",
+  "trace": "One separate profiler run is explanatory, never the primary performance verdict. attention means by original four strata:-10.225%,+0.784%,-3.339%,-6.225%; merge changes +/-1.8%; no all-order stable GPU gain established.",
+  "host_observation": "Trace checkedwait dominated cudaEventSynchronize, last GPU kernel end -> host sync return1.9\u20133.7us; first launch return -> first GPU start26\u201332us; no attribution to a specific cause or G09 polling bug.",
+  "cold_scope": "COLD logs are context/arena/program/2slot construction AFTER attrs() has already initialized CUDA and queried both images; they are not full first-CUDA-process cold startup. CLOSE includes slot close,lease release,queue drain,context close. Entire process wall and timestamps are retained separately.",
+  "unchanged_product": true,
+  "governance_used": false,
+  "ordinary_processes": 1,
+  "trace_processes": 1,
+  "no_posthoc_resampling": true,
+  "source_sha256": "ad32460170351801266aa6fddd7a65bdc90ab2239e37ca7df5f88ceda9c82c34",
+  "build_result": {
+    "compile": {
+      "seconds": 3.010238819999998,
+      "exit": 0
+    },
+    "link": {
+      "seconds": 1.2021635539999949,
+      "exit": 0
+    }
+  },
+  "created_utc": "2026-10-17T10:43:01.675561+00:00",
+  "prefill_pooled_us": {
+    "control_mean": 95.1152421875,
+    "treatment_mean": 96.144380859375,
+    "control_p50": 78.65700000000001,
+    "treatment_p50": 77.36,
+    "control_p99": 430.8238399999993,
+    "treatment_p99": 636.09241
+  }
+}

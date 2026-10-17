@@ -1,0 +1,110 @@
+{
+  "conclusion": "DO_NOT_ADD_HOST_RESOURCE_CACHE_FROM_THIS_EVIDENCE",
+  "work_completed": "Readonly retained-trace submit/API decomposition, then one ordinary warm resource-query-only CPU measurement with no attention/merge execution. Canonical product unchanged.",
+  "query_combo": {
+    "blocks": 16,
+    "block_mean_us": 0.4635686645625,
+    "block_median_us": 0.44050683599999996,
+    "min_block_us": 0.421177734,
+    "max_block_us": 0.721370117,
+    "all_block_us": [
+      0.43634375,
+      0.435110352,
+      0.721370117,
+      0.424325195,
+      0.421177734,
+      0.426134766,
+      0.425320313,
+      0.43546875,
+      0.444669922,
+      0.462396484,
+      0.446402344,
+      0.486654297,
+      0.433786133,
+      0.489006836,
+      0.466052734,
+      0.462878906
+    ]
+  },
+  "exact_per_combo_calls": [
+    {
+      "index": 0,
+      "call": "cudaGetDevice"
+    },
+    {
+      "index": 1,
+      "call": "cudaDeviceGetAttribute(max shared memory per SM)"
+    },
+    {
+      "index": 2,
+      "call": "cudaDeviceGetAttribute(max shared memory per block opt-in)"
+    },
+    {
+      "index": 3,
+      "call": "cudaFuncSetAttribute(prefill original248 kernel,dynamic shared49152)"
+    },
+    {
+      "index": 4,
+      "call": "cudaGetDevice"
+    },
+    {
+      "index": 5,
+      "call": "cudaDeviceGetAttribute(SM count)"
+    },
+    {
+      "index": 6,
+      "call": "cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(F32D256 merge,128threads,8704bytes,default)"
+    },
+    {
+      "index": 7,
+      "call": "cudaFuncSetAttribute(F32D256 merge,dynamic shared8704)"
+    }
+  ],
+  "query_sampling": "CPU2, warmup1024 combinations;16 blocks x1024 combinations, and16 blocks x1024 for each single call; all status values checked; no profiler/empty-loop subtraction. Original two real Harness owners constructed and drained, neither execute nor verify called.",
+  "actual_identity": "NVIDIA4070 SM89/device0,46SMs;mergeoccupancy10;prefill248reg,merge48reg,bothlocal0;exact merge alias recorded in object-identity.json.",
+  "ordinary_prefill_mean_us": 95.1152421875,
+  "combo_vs_ordinary_prefill_percent": 0.4873757916198861,
+  "trace_submit_mean_us_range": [
+    20.998041015625,
+    23.88325390625
+  ],
+  "trace_captured_launch_event_mean_us_range": [
+    10.563,
+    11.641
+  ],
+  "trace_uncaptured_submit_residual_mean_us_range": [
+    10.295,
+    12.826
+  ],
+  "trace_limit": "Original trace default cuda-trace-all-apis=false omitted these query APIs. Residual includes all omitted APIs, Hyle logic, wrappers, checks and profiler overhead; not query cost. No launch->GPU delay attribution.",
+  "applicability_limit": "Measured cost is warm/idle resource-query CPU cost; it is not a strict bound on original queries after an attention enqueue, nor necessarily critical-path savings. BF16 comparison invokes the same eight APIs. This evidence does not justify adding cache/owner state, and does not claim a G04/G05 root cause or fix.",
+  "load_ilp_comparison": "Not adopted: all-original same-process complete-prefill arithmetic mean95.115->96.144us (+1.082%),mixed directions across allocation/executionorders. Original results.zip remains immutable.",
+  "native_gpu_math_runs_this_followup": 0,
+  "resource_query_processes": 1,
+  "canonical_product_changes": 0,
+  "runtime_identity": {
+    "argv": [
+      "/root/hyle-scratch/compute-unified/g04-same-process-ilp/query-only/g04_query_only"
+    ],
+    "exit_code": 0,
+    "seconds": 0.6432949599999915,
+    "observed_utc": "2026-10-17T10:47:35.089700+00:00",
+    "executable_sha256": "0031666c5293838a2737e980f708deb94bdeaa31b6746ae65d9cab3361cbb349",
+    "source_sha256": "7a100bc820f86dfa8b100e61d46105e706baacda098545cfcf5f88caacdb11f1"
+  },
+  "host_build": {
+    "first_compile_failed_unused_measuring_function": true,
+    "initial_compile_failure_seconds": 2.736004780000002,
+    "retry_compile_seconds": 2.7100441320000073,
+    "link_seconds": 0.7529268480000013,
+    "native_cuda_recompile": false
+  },
+  "source_reference": {
+    "native_cache_merge": "src/compute_provider_flashinfer/native_cache.cu:28-33",
+    "patched_prefill": "locked+patched flashinfer/attention/prefill.cuh:4584-4591,4697-4698"
+  },
+  "original_main_results_zip": {
+    "path": "results.zip",
+    "sha256": "a64ad441d02ac9e08b5ad8b7e27c495d1133c7203c9b2aa174eebd587ccca273"
+  }
+}
