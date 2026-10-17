@@ -1218,6 +1218,8 @@ struct Proactor::Impl {
   // close's CQE). Owner-thread-only.
   std::vector<std::intptr_t> file_slots;  // empty = table not registered
   std::size_t free_file_slots = 0;
+  // Every index below this candidate is occupied; frees lower it again.
+  std::size_t first_free_file_candidate = 0;
   // Direct accept asks the kernel to choose a free table slot. Track its token
   // until the CQE tells us which slot became occupied; direct close keeps that
   // slot reserved until its own successful CQE.
@@ -2043,6 +2045,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
         } else if (c.res >= 0) {
           impl_->file_slots[slot] = -1;
           ++impl_->free_file_slots;
+          impl_->first_free_file_candidate =
+              std::min(impl_->first_free_file_candidate, slot);
         } else {
           // Failed/cancelled close keeps the descriptor reserved and retryable.
           impl_->file_slots[slot] = -2;
@@ -2569,6 +2573,7 @@ bool Proactor::register_file_table(unsigned nr) noexcept {
     return false;
   impl_->file_slots.assign(nr, -1);  // mirror for free-slot bookkeeping (-1 = free)
   impl_->free_file_slots = nr;
+  impl_->first_free_file_candidate = 0;
   // Pending operations are already bounded/reserved by the admitted ring depth,
   // independently of how many fixed-file slots this table provides.
   return true;
@@ -2583,9 +2588,10 @@ int Proactor::assign_fixed_slot(std::intptr_t fd) noexcept {
   // Do not overwrite one with FILES_UPDATE while it is still unobserved.
   if (impl_->pending_direct_accept_count != 0 || impl_->free_file_slots == 0)
     return -1;
-  // Find a free slot (linear scan -- tables are small; a free-list is overkill).
+  // Preserve lowest-slot selection without rescanning the occupied prefix.
   int slot = -1;
-  for (std::size_t i = 0; i < impl_->file_slots.size(); ++i) {
+  for (std::size_t i = impl_->first_free_file_candidate;
+       i < impl_->file_slots.size(); ++i) {
     if (impl_->file_slots[i] == -1) { slot = static_cast<int>(i); break; }
   }
   if (slot < 0) return -1;  // table full
@@ -2599,6 +2605,7 @@ int Proactor::assign_fixed_slot(std::intptr_t fd) noexcept {
     return -1;
   impl_->file_slots[static_cast<std::size_t>(slot)] = fd;
   --impl_->free_file_slots;
+  impl_->first_free_file_candidate = static_cast<std::size_t>(slot) + 1;
   return slot;
 }
 
@@ -2620,6 +2627,8 @@ bool Proactor::release_fixed_slot(int index) noexcept {
     return false;
   impl_->file_slots[static_cast<std::size_t>(index)] = -1;
   ++impl_->free_file_slots;
+  impl_->first_free_file_candidate = std::min(
+      impl_->first_free_file_candidate, static_cast<std::size_t>(index));
   return true;
 }
 

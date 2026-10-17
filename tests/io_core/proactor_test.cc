@@ -1246,6 +1246,37 @@ TEST(Proactor, FixedTableAdmissionTracksFailedAcceptAndReleasedMappings) {
   ::close(sockets[0]);
   ::close(sockets[1]);
 }
+TEST(Proactor, FixedTableFillsAndReusesLowestHoleAfterFailedUpdate) {
+  Proactor p;
+  ASSERT_TRUE(p.init(32));
+  if (p.backend_kind() != hyle::io::IoBackend::kIoUring)
+    GTEST_SKIP() << "kernel lacks io_uring";
+  if (!p.register_file_table(8))
+    GTEST_SKIP() << "kernel lacks sparse registered files";
+  int sockets[2];
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets), 0);
+  const int closed = ::dup(sockets[0]);
+  ASSERT_GE(closed, 0);
+  ASSERT_EQ(::close(closed), 0);
+  // A rejected native UPDATE must leave the same first slot available.
+  EXPECT_EQ(p.assign_fixed_slot(closed), -1);
+  for (int slot = 0; slot != 8; ++slot)
+    ASSERT_EQ(p.assign_fixed_slot(sockets[0]), slot);
+  EXPECT_EQ(p.assign_fixed_slot(sockets[0]), -1);
+  ASSERT_TRUE(p.release_fixed_slot(5));
+  ASSERT_TRUE(p.release_fixed_slot(2));
+  EXPECT_EQ(p.assign_fixed_slot(closed), -1);
+  EXPECT_EQ(p.assign_fixed_slot(sockets[1]), 2);
+  EXPECT_EQ(p.assign_fixed_slot(sockets[1]), 5);
+  EXPECT_EQ(p.assign_fixed_slot(sockets[1]), -1);
+  for (int slot = 0; slot != 8; ++slot)
+    EXPECT_TRUE(p.release_fixed_slot(slot));
+  EXPECT_FALSE(p.release_fixed_slot(0));
+  EXPECT_EQ(p.assign_fixed_slot(sockets[0]), 0);
+  EXPECT_TRUE(p.release_fixed_slot(0));
+  ::close(sockets[0]);
+  ::close(sockets[1]);
+}
 #endif  // __linux__
 
 // ---- Windows IOCP real IO ops ----------------------------------------------
