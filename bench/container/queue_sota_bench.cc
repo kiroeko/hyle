@@ -14,6 +14,7 @@
 #include <array>
 #include <cstdlib>
 #include <cstdint>
+#include <fstream>
 #include <string_view>
 #include <thread>
 #include <vector>
@@ -140,15 +141,11 @@ void bench_single_thread() {
 // queue (the bounded queues only). batch == kTotal so the number is ns per item
 // moved through the queue.
 //
-// Consumer-stop protocol (red-team fix): consumers count LOCALLY and only touch a
-// shared atomic kProducers times total (each producer bumps `producers_done` when
-// it finishes). A consumer exits when producers_done==kProducers AND its next
-// try_pop fails (all produced -> empty == fully drained). The OLD design did a
-// per-item fetch_add on a shared counter -- queue-EXTERNAL contention that all
-// three rivals paid equally but which compressed the real algorithmic gap. This
-// version keeps the hot loop free of cross-thread atomics beyond the queue itself.
+// Each consumer accumulates payload checks locally. After acquiring all producer
+// completions it retries pop before accepting an empty queue as fully drained.
+// Count, sum and xor are checked after join; no per-item shared counter is added.
 template <int kProducers, int kConsumers>
-void bench_mpmc() {
+void bench_mpmc(bool bounded_only = false) {
   constexpr int kPerThread = 50000;
   constexpr int kTotal = kProducers * kPerThread;
 
@@ -159,10 +156,11 @@ void bench_mpmc() {
   // Every episode includes queue allocation/destruction and P+C thread
   // construction/join. This is not a measurement of warm queue operations alone.
   b.title(title).relative(true).batch(kTotal).minEpochIterations(50);
+  if (bounded_only) b.epochs(11).epochIterations(2).warmup(1);
   if (std::getenv("HYLE_BENCH_SMOKE") != nullptr)
-    b.epochs(1).epochIterations(1).output(nullptr);
+    b.epochs(1).epochIterations(1).warmup(0).output(nullptr);
 
-  b.run("HYLE BoundedQueue", [&] {
+  auto bounded_episode = [&] {
     BoundedQueue<std::uint64_t> q(kCap);
     if (!q.valid()) std::abort();
     std::atomic<int> producers_done{0};
@@ -196,11 +194,12 @@ void bench_mpmc() {
       });
     for (auto& t : ts) t.join();
     require_conservation(consumers, static_cast<std::uint64_t>(kTotal));
-  });
+  };
+  if (!bounded_only) b.run("HYLE BoundedQueue", bounded_episode);
 
   // One shard per producer: total capacity is P*kCap, and only per-shard order
   // remains. This is a different bounded-admission policy from the single ring.
-  b.run("HYLE ShardedQueue (1 shard/producer)", [&] {
+  if (!bounded_only) b.run("HYLE ShardedQueue (1 shard/producer)", [&] {
     ShardedQueue<std::uint64_t> q(kProducers, kCap);
     if (!q.valid()) std::abort();
     std::atomic<int> producers_done{0};
@@ -239,7 +238,7 @@ void bench_mpmc() {
   });
 
 #if defined(HYLE_BENCH_MOODYCAMEL)
-  b.run("moodycamel ConcurrentQueue", [&] {
+  if (!bounded_only) b.run("moodycamel ConcurrentQueue", [&] {
     moodycamel::ConcurrentQueue<std::uint64_t> q(kCap);
     std::atomic<int> producers_done{0};
     std::array<ConsumerResult, kConsumers> consumers{};
@@ -275,7 +274,7 @@ void bench_mpmc() {
   });
 #endif
 #if defined(HYLE_BENCH_TBB)
-  b.run("tbb concurrent_bounded_queue", [&] {
+  if (!bounded_only) b.run("tbb concurrent_bounded_queue", [&] {
     tbb::concurrent_bounded_queue<std::uint64_t> q;
     q.set_capacity(kCap);
     std::atomic<int> producers_done{0};
@@ -313,7 +312,7 @@ void bench_mpmc() {
 #endif
 #if defined(HYLE_BENCH_RIGTORP)
   // Fixed-capacity single-ring peer; the same outer retry policy is charged.
-  b.run("rigtorp MPMCQueue (bounded ring)", [&] {
+  auto rigtorp_episode = [&] {
     rigtorp::mpmc::Queue<std::uint64_t> q(kCap);
     std::atomic<int> producers_done{0};
     std::array<ConsumerResult, kConsumers> consumers{};
@@ -346,8 +345,38 @@ void bench_mpmc() {
       });
     for (auto& t : ts) t.join();
     require_conservation(consumers, static_cast<std::uint64_t>(kTotal));
-  });
+  };
+  if (bounded_only) {
+    const char* aa = std::getenv("HYLE_BENCH_AA_ROUTE");
+    const bool same_bounded = aa != nullptr && std::string_view(aa) == "candidate";
+    const bool same_rigtorp = aa != nullptr && std::string_view(aa) == "peer";
+    if (aa != nullptr && !same_bounded && !same_rigtorp) std::abort();
+    auto run_bounded = [&] {
+      if (same_rigtorp) b.run("HYLE BoundedQueue", rigtorp_episode);
+      else b.run("HYLE BoundedQueue", bounded_episode);
+    };
+    auto run_rigtorp = [&] {
+      if (same_bounded) b.run("rigtorp MPMCQueue (bounded ring)", bounded_episode);
+      else b.run("rigtorp MPMCQueue (bounded ring)", rigtorp_episode);
+    };
+    if (std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr) {
+      run_rigtorp();
+      run_bounded();
+    } else {
+      run_bounded();
+      run_rigtorp();
+    }
+  } else {
+    b.run("rigtorp MPMCQueue (bounded ring)", rigtorp_episode);
+  }
 #endif
+  const char* json = bounded_only ? std::getenv("HYLE_BENCH_JSON") : nullptr;
+  if (json != nullptr) {
+    std::ofstream output(json);
+    if (!output) std::abort();
+    b.render(ankerl::nanobench::templates::json(), output);
+    if (!output) std::abort();
+  }
 }
 
 // ---- 3. work-stealing OWNER hot path (single-owner push+pop, no contention) -
@@ -653,6 +682,12 @@ int main() {
       bench_concurrent_vector();
       return 0;
     }
+#if defined(HYLE_BENCH_RIGTORP)
+    if (std::string_view(filter) == "bounded-mpmc") {
+      bench_mpmc<4, 4>(true);
+      return 0;
+    }
+#endif
     if (std::string_view(filter) == "mpmc") {
       bench_mpmc<4, 4>();
       return 0;

@@ -1,0 +1,215 @@
+{
+  "conclusion": "Current 4P/4C bounded cold trace did not reproduce a Hyle slower result in four AB/BA processes. This is not a stable overall queue ranking, equivalence conclusion, or warm-operation result. No queue implementation change.",
+  "method": {
+    "trace": "200000 distinct uint64 ids 1..200000; 4 producers x50000, 4 consumers; usable capacity1024 on each side. Producer full retries and consumer pre-done empty retries yield. After acquire all-done each consumer retries pop before accepting empty. Per-consumer local count/sum/xor aggregated after join; mismatch aborts. No shared per-item checksum counter.",
+    "interval": "Each iteration includes construction/allocation, sequential creation of 8 std::threads, all transfers, join, conservation check, thread vector destruction and queue destruction. One transfer is reported per batch item; original console unit label op means an item passed through push+pop, not an individual try call.",
+    "schedule": "One process per AB or BA: AB, BA, AB, BA. Each arm has one untimed warmup cold episode followed by 11 epochs x2 complete cold episodes. Raw JSON elapsed is seconds per episode; actual epoch window = elapsed * iterations. No sample trimming, no old launcher, no background monitor during formal.",
+    "fairness": "Both default fixed-ring libraries and their default allocation/slot-layout/destruction costs are included. Hyle uses SystemAllocator; rigtorp uses its default aligned allocator and allocates capacity+1 slots while usable remains1024. This does not isolate queue CAS costs. No producer tokens, queue growth, sharded capacity, or moodycamel rows enter this comparison."
+  },
+  "results": [
+    {
+      "process": "formal-1-ab",
+      "order": "ab",
+      "hyle_ns_per_transferred_item": 78.99099999999999,
+      "rigtorp_ns_per_transferred_item": 85.41325,
+      "hyle_time_over_rigtorp": 0.9248096753138416,
+      "hyle_lower_time_percent": 7.519032468615839,
+      "hyle_epoch_MAPE": 0.0414818679885209,
+      "rigtorp_epoch_MAPE": 0.0487072109949713,
+      "hyle_median_episode_seconds": 0.0157982,
+      "rigtorp_median_episode_seconds": 0.01708265
+    },
+    {
+      "process": "formal-2-ba",
+      "order": "ba",
+      "hyle_ns_per_transferred_item": 67.3945,
+      "rigtorp_ns_per_transferred_item": 81.76599999999999,
+      "hyle_time_over_rigtorp": 0.8242362351099479,
+      "hyle_lower_time_percent": 17.576376489005206,
+      "hyle_epoch_MAPE": 0.0328896449726815,
+      "rigtorp_epoch_MAPE": 0.00814556482183475,
+      "hyle_median_episode_seconds": 0.0134789,
+      "rigtorp_median_episode_seconds": 0.0163532
+    },
+    {
+      "process": "formal-3-ab",
+      "order": "ab",
+      "hyle_ns_per_transferred_item": 60.69925,
+      "rigtorp_ns_per_transferred_item": 76.845,
+      "hyle_time_over_rigtorp": 0.7898919903702257,
+      "hyle_lower_time_percent": 21.010800962977427,
+      "hyle_epoch_MAPE": 0.0168410567064578,
+      "rigtorp_epoch_MAPE": 0.0403731361922126,
+      "hyle_median_episode_seconds": 0.01213985,
+      "rigtorp_median_episode_seconds": 0.015369
+    },
+    {
+      "process": "formal-4-ba",
+      "order": "ba",
+      "hyle_ns_per_transferred_item": 70.4125,
+      "rigtorp_ns_per_transferred_item": 70.71225,
+      "hyle_time_over_rigtorp": 0.9957609890789785,
+      "hyle_lower_time_percent": 0.42390109210215243,
+      "hyle_epoch_MAPE": 0.0266345414317114,
+      "rigtorp_epoch_MAPE": 0.0228357038475224,
+      "hyle_median_episode_seconds": 0.0140825,
+      "rigtorp_median_episode_seconds": 0.01414245
+    }
+  ],
+  "same_path_AA": {
+    "process": "aa-candidate",
+    "actual_implementations": [
+      "Hyle BoundedQueue",
+      "Hyle BoundedQueue"
+    ],
+    "labels": [
+      "HYLE BoundedQueue",
+      "rigtorp MPMCQueue (bounded ring)"
+    ],
+    "ns_per_item": [
+      73.2935,
+      64.49225
+    ],
+    "epoch_MAPE": [
+      0.121651866843678,
+      0.0144149582413216
+    ],
+    "second_arm_lower_time_percent": 12.00822719613608,
+    "limitation": "Only one same-path process, no CI. The second peer-named label calls BoundedQueue too. Do not subtract this drift from AB results or assign its cause. First AA arm was flagged unstable by nanobench and retained."
+  },
+  "clock": {
+    "qpc_frequency_hz": 10000000,
+    "qpc_tick_seconds": 1e-07,
+    "nanobench_reported_clock_resolution_seconds": 1e-07,
+    "shortest_formal_epoch_window_seconds": 0.0234544,
+    "shortest_formal_window_qpc_ticks": 234544,
+    "limitation": "Hardware QPC tick and empirical nanobench clock resolution are separate from epoch/process variation. Millisecond epoch windows do not make the observed variation a hardware timer-resolution result."
+  },
+  "resources": {
+    "configured": "8 queue workers plus caller. Actual process mask0x5555 selects one logical processor on each of8 distinct physical cores, actual Windows EfficiencyClass1; no worker singleton pin. ABOVE_NORMAL process priority, verified child mask/priority for every formal process. All32 OS logical processors remain available to unrelated processes.",
+    "actual_diagnostic": "resource-live-handles-ab is a separate monitored, non-ranking process. 128 live-handle snapshots over about0.254s; each affinity was read with its thread handle open. They are not accumulated exited TIDs and are not formal-process snapshots.",
+    "observed_live_thread_count_values": [
+      1,
+      4,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "observed_peak_live_threads": 12,
+    "read_masks": [
+      "0x5555"
+    ],
+    "additional_threads": "Peak12 exceeds the9 explicitly requested by benchmark code. Three additional observed threads were not attributed to a runtime component; no claim that only9 OS threads existed.",
+    "limits": "Live snapshot cap covers the early part of the separate process, not a continuous per-arm thread census. Formal thread resources are established by identical source construction and verified inherited process mask; diagnostic is supplementary and cannot retroactively prove formal worker snapshots."
+  },
+  "retained_negative_points": [
+    "Formal Hyle medians vary60.70..78.99ns/item across processes; peer70.71..85.41ns/item. The final BA gap is only0.424%.",
+    "One BoundedQueue A/A process has73.29 versus64.49ns/item; its first arm has12.2% within-process MAPE.",
+    "Initial smoke-ab benchmark exit0 but driver assertion failed because no all-worker Toolhelp snapshot survived. Second smoke-resource-ab exit0 also only captured exited thread records.",
+    "resource-diagnostic-ab Toolhelp snapshots take longer than individual worker lifetimes:4 live handles in early snapshots, other query attempts ERROR_INVALID_PARAMETER87. This failed worker observation is retained. Later live-handle observation is separate, not a replacement of formal data."
+  ],
+  "scope": "All smoke/formal/AA/resource benchmark processes exit0, so every executed episode passed count/sum/xor. Those checks are not an exhaustive linearizability or exact-uniqueness proof. Only the benchmark TU and nanobench implementation TU rebuilt with MSVC19.50.35728 /O2 /MD, HYLE_TESTING not defined; static foundation libs reused with recorded hashes. No full project build, SPSC/Sharded/Moody/TBB/warm-throughput/more shapes, or queue product edits.",
+  "source_identity": {
+    "head": "6ba464fb90d916d851acbf036218fb28762f07ff",
+    "peer_head": "b9808ede08f26fa9df4df4e081d19cace8f6c6ea",
+    "peer_status": "",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\bench\\container\\queue_sota_bench.cc",
+        "bytes": 27400,
+        "sha256": "c108ccf6bb187e22915ed7ae86ddee4f542b988a8e7bb60b6d3a162e66b66e4a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\bounded_queue.h",
+        "bytes": 10617,
+        "sha256": "fbf607da23ef58190f81fa6f58be24402ad19749c9d44018db05e5b947ea7f30"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\rigtorp-MPMCQueue\\include\\rigtorp\\MPMCQueue.h",
+        "bytes": 10090,
+        "sha256": "6d7f3a01fdc6e3889b12dfd0f44936a80dd691be8f233ab7faca0b1c6f66ba97"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\nanobench\\nanobench.h",
+        "bytes": 194934,
+        "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\bench\\nanobench_impl.cc",
+        "bytes": 271,
+        "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27"
+      },
+      {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "bytes": 682568,
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\bounded-4p4c\\nanobench.obj",
+        "bytes": 1673241,
+        "sha256": "b1583d436fcd6763baedb0d711c70f92d76ea820b298b1f45f756ade03bc3084"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.lib",
+        "bytes": 119700,
+        "sha256": "2d0008331fc5cad2cc2e310788a4e9dba2c911ecf334498ac8b3af7861d736f7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+        "bytes": 764086,
+        "sha256": "4b88eede9ed8ef3813059bc6db5c87baefbae7266a4a7304ec24ede1904f1b6f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.lib",
+        "bytes": 113586,
+        "sha256": "275bc429d61d97153acf50f126151f73581a1a4823a5faf2b01536bf7e52535d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+        "bytes": 1280686,
+        "sha256": "10fe859d66dcd68d391c65d1a933e1a4de902d8bb49003f8dca768d65b19dbe4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+        "bytes": 989658,
+        "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+        "bytes": 136936,
+        "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\bounded-4p4c\\queue.exe",
+        "bytes": 266240,
+        "sha256": "093d4dce6e652caefe5f56ff3b976057ca612d3d7d86f78521448c5dbc4b4ccf"
+      }
+    ],
+    "limitations": "Only benchmark and nanobench implementation TUs rebuilt; queue implementations are header-only. Existing static foundation cache reused. No SDK staging or whole-project build."
+  },
+  "system": {
+    "operating_system": {
+      "Caption": "Microsoft Windows 11 \u4e13\u4e1a\u5de5\u4f5c\u7ad9\u7248",
+      "Version": "10.0.26200",
+      "BuildNumber": "26200"
+    },
+    "compiler": {
+      "ProductVersion": "14.50.35728.0",
+      "FileVersion": "19.50.35728.0"
+    },
+    "processor": {
+      "Name": "13th Gen Intel(R) Core(TM) i9-13900K",
+      "NumberOfCores": 24,
+      "NumberOfLogicalProcessors": 32
+    }
+  },
+  "eol": {
+    "base_crlf": 409,
+    "base_lf": 669,
+    "current_crlf": 395,
+    "current_lf": 704,
+    "untouched_owner_through_vector_section_byte_identical": true
+  }
+}
