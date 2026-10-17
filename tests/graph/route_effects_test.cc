@@ -4,6 +4,7 @@
 
 #if defined(HYLE_COMPUTE_VULKAN)
 #include "hyle/graph/cpu_vulkan.h"
+#include "hyle/sched/blocking.h"
 #elif defined(HYLE_COMPUTE_APPLE)
 #include "hyle/graph/cpu_apple.h"
 #endif
@@ -33,6 +34,9 @@ TEST(FoundationEffects, CpuResourceWriteGpuMathCpuReadAndCrossFragmentAlias) {
   bridge::Environment environment{.cpu=&cpu, .apple=&gpu, .native=&device};
 #endif
   hyle::sched::Scheduler scheduler(1, hyle::mem::system_allocator(), 32);
+#if defined(HYLE_COMPUTE_VULKAN)
+  hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
+#endif
   struct Drain { hyle::sched::Scheduler &scheduler; ~Drain(){scheduler.drain();} } drain{scheduler};
   ResourceStorage storage{7};
   GraphBuilder builder = GraphBuilder::create().value();
@@ -58,7 +62,11 @@ TEST(FoundationEffects, CpuResourceWriteGpuMathCpuReadAndCrossFragmentAlias) {
   EXPECT_EQ(facts.fragments.size(),3);
   // The effect footprint must reject tensor aliasing even when the tensor is
   // only consumed by the GPU fragment between two CPU effect fragments.
+#if defined(HYLE_COMPUTE_VULKAN)
+  auto slot = program->create_invocation(scheduler,queue,completion_waiters).value();
+#else
   auto slot = program->create_invocation(scheduler,queue).value();
+#endif
   auto alias = ConstTensorView::create(desc,storage.buffer.view()).value();
   EXPECT_TRUE(slot.bind(input,alias).IsInvalidArgument());
   auto host = Buffer::create(hyle::mem::system_resource(),4,64).value();
@@ -100,7 +108,11 @@ TEST(FoundationEffects, CpuResourceWriteGpuMathCpuReadAndCrossFragmentAlias) {
   const std::array only_binding{EffectResourceBinding{only_resource,storage.footprint()}};
   auto only_program=bridge::compile(only_graph,environment,{.node_placements=only_placement,.effect_bindings=only_binding});
   ASSERT_TRUE(only_program)<<only_program.error().message();
+#if defined(HYLE_COMPUTE_VULKAN)
+  auto only_slot=only_program->create_invocation(scheduler,queue,completion_waiters).value();
+#else
   auto only_slot=only_program->create_invocation(scheduler,queue).value();
+#endif
   ASSERT_TRUE(only_slot.prepare_replay().ok());
   {auto result=only_slot.run();ASSERT_TRUE(result)<<result.error().message();EXPECT_EQ(*storage.value(),17);}
   EXPECT_TRUE(only_slot.close().ok());

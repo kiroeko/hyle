@@ -48,10 +48,18 @@ Status episode(Mode mode){
     HYLE_ASSIGN_OR_RETURN(budget,c::ResourceBudget::create({.limits=limits,.allocator=allocator.ref(),.allow_unattributed=true}));
   }
   HYLE_ASSIGN_OR_RETURN(auto program,jr::compile(shape,jr::environment(cpu,context,device,staging),allocator.ref(),budget));
-  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);jr::Drain drain{scheduler};
+  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
+#if !defined(HYLE_G01_PAGE_RISK_APPLE)
+  hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
+#endif
+  jr::Drain drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto query,jr::query(shape));
+#if defined(HYLE_G01_PAGE_RISK_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto receiver,program.create_invocation(scheduler,cpu_queue));
+#else
+  HYLE_ASSIGN_OR_RETURN(auto receiver,program.create_invocation(scheduler,cpu_queue,completion_waiters));
+#endif
   std::vector<g::batch::NodeLayout> versions;
   for(const auto&node:shape.bindings)versions.push_back({node.node,layout});
   HYLE_RETURN_IF_ERROR(receiver.prepare_batch(versions));

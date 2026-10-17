@@ -89,11 +89,18 @@ KV和请求循环。CPU+CUDA使用`hyle/graph/cpu_cuda.h`；CPU+MLX/Metal使用
 两个在途microbatch分别创建Invocation，使用独立可变workspace/结果slot；可共享只读输入。
 每个实际Queue仍遵守原producer合同。物理copy/compute并发取决于原native路线和硬件。
 
+CPU+Vulkan 的冷创建入口为 `create_invocation(scheduler, cpu_queue, completion_waiters)`；
+`completion_waiters` 是调用方持有的 `sched::BlockingPool`，供原生完成等待使用。两个在途slots通常
+配置容量2，池的线程/栈另计；CPU+Apple与CPU+CUDA保留原创建入口。池必须活过全部Invocation、
+已接纳原生工作、等待任务销毁尾部和Scheduler的drain。先关闭Graph并drain，再shutdown池；
+不要在池worker中同步等待依赖同池完成等待的Graph结果。容量1不保证跨slot乱序完成。
+
 冷准备建立有限依赖表与每slot状态。实际阶段可并行时，每次submit最多增加一个原Sched CPU
 coarse fiber；活动依赖完全成链时使用inline路径。边界repack/复制和必要native观察继续计费，
 Apple共享内存复制仍是原同步调用，provider-private/UMA未知成本不变成0。
-依赖表有界不代表总观察成本线性：Apple/Vulkan会重复扫描在途native工作，CUDA重试会重新检查
-segment依赖；实际费用随片段数、依赖和设备延迟变化。prepare_replay与ResourceReport也可能
+依赖表有界不代表总观察成本线性：实际推进仍可能扫描在途native工作或重查segment依赖；
+Apple由原完成者通知，Vulkan借调用方池执行阻塞等待。锁、通知、池入场和线程费用随实际工作变化。
+prepare_replay与ResourceReport也可能
 分配或枚举原资源，不能据此假定整个联合调用零分配。
 取消或首错停止新入场；已经接收的CPU与native工作按原完成合同退休。结果与借用资源须保活至真实
 退休；全部公开owner释放后，用原Scheduler的drain观察回调尾部和最终物理回收。

@@ -11,7 +11,9 @@
 #include <utility>
 
 #include "../compute/completion_internal.h"
+#include "../compute_route_apple/apple_completion_internal.h"
 #include "hyle/compute/detail/generated_result.h"
+#include "hyle/core/assert.h"
 #include "hyle/graph/detail/lease_submission.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
@@ -37,6 +39,7 @@ struct FragmentRun final {
   ca::Invocation apple;
   compute::ResultLease<ca::Results> lease;
   compute::OwnedResult<ca::Results> pending;
+  bool notification_registered = false;
   std::vector<mx::array> arguments; // Vendor bind carrier, sized cold.
 };
 struct RunState final : util::RefCounted<RunState> {
@@ -62,6 +65,8 @@ struct RunState final : util::RefCounted<RunState> {
   bool pipeline_parallel = false;
   std::mutex pipeline_mutex, lease_mutex;
   sched::ConditionVariable pipeline_ready;
+  std::uint64_t native_epoch = 0;
+  std::size_t native_notifications = 0;
   Status pipeline_error;
   bool cpu_stopped = false, pipeline_accepted = false;
   std::mutex retirement_mutex;
@@ -204,10 +209,65 @@ Status await_completion(RunState &run, const compute::Completion &completion) no
     const auto ready = completion.poll();
     if (!ready) return ready.error();
     if (*ready == compute::CompletionPoll::kComplete) return completion.wait();
-    // The current Apple owner drains/checks native work. A pending native wait
-    // never strands the Sched worker that hosts this coarse progress fiber.
+    // Preserve the CPU Queue's cooperative observation path. Native owner
+    // completions use the notification bridge below instead of a timer.
     run.progress.wait_for(std::chrono::milliseconds(1));
   }
+}
+void release_native_notification(void *opaque) noexcept {
+  auto &run = *static_cast<RunState *>(opaque);
+  std::lock_guard lock(run.pipeline_mutex);
+  HYLE_FATAL_ASSERT(run.native_notifications != 0);
+  --run.native_notifications;
+  run.pipeline_ready.notify_all();
+  // The admitted root still owns this run. Returning the callback's reference
+  // under the monitor prevents the root from reusing it before this last access.
+  run.decref();
+}
+Status subscribe_native_completion(RunState &run,
+                                   const compute::Completion &completion) noexcept {
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    run.incref();
+    ++run.native_notifications;
+  }
+  // An already-completed original owner may call both callbacks inline. Never
+  // register while holding the monitor those callbacks publish through.
+  const auto status = ca::detail::subscribe_completion(cd::CompletionAccess::dependency(completion),
+      {&run, [](void *opaque) noexcept {
+        auto &owner = *static_cast<RunState *>(opaque);
+        std::lock_guard lock(owner.pipeline_mutex);
+        ++owner.native_epoch;
+        owner.pipeline_ready.notify_all();
+      }, &release_native_notification});
+  if (!status.ok()) release_native_notification(&run);
+  return status;
+}
+Status observe_native_completion(RunState &run,
+                                 const compute::Completion &completion) noexcept {
+  for (;;) {
+    std::uint64_t epoch;
+    { std::lock_guard lock(run.pipeline_mutex); epoch = run.native_epoch; }
+    const auto ready = completion.poll();
+    if (!ready) return ready.error();
+    if (*ready == compute::CompletionPoll::kComplete) return completion.wait();
+    std::unique_lock lock(run.pipeline_mutex);
+    // Capture preceded poll: a notification between poll and this park remains
+    // visible. Cancellation cannot skip retirement of an accepted native prefix.
+    run.pipeline_ready.wait(lock, [&] { return run.native_epoch != epoch; });
+  }
+}
+Status await_native_completion(RunState &run,
+                               const compute::Completion &completion) noexcept {
+  auto status = protect_prefix(run, completion);
+  const auto subscribed = subscribe_native_completion(run, completion);
+  status.Update(subscribed);
+  if (subscribed.ok()) status.Update(observe_native_completion(run, completion));
+  return status;
+}
+void join_native_notifications(RunState &run) noexcept {
+  std::unique_lock lock(run.pipeline_mutex);
+  run.pipeline_ready.wait(lock, [&] { return run.native_notifications == 0; });
 }
 void publish_terminal(RunState &run, Status status, bool accepted) noexcept {
   cd::CompletionLifetime abandoned;
@@ -340,7 +400,7 @@ Status drive_fragment(RunState &run, std::size_t index, bool &accepted) noexcept
   } else {
     HYLE_ASSIGN_OR_RETURN(auto submitted, submit_native_fragment(run, index));
     accepted = true;
-    HYLE_RETURN_IF_ERROR(await_completion(run, submitted.completion()));
+    HYLE_RETURN_IF_ERROR(await_native_completion(run, submitted.completion()));
     HYLE_RETURN_IF_ERROR(finish_native_fragment(run, index, submitted));
   }
   return Status::Ok();
@@ -391,11 +451,14 @@ Result<bool> advance_native_stage(RunState &run, std::size_t job, bool &accepted
       HYLE_ASSIGN_OR_RETURN(slot.pending, submit_native_fragment(run, stage.index));
       accepted = true;
       HYLE_RETURN_IF_ERROR(protect_prefix(run, slot.pending.completion()));
+      HYLE_RETURN_IF_ERROR(subscribe_native_completion(run, slot.pending.completion()));
+      slot.notification_registered = true;
     }
     HYLE_ASSIGN_OR_RETURN(auto ready, slot.pending.completion().poll());
     if (ready == compute::CompletionPoll::kPending) return false;
     HYLE_RETURN_IF_ERROR(finish_native_fragment(run, stage.index, slot.pending));
     slot.pending = {};
+    slot.notification_registered = false;
     return true;
   }
   HYLE_RETURN_IF_ERROR(drive_stage(run, job, accepted));
@@ -445,8 +508,10 @@ void drive_native_lane(RunState &run) noexcept {
     return result;
   };
   for (;;) {
+    std::uint64_t epoch;
     {
       std::lock_guard lock(run.pipeline_mutex);
+      epoch = run.native_epoch;
       if (run.cancel.load(std::memory_order_acquire))
         run.pipeline_error.Update(Status::Cancelled("joint native pipeline cancelled before admission"));
       if (!run.pipeline_error.ok() || run.frontier.done()) break;
@@ -481,10 +546,10 @@ void drive_native_lane(RunState &run) noexcept {
     std::unique_lock lock(run.pipeline_mutex);
     const auto changed = [&] {
       return !run.pipeline_error.ok() || run.cancel.load(std::memory_order_acquire) ||
-             run.frontier.done() || run.frontier.ready(PipelineLane::kNative);
+             run.frontier.done() || run.frontier.ready(PipelineLane::kNative) ||
+             run.native_epoch != epoch;
     };
-    if (pending != 0) run.pipeline_ready.wait_for(lock, std::chrono::milliseconds(1), changed);
-    else run.pipeline_ready.wait(lock, changed);
+    run.pipeline_ready.wait(lock, changed);
   }
 }
 
@@ -522,8 +587,15 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
     // first error. No monitor is held and both drivers have stopped admitting
     // work. Drop the owning handle before releasing the body sentinel.
     for (auto &fragment : run.fragments) if (fragment.pending.valid()) {
-      run.pipeline_error.Update(fragment.pending.completion().wait());
+      if (!fragment.notification_registered) {
+        const auto subscribed = subscribe_native_completion(run, fragment.pending.completion());
+        run.pipeline_error.Update(subscribed);
+        fragment.notification_registered = subscribed.ok();
+      }
+      if (fragment.notification_registered)
+        run.pipeline_error.Update(observe_native_completion(run, fragment.pending.completion()));
       fragment.pending = {};
+      fragment.notification_registered = false;
     }
     HYLE_RETURN_IF_ERROR(run.pipeline_error);
   }
@@ -535,6 +607,9 @@ void drive(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
   bool accepted = false;
   const auto status = drive_graph(run, accepted);
+  // A successful poll can precede the original owner's notification tail.
+  // Its retained references and callback storage belong to this episode.
+  join_native_notifications(run);
   if (run.leases.valid()) run.leases.finish(status, accepted);
   else publish_terminal(run, status, accepted);
   run.decref(); // existing Sched worker's admitted reference

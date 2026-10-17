@@ -23,6 +23,7 @@
 #include <hyle/graph/cpu_apple.h>
 #else
 #include <hyle/graph/cpu_vulkan.h>
+#include <hyle/sched/blocking.h>
 #endif
 #endif
 #include <algorithm>
@@ -94,6 +95,9 @@ double decode(std::uint16_t x,bool bf=false){
   HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
   hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
+#if !defined(HYLE_PENDING_RECEIVER_APPLE)
+  hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),2);
+#endif
   struct Drain{hyle::sched::Scheduler&scheduler;~Drain(){scheduler.drain();}}drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto query_desc,c::TensorDesc::dense(c::DataType::kFloat32,recipe.descriptions()[0].dimensions()));
   std::vector<float> q(18*heads*depth,-.125F);
@@ -191,7 +195,11 @@ double decode(std::uint16_t x,bool bf=false){
   HYLE_ASSIGN_OR_RETURN(point.program,joint::compile(graph,environment,{.node_placements=placements,.paged_nodes=page_bindings}));
   point.query=qid;point.key=kid;point.value=vid;point.nodes=page_nodes;point.outputs=output_ids;
   for(auto&slot:point.slots){
+#if defined(HYLE_PENDING_RECEIVER_APPLE)
     HYLE_ASSIGN_OR_RETURN(slot,point.program.create_invocation(scheduler,cpu_queue));
+#else
+    HYLE_ASSIGN_OR_RETURN(slot,point.program.create_invocation(scheduler,cpu_queue,completion_waiters));
+#endif
     HYLE_RETURN_IF_ERROR(slot.reserve_pending_sources(4));
   }
   }

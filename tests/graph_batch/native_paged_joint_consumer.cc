@@ -5,6 +5,7 @@
 #include <hyle/graph/cpu_apple.h>
 #else
 #include <hyle/graph/cpu_vulkan.h>
+#include <hyle/sched/blocking.h>
 #endif
 #include <algorithm>
 #include <array>
@@ -87,9 +88,17 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
 #endif
   joint::CompileReport compiled;HYLE_ASSIGN_OR_RETURN(auto program,joint::compile(graph,environment,{.node_placements=placements,.paged_nodes=bindings},&compiled));
   HYLE_RETURN_IF_ERROR(check(compiled.fragments.size()==3,"joint page was not isolated between real CPU fragments"));
-  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);Drain drain{scheduler};HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());
+  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
+#if !defined(HYLE_JOINT_PAGE_APPLE)
+  hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),2);
+#endif
+  Drain drain{scheduler};HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());
   std::array<joint::Invocation,2> slots;
+#if defined(HYLE_JOINT_PAGE_APPLE)
   for(auto& slot:slots){HYLE_ASSIGN_OR_RETURN(slot,program.create_invocation(scheduler,queue));}
+#else
+  for(auto& slot:slots){HYLE_ASSIGN_OR_RETURN(slot,program.create_invocation(scheduler,queue,completion_waiters));}
+#endif
   std::array<c::BatchLayoutVersion,2> uploaded_layouts;
   for(unsigned episode=0;episode<64;++episode){
     const auto& selected=episode%3==2?single:episode%2?next:layout;auto& slot=slots[episode%2];

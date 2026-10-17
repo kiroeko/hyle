@@ -19,6 +19,7 @@
 #include <mlx/transforms.h>
 
 #include "apple_checks.h"
+#include "apple_completion_internal.h"
 #include "apple_internal.h"
 #include "apple_runtime_internal.h"
 #include "apple_recurrent.h"
@@ -368,6 +369,7 @@ struct InvocationState : Job {
   bool bound = false;
   Status terminal;
   cd::CompletionLifetime abandoned;
+  CompletionNotification notification;
   Status terminal_hint;
 
   InvocationState(std::shared_ptr<ProgramState> p, cd::ResultSlot<Results> slot)
@@ -456,6 +458,7 @@ void release(InvocationState *state) noexcept {
 
 void finish(InvocationState &state, Status terminal) noexcept {
   cd::CompletionLifetime abandoned;
+  CompletionNotification notification;
   LeaseUseBatch uses;
   Status hint;
   {
@@ -463,14 +466,22 @@ void finish(InvocationState &state, Status terminal) noexcept {
     state.terminal = terminal;
     if (!terminal.ok())
       state.retired.store(true, std::memory_order_release);
-    abandoned = std::exchange(state.abandoned, {});
-    hint = std::move(state.terminal_hint);
     uses = std::move(state.native_uses);
-    state.done.store(1, std::memory_order_release);
   }
   cd::LeaseAccess::retire_native(uses, terminal);
+  {
+    std::lock_guard lock(state.completion_mutex);
+    // A destroy during retire_native still leaves its attachment here. Publish
+    // readiness only after permissions retire, and take every late callback in
+    // this same critical section before another episode can reuse the slot.
+    abandoned = std::exchange(state.abandoned, {});
+    notification = std::exchange(state.notification, {});
+    hint = std::move(state.terminal_hint);
+    state.done.store(1, std::memory_order_release);
+  }
   platform::detail::wake_all(&state.done);
   deliver(abandoned, std::move(terminal), hint);
+  deliver_notification(notification);
 }
 
 template<class Evaluate>
@@ -561,6 +572,30 @@ const cd::CompletionVTable completion_vtable{
           state.cancel.store(true, std::memory_order_release);
           return Status::Ok();
         }};
+Status subscribe_completion(cd::CompletionDependency source,
+                            CompletionNotification notification) noexcept {
+  if (!notification.valid())
+    return Status::InvalidArgument("Apple completion notification is invalid");
+  if (!source.pending()) {
+    if (source.vtable || source.state || !source.terminal_hint)
+      return Status::FailedPrecondition("Apple completion source is empty");
+    deliver_notification(notification);
+    return Status::Ok();
+  }
+  if (source.vtable != &completion_vtable)
+    return Status::Unimplemented("Apple completion owner has no notification bridge");
+  auto &state = *static_cast<InvocationState *>(source.state);
+  bool ready;
+  {
+    std::lock_guard lock(state.completion_mutex);
+    if (state.notification.valid())
+      return Status::Unavailable("Apple completion already has a subscriber");
+    ready = state.done.load(std::memory_order_acquire) != 0;
+    if (!ready) state.notification = notification;
+  }
+  if (ready) deliver_notification(notification);
+  return Status::Ok();
+}
 Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::CompletionDependency source) noexcept {
   if (!source.terminal_hint) return Status::FailedPrecondition("Apple copy producer is empty");
   if (!source.terminal_hint->ok()) return *source.terminal_hint;

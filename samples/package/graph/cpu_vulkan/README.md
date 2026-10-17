@@ -8,7 +8,11 @@
 RMSNorm→CPU。CPU 权重 16 KiB，而首条管线 native 边界仅 512 字节；不要求全部 CPU 权重进入 staging。
 原始编码和独立 scalar oracle 检查、两 Invocation 和多次 replay 都在例中。
 
-调用顺序为 `compile → create_invocation(scheduler, cpu_queue) → bind → prepare_replay → submit → wait`。
+调用顺序为 `compile → create_invocation(scheduler, cpu_queue, completion_waiters) → bind → prepare_replay → submit → wait`。
+调用方提供 `sched::BlockingPool completion_waiters(allocator, 2)`，供本例两个在途 slots 的原生完成等待使用。
+它与 Scheduler 分别计线程/栈预算；Sched worker 不承担阻塞原生等待。池必须活到所有 Invocation 关闭、
+已接纳工作与等待任务尾部退出及 `scheduler.drain()` 返回之后，随后才能 shutdown/销毁。
+容量1可用于没有相互等待环的顺序消费，但不保证两个 slots 乱序完成；池 worker 不得同步等待依赖同池 waiter 的 Graph 结果。
 资源包括普通 host、同 Context 的 device/staging MemoryResource；更改绑定会使准备报告失效。
 `replay_report` 给出 CPU/GPU 片段、host copy/repack、完成等待及实际独立/计算队列上传数。
 `HostWaitPolicy::kReject` 拒绝仍须 host completion 的组合；native 多队列没有消除这些依赖。
@@ -20,4 +24,6 @@ RMSNorm→CPU。CPU 权重 16 KiB，而首条管线 native 边界仅 512 字节�
 
 源码：`cmake -S . -B build -DHYLE_SAMPLE_SOURCE=<hyle-source>`。
 安装包：`cmake -S . -B build -DCMAKE_PREFIX_PATH=<sdk>`；构建使用 `--parallel 1`。
-Windows/Air source/static/shared均已验收；WSL三交付编译/安装/链接已验，实GPU运行保持未资格。
+原候选的Windows/Air source/static/shared已验收；新增完成等待池入口的验证归
+[当前修复卡](../../../../docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md)。
+WSL原三交付编译/安装/链接已验，实GPU运行保持未资格。

@@ -1,5 +1,8 @@
 #include <hyle/graph/cpu.h>
 #include <hyle/sched/scheduler.h>
+#if !defined(HYLE_G09_APPLE)
+#include <hyle/sched/blocking.h>
+#endif
 #if defined(HYLE_G09_APPLE)
 #include <hyle/graph/cpu_apple.h>
 #else
@@ -42,7 +45,8 @@ Status require(bool condition, const char *message) {
 // This fixture proves correctness/progress; it makes no device-overlap claim.
 Status branches(b::Environment environment, bool cpu_first, unsigned workers, bool native_input,
     unsigned iterations = 65, unsigned active_slots = 2,
-    Status (*observe)(unsigned, bool) = nullptr, bool exp_branch = false) {
+    Status (*observe)(unsigned, bool) = nullptr, bool exp_branch = false,
+    bool second_native = false, unsigned wait_pool_capacity = 2) {
   HYLE_RETURN_IF_ERROR(require(active_slots == 1 || active_slots == 2, "invalid observation slot count"));
   constexpr std::size_t elements = 4 * 1024 * 1024;
   HYLE_ASSIGN_OR_RETURN(auto desc, c::TensorDesc::dense(c::DataType::kFloat32,
@@ -68,21 +72,31 @@ Status branches(b::Environment environment, bool cpu_first, unsigned workers, bo
     HYLE_ASSIGN_OR_RETURN(av, builder.add(c::Unary{c::UnaryKind::kNeg}, ai));
     HYLE_ASSIGN_OR_RETURN(cv, builder.add(cpu_math, xi));
   }
-  HYLE_ASSIGN_OR_RETURN(auto out, builder.add(c::Binary{}, cv, av));
+  auto cpu_result = cv;
+  if (second_native) {
+    HYLE_ASSIGN_OR_RETURN(cpu_result, builder.add(c::Unary{c::UnaryKind::kNeg}, cv));
+  }
+  HYLE_ASSIGN_OR_RETURN(auto out, builder.add(c::Binary{}, cpu_result, av));
   HYLE_RETURN_IF_ERROR(builder.publish(out));
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
-  const std::array placements{
+  std::vector<g::NodePlacement> placements{
       g::NodePlacement{*graph.node_id(cpu_first ? 0 : 1), b::kCpuTarget, g::PlacementStrength::kRequired},
-      g::NodePlacement{*graph.node_id(cpu_first ? 1 : 0), native_target, g::PlacementStrength::kRequired},
-      g::NodePlacement{*graph.node_id(2), b::kCpuTarget, g::PlacementStrength::kRequired}};
-  std::printf("G09 begin order=%s workers=%u native_input=%u\n", cpu_first ? "cpu-first" : "gpu-first", workers, unsigned(native_input));
+      g::NodePlacement{*graph.node_id(cpu_first ? 1 : 0), native_target, g::PlacementStrength::kRequired}};
+  if (second_native)
+    placements.push_back({*graph.node_id(2), native_target, g::PlacementStrength::kRequired});
+  placements.push_back({*graph.node_id(second_native ? 3 : 2), b::kCpuTarget, g::PlacementStrength::kRequired});
+  std::printf("G09 begin order=%s workers=%u native_input=%u second_native=%u\n",
+      cpu_first ? "cpu-first" : "gpu-first", workers, unsigned(native_input), unsigned(second_native));
   std::fflush(stdout);
   b::CompileReport report;
   HYLE_ASSIGN_OR_RETURN(auto program, b::compile(graph, environment,
       {.node_placements = placements}, &report));
-  HYLE_RETURN_IF_ERROR(require(report.fragments.size() == 3,
+  HYLE_RETURN_IF_ERROR(require(report.fragments.size() == (second_native ? 4u : 3u),
       "independent CPU prefix still inherits the native join wait"));
   hyle::sched::Scheduler scheduler(workers, m::system_allocator(), 64);
+#if !defined(HYLE_G09_APPLE)
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(), wait_pool_capacity);
+#endif
   std::array<c::Queue, 2> queues;
   std::array<Tensor, 2> x;
   struct Drain { hyle::sched::Scheduler &scheduler; ~Drain() { scheduler.drain(); } } drain{scheduler};
@@ -90,7 +104,11 @@ Status branches(b::Environment environment, bool cpu_first, unsigned workers, bo
   for (unsigned i = 0; i < slots.size(); ++i) {
     HYLE_ASSIGN_OR_RETURN(queues[i], environment.cpu->create_queue());
     HYLE_ASSIGN_OR_RETURN(x[i], tensor(desc));
+#if defined(HYLE_G09_APPLE)
     HYLE_ASSIGN_OR_RETURN(slots[i], program.create_invocation(scheduler, queues[i]));
+#else
+    HYLE_ASSIGN_OR_RETURN(slots[i], program.create_invocation(scheduler, queues[i], completion_waiters));
+#endif
   }
   auto bind = [&](unsigned slot, unsigned step) -> Status {
     for (std::size_t i = 0; i < elements; ++i)
@@ -106,8 +124,8 @@ Status branches(b::Environment environment, bool cpu_first, unsigned workers, bo
     HYLE_RETURN_IF_ERROR(view.storage().read(std::as_writable_bytes(std::span(values))));
     for (std::size_t i = 0; i < elements; ++i) {
       const auto source_value = float(int(i % 101) - 50) * 0.125f + float(step) * 0.0625f + float(slot) * 0.25f;
-      const auto expected = exp_branch ? std::exp(double(source_value)) - 1.25
-                                       : double(std::abs(source_value) - 1.25f);
+      const auto cpu_value = exp_branch ? std::exp(double(source_value)) : double(std::abs(source_value));
+      const auto expected = (second_native ? -cpu_value : cpu_value) - 1.25;
       const auto differs = exp_branch
           ? !std::isfinite(values[i]) || std::abs(double(values[i]) - expected) > 2e-6 + 2e-6 * std::abs(expected)
           : double(values[i]) != expected;
@@ -152,9 +170,9 @@ Status branches(b::Environment environment, bool cpu_first, unsigned workers, bo
   HYLE_RETURN_IF_ERROR(require(closed.ok() || closed.IsCancelled(), "cancelled slot did not close"));
   HYLE_RETURN_IF_ERROR(slots[1].close());
   scheduler.drain();
-  std::printf("{\"case\":\"%s\",\"workers\":%u,\"native_input\":%s,\"oracle\":\"PASS\",\"slots\":%u,\"changed_steps\":%u,\"cpu_math\":\"%s\"}\n",
+  std::printf("{\"case\":\"%s\",\"workers\":%u,\"native_input\":%s,\"oracle\":\"PASS\",\"slots\":%u,\"changed_steps\":%u,\"cpu_math\":\"%s\",\"second_native\":%s}\n",
       cpu_first ? "cpu-first" : "gpu-first", workers, native_input ? "true" : "false", active_slots, iterations,
-      exp_branch ? "exp" : "abs");
+      exp_branch ? "exp" : "abs", second_native ? "true" : "false");
   return Status::Ok();
 }
 
@@ -173,7 +191,18 @@ Status contracts() {
     HYLE_RETURN_IF_ERROR(branches(environment, true, workers, false));
     HYLE_RETURN_IF_ERROR(branches(environment, false, workers, false));
   }
-  return branches(environment, false, 2, true);
+  HYLE_RETURN_IF_ERROR(branches(environment, false, 2, true));
+  // The CPU branch now enables another native fragment before the final join.
+  // Two slots and a single Scheduler worker exercise repeated notification and
+  // request handoffs while the root must keep admitting newly ready work.
+  HYLE_RETURN_IF_ERROR(branches(environment, true, 1, false, 8, 2, nullptr, false, true));
+  HYLE_RETURN_IF_ERROR(branches(environment, false, 1, true, 8, 2, nullptr, false, true));
+#if !defined(HYLE_G09_APPLE)
+  // A caller may deliberately budget one blocking worker. Slots may queue, but
+  // finite graphs without a pool dependency cycle must still drain and reuse.
+  HYLE_RETURN_IF_ERROR(branches(environment, false, 1, false, 4, 2, nullptr, false, true, 1));
+#endif
+  return Status::Ok();
 }
 } // namespace
 

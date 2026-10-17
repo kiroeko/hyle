@@ -8,6 +8,7 @@
 #include <hyle/compute/vulkan_memory.h>
 #include <hyle/graph/vulkan.h>
 #include <hyle/graph/cpu_vulkan.h>
+#include <hyle/sched/blocking.h>
 #endif
 #include <hyle/compute/model_ops.h>
 #include <hyle/graph/cpu.h>
@@ -216,7 +217,11 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
 
   HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
-  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);Drain drain{scheduler};
+  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
+#if !defined(HYLE_ENCODED_APPLE)
+  hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
+#endif
+  Drain drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto host_desc,c::TensorDesc::dense(c::DataType::kFloat32,query_desc.dimensions()));
   HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(hyle::mem::system_resource(),query_words.size()*4+64));
   HYLE_ASSIGN_OR_RETURN(auto host_writer,host_pool.allocate(query_words.size()*4,64));
@@ -248,7 +253,11 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   env.vulkan=&context;env.device=&device;env.staging=&staging;
 #endif
   HYLE_ASSIGN_OR_RETURN(auto joint_program,joint::compile(graph,env,{.node_placements=placements,.paged_nodes=bindings}));
+#if defined(HYLE_ENCODED_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto joint_slot,joint_program.create_invocation(scheduler,cpu_queue));
+#else
+  HYLE_ASSIGN_OR_RETURN(auto joint_slot,joint_program.create_invocation(scheduler,cpu_queue,completion_waiters));
+#endif
   HYLE_RETURN_IF_ERROR(joint_slot.reserve_pending_sources(4));
   const std::array versions{g::batch::NodeLayout{node,layout}};
 

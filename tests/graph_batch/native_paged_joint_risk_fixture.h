@@ -4,6 +4,7 @@
 #include <hyle/graph/cpu_apple.h>
 #else
 #include <hyle/graph/cpu_vulkan.h>
+#include <hyle/sched/blocking.h>
 #endif
 #include <hyle/graph/cpu.h>
 #include <hyle/sched/scheduler.h>
@@ -147,9 +148,17 @@ inline Status domain_checks(c::Context& cpu,n::Context& native,n::MemoryResource
   HYLE_RETURN_IF_ERROR(require(!joint::compile(two.graph,env,{.node_placements=two.placements,.paged_nodes=mixed_cold}),"shared page cold inputs accepted different owned layouts"));
   auto cpu_page=shape.placements;cpu_page.push_back({shape.bindings[0].node,joint::kCpuTarget,g::PlacementStrength::kRequired});
   HYLE_RETURN_IF_ERROR(require(!joint::compile(shape.graph,env,{.node_placements=cpu_page,.paged_nodes=shape.bindings}),"page node implicitly fell back to CPU"));
-  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);Drain drain{scheduler};
+  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
+#if !defined(HYLE_JOINT_PAGE_APPLE)
+  hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
+#endif
+  Drain drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());HYLE_ASSIGN_OR_RETURN(auto source,query(two));
+#if defined(HYLE_JOINT_PAGE_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
+#else
+  HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
+#endif
   const std::array incomplete{g::batch::NodeLayout{two.bindings[0].node,data.layout}};
   const std::array mismatched{incomplete[0],g::batch::NodeLayout{two.bindings[1].node,data.next}};
   HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(incomplete).ok() && !slot.submit(),"incomplete page set admitted"));
@@ -177,7 +186,12 @@ inline Status domain_checks(c::Context& cpu,n::Context& native,n::MemoryResource
   HYLE_RETURN_IF_ERROR(slot.close());slot={};
   std::printf("%s joint two page nodes and exact refusal recovery PASS; starting empty output\n",r::route);std::fflush(stdout);
   HYLE_ASSIGN_OR_RETURN(auto zero,graph(data,false,true));HYLE_ASSIGN_OR_RETURN(auto empty_program,compile(zero,env));
-  HYLE_ASSIGN_OR_RETURN(auto empty_query,query(zero));HYLE_ASSIGN_OR_RETURN(auto empty,empty_program.create_invocation(scheduler,queue));
+  HYLE_ASSIGN_OR_RETURN(auto empty_query,query(zero));
+#if defined(HYLE_JOINT_PAGE_APPLE)
+  HYLE_ASSIGN_OR_RETURN(auto empty,empty_program.create_invocation(scheduler,queue));
+#else
+  HYLE_ASSIGN_OR_RETURN(auto empty,empty_program.create_invocation(scheduler,queue,completion_waiters));
+#endif
   HYLE_RETURN_IF_ERROR(prepare(empty,zero,data,empty_query));
   HYLE_RETURN_IF_ERROR(require(empty.bind(zero.key,data.key_frame).IsInvalidArgument(),"empty episode accepted a live frame"));
   HYLE_RETURN_IF_ERROR(empty.prepare_replay());HYLE_RETURN_IF_ERROR(result(empty,zero,true));HYLE_RETURN_IF_ERROR(empty.close());
@@ -193,38 +207,67 @@ inline Status cold_failures(c::Context& cpu,n::Context& native,n::MemoryResource
     HYLE_RETURN_IF_ERROR(require(!made && made.error().IsResourceExhausted() && fault.live==0,"joint cold compile allocation rejection leaked or published"));
   }
   fault.fail=SIZE_MAX;fault.attempts=0;HYLE_ASSIGN_OR_RETURN(auto program,compile(shape,env,fault.ref()));
-  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);Drain drain{scheduler};HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());
+  hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
+#if !defined(HYLE_JOINT_PAGE_APPLE)
+  hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
+#endif
+  Drain drain{scheduler};HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());
   const auto plan_live=fault.live;fault.attempts=0;
+#if defined(HYLE_JOINT_PAGE_APPLE)
   {HYLE_ASSIGN_OR_RETURN(auto baseline,program.create_invocation(scheduler,queue));}
+#else
+  {HYLE_ASSIGN_OR_RETURN(auto baseline,program.create_invocation(scheduler,queue,completion_waiters));}
+#endif
   const auto create_count=fault.attempts;HYLE_RETURN_IF_ERROR(require(fault.live==plan_live,"joint baseline invocation metadata leaked"));
   for(std::size_t nth=0;nth<create_count;++nth){
-    fault.attempts=0;fault.fail=nth;auto made=program.create_invocation(scheduler,queue);
+    fault.attempts=0;fault.fail=nth;
+#if defined(HYLE_JOINT_PAGE_APPLE)
+    auto made=program.create_invocation(scheduler,queue);
+#else
+    auto made=program.create_invocation(scheduler,queue,completion_waiters);
+#endif
     HYLE_RETURN_IF_ERROR(require(!made && made.error().IsResourceExhausted() && fault.live==plan_live,"joint cold invocation allocation rejection leaked or published"));
   }
   fault.fail=SIZE_MAX;
   HYLE_ASSIGN_OR_RETURN(auto source,query(shape));
   const std::array versions{g::batch::NodeLayout{shape.bindings[0].node,data.layout}};
   fault.attempts=0;
+#if defined(HYLE_JOINT_PAGE_APPLE)
   {HYLE_ASSIGN_OR_RETURN(auto baseline,program.create_invocation(scheduler,queue));
+#else
+  {HYLE_ASSIGN_OR_RETURN(auto baseline,program.create_invocation(scheduler,queue,completion_waiters));
+#endif
     fault.attempts=0;HYLE_RETURN_IF_ERROR(baseline.prepare_batch(versions));}
   const auto prepare_count=fault.attempts;
   HYLE_RETURN_IF_ERROR(require(fault.live==plan_live,"joint baseline prepare metadata leaked"));
   for(std::size_t nth=0;nth<prepare_count;++nth){
     fault.fail=SIZE_MAX;
+#if defined(HYLE_JOINT_PAGE_APPLE)
     {HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
+#else
+    {HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
+#endif
       fault.attempts=0;fault.fail=nth;const auto denied=slot.prepare_batch(versions);
       HYLE_RETURN_IF_ERROR(require(denied.IsResourceExhausted() && !slot.submit(),"joint cold prepare OOM published an admitted episode"));
       fault.fail=SIZE_MAX;slot.close().IgnoreError();}
     HYLE_RETURN_IF_ERROR(require(fault.live==plan_live,"joint cold prepare OOM leaked metadata"));
   }
   fault.fail=SIZE_MAX;std::size_t bind_count=0;
+#if defined(HYLE_JOINT_PAGE_APPLE)
   {HYLE_ASSIGN_OR_RETURN(auto baseline,program.create_invocation(scheduler,queue));
+#else
+  {HYLE_ASSIGN_OR_RETURN(auto baseline,program.create_invocation(scheduler,queue,completion_waiters));
+#endif
     HYLE_RETURN_IF_ERROR(prepare(baseline,shape,data,source));fault.attempts=0;
     HYLE_RETURN_IF_ERROR(baseline.bind(shape.key,data.key_frame));bind_count=fault.attempts;}
   HYLE_RETURN_IF_ERROR(require(fault.live==plan_live,"joint baseline exact-frame replacement leaked"));
   for(std::size_t nth=0;nth<bind_count;++nth){
     fault.fail=SIZE_MAX;
+#if defined(HYLE_JOINT_PAGE_APPLE)
     {HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
+#else
+    {HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
+#endif
       HYLE_RETURN_IF_ERROR(prepare(slot,shape,data,source));fault.attempts=0;fault.fail=nth;
       const auto denied=slot.bind(shape.key,data.key_frame);fault.fail=SIZE_MAX;
       HYLE_RETURN_IF_ERROR(require(denied.IsResourceExhausted(),"joint exact-frame allocation failure was accepted"));
@@ -233,10 +276,18 @@ inline Status cold_failures(c::Context& cpu,n::Context& native,n::MemoryResource
   }
   auto capped=shape;for(auto& binding:capped.bindings)binding.options.max_metadata_backing_bytes=236;
   HYLE_ASSIGN_OR_RETURN(auto narrow,joint::compile(capped.graph,env,{.node_placements=capped.placements,.paged_nodes=capped.bindings}));
+#if defined(HYLE_JOINT_PAGE_APPLE)
   HYLE_RETURN_IF_ERROR(require(!narrow.create_invocation(scheduler,queue),"joint fixed page backing budget ignored"));
+#else
+  HYLE_RETURN_IF_ERROR(require(!narrow.create_invocation(scheduler,queue,completion_waiters),"joint fixed page backing budget ignored"));
+#endif
   auto no_host=env;no_host.host_workspace_budget_bytes=0;
   auto host_refused=compile(shape,no_host);
+#if defined(HYLE_JOINT_PAGE_APPLE)
   if(host_refused)HYLE_RETURN_IF_ERROR(require(!host_refused->create_invocation(scheduler,queue),"joint host workspace limit ignored"));
+#else
+  if(host_refused)HYLE_RETURN_IF_ERROR(require(!host_refused->create_invocation(scheduler,queue,completion_waiters),"joint host workspace limit ignored"));
+#endif
   const std::array limits{c::ResourceBudgetLimit{hyle::mem::system_resource(),4096},c::ResourceBudgetLimit{device.ref(),SIZE_MAX},c::ResourceBudgetLimit{staging.ref(),SIZE_MAX}};
   HYLE_ASSIGN_OR_RETURN(auto budget,c::ResourceBudget::create({.limits=limits,.allow_unattributed=true}));
   HYLE_ASSIGN_OR_RETURN(auto usage,budget.usage(hyle::mem::system_resource()));

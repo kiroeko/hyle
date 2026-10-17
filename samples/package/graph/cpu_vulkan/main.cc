@@ -2,6 +2,7 @@
 #include <hyle/graph/cpu_vulkan.h>
 #include <hyle/compute/low_precision.h>
 #include <hyle/sched/scheduler.h>
+#include <hyle/sched/blocking.h>
 
 #include "../../compute/cpp/workload.h"
 
@@ -104,8 +105,9 @@ Status ffn(b::Environment environment, hyle::sched::Scheduler &scheduler, c::Res
   gate_weight = {}; up_weight = {}; down_weight = {}; // Materialization must own bytes.
   HYLE_ASSIGN_OR_RETURN(auto queue0, environment.cpu->create_queue());
   HYLE_ASSIGN_OR_RETURN(auto queue1, environment.cpu->create_queue());
-  HYLE_ASSIGN_OR_RETURN(auto first, program.create_invocation(scheduler, queue0));
-  HYLE_ASSIGN_OR_RETURN(auto second, program.create_invocation(scheduler, queue1));
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(), 2);
+  HYLE_ASSIGN_OR_RETURN(auto first, program.create_invocation(scheduler, queue0, completion_waiters));
+  HYLE_ASSIGN_OR_RETURN(auto second, program.create_invocation(scheduler, queue1, completion_waiters));
   Drain drain{scheduler};
   for (auto *run : {&first, &second}) {
     HYLE_RETURN_IF_ERROR(run->bind(x, input.view.as_const()));
@@ -181,7 +183,8 @@ Status chunk(b::Environment environment, hyle::sched::Scheduler &scheduler, c::R
   HYLE_RETURN_IF_ERROR(builder.publish(output)); HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
   const std::array placement{g::NodePlacement{*graph.node_id(0), b::kCpuTarget, g::PlacementStrength::kRequired}, g::NodePlacement{*graph.node_id(3), b::kCpuTarget, g::PlacementStrength::kRequired}};
   HYLE_ASSIGN_OR_RETURN(auto program, b::compile(graph, environment, {.node_placements = placement, .resource_budget = budget}));
-  HYLE_ASSIGN_OR_RETURN(auto queue, environment.cpu->create_queue()); HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue));
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(), 1);
+  HYLE_ASSIGN_OR_RETURN(auto queue, environment.cpu->create_queue()); HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue, completion_waiters));
   Drain drain{scheduler};
   HYLE_RETURN_IF_ERROR(invocation.bind(x, input.view.as_const())); HYLE_RETURN_IF_ERROR(invocation.bind(w, batch, 19)); HYLE_RETURN_IF_ERROR(invocation.bind(s, scale.view.as_const()));
   if (invocation.prepare_replay({.host_wait = g::HostWaitPolicy::kReject}).ok()) return Status::Internal("CPU+Vulkan hid its native completion barrier");

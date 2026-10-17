@@ -31,7 +31,7 @@ baseline `8119dc6c2c02f5b3e588cc6e3b64b36b41222c59`；原 G09 产品候选
 | 项 | 已证不足 | 本轮有限设计 |
 |---|---|---|
 | W1 Vulkan | Runtime 无后台 observer；1ms timer 在无 ready native job 时观察 pending | 借 caller-owned BlockingPool；每 RunState 冷内嵌一个 waiter；不在 Sched worker 上阻塞原 Completion |
-| W2 Apple | 原 FIFO worker 完成后，hybrid 未收到主动通知 | 原 invocation/copy owner 提供内部 opaque 通知，Graph 保有 node/epoch/CV；Compute 叶不依赖 Sched |
+| W2 Apple | 原 FIFO worker 完成后，hybrid 未收到主动通知 | 原 invocation owner 提供内部 opaque 通知，Graph 保有 node/epoch/CV；Compute 叶不依赖 Sched |
 | W3 退休/错误 | queued job 取消不等于 GPU 完成；common Completion 的 const 观察会修改 handle | 冻结独占观察、destroy/release 尾部、拒绝/取消/close/异常进度与引用归还协议 |
 | W4 使用/交付 | Vulkan 当前创建入口没有借用池 | 冷创建改为 create_invocation(Scheduler&, CPU Queue&, BlockingPool&)；无兼容双入口，迁移真实调用方 |
 
@@ -96,7 +96,7 @@ SCOPED 以上门均待本轮运行；审计后补精确 filters/构建入口与�
 | FIX | 唯一采用的机制 | 有限产品文件/直接验收 |
 |---|---|---|
 | W1 | Vulkan 每 episode 一个冷内嵌常驻 BlockingJob。Sched root 启动后先等 job started，才接受该 episode 任何 CPU/native 运行前缀。job 在私有 monitor 下接收原 Completion wait 请求，root 用原 fiber-aware CV 等响应，活动句柄由 job 独占；另有 ready native/CPU 可继续推进 | cpu_vulkan.h、cpu_vulkan/invocation.cc；真实两顺序/两 slots、1/2 workers，active wait 时新 ready、多 pending |
-| W2 | Apple native/copy owner 内部按值三指针 notification packet；subscribe_completion(CompletionDependency, CompletionNotification) 为窄 private C++ export，普通 public API/Completion 不变 | 新 apple_completion_internal.h，apple_context.cc、apple_copy_recording.mm、cpu_apple/invocation.cc；已完成/inline/登记竞态、普通及 paged/copy |
+| W2 | Apple native invocation owner 内部按值三指针 notification packet；subscribe_completion(CompletionDependency, CompletionNotification) 为窄 private C++ export，普通 public API/Completion 不变 | 新 apple_completion_internal.h，apple_context.cc、cpu_apple/invocation.cc；已完成/inline/登记竞态、普通及 paged |
 | W3 | Vulkan pool 拒绝/queued shutdown 发生在 started 前，零本 episode 运行前缀，Status 失败；started 后 job 已 RUNNING，原 pool shutdown 不取消它，它继续服务所有错误/取消的 native wait/needs_drain；最后 stop→destroy_done 后才发布终态/复用 | 无 poll/collect fallback、无 Scheduler worker 上的 native wait；cold/worker OOM、queued/running shutdown、cancel/abandon/close、旧结果 |
 | W4 | Vulkan 唯一冷创建形状 create_invocation(Scheduler&, compute::Queue&, sched::BlockingPool&)，迁移所有实际 in-tree 调用；Apple 保原入口 | 公开头、contracts/pipeline/page/state joint、SDK sample/user guide；source/static/shared 与逐头 |
 
@@ -125,9 +125,12 @@ Scheduler worker 仍可运行，不伪造成功。
 ### Apple hint 与寿命
 
 成功订阅消费调用方一份引用，ready→release 恰一次，可 inline；失败不消费。只接受原 native
-或 copy vtable，未知/重复 pending subscriber 返回错误；不为未知 Completion 加 timer fallback。
-finish 在原 completion_mutex 内 exchange packet，沿原 retire/wake/deliver 尾部后 ready/release；
-不改变 done 的旧语义，也不把 hint 当 actual retirement。Graph 在锁下先计 outstanding/retain，
+vtable 和现成 terminal hint，未知/重复 pending subscriber 返回错误；不为未知 Completion 加 timer fallback。
+native finish 第一段锁只存 terminal/移出 native_uses，解锁完成 retire_native 后，第二段锁才
+exchange abandoned/hint/notification 并发布 done；这同时覆盖退休窗口内晚到的 Completion
+destroy。done 后仅原 wake、局部 callback 和 worker ref 尾部，不再写当前代状态，避免 late-inline
+通知后新一代 bind 仍撞旧 native_uses。随后沿原
+wake/deliver 尾部后 ready/release，不把 hint 当 actual retirement。Graph 在锁下先计 outstanding/retain，
 解锁再登记；ready 只更新 epoch/通知，release 归还 outstanding/ref，尾部归零后才复用/完成。
 epoch 在本轮 poll/advance 前 capture，避免通知落在最后 poll 与 park 之间。原 LeaseSubmission
 与 native owner 仍负责实际资源退休；普通/paged fragment 返回原 native Completion 已只读确认。
@@ -142,3 +145,9 @@ Windows Vulkan validation、Air Metal validation 与三个 host sanitizer profil
 按精确 hash 复用。公共 API 仅 W4，组件图不改，不重开公共等待/构建/统计核心。
 
 当前 AUDITED，允许上述有限实现；候选/实际验证/性能入口/终审和 LOC 尚未签发。
+
+实际调用映射后 W2 缩域：`cpu_apple::drive_stage` 的 upload/download 是原同步复制；唯一
+通知 caller 收到的普通/paged fragment 都是原 native Invocation Completion。CopyBatch 的
+FIFO/source lifetime 不需要本轮通知 seam，故去掉无实际 caller 的 copy packet/订阅/三项新增
+copy 测试；原 copy 产品/测试保持 KEEP。本轮 native 四项定向测试另覆盖合法 inline terminal，
+不以测试行数推动能力。此收窄不改变已冻结公共形状或扩大 owner。

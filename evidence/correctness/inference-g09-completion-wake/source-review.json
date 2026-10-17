@@ -1,0 +1,41 @@
+{
+  "schema": "hyle.g09-completion-wake-source-review/v1",
+  "date": "2026-10-17",
+  "audited_checkpoint": "6b26cd4b26488ce3dba451bffba415b7756e504a",
+  "state": "SOURCE_REVIEW_ONLY_RUNTIME_UNPROVEN",
+  "reviews": [
+    {
+      "reviewer": "/root/graph_coverage_audit",
+      "independent_scope": "Vulkan resident waiter, public pool contract, controlled shutdown tests and new native-ready pipeline cases",
+      "verdict": "PASS_NO_SOURCE_MUST",
+      "checked": [
+        "Only pool worker performs native wait; active Completion observations are exclusive under the pipeline monitor.",
+        "Response epoch is captured before observations; newly ready native work and other pending stages continue to advance.",
+        "Start refusal/queued cancellation precede runtime-prefix acceptance; running job services normal/error/cancel cleanup.",
+        "Root joins the CPU lane and active response, drains accepted handles, then waits for stop/destroy_done before leases.finish.",
+        "Admitted root reference survives the pool-job reference handoff; controlled gates and early-return cleanup preserve storage.",
+        "Second native branch and cap1 cases assert mathematics/progress without claiming a measured active interleaving."
+      ]
+    },
+    {
+      "reviewer": "/root/cpu_foundation_audit",
+      "independent_scope": "Apple native finish, internal notification seam, Graph pre-poll epoch/outstanding barrier and four lifecycle tests",
+      "verdict": "PASS_NO_SOURCE_MUST",
+      "checked": [
+        "Native done is published only after native uses retire; the second monitor section takes late abandoned/hint/notification attachments.",
+        "Registration permits inline callbacks outside the Graph monitor; success consumes a reference and failure does not.",
+        "Graph waits for notification reference release before terminal publication or reuse; hints do not replace checked native results.",
+        "Four native tests use only existing exports plus the new private subscribe_completion export across shared boundaries.",
+        "Copy support with no actual G09 caller was removed; both original copy source/test blobs remain unchanged."
+      ]
+    }
+  ],
+  "root_review": [
+    "Original and two-stage native retirement windows were checked, including a destroy arriving between native-use retirement and done publication.",
+    "Pure CPU execution with a stopped but valid pool was added as a targeted public regression case.",
+    "Existing CPU policy and both eligible mature MatMul providers were checked to ensure the public ParallelExecutor gate is actually invoked for the chosen 64x64 shape."
+  ],
+  "runtime_pass_claimed": false,
+  "performance_pass_claimed": false,
+  "remaining": "Ordinary native/device/host/three-delivery verification, fixed-candidate performance qualification and final independent review."
+}

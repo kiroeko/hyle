@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <exception>
 #include <functional>
 #include <mutex>
@@ -13,6 +14,7 @@
 #include "../compute/completion_internal.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/graph/detail/lease_submission.h"
+#include "hyle/sched/blocking.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
 #include "hyle/util/ref_counted.h"
@@ -59,6 +61,7 @@ struct RunState final : util::RefCounted<RunState> {
   std::unique_ptr<PageSlots,PageSlotsDelete> pages;
   sched::Scheduler *scheduler = nullptr;
   compute::Queue *cpu_queue = nullptr;
+  sched::BlockingPool *native_wait_pool = nullptr;
   sched::Event progress, finished;
   graph::detail::JointPipelineFrontier frontier;
   Vector<std::uint8_t> initially_complete;
@@ -66,6 +69,17 @@ struct RunState final : util::RefCounted<RunState> {
   bool pipeline_parallel = false;
   std::mutex pipeline_mutex, lease_mutex;
   sched::ConditionVariable pipeline_ready;
+  // One resident pool job per episode, with one exclusive Completion request
+  // at a time. All cell fields are guarded by pipeline_mutex. The job remains
+  // RUNNING across requests, including error/cancel drain, so pool shutdown
+  // cannot cancel a waiter after this episode has accepted native work.
+  sched::detail::BlockingJob native_wait_job;
+  std::condition_variable native_wait_ready;
+  const compute::Completion *native_wait_completion = nullptr;
+  Status native_wait_status;
+  std::uint64_t native_wait_epoch = 0;
+  bool native_wait_needed = false, native_wait_started = false;
+  bool native_wait_destroyed = true, native_wait_stop = false, native_wait_done = false;
   Status pipeline_error;
   bool cpu_stopped = false, pipeline_accepted = false;
   std::mutex retirement_mutex;
@@ -218,17 +232,145 @@ Status protect_prefix(RunState &run, const compute::Completion &completion) noex
   }
   return Status::Ok();
 }
-Status await_completion(RunState &run, const compute::Completion &completion) noexcept {
+Status await_cpu_completion(RunState &run, const compute::Completion &completion) noexcept {
   HYLE_RETURN_IF_ERROR(protect_prefix(run, completion));
   for (;;) {
     const auto ready = completion.poll();
     if (!ready) return ready.error();
     if (*ready == compute::CompletionPoll::kComplete) return completion.wait();
-    // The original Vulkan completion stays pending until native work and all
-    // provider tails retire, including observation errors. This timed wait
-    // yields the coarse progress fiber without occupying its Sched worker.
+    // The original CPU Queue owns progress. Yield this coarse fiber while its
+    // existing CPU completion is pending.
     run.progress.wait_for(std::chrono::milliseconds(1));
   }
+}
+
+void run_native_wait_job(void *opaque) noexcept {
+  auto &run = *static_cast<RunState *>(opaque);
+  std::unique_lock lock(run.pipeline_mutex);
+  run.native_wait_started = true;
+  run.pipeline_ready.notify_all();
+  for (;;) {
+    run.native_wait_ready.wait(lock, [&] {
+      return run.native_wait_stop ||
+             (run.native_wait_completion != nullptr && !run.native_wait_done);
+    });
+    if (run.native_wait_stop) return;
+    const auto *completion = run.native_wait_completion;
+    lock.unlock();
+    // This is the only observer of this handle until the response handoff.
+    // Original wait includes managed tails and exceptional needs_drain work.
+    auto status = completion->wait();
+    lock.lock();
+    run.native_wait_status = std::move(status);
+    run.native_wait_done = true;
+    ++run.native_wait_epoch;
+    run.pipeline_ready.notify_all();
+  }
+}
+void cancel_native_wait_job(void *opaque) noexcept {
+  auto &run = *static_cast<RunState *>(opaque);
+  std::lock_guard lock(run.pipeline_mutex);
+  HYLE_FATAL_ASSERT(!run.native_wait_started);
+  // No graph stage is admitted until the pool has started this job.
+  run.native_wait_status = Status::Cancelled("CPU+Vulkan native waiter cancelled before start");
+}
+void destroy_native_wait_job(void *opaque) noexcept {
+  auto &run = *static_cast<RunState *>(opaque);
+  std::lock_guard lock(run.pipeline_mutex);
+  // The admitted root retains the run until it observes this handoff. Return
+  // the pool reference before publishing the last job access under the monitor.
+  run.decref();
+  run.native_wait_destroyed = true;
+  run.pipeline_ready.notify_all();
+}
+Status start_native_waiter(RunState &run) noexcept {
+  if (!run.native_wait_needed) return Status::Ok();
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    HYLE_FATAL_ASSERT(run.native_wait_destroyed);
+    run.native_wait_started = false;
+    run.native_wait_destroyed = false;
+    run.native_wait_stop = false;
+    run.native_wait_done = false;
+    run.native_wait_completion = nullptr;
+    run.native_wait_status = Status::Ok();
+    run.native_wait_epoch = 0;
+    run.incref(); // Embedded job's reference, returned only by destroy.
+  }
+  if (!run.native_wait_pool->submit(&run.native_wait_job)) {
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      run.native_wait_status = Status::Unavailable("CPU+Vulkan native waiter admission failed");
+    }
+    run.native_wait_job.destroy();
+  }
+  std::unique_lock lock(run.pipeline_mutex);
+  run.pipeline_ready.wait(lock, [&] {
+    return run.native_wait_started || run.native_wait_destroyed;
+  });
+  if (!run.native_wait_started) return run.native_wait_status;
+  return run.cancel.load(std::memory_order_acquire)
+      ? Status::Cancelled("CPU+Vulkan cancelled before graph admission") : Status::Ok();
+}
+
+// Caller holds pipeline_mutex. Only the root posts/acknowledges requests; the
+// worker stops touching a Completion before publishing native_wait_done.
+void request_native_wait(RunState &run, const compute::Completion &completion) noexcept {
+  HYLE_FATAL_ASSERT(run.native_wait_started && !run.native_wait_destroyed &&
+                    run.native_wait_completion == nullptr);
+  run.native_wait_completion = &completion;
+  run.native_wait_done = false;
+  run.native_wait_ready.notify_one();
+}
+Status take_native_wait_response(RunState &run) noexcept {
+  HYLE_FATAL_ASSERT(run.native_wait_completion != nullptr && run.native_wait_done);
+  auto status = run.native_wait_status;
+  run.native_wait_completion = nullptr;
+  run.native_wait_done = false;
+  return status;
+}
+Status finish_native_wait_request(RunState &run) noexcept {
+  std::unique_lock lock(run.pipeline_mutex);
+  if (run.native_wait_completion == nullptr) return Status::Ok();
+  run.pipeline_ready.wait(lock, [&] { return run.native_wait_done; });
+  return take_native_wait_response(run);
+}
+Status wait_native_completion(RunState &run, const compute::Completion &completion) noexcept {
+  std::unique_lock lock(run.pipeline_mutex);
+  request_native_wait(run, completion);
+  run.pipeline_ready.wait(lock, [&] { return run.native_wait_done; });
+  return take_native_wait_response(run);
+}
+Status await_native_completion(RunState &run, const compute::Completion &completion) noexcept {
+  auto status = protect_prefix(run, completion);
+  // Even failed retention admission cannot abandon an already accepted native
+  // prefix. The running resident job still waits for its real retirement.
+  status.Update(wait_native_completion(run, completion));
+  return status;
+}
+Result<compute::CompletionPoll> poll_native_completion(
+    RunState &run, const compute::Completion &completion) noexcept {
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    if (run.native_wait_completion == &completion) {
+      if (!run.native_wait_done) return compute::CompletionPoll::kPending;
+      const auto status = take_native_wait_response(run);
+      if (!status.ok()) return std::unexpected(status);
+      return compute::CompletionPoll::kComplete;
+    }
+  }
+  return completion.poll();
+}
+Status stop_native_waiter(RunState &run) noexcept {
+  if (!run.native_wait_needed) return Status::Ok();
+  auto status = finish_native_wait_request(run);
+  std::unique_lock lock(run.pipeline_mutex);
+  if (run.native_wait_destroyed) return status;
+  HYLE_FATAL_ASSERT(run.native_wait_started);
+  run.native_wait_stop = true;
+  run.native_wait_ready.notify_one();
+  run.pipeline_ready.wait(lock, [&] { return run.native_wait_destroyed; });
+  return status;
 }
 void publish_terminal(RunState &run, Status status, bool accepted) noexcept {
   cd::CompletionLifetime abandoned;
@@ -342,7 +484,7 @@ Status drive_fragment(RunState &run, std::size_t index, bool &accepted) noexcept
   if (fragment.target == kCpuTarget) {
     HYLE_ASSIGN_OR_RETURN(auto completion, slot.cpu.submit(*run.cpu_queue));
     accepted = true;
-    HYLE_RETURN_IF_ERROR(await_completion(run, completion));
+    HYLE_RETURN_IF_ERROR(await_cpu_completion(run, completion));
     for (std::size_t port = 0; port < fragment.outputs.size(); ++port) {
       const auto id = fragment.outputs[port];
       auto &value = run.values[id];
@@ -358,7 +500,7 @@ Status drive_fragment(RunState &run, std::size_t index, bool &accepted) noexcept
   } else {
     HYLE_ASSIGN_OR_RETURN(auto submitted, submit_native_fragment(run, index));
     accepted = true;
-    HYLE_RETURN_IF_ERROR(await_completion(run, submitted.completion()));
+    HYLE_RETURN_IF_ERROR(await_native_completion(run, submitted.completion()));
     HYLE_RETURN_IF_ERROR(finish_native_fragment(run, index, submitted));
   }
   return Status::Ok();
@@ -376,7 +518,7 @@ Status drive_stage(RunState &run, std::size_t job, bool &accepted) noexcept {
   if (stage.kind == Kind::kRepack) {
     HYLE_ASSIGN_OR_RETURN(auto completion, value.repack.submit(*run.cpu_queue));
     accepted = true;
-    return await_completion(run, completion);
+    return await_cpu_completion(run, completion);
   }
   if (stage.kind == Kind::kUpload) {
     auto source = spec.id.kind() == ValueKind::kInput ? value.host_input : value.host_value;
@@ -385,7 +527,7 @@ Status drive_stage(RunState &run, std::size_t job, bool &accepted) noexcept {
     }
     HYLE_ASSIGN_OR_RETURN(auto copy, value.transfer.upload(*value.boundary, source));
     accepted = true;
-    HYLE_RETURN_IF_ERROR(await_completion(run, copy));
+    HYLE_RETURN_IF_ERROR(await_native_completion(run, copy));
     return Status::Ok();
   }
   if (stage.kind == Kind::kDownload) {
@@ -397,7 +539,7 @@ Status drive_stage(RunState &run, std::size_t job, bool &accepted) noexcept {
     if (!empty_page) {
       HYLE_ASSIGN_OR_RETURN(auto copy, value.transfer.download(*value.native_value));
       accepted = true;
-      HYLE_RETURN_IF_ERROR(await_completion(run, copy));
+      HYLE_RETURN_IF_ERROR(await_native_completion(run, copy));
       HYLE_RETURN_IF_ERROR(value.transfer.read(destination));
     }
     value.host_value = destination.as_const();
@@ -419,7 +561,7 @@ Result<bool> advance_native_stage(RunState &run, std::size_t job, bool &accepted
       accepted = true;
       HYLE_RETURN_IF_ERROR(protect_prefix(run, slot.pending.completion()));
     }
-    HYLE_ASSIGN_OR_RETURN(auto ready, slot.pending.completion().poll());
+    HYLE_ASSIGN_OR_RETURN(auto ready, poll_native_completion(run, slot.pending.completion()));
     if (ready == compute::CompletionPoll::kPending) return false;
     HYLE_RETURN_IF_ERROR(finish_native_fragment(run, stage.index, slot.pending));
     slot.pending = {};
@@ -452,7 +594,7 @@ Result<bool> advance_native_stage(RunState &run, std::size_t job, bool &accepted
     accepted = true;
     HYLE_RETURN_IF_ERROR(protect_prefix(run, value.pending_transfer));
   }
-  HYLE_ASSIGN_OR_RETURN(auto ready, value.pending_transfer.poll());
+  HYLE_ASSIGN_OR_RETURN(auto ready, poll_native_completion(run, value.pending_transfer));
   if (ready == compute::CompletionPoll::kPending) return false;
   HYLE_RETURN_IF_ERROR(value.pending_transfer.wait());
   if (stage.kind == Kind::kDownload) {
@@ -465,6 +607,13 @@ Result<bool> advance_native_stage(RunState &run, std::size_t job, bool &accepted
 }
 
 using PipelineLane = graph::detail::JointPipelinePlan::Lane;
+
+const compute::Completion &native_stage_completion(RunState &run, std::size_t job) noexcept {
+  const auto &stage = run.plan->pipeline_stages[job];
+  if (stage.kind == graph::detail::NativePipelineStage::Kind::kFragment)
+    return run.fragments[stage.index].pending.completion();
+  return run.values[stage.index].pending_transfer;
+}
 
 void drive_lane(RunState &run, PipelineLane lane) noexcept {
   for (;;) {
@@ -507,8 +656,12 @@ void drive_native_lane(RunState &run) noexcept {
     return result;
   };
   for (;;) {
+    std::uint64_t observed_epoch;
     {
       std::lock_guard lock(run.pipeline_mutex);
+      // Capture before observations: a response between the last poll and park
+      // must make the predicate true even if its notification was already sent.
+      observed_epoch = run.native_wait_epoch;
       if (run.cancel.load(std::memory_order_acquire))
         run.pipeline_error.Update(Status::Cancelled("joint native pipeline cancelled before admission"));
       if (!run.pipeline_error.ok() || run.frontier.done()) break;
@@ -541,11 +694,21 @@ void drive_native_lane(RunState &run) noexcept {
     }
     if (progressed) continue;
     std::unique_lock lock(run.pipeline_mutex);
+    if (pending != 0 && run.native_wait_completion == nullptr &&
+        run.pipeline_error.ok() && !run.cancel.load(std::memory_order_acquire) &&
+        !run.frontier.ready(PipelineLane::kNative)) {
+      request_native_wait(run, native_stage_completion(run, run.pending_native[0]));
+    }
     const auto changed = [&] {
       return !run.pipeline_error.ok() || run.cancel.load(std::memory_order_acquire) ||
-             run.frontier.done() || run.frontier.ready(PipelineLane::kNative);
+             run.frontier.done() || run.frontier.ready(PipelineLane::kNative) ||
+             run.native_wait_epoch != observed_epoch;
     };
-    if (pending != 0) run.pipeline_ready.wait_for(lock, std::chrono::milliseconds(1), changed);
+    // The selected prefix has a real completion wake, including needs_drain.
+    // Other pending prefixes may be observed independently while that handle
+    // stays exclusive to the job; bounded observation covers only those.
+    const auto bridged = run.native_wait_completion != nullptr ? std::size_t{1} : std::size_t{0};
+    if (pending > bridged) run.pipeline_ready.wait_for(lock, std::chrono::milliseconds(1), changed);
     else run.pipeline_ready.wait(lock, changed);
   }
 }
@@ -580,16 +743,16 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
     run.pipeline_ready.wait(lock, [&] { return run.cpu_stopped; });
     accepted = accepted || run.pipeline_accepted;
     lock.unlock();
-    // A pending native handle is also our active observer. On cancellation or
-    // first error, finish each accepted original prefix before dropping it:
-    // Vulkan abandonment alone does not start a background collector.
-    // Both drivers have stopped admitting work and no monitor is held here.
+    // Stop admissions, join the selected observer, then drain every accepted
+    // original prefix through the same RUNNING job. No error/cancel cleanup
+    // blocks a Scheduler worker or relies on a nonblocking native collector.
+    run.pipeline_error.Update(finish_native_wait_request(run));
     for (auto &fragment : run.fragments) if (fragment.pending.valid()) {
-      run.pipeline_error.Update(fragment.pending.completion().wait());
+      run.pipeline_error.Update(wait_native_completion(run, fragment.pending.completion()));
       fragment.pending = {};
     }
     for (auto &value : run.values) if (value.pending_transfer.valid()) {
-      run.pipeline_error.Update(value.pending_transfer.wait());
+      run.pipeline_error.Update(wait_native_completion(run, value.pending_transfer));
       value.pending_transfer = {};
     }
     HYLE_RETURN_IF_ERROR(run.pipeline_error);
@@ -601,7 +764,11 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
 void drive(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
   bool accepted = false;
-  const auto status = drive_graph(run, accepted);
+  auto status = start_native_waiter(run);
+  if (status.ok()) status = drive_graph(run, accepted);
+  status.Update(stop_native_waiter(run));
+  // The episode's lease base remains held through the job destroy handoff, so
+  // no native retention callback can publish/reuse this run before that point.
   if (run.leases.valid()) run.leases.finish(status, accepted);
   else publish_terminal(run, status, accepted);
   run.decref(); // existing Sched worker's admitted reference
@@ -667,9 +834,10 @@ Result<ResourceReport> resource_report(const RunState &run) noexcept {
 }
 } // namespace
 
-Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, compute::Queue &cpu_queue) const noexcept {
-  if (!state_ || !scheduler.valid() || !state_->cpu_context.owns(cpu_queue))
-    return std::unexpected(Status::InvalidArgument("CPU+Vulkan requires its exact CPU Queue and a live Scheduler"));
+Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, compute::Queue &cpu_queue,
+                                               sched::BlockingPool &native_wait_pool) const noexcept {
+  if (!state_ || !scheduler.valid() || !native_wait_pool.valid() || !state_->cpu_context.owns(cpu_queue))
+    return std::unexpected(Status::InvalidArgument("CPU+Vulkan requires its exact CPU Queue, live Scheduler and native wait pool"));
   const auto allocator = state_->allocator;
   auto *memory = allocator.allocate(sizeof(InvocationState), alignof(InvocationState));
   if (memory == nullptr) return std::unexpected(Status::ResourceExhausted("CPU+Vulkan invocation metadata"));
@@ -683,6 +851,9 @@ Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, co
   auto &run = *state->run;
   run.scheduler = &scheduler;
   run.cpu_queue = &cpu_queue;
+  run.native_wait_pool = &native_wait_pool;
+  run.native_wait_job = {.ctx = &run, .run_fn = &run_native_wait_job,
+      .cancel_fn = &cancel_native_wait_job, .destroy_fn = &destroy_native_wait_job};
   run.host_bytes = state_->host_workspace_bytes;
   HYLE_ASSIGN_OR_RETURN(state->result, cd::ResultSlot<Results>::create(allocator));
   try {
@@ -1120,6 +1291,7 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
     if (value.native_input) value.native_value = value.native_input;
     else if (spec.vulkan_use) value.native_value = value.boundary;
   }
+  run.native_wait_needed = false;
   for (std::size_t i = 0; i < run.plan->pipeline_stages.size(); ++i) {
     const auto &stage = run.plan->pipeline_stages[i];
     bool complete = false;
@@ -1130,6 +1302,9 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
       else complete = bool(value.native_input) || page;
     }
     run.initially_complete[i] = complete;
+    if (!complete && (stage.kind == Kind::kUpload || stage.kind == Kind::kDownload ||
+        (stage.kind == Kind::kFragment && run.plan->fragments[stage.index].target == kVulkanTarget)))
+      run.native_wait_needed = true;
   }
   run.pipeline_parallel = run.plan->pipeline.parallel_after(run.initially_complete);
   if (run.pipeline_parallel) {

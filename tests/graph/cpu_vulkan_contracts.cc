@@ -5,6 +5,8 @@
 #include <hyle/mem/quota_allocator.h>
 #include <hyle/mem/stats.h>
 
+#include "cpu_vulkan_waiter_cases.h"
+
 namespace {
 Status require(bool condition, const char *message) {
   return condition ? Status::Ok() : Status::Internal(message);
@@ -25,6 +27,7 @@ Status leased_contracts() {
   const b::Environment environment{.cpu = &cpu, .vulkan = &vulkan, .device = &device, .staging = &staging};
   auto stats = m::StatsAllocator::create(m::system_allocator()).value();
   hyle::sched::Scheduler scheduler(1, m::system_allocator(), 32);
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(), 2);
   HYLE_ASSIGN_OR_RETURN(auto queue, cpu.create_queue()); Drain drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto row, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{1, 64}));
   HYLE_ASSIGN_OR_RETURN(auto matrix, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{64, 64}));
@@ -50,7 +53,7 @@ Status leased_contracts() {
   const std::array placement{g::NodePlacement{*graph.node_id(0), b::kCpuTarget, g::PlacementStrength::kRequired},
                             g::NodePlacement{*graph.node_id(2), b::kCpuTarget, g::PlacementStrength::kRequired}};
   HYLE_ASSIGN_OR_RETURN(auto program, b::compile(graph, environment, {.node_placements = placement, .allocator = stats.get()}));
-  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue));
+  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue, completion_waiters));
   HYLE_RETURN_IF_ERROR(invocation.bind(x, row, input)); HYLE_RETURN_IF_ERROR(invocation.bind(w, matrix, weight));
   HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
   { HYLE_ASSIGN_OR_RETURN(auto warm, invocation.run()); }
@@ -81,7 +84,7 @@ Status leased_contracts() {
   // The original plan and sources now exercise the opt-in lease branch on
   // cancellation, public-handle abandonment and an accepted CPU prefix failure.
   {
-    HYLE_ASSIGN_OR_RETURN(auto cancelled_slot, program.create_invocation(scheduler, queue));
+    HYLE_ASSIGN_OR_RETURN(auto cancelled_slot, program.create_invocation(scheduler, queue, completion_waiters));
     HYLE_RETURN_IF_ERROR(cancelled_slot.bind(x, row, input));
     HYLE_RETURN_IF_ERROR(cancelled_slot.bind(w, matrix, imported));
     HYLE_RETURN_IF_ERROR(cancelled_slot.prepare_replay());
@@ -101,7 +104,7 @@ Status leased_contracts() {
     HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "cancelled mixed lease uses did not retire"));
   }
   {
-    HYLE_ASSIGN_OR_RETURN(auto abandoned_slot, program.create_invocation(scheduler, queue));
+    HYLE_ASSIGN_OR_RETURN(auto abandoned_slot, program.create_invocation(scheduler, queue, completion_waiters));
     HYLE_RETURN_IF_ERROR(abandoned_slot.bind(x, row, input));
     HYLE_RETURN_IF_ERROR(abandoned_slot.bind(w, matrix, imported));
     HYLE_RETURN_IF_ERROR(abandoned_slot.prepare_replay());
@@ -110,11 +113,11 @@ Status leased_contracts() {
     scheduler.drain();
     HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "abandoned mixed lease uses did not retire"));
   }
-  HYLE_ASSIGN_OR_RETURN(auto rejected_slot, program.create_invocation(scheduler, queue));
+  HYLE_ASSIGN_OR_RETURN(auto rejected_slot, program.create_invocation(scheduler, queue, completion_waiters));
   HYLE_RETURN_IF_ERROR(rejected_slot.bind(x, row, input)); HYLE_RETURN_IF_ERROR(rejected_slot.bind(w, matrix, imported));
   HYLE_RETURN_IF_ERROR(rejected_slot.prepare_replay());
   {
-    HYLE_ASSIGN_OR_RETURN(auto late_slot, program.create_invocation(scheduler, queue));
+    HYLE_ASSIGN_OR_RETURN(auto late_slot, program.create_invocation(scheduler, queue, completion_waiters));
     HYLE_RETURN_IF_ERROR(late_slot.bind(x, row, input));
     HYLE_RETURN_IF_ERROR(late_slot.bind(w, matrix, imported));
     HYLE_RETURN_IF_ERROR(late_slot.prepare_replay());
@@ -149,12 +152,14 @@ Status leased_contracts() {
 }
 
 Status contracts() {
+  HYLE_RETURN_IF_ERROR(vulkan_waiter_cases::run());
   HYLE_RETURN_IF_ERROR(leased_contracts());
   HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto vulkan, v::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(vulkan, v::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto staging, v::MemoryResource::create(vulkan, v::MemoryKind::kStaging));
   hyle::sched::Scheduler scheduler(1, m::system_allocator(), 32);
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(), 2);
   HYLE_ASSIGN_OR_RETURN(auto queue, cpu.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto row, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{1, 64}));
   HYLE_ASSIGN_OR_RETURN(auto matrix, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{64, 64}));
@@ -246,9 +251,9 @@ Status contracts() {
   {
     auto bounded_environment = environment; bounded_environment.native_boundary_budget_bytes = 1;
     HYLE_ASSIGN_OR_RETURN(auto bounded, b::compile(graph, bounded_environment, {.node_placements = placement}));
-    HYLE_RETURN_IF_ERROR(require(!bounded.create_invocation(scheduler, queue), "native boundary capacity ignored"));
+    HYLE_RETURN_IF_ERROR(require(!bounded.create_invocation(scheduler, queue, completion_waiters), "native boundary capacity ignored"));
   }
-  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue)); Drain drain{scheduler};
+  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue, completion_waiters)); Drain drain{scheduler};
   HYLE_RETURN_IF_ERROR(require(!invocation.submit(), "unprepared graph submitted"));
   HYLE_RETURN_IF_ERROR(require(!invocation.prepare_replay().ok(), "unbound graph prepared"));
   HYLE_RETURN_IF_ERROR(require(!invocation.bind(x, source.view.as_const()).ok(), "wrong graph shape bound"));
@@ -283,12 +288,12 @@ Status contracts() {
   const auto closed = invocation.close(); if (!closed.ok() && !closed.IsCancelled()) return closed;
   HYLE_RETURN_IF_ERROR(require(!invocation.submit(), "closed graph submitted"));
   {
-    HYLE_ASSIGN_OR_RETURN(auto abandoned, program.create_invocation(scheduler, queue));
+    HYLE_ASSIGN_OR_RETURN(auto abandoned, program.create_invocation(scheduler, queue, completion_waiters));
     HYLE_RETURN_IF_ERROR(abandoned.bind(x, input.view.as_const())); HYLE_RETURN_IF_ERROR(abandoned.bind(w, first, 7)); HYLE_RETURN_IF_ERROR(abandoned.prepare_replay());
     HYLE_ASSIGN_OR_RETURN(auto pending, abandoned.submit()); pending = {}; abandoned = {}; scheduler.drain();
   }
   HYLE_RETURN_IF_ERROR(slots.close()); HYLE_RETURN_IF_ERROR(require(!slots.upload(0, selected), "closed pool submitted"));
-  HYLE_ASSIGN_OR_RETURN(auto late, program.create_invocation(scheduler, queue));
+  HYLE_ASSIGN_OR_RETURN(auto late, program.create_invocation(scheduler, queue, completion_waiters));
   HYLE_RETURN_IF_ERROR(late.bind(x, input.view.as_const())); HYLE_RETURN_IF_ERROR(late.bind(w, first, 7)); HYLE_RETURN_IF_ERROR(late.prepare_replay());
   HYLE_RETURN_IF_ERROR(vulkan.close()); HYLE_ASSIGN_OR_RETURN(auto accepted, late.submit());
   HYLE_RETURN_IF_ERROR(require(!accepted.wait(), "closed GPU silently ran elsewhere"));

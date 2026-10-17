@@ -66,9 +66,17 @@ inline Status lifecycle(unsigned mode){
 #endif
     HYLE_ASSIGN_OR_RETURN(auto data,r::inputs(native,device,staging));HYLE_ASSIGN_OR_RETURN(auto shape,graph(data));
     HYLE_ASSIGN_OR_RETURN(auto program,compile(shape,environment(cpu,native,device,staging),metadata.get()));
-    hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);Drain drain{scheduler};
+    hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
+#if !defined(HYLE_JOINT_PAGE_APPLE)
+    hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
+#endif
+    Drain drain{scheduler};
     HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());HYLE_ASSIGN_OR_RETURN(auto source,query(shape));
+#if defined(HYLE_JOINT_PAGE_APPLE)
     HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
+#else
+    HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
+#endif
     HYLE_RETURN_IF_ERROR(prepare(slot,shape,data,source));
 #if defined(HYLE_JOINT_PAGE_APPLE)
     auto gate=std::make_shared<hyle_f5_apple_failure_fixture::Gate>();

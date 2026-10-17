@@ -508,6 +508,10 @@ fence 等待伪造跨队列可见性。`environment().distinct_transfer_queue`�
 池的关闭或弃置继续用原 native retirement，接纳后失败必须保活到实际终态。
 
 选择 `HYLE_COMPUTE_ROUTES="cpu;vulkan"`自动加入 `hyle/graph/cpu_vulkan.h` 的粗片段组合和 Sched。
+组合 Executable 冷调用 `create_invocation(scheduler, cpu_queue, completion_waiters)`，其中
+`completion_waiters` 是调用方持有的 `sched::BlockingPool`。两个在途slots配置容量2；原生等待
+在池worker执行，Scheduler仍可推进独立CPU/native支路。池的线程/栈计入调用方预算，必须活过
+Invocation关闭、已接纳原生工作/等待任务尾部以及`scheduler.drain()`，随后才能shutdown。
 主存、device、staging 分域预算与已准备的上传/等待报告均由组合提供；普通入口与资源限制见
 [组合样例](../../samples/package/graph/cpu_vulkan/README.md)。模型层/offload 比例、KV和专家策略由引擎决定。
 三交付已在Windows/Air通过；WSL编译/安装已验、实GPU未资格，完整边界见[H3终局](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)。

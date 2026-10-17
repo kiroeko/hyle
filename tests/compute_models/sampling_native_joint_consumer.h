@@ -11,6 +11,7 @@
 #include <mlx/transforms.h>
 #else
 #include <hyle/graph/cpu_vulkan.h>
+#include <hyle/sched/blocking.h>
 #endif
 
 namespace sampling_test {
@@ -39,6 +40,9 @@ inline void native_joint() {
   auto staging=take(native::MemoryResource::create(context,native::MemoryKind::kStaging));
 #endif
   hyle::sched::Scheduler scheduler(2,m::system_allocator(),64);
+#if !defined(HYLE_G08_APPLE)
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(),2);
+#endif
   auto table_buffer=take(m::Buffer::create(m::system_resource(),width*sizeof(float),256));
   std::array<float,width> table_data;
   for(int j=0;j<width;++j)table_data[std::size_t(j)]=float(j)*2+.25F;
@@ -73,7 +77,11 @@ inline void native_joint() {
   std::array<bridge::Invocation,2> slots;
   for(std::size_t bank=0;bank<slots.size();++bank) {
     queues[bank]=take(cpu.create_queue());
+#if defined(HYLE_G08_APPLE)
     slots[bank]=take(program.create_invocation(scheduler,queues[bank]));
+#else
+    slots[bank]=take(program.create_invocation(scheduler,queues[bank],completion_waiters));
+#endif
   }
   JointDrain drain{scheduler};
   for(int step=0;step<65;++step) {

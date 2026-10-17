@@ -18,6 +18,9 @@
 #include <mlx/ops.h>
 #include <mlx/primitives.h>
 
+#include "apple_completion_internal.h"
+#include "../../src/compute/completion_internal.h"
+#include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
 
@@ -25,6 +28,43 @@ namespace {
 namespace a = hyle::compute::apple;
 namespace c = hyle::compute;
 namespace mx = mlx::core;
+
+struct NotificationProbe final {
+  struct Snapshot {
+    unsigned ready, released;
+    bool ordered;
+    std::thread::id thread;
+  };
+  std::mutex mutex;
+  std::condition_variable condition;
+  unsigned ready = 0, released = 0;
+  bool ordered = true;
+  std::thread::id thread;
+  a::detail::CompletionNotification packet() noexcept {
+    return {this, [](void *opaque) noexcept {
+      auto &self = *static_cast<NotificationProbe *>(opaque);
+      std::lock_guard lock(self.mutex);
+      self.ordered = self.ordered && self.ready == self.released;
+      ++self.ready;
+      self.thread = std::this_thread::get_id();
+    }, [](void *opaque) noexcept {
+      auto &self = *static_cast<NotificationProbe *>(opaque);
+      std::lock_guard lock(self.mutex);
+      self.ordered = self.ordered && self.ready == self.released + 1;
+      ++self.released;
+      self.condition.notify_all();
+    }};
+  }
+  bool await(unsigned count = 1) {
+    std::unique_lock lock(mutex);
+    return condition.wait_for(lock, std::chrono::seconds(10),
+                              [&] { return released == count; });
+  }
+  Snapshot snapshot() {
+    std::lock_guard lock(mutex);
+    return {ready, released, ordered, thread};
+  }
+};
 
 // Test-only native primitive boundary. Real MLX GPU work precedes it; no HYLE
 // runtime hooks or substitute Provider are involved. Warmup passes normally.
@@ -110,6 +150,136 @@ struct DrainLeaseBoundary final {
     context.close().IgnoreError();
   }
 };
+
+TEST(AppleCompletionNotification, PendingNativeNotifiesOnceAndRejectsDuplicate) {
+  NotificationProbe observed, rejected;
+  auto boundary = std::make_shared<NativeBoundary>();
+  auto context = a::Context::create().value();
+  ReleaseBoundary release{boundary};
+  auto program = prepare(context, boundary).value();
+  auto invocation = program.create_invocation().value();
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f})};
+  ASSERT_TRUE(invocation.bind(inputs).ok());
+  boundary->arm();
+  auto work = invocation.submit().value();
+  ASSERT_TRUE(boundary->entered());
+  const auto source = c::detail::CompletionAccess::dependency(work.completion());
+  ASSERT_TRUE(a::detail::subscribe_completion(source, observed.packet()).ok());
+  EXPECT_TRUE(a::detail::subscribe_completion(source, rejected.packet()).IsUnavailable());
+  EXPECT_EQ(observed.snapshot().released, 0U);
+  EXPECT_EQ(rejected.snapshot().ready, 0U);
+  EXPECT_FALSE(invocation.bind(inputs).ok());
+  boundary->release();
+  ASSERT_TRUE(observed.await());
+  const auto calls = observed.snapshot();
+  EXPECT_EQ(calls.ready, 1U);
+  EXPECT_EQ(calls.released, 1U);
+  EXPECT_TRUE(calls.ordered);
+  EXPECT_NE(calls.thread, std::this_thread::get_id());
+  auto output = work.wait();
+  ASSERT_TRUE(output);
+  EXPECT_FLOAT_EQ(output->get()->arrays()[0].data<float>()[3], 16.f);
+  EXPECT_EQ(rejected.snapshot().released, 0U);
+}
+
+TEST(AppleCompletionNotification, CompletedNativeNotifiesInlineAndUnknownOwnerIsRejected) {
+  NotificationProbe observed, rejected;
+  std::array<NotificationProbe, 2> inline_observed;
+  auto boundary = std::make_shared<NativeBoundary>();
+  auto context = a::Context::create().value();
+  auto program = prepare(context, boundary).value();
+  auto invocation = program.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(std::array{mx::array({1.f, 2.f, 3.f, 4.f})}).ok());
+  auto work = invocation.submit().value();
+  ASSERT_TRUE(context.close().ok()); // Original owner is done; the handle is unobserved.
+  ASSERT_TRUE(a::detail::subscribe_completion(
+      c::detail::CompletionAccess::dependency(work.completion()), observed.packet()).ok());
+  const auto calls = observed.snapshot();
+  EXPECT_EQ(calls.ready, 1U);
+  EXPECT_EQ(calls.released, 1U);
+  EXPECT_TRUE(calls.ordered);
+  EXPECT_EQ(calls.thread, std::this_thread::get_id());
+  EXPECT_TRUE(work.wait());
+
+  for (unsigned i = 0; i != inline_observed.size(); ++i) {
+    auto completed = c::Completion::completed(i == 0 ? hyle::Status::Ok()
+        : hyle::Status::Cancelled("inline terminal failure"));
+    ASSERT_TRUE(a::detail::subscribe_completion(
+        c::detail::CompletionAccess::dependency(completed), inline_observed[i].packet()).ok());
+    const auto hint = inline_observed[i].snapshot();
+    EXPECT_EQ(hint.ready, 1U);
+    EXPECT_EQ(hint.released, 1U);
+    EXPECT_TRUE(hint.ordered);
+    EXPECT_EQ(hint.thread, std::this_thread::get_id());
+    const auto terminal = completed.wait();
+    if (i == 0) EXPECT_TRUE(terminal.ok());
+    else EXPECT_TRUE(terminal.IsCancelled());
+  }
+
+  const c::detail::CompletionVTable unknown{};
+  const auto terminal = hyle::Status::Ok();
+  const c::detail::CompletionDependency source{&unknown, &rejected, &terminal};
+  EXPECT_TRUE(a::detail::subscribe_completion(source, rejected.packet()).IsUnimplemented());
+  EXPECT_TRUE(a::detail::subscribe_completion({}, rejected.packet()).IsFailedPrecondition());
+  EXPECT_TRUE(a::detail::subscribe_completion(source, {}).IsInvalidArgument());
+  EXPECT_EQ(rejected.snapshot().ready, 0U);
+  EXPECT_EQ(rejected.snapshot().released, 0U);
+}
+
+TEST(AppleCompletionNotification, CancelAndLateFailureStillNotifyAfterAbandonment) {
+  for (bool fail : {false, true}) {
+    NotificationProbe observed;
+    auto boundary = std::make_shared<NativeBoundary>();
+    auto context = a::Context::create().value();
+    ReleaseBoundary release{boundary};
+    auto program = prepare(context, boundary).value();
+    auto invocation = program.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(std::array{mx::array({1.f, 2.f, 3.f, 4.f})}).ok());
+    boundary->arm(fail);
+    auto work = invocation.submit().value();
+    ASSERT_TRUE(boundary->entered());
+    ASSERT_TRUE(a::detail::subscribe_completion(
+        c::detail::CompletionAccess::dependency(work.completion()), observed.packet()).ok());
+    if (!fail) ASSERT_TRUE(work.request_cancel().ok());
+    work = {};
+    invocation = {};
+    EXPECT_EQ(observed.snapshot().released, 0U);
+    boundary->release();
+    const auto closed = context.close();
+    if (fail) EXPECT_TRUE(closed.IsInternal());
+    else EXPECT_TRUE(closed.ok());
+    const auto calls = observed.snapshot();
+    EXPECT_EQ(calls.ready, 1U);
+    EXPECT_EQ(calls.released, 1U);
+    EXPECT_TRUE(calls.ordered);
+  }
+}
+
+TEST(AppleCompletionNotification, RegistrationCompletionRaceReusesOneNativeSlot65Times) {
+  NotificationProbe observed;
+  auto boundary = std::make_shared<NativeBoundary>();
+  auto context = a::Context::create().value();
+  auto program = prepare(context, boundary).value();
+  auto invocation = program.create_invocation().value();
+  auto uses = c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  for (unsigned replay = 0; replay != 65; ++replay) {
+    const float value = static_cast<float>(replay + 1);
+    ASSERT_TRUE(invocation.bind(std::array{mx::array({value, 2.f, 3.f, 4.f})}).ok());
+    auto work = a::detail::PagedBatchAccess::submit(invocation, uses.begin().value()).value();
+    ASSERT_TRUE(a::detail::subscribe_completion(
+        c::detail::CompletionAccess::dependency(work.completion()), observed.packet()).ok());
+    if (replay % 2 == 0) ASSERT_TRUE(observed.await(replay + 1));
+    auto output = work.wait();
+    ASSERT_TRUE(output);
+    EXPECT_EQ(uses.active_batches(), 0U);
+    EXPECT_FLOAT_EQ(output->get()->arrays()[0].data<float>()[0], value * value);
+    ASSERT_TRUE(observed.await(replay + 1));
+  }
+  const auto calls = observed.snapshot();
+  EXPECT_EQ(calls.ready, 65U);
+  EXPECT_EQ(calls.released, 65U);
+  EXPECT_TRUE(calls.ordered);
+}
 
 TEST(AppleLeaseLifetime,
      QueuedCancellationAndAbandonmentRetireTwoNativeBlocks) {

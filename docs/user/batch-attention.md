@@ -255,6 +255,7 @@ Windows CPU source 不代签 Windows native GPU。
 
 ```cpp
 namespace gb = hyle::graph::batch;
+namespace joint = hyle::graph::cpu_vulkan;
 auto descriptor = gb::native_paged_attention(recipe, initial_layout).value();
 const std::array ports{ready_query, physical_key_input, physical_value_input};
 auto page_node = builder.add_node(
@@ -264,7 +265,8 @@ const std::array bindings{gb::NativePagedNodeBinding{
     page_node, recipe, initial_layout, {.max_metadata_backing_bytes = 4096}}};
 auto program = joint::compile(graph, environment, {
     .node_placements = cpu_nodes, .paged_nodes = bindings}).value();
-auto slot = program.create_invocation(scheduler, cpu_queue).value();
+hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(), 2);
+auto slot = program.create_invocation(scheduler, cpu_queue, completion_waiters).value();
 const std::array layouts{gb::NodeLayout{page_node, layout}};
 HYLE_RETURN_IF_ERROR(slot.prepare_batch(layouts));
 HYLE_RETURN_IF_ERROR(slot.bind(source_query, query_description, ready_host_query));
@@ -274,7 +276,9 @@ HYLE_RETURN_IF_ERROR(slot.prepare_replay());
 auto result = slot.run().value();
 ```
 
-`joint`选cpu_apple或cpu_vulkan；Environment、Graph ID、Context/Queue、资源和scheduler的
+上例选择cpu_vulkan；cpu_apple使用对应Environment和原两参数`create_invocation(scheduler, cpu_queue)`。
+Vulkan调用方持有完成等待池，两个在途slots配置容量2；池必须活过Invocation关闭、原生/等待任务尾部及
+`scheduler.drain()`，再shutdown。Environment、Graph ID、Context/Queue、资源和scheduler的
 自然借用规则沿原联合入口。冷binding与layout由plan拥有，compile的spans只借本调用。
 prepare_batch需要全部live页节点各一次，同一K/V输入的所有节点须使用相同owned版本。
 固定active packed输出shape；请求分配、页顺序/共享/tail变化显式cold prepare，active Q

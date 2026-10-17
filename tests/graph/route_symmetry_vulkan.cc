@@ -3,6 +3,7 @@
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/cpu_vulkan.h>
 #include <hyle/sched/scheduler.h>
+#include <hyle/sched/blocking.h>
 #endif
 
 #include <array>
@@ -138,6 +139,7 @@ Status hybrid(const v::Context &context) {
   HYLE_ASSIGN_OR_RETURN(auto staging, v::MemoryResource::create(context, v::MemoryKind::kStaging));
   const b::Environment environment{.cpu=&cpu, .vulkan=&context, .device=&device, .staging=&staging};
   hyle::sched::Scheduler scheduler(1, m::system_allocator(), 32);
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(), 1);
   struct Drain { hyle::sched::Scheduler &scheduler; ~Drain(){scheduler.drain();} } drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto f, symbolic_graph());
   const std::array one{g::ShapeBinding{f.rows, 1}}, four{g::ShapeBinding{f.rows, 4}};
@@ -153,7 +155,7 @@ Status hybrid(const v::Context &context) {
     std::vector<float> values(*desc.element_count(), -3.0f), actual(values.size());
     HYLE_RETURN_IF_ERROR(storage.view().write(std::as_bytes(std::span(values))));
     HYLE_ASSIGN_OR_RETURN(auto program, family.select(shape));
-    HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue));
+    HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue, completion_waiters));
     HYLE_RETURN_IF_ERROR(invocation.bind(f.input, input.as_const()));
     HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
     HYLE_ASSIGN_OR_RETURN(auto result, invocation.run());
@@ -178,7 +180,7 @@ Status hybrid(const v::Context &context) {
   }
   const std::array<std::int32_t, 1> bad{2};
   HYLE_RETURN_IF_ERROR(backing[1].view().write(std::as_bytes(std::span(bad))));
-  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue));
+  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue, completion_waiters));
   for (std::size_t i=0;i<inputs.size();++i) HYLE_RETURN_IF_ERROR(invocation.bind(*controlled.graph.input_id(i), inputs[i]));
   auto reject_wait = invocation.prepare_replay({.host_wait=g::HostWaitPolicy::kReject});
   HYLE_RETURN_IF_ERROR(require(!reject_wait.ok(), "hybrid silently accepted forbidden host wait"));

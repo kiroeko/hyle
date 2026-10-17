@@ -21,7 +21,7 @@
 #include <span>
 #include <vector>
 
-namespace hyle::sched { class Scheduler; }
+namespace hyle::sched { class Scheduler; class BlockingPool; }
 
 namespace hyle::graph::cpu_vulkan {
 inline constexpr ExecutionTargetId kVulkanTarget{0};
@@ -106,8 +106,15 @@ class Executable final {
 public:
   Executable() noexcept = default;
   bool valid() const noexcept { return state_ != nullptr; }
+  // Borrow the pool through close and all accepted job/native retirement tails.
+  // Each active native episode occupies one pool worker; two independent slots
+  // need a budget of two for concurrent progress. A smaller pool may queue slots
+  // and does not promise out-of-order completion. Pool workers must not wait on
+  // Graph results whose native waiter depends on this same pool. Close Graphs,
+  // drain the Scheduler, then shut down the pool. Pure CPU episodes use no job.
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<Invocation>
-  create_invocation(sched::Scheduler &scheduler, compute::Queue &cpu_queue) const noexcept;
+  create_invocation(sched::Scheduler &scheduler, compute::Queue &cpu_queue,
+                    sched::BlockingPool &native_wait_pool) const noexcept;
 private:
   friend struct detail::Plan;
   friend HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<Executable>

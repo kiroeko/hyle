@@ -3,6 +3,7 @@
 #include <hyle/graph/graph.h>
 #if defined(HYLE_COMPUTE_VULKAN)
 #include <hyle/graph/cpu_vulkan.h>
+#include <hyle/sched/blocking.h>
 #elif defined(HYLE_COMPUTE_APPLE)
 #include <hyle/graph/cpu_apple.h>
 #endif
@@ -104,6 +105,9 @@ Status run(){
   const b::Environment environment{.cpu=&cpu,.apple=&gpu,.native=&device};
 #endif
   hyle::sched::Scheduler scheduler(1,m::system_allocator(),32);
+#if defined(HYLE_COMPUTE_VULKAN)
+  hyle::sched::BlockingPool completion_waiters(m::system_allocator(),1);
+#endif
   struct Drain{hyle::sched::Scheduler &s;~Drain(){s.drain();}}drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto state,m::Buffer::create(m::system_resource(),4,64));
   HYLE_ASSIGN_OR_RETURN(auto mapping,state.view().map_host());
@@ -132,7 +136,11 @@ Status run(){
     const std::array effects{g::EffectResourceBinding{resource,g::EffectResourceFootprint::memory(state.view())},
                             g::EffectResourceBinding{observation,g::EffectResourceFootprint::object(&observed)}};
     HYLE_ASSIGN_OR_RETURN(auto program,b::compile(graph,environment,{.node_placements=placements,.effect_bindings=effects}));
+#if defined(HYLE_COMPUTE_VULKAN)
+    HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
+#else
     HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
+#endif
     HYLE_ASSIGN_OR_RETURN(auto alias,c::ConstTensorView::create(desc,state.view()));
     HYLE_RETURN_IF_ERROR(require(slot.bind(input,alias).IsInvalidArgument(),"cross-fragment effect alias admitted"));
     HYLE_RETURN_IF_ERROR(slot.bind(input,input_tensor));HYLE_RETURN_IF_ERROR(slot.prepare_replay());
@@ -174,7 +182,11 @@ Status run(){
   const std::array placement{g::NodePlacement{action,b::kCpuTarget,g::PlacementStrength::kRequired}};
   const std::array effects{g::EffectResourceBinding{resource,g::EffectResourceFootprint::memory(state.view())}};
   HYLE_ASSIGN_OR_RETURN(auto program,b::compile(graph,environment,{.node_placements=placement,.effect_bindings=effects}));
+#if defined(HYLE_COMPUTE_VULKAN)
+  HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
+#else
   HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
+#endif
   HYLE_RETURN_IF_ERROR(slot.prepare_replay());*word=7;
   {HYLE_ASSIGN_OR_RETURN(auto result,slot.run());HYLE_RETURN_IF_ERROR(require(*word==41,"zero-output CPU effect was pruned"));}
   HYLE_RETURN_IF_ERROR(slot.close());
