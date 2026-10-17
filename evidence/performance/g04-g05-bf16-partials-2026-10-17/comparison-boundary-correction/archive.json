@@ -1,0 +1,29 @@
+{
+  "archive": "loading-audit.zip",
+  "archive_bytes": 195091,
+  "archive_sha256": "dddc1961173406c5b03b0660b993e8fee7099cc325a6f6b8f9fa5158faa4bceb",
+  "entries": [
+    {
+      "path": "audit.py",
+      "bytes": 17406,
+      "sha256": "fb5da5c1675b86d84420203ad38c83c4f966fbcb31167751619ce11d2b72ded5"
+    },
+    {
+      "path": "comparison.json",
+      "bytes": 5219962,
+      "sha256": "6ad1c4619ef7cd24dabf0c999c663700367db582384e4ba251f0f81ccd9effe1"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3940,
+      "sha256": "ed5331920b59d94587ce529af76483d406faf0d6f9731d26228e2726f0b69933"
+    },
+    {
+      "path": "same-format-baseline-feasibility.json",
+      "bytes": 6770,
+      "sha256": "dbb7c312a82f4bb9e0393e61376494db91e637e1e852d76f9b171e693677052c"
+    }
+  ],
+  "new_GPU_or_compile": false,
+  "correction": "Different resident KV formats inside warm timing; no same-work implementation ranking follows."
+}

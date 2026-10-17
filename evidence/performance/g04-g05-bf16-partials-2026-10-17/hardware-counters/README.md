@@ -1,5 +1,8 @@
 # C2 的硬件计数器与逐指令等待定位
 
+**比较边界更正：** plain BF16 与 FP8 在计时内承担不同表示转换工作，不能把以下
+动态计数差直接解释为同工实现劣势。双方都实际加载数据，见[更正](../comparison-boundary-correction/README.md)。
+
 Windows 管理员令牌本身未解除 WSL 的 `ERR_NVGPUCTRPERM`。用户在 NVIDIA App 中手动
 允许 GPU 性能计数器访问后，实际 metrics query 和两次有限 NCU 采样均成功。原拒绝记录
 保留；退出码为零但 stdout 含权限错误的旧 query 不计为成功。

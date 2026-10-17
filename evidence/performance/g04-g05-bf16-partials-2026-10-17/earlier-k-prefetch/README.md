@@ -1,5 +1,9 @@
 # C6：QK 后、logits/mask 前预取 K
 
+**适用性更正：** plain BF16 peer 在计时前已完成展开，不能用下列异格式 warm 差额判定
+Hyle 同工落后或 G04/G05 未追平。[更正及初始K/V PC标签纠正](../comparison-boundary-correction/README.md)。
+C5→C6 同 FP8 格式的性能/正确性结果保留，旧 archive 不重写。
+
 这是对 [C5 剩余 K 等待](../shared-page-index/README.md) 的一次定向检验，已接入
 `hyle-flashinfer-bf16-early-k-prefetch-v15`。相对 C5，replay 完整调用快约1%；普通调用
 平均快0.41%但描述区间跨零，不能称已证实稳定收益。只把同一段
@@ -70,7 +74,7 @@ normal 四组均值变化为 −0.3149/−0.3737/−0.3369/−0.6021%；replay �
 也不是跨进程、跨设备保证。C5 的收益和本轮收益来自不同进程，不相加或相乘宣称
 一份新的 C2→C6 精确实测收益。
 
-## 当前直接 peer 对照
+## 已更正适用性：异格式 peer 配置对照
 
 之后复用固定 peer host object，仅改链接 actual C6 archive，再执行一次固定32768pair
 ordinary；对照仍是冷精确展开实际 FP8 字节并吸收 scale 的同源 plain BF16 KV/BF16-partial。
@@ -84,7 +88,7 @@ postverify 和 drain 全部完成 exit0。actual binary SHA256 为
 | replay | 70.934622 | 72.769808 | +2.5872% | [+1.8854%, +3.2889%] |
 
 八个矩阵全部仍为 peer 更快，差额分别约2.497/1.835µs。没有把 C5 的 peer 比率与这里
-跨进程相减，归因成 C6 单项收益。G04/G05 的剩余 peer 差距尚未补齐。
+跨进程相减，归因成 C6 单项收益；这些数值也不构成 G04/G05 同工实现落后证据。
 
 ## 最后一次硬件计数器定位
 
@@ -95,8 +99,9 @@ profile binary 为 `01b83740e2845dd68d2a437cd3381fc74d8441d848fac2046e21dd3f3a5a
 
 主循环 K 组首次等待 `0x3b00` 的 long-scoreboard 样本仅0/2，第二 payload 首消费
 `0x3b90` 为0/0；与 C5 同语义消费点133/124的形状相比，支持等待得到了更多计算覆盖。
-跨 profile 的样本数不换算独立节省微秒。初始页索引消费 `0x0d70` 仍142/150，
-初始 K 三个解码消费点合计仍163/163，因此不能说所有 K 或 metadata 读取延迟都消失。
+跨 profile 的样本数不换算独立节省微秒。初始 V 页地址消费 `0x0d70` 仍142/150，
+所列初始 K/V 三个解码消费点合计仍163/163，其中 V 点101/92、两个 K 点62/71，
+因此不能说所有 K/V 或 metadata 读取延迟都消失。
 
 FP8 总 long-scoreboard 样本485/493，对照300/322。动态 warp 指令总数3,438,560，
 对照2,466,704，仍多39.40%；相对 C5 还增加9696条，但 replay 更快，进一步说明

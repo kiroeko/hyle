@@ -1,0 +1,115 @@
+{
+  "kind": "C6_PEER_INPUT_REPRESENTATION_AND_LIFECYCLE_COMPARABILITY_AUDIT",
+  "no_GPU_compile_new_samples_canonical_or_archived_report_changes": true,
+  "identity": {
+    "source_sha256": "f27e606b2b73e7b811168833222da64e9ad1de10ca152a566f71623715240846",
+    "binary_sha256": "f16c8baa1becab40e1e93e3571804b66ee047c2f869446ac7026fb62a5b7cf46",
+    "host_object_sha256": "ea5c71e342937bd7b9d8c81f81f22c87b794cd1a6655d1245db2d5d6048f1665",
+    "FI_archive_sha256": "bbf3ec34a9aa0d7916ffc3ebb4a340583946ec3ce2bc33a6c0dc2711256ecec2",
+    "reference_role": "Same Hyle FlashInfer provider public factory, plain BF16 native_batch path. Not an external engine or an upstream FP8 throughput baseline."
+  },
+  "original_G04_G05_definition": {
+    "file": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+    "G04_line": 25,
+    "G04": "8-bit cache encode with explicit scale/rounding, append -> compressed resident storage -> direct attention. Full-history expansion is not direct compressed attention.",
+    "G05_lines": [
+      26,
+      27,
+      28
+    ],
+    "G05": "causal window, full noncausal, independent Dqk/Dv finite semantics.",
+    "original_comparator_contract": "bench/inference_resident_sdpa/cuda_encoded_p1/consumer-provenance.md",
+    "original_comparator": "Original FP8 frame owners retained plus an additional GPU-cold-expanded readonly BF16 snapshot; original BF16 partials. Immutable warm consumes the already-ready shadow. Producer/growth excluded. This was explicitly a representation/memory tradeoff, not a same-FP8 implementation comparison.",
+    "prior_applicability_correction_line": 2882
+  },
+  "current_C6_peer_boundaries": {
+    "cold_expand": {
+      "file_lines": [
+        188,
+        203
+      ],
+      "location": "CPU scalar C++ loop in plain_bf16_peer",
+      "operation": "Deep-copy fixture then decode each actual FP8 code, multiply key/value .5/2 scale, encode exact BF16 and assert decoded BF16 equals the value. No GPU decode in this C6 peer consumer."
+    },
+    "cold_upload": {
+      "file_lines": [
+        123,
+        150
+      ],
+      "operation": "Each Harness creates its own CUDA context/resources/arena. It writes the corresponding FP8 or BF16 physical pages before warm timing; query is also uploaded cold.",
+      "device_write_implementation": "src/compute_backend_cuda/cuda_memory.cc:124-138 uses cuMemcpyHtoD and finish_default_transfer for device buffers."
+    },
+    "warm": {
+      "file_lines": [
+        165,
+        171,
+        219,
+        226
+      ],
+      "charged": [
+        "slot update",
+        "plan reuse/capture checks",
+        "run including actual resident-KV attention and merge",
+        "checked Completion.wait",
+        "output acquisition/release"
+      ],
+      "not_charged": [
+        "CPU FP8->BF16 fixture expansion",
+        "initial page/query HtoD writes",
+        "context/pools/planning preparation",
+        "cold public capture preparation",
+        "oracle/readback",
+        "close/drain teardown"
+      ],
+      "meaning": "Both GPU kernels really load their resident K/V representation. The BF16 route reads twice-as-wide KV but needs no per-read FP8 decode; the FP8 route reads compressed KV and decodes tiles. Warm read may hit caches; this audit does not equate logical loads with DRAM bytes."
+    },
+    "data_values": "Same effective numeric K/V: the BF16 peer absorbs exact .5/2 scales cold, while FP8 keeps encoded bytes and applies the scales in its native attention/merge path. That equality does not make timed representation work identical.",
+    "partial_flag_correction": "report.bf16_partials=false on plain BF16 only means the new FP8 opt-in specialization was inactive. native_batch.cu:57 instantiates BatchPrefillPagedParams<T,T,T>, and line40 types split temporary as Params::DTypeO. With T=BF16 the plain peer also stores BF16 partials. Do not describe it as F32 partials because of this flag."
+  },
+  "actual_finite_fixture_bytes": {
+    "pages_capacity": 114,
+    "referenced_unique_pages": 111,
+    "page_size": 16,
+    "kv_heads": 2,
+    "Dk_Dv": [
+      256,
+      256
+    ],
+    "host_complete_FP8_K_plus_V": 1867776,
+    "host_complete_BF16_K_plus_V": 3735552,
+    "cold_written_referenced_FP8_K_plus_V": 1818624,
+    "cold_written_referenced_BF16_K_plus_V": 3637248,
+    "native_report_required_workspace_each_slot_plain": 21053440,
+    "native_report_required_workspace_each_slot_FP8opt": 10567680,
+    "actual_cap_each_slot_plain": 23068672,
+    "actual_cap_each_slot_FP8opt": 11534336,
+    "two_slot_resource_used_plain": 52282370,
+    "two_slot_resource_used_FP8opt": 27345922,
+    "scope": "This resource only, including its backing requests; driver-private pools excluded. Plain planner still reserves its conservative workspace even though its actual partial element type is BF16. These numbers are not all-kernel memory traffic."
+  },
+  "minimal_fair_next_steps_without_new_runs_here": [
+    {
+      "question": "Same-compressed-representation implementation efficiency",
+      "reuse": "The actual C5/C6 same-process 3-owner isolation plus current public Harness already compares identical FP8 resident bytes, Q/output, BF16-partial permission/caps, update/completion/output lifecycle. It establishes the local optimization gain.",
+      "external_baseline": "Use a truly instantiated upstream mixed BF16Q/E4M3KV/BF16O paged kernel with identical scale/causal/GQA/effective rows and an explicitly matched partial/rounding contract. Metal agent is independently checking the pinned upstream source/actual objects. Neither plain BF16 peer nor factorial BF16-carrier arms 10/11 qualify.",
+      "if_upstream_cannot_execute_exact_domain": "Report the missing same-contract baseline. Do not silently substitute pre-expanded BF16, narrow Q, repair its kernel using the candidate, or label differing partial precision as matched."
+    },
+    {
+      "question": "Storage-strategy lifecycle tradeoff",
+      "reuse": "Original GPU decode_rows and authorized-row table in cuda_encoded_page_native.cu/reference.cc provide a real decoded-shadow mechanism; current Harness provides complete public episodes and per-resource bytes.",
+      "fix": "Start both sides from the same specified ready FP8 input and charge shadow construction for the first use, then report a fixed explicit reuse count R and amortized total including preparation. For changing history, refresh only the specified appended/dirty rows before consumption and charge that work; preserve page/frame identity and completion lifetimes.",
+      "cold_vs_growth": "Cold start, immutable reuse, and append/refresh answer separate questions. Do not arbitrarily charge a full-history decode on every token if the compared strategy can retain/refresh a shadow, and do not omit its setup/refresh while claiming end-to-end compressed-input performance."
+    }
+  ],
+  "conclusion": "The recorded +3.20%/+2.59% C6-vs-BF16 warm differences are valid measurements of two storage strategies after different cold preparation. They are not proof that Hyle is that much slower than a same-input-format upstream implementation, nor a remaining G04/G05 same-contract failure. Both sides need actual GPU KV loads. Preserve the data and narrow its interpretation.",
+  "inputs": {
+    ".scratch\\g04-bf16-c6-peer\\consumer.cc": "f27e606b2b73e7b811168833222da64e9ad1de10ca152a566f71623715240846",
+    ".scratch\\g04-bf16-c6-peer\\link-result.json": "3a5e3f2bb24de030ef050e0e06352f0cc87a06fd99a2139050886b35dcacb800",
+    ".scratch\\g04-bf16-c6-peer\\run-ordinary-1\\identity.json": "61b4c4b8f4e4c0da596de775f898d31a4885de9722dcae2f2fbf8d9f199abede",
+    ".scratch\\g04-bf16-c6-peer\\run-ordinary-1\\stdout.log": "d444b937c488281ae1df574edaf9cd7120cf4e15c6cd8592a96171b406269543",
+    "bench\\inference_resident_sdpa\\cuda_encoded_p1\\consumer-provenance.md": "441d3d763c115a46939ba0d6e0604f01c3c1a4134c15151c0673e1980911cbb4",
+    "bench\\inference_resident_sdpa\\cuda_encoded_p1\\contract.json": "de39ecaa98b113c6ed25e7cd306a0f9a820473230b07ceab2d7dfb72414a57bc",
+    "src\\compute_provider_flashinfer\\native_batch.cu": "c17e99b53e793e3357b36eec288d2a1e36211081b95a8d2145c4ff3b4234d6da",
+    "src\\compute_backend_cuda\\cuda_memory.cc": "8475aafd9c1112189a50025afd700775ea3e048c75bf19a0f04f04f65253aac2"
+  }
+}

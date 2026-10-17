@@ -1,5 +1,8 @@
 # C4 双 K 预取：正确，但未证实完整调用收益
 
+**比较边界更正：** C2→C4 是同 FP8 格式的自身比较，结论保留；与 plain BF16 的动态
+计数比较不是同工实现竞速，见[更正](../comparison-boundary-correction/README.md)。
+
 C4/v13 未单独采用，完成本实验时 canonical 仍为 C2/v11。它是对[计数器热点](../hardware-counters/README.md)
 的实测检验，不改写前轮 C1 的显存或普通性能结果。
 

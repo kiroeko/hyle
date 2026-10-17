@@ -1,4 +1,8 @@
-# G04/G05：BF16 中间结果与剩余成本
+# G04/G05：BF16 中间结果、同格式优化与比较边界
+
+**比较口径已更正：** 下文 plain BF16 对照在计时前已展开 FP8；它与产品计时内工作不同。
+撤回据此判定 Hyle 同工落后或 G04/G05 未追平的结论，详见[更正](comparison-boundary-correction/README.md)。
+同 FP8 格式的自身版本优化与实际测试仍成立，历史 raw 不改。
 
 用户要求继续定位 CUDA prefill 的差距，并明确允许以与对手相当的中间精度换取速度和显存。
 治理保持停用。本页记录 C1，该阶段没有采用此前双 K 加载或后续 K/V 预取实验。
@@ -12,7 +16,7 @@
 双 K 预取 C4 未稳定提速，未单独采用。随后共享页索引的 C5 完整调用约快1%，
 已接入 v14；源码、实际机器码、全部测试和剩余差距见[后续实测](shared-page-index/README.md)。
 进一步提前预取的 [C6/v15](earlier-k-prefetch/README.md) 已接入，replay 相对 C5 再快约1%，
-普通调用约0.41%但区间跨零。最新直接 BF16 peer 比较仍慢3.20%/2.59%，未宣称追平。
+普通调用约0.41%但区间跨零。BF16 peer 的3.20%/2.59%是异格式 warm 差额，不是同工实现落后。
 
 ## 定位结果
 
@@ -102,7 +106,7 @@ RTX 4070 SM89 / WSL2 / driver 617.14 / CUDA 13.3 实测：
 [全部矩阵](new-product-all-matrices.csv)，精度见 [独立复算](product-precision-review.json)。
 同进程 block 区间不代表跨进程置信保证。所有八个 prefill 矩阵均显示相对 F32 的改善，
 但普通模式有一格仅 0.21%；同源 BF16 KV 对照在全部八格仍更快约 5%。
-**显存和自身速度收益已证实，G04/G05 的剩余 peer 差距尚未解决**，继续针对它归因。
+显存和自身速度收益已证实；这份异格式 peer 差额不能用来判定 G04/G05 同工实现落后。
 
 首次独立 precision harness 按 logical 而非 capacity 大小读取 output，触发严格
 view read-size 拒绝；修正 harness 后 C1 产品无需修改即通过，失败原件仍保留。

@@ -1,9 +1,13 @@
-# C2 无窗口专用化、C3 K 预取与剩余差距
+# C2 无窗口专用化、C3 K 预取与异格式对照
+
+**比较边界更正：** plain BF16 已在计时前展开，以下 warm 差额不是同 FP8 输入的实现
+落后证据；不能据此阻塞 G04/G05。见[更正](../comparison-boundary-correction/README.md)。
+同格式 C1/C2/C3 自身比较保留，历史版本与 raw 不改。
 
 本轮产品保留 C1 的可选 BF16 partial 和 C2 的无窗口专用化；C3 预取和 v12 vendor
 候选均未采用，canonical vendor 仍为 v11。C1 的实际显存和速度收益见[前轮报告](../README.md)。
 
-## 已确认的残差位置
+## 异格式路径的计时差位置
 
 C1 的同源 plain BF16 KV 对照，使用相同数据冷精确展开并吸收 scale。现有 ordinary
 完整调用中，FP8/BF16-partial 路径仍慢约 5%。新独立小 trace 共 512 个 timed episodes、

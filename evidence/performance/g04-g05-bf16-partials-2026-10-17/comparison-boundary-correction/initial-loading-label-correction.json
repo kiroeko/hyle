@@ -1,0 +1,53 @@
+{
+  "kind": "APPENDED_INITIAL_K_V_LOADING_PC_LABEL_CORRECTION",
+  "existing_archives_and_raw_unchanged": true,
+  "reason": "Independent def-use audit corrects overbroad K labels in previous C5/C6 NCU prose; numerical counters/ordinary timing remain unchanged.",
+  "binding": {
+    "actual_C6_rows_sha256": "d6b91a2e561ae8db73b6859719d6306a786a8b6af7a0011d234340ea1ca7ead9"
+  },
+  "V": {
+    "page_index": "be0 LDG.E.CONSTANT R11 -> d70 sign extension -> d80 stride c0[194] -> dc0/df0 pointer c0[1a8/1ac]",
+    "payload_loads": [
+      "e00 LDG128 R4",
+      "f00 LDG128 R8"
+    ],
+    "first_decoder": "1140 PRMT consumes R4 from e00",
+    "C6_long_samples": {
+      "d70": [
+        142,
+        150
+      ],
+      "1140": [
+        101,
+        92
+      ]
+    }
+  },
+  "K": {
+    "page_index": "ce0 LDG.E.CONSTANT R17 -> f80/fb0 stride c0[188] -> 10c0/1100 pointer c0[1a0/1a4]",
+    "payload_loads": [
+      "1160 LDG128 R16 (R16..19)",
+      "14a0 LDG128 R12 (R12..15)"
+    ],
+    "selected_decoder_sites": {
+      "1180": "PRMT consumes R17 from 1160",
+      "14c0": "PRMT consumes R13 from 14a0"
+    },
+    "C6_selected_long_samples": {
+      "1180": [
+        29,
+        50
+      ],
+      "14c0": [
+        33,
+        21
+      ]
+    }
+  },
+  "correction": "The previously quoted 163/163 total over PCs1140/1180/14c0 is a selected initial V-plus-K decode total, not all initial K. Its V part is101/92 and selected K part62/71. d70 belongs to the V address chain. None of these labels establishes a sole residual bottleneck.",
+  "unchanged_findings": [
+    "Both arms actually load resident K/V",
+    "Mainloop C6 first combinedKgroupwait3b00 has long0/2 and second3b90has0/0",
+    "Fresh peer remains a cross-representation warm storage-strategy comparison, not same-FP8 implementation efficiency"
+  ]
+}
