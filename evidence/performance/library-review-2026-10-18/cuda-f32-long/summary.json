@@ -1,0 +1,113 @@
+{
+  "task": "Untimed native-stage diagnosis of unchanged long F32 SDPA constant-oracle failures",
+  "head_at_packaging": "ee452b3c4c3af0e42ed3d09890c348dcd6b668ab",
+  "product_modified": false,
+  "input": {
+    "B": 1,
+    "Hq": 8,
+    "Hkv": 2,
+    "D": 256,
+    "Q_equals_KV": [
+      2048,
+      8192
+    ],
+    "qk": "all zero",
+    "V": 1.25,
+    "causal": true,
+    "scale": 0.0625,
+    "dtype": "F32"
+  },
+  "method": {
+    "native_pin": "456172ec733a135778adcd32d00e576a58232e45",
+    "device": "NVIDIA GeForce RTX 4070, SM89, native log reports 12281 MiB",
+    "toolchain": "MSVC14.50/CUDA13.3; one C++ TU linked retained strict native host-dispatch object and original static kernel libraries",
+    "runs": "One final untimed executable process, sequential 2K then 8K; no throughput, AA, random matrix or whole-SDK build",
+    "stages": "Native ggml_soft_max then ggml_mul_mat with F32 source/accumulation flags; retained host override temporarily selects cuBLAS DEFAULT_MATH",
+    "scores": "Host directly supplies the exact 0/-inf masked scores of original zero QK. QK/scale/diag operations omitted for stage isolation, not a current Hyle provider execution.",
+    "coverage": "All original query rows, heads and depths observed. Bounded tiles 128 at2K/64 at8K match current query-block policy. Original GQA factor4 retained.",
+    "probability_storage": "Only one tile in memory, no full Q-squared probability file; summary stores aggregate error/mass/bit counts, worst row and output SHA",
+    "completion": "Each graph compute and tensor read completes before next tile; buffers/context/backend released after final checks"
+  },
+  "results": [
+    {
+      "length": 2048,
+      "tile_q": 128,
+      "batches": 1,
+      "hq": 8,
+      "hkv": 2,
+      "depth": 256,
+      "finite": true,
+      "all_heads_depth_equal": true,
+      "probability_vs_rounded_uniform_mismatches": 2058400,
+      "probability_max_abs_vs_fp64": 9.934107481068821e-09,
+      "probability_max_mass_error_fp64": 9.383074939250946e-08,
+      "pv_max_abs_vs_1_25": 3.4332275390625e-05,
+      "pv_worst_attended_count": 1975,
+      "pv_at_worst": 1.2499656677246094,
+      "fp64_pv_of_actual_f32_prob_at_worst": 1.2500000084401108,
+      "cpu_serial_fma_at_worst": 1.2499656677246094,
+      "full_output_sha256": "d66f392e51750dd11bf878f52e7d215e75eacf04be542f90b662ecffe16a2fa0",
+      "timing": false,
+      "provider_run": false
+    },
+    {
+      "length": 8192,
+      "tile_q": 64,
+      "batches": 1,
+      "hq": 8,
+      "hkv": 2,
+      "depth": 256,
+      "finite": true,
+      "all_heads_depth_equal": true,
+      "probability_vs_rounded_uniform_mismatches": 34662776,
+      "probability_max_abs_vs_fp64": 9.934107481068821e-09,
+      "probability_max_mass_error_fp64": 9.383074939250946e-08,
+      "pv_max_abs_vs_1_25": 0.0001417398452758789,
+      "pv_worst_attended_count": 8149,
+      "pv_at_worst": 1.2501417398452759,
+      "fp64_pv_of_actual_f32_prob_at_worst": 1.2499999489227775,
+      "cpu_serial_fma_at_worst": 1.2501417398452759,
+      "full_output_sha256": "eb10e7b38c110f7f739fab3f5cf5ded187b795f21c7c54338071530ab9a596ce",
+      "timing": false,
+      "provider_run": false
+    }
+  ],
+  "conclusion": {
+    "unchanged_output": "Both complete BSHD output SHA256 values exactly equal the original Hyle baseline and candidate records. Same native math reproduces the original two failures without provider wiring.",
+    "softmax": "Native probabilities differ from CPU round-to-nearest1/n by around one ulp for some entries. Full row mass error maximum9.383074939250946e-8; constant-V FP64 PV from those actual probabilities can differ from1.25 by at most1.1728843674063683e-7.",
+    "pv": "The dominant3.4332275390625e-5/1.4173984527587891e-4 error is native long PV reduction rounding. It is not introduced by query blocking or a changed source dtype/TF32 path.",
+    "contract": "The public accumulation_type=F32 declares arithmetic precision; it does not state a universal length-independent absolute1e-5 bound. This differs from the earlier Half PV accumulator mismatch. The original experiment explicitly remains FAIL at its selected1e-5 budget.",
+    "fairness": "The retained same-native F32 peer has exactly the same output. These data establish no relative Hyle F32 precision loss or throughput result; they also do not prove agreement for arbitrary inputs/backends."
+  },
+  "raw_label_correction": {
+    "fp64_pv_of_actual_f32_prob_at_worst": "The measured field name overstates its calculation: code actually evaluates1.25*RN_F32(1/n)*n, not the captured native probability. Retained source and raw are unchanged.",
+    "cpu_serial_fma_at_worst": "Likewise consumes CPU RN_F32(1/n). It exactly matches the two worst native output values, a supporting example rather than per-native-probability replay.",
+    "independent_attribution": "The direct all-row native probability-mass bound above, plus exact full-output SHA match, localizes the dominant error without those two mislabeled/control fields."
+  },
+  "bounded_kv_read_only_assessment": {
+    "minimal_shape": "Inside existing Q tiles, view a bounded KV slice of the already-F32 transposed V and normalized probabilities, execute the same strict-F32 native mul_mat for each slice, then combine F32 partial outputs. Never normalize softmax per KV slice.",
+    "views": "F32 native cuBLAS path uses existing data pointers and leading dimensions; non-dense KV views can keep original row/head strides without materializing new K/V copies. Existing broadcast factors preserve Hq/Hkv.",
+    "extra_work": "For P=ceil(KV/Kblock), P PV launches instead of1 plusP-1 additions per Q tile, and more graph metadata. Arithmetic big-O unchanged but launch/traffic behavior changes.",
+    "extra_space": "One partial output is4*B*Hq*Qblock*Dv bytes:1MiB at2K,0.5MiB at8K here. A naive tree can retain O(P) such tensors; a streaming add chain can bound liveness but has a longer merge reduction. Actual gallocr reuse would require verification.",
+    "numerics": "Shorter PV FMA chains and a balanced merge can reduce error, but reassociate native F32 arithmetic and change output bits. No universal absolute1e-5 guarantee for arbitrary magnitudes/cancellation; any benefit needs a deliberate precision/error contract and representative validation.",
+    "decision": "Feasible private lowering experiment, not automatically a product fix for a probe-selected budget. No candidate implementation, new probe, speed result or product change performed."
+  },
+  "failures_and_limits": [
+    "First host compile failed because Windows min/max macros were enabled; frozen first source/command/log retained. NOMINMAX fixed the scratch TU only.",
+    "Final link reports LNK4098 LIBCMT/runtime-library warning, retained verbatim. Final executable exits0 and checks stage invariants; no claim of clean all-product build.",
+    "A stage-isolation run, not an actual current HEAD provider build, Graph test, cross-platform test or broad numerical qualification.",
+    "Retained strict host-dispatch/kernel archive is the exact old-control closure; it predates unrelated current IQ1/native-resource changes. Attention code/source identities retained.",
+    "No product code, precision budget, input or TF32 setting was changed."
+  ],
+  "current_source_identity_only": {
+    "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc": {
+      "sha256": "bf6769789ff3c36f9cfb6fe86935e68e6f3c6c8e82caf647e941a323c9317c95"
+    },
+    "include/hyle/compute/operation.h": {
+      "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+    },
+    "third_party/ggml_cuda_runtime/patches.json": {
+      "sha256": "41855d9721af9e88293776bf6ce221369619999a250007023f5d3837c627d42d"
+    }
+  }
+}

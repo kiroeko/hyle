@@ -4,10 +4,11 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-**仍未解决**：HTTP2相对手工单loop的大报文慢点（后续header布局纠错后未重测吞吐）；Apple其余fallback等空间项；CUDA长域F32探针的既有精度超差。
+**仍未解决**：HTTP2相对手工单loop的大报文慢点（后续header布局纠错后未重测吞吐）；Apple其余fallback等空间项。
+CUDA长域F32探针的原1e-5预算仍失败，现已定位到原生PV长归约舍入；同native对照输出完全相同，没有证实Hyle额外精度损失，见下。
 普通CPU及多节点CacheEncode已复用生命周期，普通/私有paged/ragged causal冷mask已移除；动态PagedRead保留旧arena边界。
-Apple已知无NAX硬件的受限F32 D256 causal已融合，旧Q2048失败形状在新路线通过；旧失败记录仍保留。
-其余queue政策和旧小输仍缺当前同责数据。CPU/Vulkan math attention、Apple受限长Q fallback与CPU Hadamard冷矩阵已修，bounded queue当前未复现输项。
+Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048失败形状在新路线通过；旧失败记录仍保留。
+其余queue政策和旧小输仍缺当前同责数据。CPU/Vulkan math attention、Apple受限长Q fallback与CPU Hadamard冷矩阵已修；bounded、ST512与实际Folly SPSC当前有限trace均未复现输项。
 已确认的源码缺口与已实测输项分列，不能据64个factor扫描称所有shape已穷尽。
 
 ## 当前源码明确的问题
@@ -28,7 +29,7 @@ Apple已知无NAX硬件的受限F32 D256 causal已融合，旧Q2048失败形状�
 | ConcurrentHashMap erase重复hash | [erase](../../../include/hyle/container/concurrent_hash_map.h) 先hash选shard，再由table.erase重算同key | 复用私有prehashed路径，锁/回收/析构顺序不变。计数2→1；长key形状两对改善与AA漂移见下，不声称外部赢 |
 | CPU / Vulkan Concat重复复制前缀 | 两个provider仍线性拼接；CPU保留全部中间payload，Vulkan虽有gallocr复用，复制工作仍为二次项 | 已移植平衡树，保持各自dtype/stride受理域；CPU修正重复ports元数据预算。实测与空间边界见下 |
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
-| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；后补已知无NAX硬件的F32 D256 causal tile，短Q长KV点约65.66 MiB→528 KiB。其余域仍待补 |
+| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；后补已知无NAX硬件的F32 D256 causal及D192 tile，两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。其余域仍待补 |
 | HTTP2大body背压holdout | 对照peer原先反复扫描已退休response pairs；修正公平性后首轮4进程中Hyle慢5.59–8.27%，后续存在明显位置/绝对漂移 | peer冗余工作已去；两种未证收益的产品候选已撤回，当前仍未解决；细节及执行策略差异见下 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
@@ -557,7 +558,7 @@ Q/V depth相同且为192/256、非空batch/KV时强制已有fused kernel；causa
 两种layout、GQA、bottom-right causal、非因果Q>KV及零/负scale保留，未新增用户配置或kernel。
 当批F32、D512、decode、所有显式mask及空域保留原fallback；后续受限F32 D256 causal融合见下，其余域仍可能有平方scratch。
 
-Mac16,12/M4上的实际F32 D192尝试需要40448 B线程组内存，超过该设备32768 B，故未启用F32 force。
+当时Mac16,12/M4上的默认F32 D192 tile需要40448 B线程组内存，超过该设备32768 B，未启用F32 force；后续更小的既有tile已接通，见下。
 窄型融合的Boolean全屏蔽行也与原结果不同；所有显式mask静态保留原路径，不读取mask值来选择实现。
 最终4项普通入口回归通过，使用原F32/F16/BF16预算；F16弱概率×V60000另按既有0.002检查。
 原版正常exit1：一般F16与弱概率两项失败，未放宽预算迁就旧实现。
@@ -904,6 +905,45 @@ table/batch为64/32、1024/64、4096/128，源内定义的accept扫描访问2048
 核新连接在旧CQE前后payload/reply、pending第二close拒绝、其它free slot、最终两个slot复用、3个raw fd关闭及stdin保留。
 这是受控CQ观察次序模拟，未声称自然复现竞态；原CQE的token/result/flags和全部探针源码保留。
 只编相关host TUs，原io-watch/foundation库与SDK未覆盖；未跑Windows/macOS，未测吞吐或注入所有native失败/取消路径。
+
+## CUDA长域F32：定位既有超差，不改实验预算
+
+原B1/H8/Hkv2/D256、Q=KV2048/8192、QK0/V1.25的1e-5实验仍为FAIL。
+单次native分阶段诊断直接输入原QK的精确0/−Inf结果，执行严格F32 softmax/PV；没有执行QK或完整Hyle provider，也未计时。
+完整输出SHA与原Hyle旧新两侧一致。实际概率全行质量误差≤9.383e-8，对该常量V最多解释1.173e-7输出误差；
+实际PV仍有3.433e-5/1.417e-4超差，因此主因是原生长PV归约舍入，未证实Q分块、dtype或接线引入额外误差。
+原raw两个worst-row控制字段实际使用CPU RN(1/n)，并非重放所采native概率；[摘要](cuda-f32-long/summary.json)明确纠正标签，归因使用独立全行质量界。
+F32 accumulation未承诺与长度无关的1e-5绝对界，不能把此探针与先前Half累加违约混为一类。
+按KV分PV再合并可缩短归约，却增加launch、partial空间并改变舍入顺序；本轮仅源审，没有为满足探针自选预算新增产品路线。
+[原始包](cuda-f32-long/raw.zip)保留全部失败、命令及身份；未改变预算、产品精度或声称模型精度通过。
+
+## Queue：补实际peer与完整warm合同
+
+正式ST512 benchmark改为检查每次push/pop、全部FIFO payload及最后empty，并将所有队列构造、32次显式warmup和析构移出callback。
+Hyle Bounded1024对实际Moody隐式producer、512项不触full trace，两固定AB/BA各9epochs：
+Hyle7.986/7.988、Moody9.937/9.974 ns/单次push或pop；一次额外empty检查计入时间，分母仍为1024。
+只此trace当前未复现Hyle输；Moody1024不是硬容量，不能外推MPMC、full/backpressure、bulk或token策略。
+实际caller仅一个queue操作线程，进程另有2个未归因辅助线程；首次错误thread-count断言的无epoch abort保留。
+TBB/rigtorp分支仅源审接口，未编跑；[摘要](queue-st512/summary.json)/[原始包](queue-st512/source-results.zip)记录限制，未改队列产品。
+
+另用真实clean Folly `65749da4` 的ProducerConsumerQueue及原header闭包，官方FOLLY_NO_CONFIG开关，替代shape推断。
+Hyle1024/实际Folly1025物理槽均有1024usable；固定LP0生产、LP2消费、LP4协调，实际affinity/current CPU均读回。
+每轮262144项逐值FIFO与checksum，persistent workers创建、一次warmup和join在外，协调notify/wait、传递与全部校验在内。
+两固定AB/BA各9epochs：Hyle4.025/5.724、Folly4.280/7.176 ns/传递item（含push+pop，单位不同于ST）。
+没有当前Hyle输项；epoch交叠及跨进程漂移明显，不能称稳定领先。全部36epochs保留，无AA、筛点或产品优化。
+一小TU复用nanobench/foundation；原formal SPSC仍明确是本地shape。[摘要](queue-spsc-folly/summary.json)/[源码原始包](queue-spsc-folly/source-results.zip)。
+
+## Apple F32 D192：同一受限域复用更小原生tile
+
+普通无page/array mask/sinks、Dq=Dv192、Q>8的float Steel域复用既有BQ16/BK8/WM2/WN1；causal仍要求Q≤KV。
+D256 guard literal、NAX早返、page/half及未知架构策略保留；Hyle只在已知13–16代GPU force。
+实际PSO线程组内存21760 B≤Air设备32768 B，dispatch前仍核实际PSO与设备；没有新shader、Half转换或SDK/metallib重编。
+两侧3项原FP64预算控制通过，覆盖BHSD/BSHD、GQA、causal/noncausal、正负scale/tail及弱概率×60000。
+唯一空间点F32 B1/H4/Hkv2/D192 Q129/KV32768 causal、QK0/V交替±1.25：
+额外MLX peak68583940→409600 B，包含396288 B输出；完整99072元素原FP64检查通过。
+caller QKV约96.4 MiB在此前已分配；不是总VRAM、单块硬峰值或吞吐结论。
+6个host TU/4links，单host补丁投影及root独立CMake资源检查通过；产品提交`706bfb748`。
+[摘要](apple-steel-f32-d192/summary.json)/[源码原始包](apple-steel-f32-d192/source-results.zip)保留源身份、失败和tested→applied区别；未扩大跨硬件结论。
 [摘要](io-direct-slots/summary.json)/[分阶段源码与原始结果](io-direct-slots/source-results.zip)记录全部阶段、资源边界和最终实测/应用区别。
 
 本批先写`test.ps1`、对全部精确目标核路径/size/SHA后清理：Windows37文件37438277 B、WSL38文件15539424 B，

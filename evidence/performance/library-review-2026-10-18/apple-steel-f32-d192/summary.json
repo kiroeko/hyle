@@ -1,0 +1,178 @@
+{
+  "status": "scoped_D192_f32_steel_applied_after_root_review; no_throughput_claim",
+  "machine": {
+    "host": "kiro@172.22.10.198",
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "available_before": "41GiB",
+    "sdk": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk"
+  },
+  "scope": {
+    "native": "Only ordinary !page/!mask/!sinks F32 Dq=Dv192, Q>8, causal Q<=KV or noncausal. Existing D256 guard literal and NAX early-return unchanged. One tile BQ16/BK8/WM2/WN1, plain float QueryT, hyle_q8=false.",
+    "hyle": "GPU ordinary F32 D192 none-mask full attention on known Apple architecture generations13-16, nonempty B/KV. Reuses existing known_gpu_without_nax() cold capability query; unknown/new architectures retain current routes.",
+    "precision": "Original float Steel loads, QK, online softmax probabilities and PV; no half/TF32/new kernel.",
+    "unchanged": "D256, page/ragged/q8/half branches, CPU streams, explicit masks/fully-masked bool semantics, causal Q>KV/decode fallback; public C++ API/ABI."
+  },
+  "threadgroup": {
+    "original_D192_static_bytes": 40448,
+    "original_formula": "4*(32*(192+4)+max((16+4)*192,16*(192+4)))",
+    "candidate_expected_bytes": 21760,
+    "candidate_actual_PSO_bytes": 21760,
+    "actual_device_cap_bytes": 32768,
+    "raw": "measured/candidate-{tests,space}.stderr.txt",
+    "admission": "Actual staticThreadgroupMemoryLength checked before encoder dispatch; only selected tile was tested, no fallback tile trial."
+  },
+  "correctness": {
+    "baseline_tests": 3,
+    "candidate_tests": 3,
+    "passed_each": 3,
+    "cases": [
+      "F32 BHSD GQA Q17/KV31 causal positive0.125 scale, nonzero QK, unaligned tails",
+      "F32 BSHD GQA Q33/KV17 noncausal negative-0.25 scale, nonzero QK, unaligned tails",
+      "F32 GQA Q17/KV257 causal weak exp(-16) probabilities before V60000"
+    ],
+    "oracle": "Existing independent FP64 test helper; F32 rel6e-6+abs2e-6 unchanged. Same exact test TU linked both arms.",
+    "raw": "measured/{baseline,candidate}-tests.{json,stdout.txt,stderr.txt}"
+  },
+  "space": {
+    "fixed_shape": "F32 B1/H4/Hkv2/D192 Q129/KV32768,causal,None",
+    "input": "Pre-fixed Q/K0, V alternating +1.25/-1.25 by KV row; original FP64 prefix-mean oracle and rel6e-6+abs2e-6 over all99,072 outputs. No post-result input or budget change.",
+    "baseline": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 192,
+      "Q": 129,
+      "KV": 32768,
+      "mask": "None",
+      "causal": true,
+      "input": "QK0,V alternating +1.25/-1.25 per KV row",
+      "caller_qkv_bytes": 101059584,
+      "caller_mask_bytes": 0,
+      "output_bytes": 396288,
+      "original_score_bytes": 67633152,
+      "active_before": 101072904,
+      "cache_before": 0,
+      "active_after": 101482504,
+      "peak": 169656844,
+      "peak_minus_active_before": 68583940,
+      "cache_after": 68174340,
+      "max_abs_error": 3.1831897889605075e-12,
+      "checked_elements": 99072,
+      "oracle_passed": true
+    },
+    "candidate": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 192,
+      "Q": 129,
+      "KV": 32768,
+      "mask": "None",
+      "causal": true,
+      "input": "QK0,V alternating +1.25/-1.25 per KV row",
+      "caller_qkv_bytes": 101059584,
+      "caller_mask_bytes": 0,
+      "output_bytes": 396288,
+      "original_score_bytes": 67633152,
+      "active_before": 101072896,
+      "cache_before": 0,
+      "active_after": 101482496,
+      "peak": 101482496,
+      "peak_minus_active_before": 409600,
+      "cache_after": 0,
+      "max_abs_error": 1.7882893923277729e-12,
+      "checked_elements": 99072,
+      "oracle_passed": true
+    },
+    "extra_peak_reduction_bytes": 68174340,
+    "metric": "MLX allocator peak minus active-before-submit, after public prepare/create_invocation/bind and clear_cache/reset_peak; submit/wait/synchronize included, output396288B retained. Cold preparation/JIT excluded; not whole-device VRAM or RSS.",
+    "executions": "Exactly one fresh baseline and one fresh candidate process, no timing or repeat matrix."
+  },
+  "build": {
+    "fresh_TUs": 6,
+    "links": 4,
+    "scope": "Two native selector overlays, two Hyle lowerers, one three-case test TU, one fixed space TU. Original current resource native host baseline freshly compiled so existing D256 patch is retained on both sides.",
+    "failures": "No remote compile/link/runtime failures. Two initial local preparation attempts failed exact source-hash path/test-name lookup before any remote build; corrected to current materializer-output source and actual full test name.",
+    "maps": {
+      "baseline-tests": {
+        "fresh_apple": true,
+        "fresh_native": true,
+        "archive_apple_tensor": false,
+        "archive_native_selector": false
+      },
+      "baseline-space": {
+        "fresh_apple": true,
+        "fresh_native": true,
+        "archive_apple_tensor": false,
+        "archive_native_selector": false
+      },
+      "candidate-tests": {
+        "fresh_apple": true,
+        "fresh_native": true,
+        "archive_apple_tensor": false,
+        "archive_native_selector": false
+      },
+      "candidate-space": {
+        "fresh_apple": true,
+        "fresh_native": true,
+        "archive_apple_tensor": false,
+        "archive_native_selector": false
+      }
+    },
+    "identity": "measured/runtime-identities.json includes all reused SDK/gtest library hashes and temporary object/executable identities. No SDK/metallib rebuild, configure, download or copy."
+  },
+  "limitations": [
+    "Only this Air M4 and one tile were tested. No throughput claim or speed ranking.",
+    "No explicit-mask fusion, new architecture force, causal Q>KV, decode or generic F32 depth expansion.",
+    "D192 long-Q uniform case was not run; prior D256 result is not evidence for D192 numerical behavior."
+  ],
+  "applied": {
+    "commit": "706bfb748",
+    "root_independent_check": "Root independently reviewed the five-file diff and ran cmake -P check-lock.cmake: PASS, then committed. Recorded from root completion message; no additional source hashing/build/measurement.",
+    "canonical_source_sha256": {
+      "src/compute_route_apple/apple_tensor.cc": "b5268bd56d13f597dbc06a960ad3b7948958dd38c236cd8e0f37623f3ec99b2f",
+      "tests/compute_route_apple/attention_test.cc": "ca4473285e811f3bee4da323629d075d02770055e221c970b8df55e1ea85d503",
+      "third_party/mlx_cast/patches.json": "712034498626c6e37b94d2028b5f6e4d9e77ee20b0f6e12c10ff5f4094903f91",
+      "third_party/mlx_cast/NOTICE.md": "514e0cf4143bceecca0b5a84c61496a9bec1cd259e943cf985d7e4a058a14ab7",
+      "cmake/HyleDependencyLock.json": "d2f4198223f89726abd87e91792d75f783478918434d729244fb1669064446da"
+    },
+    "materializer": {
+      "scope": "Existing exact materializer on projected single host entry and its pristine file read from the pinned archive. Not a full source/SDK rebuild.",
+      "after_sha256": "a9a0e48630e7c8eb6e8041a48b62fab497a51e1ce974759c0e6f957f4107bfa7",
+      "passed": true
+    },
+    "resource_check": {
+      "command": [
+        "cmake",
+        "-P",
+        ".scratch\\perf-review-2026-10-18\\apple-steel-f32-d192\\check-lock.cmake"
+      ],
+      "exit": 0,
+      "stdout": "-- MLX patch tree and license hashes match\n",
+      "passed": true,
+      "scope": "Only mlx_cast_patches in-tree resource and license hashes; no source/native compilation."
+    },
+    "lock_update": {
+      "old_tree": "5ebbf75779c3aa9c65299bf4bfa2a5ca0eb9c0bb0ea99ea3f2ee5f675701f292",
+      "new_tree": "cf232085a301920ad5882ed46e765f6d56c522c806a4343a6533cd5fbea56970",
+      "old_notice": "04b1625bfc1166ea7addcf4a7a0d93bd730d1a9a7ea646993476dc68861179d9",
+      "new_notice": "514e0cf4143bceecca0b5a84c61496a9bec1cd259e943cf985d7e4a058a14ab7"
+    },
+    "tested_to_applied": "Native removes diagnostic cstdio/fprintf and adds a scope comment; Hyle only changes explanatory comments; the three added canonical tests exactly equal executed scratch test bodies. D256 literal, NAX order, domains and math match the tested probe. No repeat native/SDK compilation or measurement.",
+    "initial_resource_failure": "Initial projected host check rejected an incorrectly encoded expected after-SHA; fixed hash generation to explicit UTF-8 from exact normalized baseline, existing manifest bytes and actual probe bytes unchanged. Failed attempt retained in materializer-initial-error.txt."
+  },
+  "cleanup": "cleanup-candidates.json",
+  "frozen_probe_source_sha256": {
+    "apple_tensor.baseline.cc": "4cece5d4513dc98388e95ec99ec14cc48e7a1c4faaf6a66cfb34ef9aec4fb895",
+    "apple_tensor.candidate.cc": "48f74550eef718146f0f8ef999615c730b050af29a970fe87381f7e88d49c1bf",
+    "apple_tensor.diff": "87d0888d560075ea8c418a0f13090c23984ee34557e2f2dee8d3fa47c37bc1f8",
+    "attention_test.cc": "9586388e2badd634903a7fee9a0c0d15ebd6e95d07de3aae89bafa6c9935d21d",
+    "native.baseline.cpp": "d8d9f6878d688400d75c6d24d904e1343a4b8c27d240b000d443115c1d032655",
+    "native.candidate.cpp": "11d4bf34b917c227eab8f513959cdd579e66cd11f89f6b39be93a2e0d0002c71",
+    "native.diff": "a1250f32ffefd19df973bfe0338eff0a8a8f0845b295d678728b57036d735b2e",
+    "space.cc": "553df0806b0619327b41cd49e573a5d31689a091aeb02b11400a45cdcffde75e"
+  }
+}

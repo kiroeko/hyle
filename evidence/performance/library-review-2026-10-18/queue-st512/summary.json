@@ -1,0 +1,360 @@
+{
+  "conclusion": "For this checked warm single-caller512-item scalar fill/drain trace, Hyle was faster in the two fixed AB/BA processes. No queue product change; not a general MPMC, contention, ordering-across-producers, full/backpressure, or bulk-API ranking.",
+  "trace": {
+    "payload": "uint64_t0..511,512scalar enqueues then512scalar dequeues in exact FIFO order; every operation return and every payload checked, followed by one required-empty dequeue. Any mismatch aborts. Peak logical occupancy512.",
+    "peers": "HyleBoundedQueue usable1024 with default SystemAllocator versus actual local moodycamel ConcurrentQueue defaulttraits, initial storage1024 and implicit producer. No explicit producer/consumer token, no bulk API, no full retry. Moody1024 is not called a hard capacity.",
+    "boundary": "Both queues constructed before32explicit alternating warmwaves each; implicit producer registration and first touch occur there. Timed callback is only the entire checked wave. Both queue destructors run after all measurements and output. If any later queue allocation occurs it is included; no hot allocator monitor was used.",
+    "units": "Raw elapsed is seconds per whole512-item wave. Console ns/op divides by1024 successful scalar push/pop operations; the extra empty check is charged once per wave but not counted in this denominator.",
+    "schedule": "Fixed AB thenBA,9epochs per arm,minEpochTime10ms,minEpochIterations200, performanceCounters(false); all36epochs preserved. No trimming/AA/additional shape or timing matrix."
+  },
+  "results": [
+    {
+      "order": "ab",
+      "arms": [
+        {
+          "name": "Hyle BoundedQueue",
+          "ns_per_normalized_op": 7.986103404651992,
+          "ns_per_checked_wave": 8177.76988636364,
+          "epoch_MAPE": 0.00866216051962685,
+          "all_epoch_ns_per_op": [
+            8.2482033185384,
+            7.92122984285127,
+            7.694507524403466,
+            8.055884771671826,
+            8.037096033982236,
+            7.986103404651992,
+            7.758989726027392,
+            7.691946945621464,
+            8.02103678385417
+          ],
+          "min_ns_per_op": 7.691946945621464,
+          "max_ns_per_op": 8.2482033185384
+        },
+        {
+          "name": "Moody ConcurrentQueue implicit",
+          "ns_per_normalized_op": 9.937274289375585,
+          "ns_per_checked_wave": 10175.7688723206,
+          "epoch_MAPE": 0.014870858033248,
+          "all_epoch_ns_per_op": [
+            10.148288344943262,
+            9.683175082153692,
+            9.604509502437939,
+            9.895740060888281,
+            10.120656434133007,
+            10.08728081024629,
+            9.813622400756152,
+            9.956381354533496,
+            9.937274289375585
+          ],
+          "min_ns_per_op": 9.604509502437939,
+          "max_ns_per_op": 10.148288344943262
+        }
+      ],
+      "hyle_time_over_moody": 0.8036513003561063,
+      "hyle_lower_time_percent": 19.634869964389367
+    },
+    {
+      "order": "ba",
+      "arms": [
+        {
+          "name": "Moody ConcurrentQueue implicit",
+          "ns_per_normalized_op": 9.974234637488964,
+          "ns_per_checked_wave": 10213.616268788699,
+          "epoch_MAPE": 0.0195915653482372,
+          "all_epoch_ns_per_op": [
+            10.125173276277733,
+            10.22899996849795,
+            10.12832280282334,
+            9.742516243811885,
+            9.61640692291128,
+            9.782578609388867,
+            10.09028352649004,
+            9.974234637488964,
+            9.734839072731523
+          ],
+          "min_ns_per_op": 9.61640692291128,
+          "max_ns_per_op": 10.22899996849795
+        },
+        {
+          "name": "Hyle BoundedQueue",
+          "ns_per_normalized_op": 7.988172136871503,
+          "ns_per_checked_wave": 8179.888268156419,
+          "epoch_MAPE": 0.0230215502155143,
+          "all_epoch_ns_per_op": [
+            8.346464004984657,
+            8.358985349127177,
+            7.730243950859491,
+            8.205912965900078,
+            7.988172136871503,
+            7.808410424187725,
+            7.8673285090245795,
+            8.069013204853672,
+            7.8508544184290034
+          ],
+          "min_ns_per_op": 7.730243950859491,
+          "max_ns_per_op": 8.358985349127177
+        }
+      ],
+      "hyle_time_over_moody": 0.8008807118741036,
+      "hyle_lower_time_percent": 19.91192881258964
+    }
+  ],
+  "clock": {
+    "qpc_frequency_hz": 10000000,
+    "qpc_tick_seconds": 1e-07,
+    "nanobench_resolution_seconds": 1e-07,
+    "shortest_actual_epoch_window_seconds": 0.009806500000000001,
+    "shortest_actual_window_ticks": 98065.00000000001,
+    "note": "Configured10ms is a calibration target; shortest actual window is slightly below10ms and retained. Epoch MAPE and cross-process variation are not clock resolution."
+  },
+  "resources": {
+    "cpu": "13th Gen Intel(R) Core(TM) i9-13900K",
+    "selected": {
+      "id": 258,
+      "group": 0,
+      "logical": 2,
+      "core": 2,
+      "llc": 0,
+      "numa": 0,
+      "efficiency_class": 1,
+      "flags": 0
+    },
+    "mask": "0x4",
+    "actual": [
+      {
+        "order": "ab",
+        "cold_observations": [
+          {
+            "cold_snapshot_tid": 29108
+          },
+          {
+            "cold_snapshot_tid": 86216
+          },
+          {
+            "cold_snapshot_tid": 89640
+          },
+          {
+            "threads_before": 3,
+            "main_tid": 29108,
+            "processor_group": 0,
+            "logical_processor": 2,
+            "explicit_untimed_warmup_waves_each": 32
+          },
+          {
+            "cold_snapshot_tid": 29108
+          },
+          {
+            "cold_snapshot_tid": 86216
+          },
+          {
+            "cold_snapshot_tid": 89640
+          },
+          {
+            "threads_after": 3,
+            "checked_all_push_pop_payloads": true,
+            "peak_items": 512,
+            "one_empty_check_per_wave": true,
+            "constructor_registration_warmup_destructor_timed": false
+          }
+        ],
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\consumer.exe",
+            "ab",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\final-ab.epochs.json"
+          ],
+          "order": "ab",
+          "pid": 47244,
+          "exit": 0,
+          "begin_utc": "2026-10-17T22:20:40.232509+00:00",
+          "end_utc": "2026-10-17T22:20:40.675463+00:00",
+          "affinity_mask": "0x4",
+          "system_mask": "0xffffffff",
+          "priority_class": 32768,
+          "no_during_epoch_monitor": true
+        }
+      },
+      {
+        "order": "ba",
+        "cold_observations": [
+          {
+            "cold_snapshot_tid": 47960
+          },
+          {
+            "cold_snapshot_tid": 86444
+          },
+          {
+            "cold_snapshot_tid": 74964
+          },
+          {
+            "threads_before": 3,
+            "main_tid": 47960,
+            "processor_group": 0,
+            "logical_processor": 2,
+            "explicit_untimed_warmup_waves_each": 32
+          },
+          {
+            "cold_snapshot_tid": 47960
+          },
+          {
+            "cold_snapshot_tid": 86444
+          },
+          {
+            "cold_snapshot_tid": 74964
+          },
+          {
+            "threads_after": 3,
+            "checked_all_push_pop_payloads": true,
+            "peak_items": 512,
+            "one_empty_check_per_wave": true,
+            "constructor_registration_warmup_destructor_timed": false
+          }
+        ],
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\consumer.exe",
+            "ba",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\final-ba.epochs.json"
+          ],
+          "order": "ba",
+          "pid": 87292,
+          "exit": 0,
+          "begin_utc": "2026-10-17T22:20:40.677461+00:00",
+          "end_utc": "2026-10-17T22:20:41.093695+00:00",
+          "affinity_mask": "0x4",
+          "system_mask": "0xffffffff",
+          "priority_class": 32768,
+          "no_during_epoch_monitor": true
+        }
+      }
+    ],
+    "interpretation": "One thread calls either queue. Both final processes cold-snapshot3threads before and after; two auxiliary threads not attributed. Same inherited single-logical-CPU affinity0x4 andABOVE_NORMAL priority independently checked for each process. No during-epoch resource monitor."
+  },
+  "retained_failure": {
+    "first_attempt": "formal-ab.process.json:0xC0000409 abort before any epochs file, BA not launched. Original main/candidate source snapshots retained; original executable was overwritten during diagnostic rebuild and its initial binary hash was not retained.",
+    "diagnosis": "One non-timed smoke passed all32warmwaves for both queues and then observed4process threads. The extra assertion that total process threads must equal1 was false; removed without changing push/pop/payload/empty oracle. Final actual counts3each are reported, not silently relabelled1.",
+    "source_history": "main.cc.first-attempt and main.cc.smoke-version plus diagnostic source/build identity retained. No failed measurement points filtered: initial abort generated no epochs."
+  },
+  "benchmark_fix": "Only formal single-thread section changed: every return/payload+finalempty checked, cold construction/registration/warmup/destruction outside callback for each enabled peer. Existing MPMC/owner/vector/main sections byte-identical to frozen before. Actual measured closure enablesMoody only; optionalTBB/rigtorp branches were not compiled/run in this batch.",
+  "no_AA": "Both order point gaps areabout19.6\u201319.9%; all Hyle epoch normalized times are below allMoody epoch times, MAPE<=2.3%. No additionalAA process needed; these two processes do not establish a long-run CI or all-hardware ranking.",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\bench\\container\\queue_sota_bench.cc",
+    "bytes": 28190,
+    "sha256": "6596542339dd89f972b4d4b324862f4fcd3f873c58a5affd18ded45e735b5d80"
+  },
+  "peer": {
+    "commit": "c227e283a9edd9d15393733223235527af6101e9",
+    "header_worktree_status": "",
+    "header": {
+      "path": "C:\\public\\project-hyle\\moodycamel-ConcurrentQueue\\concurrentqueue.h",
+      "bytes": 146001,
+      "sha256": "0a5930089aa1c9b9146f8a633574f5b55d30b0c23ddd9d7821132d51c778d1c2"
+    }
+  },
+  "build_identity": {
+    "inputs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\bounded_queue.h",
+        "bytes": 10617,
+        "sha256": "fbf607da23ef58190f81fa6f58be24402ad19749c9d44018db05e5b947ea7f30"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\moodycamel-ConcurrentQueue\\concurrentqueue.h",
+        "bytes": 146001,
+        "sha256": "0a5930089aa1c9b9146f8a633574f5b55d30b0c23ddd9d7821132d51c778d1c2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\nanobench\\nanobench.h",
+        "bytes": 194934,
+        "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\bench\\nanobench_impl.cc",
+        "bytes": 271,
+        "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\main.cc",
+        "bytes": 3461,
+        "sha256": "91b9ee39823167d2d890b7a39344e628bf847e1998e68339e734d13fc235e2a4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\queue_sota.candidate.cc",
+        "bytes": 28190,
+        "sha256": "6596542339dd89f972b4d4b324862f4fcd3f873c58a5affd18ded45e735b5d80"
+      },
+      {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "bytes": 682568,
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\nanobench.obj",
+        "bytes": 1673229,
+        "sha256": "fd6dd52722b9a462358db6cbc4a47b71e46189b2eaaeafcafd9213d5a3cf1d00"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.lib",
+        "bytes": 119700,
+        "sha256": "2d0008331fc5cad2cc2e310788a4e9dba2c911ecf334498ac8b3af7861d736f7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+        "bytes": 764086,
+        "sha256": "4b88eede9ed8ef3813059bc6db5c87baefbae7266a4a7304ec24ede1904f1b6f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.lib",
+        "bytes": 113586,
+        "sha256": "275bc429d61d97153acf50f126151f73581a1a4823a5faf2b01536bf7e52535d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+        "bytes": 1280686,
+        "sha256": "10fe859d66dcd68d391c65d1a933e1a4de902d8bb49003f8dca768d65b19dbe4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+        "bytes": 989658,
+        "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+        "bytes": 136936,
+        "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326"
+      }
+    ],
+    "outputs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\main.obj",
+        "bytes": 993758,
+        "sha256": "947c933b768d15742e6aec0ff73049a4dca88a4cb4146fcca43893814299ded6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\consumer.exe",
+        "bytes": 229888,
+        "sha256": "958e6e42bf9bae8151c2c1aaf69008c9b01c64fff28855ccb9e14988d98f5a9f"
+      }
+    ],
+    "no_product_library_build": true,
+    "sdk_copy_or_download": false
+  },
+  "scope": "Windows x64 MSVC14.50/O2/MD; one fresh benchmark TU and cached nanobench/foundation link. No product queue edits, SDK download/copy, full build, more consumers/producers, or reopening prior bounded4P4C.",
+  "cleanup": {
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\main.obj",
+        "bytes": 993758,
+        "sha256": "947c933b768d15742e6aec0ff73049a4dca88a4cb4146fcca43893814299ded6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\st512-warm\\consumer.exe",
+        "bytes": 229888,
+        "sha256": "958e6e42bf9bae8151c2c1aaf69008c9b01c64fff28855ccb9e14988d98f5a9f"
+      }
+    ],
+    "retain": "All source/commands/raw epochs/logs/identity metadata and existing shared nanobench/foundation caches.",
+    "action": "Root test.ps1 exact cleanup only; no deletion performed.",
+    "bytes": 1223646
+  }
+}

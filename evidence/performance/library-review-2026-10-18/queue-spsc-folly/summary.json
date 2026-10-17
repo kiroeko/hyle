@@ -1,0 +1,102 @@
+{
+  "conclusion": "No Hyle loss reproduced in these two fixed AB/BA processes. Cross-process drift and epoch overlap are substantial; no general or stable superiority claim, no product queue change.",
+  "trace": {
+    "payload": "262144 scalar uint64 values1..262144 per transfer, every pop exact FIFO value checked, final sum and empty checked. Before timing both fill1024, reject overflow, drain exact values and reject underflow.",
+    "capacity": "Hyle requested1024 and actual Folly constructor1025, both1024 usable sentinel slots. Original actual Folly uses32-bit atomic indices, Hyle uses size_t; both domains sufficient for this capacity.",
+    "boundary": "Both queues constructed before all timing. For each arm exactly one persistent producer/consumer pair is created, pinned and warmed once outside timing. Timed callback includes coordinator generation notify/wait, full transfer, exact checks, checksum and empty. Worker join/destruction outside timing, both queues destroyed after all timing/output. Spin retries have no yield for either peer.",
+    "unit": "One transferred item includes one successful scalar push and pop. Raw elapsed is seconds per262144-item complete transfer. It is not the ST512 per-individual-operation unit.",
+    "resources": "Same group0 three distinct highest-efficiency physical cores: producerLP0, consumerLP2, coordinatorLP4. Process mask0x15 and ABOVE_NORMAL; actual worker masks/current CPUs read back. Runtime auxiliary threads not enumerated or constrained.",
+    "schedule": "Fixed AB then BA, nine epochs per arm, minEpochTime20ms/minEpochIterations3, all36epochs retained. No AA because no current Hyle loss; no trimming/additional shape."
+  },
+  "results": [
+    {
+      "order": "ab",
+      "arms": [
+        {
+          "name": "Hyle SPSC",
+          "median_ns_per_transferred_item": 4.024741763160325,
+          "all_epoch_ns_per_item": [
+            4.024741763160325,
+            21.49407236199631,
+            13.59100341796875,
+            3.877894083658867,
+            3.8857936859130855,
+            4.032468795776367,
+            4.272699356079102,
+            3.5852813720703125,
+            3.9737701416015625
+          ],
+          "epoch_MAPE": 0.0378678933290865
+        },
+        {
+          "name": "actual Folly PCQueue",
+          "median_ns_per_transferred_item": 4.2795517865349195,
+          "all_epoch_ns_per_item": [
+            4.2795517865349195,
+            5.4351806640625,
+            4.667621188693581,
+            4.341215245863952,
+            4.01245920281662,
+            3.9163489090768815,
+            4.294522603352852,
+            4.075717926025391,
+            3.9770628276624302
+          ],
+          "epoch_MAPE": 0.0665658067079723
+        }
+      ],
+      "hyle_over_folly": 0.9404587124809839
+    },
+    {
+      "order": "ba",
+      "arms": [
+        {
+          "name": "actual Folly PCQueue",
+          "median_ns_per_transferred_item": 7.175650963416481,
+          "all_epoch_ns_per_item": [
+            6.006867544991646,
+            7.175650963416481,
+            7.617774376502419,
+            7.641824086507149,
+            7.160216111403237,
+            7.126299540201836,
+            7.056617736816406,
+            7.815265655517578,
+            12.378215789794922
+          ],
+          "epoch_MAPE": 0.0580383969430365
+        },
+        {
+          "name": "Hyle SPSC",
+          "median_ns_per_transferred_item": 5.724089486258354,
+          "all_epoch_ns_per_item": [
+            5.032583383413468,
+            5.514548806583176,
+            5.193201700846367,
+            6.269118365119477,
+            7.0922136306762695,
+            6.028311593191948,
+            5.090357462565117,
+            5.724089486258354,
+            5.733244759695854
+          ],
+          "epoch_MAPE": 0.0869386805477435
+        }
+      ],
+      "hyle_over_folly": 0.7977101332605777
+    }
+  ],
+  "clock": {
+    "qpc_frequency_hz": 10000000,
+    "qpc_tick_seconds": 1e-07,
+    "shortest_actual_epoch_seconds": 0.00609940000000002,
+    "note": "Clock tick differs from epoch and cross-process variation. Some large epochs/outliers retained without filtering."
+  },
+  "implementation": {
+    "actual_peer": "Local clean folly commit65749da412d92fe27d87ae45a8ef670720712858, actual ProducerConsumerQueue.h and transitive header closure. FOLLY_NO_CONFIG is the peer-supported switch, no generated config shim or peer edits.",
+    "observed_layout": "Hyle384B align128; Folly256B align64, reported hardware_destructive_interference_size64. No layout equalization or product change.",
+    "build": "One fresh MSVC14.50/O2/MD C++latest TU, existing nanobench/foundation objects. Actual compile/link logs exit0, no warnings. No full library/peer build."
+  },
+  "failures": [],
+  "limits": "One Windows13900K uint64 capacity1024 trace. No full/allocation/cancellation stress, other systems/topologies, large-capacity domain, bulk API or MPMC result. Formal spsc_bench still explicitly labels its old local shape; this evidence uses actual Folly."
+}
