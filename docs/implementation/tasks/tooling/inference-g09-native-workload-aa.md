@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**BLOCKED-from-AUDITED，2026-10-17；按程序最小转储尝试已结束，同一访问冲突复现但无 dump，临时设置已恢复；具体故障位置、完成时延归属和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
+状态：**AUDITED，2026-10-17；Windows 自动转储尝试已结束，当前只用现成调试器直接监视原诊断程序一次，区分其自身失败与采集环境；完成时延和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -202,3 +202,20 @@ CUDA 原 P1 与三个未资格平台的结论均不变。两入口均已终止�
 `registry_restored=true` 且实际复核专属键已不存在，父键原本存在且保留；417 项冻结输入均仍匹配。
 新增尝试累计 6.547 秒（内层 4.906 秒），另离线导出 0.047 秒；无编译、产品改动或有效 A/B。
 本轮按停止规则结束，不追加 native 复现，不把无 dump 推断为特定 crash reporter 的因果证明。
+
+### 一次直接调试的区分检查
+
+Windows 自动 dump 未能给出异常地址；新的有限工具动作只使用微软签名 ProcDump 12.02，
+直接以 `-mt -e -n 1 -x` 启动同一已冻结诊断程序一次，不经 Nsight。它有现成的异常监视接口，
+不编写产品异常处理器或新观测框架，不重编译。原四形状、source/SDK/两 facade/driver、数学、
+等待、采样身份与 `DISABLE_VULKAN_OBS_CAPTURE=1` 不变；这个直接调试结果只用于区分故障范围。
+
+- 入口 `.scratch/inference-gaps/g09_debug_original_observation.py`，唯一 fresh 输出
+  `.scratch/inference-gaps/g09-av-debug-1/run`；工具 `C:/h7/g09-procdump-1/procdump64.exe`。
+- 若异常复现，仅收一个 triage dump；若正常，则要求原 4+4 oracle、8 次 State 退休、8 块无溢出记录、
+  实际策略/nonce、四阶段无 Nsight/OBS 和 main 正常退出。正常一次不证明 profiler 是根因。
+- 不安装系统 postmortem debugger，不改变 AeDebug/LocalDumps，不启动新 P1/A/A 资格测试。
+  失败清理复用已审的自有 PID/nonce/完整路径检查；原始混合 UTF16/narrow 日志保留，只给标记解析移除 NUL。
+- 一个进程后停止；只离线检查已有 dump/记录。没有复现或归属仍 UNKNOWN，不扩成压力或 profiler 矩阵。
+
+这是具名访问冲突的普通故障定位，前两个采集入口及 Windows dump 尝试的终态、费用与恢复约束均保留。
