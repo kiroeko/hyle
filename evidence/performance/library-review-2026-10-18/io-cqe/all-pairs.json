@@ -1,0 +1,812 @@
+[
+  {
+    "pair": 0,
+    "order": [
+      "baseline",
+      "candidate"
+    ],
+    "label": "baseline",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.125642711,
+        "ns_per_op": 479.289,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.137470028,
+        "ns_per_op": 524.407,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.19529063,
+        "ns_per_op": 744.975,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.089799975,
+        "ns_per_op": 342.56,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.074806396,
+        "ns_per_op": 285.364,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.106405399,
+        "ns_per_op": 405.904,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.027728562,
+        "ns_per_op": 105.776,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 0,
+    "order": [
+      "baseline",
+      "candidate"
+    ],
+    "label": "candidate",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.115815035,
+        "ns_per_op": 441.799,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.119698361,
+        "ns_per_op": 456.613,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.147993728,
+        "ns_per_op": 564.551,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.090411002,
+        "ns_per_op": 344.891,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.067950359,
+        "ns_per_op": 259.21,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.082271844,
+        "ns_per_op": 313.842,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.027344915,
+        "ns_per_op": 104.313,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 1,
+    "order": [
+      "candidate",
+      "baseline"
+    ],
+    "label": "candidate",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.121099388,
+        "ns_per_op": 461.958,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.122492836,
+        "ns_per_op": 467.273,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.146912566,
+        "ns_per_op": 560.427,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.09091772,
+        "ns_per_op": 346.824,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.068986148,
+        "ns_per_op": 263.161,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.080178102,
+        "ns_per_op": 305.855,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026762483,
+        "ns_per_op": 102.091,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 1,
+    "order": [
+      "candidate",
+      "baseline"
+    ],
+    "label": "baseline",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.123537016,
+        "ns_per_op": 471.256,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.138243277,
+        "ns_per_op": 527.356,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.194066336,
+        "ns_per_op": 740.304,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.087733442,
+        "ns_per_op": 334.677,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.075753858,
+        "ns_per_op": 288.978,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.106260414,
+        "ns_per_op": 405.351,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.027876321,
+        "ns_per_op": 106.34,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 2,
+    "order": [
+      "baseline",
+      "candidate"
+    ],
+    "label": "baseline",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.122882869,
+        "ns_per_op": 468.761,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.131444636,
+        "ns_per_op": 501.421,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.189416794,
+        "ns_per_op": 722.568,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.090211179,
+        "ns_per_op": 344.128,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.075812758,
+        "ns_per_op": 289.203,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.11062093,
+        "ns_per_op": 421.985,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026779291,
+        "ns_per_op": 102.155,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 2,
+    "order": [
+      "baseline",
+      "candidate"
+    ],
+    "label": "candidate",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.116975703,
+        "ns_per_op": 446.227,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.123054993,
+        "ns_per_op": 469.418,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.152366485,
+        "ns_per_op": 581.232,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.091514601,
+        "ns_per_op": 349.1,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.069764388,
+        "ns_per_op": 266.13,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.08166898,
+        "ns_per_op": 311.542,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026632169,
+        "ns_per_op": 101.594,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 3,
+    "order": [
+      "candidate",
+      "baseline"
+    ],
+    "label": "candidate",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.118612036,
+        "ns_per_op": 452.469,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.122115046,
+        "ns_per_op": 465.832,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.149548997,
+        "ns_per_op": 570.484,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.089068178,
+        "ns_per_op": 339.768,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.06777373,
+        "ns_per_op": 258.536,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.079504411,
+        "ns_per_op": 303.285,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.029636246,
+        "ns_per_op": 113.053,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 3,
+    "order": [
+      "candidate",
+      "baseline"
+    ],
+    "label": "baseline",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.122945086,
+        "ns_per_op": 468.998,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.133279817,
+        "ns_per_op": 508.422,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.195269861,
+        "ns_per_op": 744.895,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.089612529,
+        "ns_per_op": 341.845,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.073108978,
+        "ns_per_op": 278.889,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.106323103,
+        "ns_per_op": 405.59,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026812514,
+        "ns_per_op": 102.282,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 4,
+    "order": [
+      "baseline",
+      "candidate"
+    ],
+    "label": "baseline",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.117585452,
+        "ns_per_op": 448.553,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.133334845,
+        "ns_per_op": 508.632,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.192558153,
+        "ns_per_op": 734.551,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.088991718,
+        "ns_per_op": 339.476,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.074243168,
+        "ns_per_op": 283.215,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.108327356,
+        "ns_per_op": 413.236,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.027232905,
+        "ns_per_op": 103.885,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "pair": 4,
+    "order": [
+      "baseline",
+      "candidate"
+    ],
+    "label": "candidate",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.119843322,
+        "ns_per_op": 457.166,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.125185383,
+        "ns_per_op": 477.544,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.150185375,
+        "ns_per_op": 572.912,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.088482034,
+        "ns_per_op": 337.532,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.068344023,
+        "ns_per_op": 260.712,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.080364489,
+        "ns_per_op": 306.566,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026716541,
+        "ns_per_op": 101.916,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  }
+]

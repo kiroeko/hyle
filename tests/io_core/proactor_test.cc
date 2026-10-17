@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <atomic>
+#include <cerrno>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -320,6 +322,119 @@ TEST(Proactor, NativeStatxCompletesAsynchronously) {
   EXPECT_FALSE(stat.is_directory);
   EXPECT_GT(stat.modified_time.seconds, 1'577'836'800);  // after 2020-01-01
   EXPECT_LT(stat.modified_time.nanoseconds, 1'000'000'000u);
+  ::close(fd);
+}
+
+TEST(Proactor, NativeStatxBatchPreservesOutputsAndUnrelatedCompletions) {
+  Proactor p;
+  constexpr std::size_t count = 64;
+  ASSERT_TRUE(p.init(count));
+  if (p.backend_kind() != BackendKind::kIoUring)
+    GTEST_SKIP() << "native STATX requires io_uring";
+  char path[] = "/tmp/hyle-statx-batch-XXXXXX";
+  const int fd = ::mkstemp(path);
+  ASSERT_GE(fd, 0);
+  ASSERT_EQ(::unlink(path), 0);
+  constexpr char payload[] = "batch-statx";
+  ASSERT_EQ(::write(fd, payload, sizeof(payload)),
+            static_cast<ssize_t>(sizeof(payload)));
+
+  std::array<Proactor::FileStat, count> stats{};
+  std::array<std::array<char, sizeof(payload)>, count> buffers{};
+  for (std::uint64_t wave = 1; wave <= 8; ++wave) {
+    const std::uint64_t base = wave * count;
+    for (std::size_t i = 0; i < count; ++i) {
+      stats[i].size = UINT64_MAX;
+      if (i % 2 == 0) {
+        ASSERT_TRUE(p.submit_read(fd, buffers[i].data(), sizeof(payload), 0,
+                                  base + i));
+      } else {
+        // One failing metadata query must not overwrite the caller's POD.
+        ASSERT_TRUE(p.submit_statx(i == count - 1 ? -1 : fd, &stats[i],
+                                   base + i));
+        EXPECT_EQ(stats[i].size, UINT64_MAX);
+      }
+    }
+    Proactor::FileStat rejected{};
+    rejected.size = 12345;
+    EXPECT_FALSE(p.submit_statx(fd, &rejected, base + 1));  // duplicate/full
+    EXPECT_FALSE(p.submit_statx(fd, &rejected, base + count));  // full
+    std::array<bool, count> seen{};
+    std::size_t completed = 0;
+    for (int tries = 0; tries < 100 && completed < count; ++tries) {
+      Completion events[7];  // Deliberately retire the batch across several reaps.
+      const std::size_t got = p.reap(events, 7, 100'000'000);
+      for (std::size_t j = 0; j < got; ++j) {
+        ASSERT_GE(events[j].user_data, base);
+        ASSERT_LT(events[j].user_data, base + count);
+        const std::size_t i = events[j].user_data - base;
+        ASSERT_FALSE(seen[i]);
+        seen[i] = true;
+        if (i % 2 == 0) {
+          EXPECT_EQ(events[j].result, sizeof(payload));
+          EXPECT_EQ(std::memcmp(buffers[i].data(), payload, sizeof(payload)), 0);
+        } else if (i == count - 1) {
+          EXPECT_EQ(events[j].result, -EBADF);
+          EXPECT_EQ(stats[i].size, UINT64_MAX);
+        } else {
+          EXPECT_EQ(events[j].result, 0);
+          EXPECT_EQ(stats[i].size, sizeof(payload));
+          EXPECT_FALSE(stats[i].is_directory);
+        }
+        ++completed;
+      }
+    }
+    ASSERT_EQ(completed, count);
+    EXPECT_FALSE(p.in_flight());
+    EXPECT_EQ(rejected.size, 12345u);
+    // The previously rejected unique token is reusable after the full batch.
+    ASSERT_TRUE(p.submit_statx(fd, &rejected, base + count));
+    Completion retried{};
+    ASSERT_EQ(p.reap(&retried, 1, 1'000'000'000), 1u);
+    EXPECT_EQ(retried.user_data, base + count);
+    EXPECT_EQ(retried.result, 0);
+    EXPECT_EQ(rejected.size, sizeof(payload));
+  }
+  ::close(fd);
+}
+
+TEST(Proactor, NativeStatxCancellationAckDoesNotRetireTargetOutput) {
+  Proactor p;
+  ASSERT_TRUE(p.init(2));
+  if (p.backend_kind() != BackendKind::kIoUring)
+    GTEST_SKIP() << "native STATX requires io_uring";
+  const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+  ASSERT_GE(fd, 0);
+  for (std::uint64_t wave = 1; wave <= 16; ++wave) {
+    Proactor::FileStat stat{};
+    stat.size = UINT64_MAX;
+    const std::uint64_t target = wave * 2;
+    ASSERT_TRUE(p.submit_statx(fd, &stat, target));
+    EXPECT_FALSE(p.submit_statx(fd, &stat, target));
+    ASSERT_TRUE(p.submit_cancel(target, target + 1));
+    bool target_seen = false;
+    bool cancel_seen = false;
+    for (int tries = 0; tries < 100 && (!target_seen || !cancel_seen); ++tries) {
+      Completion event{};
+      if (p.reap(&event, 1, 100'000'000) == 0) continue;
+      if (event.user_data == target + 1) {
+        ASSERT_FALSE(cancel_seen);
+        cancel_seen = true;
+        if (!target_seen) {
+          EXPECT_EQ(stat.size, UINT64_MAX);
+        }
+      } else {
+        ASSERT_EQ(event.user_data, target);
+        ASSERT_FALSE(target_seen);
+        target_seen = true;
+        EXPECT_TRUE(event.result == 0 || event.result == -ECANCELED);
+        EXPECT_EQ(stat.size, event.result == 0 ? 0u : UINT64_MAX);
+      }
+    }
+    ASSERT_TRUE(target_seen);
+    ASSERT_TRUE(cancel_seen);
+    EXPECT_FALSE(p.in_flight());
+  }
   ::close(fd);
 }
 #endif
@@ -992,6 +1107,78 @@ TEST(Proactor, DirectAccept) {
   }
   EXPECT_TRUE(closed) << "close_direct never completed";
   ::close(ls);
+}
+
+TEST(Proactor, DirectCloseBatchRetiresEachReservedSlot) {
+  Proactor p;
+  ASSERT_TRUE(p.init(16));
+  if (p.backend_kind() != BackendKind::kIoUring || !p.register_file_table(8))
+    GTEST_SKIP() << "native registered files unavailable";
+  const int listener = ::socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+  ASSERT_GE(listener, 0);
+  sockaddr_in address{};
+  address.sin_family = AF_INET;
+  address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  ASSERT_EQ(::bind(listener, reinterpret_cast<sockaddr*>(&address),
+                   sizeof(address)), 0);
+  ASSERT_EQ(::listen(listener, 8), 0);
+  socklen_t length = sizeof(address);
+  ASSERT_EQ(::getsockname(listener, reinterpret_cast<sockaddr*>(&address),
+                          &length), 0);
+  std::array<int, 3> clients{};
+  for (std::size_t i = 0; i < clients.size(); ++i) {
+    ASSERT_TRUE(p.submit_accept_direct(listener, 0xA00 + i));
+    clients[i] = ::socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    ASSERT_GE(clients[i], 0);
+    ASSERT_EQ(::connect(clients[i], reinterpret_cast<sockaddr*>(&address),
+                        sizeof(address)), 0);
+  }
+  std::array<int, 3> slots{-1, -1, -1};
+  bool unsupported = false;
+  std::size_t accepted = 0;
+  for (int tries = 0; tries < 100 && accepted < slots.size(); ++tries) {
+    Completion event{};
+    if (p.reap(&event, 1, 100'000'000) == 0) continue;
+    ASSERT_GE(event.user_data, 0xA00u);
+    ASSERT_LT(event.user_data, 0xA00u + slots.size());
+    if (event.result == -EINVAL || event.result == -ENOSYS ||
+        event.result == -EOPNOTSUPP)
+      unsupported = true;
+    else {
+      ASSERT_GE(event.result, 0);
+      slots[event.user_data - 0xA00] = static_cast<int>(event.result);
+    }
+    ++accepted;
+  }
+  for (int client : clients) ::close(client);
+  ASSERT_EQ(accepted, slots.size());
+  if (unsupported) {
+    ::close(listener);
+    GTEST_SKIP() << "kernel lacks accept_direct";
+  }
+  for (std::size_t i = 0; i < slots.size(); ++i) {
+    ASSERT_TRUE(p.submit_close_direct(slots[i], 0xC00 + i));
+    EXPECT_FALSE(p.submit_close_direct(slots[i], 0xD00 + i));
+  }
+  std::array<bool, 3> seen{};
+  std::size_t closed = 0;
+  for (int tries = 0; tries < 100 && closed < slots.size(); ++tries) {
+    Completion event{};
+    if (p.reap(&event, 1, 100'000'000) == 0) continue;
+    ASSERT_GE(event.user_data, 0xC00u);
+    ASSERT_LT(event.user_data, 0xC00u + slots.size());
+    const std::size_t index = event.user_data - 0xC00;
+    EXPECT_FALSE(seen[index]);
+    seen[index] = true;
+    EXPECT_EQ(event.result, 0);
+    ++closed;
+  }
+  ASSERT_EQ(closed, slots.size());
+  EXPECT_FALSE(p.in_flight());
+  const int reused = p.assign_fixed_slot(listener);
+  ASSERT_GE(reused, 0);
+  EXPECT_TRUE(p.release_fixed_slot(reused));
+  ::close(listener);
 }
 #endif  // __linux__
 

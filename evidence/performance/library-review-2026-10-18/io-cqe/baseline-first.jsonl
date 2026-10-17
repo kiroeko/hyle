@@ -1,0 +1,6 @@
+{"label":"baseline","kind":"statx","batch":16,"operations":262144,"seconds":0.122780286,"ns_per_op":468.370,"backend":"io_uring","validated":true}
+{"label":"baseline","kind":"statx","batch":256,"operations":262144,"seconds":0.129213182,"ns_per_op":492.909,"backend":"io_uring","validated":true}
+{"label":"baseline","kind":"statx","batch":1024,"operations":262144,"seconds":0.189140815,"ns_per_op":721.515,"backend":"io_uring","validated":true}
+{"label":"baseline","kind":"read-first-half-statx","batch":16,"operations":262144,"seconds":0.083157647,"ns_per_op":317.221,"backend":"io_uring","validated":true}
+{"label":"baseline","kind":"read-first-half-statx","batch":256,"operations":262144,"seconds":0.074597158,"ns_per_op":284.566,"backend":"io_uring","validated":true}
+{"label":"baseline","kind":"read-first-half-statx","batch":1024,"operations":262144,"seconds":0.105668132,"ns_per_op":403.092,"backend":"io_uring","validated":true}

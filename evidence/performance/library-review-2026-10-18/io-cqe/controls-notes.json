@@ -1,0 +1,9 @@
+{
+  "method": "Existing identical exe and unchanged saved baseline/candidate libraries; each route repeats same route as A and B, 5 process pairs, AB/BA alternating pair order; taskset CPU2; all 7 existing shapes retained, no code/build/extra A-B changes.",
+  "runs": 20,
+  "exit_code_zero_runs": 20,
+  "rows_per_run": 7,
+  "purpose": "Assess mixed batch16 and read-only batch1024 negative A-B pairs against workload-matched repeated-route variability.",
+  "limits": "No CI or proof of equivalence; WSL virtual CPU affinity does not prove physical P-core placement. These controls demonstrate variability of the actual run, not timer quantization.",
+  "observation": "Candidate pure-read A/A ratio .90318 reproduces the original A/B low pair .90473; mixed16 candidate A/A spans .94302..1.04319, covering original A/B .96498..1.00611. Original A/B outliers remain retained; no stable small-loss resolution is asserted."
+}

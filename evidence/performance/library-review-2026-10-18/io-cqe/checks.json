@@ -1,0 +1,50 @@
+{
+  "build": {
+    "command": "cmake --build /root/hyle-scratch/io-watch-v2-dev --target hyle_io_core_test -j 2",
+    "result": "PASS",
+    "compiler": "GCC 14.2 Release -O3 -DNDEBUG -Werror; shared; shipping layout"
+  },
+  "test": {
+    "command": "/root/hyle-scratch/io-watch-v2-dev/bin/hyle_io_core_test",
+    "exit_code": 0,
+    "total": 25,
+    "passed": 23,
+    "skipped": 2,
+    "skipped_tests": [
+      "Proactor.DirectAccept",
+      "Proactor.DirectCloseBatchRetiresEachReservedSlot"
+    ],
+    "skip_reason": "native accept_direct returns -EINVAL on this WSL kernel; successful close-slot path NOT verified"
+  },
+  "corrected_local_failures": [
+    "Initial configure empty CMAKE_PROJECT_INCLUDE argument was interpreted as directory; removed cache key with cmake -U and configure succeeded.",
+    "First test compile rejected gtest EXPECT_EQ under unbraced if (-Werror=dangling-else); explicit braces added before successful rebuild."
+  ],
+  "measurement": {
+    "type": "native io_uring full submit/completion episode, warmed same fd, 5 alternating process pairs, identical executable and distinct io_core libraries",
+    "cpu_affinity": 2,
+    "physical_p_core_proven": false,
+    "operations_per_row": 262144,
+    "outside_timing": [
+      "Proactor init/reserve",
+      "fixture open/write",
+      "user output buffers",
+      "16 warmup episodes"
+    ],
+    "inside_timing": [
+      "all submit calls",
+      "native statx record allocation",
+      "CQE lookup/conversion/free",
+      "read result and token validation",
+      "full in_flight retirement"
+    ],
+    "limits": [
+      "Single WSL host and warm local descriptor; not inference throughput or universal engine ranking.",
+      "No confidence interval computed; all pairs and outliers retained.",
+      "Index cold memory/reserve cost increases and possible tombstone rehash are not eliminated.",
+      "OOM and late SQE-reservation failure rollback were statically reviewed, not fault-injected.",
+      "Direct accept/close successful slot lifecycle skipped by this kernel.",
+      "PendingStatx duplicate token field remains in sampled source; removal deferred to avoid changing the measured revision."
+    ]
+  }
+}

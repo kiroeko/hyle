@@ -1,0 +1,1642 @@
+[
+  {
+    "route": "baseline",
+    "pair": 0,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.120787711,
+        "ns_per_op": 460.769,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.130917076,
+        "ns_per_op": 499.409,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.18724895,
+        "ns_per_op": 714.298,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.087516879,
+        "ns_per_op": 333.85,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.072941597,
+        "ns_per_op": 278.25,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.106799209,
+        "ns_per_op": 407.407,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026512224,
+        "ns_per_op": 101.136,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 0,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.119059173,
+        "ns_per_op": 454.175,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.134226664,
+        "ns_per_op": 512.034,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.188900972,
+        "ns_per_op": 720.6,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.087127906,
+        "ns_per_op": 332.367,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.074078555,
+        "ns_per_op": 282.587,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.102259433,
+        "ns_per_op": 390.089,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.028566463,
+        "ns_per_op": 108.972,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 1,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.120583978,
+        "ns_per_op": 459.991,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.13104653,
+        "ns_per_op": 499.903,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.189119623,
+        "ns_per_op": 721.434,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.085881757,
+        "ns_per_op": 327.613,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.077165919,
+        "ns_per_op": 294.365,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.106945096,
+        "ns_per_op": 407.963,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.027226016,
+        "ns_per_op": 103.859,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 1,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.122939528,
+        "ns_per_op": 468.977,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.132837609,
+        "ns_per_op": 506.735,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.188250259,
+        "ns_per_op": 718.118,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.086396175,
+        "ns_per_op": 329.575,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.073194197,
+        "ns_per_op": 279.214,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.10611878,
+        "ns_per_op": 404.811,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026700007,
+        "ns_per_op": 101.852,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 2,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.118872957,
+        "ns_per_op": 453.464,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.130536283,
+        "ns_per_op": 497.956,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.183940154,
+        "ns_per_op": 701.676,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.086809703,
+        "ns_per_op": 331.153,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.077002554,
+        "ns_per_op": 293.741,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.104214021,
+        "ns_per_op": 397.545,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026901295,
+        "ns_per_op": 102.62,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 2,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.121928794,
+        "ns_per_op": 465.121,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.134293308,
+        "ns_per_op": 512.288,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.196982073,
+        "ns_per_op": 751.427,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.089804215,
+        "ns_per_op": 342.576,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.076641137,
+        "ns_per_op": 292.363,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.106033577,
+        "ns_per_op": 404.486,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026229028,
+        "ns_per_op": 100.056,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 3,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.119166842,
+        "ns_per_op": 454.585,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.13517166,
+        "ns_per_op": 515.639,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.19439213,
+        "ns_per_op": 741.547,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.088862015,
+        "ns_per_op": 338.982,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.076355338,
+        "ns_per_op": 291.272,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.109139609,
+        "ns_per_op": 416.335,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026212475,
+        "ns_per_op": 99.993,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 3,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.124019701,
+        "ns_per_op": 473.098,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.135794028,
+        "ns_per_op": 518.013,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.193375602,
+        "ns_per_op": 737.669,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.08923905,
+        "ns_per_op": 340.42,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.074026934,
+        "ns_per_op": 282.39,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.10910744,
+        "ns_per_op": 416.212,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026350654,
+        "ns_per_op": 100.52,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 4,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.119624098,
+        "ns_per_op": 456.33,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.134225127,
+        "ns_per_op": 512.028,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.192768119,
+        "ns_per_op": 735.352,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.089006228,
+        "ns_per_op": 339.532,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.077033661,
+        "ns_per_op": 293.86,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.108910249,
+        "ns_per_op": 415.46,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026746279,
+        "ns_per_op": 102.029,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "baseline",
+    "pair": 4,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.12299373,
+        "ns_per_op": 469.184,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.133543348,
+        "ns_per_op": 509.427,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.195231904,
+        "ns_per_op": 744.751,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.089160507,
+        "ns_per_op": 340.12,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.074918422,
+        "ns_per_op": 285.791,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.108955965,
+        "ns_per_op": 415.634,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "baseline-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.028775728,
+        "ns_per_op": 109.771,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 0,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.116998667,
+        "ns_per_op": 446.314,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.118383378,
+        "ns_per_op": 451.597,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.141242461,
+        "ns_per_op": 538.797,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.084802949,
+        "ns_per_op": 323.498,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.06654051,
+        "ns_per_op": 253.832,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.076790749,
+        "ns_per_op": 292.933,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.026447746,
+        "ns_per_op": 100.89,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 0,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.121073504,
+        "ns_per_op": 461.859,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.122194733,
+        "ns_per_op": 466.136,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.14595116,
+        "ns_per_op": 556.759,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.086616273,
+        "ns_per_op": 330.415,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.068312881,
+        "ns_per_op": 260.593,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.076870208,
+        "ns_per_op": 293.237,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.027761424,
+        "ns_per_op": 105.901,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 1,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.115637054,
+        "ns_per_op": 441.12,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.116240782,
+        "ns_per_op": 443.423,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.145123717,
+        "ns_per_op": 553.603,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.08650628,
+        "ns_per_op": 329.995,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.069242128,
+        "ns_per_op": 264.138,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.07570804,
+        "ns_per_op": 288.803,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.024664168,
+        "ns_per_op": 94.086,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 1,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.113034601,
+        "ns_per_op": 431.193,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.111374247,
+        "ns_per_op": 424.859,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.1336753,
+        "ns_per_op": 509.931,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.081577284,
+        "ns_per_op": 311.193,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.061125782,
+        "ns_per_op": 233.176,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.071049265,
+        "ns_per_op": 271.031,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.02466932,
+        "ns_per_op": 94.106,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 2,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.107901684,
+        "ns_per_op": 411.612,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.105904196,
+        "ns_per_op": 403.992,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.12929037,
+        "ns_per_op": 493.204,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.083861013,
+        "ns_per_op": 319.904,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.060861968,
+        "ns_per_op": 232.17,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.071365684,
+        "ns_per_op": 272.238,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.024204884,
+        "ns_per_op": 92.334,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 2,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.106635115,
+        "ns_per_op": 406.781,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.112187954,
+        "ns_per_op": 427.963,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.132748606,
+        "ns_per_op": 506.396,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.080388464,
+        "ns_per_op": 306.658,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.062672938,
+        "ns_per_op": 239.078,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.07155679,
+        "ns_per_op": 272.967,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.023852242,
+        "ns_per_op": 90.989,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 3,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.106759088,
+        "ns_per_op": 407.254,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.109005962,
+        "ns_per_op": 415.825,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.136710168,
+        "ns_per_op": 521.508,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.08157924,
+        "ns_per_op": 311.2,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.062522617,
+        "ns_per_op": 238.505,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.071542726,
+        "ns_per_op": 272.914,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.025843486,
+        "ns_per_op": 98.585,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 3,
+    "order": [
+      "b",
+      "a"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.110274678,
+        "ns_per_op": 420.665,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.107299758,
+        "ns_per_op": 409.316,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.129641251,
+        "ns_per_op": 494.542,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.08220562,
+        "ns_per_op": 313.59,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.060632703,
+        "ns_per_op": 231.295,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.069266496,
+        "ns_per_op": 264.231,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.023341323,
+        "ns_per_op": 89.04,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 4,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "a",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.104450563,
+        "ns_per_op": 398.447,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.107050126,
+        "ns_per_op": 408.364,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.129125786,
+        "ns_per_op": 492.576,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.079340482,
+        "ns_per_op": 302.66,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.06172786,
+        "ns_per_op": 235.473,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.070335325,
+        "ns_per_op": 268.308,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-a",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.023711556,
+        "ns_per_op": 90.452,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  },
+  {
+    "route": "candidate",
+    "pair": 4,
+    "order": [
+      "a",
+      "b"
+    ],
+    "side": "b",
+    "exit_code": 0,
+    "rows": [
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.105929131,
+        "ns_per_op": 404.088,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.104947506,
+        "ns_per_op": 400.343,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.132437053,
+        "ns_per_op": 505.207,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 16,
+        "operations": 262144,
+        "seconds": 0.079896102,
+        "ns_per_op": 304.779,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 256,
+        "operations": 262144,
+        "seconds": 0.062939175,
+        "ns_per_op": 240.094,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-first-half-statx",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.071292996,
+        "ns_per_op": 271.961,
+        "backend": "io_uring",
+        "validated": true
+      },
+      {
+        "label": "candidate-aa-b",
+        "kind": "read-only",
+        "batch": 1024,
+        "operations": 262144,
+        "seconds": 0.024046709,
+        "ns_per_op": 91.731,
+        "backend": "io_uring",
+        "validated": true
+      }
+    ]
+  }
+]

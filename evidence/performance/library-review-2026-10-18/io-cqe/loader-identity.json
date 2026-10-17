@@ -1,0 +1,15 @@
+{
+  "baseline": {
+    "loader_line": "libhyle_io_core.so.0.1.0 => /root/hyle/.scratch/perf-io-cqe/baseline-lib/libhyle_io_core.so.0.1.0 (0x00007dfb9cd71000)",
+    "resolved": "/root/hyle/.scratch/perf-io-cqe/baseline-lib/libhyle_io_core.so.0.1.0",
+    "sha256": "2c4d158271946e3f8bd6840c3f4a22a16631c52fd243df7f0e09535cc3eaecdf"
+  },
+  "candidate": {
+    "loader_line": "libhyle_io_core.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_io_core.so.0.1.0 (0x000074415ccd2000)",
+    "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_io_core.so.0.1.0",
+    "sha256": "864a35ab5216cfafcba804e62ebbf0732c85ea2d1bab2fda9968e7573ee2d8c2"
+  },
+  "dynamic_search": [
+    "0x000000000000001d (RUNPATH)            Library runpath: [/root/hyle-scratch/io-watch-v2-dev/bin]"
+  ]
+}

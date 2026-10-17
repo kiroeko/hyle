@@ -1,0 +1,100 @@
+[
+  {
+    "kind": "statx",
+    "batch": 16,
+    "baseline_median_ns_per_op": 468.998,
+    "candidate_median_ns_per_op": 452.469,
+    "paired_speedup_ratios": [
+      1.0848575936115745,
+      1.0201273708865306,
+      1.0504989612910023,
+      1.0365306794498628,
+      0.9811600162741761
+    ],
+    "paired_speedup_median": 1.0365306794498628
+  },
+  {
+    "kind": "statx",
+    "batch": 256,
+    "baseline_median_ns_per_op": 508.632,
+    "candidate_median_ns_per_op": 467.273,
+    "paired_speedup_ratios": [
+      1.1484714627047412,
+      1.1285822206718557,
+      1.0681759114477927,
+      1.091427810884611,
+      1.0650997604409227
+    ],
+    "paired_speedup_median": 1.091427810884611
+  },
+  {
+    "kind": "statx",
+    "batch": 1024,
+    "baseline_median_ns_per_op": 740.304,
+    "candidate_median_ns_per_op": 570.484,
+    "paired_speedup_ratios": [
+      1.3195884871340233,
+      1.3209641933739809,
+      1.2431662399867867,
+      1.3057246127849333,
+      1.2821358253972688
+    ],
+    "paired_speedup_median": 1.3057246127849333
+  },
+  {
+    "kind": "read-first-half-statx",
+    "batch": 16,
+    "baseline_median_ns_per_op": 341.845,
+    "candidate_median_ns_per_op": 344.891,
+    "paired_speedup_ratios": [
+      0.9932413429170375,
+      0.9649764722164557,
+      0.9857576625608707,
+      1.0061129947493586,
+      1.0057594539184433
+    ],
+    "paired_speedup_median": 0.9932413429170375
+  },
+  {
+    "kind": "read-first-half-statx",
+    "batch": 256,
+    "baseline_median_ns_per_op": 285.364,
+    "candidate_median_ns_per_op": 260.712,
+    "paired_speedup_ratios": [
+      1.1008988850738783,
+      1.0981034423793798,
+      1.0866982301882537,
+      1.0787240461676517,
+      1.0863136334345944
+    ],
+    "paired_speedup_median": 1.0866982301882537
+  },
+  {
+    "kind": "read-first-half-statx",
+    "batch": 1024,
+    "baseline_median_ns_per_op": 405.904,
+    "candidate_median_ns_per_op": 306.566,
+    "paired_speedup_ratios": [
+      1.2933386863453586,
+      1.3253044743424172,
+      1.3545043685923568,
+      1.3373229800352802,
+      1.3479511752771018
+    ],
+    "paired_speedup_median": 1.3373229800352802
+  },
+  {
+    "kind": "read-only",
+    "batch": 1024,
+    "baseline_median_ns_per_op": 103.885,
+    "candidate_median_ns_per_op": 102.091,
+    "paired_speedup_ratios": [
+      1.0140250975429717,
+      1.0416197314160898,
+      1.0055219796444672,
+      0.9047261019168,
+      1.019319832018525
+    ],
+    "paired_speedup_median": 1.0140250975429717
+  }
+]

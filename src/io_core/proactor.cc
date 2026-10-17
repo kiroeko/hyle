@@ -1223,7 +1223,9 @@ struct Proactor::Impl {
   // Direct accept asks the kernel to choose a free table slot. Track its token
   // until the CQE tells us which slot became occupied; direct close keeps that
   // slot reserved until its own successful CQE.
-  std::vector<std::uint64_t> pending_direct_accepts;
+  std::size_t pending_direct_accept_count = 0;
+  // Retained only for the existing duplicate-slot check at close admission.
+  // Completion records name their vector index so reap never scans this list.
   std::vector<PendingDirectClose> pending_direct_closes;
   // Native STATX needs stable kernel output storage until its CQE. Reap converts
   // each Linux structure into the public POD, then frees the record.
@@ -1232,7 +1234,15 @@ struct Proactor::Impl {
     FileStat* output;
     struct statx native;
   };
-  std::vector<PendingStatx*> pending_statx;
+  struct PendingCompletion {
+    enum class Kind : std::uint8_t { kDirectAccept, kDirectClose, kStatx };
+    Kind kind;
+    unsigned close_index = 0;
+    // Native output must keep its heap address while the kernel owns it; flat
+    // table growth may relocate this pointer but never the statx structure.
+    PendingStatx* statx = nullptr;
+  };
+  container::FlatHashMap<std::uint64_t, PendingCompletion> pending_completions;
   // Submit batch (io-04 opt): SQEs filled by submit_* but not yet flushed to the
   // kernel. The worker loop now reaps only when its run-queue drains, so many
   // fibers submit between two reaps -- these accumulate here and the next reap
@@ -1355,7 +1365,11 @@ Proactor::~Proactor() {
         ::munmap(impl_->buf_ring, impl_->buf_ring_sz);
       if (impl_->buf_pool != nullptr) ::munmap(impl_->buf_pool, impl_->buf_pool_sz);
     }
-    for (Impl::PendingStatx* pending : impl_->pending_statx) delete pending;
+    impl_->pending_completions.for_each(
+        [](const std::uint64_t&, Impl::PendingCompletion& pending) {
+          if (pending.kind == Impl::PendingCompletion::Kind::kStatx)
+            delete pending.statx;
+        });
     if (impl_->sqes != nullptr) ::munmap(impl_->sqes, impl_->sqes_sz);
     if (impl_->cq_ptr != nullptr && !impl_->single_mmap)
       ::munmap(impl_->cq_ptr, impl_->cq_sz);
@@ -1460,14 +1474,17 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries,
   impl->sq_entries = entries < p.sq_entries ? entries : p.sq_entries;
   impl->operation_capacity = impl->sq_entries;
   try {
-    // All owner-thread bookkeeping is pre-sized to the ring's admitted depth;
-    // steady-state submissions therefore cannot throw or allocate while an SQE
-    // is being published.
+    // Reserve owner-thread bookkeeping to the admitted depth. The flat index
+    // may reclaim tombstones later; its fallible insertion always precedes SQE
+    // publication so allocation failure cannot orphan an operation.
     impl->posted.reserve(p.sq_entries);
-    impl->pending_statx.reserve(p.sq_entries);
-    impl->pending_direct_accepts.reserve(p.sq_entries);
     impl->pending_direct_closes.reserve(p.sq_entries);
   } catch (...) {
+    ::close(fd);
+    delete impl;
+    return nullptr;
+  }
+  if (!impl->pending_completions.try_reserve(impl->operation_capacity)) {
     ::close(fd);
     delete impl;
     return nullptr;
@@ -1995,55 +2012,57 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     }
     out[n].user_data = c.user_data;
     out[n].result = static_cast<std::int64_t>(c.res);  // <0 = -errno (io-02 ops)
-    // A successful direct accept returns the kernel-selected fixed-file slot.
-    // Reserve it in our mirror before handing the completion to the caller, so
-    // assign_fixed_file cannot overwrite the live direct descriptor.
-    for (std::size_t i = 0; i < impl_->pending_direct_accepts.size(); ++i) {
-      if (impl_->pending_direct_accepts[i] != c.user_data) continue;
-      if (c.res >= 0 &&
-          static_cast<std::size_t>(c.res) < impl_->file_slots.size()) {
-        impl_->file_slots[static_cast<std::size_t>(c.res)] = -2;
+    // Only three operations need extra completion bookkeeping. Resolve their
+    // original token once; ordinary read/write CQEs no longer scan every live
+    // direct-accept, direct-close and native-stat record.
+    if (const Impl::PendingCompletion* found =
+            impl_->pending_completions.empty()
+                ? nullptr
+                : impl_->pending_completions.find(c.user_data)) {
+      const Impl::PendingCompletion pending = *found;
+      if (pending.kind == Impl::PendingCompletion::Kind::kDirectAccept) {
+        // A successful direct accept returns the kernel-selected file slot.
+        if (c.res >= 0 &&
+            static_cast<std::size_t>(c.res) < impl_->file_slots.size())
+          impl_->file_slots[static_cast<std::size_t>(c.res)] = -2;
+        HYLE_FATAL_ASSERT(impl_->pending_direct_accept_count != 0);
+        --impl_->pending_direct_accept_count;
+      } else if (pending.kind == Impl::PendingCompletion::Kind::kDirectClose) {
+        const std::size_t index = pending.close_index;
+        HYLE_FATAL_ASSERT(index < impl_->pending_direct_closes.size());
+        const int slot = impl_->pending_direct_closes[index].slot;
+        // Failed/cancelled close leaves the existing reservation unchanged.
+        if (c.res >= 0 && slot >= 0 &&
+            static_cast<std::size_t>(slot) < impl_->file_slots.size())
+          impl_->file_slots[static_cast<std::size_t>(slot)] = -1;
+        impl_->pending_direct_closes[index] =
+            impl_->pending_direct_closes.back();
+        impl_->pending_direct_closes.pop_back();
+        if (index < impl_->pending_direct_closes.size()) {
+          auto* moved = impl_->pending_completions.find(
+              impl_->pending_direct_closes[index].user_data);
+          HYLE_FATAL_ASSERT(
+              moved != nullptr &&
+              moved->kind == Impl::PendingCompletion::Kind::kDirectClose);
+          moved->close_index = static_cast<unsigned>(index);
+        }
+      } else {
+        // Convert native output before the completion wakes its caller. The
+        // record survives cancellation until this target operation's own CQE.
+        Impl::PendingStatx* native = pending.statx;
+        if (c.res >= 0) {
+          FileStat value{};
+          value.size = native->native.stx_size;
+          value.modified_time = time::unix_timestamp(
+              static_cast<std::int64_t>(native->native.stx_mtime.tv_sec),
+              static_cast<std::uint32_t>(native->native.stx_mtime.tv_nsec));
+          value.mode = native->native.stx_mode;
+          value.is_directory = (native->native.stx_mode & S_IFMT) == S_IFDIR;
+          *native->output = value;
+        }
+        delete native;
       }
-      impl_->pending_direct_accepts[i] =
-          impl_->pending_direct_accepts.back();
-      impl_->pending_direct_accepts.pop_back();
-      break;
-    }
-    // Keep a direct slot reserved while CLOSE is in flight. Only a successful
-    // CQE makes it locally reusable; a failed close still names a live/unknown
-    // kernel slot and must not be silently recycled.
-    for (std::size_t i = 0; i < impl_->pending_direct_closes.size(); ++i) {
-      const Impl::PendingDirectClose pending =
-          impl_->pending_direct_closes[i];
-      if (pending.user_data != c.user_data) continue;
-      if (c.res >= 0 && pending.slot >= 0 &&
-          static_cast<std::size_t>(pending.slot) < impl_->file_slots.size()) {
-        impl_->file_slots[static_cast<std::size_t>(pending.slot)] = -1;
-      }
-      impl_->pending_direct_closes[i] =
-          impl_->pending_direct_closes.back();
-      impl_->pending_direct_closes.pop_back();
-      break;
-    }
-    // STATX writes a Linux-only structure. Convert it to the stable public POD
-    // before the completion wakes its caller, then release the native storage.
-    for (std::size_t i = 0; i < impl_->pending_statx.size(); ++i) {
-      Impl::PendingStatx* pending = impl_->pending_statx[i];
-      if (pending->user_data != c.user_data) continue;
-      if (c.res >= 0) {
-        FileStat value{};
-        value.size = pending->native.stx_size;
-        value.modified_time = time::unix_timestamp(
-            static_cast<std::int64_t>(pending->native.stx_mtime.tv_sec),
-            static_cast<std::uint32_t>(pending->native.stx_mtime.tv_nsec));
-        value.mode = pending->native.stx_mode;
-        value.is_directory = (pending->native.stx_mode & S_IFMT) == S_IFDIR;
-        *pending->output = value;
-      }
-      delete pending;
-      impl_->pending_statx[i] = impl_->pending_statx.back();
-      impl_->pending_statx.pop_back();
-      break;
+      impl_->pending_completions.erase(c.user_data);
     }
     // Map io_uring CQE flags onto our neutral flags.
     out[n].flags = 0;
@@ -2548,8 +2567,8 @@ bool Proactor::register_file_table(unsigned nr) noexcept {
   if (sys_io_uring_register(impl_->fd, IORING_REGISTER_FILES2, &rr, sizeof(rr)) < 0)
     return false;
   impl_->file_slots.assign(nr, -1);  // mirror for free-slot bookkeeping (-1 = free)
-  impl_->pending_direct_accepts.reserve(nr);
-  impl_->pending_direct_closes.reserve(nr);
+  // Pending operations are already bounded/reserved by the admitted ring depth,
+  // independently of how many fixed-file slots this table provides.
   return true;
 }
 
@@ -2659,17 +2678,25 @@ bool Proactor::submit_accept_direct(std::intptr_t fd,
   std::size_t free_slots = 0;
   for (const std::intptr_t value : impl_->file_slots)
     if (value == -1) ++free_slots;
-  if (free_slots <= impl_->pending_direct_accepts.size()) return false;
+  if (free_slots <= impl_->pending_direct_accept_count) return false;
   // ACCEPT with file_index = ALLOC: the kernel accepts + places the new connection in
   // a FREE table slot as a direct descriptor, and the CQE result is the chosen slot
   // index. No addr/addrlen (peer address not needed here). submit_one doesn't set
   // sqe.file_index, so fill the SQE directly.
   if (impl_->inflight >= impl_->sq_entries) return false;
+  auto [record, inserted] = impl_->pending_completions.try_emplace(
+      user_data, Impl::PendingCompletion{
+                     Impl::PendingCompletion::Kind::kDirectAccept});
+  (void)record;
+  if (inserted != decltype(impl_->pending_completions)::InsertResult::kInserted)
+    return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                    impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array,
-                   impl_->sqes, &sqe))
+                    impl_->sqes, &sqe)) {
+    impl_->pending_completions.erase(user_data);
     return false;
+  }
   const unsigned tail = *impl_->sq_tail;
   io_uring_sqe& s = *sqe;
   s.opcode = IORING_OP_ACCEPT;
@@ -2677,7 +2704,7 @@ bool Proactor::submit_accept_direct(std::intptr_t fd,
   s.accept_flags = SOCK_NONBLOCK | SOCK_CLOEXEC;
   s.file_index = IORING_FILE_INDEX_ALLOC;  // kernel picks a free slot
   s.user_data = user_data;
-  impl_->pending_direct_accepts.push_back(user_data);
+  ++impl_->pending_direct_accept_count;
   commit_sqe(&impl_->sq_pending, &impl_->inflight, impl_->sq_tail, tail);
   return true;
 }
@@ -2693,11 +2720,20 @@ bool Proactor::submit_close_direct(int slot, std::uint64_t user_data) noexcept {
   // CLOSE with file_index (fd unused): closes the direct descriptor in that
   // slot. Keep the mirror reserved until the successful close CQE.
   if (impl_->inflight >= impl_->sq_entries) return false;
+  auto [record, inserted] = impl_->pending_completions.try_emplace(
+      user_data, Impl::PendingCompletion{
+                     Impl::PendingCompletion::Kind::kDirectClose,
+                     static_cast<unsigned>(impl_->pending_direct_closes.size())});
+  (void)record;
+  if (inserted != decltype(impl_->pending_completions)::InsertResult::kInserted)
+    return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                    impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array,
-                   impl_->sqes, &sqe))
+                    impl_->sqes, &sqe)) {
+    impl_->pending_completions.erase(user_data);
     return false;
+  }
   const unsigned tail = *impl_->sq_tail;
   io_uring_sqe& s = *sqe;
   s.opcode = IORING_OP_CLOSE;
@@ -3083,13 +3119,19 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
 
   // The user_data identifies an in-flight operation everywhere in Proactor; a
   // duplicate would make cancellation/completion routing ambiguous.
-  for (const Impl::PendingStatx* pending : impl_->pending_statx)
-    if (pending->user_data == user_data) return false;
+  if (impl_->pending_completions.contains(user_data)) return false;
   auto* pending = new (std::nothrow) Impl::PendingStatx{};
   if (pending == nullptr) return false;
   pending->user_data = user_data;
   pending->output = out;
-  impl_->pending_statx.push_back(pending);
+  auto [record, inserted] = impl_->pending_completions.try_emplace(
+      user_data, Impl::PendingCompletion{
+                     Impl::PendingCompletion::Kind::kStatx, 0, pending});
+  (void)record;
+  if (inserted != decltype(impl_->pending_completions)::InsertResult::kInserted) {
+    delete pending;
+    return false;
+  }
 
   // liburing io_uring_prep_statx mapping: fd=dfd, addr=path, len=mask,
   // off=statx buffer and statx_flags=flags. AT_EMPTY_PATH queries `fd`.
@@ -3102,7 +3144,7 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
       reinterpret_cast<std::uint64_t>(&pending->native), user_data,
       AT_EMPTY_PATH);
   if (!submitted) {
-    impl_->pending_statx.pop_back();
+    impl_->pending_completions.erase(user_data);
     delete pending;
   }
   return submitted;
