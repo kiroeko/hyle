@@ -535,9 +535,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g09-vulkan-retirement-barrier.md",
-      "summary": "G09 native 退休发布 SCOPED：真实多 observer 可在权限退休尾部前观察完成；仅审计原 Run 退休发布屏障，不重置原失败与预算。"
+      "summary": "G09 native 退休发布 AUDITED：原 Run 单退休者/CV、外锁 observer 错误归并后才退休权限，尾部完成才发布；有限三文件，无新公共 API/线程。"
     },
     {
       "module": "graph_route_vulkan",

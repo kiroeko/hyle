@@ -1,6 +1,6 @@
 # G09 Vulkan 原完成者退休发布修正
 
-状态：**SCOPED，2026-10-17**。owner `compute_route_vulkan`；baseline
+状态：**AUDITED，2026-10-17**。SCOPED checkpoint `508551f0c`；owner `compute_route_vulkan`；baseline
 `e2a55aaabdd06349f2e2d5efb82423d34e30305c`。本卡是
 [G09 完成驱动修正](../graph/inference-g09-completion-wake-correction.md)的有限下层纠正，
 不另开性能诊断或重置原预算。原 [G08 terminal](inference-g08-final-closure.md)保留。
@@ -57,4 +57,31 @@ Air Vulkan 普通消费与适用 host sanitizer；与主卡共享 source/static/
 6. 原 native 叶 source/static/shared 重新构建链接，直接 hybrid/page/state 消费验证；未变依赖按 hash 复用。
 7. 原 public 使用形状不变；新实现必须使原 checked wait/close 的已有寿命承诺成立。
 
-SCOPED：只允许设计与测试形状审计，有限 FIX/terminal 顺序冻结并进入 AUDITED 后才改产品。
+## AUDITED：唯一有限 FIX
+
+实现者与独立 Graph 寿命审查均确认以下最小形状，未发现必须增加 public API/generation 的事实。
+
+| FIX | 冻结机制 | 验收 |
+|---|---|---|
+| V1 | 每 Runtime 一个私有 condition_variable，复用原 Run.retiring；pending/list/pending_owner 保留至权限及 abandoned 交付尾部结束 | gate 窗口 poll Pending，wait/drain/close 无早完成 |
+| V2 | 唯一退休者先 drop 自己的 observer，再等其余已登记外锁观察归零；各 loser 回锁先合并本次错误，再 drop/notify，不能二次 checked/retire | 已登记第二 observer、first-error 不被 OK 权限发布掩盖 |
+| V3 | 原 retire_regions/checked/cancel 与 terminal 优先级在 observers=0 后确定，外锁 retire_native；第二锁收 late abandoned，无 packet 则同锁直接 publish，有 packet 则外锁 deliver 后同锁 publish | abandon/lifetime 恰一次，原 native 错误和数值拒绝，65 步复用 |
+
+每个 IREE wait/poll、最终 callback tail、native fence 外锁回点均重查 retiring/pending。
+poll 有其它 observer 时只记录本次结果并返回 Pending，不能 claim 后 CV 等待或留下无人推进的
+retiring；wait/drain 才能 claim 后等零。遇已有 retiring 的 poll 立即 Pending，wait/drain 直接
+CV 等 publication，不落入原 1ms 的异常未证 quiescence backoff。notify 仅用于 observer 退出/
+retirement 发布，不新增每 kernel observer、容器、heap、线程或普通 timer。
+
+pending destroy 只 handoff abandoned/completion_owner，不清 retiring；已 publish 的正常 destroy
+独占自己的原 deliver 尾部并清理/通知。publish 后旧退休者不再写 Run，防止覆盖新代/正常
+destroy。原 completion owner 与 closed admission 继续限制复用，不新增公共状态机。
+
+定向测试在真实 GPU fence 完成后，以原 private resource-owner 回收 gate 卡住 permissions
+retirement；受控 episode 必须释放其它 LeaseDomain refs，先确认 gate 命中和 active_batches=1。
+gate 只等待外部测试信号，不从回调同步 wait/close 自身；失败 guard 先释放 gate 再 join。
+原内建 owner 回收路径未查到同步 close 本 Runtime 的实例；同一退休 callback 同步等待自己的
+retirement 不在原可组合合同内，本轮不为假设自环增加 thread identity/public 重入 API。
+非阻塞 collect 重入必须安全返回 Pending。
+
+允许上述三文件有限实现与原消费者测试纠正；实现/source/运行审查、candidate 和 P1 仍未签发。
