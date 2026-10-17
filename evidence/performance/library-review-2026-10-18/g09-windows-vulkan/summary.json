@@ -1,0 +1,1629 @@
+{
+  "experiment": "Windows Vulkan Add(x,x)/Neg/Add constrained completion-observer diagnostic",
+  "captured_utc": "2026-10-17T19:49:52.206367+00:00",
+  "decision": "CURRENT_BLOCKINGPOOL_PATH_NOT_OBSERVED_SLOWER_IN_THIS_CONSTRAINED_CONTROL",
+  "interpretation": "Current BlockingPool path is below the root-direct-wait control in both independent-case process medians. This does not establish statistical significance, equivalence, a production speedup or the old Abs G09 ranking.",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "gpu": "NVIDIA GeForce RTX 4070, 8.9, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+    "process_affinity": "0x55, logical CPUs 0,2,4,6; no P/E or physical-core inference",
+    "latency_clock": {
+      "implementation": "QueryPerformanceCounter()",
+      "monotonic": true,
+      "adjustable": false,
+      "resolution": 1e-07
+    }
+  },
+  "workload": {
+    "input": "4194304 F32 values, original x[j]=(j%101-50)*0.125, residual1.25; one invocation slot.",
+    "independent": "CPU Native Add(x,x) and resident Vulkan Neg(1.25), then CPU Native Add joining both. Exact oracle=(x+x)-1.25.",
+    "serial": "CPU Native Add(x,x) -> Vulkan Neg -> CPU Native Add with residual1.25. Exact oracle=1.25-(x+x).",
+    "scope_change": "Original Abs is replaced in both arms because explicit Native rejects dense F32 Abs. Native also rejects F32 Neg; ATen CPU deliberately declines dense basic math. This is a different current workload, not a repaired old Abs benchmark or a cross-platform rank."
+  },
+  "boundary": {
+    "timed": "Python ctypes replay: bind, prepare_replay, submit, checked wait and output scalar read/check, destroy every view/ResultLease/OwnedResult, then Scheduler.drain before return.",
+    "excluded": "Cold runtime/Context/Graph preparation, first replay, 8 warmups, all-element oracles before/after, resource/thread snapshots, close/destroy and process-exit cleanup.",
+    "control": "Only one pending original native Completion, no ready native stage and no pool-owned handle: root unlocks monitor and directly waits the same owner. Original pool job start/stop/destroy, leases, checked finish and retirement remain.",
+    "control_limit": "Waiting on Scheduler root changes Scheduler availability. This is a same-owner/explicit-resource causal intervention, not a directly substitutable production optimization or theoretical minimum native cost.",
+    "counters": "Smoke macros ON; formal macros OFF in both arms. The formal current code excludes the diagnostic conditional entirely. Serial does not enter the modified parallel-lane branch."
+  },
+  "resources": {
+    "explicit": "Both 2 Scheduler workers, BlockingPool cap2/keepalive10s, measured pool live1/retained handles1 throughout each timed block; ATen intra/inter-op1 set once cold and observed1/1. No extra observer thread.",
+    "actual_os_threads": "First three formal processes have 19; last current process18. GetThreadDescription returned empty names. Full before/after/creation/CPU-time snapshots retained; extra thread role is unknown, not asserted to be a driver thread.",
+    "cpu_time_limit": "GetThreadTimes values use 100 ns units but observed CPU accounting steps are coarse. These bracketed snapshots do not provide per-stage costs, instantaneous runnable-thread counts or latency timer resolution."
+  },
+  "method": {
+    "order": [
+      "current",
+      "control",
+      "control",
+      "current"
+    ],
+    "formal_processes": 4,
+    "shapes_per_process": 2,
+    "samples_per_shape": 31,
+    "discarded_samples": 0,
+    "aa": "No additional A/A run.",
+    "numeric": "Both final smoke and all formal full exact all-element oracles pass before and after timing, plus every timed scalar check."
+  },
+  "reuse": {
+    "vulkan_cache": ".scratch/bench-api-runtime/vulkan/build (Release/static, native implementation cc unchanged since4fb1927f7)",
+    "foundation_cache": ".scratch/build-compute-v2-dev/bin",
+    "fresh": "vulkan_lowering.cc, vulkan_batch.cc, hybrid compile.cc, each-arm invocation.cc/facade.cc only.",
+    "ggml": "Only locked GPU ggml456172 core used; no CPU ggml core/library linked. Native CPU provider has existing Torch imports; no Torch tensor math selected for F32 Add.",
+    "limit": "Both share cached common foundation and native Vulkan libraries; not a complete current-HEAD rebuild. No new vendor, dependency download, SDK/runtime staging or copying."
+  },
+  "setup_failures": [
+    {
+      "files": "smoke-0-current.*",
+      "cause": "Python DLL search omitted existing Torch CPU lib directory; no Context or replay created. Fixed with os.add_dll_directory, not DLL copying."
+    },
+    {
+      "files": "smoke-dll-search-0-current.*",
+      "cause": "Native dense F32 Abs Graph preparation declined."
+    },
+    {
+      "files": "smoke-aten-0-current.*",
+      "cause": "Explicit ATen CPU dense basic math Graph preparation declined by its edge-layout-only gate."
+    },
+    {
+      "files": "smoke-native-neg-0-current.*; smoke-direct-resource-0-current.*",
+      "cause": "Native F32 Neg is not retained; Direct cold prepare confirms it. No GPU replay/performance samples."
+    },
+    {
+      "files": "smoke-direct-admission-0-current.*; smoke-native-add-0-current.*",
+      "cause": "These ran the prior smoke DLL after intermediate compilation failed, so their repeated Neg decline is not a new candidate result. Excluded from final measurements."
+    }
+  ],
+  "failure_source_retention": "Final source, original facade and generation scripts retained. Failed provider/operator choices are documented above; intermediate facade revisions and overwritten compile diagnostics were not independently frozen, so no exact historical failed-source hash is claimed.",
+  "processes": [
+    {
+      "file": "formal-0-current.json",
+      "pid": 36168,
+      "image_sha256": "93cec0121882e8c6defd209d80bd8b5fe2ed3b45ebb285315273cf508581595a",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 3887400,
+            "p90_ns": 4581600,
+            "p99_ns": 5148600,
+            "min_ns": 3553100,
+            "max_ns": 5148600
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 19,
+          "thread_count_after": 19,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 86544,
+              "name": "",
+              "created_100ns": 134367400277823360,
+              "user_100ns": 0,
+              "kernel_100ns": 937500
+            },
+            {
+              "tid": 50340,
+              "name": "",
+              "created_100ns": 134367400277867323,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 83824,
+              "name": "",
+              "created_100ns": 134367400277867733,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 40384,
+              "name": "",
+              "created_100ns": 134367400277868828,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 67876,
+              "name": "",
+              "created_100ns": 134367400278895358,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 16128,
+              "name": "",
+              "created_100ns": 134367400278896869,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 64692,
+              "name": "",
+              "created_100ns": 134367400278898605,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 20164,
+              "name": "",
+              "created_100ns": 134367400278920280,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 84716,
+              "name": "",
+              "created_100ns": 134367400282069389,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86240,
+              "name": "",
+              "created_100ns": 134367400282644679,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86168,
+              "name": "",
+              "created_100ns": 134367400282782133,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 53228,
+              "name": "",
+              "created_100ns": 134367400282782855,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 84856,
+              "name": "",
+              "created_100ns": 134367400282940401,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 6276,
+              "name": "",
+              "created_100ns": 134367400282940799,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86572,
+              "name": "",
+              "created_100ns": 134367400282940952,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 72596,
+              "name": "",
+              "created_100ns": 134367400283106310,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 80268,
+              "name": "",
+              "created_100ns": 134367400283258077,
+              "user_100ns": 781250,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 65308,
+              "name": "",
+              "created_100ns": 134367400283258443,
+              "user_100ns": 625000,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 73108,
+              "name": "",
+              "created_100ns": 134367400284384502,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            }
+          ]
+        },
+        {
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 6758200,
+            "p90_ns": 9391400,
+            "p99_ns": 9698900,
+            "min_ns": 6175900,
+            "max_ns": 9698900
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 19,
+          "thread_count_after": 19,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 86544,
+              "name": "",
+              "created_100ns": 134367400277823360,
+              "user_100ns": 0,
+              "kernel_100ns": 1093750
+            },
+            {
+              "tid": 50340,
+              "name": "",
+              "created_100ns": 134367400277867323,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 83824,
+              "name": "",
+              "created_100ns": 134367400277867733,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 40384,
+              "name": "",
+              "created_100ns": 134367400277868828,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 67876,
+              "name": "",
+              "created_100ns": 134367400278895358,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 16128,
+              "name": "",
+              "created_100ns": 134367400278896869,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 64692,
+              "name": "",
+              "created_100ns": 134367400278898605,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 20164,
+              "name": "",
+              "created_100ns": 134367400278920280,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 84716,
+              "name": "",
+              "created_100ns": 134367400282069389,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86240,
+              "name": "",
+              "created_100ns": 134367400282644679,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 40176,
+              "name": "",
+              "created_100ns": 134367400289943110,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87200,
+              "name": "",
+              "created_100ns": 134367400289943605,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 42320,
+              "name": "",
+              "created_100ns": 134367400290139963,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 72736,
+              "name": "",
+              "created_100ns": 134367400290140296,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 70300,
+              "name": "",
+              "created_100ns": 134367400290140731,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 41736,
+              "name": "",
+              "created_100ns": 134367400290298418,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 32204,
+              "name": "",
+              "created_100ns": 134367400290393149,
+              "user_100ns": 156250,
+              "kernel_100ns": 468750
+            },
+            {
+              "tid": 28184,
+              "name": "",
+              "created_100ns": 134367400290393585,
+              "user_100ns": 1250000,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 25852,
+              "name": "",
+              "created_100ns": 134367400291594181,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "formal-1-control.json",
+      "pid": 84404,
+      "image_sha256": "70e956316b83fbbd4fe12f5e5201817133b83dbf8362e030d64dabc312ca2c7a",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 4151100,
+            "p90_ns": 5050600,
+            "p99_ns": 5510600,
+            "min_ns": 3741200,
+            "max_ns": 5510600
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 19,
+          "thread_count_after": 19,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 85508,
+              "name": "",
+              "created_100ns": 134367400299313100,
+              "user_100ns": 156250,
+              "kernel_100ns": 1093750
+            },
+            {
+              "tid": 86372,
+              "name": "",
+              "created_100ns": 134367400299361087,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86616,
+              "name": "",
+              "created_100ns": 134367400299361455,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86608,
+              "name": "",
+              "created_100ns": 134367400299362572,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 68652,
+              "name": "",
+              "created_100ns": 134367400300401425,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87444,
+              "name": "",
+              "created_100ns": 134367400300402920,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 40704,
+              "name": "",
+              "created_100ns": 134367400300404223,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86996,
+              "name": "",
+              "created_100ns": 134367400300422805,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 5048,
+              "name": "",
+              "created_100ns": 134367400303953508,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 63900,
+              "name": "",
+              "created_100ns": 134367400304514071,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 66140,
+              "name": "",
+              "created_100ns": 134367400304650318,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 45708,
+              "name": "",
+              "created_100ns": 134367400304651117,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87984,
+              "name": "",
+              "created_100ns": 134367400304790594,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87156,
+              "name": "",
+              "created_100ns": 134367400304790944,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 82988,
+              "name": "",
+              "created_100ns": 134367400304791142,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 84752,
+              "name": "",
+              "created_100ns": 134367400304953708,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86736,
+              "name": "",
+              "created_100ns": 134367400305100041,
+              "user_100ns": 1093750,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 33952,
+              "name": "",
+              "created_100ns": 134367400305100374,
+              "user_100ns": 312500,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 11740,
+              "name": "",
+              "created_100ns": 134367400306224055,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            }
+          ]
+        },
+        {
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 6900400,
+            "p90_ns": 9080800,
+            "p99_ns": 9939100,
+            "min_ns": 6255900,
+            "max_ns": 9939100
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 19,
+          "thread_count_after": 19,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 85508,
+              "name": "",
+              "created_100ns": 134367400299313100,
+              "user_100ns": 0,
+              "kernel_100ns": 1250000
+            },
+            {
+              "tid": 86372,
+              "name": "",
+              "created_100ns": 134367400299361087,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86616,
+              "name": "",
+              "created_100ns": 134367400299361455,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86608,
+              "name": "",
+              "created_100ns": 134367400299362572,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 68652,
+              "name": "",
+              "created_100ns": 134367400300401425,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87444,
+              "name": "",
+              "created_100ns": 134367400300402920,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 40704,
+              "name": "",
+              "created_100ns": 134367400300404223,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86996,
+              "name": "",
+              "created_100ns": 134367400300422805,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 5048,
+              "name": "",
+              "created_100ns": 134367400303953508,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 63900,
+              "name": "",
+              "created_100ns": 134367400304514071,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 20720,
+              "name": "",
+              "created_100ns": 134367400311660125,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 84240,
+              "name": "",
+              "created_100ns": 134367400311660620,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 71488,
+              "name": "",
+              "created_100ns": 134367400311789673,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 26328,
+              "name": "",
+              "created_100ns": 134367400311790102,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 19448,
+              "name": "",
+              "created_100ns": 134367400311790257,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86352,
+              "name": "",
+              "created_100ns": 134367400311981881,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 55172,
+              "name": "",
+              "created_100ns": 134367400312072173,
+              "user_100ns": 312500,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 11768,
+              "name": "",
+              "created_100ns": 134367400312072485,
+              "user_100ns": 781250,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 7876,
+              "name": "",
+              "created_100ns": 134367400313161415,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "formal-2-control.json",
+      "pid": 26824,
+      "image_sha256": "70e956316b83fbbd4fe12f5e5201817133b83dbf8362e030d64dabc312ca2c7a",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 3928100,
+            "p90_ns": 4696800,
+            "p99_ns": 5942500,
+            "min_ns": 3570500,
+            "max_ns": 5942500
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 19,
+          "thread_count_after": 19,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 85368,
+              "name": "",
+              "created_100ns": 134367400321676242,
+              "user_100ns": 156250,
+              "kernel_100ns": 781250
+            },
+            {
+              "tid": 3172,
+              "name": "",
+              "created_100ns": 134367400321728100,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 62336,
+              "name": "",
+              "created_100ns": 134367400321728484,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 40332,
+              "name": "",
+              "created_100ns": 134367400321729627,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86988,
+              "name": "",
+              "created_100ns": 134367400322773063,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 18452,
+              "name": "",
+              "created_100ns": 134367400322774589,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 85836,
+              "name": "",
+              "created_100ns": 134367400322776389,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 81600,
+              "name": "",
+              "created_100ns": 134367400322788312,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86848,
+              "name": "",
+              "created_100ns": 134367400325970640,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 85924,
+              "name": "",
+              "created_100ns": 134367400326575359,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 8444,
+              "name": "",
+              "created_100ns": 134367400326709031,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 10952,
+              "name": "",
+              "created_100ns": 134367400326709648,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 17792,
+              "name": "",
+              "created_100ns": 134367400326873963,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 81672,
+              "name": "",
+              "created_100ns": 134367400326874233,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 33420,
+              "name": "",
+              "created_100ns": 134367400326874377,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 84772,
+              "name": "",
+              "created_100ns": 134367400327034993,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 42564,
+              "name": "",
+              "created_100ns": 134367400327182504,
+              "user_100ns": 468750,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 25604,
+              "name": "",
+              "created_100ns": 134367400327182836,
+              "user_100ns": 625000,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 18196,
+              "name": "",
+              "created_100ns": 134367400328269389,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            }
+          ]
+        },
+        {
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 6646100,
+            "p90_ns": 7843500,
+            "p99_ns": 9804200,
+            "min_ns": 6023400,
+            "max_ns": 9804200
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 19,
+          "thread_count_after": 19,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 85368,
+              "name": "",
+              "created_100ns": 134367400321676242,
+              "user_100ns": 312500,
+              "kernel_100ns": 781250
+            },
+            {
+              "tid": 3172,
+              "name": "",
+              "created_100ns": 134367400321728100,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 62336,
+              "name": "",
+              "created_100ns": 134367400321728484,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 40332,
+              "name": "",
+              "created_100ns": 134367400321729627,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86988,
+              "name": "",
+              "created_100ns": 134367400322773063,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 18452,
+              "name": "",
+              "created_100ns": 134367400322774589,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 85836,
+              "name": "",
+              "created_100ns": 134367400322776389,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 81600,
+              "name": "",
+              "created_100ns": 134367400322788312,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86848,
+              "name": "",
+              "created_100ns": 134367400325970640,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 85924,
+              "name": "",
+              "created_100ns": 134367400326575359,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86444,
+              "name": "",
+              "created_100ns": 134367400333538550,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 53796,
+              "name": "",
+              "created_100ns": 134367400333539027,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 85056,
+              "name": "",
+              "created_100ns": 134367400333668813,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 26172,
+              "name": "",
+              "created_100ns": 134367400333669223,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 50092,
+              "name": "",
+              "created_100ns": 134367400333669383,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86856,
+              "name": "",
+              "created_100ns": 134367400333814228,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 80616,
+              "name": "",
+              "created_100ns": 134367400333912087,
+              "user_100ns": 781250,
+              "kernel_100ns": 312500
+            },
+            {
+              "tid": 82448,
+              "name": "",
+              "created_100ns": 134367400333912438,
+              "user_100ns": 781250,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 82828,
+              "name": "",
+              "created_100ns": 134367400334974992,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "formal-3-current.json",
+      "pid": 14932,
+      "image_sha256": "93cec0121882e8c6defd209d80bd8b5fe2ed3b45ebb285315273cf508581595a",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 3749100,
+            "p90_ns": 4532400,
+            "p99_ns": 5028600,
+            "min_ns": 3515000,
+            "max_ns": 5028600
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 18,
+          "thread_count_after": 18,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 9944,
+              "name": "",
+              "created_100ns": 134367400342371156,
+              "user_100ns": 0,
+              "kernel_100ns": 1093750
+            },
+            {
+              "tid": 81288,
+              "name": "",
+              "created_100ns": 134367400342432116,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 62292,
+              "name": "",
+              "created_100ns": 134367400342432493,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 28200,
+              "name": "",
+              "created_100ns": 134367400342435966,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86124,
+              "name": "",
+              "created_100ns": 134367400343485857,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 10376,
+              "name": "",
+              "created_100ns": 134367400343487269,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 59112,
+              "name": "",
+              "created_100ns": 134367400343488200,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86660,
+              "name": "",
+              "created_100ns": 134367400346580205,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 18272,
+              "name": "",
+              "created_100ns": 134367400347176160,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 24468,
+              "name": "",
+              "created_100ns": 134367400347325413,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87372,
+              "name": "",
+              "created_100ns": 134367400347326534,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 76948,
+              "name": "",
+              "created_100ns": 134367400347473740,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87876,
+              "name": "",
+              "created_100ns": 134367400347474009,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87824,
+              "name": "",
+              "created_100ns": 134367400347474144,
+              "user_100ns": 156250,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 41836,
+              "name": "",
+              "created_100ns": 134367400347632043,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 87860,
+              "name": "",
+              "created_100ns": 134367400347784225,
+              "user_100ns": 468750,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 41096,
+              "name": "",
+              "created_100ns": 134367400347784533,
+              "user_100ns": 625000,
+              "kernel_100ns": 156250
+            },
+            {
+              "tid": 3308,
+              "name": "",
+              "created_100ns": 134367400348909792,
+              "user_100ns": 0,
+              "kernel_100ns": 156250
+            }
+          ]
+        },
+        {
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 6626600,
+            "p90_ns": 8081000,
+            "p99_ns": 10253300,
+            "min_ns": 5981900,
+            "max_ns": 10253300
+          },
+          "resources_before_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "resources_after_timing": {
+            "cpu_provider": "explicit-native",
+            "scheduler_workers": 2,
+            "pool_capacity": 2,
+            "pool_keepalive_seconds": 10,
+            "pool_live_threads": 1,
+            "pool_retained_handles": 1,
+            "aten_intra_op": 1,
+            "aten_inter_op": 1,
+            "vulkan_device": "NVIDIA GeForce RTX 4070",
+            "driver_version": 2588114944,
+            "vendor_id": 4318
+          },
+          "thread_count_before": 18,
+          "thread_count_after": 18,
+          "thread_cpu_deltas_100ns_units": [
+            {
+              "tid": 9944,
+              "name": "",
+              "created_100ns": 134367400342371156,
+              "user_100ns": 0,
+              "kernel_100ns": 937500
+            },
+            {
+              "tid": 81288,
+              "name": "",
+              "created_100ns": 134367400342432116,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 62292,
+              "name": "",
+              "created_100ns": 134367400342432493,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 28200,
+              "name": "",
+              "created_100ns": 134367400342435966,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86124,
+              "name": "",
+              "created_100ns": 134367400343485857,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 10376,
+              "name": "",
+              "created_100ns": 134367400343487269,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 59112,
+              "name": "",
+              "created_100ns": 134367400343488200,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86660,
+              "name": "",
+              "created_100ns": 134367400346580205,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 18272,
+              "name": "",
+              "created_100ns": 134367400347176160,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 81268,
+              "name": "",
+              "created_100ns": 134367400354164177,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 16992,
+              "name": "",
+              "created_100ns": 134367400354164632,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 36156,
+              "name": "",
+              "created_100ns": 134367400354297085,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 64824,
+              "name": "",
+              "created_100ns": 134367400354297455,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 66524,
+              "name": "",
+              "created_100ns": 134367400354297596,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 31948,
+              "name": "",
+              "created_100ns": 134367400354447391,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 62016,
+              "name": "",
+              "created_100ns": 134367400354542598,
+              "user_100ns": 625000,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 86712,
+              "name": "",
+              "created_100ns": 134367400354543029,
+              "user_100ns": 1093750,
+              "kernel_100ns": 0
+            },
+            {
+              "tid": 27232,
+              "name": "",
+              "created_100ns": 134367400355655444,
+              "user_100ns": 0,
+              "kernel_100ns": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "paired_ratios": [
+    {
+      "current": "formal-0-current.json",
+      "control": "formal-1-control.json",
+      "shape": "independent-cpu-first",
+      "current_median_ns": 3887400,
+      "control_median_ns": 4151100,
+      "control_over_current": 1.0678345423676494
+    },
+    {
+      "current": "formal-0-current.json",
+      "control": "formal-1-control.json",
+      "shape": "serial-holdout",
+      "current_median_ns": 6758200,
+      "control_median_ns": 6900400,
+      "control_over_current": 1.0210411056198396
+    },
+    {
+      "current": "formal-3-current.json",
+      "control": "formal-2-control.json",
+      "shape": "independent-cpu-first",
+      "current_median_ns": 3749100,
+      "control_median_ns": 3928100,
+      "control_over_current": 1.0477447920834333
+    },
+    {
+      "current": "formal-3-current.json",
+      "control": "formal-2-control.json",
+      "shape": "serial-holdout",
+      "current_median_ns": 6626600,
+      "control_median_ns": 6646100,
+      "control_over_current": 1.002942685540096
+    }
+  ],
+  "smoke": [
+    {
+      "file": "smoke-add-admitted-0-current.json",
+      "result": "COMPLETED_WITH_NUMERICAL_CHECKS",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 2
+        },
+        {
+          "name": "serial-holdout",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 0
+        }
+      ]
+    },
+    {
+      "file": "smoke-add-admitted-1-control.json",
+      "result": "COMPLETED_WITH_NUMERICAL_CHECKS",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 2
+        },
+        {
+          "name": "serial-holdout",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 0
+        }
+      ]
+    }
+  ],
+  "product_changes": 0,
+  "git_head_at_archive": "f7411e6c27da2431363df95d74f91311f4d4b494"
+}

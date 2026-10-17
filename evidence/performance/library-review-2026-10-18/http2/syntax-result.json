@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/usr/bin/g++-14",
+    "-std=c++23",
+    "-DHYLE_IO_HTTP2=1",
+    "-DNDEBUG",
+    "-I/mnt/c/public/project-hyle/hyle/include",
+    "-I/root/hyle/third_party/nanobench",
+    "-I/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-syntax/include",
+    "-I/root/.cache/hyle/dependencies/v1/sources/nghttp2-85e300c79fb6-ca7aa79a25b3/lib/includes",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-fsyntax-only",
+    "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc"
+  ],
+  "exit_code": 0,
+  "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "nghttp2_cached_version": "1.70.0",
+  "scope": "Current Windows product source and public headers through /mnt/c. Syntax-only Linux compile; no linking, benchmark execution, rebuild or SDK download.",
+  "sha256": {
+    "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc": "e12688be06946273d785ca32d0627856f9b73175342b1aa335320ca73cc2593b",
+    "/root/.cache/hyle/dependencies/v1/sources/nghttp2-85e300c79fb6-ca7aa79a25b3/lib/includes/nghttp2/nghttp2.h": "0bd0ee37b1b08fa38f9b773de201fe431846fda2bd0bed44f642c6c332e2e342",
+    "/root/.cache/hyle/dependencies/v1/sources/nghttp2-85e300c79fb6-ca7aa79a25b3/lib/includes/nghttp2/nghttp2ver.h.in": "7f92a07886777c4f6c6f0b2f48e5e3347ee1057fd7b7313b232b5e7ea409b350",
+    "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-syntax/include/nghttp2/nghttp2ver.h": "7c1d27d3929a3db56a3f1b10b0a422fefa499a89c8c9bd1adac38d032a03cd9b",
+    "/root/hyle/third_party/nanobench/nanobench.h": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d"
+  }
+}

@@ -139,7 +139,7 @@ helper显式拒绝其它算子，以复用缺新IQ1实例的旧CUDA cache。不�
 | Apple ragged F16 prefill、D256 | [旧summary](../inference-g01-native-ragged-apple-m1-p1/summary.json)，8组比值0.98266–0.98941，所有CI上界低于1；约1.07%–1.76%延迟差 | 已在Air复测当前对应路径；默认fast较快但不满足同数值合同，同合同force-fused未确认当前稳定慢，见下。旧小输不直接继承 |
 | WSL 单文件 atomic replace watch | [旧summary](../io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json)，4点0.96813–0.98638，2组CI上界低于1 | 当前已复测并修掉冗余close-write唤醒；修后仍有0.1–1.0%小负样本，未确认稳定或严格等价，见下 |
 | TaskScope、32 child、4 workers | 本机历史 `C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json`；一个 placement+peer-first 组合0.970796，CI[0.955245,0.989531]，其它3组跨1 | 当前4组复现约4–7%差，随后应用私有布局优化；混合peer漂移与scope-only小样本限制均保留，见下。不能宣称所有scope负载已解决 |
-| G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | Air当前同owner/线程资源控制未建立稳定输项，见下；Windows Vulkan及完整多slot对照仍未测。历史 BLOCKED 不是性能证据 |
+| G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | Air与Windows Vulkan当前受限同owner控制均未确认现有观察机制更慢，见下；Windows采用不同CPU算子，旧Abs负载及完整多slot排名仍未重测。历史 BLOCKED 不是性能证据 |
 
 旧报告中的摊销空 harness ns/op 不等于硬件时钟分辨率。历史CI同侧不能替代当前版本的同路径 A/A、
 顺序/布局响应和完整完成边界核对。
@@ -236,6 +236,26 @@ Air上只重编当前[observer TU](../../../src/graph_route_cpu_apple/invocation
 [全部原始包](g09/raw-results.zip)保留源码/命令/link map/hash和线程CPU增量；[摘要](g09/summary.json)列边界。
 差额反向，未建立稳定当前输项，也未证明等价或serial波动是其原因；未另做A/A，不虚构跨进程CI。
 产品未改；这不是原版MLX排名、整个HEAD重建、Windows Vulkan或多slot验证。
+
+Windows Vulkan补做当前路径的受限控制，直接重编4个相关实现TU和小facade，复用已有静态Vulkan/foundation缓存。
+原Abs在显式Native CPU不受理，ATen CPU也主动拒绝dense基础运算；最终两侧均采用
+CPU Add(x,x) / Vulkan Neg / CPU Add，4194304个F32元素，精确oracle分别为`2*x-1.25`和`1.25-2*x`。
+这是当前完成观察的因果诊断，**不是旧Abs G09排名或Air跨平台比较**；未受理与误加载旧smoke的记录全部保留。
+
+| 顺序 | 当前BlockingPool ms | 根线程直接等待控制 ms | 串行同路径：当前 / 控制 ms |
+|---|---:|---:|---:|
+| AB | 3.8874 | 4.1511 | 6.7582 / 6.9004 |
+| BA | 3.7491 | 3.9281 | 6.6266 / 6.6461 |
+
+控制只改单pending、无ready、pool尚未持有该Completion时的等待位置，保留原owner、pool任务启停与退休。
+两侧显式2个Scheduler workers，pool容量2、实测live/handles均1，ATen intra/inter均1；
+实际OS线程前三进程19、末进程18，线程名均空，额外线程角色未识别，不能称活跃线程完全相等。
+等待放到Scheduler根线程也改变其可用性，不能直接当作可替换的生产优化或理论最小native成本。
+每形状8次warm、31样本、4进程AB/BA；正式计数关闭，smoke确认独立形状命中2次、serial不命中。
+计时包含bind/prepare_replay、submit、完整owner wait、标量核对、所有结果/租约释放及Scheduler drain，
+每进程计时前后4M完整oracle均通过。[摘要](g09-windows-vulkan/summary.json)和
+[原始包](g09-windows-vulkan/raw-results.zip)保留全部样本、线程CPU快照、命令与来源限制。
+该小样本没有显示当前BlockingPool更慢；不据此宣称显著性、等价、生产提速或完整HEAD/多slot覆盖，产品未改。
 
 ## 已排除的旧“输项”
 
@@ -347,4 +367,7 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 - Marlin factor仅历史占位，不为已退役实现恢复一套性能验证。
 
 后续先处理已确认的平方 scratch/扫描，再复现上述小输；不为旧标签重跑全库或给所有模块补证书。
-HTTP2 benchmark的私有构造接口也已改为公开 `TcpStream::adopt`，保留原计时边界；尚未在Linux编译该fixture。
+HTTP2 benchmark的私有构造接口已改为公开 `TcpStream::adopt`，保留原计时边界；
+现已用Linux GCC14.2/C++23、当前Windows源码与公开头、锁定nghttp2缓存完成
+[`-fsyntax-only -Wall -Wextra -Wpedantic -Werror`检查](http2/syntax-result.json)，无诊断。
+未链接或运行该fixture，不据此继承旧性能排名。

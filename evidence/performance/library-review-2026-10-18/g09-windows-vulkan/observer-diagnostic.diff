@@ -1,0 +1,48 @@
+--- current-product-invocation.cc
++++ private-diagnostic-invocation.cc
+@@ -20,6 +20,19 @@
+ #include "hyle/util/ref_counted.h"
+ #include "../compute_route_vulkan/vulkan_composition_access.h"
+ #include "../compute_route_vulkan/vulkan_transfer_internal.h"
++
++namespace {
++#if G09_COUNT_GUARDS
++std::atomic<std::uint64_t> g09_guard_visits{0};
++#endif
++}
++extern "C" __declspec(dllexport) std::uint64_t hyle_g09_guard_visits() noexcept {
++#if G09_COUNT_GUARDS
++  return g09_guard_visits.load(std::memory_order_relaxed);
++#else
++  return 0;
++#endif
++}
+ 
+ namespace hyle::graph::cpu_vulkan {
+ namespace ca = compute::vulkan;
+@@ -706,6 +719,25 @@
+     }
+     if (progressed) continue;
+     std::unique_lock lock(run.pipeline_mutex);
++#if G09_COUNT_GUARDS || G09_NATIVE_WAIT_CONTROL
++    // Diagnostic only. The resident pool job still starts/stops normally,
++    // but cannot concurrently observe this handle while its pointer is null.
++    if (pending == 1 && run.native_wait_completion == nullptr &&
++        run.pipeline_error.ok() && !run.cancel.load(std::memory_order_acquire) &&
++        !run.frontier.ready(PipelineLane::kNative)) {
++#if G09_COUNT_GUARDS
++      g09_guard_visits.fetch_add(1, std::memory_order_relaxed);
++#endif
++#if G09_NATIVE_WAIT_CONTROL
++      const auto &completion = native_stage_completion(run, run.pending_native[0]);
++      lock.unlock();
++      const auto status = completion.wait();
++      lock.lock();
++      if (!status.ok()) run.pipeline_error.Update(status);
++      continue; // Original poll/checked result/lease retirement remains.
++#endif
++    }
++#endif
+     if (pending != 0 && run.native_wait_completion == nullptr &&
+         run.pipeline_error.ok() && !run.cancel.load(std::memory_order_acquire) &&
+         !run.frontier.ready(PipelineLane::kNative)) {

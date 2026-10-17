@@ -1,0 +1,14 @@
+{
+  "summary.json": {
+    "bytes": 52911,
+    "sha256": "a882bc8bd00115d9df391146bbb71733443e0ddd45668900792a06d5aeb4b194"
+  },
+  "raw-results.zip": {
+    "bytes": 125307,
+    "sha256": "3bcb5f4e26d384614b2b054d104ffda393122a3c8910274040ed5a68a69d2b82"
+  },
+  "observer-diagnostic.diff": {
+    "bytes": 1840,
+    "sha256": "75b661c4f6b449515aba1b71ca1220c247652f9e95439fc9e63ab7185fd97890"
+  }
+}
