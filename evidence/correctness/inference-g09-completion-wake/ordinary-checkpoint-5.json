@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "state": "BLOCKED_FROM_AUDITED_FINAL_ORDINARY_FAILURE_STOP",
+  "product_checkpoint": "a0cc517332129c403b4e464a2e865712a2842290",
+  "product_tree": "7fe66687649f2c11e297648a584cf0cce9d415fc",
+  "formal_candidate_stage_entered": false,
+  "archive": "ordinary-checkpoint-5.zip",
+  "archive_sha256": "dc743786c0b25354cc33fbccb0ea218a705b5f17b4e1cc8ce22f1bb9cde30877",
+  "archive_bytes": 291917,
+  "members": [
+    {
+      "path": "air-source-v4-build-command.log",
+      "sha256": "7eea6c4df0f815748ec7aa2e773ee8d89f4de4cc46935053e5dd49b13b6a23ad",
+      "bytes": 228
+    },
+    {
+      "path": "air-source-v4-configure-command.log",
+      "sha256": "f6d69ad9f7567a78ada6fd2f2ee8b6e9c0f1fdb7db2fac713e08a7b1307935d5",
+      "bytes": 232
+    },
+    {
+      "path": "air-source-v4-device-command.log",
+      "sha256": "dead59ce42d2a9dca67950412b2da6e5dc5ee8ad710fdd0a68d78a501285d0d4",
+      "bytes": 691
+    },
+    {
+      "path": "air-source-v4-plan-command.log",
+      "sha256": "fcb3834911716521a993ff2334f607f53005f7e21d474abc02b68e87dd84b045",
+      "bytes": 227
+    },
+    {
+      "path": "air-source-v4-test-command.log",
+      "sha256": "7e6b9f2540f39013ed04b0ebe23503fc656fc64cdf2f1d7c3b7176f5f9c83419",
+      "bytes": 227
+    },
+    {
+      "path": "air-v4-cache-blockers.txt",
+      "sha256": "c9ef913fe7e2542f3e001716569c4fc62bcc1418e115757e6ee38182860a5f3e",
+      "bytes": 2335
+    },
+    {
+      "path": "air-v4-cache-origin-readonly.json",
+      "sha256": "4c33529e96fb517f972571f18f2c51aefbbd77f3689860834766398f0fcd0cdb",
+      "bytes": 7699
+    },
+    {
+      "path": "air-v4-cache-readonly.json",
+      "sha256": "b74190eb254bcbe5b07a864be7e63e28882532aa24dc736257cf57f4becc8c16",
+      "bytes": 84098
+    },
+    {
+      "path": "air-v4-staged-plan.json",
+      "sha256": "061228430822b7509e9ed0b99d1fc421100506951435f4563ef3662ca1720abd",
+      "bytes": 56139
+    },
+    {
+      "path": "run-final-v4/air-apple/source/build-build.log",
+      "sha256": "e4eb8b4198e7475e5356a8cd5dd506c6c63d3a2df65b1b340148826d4e5c6edd",
+      "bytes": 12918
+    },
+    {
+      "path": "run-final-v4/air-apple/source/configure-configure.log",
+      "sha256": "3ba3dc5c402c375aab0d90f1a643d0361fc48369aca52cd153089a8cc580bca8",
+      "bytes": 3161
+    },
+    {
+      "path": "run-final-v4/air-apple/source/configure-manifest.log",
+      "sha256": "c8dc56af1d56ccddd1f77d877b15931ac276c9f927886e72d72349f44ce63e80",
+      "bytes": 191
+    },
+    {
+      "path": "run-final-v4/air-apple/source/device-g09_wake_v4_contracts.log",
+      "sha256": "cca1dfa2e6d1405a27c7d2cdbe01bbd50e5df378e27ec51d1b219b2bad321a21",
+      "bytes": 538
+    },
+    {
+      "path": "run-final-v4/air-apple/source/device-g09_wake_v4_pending.log",
+      "sha256": "42a8b10676bcc4e0ee98c3d410c5f01a597004de5d0ff3cbbdeb12d1d08cad42",
+      "bytes": 438
+    },
+    {
+      "path": "run-final-v4/air-apple/source/device-g09_wake_v4_pipeline.log",
+      "sha256": "fc337c33a8978d0333fc68180766b6618fdcecf57f923a4d4d04af8fc8459dff",
+      "bytes": 2356
+    },
+    {
+      "path": "run-final-v4/air-apple/source/final-failure-stop.json",
+      "sha256": "5a2f319f14dd54f17077075245c43d06814357ba88687ea0f55894393068e6a5",
+      "bytes": 3120
+    },
+    {
+      "path": "run-final-v4/air-apple/source/final-parent.cmake",
+      "sha256": "dcb470b54cdca9a570aa34d8974a1fff270e3e7c8bdba2125162af408ff23940",
+      "bytes": 9210
+    },
+    {
+      "path": "run-final-v4/air-apple/source/gtest-reuse-paths.txt",
+      "sha256": "6c71bc88ca413d076522f2225f6d2e1a98fb073176cc66c0ae21791ed6da1083",
+      "bytes": 517
+    },
+    {
+      "path": "run-final-v4/air-apple/source/gtest-reuse.json",
+      "sha256": "94dc06826c703e34fc4ca409446923e2ab7ecbec9ef63e4299921fff44f214b8",
+      "bytes": 8636
+    },
+    {
+      "path": "run-final-v4/air-apple/source/GTestReuseTargets.cmake",
+      "sha256": "4bc66e6b9525cc94245185d697e2b3bba6a439957f9874ba0ea99a33a7cb9b47",
+      "bytes": 3885
+    },
+    {
+      "path": "run-final-v4/air-apple/source/original-parent.cmake",
+      "sha256": "a862470212baecf5ed072101178eb0f6b9a30b44aff438aa0a4c9e4bfe084a9e",
+      "bytes": 3344
+    },
+    {
+      "path": "run-final-v4/air-apple/source/plan-dry-run.log",
+      "sha256": "ef27ad7eea812902bf99a9746c04a66051726fdecb5d75912c262b9773385202",
+      "bytes": 11709
+    },
+    {
+      "path": "run-final-v4/air-apple/source/plan.json",
+      "sha256": "c69258c0f0abe318fb084d77a6301eb238b7bb71abab68ba00b93e6ade955640",
+      "bytes": 1195456
+    },
+    {
+      "path": "run-final-v4/air-apple/source/post-failure-identity.json",
+      "sha256": "68aab8c1d941bb5fb418fd3442eacc2576bb1420d09b29a8de48d1b44d7c109b",
+      "bytes": 638815
+    },
+    {
+      "path": "run-final-v4/air-apple/source/preview.ninja",
+      "sha256": "45424543764609bb7a5fb15b40f7360c89ae91cf73bfbe0b610ff56f9279edcb",
+      "bytes": 1448764
+    },
+    {
+      "path": "run-final-v4/air-apple/source/receipt.json",
+      "sha256": "ac5fa3b18690f2f1e3ffe1075eeb68b81176c9bdef9430c01fc60173ba17c1eb",
+      "bytes": 23798
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-encoded.json",
+      "sha256": "28147aa42e76e72cb0e6f9584df5125e16e65385d1959e2d723f247975912ca4",
+      "bytes": 2068
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_contracts.log",
+      "sha256": "d8550a00ccbe4f6bb68a8b3db110702e9883795e775ea388dd8d67f92c5e76de",
+      "bytes": 356
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_encoded.log",
+      "sha256": "41f94d70127ca871f0f8b0faffe74a6685957f34caf5331baf31d1f0f8a5948c",
+      "bytes": 4864
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_paged_joint.log",
+      "sha256": "5c0783446ea53f90d5993ea5c5e0f29c2c26ce8e136bae6b2d3fb881b02ddd19",
+      "bytes": 860
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_pending.log",
+      "sha256": "c3c9c30054a535ca67963bfab4d15a3e8e07c7d1c60418c74597cbb477e2d3c4",
+      "bytes": 1040
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_pipeline.log",
+      "sha256": "9c459971bd4cc5c6e87ff490939dfa42cbe09e0c300ed6bea74a80482614d82e",
+      "bytes": 2176
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_public_effect.log",
+      "sha256": "61957acafe99258698b845a8f7a5f46ca15c33f1e500845505eb2f74c8bae151",
+      "bytes": 39
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_sampling.log",
+      "sha256": "d3b9a9790ad305f11a7fa9079c52483c4ca2a9811717a2e7034ced62f299c1d6",
+      "bytes": 107
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-g09_wake_v4_symmetry.log",
+      "sha256": "bf9beadd2b58acd936cea7132012c98e486c6093857a173d3a559c9643ecb6cf",
+      "bytes": 51
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-native-unit.json",
+      "sha256": "ad68d23d3a2dafa43dddb43852395e414808506b88872dfdd785fad2067741ac",
+      "bytes": 2134
+    },
+    {
+      "path": "run-final-v4/air-apple/source/test-native-unit.log",
+      "sha256": "f3cec363170cf0d39d72103fbdb15e1ff279fc4179807a3b3e463aa7d575ba18",
+      "bytes": 1302
+    }
+  ],
+  "previous_checkpoint": {
+    "path": "evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-4.json",
+    "sha256": "cce7f175353e9c248f06c764580daf09193b8969993ff14059c537690ff747b1",
+    "bytes": 38149
+  },
+  "final_source_review": {
+    "path": "evidence/correctness/inference-g09-completion-wake/source-final-review.json",
+    "sha256": "86e39e369a3b30e1492dfd68f9549aedf33bfc0ba035b7a4163f2bf4ab072c34",
+    "bytes": 26526
+  },
+  "source_review_scope": "No new source must; not a runtime, delivery, sanitizer, closure or performance PASS",
+  "Windows": {
+    "source": "PASS",
+    "device": "PASS_ACTUAL_KHRONOS_INSTANCE_DEVICE_SYNC",
+    "native_tests": 4,
+    "encoded_tests": 3,
+    "real_validation_errors": 0,
+    "raw_loader_error_lines_retained": 196
+  },
+  "Air_Apple": {
+    "state": "FINAL_ORDINARY_FAILURE_STOP_NO_RETRY",
+    "candidate": "a0cc517332129c403b4e464a2e865712a2842290",
+    "failed_stage": "device",
+    "failed_fixture": "g09_wake_v4_pending",
+    "real_exit_code": -6,
+    "actual_metal_activation": [
+      "Metal API Validation Enabled",
+      "Metal GPU Validation Enabled"
+    ],
+    "fatal_verbatim": "validateComputeFunctionArguments:1272: failed assertion `Functon(steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0): total used threadgroupMemoryLength(58368) must be <= 32768.'",
+    "failure_log": {
+      "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/device-g09_wake_v4_pending.log",
+      "sha256": "42a8b10676bcc4e0ee98c3d410c5f01a597004de5d0ff3cbbdeb12d1d08cad42",
+      "bytes": 438
+    },
+    "receipt": {
+      "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/receipt.json",
+      "sha256": "ac5fa3b18690f2f1e3ffe1075eeb68b81176c9bdef9430c01fc60173ba17c1eb",
+      "bytes": 23798
+    },
+    "post_stop_identity": {
+      "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/post-failure-identity.json",
+      "sha256": "68aab8c1d941bb5fb418fd3442eacc2576bb1420d09b29a8de48d1b44d7c109b",
+      "bytes": 638815
+    },
+    "source_gate": {
+      "processes": 9,
+      "all_exit_zero": true,
+      "encoded_actual_RUN_COMPLETED": 4,
+      "native_actual_RUN_COMPLETED": 4,
+      "gate": "PASS_EXECUTED_SOURCE_SCOPE_ONLY"
+    },
+    "device_gate": {
+      "executed": 3,
+      "passed": [
+        "contracts",
+        "pipeline"
+      ],
+      "failed": [
+        "pending"
+      ],
+      "not_run": [
+        "encoded",
+        "paged_joint",
+        "sampling",
+        "public_effect",
+        "symmetry",
+        "native_unit"
+      ],
+      "native_four_tests_not_run": true,
+      "aggregate": "FAIL"
+    },
+    "new_measured_command_seconds": 52.376501377999986,
+    "not_run_after_failure": [
+      "Air Vulkan source",
+      "all new Apple/Vulkan static/shared SDK",
+      "all sanitizer facets",
+      "selector selected continuation",
+      "P1/qualification"
+    ],
+    "known_precondition_blockers": [
+      "Apple TSan current cache cpu/G10 project include",
+      "Vulkan ASan compiler resolved path differs"
+    ],
+    "no_native_or_compile_retry": true,
+    "failed_receipt_unchanged": true,
+    "resume_condition": [
+      "A separately registered/scoped/audited finite correction or qualified instrument resolution must address the exact Metal pending-consumer kernel threadgroup-memory validation fatal; bind an immutable candidate and retain this failure/cost. Do not infer this is caused by completion notification or solely by provider from this log.",
+      "The two named cache/context blockers must have separately reviewed valid route/compiler/context entries before those applicable sanitizer gates can resume; no cache/runner/env change may masquerade as this original entry.",
+      "Root/user explicitly authorizes a new bounded ordinary round with fixed stages and budget after the current final-stop condition; no automatic continuation, retry, filter/layer variation, P1 or CLOSED verdict."
+    ]
+  },
+  "costs": {
+    "inherited_seconds_counted_once": 958.64,
+    "Windows_v4_new_seconds": 217.14000000001397,
+    "Air_Apple_v4_new_seconds": 52.376501377999986,
+    "cumulative_measured_command_seconds": 1228.156501378028,
+    "cumulative_rounded_seconds": 1228.157,
+    "boundary": "Recorded ordinary native/configure/test command durations, not total investigation wall time; do not add inherited totals from multiple profile receipts. Read-only preparation/selector plan/LOC are separate retained maintenance activity.",
+    "budget_reset": false
+  },
+  "not_completed": [
+    "Air Vulkan source",
+    "all candidate static/shared SDK producers and relocated consumers",
+    "all sanitizer facets",
+    "selector full selected execution (22 selected / 137 skipped plan retained)",
+    "new workload A/A qualification",
+    "new P1"
+  ],
+  "known_host_precondition_blockers": [
+    "Apple TSan current cache cpu/G10 project include",
+    "Vulkan ASan compiler resolved path differs"
+  ],
+  "performance": {
+    "new_qualified_samples": 0,
+    "aggregate": "INCONCLUSIVE",
+    "historical_CUDA_qualified_n15_PASS_retained": true,
+    "historical_three_unqualified_profiles_and_all_failures_retained": true
+  },
+  "stop": {
+    "reason": "Third and final targeted ordinary correction failed on Air Metal device validation; four-hour wall checkpoint has not been reset and was not the reached stop condition.",
+    "no_more_native_SDK_sanitizer_selector_P1": true,
+    "original_failed_receipt_and_logs_unchanged": true,
+    "causality_limit": "The log establishes an actual D256 attention-kernel threadgroup-memory validation failure. It does not establish that the completion-notification change caused it or uniquely assign the faulty policy.",
+    "resume_condition": [
+      "A separately registered/scoped/audited finite correction or qualified instrument resolution must address the exact Metal pending-consumer kernel threadgroup-memory validation fatal; bind an immutable candidate and retain this failure/cost. Do not infer this is caused by completion notification or solely by provider from this log.",
+      "The two named cache/context blockers must have separately reviewed valid route/compiler/context entries before those applicable sanitizer gates can resume; no cache/runner/env change may masquerade as this original entry.",
+      "Root/user explicitly authorizes a new bounded ordinary round with fixed stages and budget after the current final-stop condition; no automatic continuation, retry, filter/layer variation, P1 or CLOSED verdict."
+    ]
+  }
+}

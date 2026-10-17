@@ -1,9 +1,10 @@
 # G09 完成驱动修正
 
-状态：**AUDITED，2026-10-17**。SCOPED checkpoint `13cbba94b`；用户明确要求“我们先修复g09”。
+状态：**BLOCKED-from-AUDITED，2026-10-17**。SCOPED checkpoint `13cbba94b`；用户明确要求“我们先修复g09”。
 baseline `8119dc6c2c02f5b3e588cc6e3b64b36b41222c59`；原 G09 产品候选
 `3524413272cb52d06af5e64d634edbfef09b9864`、原功能/交付/CUDA P1 与三组未资格结果保留。
 本卡替代本轮三个 owner 的施工入口，不重新授权旧 profiler/重试脚本。
+以下 SCOPED/AUDITED 段保留阶段事实；当前停止裁决与恢复条件以末节为准。
 
 ## 需求与范围
 
@@ -236,3 +237,79 @@ fence signal 已结束；必须观察实际接纳的两枚 fence，拒绝 handof
 上传与 partial handoff 单 fence 的一项 native 回归；其余 V1–V3/W1–W4 不变。
 Windows/Air native 默认四项须全部 RUN，SKIP 不能通过；只有预先证实不适用才另冻结具名子集。
 下一 v4 继续原所有门与预算，再次普通失败即停止，不追加 profiler/环境/入口变体。
+
+## Terminal：最后普通纠正后停止，2026-10-17
+
+产品实现固定于 `a0cc517332129c403b4e464a2e865712a2842290`，仍未进入正式 CANDIDATE。
+W1–W4、native V1–V4 和 encoded 合法早报错边界均已实现；没有随后追加产品修复。
+[最终综合源码审查](../../../../evidence/correctness/inference-g09-completion-wake/source-final-review.json)
+无新增 source must，只签源码边界，不代签运行、交付或性能。
+
+| 实际门 | 结果与边界 |
+|---|---|
+| Windows Vulkan source | PASS：八个公开消费者；四项 native、三项 encoded 均实际 RUN/COMPLETED，无 skip |
+| Windows Vulkan device | PASS：九进程、28 个 Context 的 Khronos instance/device/sync 实际激活已独审；真实 Validation Error/VUID/SYNC-HAZARD 为零，196 行原 loader 错误另留 |
+| Air Apple source | PASS：实际 Mac16,12/macOS27.0.1/AppleClang21；八个消费者、四项 native 通知及四项 encoded 均实际运行通过 |
+| Air Apple device | FAIL：contracts/pipeline 已实际激活 Metal API/GPU validation 并通过；第三个 pending consumer exit -6；后六个进程（含四项 native）NOT_RUN |
+| Air Vulkan source、全部 sanitizer | BLOCKED：未运行；Vulkan ASan 的 compiler resolved path 与冻结 context 不等，Apple TSan 留有 CPU/G10 hook 的旧 cache，均不得冒充原合格入口 |
+| 新 static/shared SDK 与迁址消费者 | BLOCKED：全部未运行；旧 SDK 不签本轮新 API/owner |
+| selector | 仅 READY plan：22 selected / 137 skipped 保留；完整 selected 执行未启动，不能由窄 wrapper 代签 factor/delivery |
+| 新 A/A / P1 | BLOCKED、零新合格样本；旧 CUDA n15 PASS、三组旧未资格结果及全部失败保持 |
+
+Windows 原日志、所有 source/artifact/152 DATA/control 身份、逐项独审与 LOC 保存在
+[checkpoint 4](../../../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-4.json)。
+Air 原 failed receipt、37 项原日志/JSON/identity/cache 证据及逐成员 SHA 保存在
+[checkpoint 5](../../../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-5.json)。
+原 V3 VUID 没有唯一 fence/owner 调用映射；本次 Windows clean 不补写该历史因果定位。
+
+Air fatal 明确为 `steel_attention_float16_bq32_bk16_bd256...bv256...` 的
+`threadgroupMemoryLength(58368) must be <= 32768`。这是 D256 注意力内核的实际 Metal
+资源约束失败，不能忽略、缩小输入、关闭层或当作缓存警告。此日志没有证明新完成通知导致
+该失败，也没有单独裁决错误策略归属；本轮没有改数学 Provider 或 vendor。
+
+停止原因是第三次且最后一次定向纠正后的新普通失败，**不是四小时预算已经届满**。
+此前 build/GTest、NaN consumer 和 VUID 失败不删除、不重置；Windows 本次新增命令
+217.140 秒、Air 新增 52.377 秒，与原 958.640 秒只累加一次为 **1228.157 秒**。
+这是有 receipt 的配置/构建/测试命令时间，不是设计、审查与编排的总墙钟时间。
+停止后仅保存证据及维护状态/文档，没有运行新 fixture、SDK、sanitizer、selector 或 P1。
+
+### 七门、成本与 LOC
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS：只处理本轮四 owner 与真实直接消费者；G04/G05/旧 CUDA 不变 |
+| architecture | PASS_SOURCE_ONLY：原数学/资源 owner 复用，固定有界 waiter/通知/退休机制 |
+| correctness | INCONCLUSIVE：Windows 有限门与 Air 普通门 PASS；Air device FAIL，其余适用风险 BLOCKED |
+| delivery | BLOCKED：新 public API 的 source/static/shared 完整交付闭包未完成 |
+| usability_docs | SOURCE_REVIEW：pool 借用、容量及关闭顺序已迁移 guide/sample；不由文档代签 SDK |
+| red_team | PASS_SOURCE_ONLY：无新增 source must；真实 device 失败与未证风险保留 |
+| engineering_performance | INCONCLUSIVE：源码 P0 成本账已审，新候选没有 A/A/P1 资格或性能方向 |
+
+常态成本仍为已冻结的每 invocation 冷 waiter/CV、每 Runtime 一个退休 CV、Apple 每 node 的
+有界通知 packet/ref；正常非 split Vulkan 保单 fence，split 才观察第二枚。热路径没有新增
+逐 op heap 分配或逐 op 创建线程，没有新增数学 worker/native marker；借用 pool 可以实际
+启动有界等待线程，其线程/栈和 warm startup 费用不抹去。
+本轮没有测 sizeof 或证明零 warm allocation，不以结构账替代 P1。
+
+统一 `loc-report.py --commit a0cc517... --self-check --json` 四份均 PASS：全库
+4,026,500；自实现不含测试 183,907；工具的 src 模块边界分别为 `graph_route_cpu_vulkan`
+1,812、`graph_route_cpu_apple` 1,589、`compute_route_apple` 5,257、`compute_route_vulkan`
+9,745。原 JSON 在 checkpoint 4，不手工合并历史快照。两个独立工具修正的原 60/65 项
+Python 测试证据保留，不能代签本轮未执行的 selector 全部门。
+
+### Blocker 与唯一恢复条件
+
+- `blocked_from`：AUDITED；四 owner 都进入 BLOCKED，原产品 checkpoint 保留。
+- blocker owner：Apple native/MLX dispatch 负责独立审计上述资源 fatal 的实际策略归属；
+  验证工作区维护者负责两项 sanitizer cache/context；G09 owner 负责剩余交付/资格门。
+- `resume_condition`：先以原 Air、原 D256 数学/输入/生命周期和真实 Metal 层证据，独立审计并
+  固定资源 fatal 的有限纠正设计，同时提供两个宿主门可用的真实 context/cache 方案；随后以
+  明确的新有限轮和预算按 BLOCKED→SCOPED→AUDITED 恢复。所有旧失败、费用及三轮耗尽事实
+  必须继承，不能直接重跑原入口、缩尺寸/过滤器、关层或增加 epochs/n。补齐未完成正确性/
+  host/SDK/selected 门后，才可固定正式候选并启用原每 profile 一次资格和 n15→31 合同。
+
+最终裁决：**BLOCKED；G09 结构修正已落地且部分真硬件门通过，整体验收与性能修复未完成。**
+
+停止后的 registry/status 维护、`--previous-ref a0cc517...` 合法转换、docs 与 diff 检查记录见
+[维护 receipt](../../../../evidence/correctness/inference-g09-completion-wake/terminal-maintenance.json)；
+这不补签任何未运行的产品 gate。

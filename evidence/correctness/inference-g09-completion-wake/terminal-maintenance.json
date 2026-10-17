@@ -1,0 +1,110 @@
+{
+  "state": "PASS_METADATA_ONLY_NOT_PRODUCT_CLOSURE",
+  "product_checkpoint": "a0cc517332129c403b4e464a2e865712a2842290",
+  "previous_registry_ref": "a0cc517332129c403b4e464a2e865712a2842290",
+  "maintenance_checks": [
+    {
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "scripts/check-module-closure.py",
+        "--previous-ref",
+        "a0cc517332129c403b4e464a2e865712a2842290"
+      ],
+      "exit": 0,
+      "seconds": 1.8589999999967404,
+      "log": "evidence/correctness/inference-g09-completion-wake/terminal-final-check-closure.log",
+      "log_sha256": "4360c505c9ee8e52712679590911dbc10bfac68570b53bd7b6a960d474f49d32",
+      "log_bytes": 57
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "scripts/check-docs.py"
+      ],
+      "exit": 0,
+      "seconds": 4.342999999993481,
+      "log": "evidence/correctness/inference-g09-completion-wake/terminal-final-check-docs.log",
+      "log_sha256": "77edf8563e0857a748bc94dc2d171aae25aa763e8e70b8088f19e57a9185a9f9",
+      "log_bytes": 81
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit": 0,
+      "seconds": 0.061999999976251274,
+      "log": "evidence/correctness/inference-g09-completion-wake/terminal-final-check-diff.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log_bytes": 0
+    }
+  ],
+  "archive_integrity": [
+    {
+      "summary": "ordinary-checkpoint-4.json",
+      "summary_sha256": "cce7f175353e9c248f06c764580daf09193b8969993ff14059c537690ff747b1",
+      "archive": "ordinary-checkpoint-4.zip",
+      "archive_sha256": "e4014bcfd7c53f89d43d7d0b39611b295c6fb92bcc11ef429cdd855e8510bdaf",
+      "all_member_sha256_match": true
+    },
+    {
+      "summary": "ordinary-checkpoint-5.json",
+      "summary_sha256": "15b08deffed9a578b75155baa5b8e098bf10e22642109dcbbbbc6e16a986b0ca",
+      "archive": "ordinary-checkpoint-5.zip",
+      "archive_sha256": "dc743786c0b25354cc33fbccb0ea218a705b5f17b4e1cc8ce22f1bb9cde30877",
+      "all_member_sha256_match": true
+    }
+  ],
+  "owner_states": {
+    "compute_route_apple": {
+      "state": "BLOCKED",
+      "blocked_from": "AUDITED"
+    },
+    "compute_route_vulkan": {
+      "state": "BLOCKED",
+      "blocked_from": "AUDITED"
+    },
+    "graph_route_cpu_apple": {
+      "state": "BLOCKED",
+      "blocked_from": "AUDITED"
+    },
+    "graph_route_cpu_vulkan": {
+      "state": "BLOCKED",
+      "blocked_from": "AUDITED"
+    }
+  },
+  "tracked_changes_since_product_checkpoint": [
+    "docs/implementation/module-status.json",
+    "docs/implementation/status.md",
+    "docs/implementation/tasks/compute/inference-g09-vulkan-retirement-barrier.md",
+    "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md"
+  ],
+  "product_sources_changed_after_checkpoint": false,
+  "native_SDK_sanitizer_selector_P1_executions_after_final_failure": 0,
+  "retained_metadata_preparation_refusal": {
+    "exception": "KeyError: 'path'",
+    "stage": "Archive member schema validation after the initial maintenance checks",
+    "correction": "Read original cp4 member key and cp5 path key; no checker/source/archive changed",
+    "initial_check_logs_retained": [
+      {
+        "path": "terminal-check-closure.log",
+        "sha256": "4360c505c9ee8e52712679590911dbc10bfac68570b53bd7b6a960d474f49d32",
+        "bytes": 57
+      },
+      {
+        "path": "terminal-check-diff.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "terminal-check-docs.log",
+        "sha256": "77edf8563e0857a748bc94dc2d171aae25aa763e8e70b8088f19e57a9185a9f9",
+        "bytes": 81
+      }
+    ],
+    "native_or_product_validation_retries": 0,
+    "metadata_checks_repeated_to_finish_durable_receipt": true
+  },
+  "boundary": "Required metadata/transition/docs/diff checks only. Full selector22, SDK, Air Vulkan, sanitizers and P1 remain unrun/blocked; historical executed test evidence retained in checkpoint archives."
+}

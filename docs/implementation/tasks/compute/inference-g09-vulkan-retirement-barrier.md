@@ -1,6 +1,6 @@
 # G09 Vulkan 原完成者退休发布修正
 
-状态：**AUDITED，2026-10-17**。SCOPED checkpoint `508551f0c`；owner `compute_route_vulkan`；baseline
+状态：**BLOCKED-from-AUDITED，2026-10-17**。SCOPED checkpoint `508551f0c`；owner `compute_route_vulkan`；baseline
 `e2a55aaabdd06349f2e2d5efb82423d34e30305c`。本卡是
 [G09 完成驱动修正](../graph/inference-g09-completion-wake-correction.md)的有限下层纠正，
 不另开性能诊断或重置原预算。原 [G08 terminal](inference-g08-final-closure.md)保留。
@@ -130,3 +130,28 @@ wait 的 required 集、handoff 拒绝去重、错误/取消/close 与原输出/
 沿原 source/device/Air/host/SDK/selector 门继续；若再失败或到原四小时检查点，停止并裁决，
 不通过新卡/目录/入口补发预算。V4 的有限设计已由实现者、root 与独立 Graph 审查条件通过，
 本段固定前未修改产品；实现/source/实际验证仍待签发。
+
+## Terminal：BLOCKED-from-AUDITED
+
+固定产品 `a0cc517332129c403b4e464a2e865712a2842290` 的 V1–V4 经综合源码红队无新增
+must；Windows source 与实际 Khronos instance/device/sync 门均 PASS，四项 native 全部
+RUN/COMPLETED，split transfer 回归未 skip。本次真实 VUID 为零，旧 V3 VUID 与全部失败仍
+保留，不补写旧 fence 句柄的唯一因果解释。见主卡链接的
+[checkpoint 4](../../../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-4.json)。
+
+主卡随后 Air Apple device 在第三个 pending consumer 触发真实 Metal validation fatal：
+D256 attention kernel 的线程组内存 58368 >32768，exit -6。该新普通失败耗尽最后一次定向
+纠正，触发全轮 STOP；不是 Vulkan 退休修正的新反例，也没有证明由 Apple 通知机制引起。
+[checkpoint 5](../../../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-5.json)
+保存原失败、后续 NOT_RUN、两项 host cache/context blocker 及累计 1228.157 命令秒。
+
+本 owner 的 Air Vulkan、host sanitizer、新 static/shared SDK 和原 G09 P1 均未完成；
+correctness 聚合及工程性能均 INCONCLUSIVE、delivery BLOCKED，不能以 Windows 有限门签
+CLOSED。统一 LOC/self-check PASS：全库 4,026,500、自实现不含测试 183,907、本 src 模块
+9,745，原 JSON 在 checkpoint 4。P0 每 Runtime 固定 CV/无逐 op heap/thread 的源码账保留，
+sizeof/warm allocation/P1 未测。
+
+`blocked_from` 为 AUDITED。blocker owner 为主卡 Apple native/MLX dispatch、验证工作区和
+G09 交付维护者；唯一 `resume_condition` 与主卡末节一致：先独立审计固定该资源 fatal 的
+有限纠正设计和两个合格 host 入口方案，再以明确新有限轮按 BLOCKED→SCOPED→AUDITED
+恢复并继承全部旧失败/费用。不能自动重跑、缩输入、关层、换入口或追加样本。当前停止。

@@ -518,9 +518,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
-      "summary": "G09 completion-wake correction AUDITED W1-W4: resident caller-pool Vulkan waiter starts before runtime prefix acceptance; Apple original-owner private readiness notification with release barrier. Freeze single-worker/multi-slot/cancel/shutdown/actual-retirement and public pool borrow; ordinary gates and new qualification pending."
+      "summary": "G09 completion-wake/native retirement fixes at a0cc517: Windows ordinary and actual Vulkan validation PASS; Air Apple ordinary PASS, Metal device pending consumer aborts on D256 threadgroup memory 58368>32768. Final third ordinary correction exhausted; all further execution stopped, no new P1. Missing host/SDK/selector/Air Vulkan remain unproven.",
+      "candidate": "a0cc517332129c403b4e464a2e865712a2842290",
+      "blocked_from": "AUDITED",
+      "blocker": "Actual Air Metal API/GPU validation fatal in D256 pending-consumer attention kernel (58368 threadgroup bytes >32768), exit -6; two sanitizer cache/context preconditions incompatible. Final ordinary failure STOP leaves Air Vulkan, host risks, new SDK delivery, full selector and P1 incomplete.",
+      "blocker_owner": "Apple native/MLX dispatch owner for finite resource-fatal audit; validation workspace owner for sanitizer cache/context; G09 owner for missing delivery and qualification.",
+      "resume_condition": "Independently audit and freeze a finite correction design for the exact Air D256 Metal resource fatal with original math/input/lifetime, plus valid reviewed entries for both host cache/context blockers. Resume only through an explicitly bounded new SCOPED/AUDITED round retaining all old failures, costs and exhausted correction history; complete missing correctness/host/SDK/selected gates before immutable CANDIDATE and original one-entry-per-profile AA/n15-to31 qualification. Blind reruns, smaller inputs, filter/layer changes, more epochs/n or reset budgets do not qualify."
     },
     {
       "module": "graph_route_apple",
@@ -535,9 +540,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/inference-g09-vulkan-retirement-barrier.md",
-      "summary": "G09 native 退休发布 AUDITED：原 Run 单退休者/CV、外锁 observer 错误归并后才退休权限，尾部完成才发布；有限三文件，无新公共 API/线程。"
+      "summary": "G09 completion-wake/native retirement fixes at a0cc517: Windows ordinary and actual Vulkan validation PASS; Air Apple ordinary PASS, Metal device pending consumer aborts on D256 threadgroup memory 58368>32768. Final third ordinary correction exhausted; all further execution stopped, no new P1. Missing host/SDK/selector/Air Vulkan remain unproven.",
+      "candidate": "a0cc517332129c403b4e464a2e865712a2842290",
+      "blocked_from": "AUDITED",
+      "blocker": "Actual Air Metal API/GPU validation fatal in D256 pending-consumer attention kernel (58368 threadgroup bytes >32768), exit -6; two sanitizer cache/context preconditions incompatible. Final ordinary failure STOP leaves Air Vulkan, host risks, new SDK delivery, full selector and P1 incomplete.",
+      "blocker_owner": "Apple native/MLX dispatch owner for finite resource-fatal audit; validation workspace owner for sanitizer cache/context; G09 owner for missing delivery and qualification.",
+      "resume_condition": "Independently audit and freeze a finite correction design for the exact Air D256 Metal resource fatal with original math/input/lifetime, plus valid reviewed entries for both host cache/context blockers. Resume only through an explicitly bounded new SCOPED/AUDITED round retaining all old failures, costs and exhausted correction history; complete missing correctness/host/SDK/selected gates before immutable CANDIDATE and original one-entry-per-profile AA/n15-to31 qualification. Blind reruns, smaller inputs, filter/layer changes, more epochs/n or reset budgets do not qualify."
     },
     {
       "module": "graph_route_vulkan",
@@ -653,15 +663,25 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
-      "summary": "G09 completion-wake correction AUDITED W1-W4: resident caller-pool Vulkan waiter starts before runtime prefix acceptance; Apple original-owner private readiness notification with release barrier. Freeze single-worker/multi-slot/cancel/shutdown/actual-retirement and public pool borrow; ordinary gates and new qualification pending."
+      "summary": "G09 completion-wake/native retirement fixes at a0cc517: Windows ordinary and actual Vulkan validation PASS; Air Apple ordinary PASS, Metal device pending consumer aborts on D256 threadgroup memory 58368>32768. Final third ordinary correction exhausted; all further execution stopped, no new P1. Missing host/SDK/selector/Air Vulkan remain unproven.",
+      "candidate": "a0cc517332129c403b4e464a2e865712a2842290",
+      "blocked_from": "AUDITED",
+      "blocker": "Actual Air Metal API/GPU validation fatal in D256 pending-consumer attention kernel (58368 threadgroup bytes >32768), exit -6; two sanitizer cache/context preconditions incompatible. Final ordinary failure STOP leaves Air Vulkan, host risks, new SDK delivery, full selector and P1 incomplete.",
+      "blocker_owner": "Apple native/MLX dispatch owner for finite resource-fatal audit; validation workspace owner for sanitizer cache/context; G09 owner for missing delivery and qualification.",
+      "resume_condition": "Independently audit and freeze a finite correction design for the exact Air D256 Metal resource fatal with original math/input/lifetime, plus valid reviewed entries for both host cache/context blockers. Resume only through an explicitly bounded new SCOPED/AUDITED round retaining all old failures, costs and exhausted correction history; complete missing correctness/host/SDK/selected gates before immutable CANDIDATE and original one-entry-per-profile AA/n15-to31 qualification. Blind reruns, smaller inputs, filter/layer changes, more epochs/n or reset budgets do not qualify."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
-      "summary": "G09 completion-wake correction AUDITED W1-W4: resident caller-pool Vulkan waiter starts before runtime prefix acceptance; Apple original-owner private readiness notification with release barrier. Freeze single-worker/multi-slot/cancel/shutdown/actual-retirement and public pool borrow; ordinary gates and new qualification pending."
+      "summary": "G09 completion-wake/native retirement fixes at a0cc517: Windows ordinary and actual Vulkan validation PASS; Air Apple ordinary PASS, Metal device pending consumer aborts on D256 threadgroup memory 58368>32768. Final third ordinary correction exhausted; all further execution stopped, no new P1. Missing host/SDK/selector/Air Vulkan remain unproven.",
+      "candidate": "a0cc517332129c403b4e464a2e865712a2842290",
+      "blocked_from": "AUDITED",
+      "blocker": "Actual Air Metal API/GPU validation fatal in D256 pending-consumer attention kernel (58368 threadgroup bytes >32768), exit -6; two sanitizer cache/context preconditions incompatible. Final ordinary failure STOP leaves Air Vulkan, host risks, new SDK delivery, full selector and P1 incomplete.",
+      "blocker_owner": "Apple native/MLX dispatch owner for finite resource-fatal audit; validation workspace owner for sanitizer cache/context; G09 owner for missing delivery and qualification.",
+      "resume_condition": "Independently audit and freeze a finite correction design for the exact Air D256 Metal resource fatal with original math/input/lifetime, plus valid reviewed entries for both host cache/context blockers. Resume only through an explicitly bounded new SCOPED/AUDITED round retaining all old failures, costs and exhausted correction history; complete missing correctness/host/SDK/selected gates before immutable CANDIDATE and original one-entry-per-profile AA/n15-to31 qualification. Blind reruns, smaller inputs, filter/layer changes, more epochs/n or reset budgets do not qualify."
     },
     {
       "module": "compute_stream",

@@ -1,0 +1,449 @@
+{
+  "schema": "hyle.g09.comprehensive-source-red-team.v1",
+  "timestamp_utc": "2026-10-17T07:54:33.967162+00:00",
+  "reviewer": "/root/graph_coverage_audit",
+  "baseline": "6b26cd4b26488ce3dba451bffba415b7756e504a",
+  "candidate": "a0cc517332129c403b4e464a2e865712a2842290",
+  "state": "PASS_SOURCE_REVIEW_ONLY_WITH_ACTUAL_AIR_DEVICE_FAILURE_AND_STOP",
+  "source_verdict": "PASS_NO_NEW_SOURCE_MUST_WITHIN_FROZEN_W1_W4_V1_V4",
+  "source_must": [],
+  "closure_pass_claimed": false,
+  "execution_authorized_by_this_review": false,
+  "scope": "Final bounded combination review of the four changed owners, frozen W1-W4/V1-V4, direct consumer error boundaries and corresponding targeted tests. Prior three independent source reviews and actual Windows device review are reused. No unchanged CLOSED module is reopened; no additional native, build, benchmark, replay, retry, SDK or P1 invocation occurred in this review.",
+  "input_reviews": [
+    {
+      "path": "evidence/correctness/inference-g09-completion-wake/source-review.json",
+      "sha256": "e9d14cb404ee8630efd6931202e06c1bd9ac5721982ca05aa5a8ef62f22de9a4"
+    },
+    {
+      "path": "evidence/correctness/inference-g09-completion-wake/native-retirement-source-review.json",
+      "sha256": "7ee8c050edae367aca0b1dfb4ae144be556c105b237fcb42f12e62bad34cb541"
+    },
+    {
+      "path": "evidence/correctness/inference-g09-completion-wake/split-transfer-source-review.json",
+      "sha256": "d8d150d7229aa2818a0f33feceac427fb7bbbacfb2e37dba11a3046cb214547d"
+    }
+  ],
+  "candidate_source_bindings": [
+    {
+      "path": "src/compute_route_apple/apple_completion_internal.h",
+      "sha256": "b6d81794b360fd96100f1f96c5d54562e32b38f819c65457656cd9612fa42196"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "5bb2691c198cf25ad2d113b5126c683fe81e3acc1cd09089f08f4e68daf9e040"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "8c2ffce00a51ed63025c57bdba6bcaff8ef40b450c66116991ef79b1a342af16"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "f848db8f9a45c9f2f450c000c573ed9b25241924f81268a8cb66dd9f52979d07"
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "3aa45bf9f1acae617a8f52d3fb91cb1e6990979cd65c3050a6e676b43348d46f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_internal.h",
+      "sha256": "b15e2ef67f37fd47d902cd17c9757acd3e31a7f557f7924230d2d4d5ea22540e"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "sha256": "6f432bc851bfae1dc4c54cfd32a3f160e909c886657b405954e2870fc5f10361"
+    },
+    {
+      "path": "tests/compute_batch/encoded_page_native_consumer.cc",
+      "sha256": "95f06d43181ca9a60729a7d20cfb2581f74c1af038e8c100f7ff819bab0e5e0b"
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_waiter_cases.h",
+      "sha256": "b43bd8ea0ef3ea0167015df2c5460953b471fa1e642c8be61700c3dd368bf33b"
+    },
+    {
+      "path": "tests/graph/native_joint_pipeline.cc",
+      "sha256": "8ec2a26f926ab3aed11b23741db41c12481773496544111ae9e2d126e016147c"
+    },
+    {
+      "path": "tests/compute_route_apple/lifecycle_test.cc",
+      "sha256": "444e1e021a0b2f79010018c7a545adc9bebdf78b393845d948f0b87e3aed5d23"
+    },
+    {
+      "path": "tests/compute_route_vulkan/lifecycle_test.cc",
+      "sha256": "4089e4eb7cc276eb128131b04ea08b2cc382761bea894fca1c41c81ba0709aa5"
+    },
+    {
+      "path": "docs/user/graph.md",
+      "sha256": "075fae4e08a52f7b7d20ac5b322d90fbf33088453c05faa68418159b3f5c2196"
+    },
+    {
+      "path": "docs/user/vulkan-compute.md",
+      "sha256": "b11dc90f72427069e643cecb72c3f9faced90dc3abd2b7818de8c02c95b9103b"
+    },
+    {
+      "path": "docs/user/batch-attention.md",
+      "sha256": "95d385d0655274c07d0b45657893f010f29b6323b3e983e27e9dc80997795def"
+    },
+    {
+      "path": "samples/package/graph/cpu_vulkan/main.cc",
+      "sha256": "d2a3b3ea7e93a115f82a335b85584a12ae2b86f068a66e9c6fb8293143b5a142"
+    },
+    {
+      "path": "samples/package/graph/cpu_vulkan/README.md",
+      "sha256": "6ba29c71e81b4dba969f5f45e3fcc9ee1242d74f6b4996cc6efc74209fd5d3df"
+    }
+  ],
+  "prior_binding_checks": {
+    "W1_W2_and_public_header_equal_first_implementation_checkpoint_6c6222e51": true,
+    "V1_V3_private_header_equals_prior_native_review_sha": true,
+    "V4_run_equals_prior_split_review_sha": true,
+    "V4_lifecycle_equals_prior_split_review_sha": true,
+    "encoded_consumer_equals_prior_native_review_sha": true,
+    "copy_source_and_tests_KEEP": true
+  },
+  "mechanism_findings": [
+    {
+      "id": "W1-exclusive-completion-and-progress",
+      "verdict": "PASS_SOURCE_ONLY",
+      "proof": [
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "start_line": 247,
+          "end_line": 268,
+          "finding": "Only the resident pool worker observes the selected Completion while the request is active; it stops touching the handle before publishing the response under the monitor."
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "start_line": 316,
+          "end_line": 362,
+          "finding": "Only the root requests/acknowledges; poll of the active handle returns Pending or consumes the finished response. Move/reset follows response handoff."
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "start_line": 658,
+          "end_line": 712,
+          "finding": "Epoch is captured before native observations. The root continues admitting newly ready native work and observes other pending stages. The selected completion has an actual wake; timed observation remains only for other unbridged pending prefixes."
+        }
+      ],
+      "limit": "One embedded waiter is not general wait-any and does not promise arbitrary cross-slot out-of-order completion with a capacity-one pool."
+    },
+    {
+      "id": "W2-inline-notification-and-epoch",
+      "verdict": "PASS_SOURCE_ONLY",
+      "proof": [
+        {
+          "path": "src/compute_route_apple/apple_completion_internal.h",
+          "start_line": 8,
+          "end_line": 39,
+          "finding": "Private opaque ready/release packet; success consumes one retained reference and may invoke inline, failure consumes none. Callbacks publish progress only and do not observe/reenter their Completion."
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "start_line": 217,
+          "end_line": 270,
+          "finding": "Graph retains/counts under its monitor before subscribing outside that monitor, allowing inline callbacks. Failure returns exactly its unpublished reference. Readiness hints do not bypass checked poll/wait."
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "start_line": 510,
+          "end_line": 552,
+          "finding": "Pre-poll epoch and ready/error/cancel predicates close the notify-between-poll-and-park window."
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "start_line": 606,
+          "end_line": 615,
+          "finding": "All outstanding notification references return before LeaseSubmission finish/terminal publication and slot reuse."
+        }
+      ],
+      "limit": "Only native owner and legal inline terminal dependencies are supported. Unknown/proxy/copy vtables are rejected; no hypothetical copy packet or timer fallback was added."
+    },
+    {
+      "id": "W3-pool-admission-shutdown-and-error-drain",
+      "verdict": "PASS_SOURCE_ONLY",
+      "proof": [
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "start_line": 270,
+          "end_line": 313,
+          "finding": "Pool refusal, worker creation failure and queued shutdown destroy occur before the root admits any episode work; started/running state is distinct from job destroy_done."
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "start_line": 338,
+          "end_line": 373,
+          "finding": "Retention admission failure still waits the accepted prefix through the running job. Stop joins active response then waits for embedded job destroy handoff."
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "start_line": 729,
+          "end_line": 774,
+          "finding": "On error/cancel the CPU lane stops first; selected response is joined and every retained fragment/transfer is actually waited before clearing owning handles. Job destroy_done precedes leases.finish; the admitted root reference survives the job reference handoff."
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "start_line": 569,
+          "end_line": 615,
+          "finding": "Error/cancel cleanup observes retained native fragments, then joins callback releases before episode finalization."
+        }
+      ],
+      "limit": "Caller pool must outlive all accepted Graph/native/job tails. A shared bounded pool may not be fully occupied by tasks synchronously waiting on Graph results that require queued waiters in that same pool. Permanently unproven native retirement is not converted to success."
+    },
+    {
+      "id": "W2-native-retirement-and-late-abandon",
+      "verdict": "PASS_SOURCE_ONLY",
+      "proof": [
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "start_line": 459,
+          "end_line": 484,
+          "finding": "First lock freezes terminal/moves native uses; native permissions retire outside the lock; second lock captures late abandoned/hint/notification and publishes done. The old finish then accesses only local callbacks and the worker reference."
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "start_line": 575,
+          "end_line": 597,
+          "finding": "Completed-native subscriptions deliver outside the completion monitor; pending duplicate is rejected and failure does not consume caller ownership."
+        }
+      ],
+      "limit": "Native done proves native permissions have retired; Graph also waits the notification release tail. Notification remains a hint, while the original Completion/LeaseSubmission retains checked-result and actual-retirement authority."
+    },
+    {
+      "id": "V1-V3-single-retirer-publication",
+      "verdict": "PASS_SOURCE_ONLY",
+      "proof": [
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "start_line": 200,
+          "end_line": 281,
+          "finding": "All three external-observer paths retain counted episode ownership. The two IREE return points merge their error before dropping the observer and joining a claimed retirer. Poll on retiring remains Pending and does not wait on the CV."
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "start_line": 330,
+          "end_line": 409,
+          "finding": "The native return path records first observation error/device loss before dropping an observer. A unique retirer waits all already-registered observers before freezing terminal/retiring native uses. Poll with other observers does not claim a blocking retirement."
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "start_line": 410,
+          "end_line": 467,
+          "finding": "Pending/list/pending_owner remain until native permission retirement and late abandoned delivery tails finish. Publication is one lock boundary, after which old observer does not mutate Run. Normal published Completion destruction owns its separate retiring tail."
+        }
+      ],
+      "limit": "Nonblocking collect reentry is supported as Pending. Synchronous wait/close of the same Run from its own retirement/lifetime callback is outside the frozen callback contract; no thread-ID/reentrant executor mechanism is introduced."
+    },
+    {
+      "id": "V4-both-submitted-fence-proofs",
+      "verdict": "PASS_SOURCE_ONLY",
+      "proof": [
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "start_line": 283,
+          "end_line": 338,
+          "finding": "Capture only accepted, distinct completion/transfer fences while registered as observer; waitAll(count1/2) is outside Runtime mutex. Poll queries every required fence, retains first real error and device-loss proof, and completes only when all required fences succeed."
+        }
+      ],
+      "limit": "The cross-queue semaphore handoff alone does not prove the independent transfer fence signal. Rejected handoff waits only the actually submitted transfer fence. Current clean validation does not uniquely identify the owner/cause of V3 raw fence 0xe VUID."
+    },
+    {
+      "id": "W4-public-API-and-three-delivery-contract",
+      "verdict": "SOURCE_CONTRACT_CONSISTENT_RUNTIME_DELIVERY_PENDING",
+      "proof": [
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "start_line": 74,
+          "end_line": 95,
+          "finding": "One explicit cold create_invocation signature borrows caller BlockingPool; original Completion and other public layouts remain unchanged."
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "start_line": 837,
+          "end_line": 856,
+          "finding": "Creation validates/borrows pool and cold-embeds the job; no compatibility fallback or hidden private pool is created."
+        }
+      ],
+      "source_contract": "Actual in-tree direct consumers, public sample and user guidance use the borrowed pool and explicit lifetime/shutdown sequence. Apple exports its private cross-shared seam with the original route visibility macro and no public-header/private-include requirement on SDK consumers.",
+      "limit": "Windows source build/link is actual evidence; source/static/shared relocated installed-only SDK + affected public-header gates are not signed by a source/private lifecycle fixture or this review."
+    },
+    {
+      "id": "encoded-legal-error-boundaries",
+      "verdict": "PASS_SOURCE_ONLY_AND_WINDOWS_ACTUAL_CASES",
+      "proof": [
+        {
+          "path": "tests/compute_batch/encoded_page_native_consumer.cc",
+          "start_line": 264,
+          "end_line": 281,
+          "finding": "Only original exact route numeric-domain InvalidArgument is accepted. Owning failed result/Completion must retain that error, return original update, publish no page writers and preserve old reader bytes."
+        },
+        {
+          "path": "tests/compute_batch/encoded_page_native_consumer.cc",
+          "start_line": 315,
+          "end_line": 362,
+          "finding": "Failed bind preserves producer ownership. Still-owned original results are waited; accepted update must actually retire and return invocation, otherwise unsubmitted original writers remain recoverable. Context drain retains original accepted inputs/prefixes, no suffix update may escape."
+        }
+      ],
+      "limit": "Windows raw independent-source failures reject at copy.submit with phase/native-call counts 0/0. Paired cases exercise downstream failed Outcome/update handling; their unprinted phase counts are not invented. No fake successful fence/GPU work is substituted for failure drain."
+    }
+  ],
+  "normal_cost_review": {
+    "verdict": "BOUNDED_SOURCE_STRUCTURE_REVIEW_ONLY_NOT_MEASURED_PERFORMANCE",
+    "vulkan_graph": "One cold embedded resident job and private synchronization/request fields per RunState. One pool admission per native episode, original bounded caller thread/stack budget and no per-op JoinState/job heap. Pure CPU episodes do not start the waiter. Other unbridged pending stages retain original bounded observation.",
+    "apple": "One private three-pointer notification packet per native invocation and Graph epoch/outstanding counters. Constant callbacks/monitor operations per subscription, no added worker or per-op subscriber container. Copy source/test remains baseline.",
+    "vulkan_native": "One CV per Runtime and one extra terminal lock round trip; no new Run/public layout field, heap, native marker or normal QueueWaitIdle. V4 uses a two-handle stack array; actual split adds one fence query or one fence to the same waitAll call. No normal native fence wait holds Runtime mutex.",
+    "not_claimed": [
+      "actual sizeof or stack measurements",
+      "warm allocation/performance qualification",
+      "A/A or P1 speedup/noninferiority",
+      "arbitrary pool dependency-cycle progress"
+    ]
+  },
+  "test_review": {
+    "verdict": "TARGETED_REAL_RISK_TESTS_WITH_EXPLICIT_SYNTHETIC_ERROR_BOUNDARIES",
+    "vulkan_waiter": "Original checked CPU/Vulkan mathematics; public ParallelExecutor gate invokes the real CPU tasks after release. Cold/refusal/queued and running shutdown gates retain storage and release/join on early return. One-worker, two-slot and second-native progress are asserted; no exact active interleaving/throughput claim is made.",
+    "apple_notification": "Four tests exercise actual native invocation math with pending duplicate/inline/refused owner, cancel+abandon+late error and 65 real max1 LeaseUsePool reuse. Inline completed hints are deliberately terminal public Completion objects and never stand in for actual GPU success.",
+    "vulkan_retirement": "Actual original PFN proves GPU fence completion before the resource-owner publication gate. Gate blocks active_batches decrement/retirement metadata only. Callback destruction and late abandon are checked; guard releases all gates then joins before owners/Context die. Second-observer case does not prove exact OS scheduling of the retiring claim.",
+    "split_transfer": "Distinct actual native queues and original PFNs prove real GPU completion; only transfer observation is withheld as Pending to expose premature publication. WaitAll2 and 65 changed upload/readback oracles run, plus rejected handoff count1. The forbidden unsubmitted-fence shim returns an error only to avoid a regression hang and cannot manufacture successful proof.",
+    "old_binary_red_run": false,
+    "source_test_witnesses": [
+      {
+        "path": "tests/compute_route_apple/lifecycle_test.cc",
+        "start_line": 154,
+        "end_line": 282,
+        "finding": "Four native notification cases."
+      },
+      {
+        "path": "tests/compute_route_vulkan/lifecycle_test.cc",
+        "start_line": 958,
+        "end_line": 1280,
+        "finding": "RAII cleanup, permission/delivery/late-observer tests and actual split-transfer regression."
+      },
+      {
+        "path": "tests/graph/cpu_vulkan_waiter_cases.h",
+        "start_line": 19,
+        "end_line": 284,
+        "finding": "CPU/pool gates, failure guards and checked waiter lifecycle cases."
+      },
+      {
+        "path": "tests/graph/native_joint_pipeline.cc",
+        "start_line": 191,
+        "end_line": 211,
+        "finding": "New second-native and capacity-one finite-progress direct-consumer cases."
+      }
+    ]
+  },
+  "actual_evidence_and_unresolved_gates": {
+    "windows_source_device": {
+      "verdict": "PASS_CURRENT_FIXED_CANDIDATE_THIS_GATE_ONLY",
+      "path": ".scratch/g09-completion-wake-correction/run-final-v4/windows-vulkan/source/windows-source-device-review.json",
+      "sha256": "45fec0feafc75c16e271d91ce54038293ca7d4571b1fe61461e8e1531ada8548",
+      "receipt": {
+        "path": ".scratch/g09-completion-wake-correction/run-final-v4/windows-vulkan/source/receipt.json",
+        "sha256": "1913cfb7b55a248d18850583802cf01d1ff209981754cbf4c389e5cd376a9e9a"
+      },
+      "summary": "Independent prior review bound 2677 frozen source paths, 49 binary/DLL artifacts, 22 retained stage artifacts, 152 same-facet shader DATA, runner/context/parent/helper/ninja identities. Nine actual fixture logs: 28 live Khronos instance/device/sync contexts, zero Validation Error/VUID/SYNC-HAZARD; OBS loader raw 196 separately retained. Native4 and encoded3 exact RUN/COMPLETED, no skip."
+    },
+    "air_apple_source": {
+      "build_and_ordinary_test": "PASS_ACTUAL_RECEIPT_NOT_DEVICE_AGGREGATE",
+      "receipt": {
+        "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/receipt.json",
+        "sha256": "ac5fa3b18690f2f1e3ffe1075eeb68b81176c9bdef9430c01fc60173ba17c1eb"
+      },
+      "ordinary_native_json": {
+        "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/test-native-unit.json",
+        "sha256": "ad68d23d3a2dafa43dddb43852395e414808506b88872dfdd785fad2067741ac"
+      },
+      "ordinary_encoded_json": {
+        "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/test-encoded.json",
+        "sha256": "28147aa42e76e72cb0e6f9584df5125e16e65385d1959e2d723f247975912ca4"
+      },
+      "ordinary_json_summary": "Native4 and encoded4 exact RUN/COMPLETED, failures/disabled/errors zero; not substitutes for validation-enabled execution."
+    },
+    "air_apple_device": {
+      "verdict": "FAIL_ACTUAL_AND_FINAL_ORDINARY_FAILURE_STOP",
+      "completed_prefix": [
+        "contracts",
+        "pipeline"
+      ],
+      "failed_fixture": "pending",
+      "exit_code": -6,
+      "failed_log": {
+        "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/device-g09_wake_v4_pending.log",
+        "sha256": "42a8b10676bcc4e0ee98c3d410c5f01a597004de5d0ff3cbbdeb12d1d08cad42"
+      },
+      "activation": "All three produced device logs independently show Metal API Validation Enabled and Metal GPU Validation Enabled on lines1-2.",
+      "raw_failure_line": 3,
+      "raw_failure": "validateComputeFunctionArguments:1272: steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0 threadgroupMemoryLength(58368) must be <=32768",
+      "classification": "Actual Metal compute resource-limit assertion; not absent layer activation or an ignorable loader diagnostic. No unique attribution to new notification/waiter protocol or authorization to reopen unchanged native math is inferred.",
+      "remaining_device_fixtures": "NOT_RUN_AFTER_STOP: encoded, paged_joint, sampling, public_effect, symmetry, native-unit",
+      "further_execution": "FORBIDDEN_BY_CURRENT_STOP",
+      "completed_prefix_logs": [
+        {
+          "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/device-g09_wake_v4_contracts.log",
+          "sha256": "cca1dfa2e6d1405a27c7d2cdbe01bbd50e5df378e27ec51d1b219b2bad321a21"
+        },
+        {
+          "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/device-g09_wake_v4_pipeline.log",
+          "sha256": "fc337c33a8978d0333fc68180766b6618fdcecf57f923a4d4d04af8fc8459dff"
+        }
+      ],
+      "post_stop_identity": {
+        "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/post-failure-identity.json",
+        "sha256": "68aab8c1d941bb5fb418fd3442eacc2576bb1420d09b29a8de48d1b44d7c109b"
+      },
+      "post_stop_identity_limit": "Separate original post-stop receipt reports 2677 source files /11 binaries and controls/log identities unchanged; process snapshot empty is not continuous process tracking. This final review does not replay or run native code."
+    },
+    "air_host_cache": {
+      "verdict": "BLOCKED_APPLICABLE_NOT_RUN",
+      "receipt": {
+        "path": ".scratch/g09-completion-wake-correction/air-v4-cache-readonly.json",
+        "sha256": "b74190eb254bcbe5b07a864be7e63e28882532aa24dc736257cf57f4becc8c16"
+      },
+      "specific_blockers": [
+        "Apple TSan cache retains cpu-only routes and G10 project include; it is not an Apple TSan entry.",
+        "Vulkan ASan cached /usr/bin/c++ resolved path differs from frozen /usr/bin/clang++ context; equal driver bytes do not bypass the existing path guard."
+      ],
+      "no_cache_context_or_runner_repair_authorized": true
+    },
+    "remaining": [
+      "Air Vulkan source/device not passed by this review",
+      "other applicable host sanitizer gates not run/passed",
+      "affected source/static/shared installed-only SDK and public-header gates not completed",
+      "selector selected22 execution not run; original137 skipped reasons remain",
+      "warm/P0 empirical checks and fixed-candidate A/A/P1 performance qualification not completed"
+    ],
+    "aggregate_verdict": "NOT_CLOSED: actual Air device FAIL; applicable remaining gates INCONCLUSIVE/BLOCKED. Source review does not erase original failures or reset cumulative four-hour/ordinary-failure budgets."
+  },
+  "LOC_existing_tool_reports": [
+    {
+      "path": ".scratch/g09-completion-wake-correction/loc-compute_route_apple-v4.json",
+      "sha256": "8f6f7989f1db46b6f732f06d982ed34f35cb9821172e641c44ecf82cfdc68356",
+      "self_check": "pass",
+      "module": "compute_route_apple",
+      "module_code": 5257
+    },
+    {
+      "path": ".scratch/g09-completion-wake-correction/loc-compute_route_vulkan-v4.json",
+      "sha256": "1941763dfb205ac81e45a8ab62ad2f57d58c7718ba5fdf43f508610cfbb4f742",
+      "self_check": "pass",
+      "module": "compute_route_vulkan",
+      "module_code": 9745
+    },
+    {
+      "path": ".scratch/g09-completion-wake-correction/loc-graph_route_cpu_apple-v4.json",
+      "sha256": "fa3a238f2bcbb462d181dbf2063dfb8257e14a459f226cb1e9469e1d2052cb24",
+      "self_check": "pass",
+      "module": "graph_route_cpu_apple",
+      "module_code": 1589
+    },
+    {
+      "path": ".scratch/g09-completion-wake-correction/loc-graph_route_cpu_vulkan-v4.json",
+      "sha256": "1a9fcda6952b9f72976603930f348c4ff414a659ee6e1206361690ba47a1113c",
+      "self_check": "pass",
+      "module": "graph_route_cpu_vulkan",
+      "module_code": 1812
+    }
+  ],
+  "stop_statement": "No new product must was found within frozen mechanisms. The actual Air device failure is a verification blocker requiring the current STOP/terminal decision, not permission for another fix or run. This scratch-only review changes no product, registry, tool or receipt; all original failures and costs remain."
+}
