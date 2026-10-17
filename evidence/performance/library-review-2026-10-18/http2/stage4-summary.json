@@ -1,0 +1,385 @@
+{
+  "hyle": {
+    "samples": 2578,
+    "samples_with_valid_consumer_frame": 1688,
+    "samples_with_invalid_suffix": 1662,
+    "top_leaf_symbols": [
+      [
+        "__memcpy_avx_unaligned_erms",
+        461
+      ],
+      [
+        "__libc_recv",
+        238
+      ],
+      [
+        "__memcmp_avx2_movbe",
+        221
+      ],
+      [
+        "__libc_send",
+        185
+      ],
+      [
+        "__GI___pthread_disable_asynccancel",
+        99
+      ],
+      [
+        "__GI___pthread_enable_asynccancel",
+        89
+      ],
+      [
+        "hyle::sched::Scheduler::Impl::run_worker(unsigned int)",
+        71
+      ],
+      [
+        "nghttp2_session_mem_recv2",
+        58
+      ],
+      [
+        "__tls_get_addr",
+        50
+      ],
+      [
+        "hyle::io::detail::(anonymous namespace)::flush_once(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::OperationOptions) [clone .isra.0]",
+        46
+      ],
+      [
+        "nghttp2_map_find",
+        42
+      ],
+      [
+        "jump_fcontext",
+        40
+      ],
+      [
+        "??",
+        39
+      ],
+      [
+        "operator()",
+        35
+      ],
+      [
+        "nghttp2_session_mem_send_internal",
+        35
+      ],
+      [
+        "hyle::sched::Fiber::yield()",
+        34
+      ],
+      [
+        "hyle::io::detail::Http2SessionAccess::read_body(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, unsigned long, hyle::io::OperationOptions)",
+        34
+      ],
+      [
+        "hyle::sched::Scheduler::Impl::reschedule(hyle::sched::Scheduler::Impl::Worker&, hyle::sched::Fiber*)",
+        33
+      ],
+      [
+        "nghttp2_session_get_stream",
+        30
+      ],
+      [
+        "mi_malloc",
+        27
+      ],
+      [
+        "hyle::io::detail::(anonymous namespace)::on_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)",
+        27
+      ],
+      [
+        "hyle::io::detail::tcp_try_read_some(hyle::io::TcpStream&, std::span<std::byte, 18446744073709551615ul>)",
+        25
+      ],
+      [
+        "hyle::sched::Scheduler::Impl::find_task(hyle::sched::Scheduler::Impl::Worker&, unsigned int)",
+        23
+      ],
+      [
+        "hyle::sched::current_worker_index()",
+        22
+      ],
+      [
+        "hyle::io::detail::(anonymous namespace)::try_read_once(hyle::io::detail::Http2SessionState&)",
+        21
+      ]
+    ],
+    "top_partial_consumer_chains": [
+      [
+        "nghttp2_session_pack_data",
+        276
+      ],
+      [
+        "hyle::io::detail::http2_body_consume(hyle::io::detail::http2_body_consume(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, void*, hyle::Status (*)(void*, hyle::io::HttpBodyChunkView const&) noexcept, unsigned long, hyle::io::OperationOptions)::_ZN4hyle2io6detail18http2_body_consumeENS_3mem12AllocatorRefERNS0_15Http2BodyReaderEPvPDoFNS_6StatusES6_RKNS0_17HttpBodyChunkViewEEmNS0_16OperationOptionsE.Frame*) [clone .actor] <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<int>::promise_type>::resume() const",
+        275
+      ],
+      [
+        "nghttp2_session_mem_recv2",
+        133
+      ],
+      [
+        "drive_until<hyle::io::(anonymous namespace)::send_submitted_fixed(send_submitted_fixed(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::detail::Http2StreamState&, std::span<const std::byte>, hyle::io::OperationOptions)::_ZN4hyle2io12_GLOBAL__N_120send_submitted_fixedENS_3mem12AllocatorRefERNS0_6detail17Http2SessionStateERNS4_16Http2StreamStateESt4spanIKSt4byteLm18446744073709551615EENS0_16OperationOptionsE.Frame*)::<lambda()> > <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<int>::promise_type>::resume() const",
+        70
+      ],
+      [
+        "drive_until<hyle::io::(anonymous namespace)::send_submitted_fixed(send_submitted_fixed(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::detail::Http2StreamState&, std::span<const std::byte>, hyle::io::OperationOptions)::_ZN4hyle2io12_GLOBAL__N_120send_submitted_fixedENS_3mem12AllocatorRefERNS0_6detail17Http2SessionStateERNS4_16Http2StreamStateESt4spanIKSt4byteLm18446744073709551615EENS0_16OperationOptionsE.Frame*)::<lambda()> > <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Result<hyle::io::Http2StreamId> >::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<int>::promise_type>::resume() const",
+        68
+      ],
+      [
+        "hyle::io::detail::Http2SessionAccess::read_body(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, unsigned long, hyle::io::OperationOptions) <- hyle::io::detail::http2_body_consume(hyle::io::detail::http2_body_consume(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, void*, hyle::Status (*)(void*, hyle::io::HttpBodyChunkView const&) noexcept, unsigned long, hyle::io::OperationOptions)::_ZN4hyle2io6detail18http2_body_consumeENS_3mem12AllocatorRefERNS0_15Http2BodyReaderEPvPDoFNS_6StatusES6_RKNS0_17HttpBodyChunkViewEEmNS0_16OperationOptionsE.Frame*) [clone .actor] <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const",
+        45
+      ],
+      [
+        "nghttp2_session_mem_send_internal <- hyle::sched::Task<hyle::Result<hyle::io::HttpIncomingResponse> >::promise_type::unhandled_exception()",
+        31
+      ],
+      [
+        "operator() <- hyle::io::detail::http2_body_consume(hyle::io::detail::http2_body_consume(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, void*, hyle::Status (*)(void*, hyle::io::HttpBodyChunkView const&) noexcept, unsigned long, hyle::io::OperationOptions)::_ZN4hyle2io6detail18http2_body_consumeENS_3mem12AllocatorRefERNS0_15Http2BodyReaderEPvPDoFNS_6StatusES6_RKNS0_17HttpBodyChunkViewEEmNS0_16OperationOptionsE.Frame*) [clone .actor] <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const",
+        30
+      ],
+      [
+        "hyle::io::detail::(anonymous namespace)::flush_once(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::OperationOptions) [clone .isra.0] <- drive_until<hyle::io::(anonymous namespace)::send_submitted_fixed(send_submitted_fixed(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::detail::Http2StreamState&, std::span<const std::byte>, hyle::io::OperationOptions)::_ZN4hyle2io12_GLOBAL__N_120send_submitted_fixedENS_3mem12AllocatorRefERNS0_6detail17Http2SessionStateERNS4_16Http2StreamStateESt4spanIKSt4byteLm18446744073709551615EENS0_16OperationOptionsE.Frame*)::<lambda()> > <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Result<hyle::io::Http2StreamId> >::promise_type>::resume() const",
+        29
+      ],
+      [
+        "drive_until<hyle::io::detail::Http2SessionAccess::read_body(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, std::size_t, hyle::io::OperationOptions)::<lambda()> > <- hyle::io::detail::http2_body_consume(hyle::io::detail::http2_body_consume(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, void*, hyle::Status (*)(void*, hyle::io::HttpBodyChunkView const&) noexcept, unsigned long, hyle::io::OperationOptions)::_ZN4hyle2io6detail18http2_body_consumeENS_3mem12AllocatorRefERNS0_15Http2BodyReaderEPvPDoFNS_6StatusES6_RKNS0_17HttpBodyChunkViewEEmNS0_16OperationOptionsE.Frame*) [clone .actor] <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const",
+        25
+      ],
+      [
+        "hyle::io::detail::(anonymous namespace)::try_read_once(hyle::io::detail::Http2SessionState&) <- drive_until<hyle::io::detail::Http2SessionAccess::read_body(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, std::size_t, hyle::io::OperationOptions)::<lambda()> > <- hyle::io::detail::http2_body_consume(hyle::io::detail::http2_body_consume(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, void*, hyle::Status (*)(void*, hyle::io::HttpBodyChunkView const&) noexcept, unsigned long, hyle::io::OperationOptions)::_ZN4hyle2io6detail18http2_body_consumeENS_3mem12AllocatorRefERNS0_15Http2BodyReaderEPvPDoFNS_6StatusES6_RKNS0_17HttpBodyChunkViewEEmNS0_16OperationOptionsE.Frame*) [clone .actor] <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const",
+        25
+      ],
+      [
+        "nghttp2_map_find",
+        23
+      ],
+      [
+        "nghttp2_session_add_window_update",
+        21
+      ],
+      [
+        "nghttp2_session_get_stream",
+        19
+      ],
+      [
+        "session_inbound_frame_reset",
+        18
+      ],
+      [
+        "hyle::io::detail::(anonymous namespace)::flush_once(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::OperationOptions) [clone .isra.0] <- drive_until<hyle::io::(anonymous namespace)::send_submitted_fixed(send_submitted_fixed(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::detail::Http2StreamState&, std::span<const std::byte>, hyle::io::OperationOptions)::_ZN4hyle2io12_GLOBAL__N_120send_submitted_fixedENS_3mem12AllocatorRefERNS0_6detail17Http2SessionStateERNS4_16Http2StreamStateESt4spanIKSt4byteLm18446744073709551615EENS0_16OperationOptionsE.Frame*)::<lambda()> > <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const <- std::__n4861::coroutine_handle<hyle::sched::Task<hyle::Status>::promise_type>::resume() const",
+        16
+      ],
+      [
+        "nghttp2_pq_top",
+        16
+      ],
+      [
+        "hyle::io::detail::(anonymous namespace)::on_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)",
+        16
+      ],
+      [
+        "nghttp2_is_fatal",
+        11
+      ],
+      [
+        "hyle::container::FlatHashMap<int, hyle::io::detail::Http2StreamState*, hyle::container::Hash<int, void>, std::equal_to<void>, hyle::mem::AllocatorRef>::Entry* hyle::container::FlatHashMap<int, hyle::io::detail::Http2StreamState*, hyle::container::Hash<int, void>, std::equal_to<void>, hyle::mem::AllocatorRef>::find_slot_prehashed<int>(int const&, unsigned long) <- nghttp2_session_mem_recv2",
+        11
+      ]
+    ],
+    "limitation": "Leaf PCs and in-range consumer frames independently symbolized from recorded MMAP addresses and matching ELF. Return addresses adjusted by minus1. Stop at first unmapped/bogus frame. Foundation/system binaries were not rebuilt with frame pointers; mapped frames may also be incomplete or misleading. Partial chains are diagnostic clues, not exact inclusive percentages or a decomposition of the formal latency gap."
+  },
+  "peer": {
+    "samples": 2016,
+    "samples_with_valid_consumer_frame": 1984,
+    "samples_with_invalid_suffix": 685,
+    "top_leaf_symbols": [
+      [
+        "__memcpy_avx_unaligned_erms",
+        445
+      ],
+      [
+        "__libc_send",
+        226
+      ],
+      [
+        "__libc_recv",
+        189
+      ],
+      [
+        "__memcmp_avx2_movbe",
+        188
+      ],
+      [
+        "__GI___pthread_disable_asynccancel",
+        118
+      ],
+      [
+        "nghttp2_session_mem_recv2",
+        86
+      ],
+      [
+        "__memset_avx2_unaligned_erms",
+        77
+      ],
+      [
+        "__GI___pthread_enable_asynccancel",
+        71
+      ],
+      [
+        "nghttp2_session_mem_send_internal",
+        45
+      ],
+      [
+        "nghttp2_map_find",
+        40
+      ],
+      [
+        "__GI___libc_free",
+        27
+      ],
+      [
+        "(anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)",
+        24
+      ],
+      [
+        "(anonymous namespace)::run_raw((anonymous namespace)::Workload const&)",
+        23
+      ],
+      [
+        "session_inbound_frame_reset",
+        19
+      ],
+      [
+        "(anonymous namespace)::raw_read((anonymous namespace)::RawEndpoint&, (anonymous namespace)::RawWire&, bool&)",
+        18
+      ],
+      [
+        "(anonymous namespace)::raw_consume_readable((anonymous namespace)::RawEndpoint&, bool&)",
+        17
+      ],
+      [
+        "nghttp2_session_get_stream",
+        17
+      ],
+      [
+        "__GI___libc_malloc",
+        16
+      ],
+      [
+        "nghttp2_pq_top",
+        13
+      ],
+      [
+        "nghttp2_outbound_item_free",
+        12
+      ],
+      [
+        "??",
+        11
+      ],
+      [
+        "nghttp2_session_is_my_stream_id",
+        10
+      ],
+      [
+        "std::vector<unsigned char, std::allocator<unsigned char> >::size() const",
+        10
+      ],
+      [
+        "nghttp2_session_want_read",
+        9
+      ],
+      [
+        "raw_advance",
+        9
+      ]
+    ],
+    "top_partial_consumer_chains": [
+      [
+        "raw_write <- std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        335
+      ],
+      [
+        "recv <- (anonymous namespace)::run_raw((anonymous namespace)::Workload const&) <- std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        259
+      ],
+      [
+        "nghttp2_session_pack_data",
+        245
+      ],
+      [
+        "(anonymous namespace)::run_raw((anonymous namespace)::Workload const&) <- std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        228
+      ],
+      [
+        "nghttp2_session_mem_recv2",
+        209
+      ],
+      [
+        "std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        133
+      ],
+      [
+        "nghttp2_session_mem_send_internal <- default_free",
+        40
+      ],
+      [
+        "nghttp2_session_mem_recv2 <- (anonymous namespace)::run_raw((anonymous namespace)::Workload const&) <- std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        38
+      ],
+      [
+        "(anonymous namespace)::raw_consume_readable((anonymous namespace)::RawEndpoint&, bool&) <- (anonymous namespace)::run_raw((anonymous namespace)::Workload const&) <- std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        24
+      ],
+      [
+        "nghttp2_map_find",
+        20
+      ],
+      [
+        "session_inbound_frame_reset",
+        19
+      ],
+      [
+        "session_after_frame_sent2 <- default_free",
+        17
+      ],
+      [
+        "nghttp2_session_add_window_update",
+        17
+      ],
+      [
+        "(anonymous namespace)::raw_read((anonymous namespace)::RawEndpoint&, (anonymous namespace)::RawWire&, bool&) <- (anonymous namespace)::run_raw((anonymous namespace)::Workload const&) <- std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        15
+      ],
+      [
+        "(anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)",
+        14
+      ],
+      [
+        "nghttp2_pq_top",
+        13
+      ],
+      [
+        "nghttp2_outbound_item_free <- default_free",
+        11
+      ],
+      [
+        "(anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*) <- nghttp2_session_mem_recv2",
+        10
+      ],
+      [
+        "raw_advance <- std::thread::_State_impl<std::thread::_Invoker<std::tuple<(anonymous namespace)::RawHarness::RawHarness()::{lambda()#1}> > >::_M_run()",
+        10
+      ],
+      [
+        "std::vector<unsigned char, std::allocator<unsigned char> >::size() const <- nghttp2_session_mem_recv2",
+        9
+      ]
+    ],
+    "limitation": "Leaf PCs and in-range consumer frames independently symbolized from recorded MMAP addresses and matching ELF. Return addresses adjusted by minus1. Stop at first unmapped/bogus frame. Foundation/system binaries were not rebuilt with frame pointers; mapped frames may also be incomplete or misleading. Partial chains are diagnostic clues, not exact inclusive percentages or a decomposition of the formal latency gap."
+  },
+  "method": "Separate software sampling,4000 complete holdout episodes per route, matching current send/recv fixture. Fresh HTTP2/consumer TUs with frame pointers, cached foundation unchanged. 1997Hz cpu-clock:u, no hardware PMU or formal timing; all payload/protocol/cleanup oracles passed. Profiling all process threads includes startup and inactive harness overhead.",
+  "conclusion": "Frame-pointer recording recovered some usable source callchains without installing/rebuilding profiler tooling. They implicate ordinary flush/receive/body-consume paths as next diagnostic locations; they do not establish the root cause or a scheduler percentage. Product HTTP2 unchanged, stage3 formal residual still unresolved. Do not rank total sample counts or sum inclusive nodes.",
+  "tool_limit": "Header inspection reports Invalid HEADER_EVENT_DESC and event description unavailable. Event samples/MMAP records decode; selected leaf/caller PCs were resolved independently with matching image and addr2line. Unknown/invalid suffixes are retained and excluded after their first invalid frame; mapped pointers can still be misleading when cached frames omit FP. No complete-stack claim."
+}

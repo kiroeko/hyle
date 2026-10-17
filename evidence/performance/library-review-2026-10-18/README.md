@@ -4,8 +4,9 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-**仍未解决**：HTTP2大报文背压的当前慢点；CPU causal mask、CPU/Vulkan Sink与wide fallback、Apple F32/显式mask等空间项；
-CPU Hadamard冷矩阵；queue等旧小输的当前同责重测。已确认的源码缺口与已实测输项分列，不能据首轮扫描称所有shape已穷尽。
+**仍未解决**：HTTP2大报文背压的当前慢点；CPU Sink、混合旧ggml路线F32 math、CPU causal mask及Apple F32/显式mask等空间项；
+其余queue政策和旧小输仍缺当前同责数据。Vulkan wide/Sink分块与CPU Hadamard冷矩阵已修，bounded queue当前未复现输项。
+已确认的源码缺口与已实测输项分列，不能据64个factor扫描称所有shape已穷尽。
 
 ## 当前源码明确的问题
 
@@ -28,6 +29,8 @@ CPU Hadamard冷矩阵；queue等旧小输的当前同责重测。已确认的源
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 仅非空、无显式mask的F16/BF16适用域强制既有融合；4项回归通过，1K F16额外MLX峰值约12→2 MiB。F32等仍待补 |
 | HTTP2大body背压holdout | 对照peer原先反复扫描已退休response pairs；修正公平性后首轮4进程中Hyle慢5.59–8.27%，后续存在明显位置/绝对漂移 | peer冗余工作已去；两种未证收益的产品候选已撤回，当前仍未解决；细节及执行策略差异见下 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
+| Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
+| CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
 
 原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
 这条分支已因实际Half累加问题替换，不能仅凭主kernel融合推断整个调用空间或精度。
@@ -442,10 +445,10 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 |---|---|---|
 | CPU ggml / Vulkan Concat | 已改平衡树；CPU owned payload126→20 MiB，Vulkan真实gallocr容量11.25→7.75 MiB | 定向测试与唯一代表形状完成，见下；未测完整引擎或所有shape |
 | CPU / Vulkan ordinary causal SDPA | Vulkan已有fused域的内部mask已消除；CPU仍直接借冷Half Q×KV常量 | CPU现boxed字段会禁tiled/split-KV且改变F16中间累加，未贸然默认切换；Vulkan实测边界见下 |
-| CPU / Vulkan Sink与Vulkan wide fallback | scores/probabilities仍带H×Q×KV；caller原mask是必须输入，额外head维不是 | 保持F32数学与单节点边界，先明确allocator生命周期再分块，不能只拆图而保留全部块 |
+| CPU Sink与混合旧pin F32 math | 这些分支仍物化H×Q×KV scores/probabilities；CPU-only新pin普通F32/F16/BF16已走flash，不混入此项 | CPU手写arena保留全部中间量，简单分块无益；需复用官方gallocr及既有可恢复OOM补丁，冷reserve并保留kPrepared。Vulkan同项已修，见下 |
 | Apple ordinary SDPA | 无显式mask、非空、F16/BF16 D192/256 prefill已融合；其余域仍保留原路径 | F32受实际线程组资源限制，不能直接force；显式mask语义保留，D512仍在fused域外，见下 |
-| CPU Hadamard冷常量 | 仍准备W² host矩阵，4096为64 MiB；原生FWHT本身已为O(WlogW)，但现API仍要求矩阵 | [源码复核](cpu-hadamard/source-feasibility.json)确认需要原生unary/薄bridge才能安全省常量；不以小dummy/null伪造矩阵storage，不盲移GPU两级图 |
-| FlatHash近阈值rolling churn / Queue政策 | 已实证近满rolling keys造成频繁全表重建，增长策略已修；queue容量、空扫与重试合同尚未同责核齐 | map计数见下；queue目前不判输赢，不以membership读取代替安全erase/reclaim |
+| CPU Hadamard冷常量 | W²冷矩阵已由原生unary桥移除 | [前置源码复核](cpu-hadamard/source-feasibility.json)的API缺口已补；实际两pin/baseline/AVX2结果见下，不以dummy/null伪造矩阵storage |
+| FlatHash近阈值rolling churn / Queue政策 | map增长策略已修；bounded queue已完成容量/重试/完成合同对齐，其余政策不相同 | bounded 4P/4C冷trace四进程未复现Hyle更慢；A/A漂移仍明显，不能外推其它queue或warm吞吐 |
 
 - Core/Error/Obs/Math/Time/TimerQueue/Platform/Thread/FS/Process/Util：查现有证据与机制；
   没有确认新的当前同责输项。许多冷查询只有结构依据，timer主要覆盖64项生命周期。
@@ -579,6 +582,14 @@ Hyle原有1032次try-read、其中709次WouldBlock。两个小候选分别去重
 [stage1摘要](http2/stage1-summary.json)/[raw](http2/stage1-raw.zip)及[stage2摘要](http2/stage2-summary.json)/[raw](http2/stage2-raw.zip)
 保存全部epochs、候选、失败、计数与资源边界；只编相关TU和锁定nghttp2静态库，未全量构建Hyle。
 
+进一步把peer的`read/write`改为与TcpStream一致的`recv(MSG_DONTWAIT)`、`send(MSG_DONTWAIT|MSG_NOSIGNAL)`（平台支持时）。
+同一fresh HTTP2 object、固定四进程交错新旧fixture：旧holdout两点Hyle191.163/190.895、peer180.816/182.851 μs；
+对齐后两点Hyle200.330/190.287、peer174.050/168.827 μs，仍慢15.10%/12.71%，小body仍更快。
+Hyle控制也有漂移，不将其当作稳定普遍比例或声称旧差额已解释。[stage3摘要](http2/stage3-summary.json)/[raw](http2/stage3-raw.zip)保留所有epoch及顺序。
+软件采样先因现有perf缺DWARF unwinder只能取得leaf，后用frame pointer取到部分收发/consume父调用；
+缓存foundation未重编FP，Hyle2578样本有1662个无效栈尾，peer2016样本有685个，均截断保留。
+这是定位线索，不能累加inclusive占比、用样本总量排名或将差额归因为fiber；[stage4摘要](http2/stage4-summary.json)/[raw](http2/stage4-raw.zip)记录限制，产品未改。
+
 本批源码/日志/原始数据归档后，先写`test.ps1`再按精确路径、大小及hash清理可重建产物：
 Windows Concat27文件197362252 B、Air普通SDPA8文件36649824 B；未删除源码、日志、数据或原有SDK/cache。
 
@@ -595,6 +606,13 @@ bounded Hyle/rigtorp的usable容量均1024，可按同一冷episode或同一warm
 Sharded的P×1024总容量与单shard满策略，不同于moody初始1024却可扩容/implicit producer的合同；旧倍率不继承。
 策略对齐后，空扫、重试及回收本身仍可能是真成本，不能拿算法不同自动豁免小输。
 [摘要](queue-contract/summary.json)和[源码/命令包](queue-contract/raw.zip)保留实际peer header hash、编译与smoke范围。
+
+随后用真实rigtorp固定ring核同一4P/4C、usable1024、200000个uint64消息的冷episode，包含分配/8线程创建、传输、join、核验和销毁。
+Windows13900K固定8个实际高性能物理核各一个逻辑线程（mask0x5555），AB/BA四进程各11epoch×2episode；
+Hyle/peer分别78.991/85.413、67.395/81.766、60.699/76.845、70.413/70.712 ns/传递item（push+pop），当前未复现Hyle更慢。
+同路径Hyle/Hyle A/A为73.294/64.492，首臂MAPE12.2%；最后AB差仅0.424%，不声称总体胜出、等价或warm操作排名。
+最短正式epoch23.45 ms、QPC100 ns，漂移不是仪器分辨率。实际线程补探针另进程峰值12（8 workers+caller之外3个未归因），不写成恰好9线程。
+[摘要](queue-bounded/summary.json)/[原始包](queue-bounded/raw.zip)保留全部epochs、失败的旧Toolhelp观察及后续live-handle观察；未改queue实现。
 
 ## Vulkan普通causal SDPA：因果条件不再占矩阵
 
@@ -613,3 +631,33 @@ native gallocr容量6402176→0 B，caller四端口requested及native容量均52
 [摘要](causal-mask/summary.json)及[源码/原始包](causal-mask/source-evidence.zip)保留既有shader字段依据、CPU defer原因、
 source/link身份及全部定向结果。CPU暂不切boxed，以免为去mask关闭现有tiled prefill/split-KV；该域仍待补。
 归档后按新的`test.ps1`精确清理本批5个可重建exe/obj，共90630052 B；原SDK/shader/source/log不动。
+
+## Vulkan math attention：先对齐精度，再复用块空间
+
+wide与Sink的QK/PV补显式F32 source，Q改为F32连续布局，避免原生非连续Q隐式转Half；普通融合/paged分支不变。
+原版三个F32数值测试失败；修正后的未分块baseline与候选均通过原预算，未拿原版低精度作空间/速度对照。
+大型math沿Q分块、完整KV只转换一次，每块保留mask原行与per-head sinks；输出用平衡concat保持多节点/发布中间值的原生依赖。
+复制代价为O(output·log块数)，不是零拷贝；8 MiB阈值与64 MiB选行目标不是总VRAM上限，设备offset对齐仍须满足。
+初版小KV/大输出反增空间，故仅在`(Q-blockRows)*KV > 2*Q*Dout`时分块，原小域四个对照容量均不增加，负点保留。
+
+4项Region回归通过：F32/F16、B2/GQA、MLA不同输出depth、正零负scale、mask/sinks、跨块尾块、两次真实重绑和下游Neg。
+唯一空间样本F32 Sink B1/H64/KV头1/D512、Q513/KV2049，同精度gallocr340527360→176687104 B（−48.1%）；
+caller完整端口147077380 B另计。19个QK节点的地址union47724544 B证明复用，不能当作总device峰值。
+无吞吐、公共generic Graph/default roster或全SDK重建结论；[摘要](vulkan-math-attention/summary.json)/[源码原始包](vulkan-math-attention/source-evidence.zip)保留原数值失败与初版空间负点。
+
+## CPU Hadamard：去掉冷矩阵，保留原生FWHT
+
+各pin原生FWHT仅将输入参数/元数据locals显式化，缩放、SIMD蝶形和行划分不变；真实unary CUSTOM仅接一个输入。
+callback属于所选baseline/AVX2 program，私有ABI与入口同步升为2；没有W²伪存储或新增数学内核。
+旧matrix hint及其`use_ref`矩阵参考回退保留，unary在两种reference设置下均执行FWHT。
+CPU-only ffa4与混合456两个pin、各baseline/AVX2的4项测试均通过（共16次），覆盖三dtype、W1/4/128/4096、forward/inverse、两slot和重绑；
+真实DLL导入/导出成功，故意加载旧v1 module正确返回ABI错误；依赖tree/license单项检查通过。
+
+W4096、rows2、两独立进程仅测public prepare的successful unaligned global new请求：总量67110619→1692 B，最大67108903→368 B。
+旧矩阵payload64 MiB，额外39 B为MSVC对齐请求；两臂完整8192输出误差均0。
+CPU program DLL均在计数前预热，未声称首次加载成本、全部allocator流量、瞬时RSS峰值或热吞吐改善。
+只重编每pin的ops.cpp baseline/AVX2及相关host TU，复用其它native对象；未configure、复制SDK、全量构建或验证非Windows。
+[摘要](cpu-hadamard/summary.json)/[源码原始包](cpu-hadamard/source-results.zip)保留全部命令、link maps、初次计数修正及真实shared边界结果。
+
+本批按先写`test.ps1`、核精确路径/size/SHA再删除的顺序，清理Windows Vulkan/queue8文件93754784 B、WSL HTTP2首批8文件5162160 B；
+CPU Hadamard约26.5 MB产物仍供下一CPU Sink闭包复用，原SDK/cache、源码与日志数据保留。
