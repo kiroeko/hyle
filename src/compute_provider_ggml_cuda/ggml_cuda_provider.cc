@@ -822,6 +822,24 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
               Status::Unimplemented("ggml CUDA Hadamard width is outside the "
                                     "admitted original backend domain"));
         auto &matrix = hadamards[node_index];
+        if (width > 512) {
+          const auto factors = internal::hadamard_factors(width);
+          matrix.resize(factors.constant_elements());
+          const auto fill = [&](std::int64_t n, std::size_t offset) {
+            const auto scale = 1.0F / std::sqrt(static_cast<float>(n));
+            for (std::int64_t row = 0; row < n; ++row)
+              for (std::int64_t column = 0; column < n; ++column)
+                matrix[offset + static_cast<std::size_t>(row * n + column)] =
+                    std::popcount(static_cast<std::uint64_t>(row & column)) % 2
+                        ? -scale
+                        : scale;
+          };
+          fill(factors.low, 0);
+          if (factors.high != factors.low)
+            fill(factors.high,
+                 static_cast<std::size_t>(factors.low * factors.low));
+          continue;
+        }
         matrix.resize(static_cast<std::size_t>(width * width));
         const auto scale = 1.0F / std::sqrt(static_cast<float>(width));
         for (std::int64_t row = 0; row < width; ++row)

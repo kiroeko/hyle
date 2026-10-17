@@ -1,0 +1,64 @@
+{
+  "change": "Only Hadamard width1024/2048/4096 is factored as normalized H64 then H(width/64), with swap01+cont between and after. Natural Sylvester output ordering. W<=512 old path unchanged. Both new mulmat nodes request F32 accumulation and F32 src1. Real small matrices remain allocated for native fallback/fusion/debug consumers.",
+  "constant_layout": "Program vector contains H64 then Hhigh when high16/32. high64 reuses the same H64 host block and device tensor.",
+  "mathematics": "index=low+64*high. Product sign=(-1)^(popcount(outLow&inLow)+popcount(outHigh&inHigh)); normalization1/sqrt64 * 1/sqrthigh = 1/sqrtW. No bit reversal or additional normalization.",
+  "native_dispatch": "Pinned FWHT accepts same-shape contiguous float src/dst with ne0 64/128/256/512, flattens remaining axes into rows. First stage64 eligible; second16/32 uses dense fallback, second64 eligible. No actual individual-kernel profiler trace captured. Native graph warmup completion observed both sides before timed steady submission.",
+  "tests": {
+    "candidate": "3/3 passed",
+    "baseline": "2/3 passed; F32 W2048 fails unchanged2e-6 budget, errors0.0003871342115..0.0004128030132. Original failures preserved in baseline-tests.stdout.txt.",
+    "F32": "W1024/2048/4096; [2,2,W] multiple leading axes; forward/inverse; two payloads and changed input/output addresses; every output against independent FP64 full popcount signed-matrix oracle; unchanged2e-6 absolute budget.",
+    "narrow_ports": "W2048 F16/BF16; same complete FP64 oracle over actual encoded inputs and existing half_test::expect_near: rounded-output relative0.001(F16)/0.008(BF16)+smallest positive subnormal. No new tolerance floor.",
+    "Graph": "Actual current static Graph compiles Hadamard4096->Add as one native region and checks full output against FP64 oracle+nonzero bias; baseline and candidate both pass.",
+    "limitations": "Test inputs are fixed bounded dyadic payloads, not a universal numeric proof for arbitrary nonfinite/large-range inputs. Factoring changes F32 summation order and does not promise bitwise equivalence generally."
+  },
+  "space": {
+    "method": "Actual Hyle Direct create_invocation. Probe-only provider snapshot sums dense constant upload sizes and actually allocated owned ggml backend buffer sizes; reads Program hadamards vector size/capacity. Not total host RSS, VRAM peak, native pool or driver memory.",
+    "width": 4096,
+    "rows": 4,
+    "baseline": {
+      "host_vector_size_bytes": 67108864,
+      "host_vector_capacity_bytes": 67108864,
+      "device_dense_constants_bytes": 67108864,
+      "owned_ggml_private_bytes": 67108864,
+      "caller_ports_bytes": 131072,
+      "tensor_count": 5,
+      "graph_nodes": 3
+    },
+    "candidate": {
+      "host_vector_size_bytes": 16384,
+      "host_vector_capacity_bytes": 16384,
+      "device_dense_constants_bytes": 16384,
+      "owned_ggml_private_bytes": 212992,
+      "caller_ports_bytes": 131072,
+      "tensor_count": 11,
+      "graph_nodes": 9
+    },
+    "tradeoff": "New intermediate activation buffers scale with rows*width; three F32 activation buffers here plus16KiB matrix. No universal total-scratch reduction claim at arbitrary row counts. Large W^2 constants are removed."
+  },
+  "latency": {
+    "pairs": [
+      {
+        "baseline_ns": 225332.03125,
+        "candidate_ns": 14665.625,
+        "baseline_over_candidate": 15.364638823780098
+      },
+      {
+        "baseline_ns": 193200,
+        "candidate_ns": 14569.53125,
+        "baseline_over_candidate": 13.260550163547643
+      }
+    ],
+    "method": "Exactly two independent process pairs, AB then BA, fixed logicalCPU4. Each process: cold prepare/invocation outside timer, complete FP64 oracle before and after, 8warmups then128 identical public Hyle Direct submit+Completion::wait iterations. No per-iteration FP64 host oracle. Both sides maxAbs0 on this prechosen W4096 dyadic family; old/new factor coefficients1/64 vs1/8*1/8 and all inputs are exactly representable under TF32 too. W2048 failed precision case excluded from performance comparison.",
+    "qpc_frequency_hz": 10000000,
+    "tick_ns": 100,
+    "all_samples_retained": true,
+    "confidence_interval": null,
+    "not_claimed": [
+      "Engine tokens/s",
+      "Other widths/dtypes/row counts",
+      "Full benchmark matrix or noise-confidence analysis"
+    ]
+  },
+  "validation_closure": "Fresh baseline/candidate provider and full tensor host TUs, current frozen region and consumer; same current build-compute-v2-dev static Graph/foundation libraries; existing pinned native ggml archives plus strict host overlay linked before archive. Scratch-only three absent IQ1 mappings explicitly decline, product maps unchanged. No SDK download/copy, CMake configure/build/staging or CUDA kernel compile.",
+  "initial_build_note": "Initial scratch consumer compile needed explicit lambda ->Status return; product TUs compiled successfully. Fixed before runtime checks. No numeric budget changed."
+}

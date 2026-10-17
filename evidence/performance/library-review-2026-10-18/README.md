@@ -13,7 +13,7 @@
 | CUDA attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原BF16/F32物化scores，F16物化causal mask。B1/H8/Q=KV8192时，单个F32 scores为2 GiB | BF16适用域已融合；ggml大型独立SDPA已按Q分块、复用完整KV与临时空间。实际8K F32显式private从8368降至48.5 MiB，见下 |
 | CUDA SinkAttention的按头展开平方scratch | 同provider的独立Sink原来仍分配完整scores/probabilities；H64、Q=KV2048时两块各1 GiB，属于schema允许的prefill | 已复用Q分块并使Graph走单Compute步骤。1025×1041实际private从651.17降至27.57 MiB；调用方mask仍为O(Q·KV)，见下 |
 | CUDA variadic Concat重复复制前缀 | [lowering](../../../src/compute_provider_ggml_cuda/tensor_program.cc) 线性链保留每个累积前缀；64个各1 MiB输入会额外保留2016 MiB前缀，最终输出仅64 MiB | 已改为原生平衡树，保持Graph依赖。同输入图的private分配请求2016→320 MiB；消除二次项，不宣称一次写完的最优线性算法 |
-| CUDA Hadamard平方矩阵 | [准备与lowering](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 保存并上传W²矩阵；W4096时主机/设备各64 MiB。64–512宽度即使可走FWHT仍创建矩阵 | 尚未改。原生融合可能绕过FWHT而读取矩阵，不能直接删payload；4096也不在当前FWHT支持域，需明确执行路线后再优化 |
+| CUDA Hadamard平方矩阵 | [准备与lowering](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原来保存并上传W²矩阵；W4096时主机/设备各64 MiB | 1024/2048/4096已分解为两个小变换；4096常量两侧各降至16 KiB，实际private208 KiB，两对同工延迟13.26–15.36×。≤512保留原矩阵及执行路线，融合仍可能读取它 |
 | CUDA声明F32但实际缩精度 | ggml默认cuBLAS handle启用TF32；F16 flash的PV为Half累加且不读PREC_F32 | 显式F32源请求局部切DEFAULT_MATH并恢复；ggml F16改F32 math再转最终端口。未把旧低精度速度作同合同输项 |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
 | Linux watch重复close-write唤醒 | [inotify mask](../../../src/io_watch/watch_linux.cc) 同时订阅IN_MODIFY和IN_CLOSE_WRITE；公开接口只提供内容变化提示，未承诺writer-close。即使最终忽略sibling名称，额外通知也会唤醒owner | 已去冗余close订阅；实际减少约1.97次上下文切换/发布。16项watch测试通过，剩余小负样本未声称全部解决 |
@@ -170,6 +170,38 @@ I32仍走原生CPY而非DUP，不经F32。没有拆Graph region或引入额外�
 [摘要](concat/summary.json)及[原始包](concat/raw-results.zip)保留loader落点、源码、命令和旧Graph链接失败。
 定向helper仅将旧native缓存缺失的3个IQ1映射显式拒绝，产品映射不变；Direct与Graph使用不同基础缓存闭包，
 provider/region冻结版本早于本批Sink改动且不含Sink输入，不能称全HEAD/default roster或IQ1验证。没有SDK或CUDA全量重建。
+
+### Hadamard：分解大变换，保留合法的小矩阵
+
+只修改W1024/2048/4096：自然索引为`low+64*high`，先做归一化H64，交换轴并cont后做
+H(W/64)，再交换轴并cont恢复原顺序。符号popcount及两个归一化尺度的乘积等于原Sylvester H(W)，
+无bit reversal、无额外全局scale；中间F32、末端才转端口dtype。两次mulmat显式F32累加与F32来源模式，
+high16/32可用原生dense fallback，high64复用同一H64矩阵；原FWHT仅按源码域选择，未采集独立kernel profiler trace。
+保留真实小矩阵供原生fallback/fusion/debug读取，≤512路径原字节不改，没有新vendor、op或用户选项。
+
+新增[两项回归](../../../tests/compute_provider_ggml_cuda/hadamard_test.cc)验证大宽度、多个leading axes、
+forward/inverse、全端口重绑及F16/BF16，独立FP64完整popcount公式逐元素核对；
+F32沿用2e-6、窄端口沿用既有rounded-output预算。另一个小consumer实际验证4096→Add为一个Graph region。
+候选3/3通过，基线2/3通过：旧2048 F32误差约3.87e-4–4.13e-4，失败与原预算保留，未放宽。
+此组有限输入不是全数域保证；两阶段舍入一般不与旧dense逐位等价。
+
+实际Direct的W4096、4行、F32同输入：
+
+| 统计 | 原实现 | 修后 |
+|---|---:|---:|
+| host常量vector size/capacity | 64 MiB | 16 KiB |
+| 实际device常量上传 | 64 MiB | 16 KiB |
+| 实际owned ggml private，含常量 | 64 MiB | 208 KiB |
+| AB submit+wait μs/call | 225.332 | 14.666 |
+| BA submit+wait μs/call | 193.200 | 14.570 |
+
+caller端口131072 B另计；新private含3块随rows·W增长的F32中间张量，不能声称任意row数的总scratch都下降。
+仅两对独立进程、CPU4、8warm后128次相同公共Direct submit＋Completion::wait，冷prepare/分配在计时外。
+固定小整数dyadic输入、4096两侧系数均可被TF32精确表示，计时前后完整FP64 oracle误差均0，
+没有把2048旧精度失败当作同工速度比较。QPC10 MHz，候选聚合1.865–1.877 ms；没有CI或引擎tokens/s外推。
+[摘要](hadamard/summary.json)和[源码/全部原始包](hadamard/source-evidence.zip)保存冷计数、全部4进程、失败日志与来源hash。
+复用同pin原生库及strict host overlay、现成静态Graph/foundation，当前provider/tensor/region与consumer直接编译；
+缺3个IQ1映射仅在scratch显式拒绝，不称全SDK/IQ1验证，无CUDA内核全量构建或SDK复制。
 
 ## 有效历史小输，当前版本待复测
 

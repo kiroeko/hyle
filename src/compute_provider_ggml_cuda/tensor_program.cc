@@ -757,6 +757,46 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
         rope->layout == RopeLayout::kInterleaved);
   } else if (node.operation.get_if<Hadamard>()) {
     const auto width = columns(output);
+    if (width > 512) {
+      const auto factors = hadamard_factors(width);
+      if (hadamard.size() != factors.constant_elements())
+        return {};
+      auto *low =
+          ggml_new_tensor_2d(context, GGML_TYPE_F32, factors.low, factors.low);
+      const auto low_elements =
+          static_cast<std::size_t>(factors.low * factors.low);
+      dense_constants.push_back(
+          {low, hadamard.data(), low_elements * sizeof(float)});
+      auto *high = low;
+      if (factors.high != factors.low) {
+        high = ggml_new_tensor_2d(context, GGML_TYPE_F32, factors.high,
+                                  factors.high);
+        dense_constants.push_back(
+            {high, hadamard.data() + low_elements,
+             (hadamard.size() - low_elements) * sizeof(float)});
+      }
+      // The low six bits stay contiguous. Transform each factor in natural
+      // Sylvester order, normalizing once per factor, then restore low-fast
+      // order.
+      auto *source = ggml_reshape_3d(context, as_float(context, input(0)),
+                                     factors.low, factors.high, rows(output));
+      auto *first = ggml_mul_mat(context, low, source);
+      ggml_mul_mat_set_hint(first, GGML_HINT_SRC0_IS_HADAMARD);
+      if (!ggml_prec_set_acc(first, GGML_PREC_F32) ||
+          !ggml_prec_set_src(first, GGML_PREC_F32, 1))
+        return {};
+      auto *swapped =
+          ggml_cont(context, ggml_permute(context, first, 1, 0, 2, 3));
+      auto *second = ggml_mul_mat(context, high, swapped);
+      ggml_mul_mat_set_hint(second, GGML_HINT_SRC0_IS_HADAMARD);
+      if (!ggml_prec_set_acc(second, GGML_PREC_F32) ||
+          !ggml_prec_set_src(second, GGML_PREC_F32, 1))
+        return {};
+      // Keep real small matrices even when FWHT is selected: native fused
+      // matmul fallbacks and debug validation may still read their payload.
+      result = ggml_cont(context, ggml_permute(context, second, 1, 0, 2, 3));
+      return {as_output(context, result, output)};
+    }
     if (hadamard.size() != static_cast<std::size_t>(width * width))
       return {};
     auto *transform = ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
