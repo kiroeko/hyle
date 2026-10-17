@@ -70,6 +70,30 @@ KV cache 或所有 GPU buffer 的总内存上限。Apple 的
 已绑定原 tar、顺序 patch、最终 header/JIT/host SHA 和数组算术：Q 为 16,896 字节、复用的 KV
 区为 12,288 字节。仅此源码账不能证明编译后 pipeline 的实际总量或倍增原因，原设备 FAIL 保留。
 
+### 普通推理与成熟实现的源码对照
+
+[Qwen3.5-2B 官方配置](https://huggingface.co/Qwen/Qwen3.5-2B/raw/main/config.json)明确
+head_dim=256、Q heads=8、KV heads=2，与原 fixture 的几何一致；每四层包含一层 full attention。
+Q1/Q17 混合 decode/prefill 和 KV 跨页增长属于普通推理旅程，不能通过降低 D256 或删除 prefill
+来签支持。模型官方类型为 BF16，本次最先失败的是 F16 回归，不能把 fixture 说成整模型实测。
+
+| 来源 | 已核事实与对本轮的约束 |
+|---|---|
+| [llama.cpp Metal 固定 peer](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-metal/ggml-metal-ops.cpp#L3610-L3650) | D256 属于支持形状；小 query batch 有 vec 路径，调优分块超 device 上限时退回 baseline Q=1；不能假定任意 runtime validation fatal 都会被捕获回退 |
+| [vLLM Metal tile](https://github.com/vllm-project/vllm-metal/blob/9e0e1ea38fea3f92e1f16dae215613bfb1f728e8/vllm_metal/metal/paged_attention_kernels.h#L22-L76) | D256 使用 BQ16/KV16/64 threads，源码名义 shared 为25,344字节；修改内部 tile，模型维度不变 |
+| [vLLM Metal 准入](https://github.com/vllm-project/vllm-metal/blob/9e0e1ea38fea3f92e1f16dae215613bfb1f728e8/vllm_metal/metal/paged_ops.cpp#L621-L640) | reducer 在编码前核实际 staticThreadgroupMemoryLength + dynamic bytes 与 device maxThreadgroupMemoryLength；该 guard 的具体作用域不能泛化成其所有 kernel 都有同一保护 |
+| [SGLang Metal](https://github.com/sgl-project/sglang/blob/80f40522cdc53a000577c57a9b0285c204e4c74b/python/sglang/srt/hardware_backend/mlx/kv_cache/attention_wrapper.py#L309-L340) | 实际调用 mx.fast.scaled_dot_product_attention，不能把其 CUDA FlashInfer 路径当成 Metal 路径 |
+| [锁定 MLX 标准 SDPA](https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/scaled_dot_product_attention.cpp) | 按 query/head/device 选择 vector、two-pass、full、head-split 或 unfused；小规模 D256 prefill 的标准 fallback 不等于 Hyle paged primitive 可直接套用的实现 |
+
+Hyle patched HylePagedAttention 直接进入 native dispatch，没有经过标准 SDPA 的 use_fallback。
+现有 MLX threadgroup 检查只查线程数，不能代替编译后 shared-memory 字节准入。下一有限设计
+应先查实际 pipeline 静态内存/动态绑定/设备限值，再审合法内部 tile 或成熟备用路线；保持外部
+D256、paged 表、active length、causal 与 lease 语义。若备用路线需要 gather K/V，额外 GPU
+复制、暂存和成本必须明确计入，不能伪装为原零复制路径。
+
+这些是源码机制与边界对照，不是三家在本 Air、同输入和同 Metal 验证层下的运行 PASS。
+29,184→58,368 仍须有限诊断证据解释，不得直接按名义字节除二或把验证层限制调大。
+
 ## 阶段与下一步准入
 
 SCOPED 本轮只运行文档/closure selector 与维护检查，读取原源码、缓存元数据、官方文档和
