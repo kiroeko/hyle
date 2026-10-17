@@ -1,0 +1,152 @@
+{
+  "result": "One raw-nghttp2 two-Hyle-fiber non-timed 4x256KiB full episode passes. Resume/yield and complete wire totals match the separate stage5 Hyle episode. Compared with stage2, successful immediate call counts match, receive bytes differ by9B, and194 more empty immediate IO attempts occur. This is supplementary execution-model evidence, not a pure scheduler cost measurement and not a new ranking.",
+  "scope": {
+    "runtime_invocations": 1,
+    "runtime_exit": 0,
+    "timed": false,
+    "workload": "4 streams, 256KiB request and 256KiB response per stream, paired responses completed in reverse order",
+    "command": [
+      "timeout",
+      "--kill-after=2s",
+      "15s",
+      "taskset",
+      "-c",
+      "2",
+      "/root/hyle-scratch/http2-current-20261018/raw-fiber/consumer"
+    ],
+    "compiled": "Only scratch main/probe TUs; cached HTTP/HTTP2/feature/nanobench/pico/nghttp2/foundation reused.",
+    "product": "No product or formal benchmark source changed. No AB/AA/timing/profiler/foundation build/SDK download."
+  },
+  "checks": {
+    "completed": 4,
+    "passed": true,
+    "descriptors_closed": true,
+    "overflow": 0,
+    "body_validation_each_direction": 4,
+    "body_bytes_each_direction": 1048576,
+    "request_stream_ids": [
+      1,
+      3,
+      5,
+      7
+    ],
+    "response_submit_order": [
+      3,
+      1,
+      7,
+      5
+    ],
+    "client_completed_order": [
+      3,
+      1,
+      7,
+      5
+    ],
+    "sessions_destroyed": 2,
+    "sockets_closed": 2,
+    "client_to_server_bytes": 1050124,
+    "server_to_client_bytes": 1050027
+  },
+  "scheduling": {
+    "dispatches": 520,
+    "yields": 515,
+    "dispatches_by_endpoint": [
+      260,
+      260
+    ],
+    "current_workers": [
+      0
+    ],
+    "ordinary_owner": "-1 at entry and every before/after ordinary IO and adaptive-yield phase",
+    "dispatch_owner_tuples": [
+      {
+        "worker": 0,
+        "before": -1,
+        "after": -1,
+        "count": 518
+      },
+      {
+        "worker": 0,
+        "before": -1,
+        "after": 0,
+        "count": 1
+      },
+      {
+        "worker": 0,
+        "before": 0,
+        "after": -1,
+        "count": 1
+      }
+    ],
+    "owner_transitions": [
+      {
+        "sequence": 518,
+        "fiber": "0x24ec02400b0",
+        "worker": 0,
+        "owner_before": -1,
+        "owner_after": 0
+      },
+      {
+        "sequence": 520,
+        "fiber": "0x24ec02400b0",
+        "worker": 0,
+        "owner_before": 0,
+        "owner_after": -1
+      }
+    ],
+    "explanation": "spawn_task creates initially unowned fibers. Ordinary TCP awaitables current_waker/submit/suspend do not pin. The server tail Event::wait_for uses timed ConditionVariable temporary pin, observed -1->0 at dispatch518 and 0->-1 at dispatch520. Actual worker is0 throughout; no forced spawn_task_on.",
+    "phase_count": 1060,
+    "interposition": {
+      "original": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+      "executable": "/root/hyle-scratch/http2-current-20261018/raw-fiber/consumer",
+      "evidence": "readelf symbol export and runtime dladdr distinct original/executable images; fixed arrays written by the single worker, read after harness shutdown."
+    }
+  },
+  "current_counts": {
+    "recv_attempts": 1162,
+    "recv_would_block": 839,
+    "recv_ready": 323,
+    "recv_bytes": 2091981,
+    "send_attempts": 836,
+    "send_would_block": 322,
+    "send_ready": 514,
+    "send_bytes": 2092087,
+    "async_read": 1,
+    "async_write": 1,
+    "async_read_bytes": 8170,
+    "async_write_bytes": 8064,
+    "process_received": 324,
+    "nonempty_mem_send": 259,
+    "body_ack_calls": 264,
+    "body_ack_bytes": 2097152
+  },
+  "prior_hyle_comparison": {
+    "reference": "prior-counts.json and existing stage2/stage5 raw archives; separate non-timed episodes",
+    "extra_recv_eagain": 130,
+    "extra_send_eagain": 64,
+    "extra_empty_attempts": 194,
+    "consequence": "The split raw driver is not operation-for-operation the Hyle transport. The unchanged wire/dispatch counts do not permit subtracting latency or assigning the formal residual to scheduler/framework.",
+    "stage2_same": "323 successful immediate reads and514 writes; immediate send2092087B; one async read and one async write;264 body consumes/2097152B.",
+    "stage2_receive_distribution": "Current immediate recv2091981B versus stage2 Hyle2091990B: current is9B lower. Successful immediate read call count is the same, but byte distribution is not identical.",
+    "stage2_async_limit": "Current async read8170B and write8064B are recorded for this episode only. Stage2 did not record async byte totals, so byte equality with stage2 is not established.",
+    "stage5_same": "The separate stage5 Hyle episode records520 resumes/515 yields and full wire1050124B client-to-server/1050027B server-to-client, matching this episode. These full totals must not be combined with stage2 immediate counts to invent a single prior episode."
+  },
+  "retained_boundaries": [
+    "Original raw protocol callbacks, status/headers/payload oracle,16KiB stream+connection consumption, paired reverse response rules and send/recv flags retained.",
+    "Both endpoint drivers use the original HyleHarness one-worker IoContext and spawn_task; inactive persistent RawHarness also constructed as in the original benchmark.",
+    "RawWire owns128KiB per endpoint outside the64KiB fiber stacks, Episode and native userdata live through both joins; reserved4 stream slots prevent pointer relocation.",
+    "Server waits only after last pair first response was submitted, its body provider is done and the endpoint pending wire is empty. Client signals after final response payload validation.",
+    "Endpoint cleanup destroys native session then resets TcpStream on its worker before returning. TcpStream move assignment calls synchronous ::close on Linux, so post-join fcntl EBADF does not depend on later IoContext drain.",
+    "Independent read-only review found no definite protocol/completion/owner-lifetime bug. No additional runtime was requested or executed."
+  ],
+  "limits": [
+    "No durations or cost weights collected. Formal manual-loop peer remains the real comparator; its existing13-15% matched large-body loss is still unresolved.",
+    "Single episode with probe array writes/interposition perturbs scheduling; no fresh live thread/worker resource census and no universal runtime guarantee.",
+    "Driver is separately implemented from the Hyle protocol transport and has194 additional EAGAIN attempts; changes in syscall/codec/lifecycle work prevent pure scheduler attribution.",
+    "No claim that all yields are necessary, negligible, or account for any percentage. No cancellation/fairness/readiness/owner/completion responsibility removed.",
+    "Compiler emitted an explicit-default-Event aggregate initialization warning; exact stderr retained. No compile/link/consumer-run failure in this branch. Two post-run packaging attempts stopped on repository-parent/Windows text-decoding issues; corrected only pack.py, with no consumer rerun."
+  ],
+  "next": "Stop this diagnostic. If parent chooses further work, use these phase/IO-count boundaries to design an explicitly authorized attribution step rather than repeating noisy AB runs or replacing the formal peer.",
+  "identity": "identity.json,postrun-identity.json,commands.json,loader.stdout.txt,symbols.stdout.txt",
+  "cleanup": "cleanup-candidates.json: only3 new WSL object/executable files,1634936B; no deletion performed."
+}

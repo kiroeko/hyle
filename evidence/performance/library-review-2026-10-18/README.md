@@ -4,7 +4,8 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-**仍未解决**：HTTP2大报文背压的当前慢点；CPU causal mask、一般多节点arena及Apple尚未覆盖的fallback等空间项；
+**仍未解决**：HTTP2大报文背压的当前慢点；CPU私有paged prefill mask及Apple尚未覆盖的fallback等空间项；
+Apple大形状F32的既有精度失败也仍保留。普通CPU多节点已接入生命周期复用，普通causal冷mask已移除。
 其余queue政策和旧小输仍缺当前同责数据。CPU/Vulkan math attention、Apple受限长Q fallback与CPU Hadamard冷矩阵已修，bounded queue当前未复现输项。
 已确认的源码缺口与已实测输项分列，不能据64个factor扫描称所有shape已穷尽。
 
@@ -31,6 +32,8 @@
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
+| CPU普通多节点保留已消费payload | manual arena逐一保存中间值；64个1 MiB Neg串联保留63 MiB中间payload | 普通多节点复用既有gallocr，私有缓存观察路径保留；实测冷私有请求约63.94→2.94 MiB，见下 |
+| CPU普通causal SDPA冷mask | Program原来构造并长期保留Q×KV Half mask，普通prefill也会支付平方冷分配/填充 | HYCA隐式边界复用原生vector/tiled路径；Q1不设tag/全零mask，split策略保留。实测prepare少64 MiB payload，见下 |
 | Apple GPU长Q数学fallback | 原生unfused保留全Q scores/probabilities；逻辑分块也可能被Metal待完成command buffers同时保留 | 静态fallback域以原数学16行分块，默认设置实测额外MLX峰值80→58.81 MiB；64行版反增8 MiB的负点保留，未称覆盖全部fallback |
 
 原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
@@ -595,6 +598,12 @@ Hyle控制也有漂移，不将其当作稳定普遍比例或声称旧差额已�
 原payload/反序完成/cleanup全部通过；该事件计数排除“主要在无效yield自转”的猜测，不能量化时间或解决当前残差。
 [stage5摘要](http2/stage5-summary.json)/[raw](http2/stage5-raw.zip)保留全部dispatch/yield及初次编译失败；没有追加计时或产品改动。
 
+再将原生peer拆为两个`spawn_task` endpoint，仅跑一次非计时4×256 KiB episode，完整内容/反序完成/session销毁/socket关闭均通过。
+本次同样520次恢复/515次yield，完整wire字节与stage5相同；普通IO不自动pin，实测只在尾部Event等待时临时pin。
+与stage2旧Hyle计数相比，成功立即read/write次数同为323/514，但多130次read、64次write EAGAIN；不同轮的立即读取字节分布也有9 B差异。
+因此它尚非逐操作相同的driver，不能量化纯scheduler成本或解释前述正式样本的慢点；没有追加计时或修改产品。
+[stage6摘要](http2/stage6-summary.json)/[raw](http2/stage6-raw.zip)保留全部1060个phase和520个dispatch。
+
 本批源码/日志/原始数据归档后，先写`test.ps1`再按精确路径、大小及hash清理可重建产物：
 Windows Concat27文件197362252 B、Air普通SDPA8文件36649824 B；未删除源码、日志、数据或原有SDK/cache。
 
@@ -634,7 +643,7 @@ native gallocr容量6402176→0 B，caller四端口requested及native容量均52
 原版仅新增线性空间上界测试按预期失败并保留日志。NativeWork split-K、commands/descriptors、driver/pool仍另计，
 不推断零total scratch、整机峰值或吞吐无退化；本批没有计时或公共Graph/default roster全构建。
 [摘要](causal-mask/summary.json)及[源码/原始包](causal-mask/source-evidence.zip)保留既有shader字段依据、CPU defer原因、
-source/link身份及全部定向结果。CPU暂不切boxed，以免为去mask关闭现有tiled prefill/split-KV；该域仍待补。
+source/link身份及全部定向结果。后续CPU普通路线使用独立HYCA，未切boxed；私有paged seed仍保留。
 归档后按新的`test.ps1`精确清理本批5个可重建exe/obj，共90630052 B；原SDK/shader/source/log不动。
 
 ## Vulkan math attention：先对齐精度，再复用块空间
@@ -683,7 +692,7 @@ Q分块保留完整KV、scale/全Q因果偏移、原mask行与per-head sinks，�
 冷Sink F32 B1/Q129/KV2049/H64/KV头1/D512：实际增量AllocatorRef私有请求156480184→48970792/48970760 B（两pin），包括arena/workspace/backing。
 caller逻辑需求43266820 B未在这个冷测试中分配，也未执行此大形状；数值由前述单独场景覆盖。不是RSS、瞬时peak或吞吐数据。
 [摘要](cpu-math-attention/summary.json)/[源码原始包](cpu-math-attention/source-evidence.zip)保留baseline失败、同pin host overlays、全部命令与root独立依赖锁检查。
-没有configure、SDK复制或全native构建；一般多节点CPU arena的生命周期复用尚未全面扩展。
+没有configure、SDK复制或全native构建；后续普通多节点扩展见下。
 
 ## Apple长Q fallback：逻辑分块还须服从实际提交窗口
 
@@ -699,8 +708,42 @@ Air M4上新旧各6项回归通过，预算不变；覆盖非零QK、GQA、Q1025
 输入QKV16 MiB、mask4 MiB；额外峰值包含8 MiB结果，submit前active差1008 B冷常量另列。不是严格provider-private、单块硬峰值或全设备VRAM。
 
 MLX每command buffer及active-task窗口会同时保留多个块，环境设置也影响峰值；不外推吞吐、全Apple suite或其它硬件。
-CPU stream、Q<1024、可能NAX等边界仍保留；Air若实际不启用NAX，其D256 causal无mask F32仍可能平方fallback。
+CPU stream、Q<1024及未知/新架构的可能NAX边界仍保留；Air的D256 causal遗漏已补，见下。
 [摘要](apple-sdpa-blocks/summary.json)/[源码原始包](apple-sdpa-blocks/source-results.zip)保留64行负点、16行全结果、最终applied与measured源码差别；无SDK/metallib重建。
 
 本轮全部按`test.ps1`核精确路径/size/SHA清理：Windows两批79文件145734659 B、WSL15文件9385152 B、Air8文件36820176 B，合计191939987 B（约183 MiB）。
-仅保留两pin的4个最小CPU native对象/v2 DLL共4281057 B供继续复用；源码、压缩原始数据与原SDK/cache保留。
+当批保留两pin的4个最小CPU native对象/v2 DLL共4281057 B；后续已由新causal模块替换，见下。源码、压缩原始数据与原SDK/cache保留。
+
+## 普通CPU多节点：不再保留所有中间payload
+
+沿用同一GraphStorage，仅扩展到不含CacheEncode/PagedRead的普通多节点recipe；单节点与私有缓存策略保留。
+INPUT、公开OUTPUT及view根的生命周期标记不变，常量仍由Program持有，NaN修复回调的原始source保留显式依赖。
+两个pin各9/9通过；旧版仅新增cold空间上界按预期失败。覆盖发布第32步的中间结果、分支/常量、NaN回调、双slot重绑及OOM回收。
+64个1 MiB Neg串联的实际增量AllocatorRef私有请求67049688→3086784/3086752 B，包括元数据/workspace/backing；
+caller逻辑端口2 MiB未在该冷测试分配，大形状未执行；数值由独立小形状覆盖。不是RSS、全heap或吞吐数据。
+[摘要](cpu-region-storage/summary.json)/[源码原始包](cpu-region-storage/source-evidence.zip)保存逐字tested/applied快照；后者仅排版差异。
+
+## CPU普通causal：移除冷平方mask，保持原生执行路线
+
+私有HYCA只表示普通bottom-right因果边界，独立于会切reference路线的boxed tag。
+vector裁掉原本已在QK/PV前跳过的未来KV；tiled在原有固定scratch生成相同0/−Inf，不改prefill/split选择或Half PV。
+Q1省去全零mask且不设tag。私有paged非boxed Q>1仍使用原seed，本批未扩展该域。
+两个pin各selected5/5、baseline3/3通过，共16次最终test执行；含native显式mask逐元素精确对照与公共provider换绑/独立FP64控制。
+这是同一executor内的精确对照，未声称不同ISA逐位相同；部分tile的未来NaN/Inf仍可能按原规则传播。
+CPU-only pin的Q2048/KV16384/F16，各臂一次预热program后public prepare的successful unaligned global new请求：
+baseline21次67112291 B、candidate20次3388 B，差67108903 B（64 MiB payload＋MSVC对齐39 B），最大请求降至736 B。
+该冷测试未创建/执行invocation，未计时或测RSS/全allocator峰值。只重编相关host TU及两pin ops，未configure或全SDK构建。
+[摘要](cpu-native-causal/summary.json)/[源码原始包](cpu-native-causal/raw.zip)记录实际module身份、全部命令/失败与资源单项检查。
+
+## Apple D256 causal：按已知硬件能力补fallback遗漏
+
+Air实查为applegpu_g16g，原生NAX不可用；锁定实现要求至少generation17，phone至少18。
+仅通过公开device_info保守识别已知13–16代，让原本确定fallback的D256 causal域沿用现有Q16块；未知/新格式及异常仍保留原生选择。
+非零QK的Q1025/KV1281、D256 FP64回归与小形状控制，两侧各2项通过，原rel6e-6+abs2e-6预算不变。
+唯一Q=KV2048、QK0/V1.25大空间点，MLX额外peak83902464→60371584 B（−28.05%，包含8 MiB输出）；
+但两侧max abs error均3.43323e-5，超过9.5e-6预算，**均为FAIL**。相同最大误差不证明逐元素等价，未把此形状称为数值通过。
+caller QKV16 MiB与冷常量另计；未测吞吐/整机VRAM，未改SDK/kernel或在tracing中eval。
+[摘要](apple-nax-capability/summary.json)/[源码原始包](apple-nax-capability/source-results.zip)保留原生能力条件、全部失败与实际计数。
+
+本批先写`test.ps1`再按精确路径/size/SHA清理Windows64文件62820427 B、Air9文件41857520 B、WSL3文件1634936 B，合计106312883 B（约101.4 MiB）。
+旧4个CPUHad复用文件已由新4个native causal baseline对象/AVX2模块替换，保留4281627 B；原SDK/其它native缓存、源码、日志和压缩数据不动。

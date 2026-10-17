@@ -1,0 +1,7 @@
+{
+  "path": ".scratch\\perf-review-2026-10-18\\http2\\raw-fiber\\source-results.zip",
+  "bytes": 93176,
+  "sha256": "2ac5d77b73a9f8cec514bcf5bfbf88d57c157178d3a94583f1eada958d69d451",
+  "files": 32,
+  "scope": "Small sources/commands/raw stdout/stderr/identities/summary only; no executable/object/SDK/native binaries."
+}
