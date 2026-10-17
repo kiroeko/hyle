@@ -1,0 +1,102 @@
+{
+  "schema": "hyle.g04-g05.load-ilp-independent-execution-review/v1",
+  "date": "2026-10-17",
+  "reviewer": "graph_coverage_audit independent subagent",
+  "input_head": "8e04eb0c0",
+  "decision": "PASS_ONE_BOUNDED_DIAGNOSTIC_ENTRY_NOT_PRODUCT_OR_P1",
+  "scope": "Actual Windows launcher/source mirror plus read-only WSL actual source, two binaries, native objects and link maps. No GPU, benchmark, profiler, sanitizer or mathematical executable run by reviewer; no product, registry or SDK mutation.",
+  "identities": {
+    "launcher_sha256": "07be8eb852a3b6b5d00be5ebe49b92925f65e4cc3c4d9bb7dcb9aecd3cab1acf",
+    "actual_wsl_source_and_local_mirror_sha256": "3911915b43d8b657f0d4fb743fb77342d61d300eb726d4514b0e68eb400c8af5",
+    "link_receipt_sha256": "61ae3b1281d86103640521faab5209ab4d5fea9c914c15355b1a292c391c38e8",
+    "compile_receipt_sha256": "2d574d15e58c750cc583e058ee2142b5340d9578f52bbc87a27fbb94318df0d9",
+    "variant_patch_sha256": "ff67a48af267cfafd3acd6e6991406f66bdb58cd079eebb901b583bbc947dc87",
+    "control_object_sha256": "ff214a327ca8c9d6d22e8657bf9510586f2ae00eb0466f0ebae1a464a60b716f",
+    "treatment_object_sha256": "106c5a7e005d375a58f596b945ca6f5734323a1bc0df3f6ee1af7cfd061c4061",
+    "binaries": [
+      {
+        "mode": "control",
+        "path": "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/build/load_ilp_control",
+        "sha256": "087e54190af639fe22a0d6cb78faaa38efb7a4a53a6eb28c2586fa11ecd4d9b5",
+        "native_object_sha256": "ff214a327ca8c9d6d22e8657bf9510586f2ae00eb0466f0ebae1a464a60b716f",
+        "no_bf16_peer_symbol_or_link": true,
+        "explicit_native_object_in_map": true,
+        "sdk_native_cache_archive_member_not_extracted": true,
+        "map_sha256": "8ceba15f943d91d80fb91f923f7afd23f93fe90e687927a78b1f9a6ef496b603"
+      },
+      {
+        "mode": "treatment",
+        "path": "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/build/load_ilp_treatment",
+        "sha256": "cf8015adf4649f2081862c58664d09e50fb87e7700d9d1b8089249fb90c4d970",
+        "native_object_sha256": "106c5a7e005d375a58f596b945ca6f5734323a1bc0df3f6ee1af7cfd061c4061",
+        "no_bf16_peer_symbol_or_link": true,
+        "explicit_native_object_in_map": true,
+        "sdk_native_cache_archive_member_not_extracted": true,
+        "map_sha256": "31ffee164e36c67a3e9186fc1db51705e1590bffde092d6de9de1e46c0df9081"
+      }
+    ]
+  },
+  "independent_actual_wsl_checks": {
+    "actual_source_hash_matches_latest_link_receipt": true,
+    "two_final_binary_hashes_match": true,
+    "two_full_native_object_hashes_match_original_compile_receipt": true,
+    "two_map_hashes_match": true,
+    "explicit_full_native_object_LOAD_and_text_in_both_maps": true,
+    "sdk_native_cache_archive_member_absent_in_both_maps": true,
+    "bf16_reference_library_absent_in_both_maps": true
+  },
+  "findings": [
+    {
+      "id": "ILP29-01",
+      "severity": "RESOLVED",
+      "topic": "D256 NoFill tail coverage",
+      "evidence": "Actual consumer lines255-259 add exactly Q64/128 KV1023/767 D256 causal unbounded only under verify_only. measure returns before warmup/timing at211. These4shapes x2contexts x4replays yield32 independent correctness records,8teardowns andone tailmarker for normal verify,memcheck andtreatment racecheck. Timed runs remain original3shapes and30pre/post correctness records."
+    },
+    {
+      "id": "ILP29-02",
+      "severity": "PASS",
+      "topic": "Same-representation full-TU replacement",
+      "evidence": "Actual Harness151 always uses original FlashInfer provider; BF16 reference member/preparation removed. Both contexts within each process therefore use the same FP8/F32 object implementation. Control.o is retained actual SDK full TU, treatment.o is new original-fullTU. Actual map LOAD/text,object/binarySHA and absent SDK native_cache member were independently checked. No cropped bridge and no same-process control-versus-treatment claim."
+    },
+    {
+      "id": "ILP29-03",
+      "severity": "PASS_WITH_RUNTIME_DISPATCH_PENDING",
+      "topic": "Window/holdout/merge negative controls",
+      "evidence": "Linked normalized window SASS is exactly b2094d597d01969614df3b0dcb8bf0a0eed0e824c7591d94a9b3238681c0ee8e onboth sides; window kernel DTypeO BF16 makes HYLE_FP8_DIRECT_STAGE false even withCTA64. Holdout andmerge hashes likewise equal. Prefill F32-outputD256 has intended new loadorder. Actual execution must still attribute expected kernel,grid/block/shared/register identity before causal inference; this static review is not a runtime dispatch or performance certificate."
+    },
+    {
+      "id": "ILP29-04",
+      "severity": "PASS",
+      "topic": "Numerical,tail,permission and lifecycle boundary",
+      "evidence": "Actual consumer preserves original Data/oracle generation,shared pages,reverse IDs,tail sentinel,FP8 scales .5/2,BF16query/output,F32partial/merge,two invocation slots,checked Completion.wait,owning output release,byte-identical readonly KV checks anddrain/close. Variant preserves invalidK NoFill andboth original packed offsets/decoder/stores; no V/barrier/tile/planner/physical-representation change. Actual emitted register count rises248to250 withzero spill; original shared footprint andtwo-block resource ceiling remain ascodegen checkpoint,not measured occupancy."
+    },
+    {
+      "id": "ILP29-05",
+      "severity": "PASS",
+      "topic": "Finite process matrix and diagnostics only",
+      "evidence": "Run script performs exactly2normal VERIFY_ONLY,2memcheck VERIFY_ONLY and1treatment racecheck VERIFY_ONLY,then4paired groups (8timeline processes),covering both execution/allocation factors withCT/TC/TC/CT implementation order. Each timeline process has2same-implementation contexts,64warmups and8groups x64episodes/context/shape. Every case retained; first failure stops remaining cases. AA_ROUTE=selected is an explicit private ready-guard bypass for identical-instance diagnosis,not formal qualification."
+    },
+    {
+      "id": "ILP29-06",
+      "severity": "RESOLVED",
+      "topic": "Owned process-group cleanup",
+      "evidence": "Final launcher starts each child withstart_new_session;setup SID/PGID checks,active receipt save andwait are inside same exception-cleanup try. Nonzero profiler exit ormissing uniqueAPP_EXIT marker kills remaining owned group beforestop. Timeout/other BaseException uses same SIGTERM/SIGKILL/wait cleanup; it doesnot target unrelated processes. The earlier77db launcher gap is documented here; final guarded source is07be8eb. Post-exit numerical/parser checks occur only after unique normalapplication marker andzero parentexit."
+    },
+    {
+      "id": "ILP29-07",
+      "severity": "PASS",
+      "topic": "Freeze andparser boundaries",
+      "evidence": "Fresh execution directory forbids replacing/repeating attempt. Actual two objectSHA are asserted beforework;source,headers,originalTU,patch,metarecords andbinaries frozen before/after. Targetenvironment/device/toolversions andprocess affinity/nice are recorded;inherited diagnostic/factor env is cleared. Exact oracle/toolsummary/teardown/APP_EXIT/tail/3shape24groups checks precede advancing. No kernel-time/host-time crossclock subtraction is authorized."
+    }
+  ],
+  "remaining_must_before_execution": [],
+  "runtime_acceptance_and_interpretation_limits": [
+    "Coordinating owner must serialize GPU execution; this review itself performsnone.",
+    "All device oracle/tail/memcheck/racecheck gates remain unrun until the bounded launcher executes; static codegen isnot correctnessPASS.",
+    "Runtime expected kernel identity andnegative controls must be checked using actual saved trace before attributing benefit. Ifunmatched/noisy,stopthis mechanism without extrasamples.",
+    "Same-process instance comparisons are negative controls;implementation comparison isbetween separateprocesses.",
+    "This isnot formalP1/n15,A/A recovery,attempt14requalification,driverpolicy change,or shipping productFIX. Allold losses/unknowns remain."
+  ],
+  "reviewer_application_or_gpu_runs": 0,
+  "reviewer_product_changes": 0
+}

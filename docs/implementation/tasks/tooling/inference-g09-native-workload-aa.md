@@ -2,6 +2,11 @@
 
 状态：**BLOCKED-from-AUDITED，2026-10-17；R27 的单次 individual 采集完整正常退出，R28 复核通过；原计量段缺可归属 GPU 完成记录，native readiness 和原 A/A 原因仍未决，产品/正式测量 FIX 集为空**。
 
+用户随后明确要求处理累计约24小时仍未解决的性能问题。新的
+[有界机制诊断](inference-performance-recovery-2026-10-17.md)承接此要求，以已有有/无 Nsight
+记录的离线反证和单 pending 完成等待干预区分观察成本；不继续追加 profiler 组合，
+不复用下文已结束入口，也不据此恢复正式 A/A/P1 或产品状态。
+
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
 原 private consumer source 为 `35ec95dbfb7012c746c4a4114c5b3bcffaf3d12e`；

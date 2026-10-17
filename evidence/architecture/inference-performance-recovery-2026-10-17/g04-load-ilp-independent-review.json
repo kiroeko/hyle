@@ -1,0 +1,5834 @@
+{
+  "schema": "hyle.g04-load-ilp-independent-runtime-review/v1",
+  "reviewer": "/root/cpu_foundation_audit",
+  "state": "PASS_OFFLINE_ACCOUNTING_CAUSAL_LIMITS_RETAINED",
+  "actions": {
+    "gpu_benchmark_remote_runs": 0,
+    "sqlite_mode": "ro&immutable=1",
+    "derived_analyzer_executed": false,
+    "product_registry_changes": 0
+  },
+  "inputs": {
+    "runtime_receipt_sha256": "d6d5266172f0e7aca703d2c68e8b5863083ea7f05996e35042891e23dbd91dc6",
+    "derived_analysis_sha256": "3d361f65140ffb452a53baae52a1840d6ab2e41bea9ac30448b7c8cde764c96b",
+    "derived_analyzer_sha256": "cc4c1610a6663e5538fbd984f9dc8ae7ac0d46ba7b43d819f4770dc42530ffae",
+    "link_receipt_sha256": "61ae3b1281d86103640521faab5209ab4d5fea9c914c15355b1a292c391c38e8"
+  },
+  "method": [
+    "Independent rawSQLite recomputation; do not import or execute the original analyzer.",
+    "Each kernel must map through matching CUDAcorrelation launchAPI to exactly one containing episode in the same hostthread; no nearest/minimum launch guess.",
+    "GPUduration uses GPUstart/end; hostepisode uses its NVTXbookends; no CPUminusGPU or clockmodel fit.",
+    "All4pairedprocess groups and both identicalimplementation contexts retained; no favorable selection or normalized qualification."
+  ],
+  "artifact_hashes": {
+    "/mnt/c/public/project-hyle/hyle/.scratch/inference-performance-recovery-2026-10-17/g04-load-ilp-run.py": "07be8eb852a3b6b5d00be5ebe49b92925f65e4cc3c4d9bb7dcb9aecd3cab1acf",
+    "/mnt/c/public/project-hyle/hyle/.scratch/inference-performance-recovery-2026-10-17/g04-load-ilp-compile-receipt.json": "2d574d15e58c750cc583e058ee2142b5340d9578f52bbc87a27fbb94318df0d9",
+    "/mnt/c/public/project-hyle/hyle/.scratch/inference-performance-recovery-2026-10-17/g04-load-ilp-link-receipt.json": "61ae3b1281d86103640521faab5209ab4d5fea9c914c15355b1a292c391c38e8",
+    "/mnt/c/public/project-hyle/hyle/.scratch/inference-performance-recovery-2026-10-17/g04-load-ilp-variant.patch": "ff67a48af267cfafd3acd6e6991406f66bdb58cd079eebb901b583bbc947dc87",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/CMakeLists.txt": "4b02507205a0d1a285edc5e35367852ad36ddc288059d61b0ba7ff3d567b6afc",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/bench/inference_resident_sdpa/cuda_encoded_page_bench.cc": "3911915b43d8b657f0d4fb743fb77342d61d300eb726d4514b0e68eb400c8af5",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/bench/inference_resident_sdpa/cuda_encoded_page_reference.h": "ba08471ca3ccc1d8437d418a9b37acce3b989a361a3d96529889325104ba4c5b",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/bench/common/perf_process.h": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+    "/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/native_cache.cu": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/include/flashinfer/attention/prefill.cuh": "395e579a37968b041c37ea5eb68434d3f39ba9907ef5c2cfaf23f8818f3ce0b5",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/build/load_ilp_control": "087e54190af639fe22a0d6cb78faaa38efb7a4a53a6eb28c2586fa11ecd4d9b5",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/build/load_ilp_treatment": "cf8015adf4649f2081862c58664d09e50fb87e7700d9d1b8089249fb90c4d970",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/native_cache_control.o": "ff214a327ca8c9d6d22e8657bf9510586f2ae00eb0466f0ebae1a464a60b716f",
+    "/root/hyle-scratch/compute-unified/g04-load-ilp-2026-10-17/consumer/native_cache_treatment.o": "106c5a7e005d375a58f596b945ca6f5734323a1bc0df3f6ee1af7cfd061c4061"
+  },
+  "log_checks": [
+    {
+      "stage": "control-oracle",
+      "sha256": "0abb99d77632d8ea8a0549b37a991efb7906e0567a322671f091b8659af3268a",
+      "exit_code": 0,
+      "oracle_records": 32,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 8
+    },
+    {
+      "stage": "control-memcheck",
+      "sha256": "2652eea21663a3e93bceba1a40f4f3ad25eb8937b0227bc1499455a8feeae652",
+      "exit_code": 0,
+      "oracle_records": 32,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 8
+    },
+    {
+      "stage": "treatment-oracle",
+      "sha256": "f1f8705d8c740dfa14bbf605fe8d8ea741b753d8681d6a41bc9e3d51bd93bf86",
+      "exit_code": 0,
+      "oracle_records": 32,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 8
+    },
+    {
+      "stage": "treatment-memcheck",
+      "sha256": "b6ebcff88ff9600809499835e82fb2bc02e326da48bfbd4155942f6063506ccf",
+      "exit_code": 0,
+      "oracle_records": 32,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 8
+    },
+    {
+      "stage": "treatment-racecheck",
+      "sha256": "ec02ce406e72c4a188bd4ae01cc48d5d61b2d34f683d3cdce62c3f32258d1f81",
+      "exit_code": 0,
+      "oracle_records": 32,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 8
+    },
+    {
+      "stage": "pair0-control",
+      "sha256": "e63f9befaace7001d7945643ee623fbd5b80b2146416954e5fd32278766f600d",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    },
+    {
+      "stage": "pair0-treatment",
+      "sha256": "679b7d0e846a079a3e92c6a2573f171dd23c2f4763ec3ea329d1e3e324092bd8",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    },
+    {
+      "stage": "pair1-treatment",
+      "sha256": "7d7297f6440fc1ba8ac3784b82794e2d17ef61588cbc4acf025b8f2530bf2bc8",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    },
+    {
+      "stage": "pair1-control",
+      "sha256": "a5b980fbb8fc87c27fefb6e3c585e14a441654ecd87aefe596220a9850997a13",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    },
+    {
+      "stage": "pair2-treatment",
+      "sha256": "95b620000595b1be3ebc3de34b514a4bdb40167e96d1c78b2ddfa420137abdf1",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    },
+    {
+      "stage": "pair2-control",
+      "sha256": "27fdbe03550a522b63623bd2e41ab52a4470203f2c0c07e7269ac73339dd5c48",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    },
+    {
+      "stage": "pair3-control",
+      "sha256": "aa19bc1031236d400b69b3ff558c3383ae390d7833c32d8591385c1bb07defee",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    },
+    {
+      "stage": "pair3-treatment",
+      "sha256": "8b217c74db10ccaf4531352ad7bd5679de8e53b5e6c1c6eebe2caf28851a9a54",
+      "exit_code": 0,
+      "oracle_records": 30,
+      "oracle_max_abs_error": 0.000994979551,
+      "complete_teardowns": 6
+    }
+  ],
+  "processes": [
+    {
+      "pair": 0,
+      "mode": "control",
+      "sqlite_sha256": "e7232418d57e4e6fdaa502d2b62bf98b84ffe3d9df8558094e753fded09c825d",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 6.065,
+                "mean_us": 6.057607421875,
+                "group64_mean_us": [
+                  6.054250000000001,
+                  6.079750000000001,
+                  6.04871875,
+                  6.058328125,
+                  6.050265625000001,
+                  6.051921875000001,
+                  6.0482812500000005,
+                  6.06934375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.065,
+                "mean_us": 6.057607421875,
+                "group64_mean_us": [
+                  6.054250000000001,
+                  6.079750000000001,
+                  6.04871875,
+                  6.058328125,
+                  6.050265625000001,
+                  6.051921875000001,
+                  6.0482812500000005,
+                  6.06934375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 53.305,
+                "mean_us": 58.777580078125,
+                "group64_mean_us": [
+                  65.670671875,
+                  87.849484375,
+                  43.71565625,
+                  46.700015625,
+                  83.345171875,
+                  54.118046875,
+                  40.105234375,
+                  48.716359375
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 6.033,
+                "mean_us": 6.04496875,
+                "group64_mean_us": [
+                  6.0363125,
+                  6.06178125,
+                  6.0436250000000005,
+                  6.0398125,
+                  6.03575,
+                  6.0383281250000005,
+                  6.040265625,
+                  6.063875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.033,
+                "mean_us": 6.04496875,
+                "group64_mean_us": [
+                  6.0363125,
+                  6.06178125,
+                  6.0436250000000005,
+                  6.0398125,
+                  6.03575,
+                  6.0383281250000005,
+                  6.040265625,
+                  6.063875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 53.9855,
+                "mean_us": 56.56198828125,
+                "group64_mean_us": [
+                  61.762125,
+                  70.010421875,
+                  50.686578125,
+                  52.8489375,
+                  59.83584375,
+                  66.14875,
+                  40.209890625,
+                  50.993359375
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 6.034,
+              "mean_us": 6.0512880859375
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 6.034,
+              "mean_us": 6.0512880859375
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 53.625,
+              "mean_us": 57.6697841796875
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 42.489,
+                "mean_us": 42.524310546875,
+                "group64_mean_us": [
+                  42.626234375,
+                  42.788171875,
+                  42.637296875,
+                  42.498328125,
+                  42.4888125,
+                  42.36040625,
+                  42.347390625,
+                  42.44784375
+                ]
+              },
+              "merge": {
+                "median_us": 9.82,
+                "mean_us": 9.832576171875,
+                "group64_mean_us": [
+                  9.85171875,
+                  9.838109375,
+                  9.832515625000001,
+                  9.851593750000001,
+                  9.8255,
+                  9.792953125,
+                  9.835625,
+                  9.832593750000001
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 52.277,
+                "mean_us": 52.35688671875,
+                "group64_mean_us": [
+                  52.477953125,
+                  52.62628125,
+                  52.4698125,
+                  52.349921875,
+                  52.3143125,
+                  52.153359375,
+                  52.183015625,
+                  52.2804375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.348,
+                "mean_us": 1.35808203125,
+                "group64_mean_us": [
+                  1.3699375,
+                  1.36840625,
+                  1.357390625,
+                  1.378,
+                  1.3318125,
+                  1.37596875,
+                  1.33634375,
+                  1.346796875
+                ]
+              },
+              "episode": {
+                "median_us": 100.4425,
+                "mean_us": 112.653486328125,
+                "group64_mean_us": [
+                  131.33453125,
+                  123.374453125,
+                  116.6798125,
+                  107.517078125,
+                  126.099140625,
+                  93.280125,
+                  108.959046875,
+                  93.983703125
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 42.457,
+                "mean_us": 42.51565234375,
+                "group64_mean_us": [
+                  42.6313125,
+                  42.743046875,
+                  42.61228125,
+                  42.487421875,
+                  42.612265625,
+                  42.29384375,
+                  42.261171875,
+                  42.483875
+                ]
+              },
+              "merge": {
+                "median_us": 9.884,
+                "mean_us": 9.904328125000001,
+                "group64_mean_us": [
+                  9.892765625000001,
+                  9.918796875,
+                  9.915328125,
+                  9.9554375,
+                  9.880640625,
+                  9.899734375,
+                  9.900171875,
+                  9.87175
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 52.342,
+                "mean_us": 52.41998046875,
+                "group64_mean_us": [
+                  52.524078125,
+                  52.66184375,
+                  52.527609375,
+                  52.442859375,
+                  52.49290625,
+                  52.193578125,
+                  52.16134375,
+                  52.355625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.347,
+                "mean_us": 1.415349609375,
+                "group64_mean_us": [
+                  1.35934375,
+                  1.34284375,
+                  1.331234375,
+                  1.950046875,
+                  1.347375,
+                  1.3483125,
+                  1.31690625,
+                  1.326734375
+                ]
+              },
+              "episode": {
+                "median_us": 106.3535,
+                "mean_us": 111.906130859375,
+                "group64_mean_us": [
+                  118.449640625,
+                  145.148703125,
+                  118.483015625,
+                  111.695734375,
+                  110.50821875,
+                  95.340140625,
+                  91.97059375,
+                  103.653
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 42.457,
+              "mean_us": 42.5199814453125
+            },
+            "merge": {
+              "median_us": 9.853,
+              "mean_us": 9.8684521484375
+            },
+            "gpu_sum": {
+              "median_us": 52.3095,
+              "mean_us": 52.38843359375
+            },
+            "gpu_gap": {
+              "median_us": 1.348,
+              "mean_us": 1.3867158203125
+            },
+            "episode": {
+              "median_us": 102.66149999999999,
+              "mean_us": 112.27980859375
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.429,
+                "mean_us": 4.437201171875,
+                "group64_mean_us": [
+                  4.434703125,
+                  4.43459375,
+                  4.4605781250000005,
+                  4.425171875,
+                  4.446203125,
+                  4.432609375,
+                  4.431078125,
+                  4.4326718750000005
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.429,
+                "mean_us": 4.437201171875,
+                "group64_mean_us": [
+                  4.434703125,
+                  4.43459375,
+                  4.4605781250000005,
+                  4.425171875,
+                  4.446203125,
+                  4.432609375,
+                  4.431078125,
+                  4.4326718750000005
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 28.609,
+                "mean_us": 33.1597265625,
+                "group64_mean_us": [
+                  29.16475,
+                  29.71675,
+                  46.018703125,
+                  33.6825625,
+                  35.352125,
+                  33.33353125,
+                  29.105875,
+                  28.903515625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.429,
+                "mean_us": 4.43666015625,
+                "group64_mean_us": [
+                  4.425671875,
+                  4.429640625,
+                  4.4615937500000005,
+                  4.43765625,
+                  4.449140625,
+                  4.43115625,
+                  4.4296875,
+                  4.428734375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.429,
+                "mean_us": 4.43666015625,
+                "group64_mean_us": [
+                  4.425671875,
+                  4.429640625,
+                  4.4615937500000005,
+                  4.43765625,
+                  4.449140625,
+                  4.43115625,
+                  4.4296875,
+                  4.428734375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 28.570500000000003,
+                "mean_us": 36.294330078125,
+                "group64_mean_us": [
+                  28.701421875,
+                  28.741609375,
+                  36.239828125,
+                  37.075765625,
+                  36.130171875,
+                  65.688203125,
+                  29.011609375,
+                  28.76603125
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.429,
+              "mean_us": 4.4369306640625
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.429,
+              "mean_us": 4.4369306640625
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 28.579,
+              "mean_us": 34.7270283203125
+            }
+          }
+        }
+      }
+    },
+    {
+      "pair": 0,
+      "mode": "treatment",
+      "sqlite_sha256": "dd9f04c0013becb9060dab0bca2bf9a5e48b5bd1b8386aeefa5b5c31afc2c5fd",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 6.18,
+                "mean_us": 6.177142578125,
+                "group64_mean_us": [
+                  6.174046875,
+                  6.16484375,
+                  6.243,
+                  6.1658124999999995,
+                  6.170828125,
+                  6.163359375,
+                  6.168953125,
+                  6.166296875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.18,
+                "mean_us": 6.177142578125,
+                "group64_mean_us": [
+                  6.174046875,
+                  6.16484375,
+                  6.243,
+                  6.1658124999999995,
+                  6.170828125,
+                  6.163359375,
+                  6.168953125,
+                  6.166296875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.8865,
+                "mean_us": 48.618216796875,
+                "group64_mean_us": [
+                  51.120265625,
+                  66.1158125,
+                  58.234125,
+                  41.581203125,
+                  45.988109375,
+                  43.86496875,
+                  41.30971875,
+                  40.731531249999996
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 6.148,
+                "mean_us": 6.15726953125,
+                "group64_mean_us": [
+                  6.149875,
+                  6.1463906249999996,
+                  6.175484375,
+                  6.154609375,
+                  6.167359375,
+                  6.154125,
+                  6.157203125,
+                  6.153109375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.148,
+                "mean_us": 6.15726953125,
+                "group64_mean_us": [
+                  6.149875,
+                  6.1463906249999996,
+                  6.175484375,
+                  6.154609375,
+                  6.167359375,
+                  6.154125,
+                  6.157203125,
+                  6.153109375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.8095,
+                "mean_us": 52.155001953125,
+                "group64_mean_us": [
+                  48.365609375,
+                  61.764890625,
+                  63.90565625,
+                  44.9749375,
+                  44.13009375,
+                  69.706828125,
+                  44.060984375,
+                  40.331015625
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 6.148,
+              "mean_us": 6.1672060546875
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 6.148,
+              "mean_us": 6.1672060546875
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 39.828500000000005,
+              "mean_us": 50.386609375
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 41.659,
+                "mean_us": 41.81326953125,
+                "group64_mean_us": [
+                  41.697,
+                  41.682171875,
+                  41.73471875,
+                  41.625953125,
+                  42.097609375,
+                  42.002015625,
+                  41.9666875,
+                  41.7
+                ]
+              },
+              "merge": {
+                "median_us": 9.973,
+                "mean_us": 9.991796875,
+                "group64_mean_us": [
+                  9.99415625,
+                  10.007921875,
+                  9.9829375,
+                  9.97478125,
+                  9.99565625,
+                  10.0024375,
+                  9.982296875,
+                  9.9941875
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 51.697,
+                "mean_us": 51.80506640625,
+                "group64_mean_us": [
+                  51.69115625,
+                  51.69009375,
+                  51.71765625,
+                  51.600734375,
+                  52.093265625,
+                  52.004453125,
+                  51.948984375,
+                  51.6941875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.341,
+                "mean_us": 1.502705078125,
+                "group64_mean_us": [
+                  1.377453125,
+                  1.3468125,
+                  1.35703125,
+                  1.3661875,
+                  1.81484375,
+                  2.044671875,
+                  1.345859375,
+                  1.36878125
+                ]
+              },
+              "episode": {
+                "median_us": 88.0505,
+                "mean_us": 103.698837890625,
+                "group64_mean_us": [
+                  99.267265625,
+                  88.15890625,
+                  96.2721875,
+                  90.01790625,
+                  108.600328125,
+                  134.051296875,
+                  102.172609375,
+                  111.050203125
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 41.626,
+                "mean_us": 41.730189453125,
+                "group64_mean_us": [
+                  41.68059375,
+                  41.754125,
+                  41.7311875,
+                  41.585609375,
+                  41.81703125,
+                  41.942703125,
+                  41.6801875,
+                  41.650078125
+                ]
+              },
+              "merge": {
+                "median_us": 10.071,
+                "mean_us": 10.078822265625,
+                "group64_mean_us": [
+                  10.0370625,
+                  10.0615625,
+                  10.0304375,
+                  10.09071875,
+                  10.095765625,
+                  10.087078125,
+                  10.131046875,
+                  10.09690625
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 51.697,
+                "mean_us": 51.80901171875,
+                "group64_mean_us": [
+                  51.71765625,
+                  51.8156875,
+                  51.761625,
+                  51.676328125,
+                  51.912796875,
+                  52.02978125,
+                  51.811234375,
+                  51.746984375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.341,
+                "mean_us": 1.35343359375,
+                "group64_mean_us": [
+                  1.363125,
+                  1.3294531250000001,
+                  1.361109375,
+                  1.35240625,
+                  1.353,
+                  1.371359375,
+                  1.3436875,
+                  1.353328125
+                ]
+              },
+              "episode": {
+                "median_us": 88.0495,
+                "mean_us": 101.6473671875,
+                "group64_mean_us": [
+                  97.777203125,
+                  89.42071875,
+                  113.448375,
+                  93.2021875,
+                  108.11215625,
+                  116.61025,
+                  100.25234375,
+                  94.355703125
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 41.658,
+              "mean_us": 41.7717294921875
+            },
+            "merge": {
+              "median_us": 10.038,
+              "mean_us": 10.0353095703125
+            },
+            "gpu_sum": {
+              "median_us": 51.697,
+              "mean_us": 51.8070390625
+            },
+            "gpu_gap": {
+              "median_us": 1.341,
+              "mean_us": 1.4280693359375
+            },
+            "episode": {
+              "median_us": 88.05,
+              "mean_us": 102.6731025390625
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.512,
+                "mean_us": 4.52356640625,
+                "group64_mean_us": [
+                  4.509859375,
+                  4.536,
+                  4.5446406249999995,
+                  4.51046875,
+                  4.5133906249999995,
+                  4.511015625,
+                  4.511390625,
+                  4.551765625
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.512,
+                "mean_us": 4.52356640625,
+                "group64_mean_us": [
+                  4.509859375,
+                  4.536,
+                  4.5446406249999995,
+                  4.51046875,
+                  4.5133906249999995,
+                  4.511015625,
+                  4.511390625,
+                  4.551765625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 48.809,
+                "mean_us": 49.64964453125,
+                "group64_mean_us": [
+                  51.696125,
+                  62.89096875,
+                  55.411609375,
+                  47.476296875,
+                  38.959234375,
+                  68.03504687499999,
+                  30.449359375,
+                  42.278515625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.513,
+                "mean_us": 4.527224609375,
+                "group64_mean_us": [
+                  4.520703125,
+                  4.543734375,
+                  4.5288125,
+                  4.522171875,
+                  4.520015625,
+                  4.521703125,
+                  4.522171875,
+                  4.5384843749999995
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.513,
+                "mean_us": 4.527224609375,
+                "group64_mean_us": [
+                  4.520703125,
+                  4.543734375,
+                  4.5288125,
+                  4.522171875,
+                  4.520015625,
+                  4.521703125,
+                  4.522171875,
+                  4.5384843749999995
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 48.9045,
+                "mean_us": 46.812435546875,
+                "group64_mean_us": [
+                  60.34040625,
+                  60.78540625,
+                  52.4126875,
+                  46.05696875,
+                  39.05015625,
+                  47.02578125,
+                  29.427640625,
+                  39.4004375
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.513,
+              "mean_us": 4.5253955078125
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.513,
+              "mean_us": 4.5253955078125
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 48.851,
+              "mean_us": 48.2310400390625
+            }
+          }
+        }
+      }
+    },
+    {
+      "pair": 1,
+      "mode": "treatment",
+      "sqlite_sha256": "012b3870f195ef5fa0c3a789668d79dd2f2ba5247b02a68e9f95b150bb1761dc",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 6.03,
+                "mean_us": 6.044126953125001,
+                "group64_mean_us": [
+                  6.0416875,
+                  6.042718750000001,
+                  6.04615625,
+                  6.045109375,
+                  6.04575,
+                  6.044234375,
+                  6.045609375,
+                  6.04175
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.03,
+                "mean_us": 6.044126953125001,
+                "group64_mean_us": [
+                  6.0416875,
+                  6.042718750000001,
+                  6.04615625,
+                  6.045109375,
+                  6.04575,
+                  6.044234375,
+                  6.045609375,
+                  6.04175
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.4675,
+                "mean_us": 50.3273046875,
+                "group64_mean_us": [
+                  44.131203125,
+                  42.581625,
+                  61.7238125,
+                  63.49240625,
+                  70.562859375,
+                  39.091625,
+                  40.805515625,
+                  40.229390625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 6.03,
+                "mean_us": 6.03353125,
+                "group64_mean_us": [
+                  6.030125,
+                  6.036140625,
+                  6.0397187500000005,
+                  6.03365625,
+                  6.0291250000000005,
+                  6.035640625,
+                  6.03715625,
+                  6.0266875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.03,
+                "mean_us": 6.03353125,
+                "group64_mean_us": [
+                  6.030125,
+                  6.036140625,
+                  6.0397187500000005,
+                  6.03365625,
+                  6.0291250000000005,
+                  6.035640625,
+                  6.03715625,
+                  6.0266875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.331,
+                "mean_us": 50.037869140625,
+                "group64_mean_us": [
+                  46.859734375,
+                  49.939375,
+                  60.7673125,
+                  61.9495625,
+                  47.255484375,
+                  39.41340625,
+                  44.900453125,
+                  49.217625
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 6.03,
+              "mean_us": 6.0388291015625
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 6.03,
+              "mean_us": 6.0388291015625
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 39.4145,
+              "mean_us": 50.1825869140625
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 40.828,
+                "mean_us": 40.85745703125,
+                "group64_mean_us": [
+                  40.8185,
+                  40.825015625,
+                  40.780375,
+                  40.908234375,
+                  40.844625,
+                  40.87615625,
+                  40.860078125,
+                  40.946671875
+                ]
+              },
+              "merge": {
+                "median_us": 9.75,
+                "mean_us": 9.78498828125,
+                "group64_mean_us": [
+                  9.79678125,
+                  9.764109375,
+                  9.788609375,
+                  9.763703125,
+                  9.799140625,
+                  9.788703125,
+                  9.816765625,
+                  9.76209375
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 50.61,
+                "mean_us": 50.6424453125,
+                "group64_mean_us": [
+                  50.61528125,
+                  50.589125,
+                  50.568984375,
+                  50.6719375,
+                  50.643765625,
+                  50.664859375,
+                  50.67684375,
+                  50.708765625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.347,
+                "mean_us": 1.32925,
+                "group64_mean_us": [
+                  1.339,
+                  1.32696875,
+                  1.32553125,
+                  1.33196875,
+                  1.3310312499999999,
+                  1.327484375,
+                  1.3224687499999999,
+                  1.329546875
+                ]
+              },
+              "episode": {
+                "median_us": 85.3235,
+                "mean_us": 93.48153125,
+                "group64_mean_us": [
+                  86.620953125,
+                  86.450109375,
+                  108.68265625,
+                  91.851171875,
+                  86.212953125,
+                  109.03571875,
+                  88.217171875,
+                  90.781515625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 40.765,
+                "mean_us": 40.806541015625,
+                "group64_mean_us": [
+                  40.7934375,
+                  40.797484374999996,
+                  40.78940625,
+                  40.850609375,
+                  40.786359375,
+                  40.82953125,
+                  40.762328125,
+                  40.843171875
+                ]
+              },
+              "merge": {
+                "median_us": 9.847,
+                "mean_us": 9.88291796875,
+                "group64_mean_us": [
+                  9.893453125,
+                  9.862890625,
+                  9.884359375,
+                  9.8919375,
+                  9.896953125,
+                  9.865984375,
+                  9.904953125,
+                  9.8628125
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 50.643,
+                "mean_us": 50.689458984375,
+                "group64_mean_us": [
+                  50.686890625,
+                  50.660375,
+                  50.673765625,
+                  50.742546875,
+                  50.6833125,
+                  50.695515625,
+                  50.66728125,
+                  50.705984375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.315,
+                "mean_us": 1.31213671875,
+                "group64_mean_us": [
+                  1.3089374999999999,
+                  1.31440625,
+                  1.312484375,
+                  1.312421875,
+                  1.3099375,
+                  1.3224687499999999,
+                  1.3074999999999999,
+                  1.3089374999999999
+                ]
+              },
+              "episode": {
+                "median_us": 85.332,
+                "mean_us": 89.024076171875,
+                "group64_mean_us": [
+                  88.292765625,
+                  86.639953125,
+                  86.2208125,
+                  93.76859375,
+                  86.42228125,
+                  90.754859375,
+                  86.22353125,
+                  93.8698125
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 40.797,
+              "mean_us": 40.8319990234375
+            },
+            "merge": {
+              "median_us": 9.815,
+              "mean_us": 9.833953125
+            },
+            "gpu_sum": {
+              "median_us": 50.611000000000004,
+              "mean_us": 50.6659521484375
+            },
+            "gpu_gap": {
+              "median_us": 1.315,
+              "mean_us": 1.3206933593749999
+            },
+            "episode": {
+              "median_us": 85.326,
+              "mean_us": 91.2528037109375
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.426,
+                "mean_us": 4.4354375,
+                "group64_mean_us": [
+                  4.433515625,
+                  4.436546875,
+                  4.434578125,
+                  4.43709375,
+                  4.435046875,
+                  4.436078125,
+                  4.43503125,
+                  4.435609375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.426,
+                "mean_us": 4.4354375,
+                "group64_mean_us": [
+                  4.433515625,
+                  4.436546875,
+                  4.434578125,
+                  4.43709375,
+                  4.435046875,
+                  4.436078125,
+                  4.43503125,
+                  4.435609375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 29.447000000000003,
+                "mean_us": 30.4806796875,
+                "group64_mean_us": [
+                  29.780703125,
+                  33.11284375,
+                  30.4825,
+                  30.08290625,
+                  30.3418125,
+                  30.76590625,
+                  29.66596875,
+                  29.612796875
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.426,
+                "mean_us": 4.429283203125,
+                "group64_mean_us": [
+                  4.4255625,
+                  4.4280156250000005,
+                  4.43553125,
+                  4.42653125,
+                  4.426515625,
+                  4.43453125,
+                  4.42903125,
+                  4.428546875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.426,
+                "mean_us": 4.429283203125,
+                "group64_mean_us": [
+                  4.4255625,
+                  4.4280156250000005,
+                  4.43553125,
+                  4.42653125,
+                  4.426515625,
+                  4.43453125,
+                  4.42903125,
+                  4.428546875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 29.4825,
+                "mean_us": 34.966427734375,
+                "group64_mean_us": [
+                  30.01871875,
+                  30.36175,
+                  33.5961875,
+                  30.1045625,
+                  30.779515625,
+                  65.39053125,
+                  29.901734375,
+                  29.578421875
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.426,
+              "mean_us": 4.4323603515625
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.426,
+              "mean_us": 4.4323603515625
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 29.4635,
+              "mean_us": 32.7235537109375
+            }
+          }
+        }
+      }
+    },
+    {
+      "pair": 1,
+      "mode": "control",
+      "sqlite_sha256": "28f43a885ad0e53a885b0ced68aa4e9a288c193b22aef7d7006aa36d0769695b",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 6.069,
+                "mean_us": 6.08316796875,
+                "group64_mean_us": [
+                  6.082546875,
+                  6.09003125,
+                  6.0785,
+                  6.079578124999999,
+                  6.08159375,
+                  6.085046875,
+                  6.084515625,
+                  6.08353125
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.069,
+                "mean_us": 6.08316796875,
+                "group64_mean_us": [
+                  6.082546875,
+                  6.09003125,
+                  6.0785,
+                  6.079578124999999,
+                  6.08159375,
+                  6.085046875,
+                  6.084515625,
+                  6.08353125
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.670500000000004,
+                "mean_us": 46.12026953125,
+                "group64_mean_us": [
+                  46.9326875,
+                  54.245,
+                  45.694703125,
+                  44.678390625,
+                  54.27246875,
+                  42.75140625,
+                  39.9333125,
+                  40.4541875
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 6.068,
+                "mean_us": 6.071052734375,
+                "group64_mean_us": [
+                  6.06790625,
+                  6.06484375,
+                  6.07040625,
+                  6.073421874999999,
+                  6.079484375,
+                  6.0699375,
+                  6.0714218749999995,
+                  6.071
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.068,
+                "mean_us": 6.071052734375,
+                "group64_mean_us": [
+                  6.06790625,
+                  6.06484375,
+                  6.07040625,
+                  6.073421874999999,
+                  6.079484375,
+                  6.0699375,
+                  6.0714218749999995,
+                  6.071
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.5425,
+                "mean_us": 50.7281171875,
+                "group64_mean_us": [
+                  49.8379375,
+                  56.578703125000004,
+                  41.67575,
+                  42.83946875,
+                  62.081359375,
+                  73.290078125,
+                  40.14471875,
+                  39.376921875
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 6.069,
+              "mean_us": 6.077110351562499
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 6.069,
+              "mean_us": 6.077110351562499
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 39.6095,
+              "mean_us": 48.424193359375
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 42.511,
+                "mean_us": 42.56689453125,
+                "group64_mean_us": [
+                  42.48475,
+                  42.5523125,
+                  42.681859375,
+                  42.564984375,
+                  42.568,
+                  42.598703125,
+                  42.547234375,
+                  42.5373125
+                ]
+              },
+              "merge": {
+                "median_us": 9.813,
+                "mean_us": 9.861703125,
+                "group64_mean_us": [
+                  9.8505625,
+                  9.847015625,
+                  9.857046875,
+                  9.884890625,
+                  9.866234375,
+                  9.8706875,
+                  9.86109375,
+                  9.85609375
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 52.355000000000004,
+                "mean_us": 52.42859765625,
+                "group64_mean_us": [
+                  52.3353125,
+                  52.399328125,
+                  52.53890625,
+                  52.449875,
+                  52.434234375,
+                  52.469390625,
+                  52.408328125,
+                  52.39340625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.356,
+                "mean_us": 1.390865234375,
+                "group64_mean_us": [
+                  1.402015625,
+                  1.44040625,
+                  1.38046875,
+                  1.358703125,
+                  1.434859375,
+                  1.3754375,
+                  1.3945,
+                  1.34053125
+                ]
+              },
+              "episode": {
+                "median_us": 87.414,
+                "mean_us": 92.4742890625,
+                "group64_mean_us": [
+                  88.05728125,
+                  90.395859375,
+                  100.29421875,
+                  90.677390625,
+                  91.88684375,
+                  101.383421875,
+                  88.082859375,
+                  89.0164375
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 42.511,
+                "mean_us": 42.537708984375,
+                "group64_mean_us": [
+                  42.51296875,
+                  42.521515625,
+                  42.627046875,
+                  42.499375,
+                  42.534671875,
+                  42.56890625,
+                  42.520625,
+                  42.5165625
+                ]
+              },
+              "merge": {
+                "median_us": 9.942,
+                "mean_us": 9.95948046875,
+                "group64_mean_us": [
+                  9.972,
+                  9.944921875,
+                  9.943328125,
+                  9.951984375,
+                  9.998328125,
+                  9.953921875,
+                  9.9635,
+                  9.947859375
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 52.453,
+                "mean_us": 52.497189453125,
+                "group64_mean_us": [
+                  52.48496875,
+                  52.4664375,
+                  52.570375,
+                  52.451359375,
+                  52.533,
+                  52.522828125,
+                  52.484125,
+                  52.464421875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.388,
+                "mean_us": 1.38173828125,
+                "group64_mean_us": [
+                  1.39709375,
+                  1.445,
+                  1.45,
+                  1.3385156249999999,
+                  1.33703125,
+                  1.340578125,
+                  1.40509375,
+                  1.34059375
+                ]
+              },
+              "episode": {
+                "median_us": 87.471,
+                "mean_us": 95.290203125,
+                "group64_mean_us": [
+                  89.659625,
+                  88.429140625,
+                  119.4295,
+                  90.97246875,
+                  90.227578125,
+                  105.87165625,
+                  88.57321875,
+                  89.1584375
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 42.511,
+              "mean_us": 42.5523017578125
+            },
+            "merge": {
+              "median_us": 9.909,
+              "mean_us": 9.910591796875
+            },
+            "gpu_sum": {
+              "median_us": 52.42,
+              "mean_us": 52.4628935546875
+            },
+            "gpu_gap": {
+              "median_us": 1.356,
+              "mean_us": 1.3863017578125
+            },
+            "episode": {
+              "median_us": 87.4485,
+              "mean_us": 93.88224609375
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.454,
+                "mean_us": 4.458533203125,
+                "group64_mean_us": [
+                  4.45603125,
+                  4.461890625,
+                  4.4615625,
+                  4.4584375,
+                  4.4585156249999995,
+                  4.4544375,
+                  4.45846875,
+                  4.458921875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.454,
+                "mean_us": 4.458533203125,
+                "group64_mean_us": [
+                  4.45603125,
+                  4.461890625,
+                  4.4615625,
+                  4.4584375,
+                  4.4585156249999995,
+                  4.4544375,
+                  4.45846875,
+                  4.458921875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 31.015,
+                "mean_us": 39.893796875,
+                "group64_mean_us": [
+                  50.206,
+                  42.156734375,
+                  34.83834375,
+                  31.665578125,
+                  31.237875,
+                  31.77765625,
+                  64.523421875,
+                  32.744765625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.455,
+                "mean_us": 4.463326171875,
+                "group64_mean_us": [
+                  4.461625,
+                  4.466640625,
+                  4.463609375,
+                  4.46553125,
+                  4.46209375,
+                  4.4610625,
+                  4.463,
+                  4.463046875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.455,
+                "mean_us": 4.463326171875,
+                "group64_mean_us": [
+                  4.461625,
+                  4.466640625,
+                  4.463609375,
+                  4.46553125,
+                  4.46209375,
+                  4.4610625,
+                  4.463,
+                  4.463046875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 31.0245,
+                "mean_us": 34.94243359375,
+                "group64_mean_us": [
+                  49.7245,
+                  39.24059375,
+                  31.338125,
+                  31.85621875,
+                  31.99459375,
+                  32.772921875,
+                  31.636265625,
+                  30.97625
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.455,
+              "mean_us": 4.4609296875
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.455,
+              "mean_us": 4.4609296875
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 31.02,
+              "mean_us": 37.418115234375
+            }
+          }
+        }
+      }
+    },
+    {
+      "pair": 2,
+      "mode": "treatment",
+      "sqlite_sha256": "aef9577c5f77bdd55bec327774ad66b5d659f8838869e41a388259de7b8597f6",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 5.834,
+                "mean_us": 5.83408984375,
+                "group64_mean_us": [
+                  5.833078125,
+                  5.833,
+                  5.835875,
+                  5.8354375,
+                  5.834953125,
+                  5.834421875,
+                  5.8339687499999995,
+                  5.831984375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 5.834,
+                "mean_us": 5.83408984375,
+                "group64_mean_us": [
+                  5.833078125,
+                  5.833,
+                  5.835875,
+                  5.8354375,
+                  5.834953125,
+                  5.834421875,
+                  5.8339687499999995,
+                  5.831984375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 38.951,
+                "mean_us": 47.78360546875,
+                "group64_mean_us": [
+                  53.044515625,
+                  61.767109375000004,
+                  43.5555625,
+                  45.5509375,
+                  60.756734375,
+                  41.46790625,
+                  38.85365625,
+                  37.272421875
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 5.834,
+                "mean_us": 5.848154296875,
+                "group64_mean_us": [
+                  5.84653125,
+                  5.8485,
+                  5.852890625,
+                  5.844125,
+                  5.855421875,
+                  5.84503125,
+                  5.84665625,
+                  5.846078125
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 5.834,
+                "mean_us": 5.848154296875,
+                "group64_mean_us": [
+                  5.84653125,
+                  5.8485,
+                  5.852890625,
+                  5.844125,
+                  5.855421875,
+                  5.84503125,
+                  5.84665625,
+                  5.846078125
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.193,
+                "mean_us": 51.44989453125,
+                "group64_mean_us": [
+                  48.72378125,
+                  60.6268125,
+                  48.520640625,
+                  50.8351875,
+                  83.131203125,
+                  42.883140625,
+                  39.28584375,
+                  37.592546875000004
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 5.834,
+              "mean_us": 5.8411220703125
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 5.834,
+              "mean_us": 5.8411220703125
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 39.0715,
+              "mean_us": 49.61675
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 39.469,
+                "mean_us": 39.57578515625,
+                "group64_mean_us": [
+                  39.4473125,
+                  39.6848125,
+                  39.55159375,
+                  39.507921875,
+                  39.501609375,
+                  39.704734375,
+                  39.693625,
+                  39.514671875
+                ]
+              },
+              "merge": {
+                "median_us": 9.526,
+                "mean_us": 9.56391796875,
+                "group64_mean_us": [
+                  9.60696875,
+                  9.515765625,
+                  9.58375,
+                  9.550703125,
+                  9.594328125,
+                  9.54675,
+                  9.540984374999999,
+                  9.57209375
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 49.027,
+                "mean_us": 49.139703125,
+                "group64_mean_us": [
+                  49.05428125,
+                  49.200578125,
+                  49.13534375,
+                  49.058625,
+                  49.0959375,
+                  49.251484375,
+                  49.234609375,
+                  49.086765625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.303,
+                "mean_us": 1.308435546875,
+                "group64_mean_us": [
+                  1.30121875,
+                  1.3090625,
+                  1.3090625,
+                  1.330390625,
+                  1.2794375,
+                  1.31978125,
+                  1.31778125,
+                  1.30075
+                ]
+              },
+              "episode": {
+                "median_us": 84.232,
+                "mean_us": 95.072939453125,
+                "group64_mean_us": [
+                  87.514703125,
+                  92.0336875,
+                  113.114328125,
+                  97.904046875,
+                  88.162578125,
+                  103.884640625,
+                  91.859578125,
+                  86.109953125
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 39.532,
+                "mean_us": 39.6046015625,
+                "group64_mean_us": [
+                  39.55165625,
+                  39.603453125,
+                  39.618453125,
+                  39.59275,
+                  39.549671875,
+                  39.80321875,
+                  39.58546875,
+                  39.532140625
+                ]
+              },
+              "merge": {
+                "median_us": 9.433,
+                "mean_us": 9.47951953125,
+                "group64_mean_us": [
+                  9.48521875,
+                  9.479453125,
+                  9.478484374999999,
+                  9.46578125,
+                  9.48525,
+                  9.51084375,
+                  9.4575625,
+                  9.4735625
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 48.995000000000005,
+                "mean_us": 49.08412109375,
+                "group64_mean_us": [
+                  49.036875,
+                  49.08290625,
+                  49.0969375,
+                  49.05853125,
+                  49.034921875,
+                  49.3140625,
+                  49.04303125,
+                  49.005703125
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.303,
+                "mean_us": 1.2894609375,
+                "group64_mean_us": [
+                  1.287203125,
+                  1.26975,
+                  1.29396875,
+                  1.32690625,
+                  1.255703125,
+                  1.306140625,
+                  1.298921875,
+                  1.27709375
+                ]
+              },
+              "episode": {
+                "median_us": 84.2465,
+                "mean_us": 93.925849609375,
+                "group64_mean_us": [
+                  84.302390625,
+                  88.7451875,
+                  93.488359375,
+                  90.269375,
+                  86.941140625,
+                  117.300171875,
+                  87.86225,
+                  102.497921875
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 39.501,
+              "mean_us": 39.590193359375
+            },
+            "merge": {
+              "median_us": 9.495,
+              "mean_us": 9.52171875
+            },
+            "gpu_sum": {
+              "median_us": 49.025999999999996,
+              "mean_us": 49.111912109375
+            },
+            "gpu_gap": {
+              "median_us": 1.303,
+              "mean_us": 1.2989482421875
+            },
+            "episode": {
+              "median_us": 84.2375,
+              "mean_us": 94.49939453125
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.282,
+                "mean_us": 4.290396484375,
+                "group64_mean_us": [
+                  4.285390625,
+                  4.28396875,
+                  4.284453125,
+                  4.284453125,
+                  4.314984375,
+                  4.28834375,
+                  4.2985625,
+                  4.283015625
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.282,
+                "mean_us": 4.290396484375,
+                "group64_mean_us": [
+                  4.285390625,
+                  4.28396875,
+                  4.284453125,
+                  4.284453125,
+                  4.314984375,
+                  4.28834375,
+                  4.2985625,
+                  4.283015625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 28.218,
+                "mean_us": 35.74125390625,
+                "group64_mean_us": [
+                  30.98853125,
+                  29.43090625,
+                  28.302609375,
+                  32.609765625,
+                  47.148515625,
+                  53.97165625,
+                  33.576609375,
+                  29.9014375
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.282,
+                "mean_us": 4.29888671875,
+                "group64_mean_us": [
+                  4.294625,
+                  4.294140625,
+                  4.29275,
+                  4.295125,
+                  4.311140625,
+                  4.28203125,
+                  4.33003125,
+                  4.29125
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.282,
+                "mean_us": 4.29888671875,
+                "group64_mean_us": [
+                  4.294625,
+                  4.294140625,
+                  4.29275,
+                  4.295125,
+                  4.311140625,
+                  4.28203125,
+                  4.33003125,
+                  4.29125
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 28.085,
+                "mean_us": 33.228099609375,
+                "group64_mean_us": [
+                  30.8778125,
+                  30.003890625,
+                  28.242796875,
+                  32.532109375,
+                  53.205828125,
+                  28.958140625,
+                  33.3605625,
+                  28.64365625
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.282,
+              "mean_us": 4.2946416015625
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.282,
+              "mean_us": 4.2946416015625
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 28.1585,
+              "mean_us": 34.4846767578125
+            }
+          }
+        }
+      }
+    },
+    {
+      "pair": 2,
+      "mode": "control",
+      "sqlite_sha256": "60f9a1c67a1a2b388bd4f900ee98e74f94b697e1817d0dc22d53b702a9cdb871",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 6.037,
+                "mean_us": 6.04687109375,
+                "group64_mean_us": [
+                  6.04140625,
+                  6.0398125,
+                  6.0654375,
+                  6.037296875,
+                  6.06896875,
+                  6.038390625,
+                  6.042859375,
+                  6.040796875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.037,
+                "mean_us": 6.04687109375,
+                "group64_mean_us": [
+                  6.04140625,
+                  6.0398125,
+                  6.0654375,
+                  6.037296875,
+                  6.06896875,
+                  6.038390625,
+                  6.042859375,
+                  6.040796875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.5675,
+                "mean_us": 48.0234765625,
+                "group64_mean_us": [
+                  44.3656875,
+                  43.58153125,
+                  50.95846875,
+                  40.28453125,
+                  53.4658125,
+                  70.079328125,
+                  40.002203125,
+                  41.45025
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 6.037,
+                "mean_us": 6.0606796874999995,
+                "group64_mean_us": [
+                  6.051421875,
+                  6.053421875,
+                  6.1090625,
+                  6.0529375,
+                  6.0604375,
+                  6.05390625,
+                  6.05334375,
+                  6.05090625
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.037,
+                "mean_us": 6.0606796874999995,
+                "group64_mean_us": [
+                  6.051421875,
+                  6.053421875,
+                  6.1090625,
+                  6.0529375,
+                  6.0604375,
+                  6.05390625,
+                  6.05334375,
+                  6.05090625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.457,
+                "mean_us": 44.217205078125,
+                "group64_mean_us": [
+                  41.1196875,
+                  41.54375,
+                  59.277390625,
+                  44.08609375,
+                  45.668,
+                  41.90621875,
+                  40.027734375,
+                  40.108765625
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 6.037,
+              "mean_us": 6.053775390625
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 6.037,
+              "mean_us": 6.053775390625
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 39.519000000000005,
+              "mean_us": 46.1203408203125
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 42.419,
+                "mean_us": 42.50925390625,
+                "group64_mean_us": [
+                  42.58453125,
+                  42.64184375,
+                  42.550921875,
+                  42.76471875,
+                  42.540375,
+                  42.344234375,
+                  42.308125,
+                  42.33928125
+                ]
+              },
+              "merge": {
+                "median_us": 9.89,
+                "mean_us": 9.904970703125,
+                "group64_mean_us": [
+                  9.896140625000001,
+                  9.9198125,
+                  9.882093750000001,
+                  9.89871875,
+                  9.92328125,
+                  9.912203125,
+                  9.88921875,
+                  9.918296875000001
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 52.340999999999994,
+                "mean_us": 52.414224609375,
+                "group64_mean_us": [
+                  52.480671875,
+                  52.56165625,
+                  52.433015625,
+                  52.6634375,
+                  52.46365625,
+                  52.2564375,
+                  52.19734375,
+                  52.257578125
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.317,
+                "mean_us": 1.66878125,
+                "group64_mean_us": [
+                  4.012859375,
+                  1.3034375,
+                  1.3365625,
+                  1.37325,
+                  1.332546875,
+                  1.328015625,
+                  1.348109375,
+                  1.31546875
+                ]
+              },
+              "episode": {
+                "median_us": 95.64500000000001,
+                "mean_us": 108.8278125,
+                "group64_mean_us": [
+                  117.7810625,
+                  116.12953125,
+                  124.597515625,
+                  103.7445,
+                  130.126015625,
+                  93.067421875,
+                  91.5639375,
+                  93.612515625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 42.451,
+                "mean_us": 42.4866640625,
+                "group64_mean_us": [
+                  42.593171875,
+                  42.686890625,
+                  42.490265625,
+                  42.460609375,
+                  42.6196875,
+                  42.33365625,
+                  42.335640624999996,
+                  42.373390625
+                ]
+              },
+              "merge": {
+                "median_us": 9.826,
+                "mean_us": 9.843560546875,
+                "group64_mean_us": [
+                  9.851578125,
+                  9.871078125,
+                  9.822953125,
+                  9.84853125,
+                  9.81590625,
+                  9.833890625,
+                  9.87159375,
+                  9.832953125
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 52.277,
+                "mean_us": 52.330224609375,
+                "group64_mean_us": [
+                  52.44475,
+                  52.55796875,
+                  52.31321875,
+                  52.309140625,
+                  52.43559375,
+                  52.167546875,
+                  52.207234375,
+                  52.20634375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.317,
+                "mean_us": 1.4149453125,
+                "group64_mean_us": [
+                  1.325015625,
+                  1.312,
+                  1.333609375,
+                  1.35121875,
+                  1.31853125,
+                  1.32609375,
+                  2.0265,
+                  1.32659375
+                ]
+              },
+              "episode": {
+                "median_us": 97.5,
+                "mean_us": 107.272583984375,
+                "group64_mean_us": [
+                  113.015453125,
+                  120.76075,
+                  107.95178125,
+                  102.33078125,
+                  112.12571875,
+                  100.347609375,
+                  92.982140625,
+                  108.6664375
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 42.45,
+              "mean_us": 42.497958984375
+            },
+            "merge": {
+              "median_us": 9.858,
+              "mean_us": 9.874265625
+            },
+            "gpu_sum": {
+              "median_us": 52.309,
+              "mean_us": 52.372224609375
+            },
+            "gpu_gap": {
+              "median_us": 1.317,
+              "mean_us": 1.54186328125
+            },
+            "episode": {
+              "median_us": 97.011,
+              "mean_us": 108.0501982421875
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.431,
+                "mean_us": 4.44648046875,
+                "group64_mean_us": [
+                  4.432234375,
+                  4.43275,
+                  4.436328125,
+                  4.518171875,
+                  4.450390625,
+                  4.433359375,
+                  4.433265625,
+                  4.43534375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.431,
+                "mean_us": 4.44648046875,
+                "group64_mean_us": [
+                  4.432234375,
+                  4.43275,
+                  4.436328125,
+                  4.518171875,
+                  4.450390625,
+                  4.433359375,
+                  4.433265625,
+                  4.43534375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 48.301,
+                "mean_us": 49.056853515625,
+                "group64_mean_us": [
+                  53.73971875,
+                  49.9876875,
+                  48.527984375,
+                  51.839296875,
+                  55.1245625,
+                  49.984453125,
+                  48.55890625,
+                  34.69221875
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.432,
+                "mean_us": 4.445921875,
+                "group64_mean_us": [
+                  4.442328125,
+                  4.442875,
+                  4.441390625,
+                  4.461453125,
+                  4.442296875,
+                  4.443890625,
+                  4.44428125,
+                  4.4488593750000005
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.432,
+                "mean_us": 4.445921875,
+                "group64_mean_us": [
+                  4.442328125,
+                  4.442875,
+                  4.441390625,
+                  4.461453125,
+                  4.442296875,
+                  4.443890625,
+                  4.44428125,
+                  4.4488593750000005
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 48.2445,
+                "mean_us": 50.766677734375,
+                "group64_mean_us": [
+                  43.770328125,
+                  47.895921875,
+                  50.091515625,
+                  53.327140625,
+                  50.796859375,
+                  71.91171875,
+                  50.64375,
+                  37.6961875
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.431,
+              "mean_us": 4.446201171875
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.431,
+              "mean_us": 4.446201171875
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 48.269000000000005,
+              "mean_us": 49.911765625
+            }
+          }
+        }
+      }
+    },
+    {
+      "pair": 3,
+      "mode": "control",
+      "sqlite_sha256": "5b20c79892a9b88f98cc911aba97d345d696b2de234c564d90cc38a625cf72fb",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 248,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 5.932,
+                "mean_us": 5.955396484375,
+                "group64_mean_us": [
+                  6.016453125,
+                  5.95778125,
+                  5.9356406250000004,
+                  5.94109375,
+                  5.936609375000001,
+                  5.938484375,
+                  5.969671875,
+                  5.9474375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 5.932,
+                "mean_us": 5.955396484375,
+                "group64_mean_us": [
+                  6.016453125,
+                  5.95778125,
+                  5.9356406250000004,
+                  5.94109375,
+                  5.936609375000001,
+                  5.938484375,
+                  5.969671875,
+                  5.9474375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 58.236,
+                "mean_us": 64.089318359375,
+                "group64_mean_us": [
+                  54.895078125,
+                  53.32946875,
+                  64.689890625,
+                  63.512484375,
+                  83.5935625,
+                  61.018515625,
+                  70.0703125,
+                  61.605234375
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 5.963,
+                "mean_us": 5.9638125,
+                "group64_mean_us": [
+                  5.984859375,
+                  5.95778125,
+                  5.957828125,
+                  5.9508125000000005,
+                  5.949390625,
+                  5.950921875000001,
+                  5.9849375,
+                  5.97396875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 5.963,
+                "mean_us": 5.9638125,
+                "group64_mean_us": [
+                  5.984859375,
+                  5.95778125,
+                  5.957828125,
+                  5.9508125000000005,
+                  5.949390625,
+                  5.950921875000001,
+                  5.9849375,
+                  5.97396875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 58.2,
+                "mean_us": 59.72349609375,
+                "group64_mean_us": [
+                  47.631359375,
+                  54.070375,
+                  65.71015625,
+                  59.9608125,
+                  59.389890625,
+                  58.2981875,
+                  66.78346875,
+                  65.94371875
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 5.932,
+              "mean_us": 5.9596044921875
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 5.932,
+              "mean_us": 5.9596044921875
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 58.2115,
+              "mean_us": 61.9064072265625
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 41.648,
+                "mean_us": 41.73091796875,
+                "group64_mean_us": [
+                  41.940078125,
+                  41.729625,
+                  41.765078125,
+                  41.839609375,
+                  41.6891875,
+                  41.51371875,
+                  41.5418125,
+                  41.828234375
+                ]
+              },
+              "merge": {
+                "median_us": 9.718,
+                "mean_us": 9.7310078125,
+                "group64_mean_us": [
+                  9.747359375,
+                  9.69609375,
+                  9.750875,
+                  9.747859374999999,
+                  9.7040625,
+                  9.7459375,
+                  9.70703125,
+                  9.74884375
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 51.397,
+                "mean_us": 51.46192578125,
+                "group64_mean_us": [
+                  51.6874375,
+                  51.42571875,
+                  51.515953125,
+                  51.58746875,
+                  51.39325,
+                  51.25965625,
+                  51.24884375,
+                  51.577078125
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.325,
+                "mean_us": 2.377509765625,
+                "group64_mean_us": [
+                  9.0730625,
+                  1.333546875,
+                  1.34934375,
+                  1.301078125,
+                  1.34428125,
+                  1.305390625,
+                  1.309375,
+                  2.004
+                ]
+              },
+              "episode": {
+                "median_us": 89.59649999999999,
+                "mean_us": 104.16087890625,
+                "group64_mean_us": [
+                  122.323828125,
+                  103.96421875,
+                  106.7760625,
+                  114.8683125,
+                  99.962515625,
+                  87.97496875,
+                  87.21146875,
+                  110.20565625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 41.710499999999996,
+                "mean_us": 41.798681640625,
+                "group64_mean_us": [
+                  41.903703125,
+                  41.75084375,
+                  41.884484375,
+                  41.918953125,
+                  41.800671875,
+                  41.5793125,
+                  41.587640625,
+                  41.96384375
+                ]
+              },
+              "merge": {
+                "median_us": 9.623,
+                "mean_us": 9.648376953125,
+                "group64_mean_us": [
+                  9.6744375,
+                  9.65075,
+                  9.646453125,
+                  9.68084375,
+                  9.641875,
+                  9.642875,
+                  9.628140625,
+                  9.621640625
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 51.366,
+                "mean_us": 51.44705859375,
+                "group64_mean_us": [
+                  51.578140625,
+                  51.40159375,
+                  51.5309375,
+                  51.599796875,
+                  51.442546875,
+                  51.2221875,
+                  51.21578125,
+                  51.585484375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.325,
+                "mean_us": 1.325630859375,
+                "group64_mean_us": [
+                  1.28275,
+                  1.360171875,
+                  1.3600937499999999,
+                  1.292578125,
+                  1.33453125,
+                  1.302953125,
+                  1.328046875,
+                  1.343921875
+                ]
+              },
+              "episode": {
+                "median_us": 88.8885,
+                "mean_us": 107.988068359375,
+                "group64_mean_us": [
+                  117.206703125,
+                  100.620515625,
+                  120.489484375,
+                  116.29246875,
+                  115.296125,
+                  86.098078125,
+                  90.081609375,
+                  117.8195625
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 41.679,
+              "mean_us": 41.7647998046875
+            },
+            "merge": {
+              "median_us": 9.686,
+              "mean_us": 9.6896923828125
+            },
+            "gpu_sum": {
+              "median_us": 51.396,
+              "mean_us": 51.4544921875
+            },
+            "gpu_gap": {
+              "median_us": 1.325,
+              "mean_us": 1.8515703125
+            },
+            "episode": {
+              "median_us": 89.15,
+              "mean_us": 106.0744736328125
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.354,
+                "mean_us": 4.363380859375,
+                "group64_mean_us": [
+                  4.36146875,
+                  4.361875,
+                  4.37034375,
+                  4.357,
+                  4.357546875,
+                  4.35759375,
+                  4.368375,
+                  4.37284375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.354,
+                "mean_us": 4.363380859375,
+                "group64_mean_us": [
+                  4.36146875,
+                  4.361875,
+                  4.37034375,
+                  4.357,
+                  4.357546875,
+                  4.35759375,
+                  4.368375,
+                  4.37284375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 31.4795,
+                "mean_us": 40.1353828125,
+                "group64_mean_us": [
+                  31.047984375,
+                  29.48590625,
+                  33.754703125,
+                  40.0765,
+                  50.11159375,
+                  48.5655,
+                  49.048859375,
+                  38.992015625
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.354,
+                "mean_us": 4.363517578125,
+                "group64_mean_us": [
+                  4.354625,
+                  4.35753125,
+                  4.361,
+                  4.36440625,
+                  4.361484375,
+                  4.363984375,
+                  4.3748125,
+                  4.370296875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.354,
+                "mean_us": 4.363517578125,
+                "group64_mean_us": [
+                  4.354625,
+                  4.35753125,
+                  4.361,
+                  4.36440625,
+                  4.361484375,
+                  4.363984375,
+                  4.3748125,
+                  4.370296875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 31.573,
+                "mean_us": 43.634771484375,
+                "group64_mean_us": [
+                  30.0894375,
+                  30.046578125,
+                  29.8095625,
+                  41.474125,
+                  50.866546875,
+                  74.534234375,
+                  56.830875,
+                  35.4268125
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.354,
+              "mean_us": 4.3634492187500005
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.354,
+              "mean_us": 4.3634492187500005
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 31.552999999999997,
+              "mean_us": 41.8850771484375
+            }
+          }
+        }
+      }
+    },
+    {
+      "pair": 3,
+      "mode": "treatment",
+      "sqlite_sha256": "a31aaebb0857b74128df1df50f56c5022d763aecff6b052e5e80de53d05560a8",
+      "raw_kernel_rows": 4648,
+      "timed_kernel_rows": 4096,
+      "excluded_unmapped_oracle_warmup_rows": 552,
+      "timed_episodes": 3072,
+      "recorded_kernel_processes": 1,
+      "gpu_facts_static": [
+        {
+          "id": 0,
+          "name": "NVIDIA GeForce RTX 4070",
+          "uuid": "e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+          "clockRate": 2475000000
+        }
+      ],
+      "sampled_power_clock_tables": [],
+      "resources": [
+        {
+          "shape": "window",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "window",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 241,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "peer",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 250,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 49152,
+          "gridX": 40,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "prefill",
+          "context": "candidate",
+          "kind": "merge",
+          "registersPerThread": 48,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 8704,
+          "gridX": 460,
+          "gridY": 1,
+          "gridZ": 1,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "peer",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        },
+        {
+          "shape": "holdout",
+          "context": "candidate",
+          "kind": "attention",
+          "registersPerThread": 165,
+          "staticSharedMemory": 0,
+          "dynamicSharedMemory": 40960,
+          "gridX": 3,
+          "gridY": 1,
+          "gridZ": 2,
+          "blockX": 32,
+          "blockY": 4,
+          "blockZ": 1,
+          "localMemoryPerThread": 0,
+          "localMemoryTotal": 40697856
+        }
+      ],
+      "summaries": {
+        "window": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 6.015,
+                "mean_us": 6.030958984375,
+                "group64_mean_us": [
+                  6.019984375,
+                  6.023890625,
+                  6.0258593750000005,
+                  6.025015625,
+                  6.07309375,
+                  6.027875,
+                  6.02903125,
+                  6.022921875
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.015,
+                "mean_us": 6.030958984375,
+                "group64_mean_us": [
+                  6.019984375,
+                  6.023890625,
+                  6.0258593750000005,
+                  6.025015625,
+                  6.07309375,
+                  6.027875,
+                  6.02903125,
+                  6.022921875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.989000000000004,
+                "mean_us": 50.1528984375,
+                "group64_mean_us": [
+                  55.7318125,
+                  63.58640625,
+                  60.50921875,
+                  42.9094375,
+                  50.7779375,
+                  43.276359375,
+                  44.060328125,
+                  40.3716875
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 6.046,
+                "mean_us": 6.04296484375,
+                "group64_mean_us": [
+                  6.034953125,
+                  6.032984375,
+                  6.0349375,
+                  6.035078125,
+                  6.0796093749999995,
+                  6.049328125,
+                  6.041921875,
+                  6.03490625
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 6.046,
+                "mean_us": 6.04296484375,
+                "group64_mean_us": [
+                  6.034953125,
+                  6.032984375,
+                  6.0349375,
+                  6.035078125,
+                  6.0796093749999995,
+                  6.049328125,
+                  6.041921875,
+                  6.03490625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 39.829,
+                "mean_us": 53.085244140625,
+                "group64_mean_us": [
+                  59.3565,
+                  64.7041875,
+                  57.96125,
+                  40.171921875,
+                  75.11153125,
+                  43.18096875,
+                  44.030453125,
+                  40.165140625
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 6.015,
+              "mean_us": 6.0369619140625
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 6.015,
+              "mean_us": 6.0369619140625
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 39.912499999999994,
+              "mean_us": 51.6190712890625
+            }
+          }
+        },
+        "prefill": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 40.661,
+                "mean_us": 40.68409765625,
+                "group64_mean_us": [
+                  40.63709375,
+                  40.660078125,
+                  40.692875,
+                  40.684484375000004,
+                  40.652171875,
+                  40.667015625,
+                  40.80103125,
+                  40.678031250000004
+                ]
+              },
+              "merge": {
+                "median_us": 9.837499999999999,
+                "mean_us": 9.862181640625,
+                "group64_mean_us": [
+                  9.8294375,
+                  9.866453125,
+                  9.859390625,
+                  9.880875,
+                  9.876921874999999,
+                  9.873515625,
+                  9.822421875,
+                  9.8884375
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 50.483000000000004,
+                "mean_us": 50.546279296875,
+                "group64_mean_us": [
+                  50.46653125,
+                  50.52653125,
+                  50.552265625,
+                  50.565359375,
+                  50.52909375,
+                  50.54053125,
+                  50.623453125,
+                  50.56646875
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.375,
+                "mean_us": 1.377720703125,
+                "group64_mean_us": [
+                  1.3381875,
+                  1.3291250000000001,
+                  1.419234375,
+                  1.4381875,
+                  1.362671875,
+                  1.335609375,
+                  1.363640625,
+                  1.435109375
+                ]
+              },
+              "episode": {
+                "median_us": 85.17,
+                "mean_us": 89.38797460937501,
+                "group64_mean_us": [
+                  85.753546875,
+                  87.641390625,
+                  90.87771875,
+                  88.250953125,
+                  88.617765625,
+                  87.047578125,
+                  98.1778125,
+                  88.73703125
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 40.725,
+                "mean_us": 40.771056640625,
+                "group64_mean_us": [
+                  40.7325625,
+                  40.7434375,
+                  40.727,
+                  40.749015625,
+                  40.691953125,
+                  40.746,
+                  40.80096875,
+                  40.977515625
+                ]
+              },
+              "merge": {
+                "median_us": 9.757,
+                "mean_us": 9.777146484375,
+                "group64_mean_us": [
+                  9.80609375,
+                  9.764453125,
+                  9.783390625,
+                  9.772921875,
+                  9.778984375,
+                  9.7669375,
+                  9.763890625,
+                  9.7805
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 50.482,
+                "mean_us": 50.548203125,
+                "group64_mean_us": [
+                  50.53865625,
+                  50.507890625,
+                  50.510390625,
+                  50.5219375,
+                  50.4709375,
+                  50.5129375,
+                  50.564859375,
+                  50.758015625
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 1.344,
+                "mean_us": 1.630982421875,
+                "group64_mean_us": [
+                  1.317109375,
+                  3.444625,
+                  1.381171875,
+                  1.429671875,
+                  1.3586875,
+                  1.3286875,
+                  1.34628125,
+                  1.441625
+                ]
+              },
+              "episode": {
+                "median_us": 85.304,
+                "mean_us": 93.696658203125,
+                "group64_mean_us": [
+                  87.192484375,
+                  87.989171875,
+                  113.64742187499999,
+                  87.492140625,
+                  86.778796875,
+                  104.4918125,
+                  91.136,
+                  90.8454375
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 40.693,
+              "mean_us": 40.7275771484375
+            },
+            "merge": {
+              "median_us": 9.821,
+              "mean_us": 9.8196640625
+            },
+            "gpu_sum": {
+              "median_us": 50.483,
+              "mean_us": 50.5472412109375
+            },
+            "gpu_gap": {
+              "median_us": 1.344,
+              "mean_us": 1.5043515625
+            },
+            "episode": {
+              "median_us": 85.244,
+              "mean_us": 91.54231640625
+            }
+          }
+        },
+        "holdout": {
+          "contexts": {
+            "candidate": {
+              "attention": {
+                "median_us": 4.415,
+                "mean_us": 4.426234375,
+                "group64_mean_us": [
+                  4.418859375,
+                  4.42084375,
+                  4.438359375,
+                  4.423359375,
+                  4.4244375,
+                  4.44434375,
+                  4.421328125,
+                  4.41834375
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.415,
+                "mean_us": 4.426234375,
+                "group64_mean_us": [
+                  4.418859375,
+                  4.42084375,
+                  4.438359375,
+                  4.423359375,
+                  4.4244375,
+                  4.44434375,
+                  4.421328125,
+                  4.41834375
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 29.474,
+                "mean_us": 35.60035546875,
+                "group64_mean_us": [
+                  29.834859375,
+                  28.409921875,
+                  52.339578125,
+                  42.347109375,
+                  29.109859375,
+                  41.67965625,
+                  30.45815625,
+                  30.623703125
+                ]
+              }
+            },
+            "peer": {
+              "attention": {
+                "median_us": 4.415,
+                "mean_us": 4.42317578125,
+                "group64_mean_us": [
+                  4.423328125,
+                  4.422328125,
+                  4.42634375,
+                  4.41784375,
+                  4.416859375,
+                  4.425890625,
+                  4.428359375,
+                  4.424453125
+                ]
+              },
+              "merge": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "gpu_sum": {
+                "median_us": 4.415,
+                "mean_us": 4.42317578125,
+                "group64_mean_us": [
+                  4.423328125,
+                  4.422328125,
+                  4.42634375,
+                  4.41784375,
+                  4.416859375,
+                  4.425890625,
+                  4.428359375,
+                  4.424453125
+                ]
+              },
+              "gpu_gap": {
+                "median_us": 0.0,
+                "mean_us": 0.0,
+                "group64_mean_us": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "episode": {
+                "median_us": 29.685000000000002,
+                "mean_us": 40.7489453125,
+                "group64_mean_us": [
+                  29.708515625,
+                  28.653515625,
+                  48.231546875,
+                  42.6391875,
+                  30.604125,
+                  76.189046875,
+                  30.595265625,
+                  39.370359375
+                ]
+              }
+            }
+          },
+          "both_contexts": {
+            "attention": {
+              "median_us": 4.415,
+              "mean_us": 4.424705078125
+            },
+            "merge": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "gpu_sum": {
+              "median_us": 4.415,
+              "mean_us": 4.424705078125
+            },
+            "gpu_gap": {
+              "median_us": 0.0,
+              "mean_us": 0.0
+            },
+            "episode": {
+              "median_us": 29.586,
+              "mean_us": 38.174650390625
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "pair": 0,
+      "allocation": 0,
+      "execution_order": 0,
+      "process_order": [
+        "control",
+        "treatment"
+      ],
+      "shapes": [
+        {
+          "shape": "window",
+          "latency_change_percent": {
+            "attention": 1.889294000662911,
+            "merge": null,
+            "gpu_sum": 1.889294000662911,
+            "episode": -25.72773892773892
+          },
+          "contexts": {
+            "candidate": {
+              "attention": 1.8961253091508645,
+              "gpu_sum": 1.8961253091508645,
+              "episode": -25.173060688490768
+            },
+            "peer": {
+              "attention": 1.906182662025513,
+              "gpu_sum": 1.906182662025513,
+              "episode": -26.258902853544008
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": 0.11399999999999988,
+            "merge": 0.0,
+            "gpu_sum": 0.11399999999999988,
+            "episode": -13.796499999999995
+          }
+        },
+        {
+          "shape": "prefill",
+          "latency_change_percent": {
+            "attention": -1.8819040440916646,
+            "merge": 1.8776007307419018,
+            "gpu_sum": -1.1709154168936808,
+            "episode": -14.232696775324726
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -1.9534467744592665,
+              "gpu_sum": -1.1094745299079833,
+              "episode": -12.33740697413943
+            },
+            "peer": {
+              "attention": -1.9572744188237623,
+              "gpu_sum": -1.2322800045852178,
+              "episode": -17.210529037596324
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -0.7989999999999995,
+            "merge": 0.1850000000000005,
+            "gpu_sum": -0.6124999999999972,
+            "episode": -14.611499999999992
+          }
+        },
+        {
+          "shape": "holdout",
+          "latency_change_percent": {
+            "attention": 1.8965906525174825,
+            "merge": null,
+            "gpu_sum": 1.8965906525174825,
+            "episode": 70.93320270128416
+          },
+          "contexts": {
+            "candidate": {
+              "attention": 1.8740121923684683,
+              "gpu_sum": 1.8740121923684683,
+              "episode": 70.6071515956517
+            },
+            "peer": {
+              "attention": 1.8965906525174825,
+              "gpu_sum": 1.8965906525174825,
+              "episode": 71.17131306767467
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": 0.08399999999999963,
+            "merge": 0.0,
+            "gpu_sum": 0.08399999999999963,
+            "episode": 20.272
+          }
+        }
+      ]
+    },
+    {
+      "pair": 1,
+      "allocation": 0,
+      "execution_order": 1,
+      "process_order": [
+        "treatment",
+        "control"
+      ],
+      "shapes": [
+        {
+          "shape": "window",
+          "latency_change_percent": {
+            "attention": -0.6426099851705391,
+            "merge": null,
+            "gpu_sum": -0.6426099851705391,
+            "episode": -0.4923061386788552
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -0.6426099851705391,
+              "gpu_sum": -0.6426099851705391,
+              "episode": -0.511715254408196
+            },
+            "peer": {
+              "attention": -0.626235992089641,
+              "gpu_sum": -0.626235992089641,
+              "episode": -0.5348675475753795
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -0.0389999999999997,
+            "merge": 0.0,
+            "gpu_sum": -0.0389999999999997,
+            "episode": -0.19500000000000028
+          }
+        },
+        {
+          "shape": "prefill",
+          "latency_change_percent": {
+            "attention": -4.031897626496683,
+            "merge": -0.9486325562619968,
+            "gpu_sum": -3.4509729111026233,
+            "episode": -2.42714283263864
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -3.9589753240337755,
+              "gpu_sum": -3.3330149937923825,
+              "episode": -2.391493353467411
+            },
+            "peer": {
+              "attention": -4.107172261297077,
+              "gpu_sum": -3.4507082531027855,
+              "episode": -2.445381898000487
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -1.7140000000000057,
+            "merge": -0.0940000000000012,
+            "gpu_sum": -1.8089999999999975,
+            "episode": -2.1225000000000023
+          }
+        },
+        {
+          "shape": "holdout",
+          "latency_change_percent": {
+            "attention": -0.6509539842873169,
+            "merge": null,
+            "gpu_sum": -0.6509539842873169,
+            "episode": -5.017730496453899
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -0.6286484059272457,
+              "gpu_sum": -0.6286484059272457,
+              "episode": -5.055618249234239
+            },
+            "peer": {
+              "attention": -0.6509539842873169,
+              "gpu_sum": -0.6509539842873169,
+              "episode": -4.970265435381704
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -0.028999999999999915,
+            "merge": 0.0,
+            "gpu_sum": -0.028999999999999915,
+            "episode": -1.5564999999999998
+          }
+        }
+      ]
+    },
+    {
+      "pair": 2,
+      "allocation": 1,
+      "execution_order": 0,
+      "process_order": [
+        "treatment",
+        "control"
+      ],
+      "shapes": [
+        {
+          "shape": "window",
+          "latency_change_percent": {
+            "attention": -3.362597316547955,
+            "merge": null,
+            "gpu_sum": -3.362597316547955,
+            "episode": -1.132366709683963
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -3.362597316547955,
+              "gpu_sum": -3.362597316547955,
+              "episode": -1.5580969229797237
+            },
+            "peer": {
+              "attention": -3.362597316547955,
+              "gpu_sum": -3.362597316547955,
+              "episode": -0.6690827989963788
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -0.2030000000000003,
+            "merge": 0.0,
+            "gpu_sum": -0.2030000000000003,
+            "episode": -0.4475000000000051
+          }
+        },
+        {
+          "shape": "prefill",
+          "latency_change_percent": {
+            "attention": -6.94699646643111,
+            "merge": -3.682288496652475,
+            "gpu_sum": -6.276166625246137,
+            "episode": -13.167063528878165
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -6.954430797519972,
+              "gpu_sum": -6.331556523566595,
+              "episode": -11.93266767734854
+            },
+            "peer": {
+              "attention": -6.876163105698341,
+              "gpu_sum": -6.278095529582794,
+              "episode": -13.593333333333335
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -2.949000000000005,
+            "merge": -0.3630000000000013,
+            "gpu_sum": -3.2830000000000013,
+            "episode": -12.773499999999999
+          }
+        },
+        {
+          "shape": "holdout",
+          "latency_change_percent": {
+            "attention": -3.3626720830512324,
+            "merge": null,
+            "gpu_sum": -3.3626720830512324,
+            "episode": -41.66338643850091
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -3.3626720830512324,
+              "gpu_sum": -3.3626720830512324,
+              "episode": -41.57884929918636
+            },
+            "peer": {
+              "attention": -3.3844765342960326,
+              "gpu_sum": -3.3844765342960326,
+              "episode": -41.78611033382044
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -0.14900000000000002,
+            "merge": 0.0,
+            "gpu_sum": -0.14900000000000002,
+            "episode": -20.110500000000005
+          }
+        }
+      ]
+    },
+    {
+      "pair": 3,
+      "allocation": 1,
+      "execution_order": 1,
+      "process_order": [
+        "control",
+        "treatment"
+      ],
+      "shapes": [
+        {
+          "shape": "window",
+          "latency_change_percent": {
+            "attention": 1.3991908293998545,
+            "merge": null,
+            "gpu_sum": 1.3991908293998545,
+            "episode": -31.435369299880623
+          },
+          "contexts": {
+            "candidate": {
+              "attention": 1.3991908293998545,
+              "gpu_sum": 1.3991908293998545,
+              "episode": -31.332852531080423
+            },
+            "peer": {
+              "attention": 1.3919168203924137,
+              "gpu_sum": 1.3919168203924137,
+              "episode": -31.56529209621993
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": 0.0829999999999993,
+            "merge": 0.0,
+            "gpu_sum": 0.0829999999999993,
+            "episode": -18.299000000000007
+          }
+        },
+        {
+          "shape": "prefill",
+          "latency_change_percent": {
+            "attention": -2.3656997528731627,
+            "merge": 1.3937641957464386,
+            "gpu_sum": -1.7764028329052883,
+            "episode": -4.3813796971396535
+          },
+          "contexts": {
+            "candidate": {
+              "attention": -2.3698616980407317,
+              "gpu_sum": -1.7783139093721312,
+              "episode": -4.940483166195097
+            },
+            "peer": {
+              "attention": -2.362714424425494,
+              "gpu_sum": -1.720982751236222,
+              "episode": -4.032580142538111
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": -0.9860000000000042,
+            "merge": 0.1349999999999998,
+            "gpu_sum": -0.9130000000000038,
+            "episode": -3.906000000000006
+          }
+        },
+        {
+          "shape": "holdout",
+          "latency_change_percent": {
+            "attention": 1.4010105649977067,
+            "merge": null,
+            "gpu_sum": 1.4010105649977067,
+            "episode": -6.233955566824068
+          },
+          "contexts": {
+            "candidate": {
+              "attention": 1.4010105649977067,
+              "gpu_sum": 1.4010105649977067,
+              "episode": -6.370812751155519
+            },
+            "peer": {
+              "attention": 1.4010105649977067,
+              "gpu_sum": 1.4010105649977067,
+              "episode": -5.979792860988809
+            }
+          },
+          "delta_treatment_minus_control_us": {
+            "attention": 0.06099999999999994,
+            "merge": 0.0,
+            "gpu_sum": 0.06099999999999994,
+            "episode": -1.9669999999999987
+          }
+        }
+      ]
+    }
+  ],
+  "total": {
+    "raw_kernel_rows": 37184,
+    "timed_kernel_rows": 32768,
+    "timed_episodes": 24576,
+    "excluded_oracle_warmup_kernel_rows": 4416,
+    "verified_log_files": 13,
+    "verified_frozen_artifacts": 14,
+    "maximum_original_derived_numeric_difference_us": 0.0,
+    "all_original_process_summary_and_all_pair_percentages_reproduced": true
+  },
+  "verdict": {
+    "runtime_identity": "PASS; expected original FP8 kernels andfinitegeometry; prefill248->250registers isonlyresourcechange; localmemory0; sameimplementationcontextsmatchresources",
+    "negative_control_stability": "NOT_STABLE_ACROSS_PROCESSES; unchangedwindow/holdoutGPUdurationsmove together perpair. Do not call this proven clockdrift: no sampledclock/poweridentityexists.",
+    "attribution": "Positive evidence for a shape-local effect, but crossprocessrawpercentageisconfounded. The frozen diagnosticcontract says noisymatchedcontrols terminate this attempt without moresamples; do not sign adoption/P1 or hide confounding by normalization.",
+    "qualification": "UNCHANGED; diagnostics only, originalattempt14verdictretained, valid_formal_ab0",
+    "no_new_run_authorization": true
+  },
+  "interpretation_limits": [
+    "32768 is timedNVTX/correlationmappedkernels; all8SQLitecontain37184rawrows. The552excludedrows/process are retained andnot countedastimed.",
+    "StaticclockRate2475000000 is devicemetadata, not per-episodeactualfrequency. Externalprocessesandpowerconditionsarenotattributed.",
+    "Two contexts in oneprocess are sameimplementationinstances, not FP8versusBF16norcontrolversustreatment.",
+    "Hostepisodechanges include largevariability/negativecontroldrift; GPUkernelmedianchangesdonotprovecompleteinferenceperformance.",
+    "No normalization, fittedclockmodel, repeatedsample, originalthresholdchange or formalstatisticreplacementwasused."
+  ],
+  "final_schema_refresh": {
+    "reason": "Original analyzer added raw/mapped/untimed scope fields and wording; final frozen numeric summaries independently equal the already rawSQLite-recomputed review.",
+    "all_process_context_groups_and_pairs_still_identical": true,
+    "raw_sqlite_hashes_unchanged": true
+  }
+}

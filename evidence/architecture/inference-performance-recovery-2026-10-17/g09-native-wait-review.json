@@ -1,0 +1,165 @@
+{
+  "schema": "hyle.g09.native-wait-independent-source-review/v1",
+  "date": "2026-10-17",
+  "reviewer": "graph_coverage_audit independent subagent",
+  "input_head": "8e04eb0c0e220042e02a8cbcf5634c78fea7f17e",
+  "scope": "Read-only source review plus this evidence write. No GPU, application, benchmark, profiler, product or registry mutation. No build performed by reviewer.",
+  "decision": "SOURCE_AND_FINAL_LAUNCHER_REVIEW_PASS_BOUNDED_DIAGNOSTIC_ONLY",
+  "source_identity": {
+    "invocation.cc": {
+      "old_sha256": "beb735311c470bdd0ed326506d1a07d8c69d9b02ea2cbe6789fd8996b32f19eb",
+      "new_sha256": "581a91ed9626dbc87dbe818e8e6deedd6989d2eb053276ceae1920a4cbfd74a0",
+      "normalized_equal": false
+    },
+    "driver.cc": {
+      "old_sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+      "new_sha256": "f5300c9f12476a6a46fcb3bcdc2e4369b4b03ad45ea50db2d1286d18fe3358ab",
+      "normalized_equal": false
+    },
+    "CMakeLists.txt": {
+      "old_sha256": "016e5cccd8db233e8b771ca849060255e33cdd6afd5d2c6e7bd93ff0379b5049",
+      "new_sha256": "403a33c964d819bacbfb26407120f7385e79de6ef8a7c26673f29c4ee08643dd",
+      "normalized_equal": false
+    },
+    "facade.cc": {
+      "old_sha256": "673729edffeb93c4d51cd5b8dc5e88c0e3cfe5bca17055aa0efd5c5725181bbf",
+      "new_sha256": "673729edffeb93c4d51cd5b8dc5e88c0e3cfe5bca17055aa0efd5c5725181bbf",
+      "normalized_equal": true
+    },
+    "wrapper.cc": {
+      "old_sha256": "ee59a3d9d8721bfb46b084838d8712b0bbd20e79a7b299e286e3f1748fda11ef",
+      "new_sha256": "ee59a3d9d8721bfb46b084838d8712b0bbd20e79a7b299e286e3f1748fda11ef",
+      "normalized_equal": true
+    },
+    "facade_api.h": {
+      "old_sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+      "new_sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+      "normalized_equal": true
+    },
+    "recorder.h": {
+      "old_sha256": "8c00345352f56d1f0e2fb0511df92b9611dddf2020e7a14bea0c7834b2078738",
+      "new_sha256": "8c00345352f56d1f0e2fb0511df92b9611dddf2020e7a14bea0c7834b2078738",
+      "normalized_equal": true
+    }
+  },
+  "findings": [
+    {
+      "id": "NW29-01",
+      "severity": "RESOLVED",
+      "topic": "Recheck frontier predicate under the lock used for intervention",
+      "evidence": "invocation.cc:552 takes no ready native job under an earlier lock; CPU child can publish progress before new lock at564. The current intervention must also require !changed() under that new lock, so error/cancel/done/new native readiness returns to original predicate path.",
+      "requested": "Use if (pending == 1 && !changed()) at the intervention. Fixed shape0/1 race occurrence is not asserted; this ensures the declared precondition rather than broadening diagnostic semantics.",
+      "condition_present": true,
+      "resolution": "Final source rechecked at571: pending==1 && !changed() under pipeline_mutex. Kind52 records low32 pending count and high32 CPU-ready boolean under the same lock; it creates no owner, queue or synchronization rule. The earlier build remains historical and is not this final object certificate."
+    },
+    {
+      "id": "NW29-02",
+      "severity": "PASS",
+      "topic": "Completion reference lifetime",
+      "evidence": "include/hyle/compute/result.h:100 returns const Completion& stored in OwnedResult. Fragment pending and value.pending_transfer stay in RunState; current native root alone settles these handles. CPU lane updates frontier/CPU stages, and caller cannot rebind/reset during accepted work. Root retains RunState through drive and original cleanup. Unlocking pipeline_mutex does not free or replace the selected Completion."
+    },
+    {
+      "id": "NW29-03",
+      "severity": "PASS",
+      "topic": "Only already admitted unique native prefix; no lock held during wait",
+      "evidence": "Selection is run.pending_native[0] only at pending==1 after original ready admission loop. Fragment selects pending.completion(); upload/download select original pending_transfer. Existing valid check retains old fallback. pipeline_mutex unlock surrounds Completion.wait; src/compute_route_vulkan/vulkan_run.cc:251-269 releases runtime mutex for native WaitForFences. CPU child is spawned before drive_native_lane."
+    },
+    {
+      "id": "NW29-04",
+      "severity": "PASS",
+      "topic": "Error and retirement path",
+      "evidence": "A failed wait only updates pipeline_error under lock, then original top-of-loop stops admissions; drive_graph waits CPU stopped and its existing fragment/transfer cleanup observes all accepted handles before terminal publication. No pending handle is dropped by intervention and original poll/finish/output/read/drain remain."
+    },
+    {
+      "id": "NW29-05",
+      "severity": "PASS_WITH_RUNTIME_ASSERTION_REQUIRED",
+      "topic": "Negative controls and fixed measurement boundary",
+      "evidence": "facade.cc, wrapper.cc, recorder.h and API are normalized identical. Shape0/1 have independent CPU/native branches. Shape2/3 fixed dependent DAGs previously took !pipeline_parallel path, unchanged by new code. New diagnostic must show zero record kinds50/51 for shape2/3; old control images must also have zero50/51. All shapes retain original full oracles, slots,8warmups,12paired rounds/exact1 and drain. New kind52 is also intervention-only; fixed shape2/3 and old images must have zero50/51/52 records."
+    },
+    {
+      "id": "NW29-06",
+      "severity": "PASS_WITH_ENTRY_FREEZE_REQUIRED",
+      "topic": "Diagnostic ready-guard bypass and arm mapping",
+      "evidence": "driver only adds explicit G09_NATIVE_WAIT_DIAGNOSTIC bypass to private ready guard; CMake candidate paths point at new wait facade, baseline paths at R25 observed original; original imported nanobench archive remains. No public perf source changes. Launcher must freeze DIAGNOSTIC=1, HYLE_BENCH_AA_ROUTE empty, verify_only false, no formal qualifier output. Otherwise candidate A/A route could choose two new images rather than the intended old/new comparison."
+    }
+  ],
+  "before_any_run": [
+    "NW29-01 source predicate is resolved. Rebuild the affected invocation object/two facades and bind final source/artifact SHA before any run.",
+    "Independent actual build/link map/COFF review must prove replacement invocation TU and unchanged frozen SDK/leaf runtime; imported old invocation archive member must not be extracted.",
+    "Freeze one reviewed launcher and all runtime/facade/driver identities before the four diagnostic factor combinations.",
+    "Validate original4before+4after oracles,8State retirements,4M/slots,normal exit,record overflow,actual priority/mask/caller and OBS absence; stop on first failure.",
+    "Preserve all original failures; results are diagnostic, neither A/A/P1 qualification nor GPU-ready timestamp."
+  ],
+  "interpretation_limits": [
+    "Completion.wait return is host-observed successful native prefix retirement upper bound, including driver/scheduling/bookkeeping; not exact GPU kernel end.",
+    "This scratch blocking intervention is restricted to the frozen single-independent-native-branch fixture, not a general DAG wait algorithm.",
+    "Differences can establish observation-strategy contribution under this fixture but cannot alone identify all original A/A bias or be promoted to shipping product fix.",
+    "The original frontier uses sched::ConditionVariable, a fiber-aware timed wait; direct Completion.wait blocks its worker. Any effect is observation/wakeup strategy contribution, not isolated pure1ms device notification latency. Another worker remains available for the fixed CPU lane."
+  ],
+  "build_performed": false,
+  "gpu_or_application_run_performed": false,
+  "product_registry_changes": 0,
+  "recheck": "Final guarded predicate and kind52 independently re-read; source-only pass. Parent reported an earlier build but no application/GPU run; reviewer did not validate final binary identity.",
+  "launcher_review": {
+    "decision": "PASS_SEAL_ONLY_AND_FOUR_FROZEN_DIAGNOSTIC_PROCESSES_WITH_EXISTING_STOP_RULES",
+    "path": ".scratch\\inference-gaps\\g09_run_native_wait_29.py",
+    "sha256_at_review": "99eb305f16df52cbd47d5551960b17680c5c23a4b2fa120e5ca1c7ab2ba1ea31",
+    "seal_only": "Source branch writes only authorization then exits; no Popen/math execution before --execute.",
+    "execution_bound": "Four fixed execution/allocation combinations; one live owned child at a time; Run directory and authorization prevent blind repeat. Explicit argv selects native-wait-1 versus old observed-1 while AA_ROUTE empty/DIAGNOSTIC1.",
+    "must_before_run": [
+      {
+        "id": "NW29-L01",
+        "issue": "Target runtime nonce/PID/policy/factor telemetry is emitted but not validated by launcher; canary is a separate process. caller_cpu conditional is ineffective for the actual caller_logical_cpu policy key.",
+        "fix": "Validate emitted target PID==Popen pid, nonce exact, mask0x14/priority32768, caller2/affinity_ok1, each expected factor/aa_route/verify-only; validate two loaded image paths/tags. Check policy caller_logical_cpu==2.",
+        "status": "RESOLVED_IN_FINAL_LAUNCHER"
+      },
+      {
+        "id": "NW29-L02",
+        "issue": "Current parser only forbids kind50/51/52 in old tag, not new shape2/3; declared block counts are not compared to actual records.",
+        "fix": "Parse eight fixed per-shape/arm flush blocks, count actual records, require intervention records in shape0/1 new blocks and none in shape2/3 or old blocks; check kind50/51 matching and52 low32=1.",
+        "status": "RESOLVED_IN_FINAL_LAUNCHER"
+      }
+    ],
+    "recommended_freeze": "Include source-manifest/build-reviewed-result and reused fixed helper/profile source identities in sealed files; freeze original observed images against matching retained R25 identity.",
+    "independent_actual_hash_checks": {
+      "source_manifest_matches_build": true,
+      "all_manifest_source_files_match": true,
+      "all_new_build_artifacts_and_staged_runtime_match": true,
+      "old_observed_dlls_and_driver_match_retained_R25_artifact_binding": true
+    },
+    "build_reviewed_result_sha256": "1b4c5bd7c13b679e8c737dfd664dc223b74c4225e61aa987a610f3ef98cce474",
+    "source_manifest_sha256": "9c5fccfee9c975110df60fc0eb9472c127deddfd396eb5f3caaf6b6c110c8541",
+    "run_performed": false,
+    "prior_review_retained": {
+      "sha256_at_review": "99eb305f16df52cbd47d5551960b17680c5c23a4b2fa120e5ca1c7ab2ba1ea31",
+      "decision": "PENDING_TARGET_IDENTITY_AND_NEGATIVE_CONTROL_PARSER_FIXES",
+      "must_before_run": [
+        {
+          "id": "NW29-L01",
+          "issue": "Target runtime nonce/PID/policy/factor telemetry is emitted but not validated by launcher; canary is a separate process. caller_cpu conditional is ineffective for the actual caller_logical_cpu policy key.",
+          "fix": "Validate emitted target PID==Popen pid, nonce exact, mask0x14/priority32768, caller2/affinity_ok1, each expected factor/aa_route/verify-only; validate two loaded image paths/tags. Check policy caller_logical_cpu==2.",
+          "status": "RESOLVED_IN_FINAL_LAUNCHER"
+        },
+        {
+          "id": "NW29-L02",
+          "issue": "Current parser only forbids kind50/51/52 in old tag, not new shape2/3; declared block counts are not compared to actual records.",
+          "fix": "Parse eight fixed per-shape/arm flush blocks, count actual records, require intervention records in shape0/1 new blocks and none in shape2/3 or old blocks; check kind50/51 matching and52 low32=1.",
+          "status": "RESOLVED_IN_FINAL_LAUNCHER"
+        }
+      ]
+    },
+    "final_checks": [
+      "Lines23-52: seal-only writes authorization then exits before RUN creation and child process code. No mathematical application executes in seal-only.",
+      "Lines27-37,54-56,73-74: source/manifests/build metadata,new PE/runtime,retained observed images,review,launcher and fixed helper/profile SHA are sealed, compared at execute and rechecked before every owned child.",
+      "Lines43-44: actual policy key caller_logical_cpu==2 is checked.",
+      "Lines72-83: exactly four execution/allocation combinations; AA_ROUTE empty,verify_only0,DIAGNOSTIC1,nonce unique,OBS disabled; argv maps new native-wait1 against old observed1,not new/new.",
+      "Lines91-103: at most one live own math child; wait extends same PID,never restarts. Exceptions terminate only the retained own child. No profiler/debugger/other process tree is started.",
+      "Lines105-124: raw originals retained; ASCII NUL/CRLF normalization only. Exact target PID/nonce/mask/priority/caller/topology/affinity/factors,AA_ROUTE empty and new/old image path+tags are checked.",
+      "Lines125-147: original4+4full oracle,8State retirement blocks,declared versus actual record counts and12round markers are required. Old/control and shape2/3 blocks forbid50/51/52; intervention blocks pair52,50,51 by run/token/thread,require successful waits and pending low32==1.",
+      "Lines148-161: OBS/Nsight modules rejected. First nonzero exit/identity/oracle/record failure stops remaining combinations and records failure; no formal readiness/P1 output is generated."
+    ],
+    "syntax_and_parser_smoke": "Python AST parse and exact field-grammar tests PASS without importing/executing launcher.",
+    "entry_not_run_by_reviewer": true,
+    "final_scope_note": "Final review approves only the existing bounded diagnostic entry, not product modification or formal measurement recovery. GPU work must remain serial as card requires; ordinary host probe/canary do not stand in for mathematical target checks."
+  }
+}

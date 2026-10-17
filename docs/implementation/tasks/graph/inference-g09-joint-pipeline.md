@@ -12,6 +12,15 @@ G07/G08/G10已接受，当前G07–G10 goal完成3/4；剩余G09的三组测量�
 已完整正常退出，四形状 oracle/退休/身份通过；原计量段缺可归属 GPU 记录，native readiness 与
 原 A/A 因果仍未决，故不恢复性能资格或推进产品状态。
 
+2026-10-17 当前用户要求打破长期定位停滞后，另建的
+[有限机制诊断](../tooling/inference-performance-recovery-2026-10-17.md)已在可丢弃 Windows Vulkan
+映像中完成四个全换序进程：仅在无 ready native job、single-pending 时把周期观察改成原
+Completion.wait，原数学/生命周期不变。八个独立分支形状/顺序的平均 replay 均减少
+1.770–2.257ms，48 个成对组有 47 个改善；两个未干预路径的差异方向不一致。
+这确认周期观察策略对该消费者有实质成本，但不证明原 A/A 已恢复。干预会占用 Sched worker，
+只能作为因果反证；生产需保单 worker、多在途与真实退休的完成通知/有界阻塞执行路径，
+不可直接搬入该补丁。当前三组 A/A、产品状态和原失败预算不变。
+
 ## 需求、真实事实与owner
 
 本卡承接[原G09](../project/inference-single-machine-foundation-audit-2026-10.md)和

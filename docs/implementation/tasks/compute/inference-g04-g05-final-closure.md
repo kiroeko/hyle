@@ -93,3 +93,10 @@ CANDIDATE 终审。阶段提交只维护文档/registry，不产生新产品 can
 原产品candidate始终不变。五个本批剩余owner结束本轮，其他已验收范围及G07两SCOPED
 owner不变；G01–G06六项告一段落，G07–G10全部保留后再交付完整CLI。当前没有活动goal，
 不以本记录自动创建/恢复它。原14次性能尝试、全部失败/未知费用与原5%门原样保留。
+
+2026-10-17 用户针对长期性能定位停滞要求另想办法后，新的
+[有界机制诊断](../tooling/inference-performance-recovery-2026-10-17.md)在独立可丢弃 full-TU
+中检验了 D256 K-load 顺序。该变体通过数值/tail/只读、memcheck/racecheck 及实际 kernel
+身份复核，四组目标 kernel 原始耗时均减少；同 SASS 负控也共同漂移，故未取得可签发的
+纯因果或正式性能收益，不采纳产品、不开启本 terminal 的实现施工，也不改上述取舍/门限。
+全部换序与反证保留，有限诊断已按其预声明停止，不追加正式采样。
