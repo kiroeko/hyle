@@ -1,0 +1,62 @@
+{
+  "product_candidate": "1dbfce9a025b9ba10e357d33863d0c646baf16bb",
+  "test_source_sha256": "092e51b9996e029466c1a8a618c8d4ab2b5c47ce7cf95af2e90402dcbf66fccf",
+  "commands": [
+    {
+      "label": "publication-configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-source",
+        "-B",
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk",
+        "-DHYLE_TEST_ROUTE=apple",
+        "-DHYLE_TEST_CANONICAL_SOURCE=/Users/kiro/hyle-scratch/compute-unified/source-c8874688"
+      ],
+      "exit_code": 0,
+      "seconds": 1.280946125,
+      "log": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-configure.log",
+      "log_sha256": "fe928a452bbdaaa6ab9e422084cf0bef0943b65453391c09d4571ac190cdd6a2",
+      "actual_api_validation": false,
+      "actual_gpu_validation": false
+    },
+    {
+      "label": "publication-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-build",
+        "--target",
+        "completion_publication",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 1.3451859580000003,
+      "log": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-build.log",
+      "log_sha256": "dc98c0e074e0735fdc8addde82e71812ba39a9ee593183b616d8ba0ec99bbff7",
+      "actual_api_validation": false,
+      "actual_gpu_validation": false
+    },
+    {
+      "label": "publication-api-gpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-build/bin/completion_publication"
+      ],
+      "exit_code": 0,
+      "seconds": 0.608959,
+      "log": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-api-gpu.log",
+      "log_sha256": "ce81ff65416f7b85ddb428d000435f0ad3dc7408a4d322040dfead29799349a9",
+      "actual_api_validation": true,
+      "actual_gpu_validation": true
+    }
+  ],
+  "binary": {
+    "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/publication-build/bin/completion_publication",
+    "sha256": "48110b21fab0be32c16bf856ff577c38b644761cb865941d32b84fa438ea2f48"
+  }
+}

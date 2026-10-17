@@ -1,0 +1,47 @@
+[
+  {
+    "stage": "configure",
+    "exit": 0,
+    "seconds": 12.944553000037558,
+    "log": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-publication-test\\configure.log",
+    "argv": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-publication-test",
+      "-B",
+      "C:\\h7\\g09-completion-publication",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:/h7/g09-direct-sdk/current",
+      "-DHYLE_TEST_CANONICAL_SOURCE=C:/public/project-hyle/hyle",
+      "-DHYLE_TEST_ROUTE=vulkan",
+      "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1",
+      "-DHYLE_COMPUTE_TORCH_CPU_ROOT=C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch"
+    ]
+  },
+  {
+    "stage": "build",
+    "exit": 0,
+    "seconds": 5.144255899998825,
+    "log": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-publication-test\\build.log",
+    "argv": [
+      "cmake",
+      "--build",
+      "C:\\h7\\g09-completion-publication",
+      "--target",
+      "completion_publication",
+      "--parallel",
+      "2"
+    ]
+  },
+  {
+    "stage": "run",
+    "exit": 0,
+    "seconds": 1.0501149999909103,
+    "log": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-publication-test\\run.log",
+    "argv": [
+      "C:\\h7\\g09-completion-publication\\bin\\completion_publication.exe"
+    ]
+  }
+]

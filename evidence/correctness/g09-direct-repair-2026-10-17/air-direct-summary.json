@@ -1,0 +1,532 @@
+{
+  "candidate": "1dbfce9a025b9ba10e357d33863d0c646baf16bb",
+  "monitor": [
+    {
+      "label": "monitor-contracts-api-gpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/bin/g09_wake_v4_contracts"
+      ],
+      "exit_code": 0,
+      "seconds": 2.169842375,
+      "log": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/monitor-contracts-api-gpu.log",
+      "log_sha256": "77380b7da52e253f4bf128328b921de8d8232961b521207037b3985cfd55eef6",
+      "actual_api_validation": true,
+      "actual_gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "monitor-pipeline-api-gpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/bin/g09_wake_v4_pipeline"
+      ],
+      "exit_code": 0,
+      "seconds": 5.321908166,
+      "log": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/monitor-pipeline-api-gpu.log",
+      "log_sha256": "4554ad89e9140dc6c5e52ef5224aef77122eac1f70d1899f5b3f6810585812f3",
+      "actual_api_validation": true,
+      "actual_gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "monitor-encoded-api-gpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/bin/g09_wake_v4_encoded",
+        "--gtest_filter=EncodedNativePages.*",
+        "--gtest_output=json:/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/encoded4.json"
+      ],
+      "exit_code": 0,
+      "seconds": 3.508859958000002,
+      "log": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/monitor-encoded-api-gpu.log",
+      "log_sha256": "164590d6cc4a68b10f440e22019c9c0893f7645025b49057c14c20b1942eb9dc",
+      "actual_api_validation": true,
+      "actual_gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "monitor-native_unit-api-gpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/bin/g09_wake_v4_native_unit",
+        "--gtest_filter=AppleCompletionNotification.*",
+        "--gtest_output=json:/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/completion4.json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.38115891699999693,
+      "log": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/monitor-native_unit-api-gpu.log",
+      "log_sha256": "39fa7458462b665db5e4410d863c15cbc9df28faf602ceb2eca29f35d57d4e22",
+      "actual_api_validation": true,
+      "actual_gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    }
+  ],
+  "apple": {
+    "mode": "ORDINARY_REPEATED_LATENCY_COMPARISON",
+    "runs": [
+      {
+        "repeat": 0,
+        "label": "baseline",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib",
+          "--label",
+          "baseline",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/0-baseline.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 1666372541,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/0-baseline.json"
+      },
+      {
+        "repeat": 0,
+        "label": "candidate",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade/bin/libg09_native_trial.dylib",
+          "--label",
+          "candidate",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/0-candidate.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 1210037625,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/0-candidate.json"
+      },
+      {
+        "repeat": 1,
+        "label": "candidate",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade/bin/libg09_native_trial.dylib",
+          "--label",
+          "candidate",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/1-candidate.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 740955583,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/1-candidate.json"
+      },
+      {
+        "repeat": 1,
+        "label": "baseline",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib",
+          "--label",
+          "baseline",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/1-baseline.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 951016292,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/1-baseline.json"
+      },
+      {
+        "repeat": 2,
+        "label": "baseline",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib",
+          "--label",
+          "baseline",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/2-baseline.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 1001425042,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/2-baseline.json"
+      },
+      {
+        "repeat": 2,
+        "label": "candidate",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade/bin/libg09_native_trial.dylib",
+          "--label",
+          "candidate",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/2-candidate.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 725102167,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-results/2-candidate.json"
+      }
+    ],
+    "baseline": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib",
+    "candidate": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade/bin/libg09_native_trial.dylib",
+    "all_shapes_and_samples_retained": true,
+    "ratios": [
+      {
+        "shape": "independent-cpu-first",
+        "baseline": {
+          "n": 93,
+          "median_ns": 2665958,
+          "p90_ns": 4023958,
+          "p99_ns": 4373834,
+          "min_ns": 2497375,
+          "max_ns": 4373834
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 2090750,
+          "p90_ns": 2256750,
+          "p99_ns": 2523083,
+          "min_ns": 1809750,
+          "max_ns": 2523083
+        },
+        "candidate_over_baseline": 0.7842396616900942
+      },
+      {
+        "shape": "independent-gpu-first",
+        "baseline": {
+          "n": 93,
+          "median_ns": 2913917,
+          "p90_ns": 5045250,
+          "p99_ns": 5488000,
+          "min_ns": 2521083,
+          "max_ns": 5488000
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 1884084,
+          "p90_ns": 2081417,
+          "p99_ns": 2318041,
+          "min_ns": 1824416,
+          "max_ns": 2318041
+        },
+        "candidate_over_baseline": 0.6465812169667152
+      },
+      {
+        "shape": "two-microbatches",
+        "baseline": {
+          "n": 93,
+          "median_ns": 5609709,
+          "p90_ns": 7265084,
+          "p99_ns": 7691958,
+          "min_ns": 4786250,
+          "max_ns": 7691958
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 4753125,
+          "p90_ns": 4994667,
+          "p99_ns": 5357166,
+          "min_ns": 4343833,
+          "max_ns": 5357166
+        },
+        "candidate_over_baseline": 0.8473033093160447
+      },
+      {
+        "shape": "serial-holdout",
+        "baseline": {
+          "n": 93,
+          "median_ns": 5451667,
+          "p90_ns": 5777334,
+          "p99_ns": 6167417,
+          "min_ns": 3004334,
+          "max_ns": 6167417
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 3025000,
+          "p90_ns": 3549250,
+          "p99_ns": 4340625,
+          "min_ns": 2590375,
+          "max_ns": 4340625
+        },
+        "candidate_over_baseline": 0.5548761507260073
+      }
+    ],
+    "result": "COMPLETED_WITH_NUMERICAL_CHECKS_NO_QUALIFICATION_CLAIM"
+  },
+  "vulkan": {
+    "mode": "ORDINARY_REPEATED_LATENCY_COMPARISON",
+    "runs": [
+      {
+        "repeat": 0,
+        "label": "baseline",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib",
+          "--label",
+          "baseline",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/0-baseline.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 2772454125,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/0-baseline.json"
+      },
+      {
+        "repeat": 0,
+        "label": "candidate",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-facade/bin/libg09_native_trial.dylib",
+          "--label",
+          "candidate",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/0-candidate.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 2431188250,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/0-candidate.json"
+      },
+      {
+        "repeat": 1,
+        "label": "candidate",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-facade/bin/libg09_native_trial.dylib",
+          "--label",
+          "candidate",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/1-candidate.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 1511606584,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/1-candidate.json"
+      },
+      {
+        "repeat": 1,
+        "label": "baseline",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib",
+          "--label",
+          "baseline",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/1-baseline.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 2219595542,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/1-baseline.json"
+      },
+      {
+        "repeat": 2,
+        "label": "baseline",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib",
+          "--label",
+          "baseline",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/2-baseline.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 2372915958,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/2-baseline.json"
+      },
+      {
+        "repeat": 2,
+        "label": "candidate",
+        "argv": [
+          "/Library/Developer/CommandLineTools/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/latency.py",
+          "measure",
+          "--image",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-facade/bin/libg09_native_trial.dylib",
+          "--label",
+          "candidate",
+          "--warmup",
+          "8",
+          "--iterations",
+          "31",
+          "--output",
+          "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/2-candidate.json"
+        ],
+        "exit_code": 0,
+        "process_elapsed_ns": 1552829542,
+        "result": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-results/2-candidate.json"
+      }
+    ],
+    "baseline": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib",
+    "candidate": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-facade/bin/libg09_native_trial.dylib",
+    "all_shapes_and_samples_retained": true,
+    "ratios": [
+      {
+        "shape": "independent-cpu-first",
+        "baseline": {
+          "n": 93,
+          "median_ns": 9836250,
+          "p90_ns": 10592791,
+          "p99_ns": 10894000,
+          "min_ns": 5091125,
+          "max_ns": 10894000
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 3286125,
+          "p90_ns": 7219458,
+          "p99_ns": 8556958,
+          "min_ns": 2853500,
+          "max_ns": 8556958
+        },
+        "candidate_over_baseline": 0.33408311094166987
+      },
+      {
+        "shape": "independent-gpu-first",
+        "baseline": {
+          "n": 93,
+          "median_ns": 10806042,
+          "p90_ns": 14567292,
+          "p99_ns": 15348000,
+          "min_ns": 9434792,
+          "max_ns": 15348000
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 6935667,
+          "p90_ns": 8044583,
+          "p99_ns": 10916792,
+          "min_ns": 5111666,
+          "max_ns": 10916792
+        },
+        "candidate_over_baseline": 0.641832319363556
+      },
+      {
+        "shape": "two-microbatches",
+        "baseline": {
+          "n": 93,
+          "median_ns": 13708833,
+          "p90_ns": 15339625,
+          "p99_ns": 15741916,
+          "min_ns": 8045125,
+          "max_ns": 15741916
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 13124083,
+          "p90_ns": 13817083,
+          "p99_ns": 14340042,
+          "min_ns": 11648334,
+          "max_ns": 14340042
+        },
+        "candidate_over_baseline": 0.957345019813138
+      },
+      {
+        "shape": "serial-holdout",
+        "baseline": {
+          "n": 93,
+          "median_ns": 13979708,
+          "p90_ns": 17216209,
+          "p99_ns": 18581708,
+          "min_ns": 9159750,
+          "max_ns": 18581708
+        },
+        "candidate": {
+          "n": 93,
+          "median_ns": 4776542,
+          "p90_ns": 6498083,
+          "p99_ns": 7638583,
+          "min_ns": 3949750,
+          "max_ns": 7638583
+        },
+        "candidate_over_baseline": 0.34167680755563706
+      }
+    ],
+    "result": "COMPLETED_WITH_NUMERICAL_CHECKS_NO_QUALIFICATION_CLAIM"
+  },
+  "timing_scope": "Repeated direct public journey measurements only; all processes/shapes/warm samples retained. No qualification or broader performance claim."
+}

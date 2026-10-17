@@ -1,0 +1,928 @@
+{
+  "baseline_commit": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "final_product_commit": "1dbfce9a0",
+  "final_owner_source_sha256": "d074251950760ac16607e5c675fb0f5b6d6196855a00e8e7b332db7c1319f110",
+  "phases": {
+    "pre_monitor": {
+      "directory": ".scratch\\g09-direct-latency\\windows-pre-monitor-clean",
+      "comparison_sha256": "dc1d3820e398634fa0725fffcbf9493529bbdfb70464aeb7272de23f0b5b2473",
+      "runs": [
+        {
+          "repeat": 0,
+          "label": "baseline",
+          "image_sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+          "process_ms": 2791.9878,
+          "load_ms": 137.7426,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 167.543,
+              "first_replay_ms": 15.4179,
+              "warm_median_ms": 9.0955,
+              "warm_p90_ms": 10.5357,
+              "warm_p99_ms": 11.2012,
+              "close_destroy_ms": 27.6035,
+              "full_oracle_before_ms": 15.9856,
+              "full_oracle_after_ms": 15.6663,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 63.4731,
+              "first_replay_ms": 8.4527,
+              "warm_median_ms": 8.8054,
+              "warm_p90_ms": 10.4034,
+              "warm_p99_ms": 10.8519,
+              "close_destroy_ms": 26.8537,
+              "full_oracle_before_ms": 16.59,
+              "full_oracle_after_ms": 15.9221,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 70.4355,
+              "first_replay_ms": 18.8924,
+              "warm_median_ms": 13.9778,
+              "warm_p90_ms": 15.8232,
+              "warm_p99_ms": 16.8753,
+              "close_destroy_ms": 27.9804,
+              "full_oracle_before_ms": 29.2062,
+              "full_oracle_after_ms": 27.3585,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 56.2422,
+              "first_replay_ms": 13.8253,
+              "warm_median_ms": 11.5917,
+              "warm_p90_ms": 12.8722,
+              "warm_p99_ms": 14.1432,
+              "close_destroy_ms": 28.6756,
+              "full_oracle_before_ms": 17.615,
+              "full_oracle_after_ms": 18.1746,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 0,
+          "label": "candidate",
+          "image_sha256": "279a7787db43f94c01cee14db9acd3fe41f0d13fcd9a5977e37f7f984e6e072f",
+          "process_ms": 2244.7907,
+          "load_ms": 139.9745,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 168.5583,
+              "first_replay_ms": 9.7719,
+              "warm_median_ms": 4.945,
+              "warm_p90_ms": 5.5128,
+              "warm_p99_ms": 5.6664,
+              "close_destroy_ms": 28.1741,
+              "full_oracle_before_ms": 12.182,
+              "full_oracle_after_ms": 11.7882,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 59.7634,
+              "first_replay_ms": 6.4493,
+              "warm_median_ms": 4.8021,
+              "warm_p90_ms": 5.5534,
+              "warm_p99_ms": 6.2619,
+              "close_destroy_ms": 28.317,
+              "full_oracle_before_ms": 11.6976,
+              "full_oracle_after_ms": 12.1217,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 67.5601,
+              "first_replay_ms": 17.3457,
+              "warm_median_ms": 12.3807,
+              "warm_p90_ms": 13.0064,
+              "warm_p99_ms": 13.8572,
+              "close_destroy_ms": 29.2535,
+              "full_oracle_before_ms": 25.6393,
+              "full_oracle_after_ms": 25.2181,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 60.9178,
+              "first_replay_ms": 9.8092,
+              "warm_median_ms": 8.2947,
+              "warm_p90_ms": 9.097,
+              "warm_p99_ms": 9.7387,
+              "close_destroy_ms": 24.9605,
+              "full_oracle_before_ms": 15.8441,
+              "full_oracle_after_ms": 14.7778,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 1,
+          "label": "candidate",
+          "image_sha256": "279a7787db43f94c01cee14db9acd3fe41f0d13fcd9a5977e37f7f984e6e072f",
+          "process_ms": 2253.0574,
+          "load_ms": 140.8559,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 162.9778,
+              "first_replay_ms": 8.541,
+              "warm_median_ms": 4.912,
+              "warm_p90_ms": 5.5804,
+              "warm_p99_ms": 6.1674,
+              "close_destroy_ms": 27.1153,
+              "full_oracle_before_ms": 11.8722,
+              "full_oracle_after_ms": 11.8414,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 67.202,
+              "first_replay_ms": 6.2831,
+              "warm_median_ms": 4.8533,
+              "warm_p90_ms": 5.5175,
+              "warm_p99_ms": 6.5683,
+              "close_destroy_ms": 27.8121,
+              "full_oracle_before_ms": 12.1645,
+              "full_oracle_after_ms": 11.91,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 71.82,
+              "first_replay_ms": 15.08,
+              "warm_median_ms": 11.911,
+              "warm_p90_ms": 12.6881,
+              "warm_p99_ms": 12.8646,
+              "close_destroy_ms": 29.3225,
+              "full_oracle_before_ms": 25.0994,
+              "full_oracle_after_ms": 25.6373,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 60.5322,
+              "first_replay_ms": 8.839,
+              "warm_median_ms": 8.1518,
+              "warm_p90_ms": 8.9501,
+              "warm_p99_ms": 9.1782,
+              "close_destroy_ms": 25.608,
+              "full_oracle_before_ms": 15.5571,
+              "full_oracle_after_ms": 14.724,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 1,
+          "label": "baseline",
+          "image_sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+          "process_ms": 2833.68,
+          "load_ms": 139.5343,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 162.9465,
+              "first_replay_ms": 14.8244,
+              "warm_median_ms": 8.6855,
+              "warm_p90_ms": 9.5974,
+              "warm_p99_ms": 10.384,
+              "close_destroy_ms": 25.5792,
+              "full_oracle_before_ms": 16.008,
+              "full_oracle_after_ms": 14.7076,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 62.138,
+              "first_replay_ms": 10.2685,
+              "warm_median_ms": 8.9365,
+              "warm_p90_ms": 9.974,
+              "warm_p99_ms": 10.8078,
+              "close_destroy_ms": 26.6198,
+              "full_oracle_before_ms": 14.987,
+              "full_oracle_after_ms": 16.289,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 68.248,
+              "first_replay_ms": 17.8638,
+              "warm_median_ms": 14.8985,
+              "warm_p90_ms": 16.6544,
+              "warm_p99_ms": 17.4517,
+              "close_destroy_ms": 29.0651,
+              "full_oracle_before_ms": 27.7278,
+              "full_oracle_after_ms": 27.7362,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 59.3951,
+              "first_replay_ms": 14.1844,
+              "warm_median_ms": 11.5701,
+              "warm_p90_ms": 13.257,
+              "warm_p99_ms": 14.0326,
+              "close_destroy_ms": 26.1385,
+              "full_oracle_before_ms": 19.3996,
+              "full_oracle_after_ms": 18.6455,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "label": "baseline",
+          "image_sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+          "process_ms": 2786.722,
+          "load_ms": 136.8653,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 158.1365,
+              "first_replay_ms": 14.1022,
+              "warm_median_ms": 9.5085,
+              "warm_p90_ms": 10.5891,
+              "warm_p99_ms": 11.528,
+              "close_destroy_ms": 26.7585,
+              "full_oracle_before_ms": 18.7409,
+              "full_oracle_after_ms": 16.2152,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 56.2175,
+              "first_replay_ms": 9.5123,
+              "warm_median_ms": 8.9284,
+              "warm_p90_ms": 10.0032,
+              "warm_p99_ms": 10.709,
+              "close_destroy_ms": 27.857,
+              "full_oracle_before_ms": 17.1153,
+              "full_oracle_after_ms": 16.8909,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 65.5405,
+              "first_replay_ms": 18.5617,
+              "warm_median_ms": 14.3644,
+              "warm_p90_ms": 15.9975,
+              "warm_p99_ms": 16.7135,
+              "close_destroy_ms": 27.8683,
+              "full_oracle_before_ms": 24.3814,
+              "full_oracle_after_ms": 25.0056,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 58.485,
+              "first_replay_ms": 13.4335,
+              "warm_median_ms": 11.2374,
+              "warm_p90_ms": 13.0458,
+              "warm_p99_ms": 13.4988,
+              "close_destroy_ms": 27.6931,
+              "full_oracle_before_ms": 17.1128,
+              "full_oracle_after_ms": 19.3733,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "label": "candidate",
+          "image_sha256": "279a7787db43f94c01cee14db9acd3fe41f0d13fcd9a5977e37f7f984e6e072f",
+          "process_ms": 2265.7496,
+          "load_ms": 139.5187,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 158.9445,
+              "first_replay_ms": 10.8257,
+              "warm_median_ms": 5.5451,
+              "warm_p90_ms": 6.1389,
+              "warm_p99_ms": 6.9192,
+              "close_destroy_ms": 28.9429,
+              "full_oracle_before_ms": 11.478,
+              "full_oracle_after_ms": 13.1373,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 64.619,
+              "first_replay_ms": 6.8943,
+              "warm_median_ms": 5.7495,
+              "warm_p90_ms": 6.3822,
+              "warm_p99_ms": 6.9338,
+              "close_destroy_ms": 29.2267,
+              "full_oracle_before_ms": 12.1849,
+              "full_oracle_after_ms": 11.9177,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 70.3934,
+              "first_replay_ms": 15.5605,
+              "warm_median_ms": 11.6619,
+              "warm_p90_ms": 12.3359,
+              "warm_p99_ms": 12.6011,
+              "close_destroy_ms": 27.9753,
+              "full_oracle_before_ms": 25.0916,
+              "full_oracle_after_ms": 24.8694,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 64.0222,
+              "first_replay_ms": 10.3596,
+              "warm_median_ms": 8.3817,
+              "warm_p90_ms": 9.0993,
+              "warm_p99_ms": 10.7744,
+              "close_destroy_ms": 26.9431,
+              "full_oracle_before_ms": 14.6691,
+              "full_oracle_after_ms": 14.5908,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        }
+      ],
+      "pooled_warm_ratios": [
+        {
+          "shape": "independent-cpu-first",
+          "baseline": {
+            "n": 93,
+            "median_ns": 9095500,
+            "p90_ns": 10384000,
+            "p99_ns": 11528000,
+            "min_ns": 7095100,
+            "max_ns": 11528000
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 5106100,
+            "p90_ns": 5809900,
+            "p99_ns": 6919200,
+            "min_ns": 4408200,
+            "max_ns": 6919200
+          },
+          "candidate_over_baseline": 0.561387499312847
+        },
+        {
+          "shape": "independent-gpu-first",
+          "baseline": {
+            "n": 93,
+            "median_ns": 8899200,
+            "p90_ns": 10387100,
+            "p99_ns": 10851900,
+            "min_ns": 7332800,
+            "max_ns": 10851900
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 5068800,
+            "p90_ns": 6067700,
+            "p99_ns": 6933800,
+            "min_ns": 4469100,
+            "max_ns": 6933800
+          },
+          "candidate_over_baseline": 0.56957928802589
+        },
+        {
+          "shape": "two-microbatches",
+          "baseline": {
+            "n": 93,
+            "median_ns": 14463100,
+            "p90_ns": 16295300,
+            "p99_ns": 17451700,
+            "min_ns": 12502700,
+            "max_ns": 17451700
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 12111400,
+            "p90_ns": 12732100,
+            "p99_ns": 13857200,
+            "min_ns": 10915700,
+            "max_ns": 13857200
+          },
+          "candidate_over_baseline": 0.8374000041484883
+        },
+        {
+          "shape": "serial-holdout",
+          "baseline": {
+            "n": 93,
+            "median_ns": 11466500,
+            "p90_ns": 13209300,
+            "p99_ns": 14143200,
+            "min_ns": 9634900,
+            "max_ns": 14143200
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 8294700,
+            "p90_ns": 9097200,
+            "p99_ns": 10774400,
+            "min_ns": 7743600,
+            "max_ns": 10774400
+          },
+          "candidate_over_baseline": 0.7233855143243361
+        }
+      ],
+      "warm_samples_per_arm_per_shape": 93
+    },
+    "final_monitor": {
+      "directory": ".scratch\\g09-direct-latency\\windows-monitor-final",
+      "comparison_sha256": "99a1a617242766403fccb44a910b36aa3c248c20406f7cf3c6b50875cf7847fe",
+      "runs": [
+        {
+          "repeat": 0,
+          "label": "baseline",
+          "image_sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+          "process_ms": 2874.9328,
+          "load_ms": 139.4723,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 160.5483,
+              "first_replay_ms": 14.5019,
+              "warm_median_ms": 9.0682,
+              "warm_p90_ms": 10.1963,
+              "warm_p99_ms": 10.5952,
+              "close_destroy_ms": 26.5493,
+              "full_oracle_before_ms": 17.8971,
+              "full_oracle_after_ms": 15.3544,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 65.5504,
+              "first_replay_ms": 8.8185,
+              "warm_median_ms": 8.6213,
+              "warm_p90_ms": 9.735,
+              "warm_p99_ms": 11.1522,
+              "close_destroy_ms": 26.8757,
+              "full_oracle_before_ms": 16.9122,
+              "full_oracle_after_ms": 16.2714,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 71.3186,
+              "first_replay_ms": 20.3778,
+              "warm_median_ms": 15.0839,
+              "warm_p90_ms": 16.4097,
+              "warm_p99_ms": 17.6173,
+              "close_destroy_ms": 29.0154,
+              "full_oracle_before_ms": 30.2905,
+              "full_oracle_after_ms": 31.1611,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 64.3012,
+              "first_replay_ms": 13.2758,
+              "warm_median_ms": 11.3846,
+              "warm_p90_ms": 13.7295,
+              "warm_p99_ms": 16.8004,
+              "close_destroy_ms": 28.0866,
+              "full_oracle_before_ms": 18.8905,
+              "full_oracle_after_ms": 17.908,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 0,
+          "label": "candidate",
+          "image_sha256": "6949673c81b647b3ef5976bc7a36ec552429f185dc472462e738eefe949fb0b7",
+          "process_ms": 2249.835,
+          "load_ms": 142.6586,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 162.8562,
+              "first_replay_ms": 9.0343,
+              "warm_median_ms": 5.0248,
+              "warm_p90_ms": 6.2007,
+              "warm_p99_ms": 6.6272,
+              "close_destroy_ms": 25.4783,
+              "full_oracle_before_ms": 12.0578,
+              "full_oracle_after_ms": 11.7648,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 62.1505,
+              "first_replay_ms": 6.6899,
+              "warm_median_ms": 5.0011,
+              "warm_p90_ms": 5.7045,
+              "warm_p99_ms": 6.7904,
+              "close_destroy_ms": 26.4167,
+              "full_oracle_before_ms": 12.8663,
+              "full_oracle_after_ms": 11.4289,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 61.4999,
+              "first_replay_ms": 16.3093,
+              "warm_median_ms": 11.593,
+              "warm_p90_ms": 12.4359,
+              "warm_p99_ms": 12.6633,
+              "close_destroy_ms": 27.1419,
+              "full_oracle_before_ms": 25.1683,
+              "full_oracle_after_ms": 24.0436,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 57.1402,
+              "first_replay_ms": 10.144,
+              "warm_median_ms": 8.5787,
+              "warm_p90_ms": 9.1263,
+              "warm_p99_ms": 9.5116,
+              "close_destroy_ms": 27.2764,
+              "full_oracle_before_ms": 14.9676,
+              "full_oracle_after_ms": 15.033,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 1,
+          "label": "candidate",
+          "image_sha256": "6949673c81b647b3ef5976bc7a36ec552429f185dc472462e738eefe949fb0b7",
+          "process_ms": 2244.9841,
+          "load_ms": 138.5595,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 158.2044,
+              "first_replay_ms": 11.0664,
+              "warm_median_ms": 4.8034,
+              "warm_p90_ms": 5.5724,
+              "warm_p99_ms": 6.0654,
+              "close_destroy_ms": 26.6419,
+              "full_oracle_before_ms": 13.4479,
+              "full_oracle_after_ms": 11.4445,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 59.2573,
+              "first_replay_ms": 6.6239,
+              "warm_median_ms": 4.931,
+              "warm_p90_ms": 5.3995,
+              "warm_p99_ms": 5.9225,
+              "close_destroy_ms": 26.1189,
+              "full_oracle_before_ms": 11.2514,
+              "full_oracle_after_ms": 12.3784,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 65.1061,
+              "first_replay_ms": 15.1532,
+              "warm_median_ms": 12.2278,
+              "warm_p90_ms": 12.994,
+              "warm_p99_ms": 13.3367,
+              "close_destroy_ms": 30.7991,
+              "full_oracle_before_ms": 23.5037,
+              "full_oracle_after_ms": 25.7608,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 60.9917,
+              "first_replay_ms": 10.8404,
+              "warm_median_ms": 8.4526,
+              "warm_p90_ms": 9.0712,
+              "warm_p99_ms": 10.0299,
+              "close_destroy_ms": 27.5658,
+              "full_oracle_before_ms": 15.4082,
+              "full_oracle_after_ms": 16.4894,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 1,
+          "label": "baseline",
+          "image_sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+          "process_ms": 2823.3529,
+          "load_ms": 136.1306,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 158.5765,
+              "first_replay_ms": 14.8098,
+              "warm_median_ms": 8.5647,
+              "warm_p90_ms": 10.2891,
+              "warm_p99_ms": 11.5732,
+              "close_destroy_ms": 26.7923,
+              "full_oracle_before_ms": 15.5667,
+              "full_oracle_after_ms": 17.3474,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 69.7764,
+              "first_replay_ms": 9.0535,
+              "warm_median_ms": 8.4697,
+              "warm_p90_ms": 10.1367,
+              "warm_p99_ms": 11.6881,
+              "close_destroy_ms": 25.4184,
+              "full_oracle_before_ms": 17.5471,
+              "full_oracle_after_ms": 14.5437,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 69.9474,
+              "first_replay_ms": 15.7731,
+              "warm_median_ms": 15.2145,
+              "warm_p90_ms": 16.5944,
+              "warm_p99_ms": 17.4952,
+              "close_destroy_ms": 30.8349,
+              "full_oracle_before_ms": 25.889,
+              "full_oracle_after_ms": 26.7519,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 60.2125,
+              "first_replay_ms": 12.7851,
+              "warm_median_ms": 11.5612,
+              "warm_p90_ms": 13.2147,
+              "warm_p99_ms": 14.0343,
+              "close_destroy_ms": 26.2256,
+              "full_oracle_before_ms": 19.9174,
+              "full_oracle_after_ms": 19.1352,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "label": "baseline",
+          "image_sha256": "ff83df9a11dbd16a71f81a50a4c412708e66b07defc09fba029bbc841ff6746e",
+          "process_ms": 2767.2207,
+          "load_ms": 139.7014,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 165.531,
+              "first_replay_ms": 15.1782,
+              "warm_median_ms": 8.3123,
+              "warm_p90_ms": 9.1867,
+              "warm_p99_ms": 10.3693,
+              "close_destroy_ms": 26.5029,
+              "full_oracle_before_ms": 14.8229,
+              "full_oracle_after_ms": 16.5573,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 59.6385,
+              "first_replay_ms": 8.9373,
+              "warm_median_ms": 8.499,
+              "warm_p90_ms": 9.5339,
+              "warm_p99_ms": 10.715,
+              "close_destroy_ms": 28.1282,
+              "full_oracle_before_ms": 15.5474,
+              "full_oracle_after_ms": 15.0777,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 68.6532,
+              "first_replay_ms": 19.2203,
+              "warm_median_ms": 14.4654,
+              "warm_p90_ms": 15.5456,
+              "warm_p99_ms": 16.1143,
+              "close_destroy_ms": 26.6371,
+              "full_oracle_before_ms": 33.7197,
+              "full_oracle_after_ms": 28.8235,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 56.0264,
+              "first_replay_ms": 11.9411,
+              "warm_median_ms": 11.5858,
+              "warm_p90_ms": 13.1127,
+              "warm_p99_ms": 13.521,
+              "close_destroy_ms": 27.7949,
+              "full_oracle_before_ms": 16.6579,
+              "full_oracle_after_ms": 17.5896,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        },
+        {
+          "repeat": 2,
+          "label": "candidate",
+          "image_sha256": "6949673c81b647b3ef5976bc7a36ec552429f185dc472462e738eefe949fb0b7",
+          "process_ms": 2269.76,
+          "load_ms": 138.6231,
+          "shapes": [
+            {
+              "name": "independent-cpu-first",
+              "cold_create_ms": 156.7523,
+              "first_replay_ms": 8.882,
+              "warm_median_ms": 5.0952,
+              "warm_p90_ms": 5.8324,
+              "warm_p99_ms": 6.0796,
+              "close_destroy_ms": 28.6859,
+              "full_oracle_before_ms": 13.2586,
+              "full_oracle_after_ms": 12.1035,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "independent-gpu-first",
+              "cold_create_ms": 64.259,
+              "first_replay_ms": 6.2612,
+              "warm_median_ms": 5.0543,
+              "warm_p90_ms": 6.0605,
+              "warm_p99_ms": 6.3285,
+              "close_destroy_ms": 28.7287,
+              "full_oracle_before_ms": 12.0637,
+              "full_oracle_after_ms": 11.6211,
+              "slots": 1,
+              "elements": 4194304
+            },
+            {
+              "name": "two-microbatches",
+              "cold_create_ms": 69.7621,
+              "first_replay_ms": 15.6595,
+              "warm_median_ms": 12.5147,
+              "warm_p90_ms": 13.114,
+              "warm_p99_ms": 13.5179,
+              "close_destroy_ms": 32.8583,
+              "full_oracle_before_ms": 24.3137,
+              "full_oracle_after_ms": 27.4089,
+              "slots": 2,
+              "elements": 4194304
+            },
+            {
+              "name": "serial-holdout",
+              "cold_create_ms": 63.0424,
+              "first_replay_ms": 9.8802,
+              "warm_median_ms": 8.3816,
+              "warm_p90_ms": 9.0656,
+              "warm_p99_ms": 9.6319,
+              "close_destroy_ms": 26.8774,
+              "full_oracle_before_ms": 15.4804,
+              "full_oracle_after_ms": 14.8788,
+              "slots": 1,
+              "elements": 4194304
+            }
+          ]
+        }
+      ],
+      "pooled_warm_ratios": [
+        {
+          "shape": "independent-cpu-first",
+          "baseline": {
+            "n": 93,
+            "median_ns": 8609600,
+            "p90_ns": 10173900,
+            "p99_ns": 11573200,
+            "min_ns": 7224000,
+            "max_ns": 11573200
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 5024800,
+            "p90_ns": 5832400,
+            "p99_ns": 6627200,
+            "min_ns": 4322500,
+            "max_ns": 6627200
+          },
+          "candidate_over_baseline": 0.5836275785170043
+        },
+        {
+          "shape": "independent-gpu-first",
+          "baseline": {
+            "n": 93,
+            "median_ns": 8512300,
+            "p90_ns": 10017900,
+            "p99_ns": 11688100,
+            "min_ns": 7290800,
+            "max_ns": 11688100
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 4982700,
+            "p90_ns": 5897700,
+            "p99_ns": 6790400,
+            "min_ns": 4315400,
+            "max_ns": 6790400
+          },
+          "candidate_over_baseline": 0.5853529598345923
+        },
+        {
+          "shape": "two-microbatches",
+          "baseline": {
+            "n": 93,
+            "median_ns": 14911800,
+            "p90_ns": 16367900,
+            "p99_ns": 17617300,
+            "min_ns": 12098700,
+            "max_ns": 17617300
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 12145200,
+            "p90_ns": 12969600,
+            "p99_ns": 13517900,
+            "min_ns": 11155100,
+            "max_ns": 13517900
+          },
+          "candidate_over_baseline": 0.8144690781796966
+        },
+        {
+          "shape": "serial-holdout",
+          "baseline": {
+            "n": 93,
+            "median_ns": 11561200,
+            "p90_ns": 13294300,
+            "p99_ns": 16800400,
+            "min_ns": 9736200,
+            "max_ns": 16800400
+          },
+          "candidate": {
+            "n": 93,
+            "median_ns": 8488100,
+            "p90_ns": 9090200,
+            "p99_ns": 10029900,
+            "min_ns": 7732700,
+            "max_ns": 10029900
+          },
+          "candidate_over_baseline": 0.7341884925440265
+        }
+      ],
+      "warm_samples_per_arm_per_shape": 93
+    }
+  },
+  "contaminated_directory": {
+    "path": ".scratch\\g09-direct-latency\\windows-results",
+    "excluded_from_conclusions": true,
+    "reason": "Repeated facade-resume overlap and output-path reuse; not a result."
+  },
+  "limits": [
+    "Ordinary wall-clock repeats with FFI overhead, no statistical qualification claim.",
+    "CV monitor is also a correctness/progress fix; these repeats do not isolate a stable additional median speedup over W1/W2.",
+    "Cold/create/first/native warm/full oracle/close/process costs remain separate.",
+    "Four original 4M F32 CPU+GPU shapes, both insertion orders and both slots retained."
+  ]
+}

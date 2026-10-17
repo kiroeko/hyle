@@ -9,9 +9,12 @@ if(HYLE_COMPUTE_VULKAN_ENABLED AND HYLE_COMPUTE_CPU)
   hyle_add_test(graph_route_cpu_vulkan NAME finite
     SOURCES ../graph/route_symmetry_vulkan.cc
     DEFINES HYLE_FOUNDATION_A_HYBRID=1 DEPS hyle_graph_route_cpu)
+  hyle_add_test(graph_route_cpu_vulkan NAME completion_publication
+    SOURCES ../graph/cpu_completion_publication.cc DEPS hyle_graph_route_cpu)
   hyle_stage_runtime(hyle_graph_route_cpu_vulkan_contracts_test)
   hyle_stage_runtime(hyle_graph_route_cpu_vulkan_public_consumer_test)
   hyle_stage_runtime(hyle_graph_route_cpu_vulkan_finite_test)
+  hyle_stage_runtime(hyle_graph_route_cpu_vulkan_completion_publication_test)
 endif()
 
 if(HYLE_COMPUTE_VULKAN_ENABLED AND HYLE_COMPUTE_CPU)

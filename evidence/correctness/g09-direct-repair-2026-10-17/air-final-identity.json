@@ -1,0 +1,423 @@
+{
+  "candidate": "1dbfce9a025b9ba10e357d33863d0c646baf16bb",
+  "source_archive_sha256": "7fc390d2ad3fc8cdb92c2fd1e221df5d2a8facacfd44ce1a9356bf39b8759ea3",
+  "machine": {
+    "model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+    "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "platform": "macOS-27.0.1-arm64-arm-64bit"
+  },
+  "images": {
+    "apple": {
+      "candidate": {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade/bin/libg09_native_trial.dylib",
+        "sha256": "407aa30c2453b993f3bfe435c87287cf325c108d12f0f634fced8be837c7c900"
+      },
+      "baseline": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib",
+        "sha256": "0c0c48b8bf43d006b82c19f257cf3e7e0c5f9d4608c12ec65f62d98c5ec38f5b"
+      }
+    },
+    "vulkan": {
+      "candidate": {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-facade/bin/libg09_native_trial.dylib",
+        "sha256": "2d27dc41fc7c59aa0879854923c298bab06af099f8ff1e97263fb8ebf90d30a7"
+      },
+      "baseline": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib",
+        "sha256": "132b43c7600b79d5f54e4a5c6ef08da9b6ba1033eae6065e9146b0df4dc51411"
+      }
+    }
+  },
+  "source_files": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "357274722348b979b0f8e8e675d27edeab4db2c0d56490895cf36b7323ff596b",
+      "bytes": 56216
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "d074251950760ac16607e5c675fb0f5b6d6196855a00e8e7b332db7c1319f110",
+      "bytes": 69242
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/completion_internal.h",
+      "sha256": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec",
+      "bytes": 762
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/mlx_cast/patches.json",
+      "sha256": "c7ec1769d7ddc31472ddd519cfa1ba9543da45c795b0aa481459a5ef01919d14",
+      "bytes": 331022
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/cmake/HyleDependencyLock.json",
+      "sha256": "6e01905024c44e10b16aa36e24821fb8d866b177eb74e265882fda163d5d95d4",
+      "bytes": 72883
+    }
+  ],
+  "sdk_archives": {
+    "apple": [
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform.a",
+        "sha256": "d3465a3e942bc642fc7f8493b66d88f0990824c95547b5da7f90bd5a98a17a60",
+        "bytes": 141920
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-base.a",
+        "sha256": "e13017cf65b053e0205c99d1b829dc4816a95ab37316e59146a74db22a1aece1",
+        "bytes": 1047840
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform_thread.a",
+        "sha256": "b7c206dd87d69c2a9a94f2162d96f9f7659ec5aa6958d0dcc13c26925381233f",
+        "bytes": 20128
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_batch.a",
+        "sha256": "ecadf2c266a4d3608daf32a6f29a449550b68071dc0061b79ee3d60af3699139",
+        "bytes": 152992
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_time.a",
+        "sha256": "a5d3960f2ee4d4ed61dcfdd18847f7866708a85e855c6483b89b9622ca802b7a",
+        "bytes": 16096
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmlx.a",
+        "sha256": "0ec0cd1a0e00c3f75c1ecf9db549b023e6fdc64f3d2f1a63a9a8be809eea9af9",
+        "bytes": 11510272
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_io_core.a",
+        "sha256": "b7ce150031b825466aefdbbc7be45ef92c3a1a82392a26b67677a4e79bf0433d",
+        "bytes": 376560
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_stream.a",
+        "sha256": "dbf6844ba0e0a2aec0970442a778cc27a4c57275c0f2ad07ef439541fe1d47aa",
+        "bytes": 134600
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_cpu_apple.a",
+        "sha256": "e818b77d405dcf4951c68a42d1ba6b2297099141a43c278a617c6e362b622612",
+        "bytes": 358304
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph.a",
+        "sha256": "86208e55517b457680ce48e0cfdecbac47e2cc69ad211f2e46809f0825986865",
+        "bytes": 775272
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_error.a",
+        "sha256": "4f909f8dc2cf0ff5cedc63d6c752c6046d207fcfb64b63e6bef7a23009d54ce8",
+        "bytes": 30216
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-cpu.a",
+        "sha256": "5e9238084f53d8e1b33cb886adbed192fdab23af7b253ec45e09eed70bdd3034",
+        "bytes": 1142472
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_batch.a",
+        "sha256": "6ecb6b630f66c75403b3ac2c7c81096b526de9b7cbf6b0c6125601c95f54ca37",
+        "bytes": 364352
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_backend_cpu.a",
+        "sha256": "be7d853a40eb30ebc7d61213038f8bb36ebc89600c62cfaa26faf979a174f7f2",
+        "bytes": 13576
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_cpu.a",
+        "sha256": "bc7465a8e0979516e6a07195cc0ba0b6ffe958e4e8de514f729f6d1ff0bfd527",
+        "bytes": 44136
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_route_apple.a",
+        "sha256": "1878c553dbdb569de518480713c9ba21862f3ff57aa48adc9881aa8c3205004b",
+        "bytes": 1370040
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmimalloc_static.a",
+        "sha256": "db2650145b4959be18b2f14bcec21064a3da169a5c77c1da316f2d0209f38c45",
+        "bytes": 308632
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute.a",
+        "sha256": "c468c6cacb23eee131a0192796567367eee4b042a1f180c33b726479045e6c99",
+        "bytes": 607240
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_simd.a",
+        "sha256": "2abcc25cb1875df64876060ccb9165b37478edab080081ae04daa7b636bff1fe",
+        "bytes": 1516216
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml.a",
+        "sha256": "7990b38448c824e4e6797181b8a397fbbe815809bcef4cd2dec8cdd18ddab0ab",
+        "bytes": 41848
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-metal.a",
+        "sha256": "8c6d1b49777320eb72edb138b4f794ca4e539fcb441181f9a1ee3ad9ce5b0978",
+        "bytes": 2504328
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_ggml.a",
+        "sha256": "4ffb4afdb10d1dcbb4e3ee5d1a3941b45709e48685bb69cbac5e6ff91e1e5a24",
+        "bytes": 178824
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform_fs.a",
+        "sha256": "8f77f2798f11b59097a8e8bd6a4a99b2e962d4bbe55dabdb1dec3a3f4601e114",
+        "bytes": 61184
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem_vm.a",
+        "sha256": "6ee1c4547412c2f5d8e2b35e6d99c2b3e3b8d9a303901a640e28efaa23285f5d",
+        "bytes": 59240
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ggml_runtime.a",
+        "sha256": "f0d30fd2afc4cd7df77d8ebe5557bb77adb2a9ccd6c37a93721af511e8662479",
+        "bytes": 21416
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_container.a",
+        "sha256": "46bc278866d2e8030609bb99725a430bf5e9f4b5ea1667d86b43e32697bae2dc",
+        "bytes": 56448
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_state.a",
+        "sha256": "a75ef41586d7d51a32a7db3681456abbf9b8554ea7dd05f98f1f940c73739162",
+        "bytes": 95816
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ops.a",
+        "sha256": "32d82c7484171854455b8423be65f192993da2c17874ecd2f4935c132290eb01",
+        "bytes": 119368
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem.a",
+        "sha256": "29d4a1408dd314f5e021260d38a7a62e94383b390612dc1cad324f06d2668531",
+        "bytes": 201448
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_route_cpu.a",
+        "sha256": "ed0edd19a3a8a9786c7929228031ff23a5d1c453dde812e3760ec73ea8af92db",
+        "bytes": 66776
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_ggml_metal.a",
+        "sha256": "30cfa6cd10112bc6e8ffd95df3b4bb2bb3948107d0655f4d6af0597a745827a4",
+        "bytes": 34184
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_apple.a",
+        "sha256": "760daba0bfeabc8ece1441df01724ead32c971acf1b26a3eb9942ed5aa893de9",
+        "bytes": 103240
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_sched.a",
+        "sha256": "dfaf3805b132d65a81c0f1f8be0f4e01df97e95d1d87106e528d2124b46887e6",
+        "bytes": 254456
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_native.a",
+        "sha256": "0ba899e86f6086a4419a6402184f89fbedd0351ceb3338182ca19fd9d14e519c",
+        "bytes": 574960
+      }
+    ],
+    "vulkan": [
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform.a",
+        "sha256": "bc3751849e66ded9195e3afc7f8ad8a7e2476471ecc20e3b35a60103f457c4d5",
+        "bytes": 141920
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_iree_vulkan.a",
+        "sha256": "07aeed3487df0b726dacf79d750033435553910f11139d5e55f9d629d8e97878",
+        "bytes": 688752
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-base.a",
+        "sha256": "5509938f40e3d644f77ffe3593650ecc7f502bf1d67d094d2c72b63ff5dc7c3f",
+        "bytes": 1044968
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform_thread.a",
+        "sha256": "3dcbd09e9b6692477873c89798b68067e6f8189ccd65f57a356afab782ef969f",
+        "bytes": 20128
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_batch.a",
+        "sha256": "d3c5f310e903e21ea6a4506701f12b0aca62f404f5c09e3ee5b4ee3c0ff1a55e",
+        "bytes": 152992
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_time.a",
+        "sha256": "ce9d0645a8dabe63ce65d5ea8d069d0e6f26eb560b6600e4e57a23d107c3a241",
+        "bytes": 16096
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_io_core.a",
+        "sha256": "96def2e30ed3ffe14ed9c2687e3d305d0228f7ca576e93a0028607087af8bbb9",
+        "bytes": 376560
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_stream.a",
+        "sha256": "38226a0bd8df32fc85bd7e2a8544fa854f6ab542fb3491fbb4772957295933e7",
+        "bytes": 134600
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph.a",
+        "sha256": "0f5861ceac22b021694a3530eedb9fbff236f4bde2eb248b41f969e2d3d1e7ef",
+        "bytes": 775272
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_error.a",
+        "sha256": "edf20e1c098bfbbe31208d4317d80bfaa4a389b03c0c783971749887f647cf38",
+        "bytes": 30216
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-cpu.a",
+        "sha256": "266335b545da5221c9655cdd2d2403ec8a333a77400dd4d5713a7f0ba3dcefb9",
+        "bytes": 1142480
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_batch.a",
+        "sha256": "64bed4d657ca8521587e432254c22c85532d299e1f034fc919ffd721300b5be0",
+        "bytes": 364352
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_cpu_vulkan.a",
+        "sha256": "5ba20ce88e1de3afd7a00bc70f852be03d1d19f8ed84ccea33733b818e835575",
+        "bytes": 382672
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libflatcc_parsing.a",
+        "sha256": "03408515e71879d027857a9f591f1c2b8e17c431becdf829a51fc7069eda0c21",
+        "bytes": 15264
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_backend_cpu.a",
+        "sha256": "825aa02ecff75e254d151b3a87f74dae6a6d21a44964f0a310401da03f58ce9b",
+        "bytes": 13576
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_cpu.a",
+        "sha256": "984b7a26ce79e186ae9e304587e46b5e483a2c08e3199be58300116430d7cfd5",
+        "bytes": 44136
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_ggml_vulkan.a",
+        "sha256": "de5ea7dc4d422b78b121f5cb8ac8506802e0bcd8f41dea6ac66d4b6993f921bf",
+        "bytes": 129984
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libmimalloc_static.a",
+        "sha256": "2b8766a1dd9d918fae18948edbf6e7b02f30fd6f96768a48f8b4a41a4c56fae1",
+        "bytes": 308632
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute.a",
+        "sha256": "88ffc25879b3e51b5dff605f4d91929d13eddeae6ec338de307ca0f75038acbd",
+        "bytes": 607240
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_vulkan.a",
+        "sha256": "da558a8185a11d183fb5b1930736fb2571637752b5b77cd531a3011a597eb57e",
+        "bytes": 64808
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_simd.a",
+        "sha256": "0767b981a597a9754080aa68a8e594478910b9ee7eb4ac96002858a937bf12ec",
+        "bytes": 1516216
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml.a",
+        "sha256": "cc33da89e92d9832c2711b7a67764d840cedaf0389f879386582ed7be4a1e9f4",
+        "bytes": 42088
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_ggml.a",
+        "sha256": "4a9ed044fc5958907466691352de32e125efed0ef3cc96f4acd9fffba4bfca5b",
+        "bytes": 178824
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform_fs.a",
+        "sha256": "07ca9d2952defad633ca1e9264963a07b2cf468e857db48d310719dde74910b3",
+        "bytes": 61184
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_mem_vm.a",
+        "sha256": "b9d507f61040cb0797810a4f8a71616a2e5e668259d240954f9b3e55afe117fe",
+        "bytes": 59240
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_ggml_runtime.a",
+        "sha256": "24962780e99a5ff3b4772bcd4172ae6eacf8813a224b332ce41b4fdf96e02fcd",
+        "bytes": 21416
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_container.a",
+        "sha256": "8466bcd974dc3b7444f4177298bf6388c0a8c5171f6d9ee28204c7314fd51d0f",
+        "bytes": 56448
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_state.a",
+        "sha256": "449fc62d8b915724f0683dcd61e3be89fb3c77bea01ba3a24ee03e3765efc450",
+        "bytes": 95816
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_ops.a",
+        "sha256": "7cb9e62c0f0328e8907962495401fd94d43c593ed51bbcde2a53f1db2a6d0f3a",
+        "bytes": 119368
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_mem.a",
+        "sha256": "83ac760159f4364f0c85cbf3520c851248e1e4a9a800c294b14fe0747a4358e6",
+        "bytes": 201448
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_route_cpu.a",
+        "sha256": "b6e9fb7d391d963dd05146eed73ef374a9240d7d2875628a6b36484b199dde8d",
+        "bytes": 66776
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_sched.a",
+        "sha256": "d7f7cde56a9ed34260c6760c3bb6e88b68a4b9413ab22b3668aaf06535068d8d",
+        "bytes": 254456
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libiree_runtime_unified.a",
+        "sha256": "d480cac1ccde0c4022524a053de741da4b04d23166b7f9cb1e23dad7df357efd",
+        "bytes": 1655952
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-vulkan.a",
+        "sha256": "2d1bca950addf5b3632b5f3d09c9934957b97e5209c95f23b030a3e7bd37fc6f",
+        "bytes": 44614464
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_route_vulkan.a",
+        "sha256": "578dd6cb49dff372f3439c969b1045367fffc18f706565def975898ac3c4dab7",
+        "bytes": 1504504
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_native.a",
+        "sha256": "488eb05c25b23067211c96fc78ea56c2e0297edb39819b7be3a80c8bd124b9bf",
+        "bytes": 574960
+      }
+    ]
+  },
+  "facade_dependencies": {
+    "apple": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade/bin/libg09_native_trial.dylib:\n\t@rpath/libg09_native_trial.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libtorch.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libtorch_cpu.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libc10.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5027.0.69)\n\t/System/Library/Frameworks/Metal.framework/Versions/A/Metal (compatibility version 1.0.0, current version 382.5.3)\n\t/System/Library/Frameworks/MetalKit.framework/Versions/A/MetalKit (compatibility version 1.0.0, current version 174.4.0)\n\t/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore (compatibility version 1.2.0, current version 1223.2.2)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5027.0.69)\n\t/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)\n",
+    "vulkan": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-facade/bin/libg09_native_trial.dylib:\n\t@rpath/libg09_native_trial.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libtorch.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libtorch_cpu.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libc10.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)\n"
+  },
+  "facade_build_commands": {
+    "apple": "cd /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-facade/hyle-apple-runtime/g09_runtime_probe-Release.cmake\n/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/include -isystem /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -MD -MT CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o -MF CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o.d -o CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o -c /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/runtime_probe.cc\n: && /usr/bin/c++ -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o -o bin/g09_runtime_probe  -Wl,-rpath,/Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_state.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_cpu_apple.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_native.a  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch_cpu.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libc10.dylib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_ggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_backend_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_simd.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_apple.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_route_apple.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_stream.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_io_core.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_ggml_metal.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ggml_runtime.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-metal.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-base.a  -lm  -framework Foundation  -framework Metal  -framework MetalKit  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmlx.a  -framework QuartzCore  -framework Foundation  -framework Metal  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_container.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ops.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_sched.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform_thread.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem_vm.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform_fs.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_time.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_error.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmimalloc_static.a && :\n/usr/bin/c++ -DG09_APPLE=1 -DG09_IMAGE_TAG=\\\"current-monitor-1dbfce9a0\\\" -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -Dg09_native_trial_EXPORTS -isystem /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/include -isystem /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -MD -MT CMakeFiles/g09_native_trial.dir/facade.cc.o -MF CMakeFiles/g09_native_trial.dir/facade.cc.o.d -o CMakeFiles/g09_native_trial.dir/facade.cc.o -c /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/facade.cc\n: && /usr/bin/c++ -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -dynamiclib -Wl,-headerpad_max_install_names -Wl,-exported_symbol,_hyle_g09_facade_v1 -Wl,-no_weak_exports -o bin/libg09_native_trial.dylib -install_name @rpath/libg09_native_trial.dylib CMakeFiles/g09_native_trial.dir/facade.cc.o  -Wl,-rpath,/Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_state.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_cpu_apple.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_native.a  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch_cpu.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libc10.dylib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_ggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_backend_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_simd.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_route_apple.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_route_apple.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_stream.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_io_core.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_ggml_metal.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ggml_runtime.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-metal.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-base.a  -lm  -framework Foundation  -framework Metal  -framework MetalKit  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmlx.a  -framework QuartzCore  -framework Foundation  -framework Metal  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_container.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ops.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_sched.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform_thread.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem_vm.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform_fs.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_time.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_error.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmimalloc_static.a && :\n",
+    "vulkan": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -MD -MT CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o -MF CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o.d -o CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o -c /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/runtime_probe.cc\n: && /usr/bin/c++ -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/g09_runtime_probe.dir/runtime_probe.cc.o -o bin/g09_runtime_probe  -Wl,-rpath,/Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_state.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_cpu_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_native.a  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch_cpu.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libc10.dylib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_ggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_backend_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_simd.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_route_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_stream.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_io_core.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_iree_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_ggml_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_ggml_runtime.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-base.a  -lm  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libiree_runtime_unified.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libflatcc_parsing.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_container.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_ops.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_sched.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_mem_vm.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform_fs.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_mem.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libmimalloc_static.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform_thread.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_time.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_error.a && :\n/usr/bin/c++ -DG09_IMAGE_TAG=\\\"current-monitor-1dbfce9a0\\\" -DG09_VULKAN=1 -DG09_VULKAN_POOL_API=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -Dg09_native_trial_EXPORTS -isystem /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -MD -MT CMakeFiles/g09_native_trial.dir/facade.cc.o -MF CMakeFiles/g09_native_trial.dir/facade.cc.o.d -o CMakeFiles/g09_native_trial.dir/facade.cc.o -c /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/latency/facade.cc\n: && /usr/bin/c++ -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -dynamiclib -Wl,-headerpad_max_install_names -Wl,-exported_symbol,_hyle_g09_facade_v1 -Wl,-no_weak_exports -o bin/libg09_native_trial.dylib -install_name @rpath/libg09_native_trial.dylib CMakeFiles/g09_native_trial.dir/facade.cc.o  -Wl,-rpath,/Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_state.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_cpu_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_route_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_native.a  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch_cpu.dylib  /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libc10.dylib  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_ggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_backend_cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_simd.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_route_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_route_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_stream.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_io_core.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_iree_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_provider_ggml_vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_ggml_runtime.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-cpu.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-vulkan.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libggml-base.a  -lm  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libiree_runtime_unified.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libflatcc_parsing.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_batch.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_graph.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_container.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_compute_ops.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_sched.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_mem_vm.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform_fs.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_mem.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libmimalloc_static.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform_thread.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_time.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_platform.a  /Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/vulkan-sdk/lib/libhyle_error.a && :\n"
+  }
+}

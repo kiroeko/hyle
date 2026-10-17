@@ -1,0 +1,253 @@
+{
+  "candidate": "08e02b27c742d3c024673143c9bae85e2006b003",
+  "machine": {
+    "model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+    "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "platform": "macOS-27.0.1-arm64-arm-64bit"
+  },
+  "scope": "Eight original public Apple consumers, original completion lifecycle4, exact cache7; actual API+GPU validation. No performance claim.",
+  "state": "ALL_EXECUTED_TESTS_PASS",
+  "processes": [
+    {
+      "label": "pending-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "cache7-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-contracts-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-pipeline-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-encoded-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-paged_joint-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-sampling-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-public_effect-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-symmetry-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    },
+    {
+      "label": "consumer-native_unit-api-gpu",
+      "exit_code": 0,
+      "api_validation": true,
+      "gpu_validation": true,
+      "loaded_mlx": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+          "sha256": "8311beb1328b0da817945973b057aa1866736e192091d5fff32b03203cc3af7a"
+        }
+      ],
+      "error_markers": []
+    }
+  ],
+  "gtest_reports": {
+    "cache7": {
+      "tests": 7,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "all_run_completed": true,
+      "case_names": [
+        "Q8PagedRaggedWindowsAndIndependentValueDepth",
+        "FullNoncausalAllowsMoreQueriesThanKeys",
+        "PlainWindowAndIndependentValueDepth",
+        "OriginalPlainCoupledUnboundedPaths",
+        "MainDepthsAndLongPrefill",
+        "SmallSoftmaxWeightsKeepLargeValueContributions",
+        "SubnormalQueryKeepsLargeKeyScores"
+      ]
+    },
+    "encoded4": {
+      "tests": 4,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "all_run_completed": true,
+      "case_names": [
+        "IncrementalProducersAndJointConsumer",
+        "FailedEncoderNeverPublishesPendingPages",
+        "SingleRequestIncrementalConsumer",
+        "BFloat16IncrementalAndFailureConsumers"
+      ]
+    },
+    "completion4": {
+      "tests": 4,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "all_run_completed": true,
+      "case_names": [
+        "PendingNativeNotifiesOnceAndRejectsDuplicate",
+        "CompletedNativeNotifiesInlineAndUnknownOwnerIsRejected",
+        "CancelAndLateFailureStillNotifyAfterAbandonment",
+        "RegistrationCompletionRaceReusesOneNativeSlot65Times"
+      ]
+    }
+  },
+  "binary_and_resource_identity": [
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/.hyle-apple-runtime.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_air_cache_direct",
+      "sha256": "8aab73e2904eb1771cb3cf437f772fad6cd5218e6dbe243dca5f0b01dad7e1cf",
+      "bytes": 715800
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_contracts",
+      "sha256": "aa6cc0030c9b0fc6739318d1389ccbb451f771fa3a271e808fc04717a35a0a14",
+      "bytes": 198856
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_encoded",
+      "sha256": "19a5257c27b7bd846963d06c437159a78c408f9094f7deef5e6e18ceadd571fc",
+      "bytes": 663952
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_native_unit",
+      "sha256": "5d96764777a3b6a5aa9e60419b840f1978be01a6848fbe371703efaa789939df",
+      "bytes": 756712
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_paged_joint",
+      "sha256": "dd6e0217a1b103627f73216e22413f9de2b2ca669c5edf966f8ec50c6b8880a4",
+      "bytes": 137576
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_pending",
+      "sha256": "0e7145b8be8fa782c8d8066947c3c64fcc0f8b092aa6663ec4170d8ed32986be",
+      "bytes": 144576
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_pipeline",
+      "sha256": "fec544e43688537915c85cf161d678cd5965220aba09d92ef6154a387829d654",
+      "bytes": 113960
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_public_effect",
+      "sha256": "63f612edb864c901c7ecadfa899633a17a2696eefd49b6c67a09a81e9a35bb96",
+      "bytes": 114984
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_sampling",
+      "sha256": "2506f34596786f3e66483ee3db62f0c5d3950111772ab26cf7620fac208f2b22",
+      "bytes": 137976
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/g09_wake_v4_symmetry",
+      "sha256": "523b5e96df25bcc76e675dea7e748f46b3dbf5cc128aee7780cdc8b0e6a48662",
+      "bytes": 144936
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/bin/mlx.metallib",
+      "sha256": "2f149b1a4c8fccd585410c1ee4abb0e5a711a574935d4dcc24f4458f5c9951d4",
+      "bytes": 1666984
+    }
+  ],
+  "ordinary_command_seconds": 255.506108252,
+  "source_archive_sha256": "818dcb4d22cc05e34b2f28083b6326ea366db4bca164d2d2f407cc3ab26c97d9",
+  "source_archive": "Normal git archive of canonical product/build/test roots; docs/evidence omitted. SOURCE-MANIFEST export-subst is retained. Source zip itself is retained in the run directory, reproducible from the named commit.",
+  "performance": "NOT_RUN_IN_THIS_PACKAGE"
+}
