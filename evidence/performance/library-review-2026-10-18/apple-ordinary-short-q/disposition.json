@@ -1,0 +1,7 @@
+{
+  "product_applied": false,
+  "candidate_preserved": "source-results.zip",
+  "reason": "Original FP64 comparison fails at the same first scalar in baseline and candidate. Neither full candidate numerical validation nor space/latency measurements passed or were completed. No tolerance/input/precision change.",
+  "canonical_source_disposition": "All nine uncommitted candidate files matched the frozen snapshots exactly; all nine baseline snapshots matched committed HEAD before restoring those exact paths. Other changes were preserved.",
+  "counts": "Remains within the partially covered Apple ordinary attention entry, not a new completed performance fix."
+}

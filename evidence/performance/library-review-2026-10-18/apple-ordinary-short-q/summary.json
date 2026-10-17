@@ -1,0 +1,79 @@
+{
+  "status": "frozen failed candidate; not committed/applied for release; no space or latency measurement",
+  "canonical_disposition": "Root will independently byte-check these9 candidate source snapshots then revert only this failed candidate from the worktree. The complete baseline/candidate source remains in this archive for continuation. No rollback/deletion/commit performed by this agent.",
+  "baseline_source_head": "74fc012eb for these Apple files; unrelated later State/HTTP2 commits are outside this source snapshot.",
+  "scope": "Ordinary typed Apple F32 Dq=Dv256, BHSD/BSHD, explicit rank2 Boolean mask, 128<Q<1024, score>=64MiB and Q128 benefit guard; shared existing Sink checked single-Job execution; no native SDK/shader/public setting change.",
+  "sources": {
+    "manifest": "frozen-source-sha256.json",
+    "count_per_arm": 9,
+    "baseline_directory": "baseline/",
+    "candidate_directory": "candidate/",
+    "diff": "candidate.diff",
+    "diff_sha256": "b68be9c84d5adb50860f19737980e968a3c195db4272541e5ef971abee4d8833"
+  },
+  "fixed_control": {
+    "shape": "B1/Hq8/Hkv2/D256/Q513/KV8193",
+    "input_source": "inline apple_tensor_test::ordinary_short_query in frozen tests/compute_route_apple/tensor_test_support.h",
+    "inputs": "Nonzero exactly representable two-channel dyadic Q/K; separable alternating V+head/channel offset; global prefix Boolean mask plus fully-false rows0,127,128,512; two fixed phases. Inputs/seed/scale/mask/budget were never changed after observation.",
+    "original_F32_budget": {
+      "absolute": 2e-06,
+      "relative": 6e-06
+    },
+    "oracle": "Independent FP64 per-row/key weights with analytically separable V, then all output channels; expected comparison follows preexisting F32 rounding in expect(). Fully-false Boolean rows preserve original finite-min uniform-over-fullKV semantics."
+  },
+  "confirmed_results_only": {
+    "baseline_existing_longQ_control": "AppleAttention.MathQueryBlocksRetainBroadcastMasksAndReboundOwners passed (1180ms is a test process log duration, not a throughput ranking).",
+    "baseline_new_Direct": "FAIL at its first numeric comparison, BHSD/phase0/head0/queryrow0/channel0, completely false Boolean row.",
+    "candidate_new_Direct": "Exactly one separately authorized existing-executable run of the same new test; FAIL at the same first scalar.",
+    "first_scalar": {
+      "baseline_actual": -0.1248360276222229,
+      "candidate_actual": -0.1248360276222229,
+      "expected_F32_rounded_FP64": -0.1248474270105362,
+      "absolute_error": 1.1399388313293457e-05,
+      "allowed_error": 2.7490845620632172e-06
+    },
+    "what_equality_means": "Only this observed first scalar is identical. Do not infer all output equality, additional candidate precision loss, nonzero-QK/cross-block/tail correctness, general F32 support or candidate improvement.",
+    "termination": "Both numerical assertions were followed by uncaught testing::internal::GoogleTestFailureException from the selected GTest throw_on_failure option, returncode-6. This is test-triggered SIGABRT after an explicit accuracy failure, not an independently observed native/product crash."
+  },
+  "build_and_identity": {
+    "baseline": "Reuse the approved consistent4-object group: prior Q128 candidate-context/operations/graph and force-scale apple_tensor. Root had byte-compared matching frozen source; cached flags/headers previously aligned and small object SHA were verified before link.",
+    "fresh_candidate_products": 4,
+    "fresh_test_TUs": 2,
+    "successful_links": 4,
+    "test_object_reuse": "The exact same new attention-test and graph-test object sources/objects serve both arms. Cached applied-direct.o supplies only existing Sink Direct tests. No old/new duplicate Graph test TU was linked.",
+    "map_proof": "functional-link-map-check.json verifies each actual exe map contains its own complete4-host group and the original SDK/lib/libmlx.a.",
+    "no_rebuild": "Original native/MLX SDK, shaders, metallib, dependencies and baseline objects were not rebuilt or copied."
+  },
+  "failure_and_correction": {
+    "initial_graph_compile": "FAIL because the staged candidate and common directories contained two physical copies of tensor_test_support.h, included through the common Sink helper; pragma once could not deduplicate distinct files.",
+    "correction": "Place unchanged Sink helper beside candidate shared test header, so both include chains reach one physical header. Only failed Graph test TU was recompiled; successful4product+Direct-test TUs were preserved. No product/input/budget change.",
+    "records": "Original source subset archive, first/current driver versions, stage-correction metadata, expected inputs and all command/stdout/stderr attempts are retained."
+  },
+  "not_run": [
+    "Remaining baseline new Direct comparisons/second layout/rebind assertions",
+    "Baseline existing Sink Direct2 filters",
+    "Both baseline Graph filters",
+    "Candidate other Direct filters/Sink/Graph",
+    "Any fixed-point space process",
+    "Any latency warmup/timed sample"
+  ],
+  "resource_and_performance_conclusion": "None. Static full-score/block byte arithmetic is a design estimate only; no physical peak/cache benefit, latency regression or speedup was measured.",
+  "artifacts": {
+    "functional_raw": {
+      "path": "functional-raw.tar.gz",
+      "bytes": 1646591,
+      "sha256": "b575fe889a324c9a1a1f09c360b8c2cc66cabbf50bee67406e54b1cc333bae27",
+      "files": 45
+    },
+    "candidate_single_raw": {
+      "path": "candidate-single-raw.tar.gz",
+      "bytes": 990,
+      "sha256": "770eb5f7ddfc94015abb20da2a4eca5e1c56937d517f9f8cf1d1b5dea546aaa6"
+    },
+    "design": "design/apple-ordinary-short-q-design.json",
+    "functional_failure": "functional-failure-summary.json",
+    "candidate_failure": "candidate-failure-summary.json"
+  },
+  "cleanup": "cleanup-candidates.json:4 executables eligible for precise root cleanup,6 new small objects retained temporarily, original9 objects+SDK/log/source kept.",
+  "execution_stop": "No further product/test execution, experiment, shape/input/precision adjustment or compilation after the authorized single candidate test. Only read-only raw-log collection and local source/metadata packaging followed."
+}

@@ -1214,3 +1214,14 @@ GCC14.2同flags旧对象的容量zero-store循环确实存在，新对象消失�
 
 本批先写根目录test.ps1，Windows/WSL全部精确预检后删除18个可重建产物9035979逻辑B；保留6个当前对象/core缓存4191766 B及所有源、日志、原始数据、结果包和SDK。
 [清理结果与精确范围](cleanup-state-http2.json)记录身份；本批没有Mac清理，也未将逻辑长度称为实测物理回收。
+
+## Apple普通短Q：候选保留，未应用
+
+为F32 D256/显式rank2 Boolean mask、128<Q<1024的确定math fallback试作既有owner内Q128 checked分块，固定点Q513/KV8193/H8/Hkv2。
+两侧各自四host对象闭包一致，baseline复用当前缓存；仅fresh候选4产品TU及2测试TU，原SDK/native库未改。首次Graph编译的scratch重复头布局错误保留，仅续编失败TU。
+baseline原长Q广播mask控制通过；新控制在BHSD/phase0/h0/t0/d0的全false行上先失败：actual −0.1248360276222229，FP64参考转F32为−0.1248474270105362，误差1.13994e−5超过原预算2.74908e−6。
+随后仅运行候选同一新Direct test，也在同首元素得到完全相同失败；没有放宽abs2e−6+rel6e−6、换输入或降低精度。
+不能由一个相等元素推断全部输出相同、已定位PV误差根因或候选改善。throw_on_failure在此GTest闭包形成未捕获测试异常/SIGABRT，发生在数值断言之后，不当成native崩溃。
+本批两Graph、Sink、完整新控制及空间/latency均未完成；候选9源逐字冻结后已从产品工作树撤回，不计新增修复。
+[摘要](apple-ordinary-short-q/summary.json)、[完整两侧源码与失败结果](apple-ordinary-short-q/source-results.zip)、[处理结果](apple-ordinary-short-q/disposition.json)保留后续继续调查所需内容。
+另先写test.ps1并预检全部目标后，精确删除Air4个测试exe共40863904逻辑B；保留6个本批对象937096 B及原9对象、所有源/log/map/raw/包/SDK。[清理结果](apple-ordinary-short-q/cleanup.json)。

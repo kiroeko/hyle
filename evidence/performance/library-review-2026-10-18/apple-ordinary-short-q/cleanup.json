@@ -1,0 +1,80 @@
+{
+  "deleted": [
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/baseline-direct-tests",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/baseline-graph-tests",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-direct-tests",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph-tests"
+  ],
+  "retained_files_verified": 6,
+  "deleted_bytes": 40863904,
+  "bytes_meaning": "Logical file lengths; no claim of measured physical reclamation.",
+  "executed_root_test_ps1_sha256": "fb6bfad6352aaa3f68a17ac614a844b69f78dedfa94bfea2c92b739509934532",
+  "exact_plan": {
+    "host": "kiro@172.22.10.198",
+    "root": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q",
+    "source": {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-failure-summary.json",
+      "bytes": 5902,
+      "sha256": "fbf1c8925400cd5ef98a9f2883ff423049c91e44f70d0522cd30d64f9357f7d8"
+    },
+    "targets": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/baseline-direct-tests",
+        "bytes": 10283464,
+        "sha256": "8c9bd1d9ea3c3afdf81a7284dbaa482b52a3be722bbe53eaf0d9f1dcd9f4b206"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/baseline-graph-tests",
+        "bytes": 10139800,
+        "sha256": "d7c8fb19a4681ae135dd4c01a2b975685922cade81f2a444d256e24792f73332"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-direct-tests",
+        "bytes": 10300408,
+        "sha256": "39eac0e74db5320ea219dc11f417bb408a0d799142b3be09e722510e50231e2e"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph-tests",
+        "bytes": 10140232,
+        "sha256": "0745f85d13928c9ff9e4897a86755b99a985542ef3307346cf71a54f8fb1a9c3"
+      }
+    ],
+    "delete_bytes": 40863904,
+    "retain": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-context.o",
+        "bytes": 182048,
+        "sha256": "0ad035588062f078880e81421e75e3715233d3c7f325b3c3d368557da7bd2be2"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-operations.o",
+        "bytes": 72016,
+        "sha256": "2fa2f5bd746a5db5fbc0b19749397efd7fbc0d257435e8083bdd33dc96f439e3"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-tensor.o",
+        "bytes": 129432,
+        "sha256": "62e4a8b2668fe35811f5992d0ed48d29cc8ffbbc2b24d1fcc4b4a53fb4f40715"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+        "bytes": 87824,
+        "sha256": "13b405c34bb446496563f51db9b91439ea6004d34b00d833edcba6e25d197de6"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/attention-tests.o",
+        "bytes": 240736,
+        "sha256": "327e48535ef84e971dc705f66cb8413e67838151db3e438b621e6a4bb3fb7639"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/graph-tests.o",
+        "bytes": 225040,
+        "sha256": "6f66303ce495214b50642e1dd1e25b97e63ef546714530f528be0a164e640641"
+      }
+    ],
+    "retain_bytes": 937096,
+    "preserved": "All source, logs, maps, raw results, archives, original nine cache objects and SDK; no directory removal or scanning.",
+    "validation": "No Mac access performed. Execution must preflight all ten files, then repeat path/size/SHA/inode checks immediately before each of four unlink calls. Retained six are checked again afterwards.",
+    "execution": "Template only. Parent reviews and copies to repository-root test.ps1 before execution."
+  }
+}
