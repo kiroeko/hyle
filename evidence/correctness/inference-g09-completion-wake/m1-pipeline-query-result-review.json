@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "kind": "INDEPENDENT_M1Q1_STATIC_RESOURCE_ATTRIBUTION_RESULT_REVIEW",
+  "reviewer": "/root/budget_policy_review",
+  "reviewed_utc": "2026-10-17T09:58:13.542474+00:00",
+  "verdict": "EXACT_PIPELINE_STATIC_RESOURCE_ATTRIBUTION_ESTABLISHED",
+  "receipt_sha256": "e12d94d3f35926a508ba33ae86ad5ae5411b772ff815c963a2da70ba6080604a",
+  "rows": [
+    {
+      "variant": "none",
+      "static_threadgroup_bytes": 29184,
+      "shader_validation_numeric": 2,
+      "shader_validation_decoded": "Disabled",
+      "api_activation_log": false,
+      "gpu_activation_log": false,
+      "log_sha256": "67c093cb5959896acaafdba900e0ed66aeb3cc480b3c33181c3eca43d1865818"
+    },
+    {
+      "variant": "api",
+      "static_threadgroup_bytes": 29184,
+      "shader_validation_numeric": 2,
+      "shader_validation_decoded": "Disabled",
+      "api_activation_log": true,
+      "gpu_activation_log": false,
+      "log_sha256": "394814fc38aba8cdeb774ab2dbc83f54528f0f6db6e1cb68118f5b4d88c1e96c"
+    },
+    {
+      "variant": "api_gpu",
+      "static_threadgroup_bytes": 58368,
+      "shader_validation_numeric": 1,
+      "shader_validation_decoded": "Enabled",
+      "api_activation_log": true,
+      "gpu_activation_log": true,
+      "log_sha256": "23d32ef5147754ca57f9b72556369dcfc0325b645f7b674e92811e417b5b57cd"
+    }
+  ],
+  "same_identity_checks": "All three logs identify original Apple M4/applegpu_g16g, exact MLX image, exact kernel base/specialization, MSL SHA5749a119...77f and 123307 bytes. Original source/object/DSO/resource and entry inputs were guarded by the frozen supervisor. Each variant is one distinct one-shot process, exit0; no math dispatch by helper.",
+  "shader_validation_enum": {
+    "source_path": ".scratch\\foundation-f3\\sdk-air-cpu-apple-static-97858fbc8\\relocated\\include\\metal_cpp\\Metal\\MTLPipeline.hpp",
+    "source_sha256": "351b12718bd0b882b6f74c84cbcca6248adcd04d1d3021c4122f06ffa5b600b2",
+    "lines": "38-41",
+    "Default": 0,
+    "Enabled": 1,
+    "Disabled": 2,
+    "warning": "Nonzero does not mean enabled; 2 explicitly means Disabled."
+  },
+  "official_definitions": {
+    "static_threadgroup_memory": "Apple defines staticThreadgroupMemoryLength as the byte length of statically allocated threadgroup memory. It is a compiled pipeline property, not a measurement of the original encoder dynamic state.",
+    "pipeline_shader_validation": "Apple defines shaderValidation as the current shader-validation state of the pipeline.",
+    "links": [
+      "https://developer.apple.com/documentation/metal/mtlcomputepipelinestate/staticthreadgroupmemorylength",
+      "https://developer.apple.com/documentation/metal/mtlcomputepipelinestate/shadervalidation",
+      "https://developer.apple.com/documentation/metal/mtlshadervalidation"
+    ],
+    "downloaded_official_DocC_snapshots": [
+      {
+        "path": ".scratch\\g09-completion-wake-correction\\m1-query-primary-docs\\mtlcomputepipelinestate-shadervalidation.json",
+        "sha256": "fa0206b22f0d945f7995ffce7eb0bb2c079fbb9b7b1fc5260cf305339b3a3bc4"
+      },
+      {
+        "path": ".scratch\\g09-completion-wake-correction\\m1-query-primary-docs\\mtlcomputepipelinestate-staticthreadgroupmemorylength.json",
+        "sha256": "c9740ee23062d632ca1558ab9faa7638df986f5b9d9f31eb7b13c5e1fb279184"
+      },
+      {
+        "path": ".scratch\\g09-completion-wake-correction\\m1-query-primary-docs\\mtlshadervalidation.json",
+        "sha256": "63a5d0a429e6e5b18cdbcff8e3375dc094edc751cedcef5413687544f1672028"
+      }
+    ]
+  },
+  "conclusion": "For this frozen source, exact pipeline and Air, API-only leaves static demand at29184. Adding actually enabled Shader Validation produces58368 static bytes, exceeding the same32768 device limit. This compiled static demand alone is sufficient to account for the old reported total58368 without assuming a dynamic allocation.",
+  "not_proven": [
+    "The internal shadow-memory or compiler transformation responsible for the exact difference.",
+    "A universal factor-of-two rule for other kernels, shapes, dtypes, devices or toolchains.",
+    "The original encoder dynamic state; it remains NOT_OBSERVED.",
+    "A successful original fixture dispatch, corrected product, ordinary/device correctness, host/SDK delivery or any performance qualification."
+  ],
+  "original_verdicts": {
+    "original_combined_layer_fixture": "FAIL_PRESERVED",
+    "new_math_dispatches": 0,
+    "runtime_budget_or_performance_samples": "NONE"
+  },
+  "new_design_dynamic_ABI_boundary": "Original attention signature contains no [[threadgroup(n)]] dynamic parameters and its host function contains no dynamic-threadgroup setter. The new resource check may use required_dynamic_bytes=0 for this unchanged kernel ABI; it must not backfill the original encoder state as0 or reset shared encoder dynamic bindings without a separate fact.",
+  "clock_correction": {
+    "frozen_started_monotonic": 0.042385625,
+    "cross_process_monotonic_guard": "NOT_QUALIFIED; persisted0.042385625 cannot by itself establish a common clock origin across separate macOS Python processes. Official Python docs say macOS monotonic became common across processes in3.10. Actual interpreter version/clock origin was not qualified in this reviewer evidence.",
+    "prior_source_review_correction": "Prior source-only review accepted the declared600-second guard without qualifying this cross-process clock property. Preserve that original review and this correction; do not silently rewrite or replay.",
+    "external_start_utc": "2026-10-17T09:51:52.355187+00:00",
+    "external_completion_upper_bound_utc_from_root": "2026-10-17T09:55:52+00:00",
+    "elapsed_upper_bound_seconds": 239.644813,
+    "actual_within_600_seconds": true,
+    "original_global_UTC_deadline": "2026-10-17T12:08:00+00:00",
+    "per_command_duration_scope": "Same-process monotonic differences used for individual command durations are not invalidated by the cross-process-origin issue.",
+    "measured_command_seconds": 1.9901391680000002,
+    "action": "Frozen entry/receipts remain unchanged. No rerun, new variant or extra sample is justified by this clock finding.",
+    "primary_reference": "https://docs.python.org/3/library/time.html#time.monotonic"
+  },
+  "native_or_SSH_execution_by_reviewer": false,
+  "source_entry_changes_by_reviewer": "NONE"
+}

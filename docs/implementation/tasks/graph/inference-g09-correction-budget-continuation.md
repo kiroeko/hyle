@@ -139,3 +139,33 @@ PASS 都不能代签新未运行门。当前仅解除机械次数上限导致的
 H1/H2 只读方案已查明：Apple TSan 要显式 cpu;apple 并清旧 G10 hook，且全阶段恢复原模型；
 Vulkan ASan 要以真实 `/usr/bin/c++` 独立 context 保留路径 guard，并核真实 Vulkan owner/
 fixture 的 sanitizer 编译项。新 host 控制入口仍未冻结、未授权运行，不因 M1Q1 解锁而解锁。
+
+### M1Q1 实际结果与归属
+
+冻结入口按阶段停审后已各执行一次；[结果与身份](../../../../evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-result.json)
+及[完整 raw 包](../../../../evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-result.zip)
+保留原 controls、实际 plan/link、三个 fresh process 和旧失败。没有重编产品、重放原 fixture 或提交 GPU 数学。
+[结果独审](../../../../evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-result-review.json)
+与[Apple 定义/枚举原件](../../../../evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-primary-docs.zip)
+单独封存；旧入口的源码独审不冒充结果独审。
+
+| 实际状态 | pipeline 静态 threadgroup 字节 | device 上限 | pipeline shaderValidation |
+|---|---:|---:|---|
+| 无验证 | 29,184 | 32,768 | Disabled（2） |
+| 仅 API 验证，激活日志已见 | 29,184 | 32,768 | Disabled（2） |
+| API＋GPU 验证，两项激活日志均已见 | 58,368 | 32,768 | Enabled（1） |
+
+三项完整 MSL、函数常量、原 MLX DSO、资源、工具链均绑定同一冻结身份，查询均 exit 0。
+因此已确认**此 pipeline 的编译后静态内存随 Shader Validation 启用从29,184增加到58,368字节**；
+静态量本身已经超限，足以解释旧断言的字节值。不能再写成原 kernel 在普通编译状态本来就需58,368字节。
+这不证明内部 shadow 实现，不是所有 kernel 的固定倍数；原 encoder 动态历史仍为 NOT_OBSERVED，
+原完整设备验证仍 FAIL，不能由查询替签 correctness/SDK/P1。
+
+新命令累计1.990139168秒，继承原1228.157秒后为1230.147139168秒；产品仍已用2/6，P1未增加。
+私有入口原 UTC 起点09:51:52.355187，最终 receipt mtime 给出完成上界09:55:36.163807，
+root另在09:55:52 UTC确认已结束，均在600秒内。原 child 精确退出UTC没有记录。
+原跨进程 monotonic guard 的可靠性未证明，旧macOS Python存在进程间基准风险；此前认为同一启动
+周期即可比较的判断在此更正。本次以外部UTC证明时限，原入口/raw不修改、不重跑，后续入口使用
+明确的跨进程时间合同。总截止20:08 +0800保持。
+
+资源准入与合法备用分块进入下一有限设计审计；在该 FIX 独审并冻结前，仍不授权产品修改。

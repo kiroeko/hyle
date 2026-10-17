@@ -1,0 +1,582 @@
+{
+  "schema": 1,
+  "kind": "M1Q1_EXACT_ORIGINAL_PIPELINE_RESOURCE_ATTRIBUTION",
+  "state": "DIAGNOSIS_CONFIRMED_EXACT_PIPELINE_ONLY",
+  "created_utc": "2026-10-17T09:58:04.331103+00:00",
+  "product_checkpoint": "a0cc517332129c403b4e464a2e865712a2842290",
+  "scoped_checkpoint": "9b09b57af6639b77ed01cba85baaccad0755ada4",
+  "audited_checkpoint": "4b38379f96cfa69ccc7e035f555fd4d615368cd4",
+  "formal_candidate_stage_entered": false,
+  "aggregate_product_gate": "NOT_VERDICTED_BY_DIAGNOSTIC",
+  "old_device_validation_verdict": "FAIL_PRESERVED",
+  "original_fixture_replays": 0,
+  "new_product_corrections": 0,
+  "P1_processes": 0,
+  "frozen_controls": {
+    "entry_archive": {
+      "path": "evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-entry.zip",
+      "sha256": "d930f966c6c9bf04196d669ac6a6691856c57eb7b921e5b558681e5440a1aedd",
+      "bytes": 27970
+    },
+    "contract": {
+      "path": "evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-contract.json",
+      "sha256": "48303c2bb907244ae5915f0f5a956982e4e2757b6fb542cb929872d7c0dafd9b",
+      "bytes": 13361
+    },
+    "source_review": {
+      "path": "evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-source-review.json",
+      "sha256": "62ffa4fcd587ba843af69ee1db2a01d76f7f2bfe1f9d5ac01c3224551424c6df",
+      "bytes": 7251
+    },
+    "actual_plan_and_link_review": {
+      "path": ".scratch/g09-completion-wake-correction/m1-pipeline-query-plan-link-review.json",
+      "sha256": "764062f4c3a0c5dcb1d6212c682de1555907d76eb7a67ef12d98b77bb1fe0e42",
+      "bytes": 3807
+    }
+  },
+  "identity": {
+    "machine": "Mac16,12 / Apple M4 / applegpu_g16g",
+    "os": "macOS27.0.1 /26A434",
+    "compiler": "Apple clang21.0.0 clang-2100.3.34.2",
+    "facet": "Original Air source-build, shared MLX",
+    "actual_library_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+    "actual_library_sha256": "2b976f95a0fb977c0a1adf84510d80d905d90e5cbdb644c0cf5356e63fe78d85",
+    "metallib_sha256": "2f149b1a4c8fccd585410c1ee4abb0e5a711a574935d4dcc24f4458f5c9951d4",
+    "helper_binary": {
+      "path": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build/g09_m1_pipeline_query",
+      "sha256": "ec0e9a8250e3b6e5d29de4ad580d6eb5b82bec17c96ac552f0066843ddabfbd7",
+      "bytes": 172952
+    },
+    "source_and_resource_pre_post_guards": "PASS_FOR_ALL_FROZEN_CONTRACT_INPUTS_BEFORE_AND_AFTER_EACH_STAGE"
+  },
+  "exact_pipeline": {
+    "kernel_base": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256",
+    "kernel_hash": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0",
+    "msl_sha256": "5749a119fa92574afd316b2a551577c2d95ab9f9bcf1d76605372068f022e77f",
+    "msl_bytes": 123307,
+    "template_arguments": [
+      "half",
+      32,
+      16,
+      256,
+      4,
+      1,
+      "half",
+      "float",
+      256,
+      "half"
+    ],
+    "bool_function_constants": {
+      "200": false,
+      "201": false,
+      "300": false,
+      "301": true,
+      "302": false,
+      "303": true,
+      "304": false,
+      "305": false
+    },
+    "math_policy": "Original inline CompileOptions{} MathMode::Safe and original prebuilt Device::get_library/get_kernel; no custom fast math, language version, NAX, fallback, new tile or model geometry change."
+  },
+  "execution": {
+    "configure_plan": {
+      "actions": [
+        "[1/2] /usr/bin/clang++  -isystem /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source -isystem /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/metal-cpp-08f74cff0c0143c5/source -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -MD -MT CMakeFiles/g09_m1_pipeline_query.dir/query.cc.o -MF CMakeFiles/g09_m1_pipeline_query.dir/query.cc.o.d -o CMakeFiles/g09_m1_pipeline_query.dir/query.cc.o -c /Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/query.cc",
+        "[2/2] : && /usr/bin/clang++ -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wl,-search_paths_first -Wl,-headerpad_max_install_names /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/utils.cpp.o /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_attention.cpp.o CMakeFiles/g09_m1_pipeline_query.dir/query.cc.o -o g09_m1_pipeline_query  -Wl,-rpath,/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build  /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib  -framework Metal  -framework Foundation  -framework QuartzCore && :"
+      ],
+      "source_tus_compiled": 1,
+      "link_actions": 1,
+      "reused_original_string_objects": 2,
+      "product_vendor_compiles": 0,
+      "ninja_sha256": "4b32215f15bfa0b9c4f43fa905fb5ae18170d25e83011e7ddcfb081d1b4ebb49"
+    },
+    "commands": [
+      {
+        "label": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017",
+          "-B",
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+          "-DCMAKE_OSX_ARCHITECTURES=arm64",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DCMAKE_OSX_SYSROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        ],
+        "timeout_seconds": 45,
+        "actual_requested_mtl_environment": {},
+        "child_pid": 55910,
+        "exit_code": 0,
+        "seconds": 0.252345959,
+        "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/configure.log",
+        "log_sha256": "df20a4f206e44fe32128224ad912efed68799b1a6116c5f200fce3d460895c13"
+      },
+      {
+        "label": "plan",
+        "command": [
+          "/opt/homebrew/bin/ninja",
+          "-C",
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build",
+          "-n",
+          "-v",
+          "g09_m1_pipeline_query"
+        ],
+        "timeout_seconds": 15,
+        "actual_requested_mtl_environment": {},
+        "child_pid": 55976,
+        "exit_code": 0,
+        "seconds": 0.005634249999999993,
+        "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/plan.log",
+        "log_sha256": "6df738d15d2c5b8d464cd769c59a71d73eaa499f9816f41439ae89c1cc8193ea"
+      },
+      {
+        "label": "build",
+        "command": [
+          "/opt/homebrew/bin/ninja",
+          "-C",
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build",
+          "-j",
+          "1",
+          "-v",
+          "g09_m1_pipeline_query"
+        ],
+        "timeout_seconds": 60,
+        "actual_requested_mtl_environment": {},
+        "child_pid": 56022,
+        "exit_code": 0,
+        "seconds": 0.750196834,
+        "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build.log",
+        "log_sha256": "6df738d15d2c5b8d464cd769c59a71d73eaa499f9816f41439ae89c1cc8193ea"
+      },
+      {
+        "label": "otool",
+        "command": [
+          "/usr/bin/otool",
+          "-L",
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build/g09_m1_pipeline_query"
+        ],
+        "timeout_seconds": 10,
+        "actual_requested_mtl_environment": {},
+        "child_pid": 56028,
+        "exit_code": 0,
+        "seconds": 0.012236542000000017,
+        "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/otool.log",
+        "log_sha256": "2920fd60acef26f6c8cb9ea0406e191f205f9d47fbb9cc36d569583386e8a52b"
+      },
+      {
+        "label": "query-none",
+        "command": [
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build/g09_m1_pipeline_query",
+          "none"
+        ],
+        "timeout_seconds": 90,
+        "actual_requested_mtl_environment": {},
+        "child_pid": 56054,
+        "exit_code": 0,
+        "seconds": 0.6090145,
+        "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/query-none.log",
+        "log_sha256": "67c093cb5959896acaafdba900e0ed66aeb3cc480b3c33181c3eca43d1865818"
+      },
+      {
+        "label": "query-api",
+        "command": [
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build/g09_m1_pipeline_query",
+          "api"
+        ],
+        "timeout_seconds": 90,
+        "actual_requested_mtl_environment": {
+          "MTL_DEBUG_LAYER": "1"
+        },
+        "child_pid": 56056,
+        "exit_code": 0,
+        "seconds": 0.21035150000000002,
+        "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/query-api.log",
+        "log_sha256": "394814fc38aba8cdeb774ab2dbc83f54528f0f6db6e1cb68118f5b4d88c1e96c"
+      },
+      {
+        "label": "query-api_gpu",
+        "command": [
+          "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/build/g09_m1_pipeline_query",
+          "api_gpu"
+        ],
+        "timeout_seconds": 90,
+        "actual_requested_mtl_environment": {
+          "MTL_DEBUG_LAYER": "1",
+          "MTL_SHADER_VALIDATION": "1"
+        },
+        "child_pid": 56058,
+        "exit_code": 0,
+        "seconds": 0.15035958300000007,
+        "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/query-api_gpu.log",
+        "log_sha256": "23d32ef5147754ca57f9b72556369dcfc0325b645f7b674e92811e417b5b57cd"
+      }
+    ],
+    "fresh_query_processes": 3,
+    "attempts_per_variant": 1,
+    "automatic_retries": 0,
+    "build_source_tus": 1,
+    "product_vendor_source_compiles": 0,
+    "reused_original_source_string_objects": 2,
+    "helper_explicit_encoder_creations": 0,
+    "helper_explicit_buffer_creations": 0,
+    "helper_explicit_gpu_math_dispatches": 0,
+    "scope_limit": "These zero counts describe helper source calls, not absence of resources used by original Device cold initialization or Apple compiler/validation internal services."
+  },
+  "results": [
+    {
+      "requested_variant": "none",
+      "actual_activation_evidence": {
+        "api_log_seen": false,
+        "gpu_log_seen": false,
+        "pipeline_reported_shader_validation": 2
+      },
+      "resource_query": {
+        "variant": "none",
+        "kind": "PIPELINE_RESOURCE_QUERY_ONLY",
+        "mlx_image": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+        "device": "Apple M4",
+        "architecture": "applegpu_g16g",
+        "kernel_base": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256",
+        "kernel_hash": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0",
+        "msl_sha256": "5749a119fa92574afd316b2a551577c2d95ab9f9bcf1d76605372068f022e77f",
+        "msl_bytes": 123307,
+        "pipeline_static_threadgroup_bytes": 29184,
+        "device_max_threadgroup_bytes": 32768,
+        "pipeline_max_threads": 128,
+        "pipeline_thread_execution_width": 32,
+        "pipeline_shader_validation": 2,
+        "original_declared_arrays_bytes": 29184,
+        "encoder_created_by_helper": false,
+        "gpu_dispatches_by_helper": 0,
+        "original_encoder_dynamic_memory": "NOT_OBSERVED"
+      }
+    },
+    {
+      "requested_variant": "api",
+      "actual_activation_evidence": {
+        "api_log_seen": true,
+        "gpu_log_seen": false,
+        "pipeline_reported_shader_validation": 2
+      },
+      "resource_query": {
+        "variant": "api",
+        "kind": "PIPELINE_RESOURCE_QUERY_ONLY",
+        "mlx_image": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+        "device": "Apple M4",
+        "architecture": "applegpu_g16g",
+        "kernel_base": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256",
+        "kernel_hash": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0",
+        "msl_sha256": "5749a119fa92574afd316b2a551577c2d95ab9f9bcf1d76605372068f022e77f",
+        "msl_bytes": 123307,
+        "pipeline_static_threadgroup_bytes": 29184,
+        "device_max_threadgroup_bytes": 32768,
+        "pipeline_max_threads": 128,
+        "pipeline_thread_execution_width": 32,
+        "pipeline_shader_validation": 2,
+        "original_declared_arrays_bytes": 29184,
+        "encoder_created_by_helper": false,
+        "gpu_dispatches_by_helper": 0,
+        "original_encoder_dynamic_memory": "NOT_OBSERVED"
+      }
+    },
+    {
+      "requested_variant": "api_gpu",
+      "actual_activation_evidence": {
+        "api_log_seen": true,
+        "gpu_log_seen": true,
+        "pipeline_reported_shader_validation": 1
+      },
+      "resource_query": {
+        "variant": "api_gpu",
+        "kind": "PIPELINE_RESOURCE_QUERY_ONLY",
+        "mlx_image": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+        "device": "Apple M4",
+        "architecture": "applegpu_g16g",
+        "kernel_base": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256",
+        "kernel_hash": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0",
+        "msl_sha256": "5749a119fa92574afd316b2a551577c2d95ab9f9bcf1d76605372068f022e77f",
+        "msl_bytes": 123307,
+        "pipeline_static_threadgroup_bytes": 58368,
+        "device_max_threadgroup_bytes": 32768,
+        "pipeline_max_threads": 128,
+        "pipeline_thread_execution_width": 32,
+        "pipeline_shader_validation": 1,
+        "original_declared_arrays_bytes": 29184,
+        "encoder_created_by_helper": false,
+        "gpu_dispatches_by_helper": 0,
+        "original_encoder_dynamic_memory": "NOT_OBSERVED"
+      }
+    }
+  ],
+  "shader_validation_enum": {
+    "observed_values": [
+      2,
+      2,
+      1
+    ],
+    "interpretation": [
+      "Disabled",
+      "Disabled",
+      "Enabled"
+    ],
+    "exact_header_evidence": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/metal-cpp-08f74cff0c0143c5/source/Metal/MTLPipeline.hpp",
+      "sha256": "351b12718bd0b882b6f74c84cbcca6248adcd04d1d3021c4122f06ffa5b600b2",
+      "bytes": 3731,
+      "line": 35,
+      "excerpt": "    MutabilityImmutable = 2,\n};\n\n_MTL_ENUM(NS::Integer, ShaderValidation) {\n    ShaderValidationDefault = 0,\n    ShaderValidationEnabled = 1,\n    ShaderValidationDisabled = 2,\n};\n\nclass PipelineBufferDescriptor : public NS::Copying<PipelineBufferDescriptor>\n{\npublic:\n    static PipelineBufferDescriptor* alloc();"
+    },
+    "actual_activation": "none: no API/GPU activation logs and pipeline Disabled; api: API log seen, no GPU log, pipeline Disabled; api_gpu: API and GPU logs seen, pipeline Enabled."
+  },
+  "finding": {
+    "claim": "For this exact original pipeline, same instantiated MSL and original library/resources, enabling Shader Validation changes pipeline.staticThreadgroupMemoryLength from 29184 to 58368 bytes. API validation alone retains 29184. The reported 58368 is therefore an observed validation-dependent compiled-pipeline resource requirement, not a proven original uninstrumented-source allocation demand.",
+    "device_max_threadgroup_bytes": 32768,
+    "validation_disabled_static_bytes": 29184,
+    "validation_enabled_static_bytes": 58368,
+    "reported_failure_bytes_matched_by_query": true,
+    "extra_static_bytes_for_this_pipeline": 29184,
+    "ratio_for_this_pipeline": 2,
+    "not_proven": [
+      "The internal compiler/validation implementation of the extra allocation, including any specific shadow-memory layout.",
+      "That all Metal shaders or all Shader Validation pipelines use exactly twice the static memory.",
+      "The original fixture encoder dynamic binding history; it remains NOT_OBSERVED.",
+      "Full original-fixture correctness with an altered tile, resource guard, fallback or validation configuration.",
+      "A product performance gain, new P1 qualification, or readiness to close G09."
+    ],
+    "no_suppression": "Original failed combined API+GPU validation remains FAIL. No original fixture replay, disabled-check workaround, new tile, dispatch, or product patch was performed."
+  },
+  "budget": {
+    "original_measured_command_ledger_seconds": "1228.157",
+    "configure_plan_two_commands_seconds": "0.257980208999999993",
+    "subsequent_build_otool_three_queries_five_commands_seconds": "1.732158959000000107",
+    "new_seven_commands_total_seconds": "1.990139168000000100",
+    "cumulative_old_ledger_plus_all_new_commands_seconds": "1230.147139168000000100",
+    "rounded_cumulative_seconds": 1230.147,
+    "precision_note": "Prior 1228.157 is an existing rounded ledger. Retain individual new raw within-process measurements without treating resulting decimal digits as more precise than the inherited ledger. Do not double count configure/plan when adding the subsequent five commands.",
+    "budget_reset": false,
+    "original_failures_reset": false,
+    "global_start_local": "2026-10-17T14:08:00+08:00",
+    "global_deadline_local": "2026-10-17T20:08:00+08:00",
+    "private_start_utc": "2026-10-17T09:51:52.355187+00:00",
+    "private_hard_deadline_utc": "2026-10-17T10:01:52.355187+00:00",
+    "exact_query_child_exit_utc": null,
+    "exact_exit_limitation": "Frozen supervisor did not record per-command absolute exit UTC. Do not invent one from elapsed values.",
+    "last_api_gpu_log_write_utc": "2026-10-17T09:55:36.133554+00:00",
+    "final_receipt_write_utc": "2026-10-17T09:55:36.163807+00:00",
+    "final_receipt_semantics": "Filesystem mtime of final receipt after successful child exits, all three result parses and post-stage input guards; a post-query completion bound, not an exact child exit timestamp.",
+    "elapsed_start_to_final_receipt_write_seconds": 223.80862,
+    "external_root_observation_utc": "2026-10-17T09:55:52+00:00",
+    "external_observation_provenance": "Parent/root explicitly supplied 2026-10-17 09:55:52 UTC as an independent post-result observation after reading raw results. This agent did not independently measure that parent observation.",
+    "external_elapsed_upper_bound_seconds": 239.644813,
+    "under_600_seconds_from_utc_evidence": true,
+    "monotonic_risk": "Receipt started_monotonic is approximately0.042s. Cross-process comparability of time.monotonic() for this old /usr/bin/python3 on macOS was not proven; an older-macPython per-process clock-origin risk was identified. Frozen entry was not patched or rerun. Parent/root externally enforced absolute UTC cutoff18:01:52 local and retained timeout+10 margin. Per-command elapsed measurements are within each supervisor process and are retained as measured; no claim that the cross-stage monotonic guard independently proved the 600s limit."
+  },
+  "prior_failure_preserved": {
+    "checkpoint5_summary": {
+      "path": "evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-5.json",
+      "sha256": "15b08deffed9a578b75155baa5b8e098bf10e22642109dcbbbbc6e16a986b0ca",
+      "bytes": 14149
+    },
+    "checkpoint5_archive": {
+      "path": "evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-5.zip",
+      "sha256": "dc743786c0b25354cc33fbccb0ea218a705b5f17b4e1cc8ce22f1bb9cde30877",
+      "bytes": 291917
+    },
+    "air_failed_receipt": {
+      "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/receipt.json",
+      "sha256": "ac5fa3b18690f2f1e3ffe1075eeb68b81176c9bdef9430c01fc60173ba17c1eb",
+      "bytes": 23798
+    },
+    "air_failed_log": {
+      "path": ".scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/device-g09_wake_v4_pending.log",
+      "sha256": "42a8b10676bcc4e0ee98c3d410c5f01a597004de5d0ff3cbbdeb12d1d08cad42",
+      "bytes": 438
+    },
+    "failure": "Metal validateComputeFunctionArguments failed assertion total used threadgroupMemoryLength58368 must be<=32768; original pending consumer exit-6.",
+    "status": "Original raw files and verdict unchanged; new evidence refines attribution only."
+  },
+  "uncompleted_product_gates": "Original missing Air Vulkan / host risks / full selector / SDK delivery / new P1 remain unproven; this query does not run or satisfy them.",
+  "archive": {
+    "path": "evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-result.zip",
+    "sha256": "040525f405e43122a23c95d6143b9e325ee4263fec52de7425ecb55902b1a39c",
+    "bytes": 136417,
+    "member_count": 34,
+    "members": [
+      {
+        "path": "actual/build/build.log",
+        "sha256": "6df738d15d2c5b8d464cd769c59a71d73eaa499f9816f41439ae89c1cc8193ea",
+        "bytes": 1677
+      },
+      {
+        "path": "actual/build/otool.log",
+        "sha256": "2920fd60acef26f6c8cb9ea0406e191f205f9d47fbb9cc36d569583386e8a52b",
+        "bytes": 806
+      },
+      {
+        "path": "actual/build/receipt.json",
+        "sha256": "0d5512e4d1fd7f652078571b03a5351bc219d1301c87a7a7c710effbabb97b8f",
+        "bytes": 6321
+      },
+      {
+        "path": "actual/plan/build.ninja",
+        "sha256": "4b32215f15bfa0b9c4f43fa905fb5ae18170d25e83011e7ddcfb081d1b4ebb49",
+        "bytes": 19032
+      },
+      {
+        "path": "actual/plan/compile_commands.json",
+        "sha256": "864cca9d37aa76d5879e3ae72e879db0595b3e6a96d4f4fd78f2715067aa09b8",
+        "bytes": 940
+      },
+      {
+        "path": "actual/plan/configure.log",
+        "sha256": "df20a4f206e44fe32128224ad912efed68799b1a6116c5f200fce3d460895c13",
+        "bytes": 458
+      },
+      {
+        "path": "actual/plan/metal-cpp-link-closure.json",
+        "sha256": "c52c8cf357e125fc9805a39d67b1dba62c5e599b9dd236dc1c8865df460cbad2",
+        "bytes": 169716
+      },
+      {
+        "path": "actual/plan/plan.log",
+        "sha256": "6df738d15d2c5b8d464cd769c59a71d73eaa499f9816f41439ae89c1cc8193ea",
+        "bytes": 1677
+      },
+      {
+        "path": "actual/plan/receipt.json",
+        "sha256": "df737f4b551872be1c74cd3986305be34ef18277957608730b3e7168255057d9",
+        "bytes": 4005
+      },
+      {
+        "path": "actual/query/completion-metadata-and-enum.json",
+        "sha256": "c38315a0c95a6851ca8c293a9d01db57b5fe35a5fddada0d1831237c61918622",
+        "bytes": 2189
+      },
+      {
+        "path": "actual/query/g09_m1_pipeline_query",
+        "sha256": "ec0e9a8250e3b6e5d29de4ad580d6eb5b82bec17c96ac552f0066843ddabfbd7",
+        "bytes": 172952
+      },
+      {
+        "path": "actual/query/query-api.log",
+        "sha256": "394814fc38aba8cdeb774ab2dbc83f54528f0f6db6e1cb68118f5b4d88c1e96c",
+        "bytes": 981
+      },
+      {
+        "path": "actual/query/query-api_gpu.log",
+        "sha256": "23d32ef5147754ca57f9b72556369dcfc0325b645f7b674e92811e417b5b57cd",
+        "bytes": 1076
+      },
+      {
+        "path": "actual/query/query-none.log",
+        "sha256": "67c093cb5959896acaafdba900e0ed66aeb3cc480b3c33181c3eca43d1865818",
+        "bytes": 891
+      },
+      {
+        "path": "actual/query/receipt.json",
+        "sha256": "e12d94d3f35926a508ba33ae86ad5ae5411b772ff815c963a2da70ba6080604a",
+        "bytes": 12348
+      },
+      {
+        "path": "frozen-entry/CMakeLists.txt",
+        "sha256": "32694358cad11fc5c2ddbf08bbc20cc7908ea5fcf2bffedf804ccc12aac20bc8",
+        "bytes": 1732
+      },
+      {
+        "path": "frozen-entry/contract.json",
+        "sha256": "48303c2bb907244ae5915f0f5a956982e4e2757b6fb542cb929872d7c0dafd9b",
+        "bytes": 13361
+      },
+      {
+        "path": "frozen-entry/entry-plan.txt",
+        "sha256": "4d7b4db977754f0224e40e60fa2474469d9c8af2375693ae7d4af1728174ff57",
+        "bytes": 1237
+      },
+      {
+        "path": "frozen-entry/m1-air-readonly-link-closure.json",
+        "sha256": "f0b4693750799d8bf533f88a6c4abe8a58840273e24e3b4570813c135d77e0bb",
+        "bytes": 20704
+      },
+      {
+        "path": "frozen-entry/m1-air-readonly-original-msl.json",
+        "sha256": "7dc6009a2181d88d4991ecc39ddb019ee1a28b076cd0015141da762de70626ee",
+        "bytes": 6501
+      },
+      {
+        "path": "frozen-entry/m1-air-readonly-private-symbols.json",
+        "sha256": "43b98cf0bb91c47f71d6a6e43f3c47bd5123ac0a6f33b0895298a2d6a9e14cec",
+        "bytes": 20966
+      },
+      {
+        "path": "frozen-entry/m1-air-readonly-source-bindings.json",
+        "sha256": "b15789fd7bd5bd851f50cec5b82b0afae1ffd335d1b831b85108387438cfe2d5",
+        "bytes": 8452
+      },
+      {
+        "path": "frozen-entry/m1-pipeline-query-independent-source-review.json",
+        "sha256": "62ffa4fcd587ba843af69ee1db2a01d76f7f2bfe1f9d5ac01c3224551424c6df",
+        "bytes": 7251
+      },
+      {
+        "path": "frozen-entry/query.cc",
+        "sha256": "20fa723861435476d17e49b651eac40ed010f413c3ec7a7eb1d7d28c1c7ced99",
+        "bytes": 7106
+      },
+      {
+        "path": "frozen-entry/supervise.py",
+        "sha256": "eb731c1cb4dc56ac6deaac817e6ce97ae2e9aa20dc6e7462fa19654ab03cc6ed",
+        "bytes": 8555
+      },
+      {
+        "path": "original-failure/device-pending.log",
+        "sha256": "42a8b10676bcc4e0ee98c3d410c5f01a597004de5d0ff3cbbdeb12d1d08cad42",
+        "bytes": 438
+      },
+      {
+        "path": "original-failure/ordinary-checkpoint-5.json",
+        "sha256": "15b08deffed9a578b75155baa5b8e098bf10e22642109dcbbbbc6e16a986b0ca",
+        "bytes": 14149
+      },
+      {
+        "path": "original-failure/receipt.json",
+        "sha256": "ac5fa3b18690f2f1e3ffe1075eeb68b81176c9bdef9430c01fc60173ba17c1eb",
+        "bytes": 23798
+      },
+      {
+        "path": "pre-query-static-audit/metal-validation-static-memory-audit.json",
+        "sha256": "c334cd30b3b24bf6a7a4700e0eae45d8875e4b962daeb82f4ab76707f6197b85",
+        "bytes": 48396
+      },
+      {
+        "path": "pre-query-static-audit/metal-validation-static-memory-audit.txt",
+        "sha256": "f64c35e6192aee279f9791dbd9ed434da94e5f92b314af6725b28e36e96ca7e0",
+        "bytes": 1474
+      },
+      {
+        "path": "result-summary.json",
+        "sha256": "d0852bb9a47e8b0b0d7571410747bdff589956cef4459c1c241ba469535542e4",
+        "bytes": 21264
+      },
+      {
+        "path": "reviews/actual-plan-link-review.json",
+        "sha256": "764062f4c3a0c5dcb1d6212c682de1555907d76eb7a67ef12d98b77bb1fe0e42",
+        "bytes": 3807
+      },
+      {
+        "path": "reviews/source-review.json",
+        "sha256": "62ffa4fcd587ba843af69ee1db2a01d76f7f2bfe1f9d5ac01c3224551424c6df",
+        "bytes": 7251
+      },
+      {
+        "path": "zip-inputs.json",
+        "sha256": "ff3635250a2f5546d3324e30885895bb2b416d0c8955bf29fcd2a1f95a323638",
+        "bytes": 5746
+      }
+    ]
+  }
+}
