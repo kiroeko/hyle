@@ -11,14 +11,24 @@
 | CPU 普通路线漏注册 ggml | [owner CMake](../../../src/compute_provider_ggml/CMakeLists.txt) 用 `NO_DEFINE`，而 [Direct](../../../src/compute_route_cpu/cpu_context.cc) / [Graph](../../../src/graph_route_cpu/cpu_context.cc) 以该 presence 宏编译注册。实际库虽链接，候选却消失，旧 CPU 排名不能直接继承 | 已恢复 target 的宏传播；实际 owner 声明的配置回归通过。未测修复后的 CPU 模型倍率 |
 | StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；`replace` / `import` 等也调用它。密集单池 B 块为二次扫描 | 已在命中后停止。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
 | CUDA BF16/F32 attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 仅 F16 走 flash，BF16/F32 物化 scores。B1/H8/Q=KV8192 时，单个 F32 scores 为 **2 GiB**，不含 softmax 等其它 scratch。Windows 当前无 FlashInfer 路线 | 确认空间复杂度问题；未测当前峰值或倍率。优先调查锁定原生库的 BF16 融合接法，不能以窄化 F16 规避 |
-| io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 正在用真实 native io_uring 做规模对照；不能把源码复杂度直接写成已测吞吐损失 |
+| io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
 
 CUDA 的 F16 flash 分支也会物化 Q×KV 的 F16 causal mask，8K方形时为128 MiB；
 不能因为主 attention kernel 融合就假定整个调用的额外空间为线性。
 锁定 Torch CUDA 的 Windows 二进制没有 FlashAttention，但已有 CUTLASS BF16 memory-efficient 内核。
 候选入口是原生 `_efficient_attention_forward`、bottom-right mask type、显式scale、F32 accumulator；
 GQA需核对分组切片与零stride view。内核概率tile使用BF16，与现有全F32中间图并非逐位等价，
-必须先核数值合同与实际设备结果，再决定接线和排序；当前仅是可行性调查。
+必须先核数值合同与实际设备结果，再决定接线和排序。
+
+Windows RTX4070 原生[探针](bf16-sdpa/sdpa_probe.cc)已验证10个BF16场景：同头、非方形bottom-right、
+H8/KV2/D256零stride GQA、decode、零/负scale、非因果Q>KV，以及超F16范围的K/V。
+独立FP64公式参考的最大相对L2误差0.174713%，均满足探针声明的绝对0.01＋相对1.5%预算。
+[原始结果](bf16-sdpa/results.jsonl)明确 `flash_available=false`。
+Q128/KV257/H8/D64 的额外 Torch allocated 峰值262144 B，包含分组输出/拼接；该形状单个F32 scores
+为1052672 B。这仅证明小规模原生接法可行，不是8K总显存、Hyle接入或吞吐结果。
+复现使用本机已有锁定SDK：
+`python evidence/performance/library-review-2026-10-18/bf16-sdpa/run_probe.py --compile --run`，
+产物写入 `.scratch/perf-review-2026-10-18/bf16-sdpa`。外部stream/Queue、失败退休、并发和Graph选择仍待接入验证。
 
 ## 有效历史小输，当前版本待复测
 
@@ -54,7 +64,8 @@ GQA需核对分组切片与零stride view。内核概率tile使用BF16，与现�
 
 Windows11 26200 / i9-13900K；MSVC19.50.35728，Release/O2、static、trace与sanitizer关闭。
 固定逻辑CPU4 affinity，不宣称已证明其P/E核心类型。准备、分配、导入与销毁均在计时外，
-两侧计时相同次数的公共 `StateStore::stats()`；保留同一 schema、version、原始块、root和完整结果校验。
+两侧计时相同次数的公共 `StateStore::stats()`；保留同一 schema、version、原始块、root，
+校验所测计费字段、versions及累计checksum。
 
 | 块数 / pool roots | 旧实现 μs/call | 修复后 μs/call | 成对倍率中位数 |
 |---|---:|---:|---:|
@@ -77,6 +88,40 @@ QPC频率10 MHz、tick 100 ns；最快聚合区间22.1 μs，未用单次100 ns�
 这里证明的是统计调用及其重复 root 扫描，**不是引擎 tokens/s 提高这些倍数**。
 密集单池降为线性；不同 root、长空洞前缀和 clone-route 查找仍有扫描，最坏复杂度没有普遍降为线性。
 `import` 的其它去重扫描也未被这项修复消除。
+
+## io_uring 同工规模实测
+
+WSL Ubuntu24.04/GCC14.2、kernel6.18.54，Release/O3、shared、Werror。实际 `io_uring_setup` 与
+消费者 backend 检查均成功，不是epoll fallback。运行于Linux本地文件系统，taskset固定虚拟CPU2，
+不宣称Hyper-V物理P核已固定。只重建相关88步基础闭包，没有GPU/协议全量构建。
+
+[同一消费者](io-cqe/batch.cc)以不同 `LD_LIBRARY_PATH` 加载旧库和索引库。
+[loader记录](io-cqe/loader-identity.json)核对了实际落点、两库hash及exe的RUNPATH。
+正式AB使用同一个7形状exe；[首轮基线](io-cqe/baseline-first.jsonl)是增加pure-read前的6形状初探，
+其旧exe hash不混入正式AB结论。
+5对交替AB/BA，每行262144个operation，计入submit、statx native记录分配、全部CQE、转换/回收、
+token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户buffers在两侧计时外。
+
+| 负载 | batch | 旧 ns/op | 新 ns/op | 配对倍率中位数 |
+|---|---:|---:|---:|---:|
+| statx | 16 | 469.0 | 452.5 | 1.037× |
+| statx | 256 | 508.6 | 467.3 | 1.091× |
+| statx | 1024 | 740.3 | 570.5 | 1.306× |
+| read＋statx | 16 | 341.8 | 344.9 | 0.993× |
+| read＋statx | 256 | 285.4 | 260.7 | 1.087× |
+| read＋statx | 1024 | 405.9 | 306.6 | 1.337× |
+| pure read | 1024 | 103.9 | 102.1 | 1.014× |
+
+256/1024的两种负载均5/5对获益；不计算或虚构CI，不外推引擎tokens/s。
+[原始AB](io-cqe/all-pairs.json)/[摘要](io-cqe/summary.json)保留小mixed负点及pure-read的0.9047负对。
+再用相同库各做5对[同路径AA](io-cqe/controls-all-pairs.json)：mixed16旧范围0.9667–1.0060、
+新0.9430–1.0432；pure-read1024旧0.9281–1.0256、新0.9032–1.0148。
+该运行波动可重现原小负对的量级，目前不足以认定稳定小回退，也不证明严格等价；不将其冒充时钟量化问题。
+
+[构建与回归](io-cqe/checks.json)：25项Proactor测试23通过、2跳过；statx失败/retry、混合批次与取消ack/target分离实际通过。
+当前kernel对direct accept返回-EINVAL，成功slot/批量close生命周期仍未实测。
+索引保留statx的稳定kernel输出地址、原token/取消/slot和失败回滚；无special记录的普通CQE直接跳过哈希。
+代价是更多冷host索引容量，并可能因tombstone回收重分配，未声称空间减小或永久无分配。
 
 ## 模块覆盖与未测范围
 

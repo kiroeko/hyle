@@ -1,0 +1,13 @@
+{
+  "captured_utc": "2026-10-17T18:26:36.344306+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10",
+  "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB",
+  "case_count": 10,
+  "all_passed": true,
+  "maximum_relative_l2_error": 0.00174713000388,
+  "maximum_normalized_error": 0.25436507406,
+  "performance_timing": false,
+  "product_build": false,
+  "sdk_copy_or_download": false
+}
