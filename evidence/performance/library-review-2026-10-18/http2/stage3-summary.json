@@ -1,0 +1,212 @@
+{
+  "change": "Peer socket calls now match TcpStream immediate seam: recv(MSG_DONTWAIT), send(MSG_DONTWAIT|MSG_NOSIGNAL where defined), same EINTR retry and all protocol/cleanup work. Product HTTP2 unchanged.",
+  "formal_schedule": "Fixed four processes only: old read/write Hyle-first, matched send/recv peer-first, matched send/recv Hyle-first, old read/write peer-first. Same fresh unprofiled HTTP2 object, old cached HTTP/feature/foundation, taskset CPU2. Both persistent harness workers present, one route active. Nine epochs per arm, at least five complete episodes per epoch, no trimming or correction by A/A.",
+  "points": [
+    {
+      "file": "seam-formal-0-readwrite-4.json",
+      "order": [
+        "HYLE HTTP/2 public session",
+        "nghttp2 direct HTTP/2 session"
+      ],
+      "arms": {
+        "hyle": {
+          "ns_per_stream": 191163.16666666674,
+          "epoch_MAPE": 0.0177836649037831,
+          "minimum_actual_epoch_seconds": 0.0037927300000000002,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "peer": {
+          "ns_per_stream": 180816.08333333326,
+          "epoch_MAPE": 0.00539536426817626,
+          "minimum_actual_epoch_seconds": 0.003609543,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": 5.722435273779669
+    },
+    {
+      "file": "seam-formal-0-readwrite-64.json",
+      "order": [
+        "HYLE HTTP/2 public session",
+        "nghttp2 direct HTTP/2 session"
+      ],
+      "arms": {
+        "hyle": {
+          "ns_per_stream": 4764.059375000001,
+          "epoch_MAPE": 0.0367532498444358,
+          "minimum_actual_epoch_seconds": 0.001470455,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "peer": {
+          "ns_per_stream": 6469.340625000001,
+          "epoch_MAPE": 0.00932984179345924,
+          "minimum_actual_epoch_seconds": 0.0020510529999999997,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": -26.359429018316682
+    },
+    {
+      "file": "seam-formal-1-sendrecv-4.json",
+      "order": [
+        "nghttp2 direct HTTP/2 session",
+        "HYLE HTTP/2 public session"
+      ],
+      "arms": {
+        "peer": {
+          "ns_per_stream": 174050.35,
+          "epoch_MAPE": 0.0273349258755355,
+          "minimum_actual_epoch_seconds": 0.003245352,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "hyle": {
+          "ns_per_stream": 200329.55000000002,
+          "epoch_MAPE": 0.0286742368079346,
+          "minimum_actual_epoch_seconds": 0.00385604,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": 15.098619451210539
+    },
+    {
+      "file": "seam-formal-1-sendrecv-64.json",
+      "order": [
+        "nghttp2 direct HTTP/2 session",
+        "HYLE HTTP/2 public session"
+      ],
+      "arms": {
+        "peer": {
+          "ns_per_stream": 5912.378124999999,
+          "epoch_MAPE": 0.0227353025037502,
+          "minimum_actual_epoch_seconds": 0.0017839219999999999,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "hyle": {
+          "ns_per_stream": 4776.109375,
+          "epoch_MAPE": 0.0139377422303838,
+          "minimum_actual_epoch_seconds": 0.0015073460000000001,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": -19.218472262377496
+    },
+    {
+      "file": "seam-formal-2-sendrecv-4.json",
+      "order": [
+        "HYLE HTTP/2 public session",
+        "nghttp2 direct HTTP/2 session"
+      ],
+      "arms": {
+        "hyle": {
+          "ns_per_stream": 190287.44999999998,
+          "epoch_MAPE": 0.00102634324842643,
+          "minimum_actual_epoch_seconds": 0.0037453399999999998,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "peer": {
+          "ns_per_stream": 168827.44999999998,
+          "epoch_MAPE": 0.0171321446797893,
+          "minimum_actual_epoch_seconds": 0.00327667,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": 12.711203065615218
+    },
+    {
+      "file": "seam-formal-2-sendrecv-64.json",
+      "order": [
+        "HYLE HTTP/2 public session",
+        "nghttp2 direct HTTP/2 session"
+      ],
+      "arms": {
+        "hyle": {
+          "ns_per_stream": 4943.928124999999,
+          "epoch_MAPE": 0.00554747290617531,
+          "minimum_actual_epoch_seconds": 0.00156422,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "peer": {
+          "ns_per_stream": 5980.0260416666715,
+          "epoch_MAPE": 0.0140229464791171,
+          "minimum_actual_epoch_seconds": 0.001792299,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": -17.325976667116738
+    },
+    {
+      "file": "seam-formal-3-readwrite-4.json",
+      "order": [
+        "nghttp2 direct HTTP/2 session",
+        "HYLE HTTP/2 public session"
+      ],
+      "arms": {
+        "peer": {
+          "ns_per_stream": 182851.4,
+          "epoch_MAPE": 0.0173143329784985,
+          "minimum_actual_epoch_seconds": 0.003573089,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "hyle": {
+          "ns_per_stream": 190894.91666666674,
+          "epoch_MAPE": 0.0153363845651286,
+          "minimum_actual_epoch_seconds": 0.0037602300000000003,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": 4.398936331177539
+    },
+    {
+      "file": "seam-formal-3-readwrite-64.json",
+      "order": [
+        "nghttp2 direct HTTP/2 session",
+        "HYLE HTTP/2 public session"
+      ],
+      "arms": {
+        "peer": {
+          "ns_per_stream": 6414.4973958333285,
+          "epoch_MAPE": 0.0221064605031392,
+          "minimum_actual_epoch_seconds": 0.002008126,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        },
+        "hyle": {
+          "ns_per_stream": 4772.46875,
+          "epoch_MAPE": 0.0140232525712616,
+          "minimum_actual_epoch_seconds": 0.0015267129999999999,
+          "empirical_clock_resolution_seconds": 1.2e-08,
+          "epochs": 9
+        }
+      },
+      "hyle_slower_percent": -25.598710927842028
+    }
+  ],
+  "conclusion": "The original 4x256KiB Hyle loss remains after matching the socket seam. Two matched points are slower by about13-15%; this is not a stable universal percentage. Peer absolute time changes along with the libc seam; unchanged Hyle also varies. Small body still faster in this narrow workload. Do not claim the seam explained or solved the product residual.",
+  "clock": "Raw min epoch windows are milliseconds and empirical resolution12-16ns. Counter fields zero mean unavailable, not no CPU work. Process and order drift are not clock quantization.",
+  "sampling": {
+    "work": "1000 complete holdout episodes per active route, same payload/header/flow-control/oracle/socket/session cleanup, one process per route. Instrumented profiles are separate from formal ranking.",
+    "command": "perf record -e cpu-clock:u -F997 --call-graph dwarf,4096; taskset -c2",
+    "samples": {
+      "hyle": 322,
+      "peer": 273
+    },
+    "lost_samples": 0,
+    "limitation": "Hardware PMU cycles/instructions unsupported. Installed minimal perf lacks libelf, libdw/libunwind and DWARF unwind; report/script provide leaf IPs only. addr2line resolves selected existing-image addresses independently but cannot recover parent stacks. No attribution of total gap to fibers, notify, memcpy or syscall percentages; no stack claim or profiler-time latency ranking.",
+    "leaf_findings": "Selected leafs resolve to libc memcpy/recv/send for Hyle and memcpy/read/write for peer, motivating syscall seam alignment. Source counters already showed equal body-copy bytes and no compaction; different memcpy sample percentages alone do not imply extra copied bytes."
+  },
+  "scope": "Linux WSL GCC14.2 and existing locked nghttp2 1.70/foundation cache; related TUs only. No full HEAD/native rebuild, SDK copy, Mac/Windows HTTP2 run or new product optimization. The two same-source binaries and profiling binary are rebuildable and not retained in the evidence ZIP."
+}

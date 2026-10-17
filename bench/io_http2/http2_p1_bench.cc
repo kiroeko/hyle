@@ -682,10 +682,17 @@ bool raw_fill_output(RawEndpoint &endpoint, RawWire &wire) noexcept {
 }
 
 bool raw_write(RawWire &wire, bool &progress) noexcept {
+  // Match TcpStream's immediate socket seam, including per-call nonblocking
+  // and SIGPIPE suppression where supported; plain write uses another libc
+  // entry and relies on the process-wide signal setting.
+  int flags = MSG_DONTWAIT;
+#if defined(MSG_NOSIGNAL)
+  flags |= MSG_NOSIGNAL;
+#endif
   while (wire.begin != wire.end) {
-    const ssize_t written = ::write(wire.descriptor,
+    const ssize_t written = ::send(wire.descriptor,
                                     wire.pending.data() + wire.begin,
-                                    wire.end - wire.begin);
+                                    wire.end - wire.begin, flags);
     if (written > 0) {
       wire.begin += static_cast<std::size_t>(written);
       progress = true;
@@ -704,7 +711,8 @@ bool raw_write(RawWire &wire, bool &progress) noexcept {
 bool raw_read(RawEndpoint &endpoint, RawWire &wire, bool &progress) noexcept {
   for (;;) {
     const ssize_t count =
-        ::read(wire.descriptor, wire.input.data(), wire.input.size());
+        ::recv(wire.descriptor, wire.input.data(), wire.input.size(),
+               MSG_DONTWAIT);
     if (count > 0) {
       progress = true;
       const nghttp2_ssize consumed = nghttp2_session_mem_recv2(
