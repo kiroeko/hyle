@@ -1046,20 +1046,26 @@ Result<Region> Region::create(NativeDevice device,
         auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
         if (key->ne[0] == value->ne[0] &&
             (key->ne[0] == 64 || key->ne[0] == 128 || key->ne[0] == 256)) {
-          ggml_tensor *mask = nullptr;
-          if (attention->causal) {
-            auto *seed = ggml_new_tensor_2d(context, GGML_TYPE_F32,
-                                            key->ne[1], query->ne[1]);
-            mask = ggml_cast(context,
-                ggml_diag_mask_inf_inplace(context,
-                    ggml_fill_inplace(context, seed, 0.0F),
-                    static_cast<int>(key->ne[1] - query->ne[1])),
-                GGML_TYPE_F16);
-          }
-          output = ggml_flash_attn_ext(context, query, key, value, mask,
+          output = ggml_flash_attn_ext(context, query, key, value, nullptr,
                                        attention->scale, 0.0F, 0.0F);
           output->op_params[bridge::kFlashAttentionMathSlot] =
               bridge::kFlashAttentionFullF32;
+          if (attention->causal) {
+            // The existing scalar FullF32 shader applies bottom-right causal
+            // bounds directly to ordinary KV rows; no Q-by-KV mask is needed.
+            output->op_params[bridge::kFlashAttentionLogicalRowsSlot] =
+                static_cast<std::int32_t>(key->ne[1]);
+            output->op_params[bridge::kFlashAttentionTableOffsetSlot] = 0;
+            output->op_params[bridge::kFlashAttentionCausalSlot] = 1;
+            // A window spanning all KV preserves the unrestricted left edge
+            // and lets the existing shader skip wholly future causal tiles.
+            output->op_params[bridge::kFlashAttentionWindowSlot] =
+                static_cast<std::int32_t>(key->ne[1] - 1);
+            output->op_params[bridge::kFlashAttentionCacheSlot] =
+                bridge::kFlashAttentionCache;
+            // This is a fixed ordinary op, not a runtime batch request.
+            output->op_params[kBatchRuntimeRequestSlot] = -1;
+          }
           if (!ggml_prec_set_acc(output, GGML_PREC_F32))
             return std::unexpected(Status::Unimplemented(
                 "ggml Vulkan fused attention accumulation"));

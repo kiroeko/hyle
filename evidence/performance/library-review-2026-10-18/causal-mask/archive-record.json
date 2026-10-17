@@ -1,0 +1,6 @@
+{
+  "sha256": "7aff82ec8fb7eebfe123a6fb06e956098518f99191f545218a807a06ab9e7752",
+  "bytes": 85061,
+  "members": 29,
+  "root_verified": "product hashes, final3-test numeric log and original expected space failure, final caller/gallocr logs, ZIP CRC/no binaries; fixed causal/window/runtime slot source independently reviewed"
+}

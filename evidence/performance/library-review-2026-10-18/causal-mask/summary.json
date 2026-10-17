@@ -1,0 +1,58 @@
+{
+  "change": "Ordinary Vulkan causal fused SDPA uses existing FullF32 cache/window metadata instead of Q*KV dense mask seed+cast. CPU and noncausal/wide/Sink/BF16 paths unchanged.",
+  "chosen_fields": {
+    "mask": "null",
+    "MathSlot4": "FullF32 unchanged",
+    "PagedSlot5": 0,
+    "LogicalRowsSlot6": "KV length",
+    "TableOffsetSlot7": 0,
+    "CausalSlot8": 1,
+    "WindowSlot9": "KV-1",
+    "CacheSlot10": "kFlashAttentionCache",
+    "RuntimeRequestSlot11": -1,
+    "src5": "null"
+  },
+  "proof": "For each valid q, position=KV-Q+q lies in[0,KV-1], so max(0,position-(KV-1))=0. Tile last query is clipped toQ-1, so last_key<=KV. Existing tensor-domain bounds make KV,window+1 and signed position safe. SplitKV keeps its own lower bound, only future tiles are clipped; cache offset remains0. Ordinary F32/F16 full-F32 path excludes quantized/MMQ branches.",
+  "tests": {
+    "baseline_numerics": "PASS2/2 GTests (6 F32/F16 cases, B1/B2, GQA and same-head, D64/128/256, Q1/3/5/17, non-square KV>Q, padded batch cache pitch, scale positive/zero/negative, two independent physical buffer sets and rebind/replay with retained first result).",
+    "candidate": "PASS3/3 with same numeric domain and cold backing regression.",
+    "ordinary_not_runtime_request": "validate_batch_layout({}, {}) and update_batch_layout({}, {}) both pass; slot11=-1 prevents request0 mis-tag.",
+    "admission": "Existing BSHD F32/F16 accepted, BHSD and BF16 still declined.",
+    "oracle": "Independent FP64 stable-softmax reference computed from actual exactly representable dyadic input values, with final dtype rounding. F32 relative6e-6+absolute2e-6 and F16 relative.001+absolute2e-7 copied from existing Vulkan attention oracle; no budget widened.",
+    "existing_large_graph_suite": "Not run; standalone actual Region submission/wait used. No full provider/default route build."
+  },
+  "space": {
+    "shape": {
+      "B": 1,
+      "Q": 1025,
+      "KV": 1041,
+      "H": 8,
+      "Hkv": 2,
+      "D": 64,
+      "dtype": "F32",
+      "causal": true
+    },
+    "caller_requested_per_port_bytes": [
+      2099200,
+      532992,
+      532992,
+      2099200
+    ],
+    "caller_requested_sum_bytes": 5264384,
+    "caller_native_buffer_capacity_sum_bytes": 5264384,
+    "native_gallocr_backing_bytes": {
+      "baseline": 6402176,
+      "candidate": 0
+    },
+    "removed_mask_logical_bytes": {
+      "F32_seed": 4268100,
+      "F16_mask": 2134050
+    },
+    "oracle": "Q/K all0, V nonzero.25; every524800 output scalar checked against analytic.25 with4e-6 absolute budget, both sides pass.",
+    "negative_control": "Baseline expected to fail only new linear cold-backing upper bound (6402176>2099200). Raw GTest failure and process exit1 retained; candidate passes. Baseline constant output checks continue after nonfatal space assertion and pass.",
+    "limits": "Native gallocr capacity is explicit owned backing, not whole/peak VRAM. Caller buffers separately counted. NativeWork internal flash split-K buffers, command/descriptors and driver/pool allocations remain separate/unknown; do not infer zero total scratch or total VRAM."
+  },
+  "performance": "No SDPA timing collected. Existing window=KV-1 semantics keeps left bound0 and clips wholly future causal tiles. This does not establish throughput parity or improvement.",
+  "cpu_deferred_reason": "params.use_ref || boxed disables both tiled prefill and split-KV decode; row/head/batch work sharing remains. Losing tiled GEMM/KV reuse may regress large F32/F16 prefill. No multiplier measured. Native planner still reserves its bounded per-thread workspace. Boxed first/last only change eligible key rows; same vector dot/type conversions. F32/BF16 PV is F32. Existing unboxed F16 one-chunk uses Half VKQ accumulator; boxed switches this to F32, so cannot claim the old F16 private arithmetic is identical.",
+  "product_commit": "Not committed; parent owns integration."
+}
