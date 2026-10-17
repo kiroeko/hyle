@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**AUDITED，2026-10-17；独立 R27 复核实际故障调用点，冻结一次仅 batch→individual 的非排名采集纠正；具体根因、完成时延和原 A/A 原因仍未决，产品/正式测量 FIX 集为空**。
+状态：**BLOCKED-from-AUDITED，2026-10-17；R27 的单次 individual 采集完整正常退出，R28 复核通过；原计量段缺可归属 GPU 完成记录，native readiness 和原 A/A 原因仍未决，产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -284,3 +284,30 @@ R27 未找到具体 Vulkan 合同违规，也未证明 Nsight batch bug；此前
 
 即使取得 GPU workload 表，官方明确 Compute/Transfer execution range 的结束时间可能早于实际；
 不得据此直接签 native readiness，更不能代替 public Completion 或恢复 A/A/P1 资格。
+
+### individual 单次结果与终态
+
+[运行原件与终态](../../../../evidence/architecture/inference-g09-completion-observation/individual-receipt.json)
+及[独立 R28](../../../../evidence/architecture/inference-g09-completion-observation/28.json)
+确认：原四形状全部完成，4+4 完整数学 oracle、8 次 State 退休、8 块无溢出记录（7730 条）、
+四阶段无 OBS、实际 PID/nonce/策略/两映像均通过。同一个已保留目标 handle 证明进程退出码为零，
+没有强制结束或残留诊断进程；449 个冻结输入在结果卡改动前全部匹配。
+本次累计 7.671 秒，其中 profile 6.359 秒、离线 export 0.063 秒；无编译或产品修改。
+
+实际保存 361 个 NVTX、3881 个 Vulkan API 和 274 个 GPU workload 记录。
+270 个 GPU 记录按精确 context/correlation 唯一关联到第三形状 `two-microbatches` 的两候选
+before-oracle 与原 8 次 warmup，各 135 个；不是 cold-create。
+原 96 次计量 replay 含 504 个 QueueSubmit API，但没有可唯一关联的 GPU workload。
+另 4 个 GPU 记录虽在计量时间窗内，correlation 为零、末端缺失，仍无 submission 归属；
+缺少可关联记录绝不等于没有 GPU 执行。采集器明确提示重复提交的 command buffer 被忽略、
+异步 workload 可能缩短，此 warning 本身也不证明产品违反 Vulkan pending 合同。
+
+352 个时钟 marker 全配对，但全程 constant-offset 区间上下界相差反向 4ns，原样保留 UNKNOWN；
+不丢端点、不加容差或替换时钟模型。宿主等待统计只使用同一 QPC 的原记录，排除 oracle/warmup，
+重叠 park 取并集；它不能证明可消除成本。GPU/API 归属只用 trace 内的 marker bookends，
+不修复跨时钟完成时延，更不把 GPU range end 当作 public Completion。
+
+这一次工具候选已结束：完整运行通过，独立 native readiness 与原 A/A 因果仍 INCONCLUSIVE/UNKNOWN。
+不追加 profiler/debugger/driver/Provider 配置，不重开产品 owner；原失败、费用、CUDA 原 P1 以及
+另三组原 A/A 未资格、0 个有效 A/B 均保留。恢复仍仅按本卡的具名机制、独立审查和新入口条件，
+本结果不提供下一次测量授权。

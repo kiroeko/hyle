@@ -8,6 +8,9 @@ G07/G08/G10已接受，当前G07–G10 goal完成3/4；剩余G09的三组测量�
 在用户授权的管理员重试中留下前两形状记录，但访问冲突中断、native readiness 归属未得；不恢复资格。
 后续[具体故障现场](../../../../evidence/architecture/inference-g09-completion-observation/nsys-procdump-receipt.json)
 已取得驱动 NULL-read 及经过 Nsight 拦截层的上传提交栈；根因未签，直接调试同程序则四形状完整通过。
+最后[普通 individual 采集](../../../../evidence/architecture/inference-g09-completion-observation/individual-receipt.json)
+已完整正常退出，四形状 oracle/退休/身份通过；原计量段缺可归属 GPU 记录，native readiness 与
+原 A/A 因果仍未决，故不恢复性能资格或推进产品状态。
 
 ## 需求、真实事实与owner
 

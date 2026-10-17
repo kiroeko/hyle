@@ -1,0 +1,151 @@
+{
+  "schema": "hyle.g09.individual-result-independent-review/v1",
+  "review": "R28",
+  "reviewed_on": "2026-10-17",
+  "reviewer": "/root/g09_transfer_capture_review",
+  "state": "PASS_FINITE_DIAGNOSTIC_EXECUTION_REVIEW_NATIVE_READINESS_INCONCLUSIVE",
+  "scope": "One completed R27 ordinary Nsight individual-mode diagnostic; independent read-only result/source-accounting/correlation review. No new native execution, collector configuration or product investigation.",
+  "actions": {
+    "native_application_gpu_profile_build_runs": 0,
+    "product_or_public_instrument_changes": 0,
+    "existing_analyzers_executed": false,
+    "offline_only": [
+      "Read final launcher result, source-analysis, gpu-attribution, embedded stderr and the two analyzer source files.",
+      "Opened existing trace.sqlite with mode=ro, decoded its embedded stderr, independently parsed all source records and recomputed marker bounds, all 176 replay records and all eight source aggregates.",
+      "Independently joined recorded Vulkan rows, recomputed every replay bookend/API membership/GPU attribution and compared every replay and summary to final derived JSON.",
+      "Rehashed all 449 frozen inputs; all matched at the time of this review. Checked final evidence hashes and authorization binding."
+    ]
+  },
+  "summary": {
+    "application_and_collector_execution": "COMPLETE_NORMAL_EXIT_FOR_THIS_ONE_DIAGNOSTIC",
+    "capture_coverage": "INCOMPLETE_FOR_INDEPENDENT_NATIVE_READINESS",
+    "clock": "UNKNOWN_NO_COMMON_OFFSET; empty by 4ns, unchanged",
+    "measurement_coverage": "96 original measurement replays contain 504 recorded vkQueueSubmit APIs and zero uniquely linked GPU rows; this is missing attribution, not zero GPU work.",
+    "causality": "UNKNOWN for prior batch-mode faults and all original A/A failures",
+    "product_must": [],
+    "qualification": "UNCHANGED; DIAGNOSTIC_ONLY, valid_formal_ab=0",
+    "stop": "This one configuration is terminal. Preserve BLOCKED-from-AUDITED and existing resume conditions; no further configuration/run follows from R28."
+  },
+  "execution_verification": {
+    "profile_mode": "individual",
+    "profile_exit_code": 0,
+    "export_exit_code": 0,
+    "target_pid": 43320,
+    "target_nonce": "7467800d24f7fa097db15e94ba255024",
+    "actual_policy": "one exact marker: mask0x14, AboveNormal32768, nonce and PID match result",
+    "retained_target_handle_result": "ALREADY_EXITED, GetExitCodeProcess=0; no forced target termination",
+    "remaining_target_images_in_saved_result": [],
+    "single_process_identity": "All recorded VULKAN_API and VULKAN_WORKLOAD events decode to process43320; one actual policy marker.",
+    "embedded_stderr_equals_sqlite_decoding": true,
+    "normal_main0_markers": 1,
+    "before_oracles": 4,
+    "after_oracles": 4,
+    "full_elements_per_shape": 4194304,
+    "state_retirements": 8,
+    "record_blocks": 8,
+    "records": 7730,
+    "records_by_block": [788, 748, 756, 758, 1432, 1446, 904, 898],
+    "replays_per_block": 22,
+    "replay_contract": "before oracle ordinal0; eight warmups ordinal1..8; twelve measurement replays ordinal9..20; after oracle ordinal21",
+    "facades": "exact original observed1/observed2 paths and each candidate tag once",
+    "module_phases": ["independent-cpu-first", "independent-gpu-first", "two-microbatches", "serial-holdout"],
+    "OBS_paths_in_all_module_phases": [],
+    "saved_result_builds": 0,
+    "frozen_inputs_rehashed": 449,
+    "frozen_input_mismatches_at_review": [],
+    "authorization_sha256_matches_saved_result": true
+  },
+  "source_accounting": {
+    "all_block_metadata_exactly_reproduced": true,
+    "all176_replay_records_exactly_reproduced": true,
+    "all8_measurement_aggregates_exactly_reproduced": true,
+    "interval_method": "Pair matching enter/leave kinds by type/run, require no unmatched pairs, union overlapping intervals within each full replay. Exclude original oracle/warmup ordinals from measurement aggregates.",
+    "interpretation": "Native/frontier park, old progress park and caller finished wait are observed diagnostic intervals. They include actual GPU/provider work and host scheduling. Overlapping caller wait must not be added as independent overhead; no interval is certified avoidable."
+  },
+  "clock_review": {
+    "source_markers": 352,
+    "trace_markers": 352,
+    "matching": "Exact candidate tag and NVTX payload QPC-before value; source after-QPC record matches every marker, no duplicates or unmatched markers.",
+    "lower_ns": -436773685562031,
+    "upper_ns": -436773685562035,
+    "empty_interval_ns": 4,
+    "verdict": "UNKNOWN_NO_COMMON_OFFSET",
+    "limits": "Do not widen tolerance, discard endpoints, fit a replacement clock model or call this a qualified common QPC/trace clock. A 4ns contradiction remains a contradiction under the declared contract."
+  },
+  "recorded_gpu_attribution_review": {
+    "raw_table_counts": {"NVTX_EVENTS": 361, "VULKAN_API": 3881, "VULKAN_WORKLOAD": 274},
+    "vkQueueSubmit_api_rows": 928,
+    "join_contract": "Same contextId and API correlationId..endCorrelationId containing the GPU correlation range; assign only exactly one matching vkQueueSubmit API. One recorded process is independently verified. Local schema and official NVIDIA schema define these IDs as API/GPU matching endpoints.",
+    "current_data_strength": "All API ranges and all linked GPU ranges are singletons. Thus every one of the 270 accepted joins is exact context/correlation equality, not an inference from time proximity or a permissively broad range.",
+    "uniquely_linked_GPU_rows": 270,
+    "distinct_linked_submit_APIs": 170,
+    "multi_match_GPU_rows": 0,
+    "unassigned_GPU_rows": 4,
+    "unassigned_details": "SQLite rowid271..274 (zero-based workload indexes270..273) all have correlationId0, endCorrelationIdNULL and zero API matches. They are not multi-match ambiguity and are not repaired by guessing.",
+    "replay_membership": "Pair source-identified NVTX entry/exit markers in trace clock; include only submit APIs fully contained between those trace timestamps. No QPC offset is applied. There are no queue-submit APIs crossing any of the 176 selected replay boundaries in this trace.",
+    "all_per_replay_and_summary_JSON_exactly_reproduced": true,
+    "measurement_replays": 96,
+    "measurement_submit_API_rows": 504,
+    "measurement_submit_API_rows_by_block": [36, 36, 36, 36, 120, 120, 60, 60],
+    "measurement_uniquely_linked_GPU_rows": 0,
+    "measurement_replays_with_uniquely_linked_GPU_rows": 0,
+    "positive_270_row_location": {
+      "shape": "two-microbatches, third of the four original shapes",
+      "blocks": [4, 5],
+      "tags": ["candidate-1", "candidate-2"],
+      "phase": "before-oracle ordinal0 plus original warmups ordinal1..8 only",
+      "rows_per_candidate": 135,
+      "GPU_rows_per_candidate_by_ordinal0_to8": [16, 16, 16, 16, 16, 16, 16, 16, 7],
+      "linked_submit_APIs_per_candidate_by_ordinal0_to8": [10, 10, 10, 10, 10, 10, 10, 10, 5],
+      "linked_rows_outside_all_replay_bookends": 0,
+      "cold_create_explanation": "The 270 linked rows are inside these oracle/warmup replay bookends. They must not be described as cold-create-only or possibly all cold-create."
+    },
+    "unassigned_temporal_location_only": [
+      {"sqlite_rowid": 271, "measurement_block": 5, "ordinal": 12},
+      {"sqlite_rowid": 272, "measurement_block": 4, "ordinal": 12},
+      {"sqlite_rowid": 273, "measurement_block": 4, "ordinal": 13},
+      {"sqlite_rowid": 274, "measurement_block": 5, "ordinal": 13}
+    ],
+    "unassigned_temporal_limit": "These four GPU timestamp ranges lie within measurement windows, but time containment does not establish a submission owner or completion boundary. Preserve them as unassigned; this is further reason never to translate zero linked coverage into zero GPU execution.",
+    "readiness": "UNKNOWN. Partial workload rows, possibly early execution-range ends and lack of exact measured-submit coverage cannot establish independent fence readiness, public Completion or a completion-to-observation gap."
+  },
+  "collector_warning_review": {
+    "observed": [
+      "The collector warns that not all NVTX events might have been collected.",
+      "It also reports ignored resubmitted compute/copy command buffers and potentially shortened asynchronous-queue workload ranges."
+    ],
+    "verdict": "TRACE_COMPLETENESS_LIMIT_NOT_PRODUCT_CONTRACT_VERDICT",
+    "reason": "A profiler diagnostic supplies no offending original command-buffer handle/state, original submit/fence chronology or independent validation verdict. Coupled with the documented early-end limitation, it cannot alone prove an original Vulkan pending-command-buffer violation. R27 found no concrete source violation; this warning does not replace the missing evidence or authorize product reopening.",
+    "product_or_tool_cause": "UNKNOWN; no product change, transfer removal, waiting change or collector workaround follows from this warning."
+  },
+  "evidence_hashes": {
+    "result.json": "1a821ffa56fd11d07588a1c23b7203ea3d1c2dcca7488c439aa4823a4ade17a0",
+    "source-analysis.json": "b3dc8f9d223e0f28fd59e996014dea81681caf9984a2a03a7f9b732c8a52d897",
+    "gpu-attribution.json": "fa0a0c5e508981bdf7317d9d12739aa708dba041f768619545bc601792baf540",
+    "trace.sqlite": "7e938b581454ec4d8dde715e5e7639c1af92ab6b91794ef12a364d5e9e2492b6",
+    "embedded-stderr.log": "798574c7713c2d1c44ed12d5309b97c7ca0282ba30257b772a6b3f3f9908481a",
+    "offline-analysis.log": "3765bbec0466270d2e13a086504e8f40a5ae6f8aa2d8d7d1e77edeaedb7a115d",
+    "g09_analyze_individual.py": "a6e9ae33ed605e24d569c22108fbd29691f06ca5bfaa1b595f373ab5bd1ab679",
+    "g09_analyze_partial_observation.py": "961df2ecad02369ade2524adc05546c171de4c00036f62abce488e79ffb51437",
+    "g09_capture_individual.py": "a3b7ea9596f49c21bfa6646895f2856d5e168acffea3bc6c907bcfffe8061de8",
+    "individual-authorization.json": "15e92945c2b5a1263b098300feb3e6157533a871e5f617de1dd3f79df56676d3"
+  },
+  "primary_sources": [
+    {
+      "url": "https://docs.nvidia.com/nsight-systems/AnalysisGuide/index.html",
+      "support": "VULKAN_API/VULKAN_WORKLOAD matching correlation endpoints and context schema; checked against the schema embedded in this SQLite file."
+    },
+    {
+      "url": "https://docs.nvidia.com/nsight-systems/UserGuide/index.html",
+      "support": "Vulkan GPU Trace Notes state that Compute/Transfer execution-range ends may appear earlier than actual occurrence."
+    }
+  ],
+  "remaining_must": {
+    "product": [],
+    "before_sealing": [
+      "Retain this review and final helper/derived-file hashes with raw trace/stderr/source and all old failures/costs.",
+      "State the positive GPU attribution as two-microbatch before-oracle/warmups, four unassigned rows as zero-match, measured native readiness as INCONCLUSIVE/UNKNOWN and original qualification as unchanged."
+    ],
+    "future_formal_recovery": "Only the existing BLOCKED closure card's independently reviewed concrete instrument/host/contract mechanism and original A/A/P1 contract can permit later recovery. This diagnostic supplies neither an original A/A cause nor a new run authorization."
+  }
+}

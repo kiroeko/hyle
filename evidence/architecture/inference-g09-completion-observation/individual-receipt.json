@@ -1,0 +1,705 @@
+{
+  "schema": "hyle.g09.individual-completion-observation-result/v1",
+  "created_utc": "2026-10-17T05:20:31.299660+00:00",
+  "state": "DIAGNOSTIC_APPLICATION_COMPLETE_NATIVE_READINESS_INCONCLUSIVE",
+  "source_freeze_commit": "895bfa14f",
+  "product_candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_changes": 0,
+  "builds": 0,
+  "math_application_processes": 1,
+  "authorization_sha256": "15e92945c2b5a1263b098300feb3e6157533a871e5f617de1dd3f79df56676d3",
+  "review_sha256": "0c9cdfb14c0e0a993d1193b726d28769da9c4145ad4d89abff24bde3d033dae9",
+  "launcher_sha256": "a3b7ea9596f49c21bfa6646895f2856d5e168acffea3bc6c907bcfffe8061de8",
+  "only_collection_delta": "ordinary direct Nsight workload mode batch -> individual; no debugger",
+  "runtime": {
+    "actual_target_pid": 43320,
+    "actual_target_exit_code": 0,
+    "normal_main_marker": true,
+    "oracles_before": 4,
+    "oracles_after": 4,
+    "retired_states": 8,
+    "record_blocks": 8,
+    "records": 7730,
+    "module_phases": [
+      "independent-cpu-first",
+      "independent-gpu-first",
+      "serial-holdout",
+      "two-microbatches"
+    ],
+    "obs_modules": [],
+    "frozen_input_count": 449,
+    "all_frozen_inputs_match_before_result_card_edits": true,
+    "no_live_target": true,
+    "actual_nonce_policy_images": "PASS"
+  },
+  "cost": {
+    "elapsed_seconds": 7.670999999972992,
+    "stages": [
+      {
+        "stage": "profile",
+        "command": [
+          "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+          "profile",
+          "--trace=vulkan,nvtx",
+          "--sample=none",
+          "--cpuctxsw=none",
+          "--backtrace=none",
+          "--vulkan-gpu-workload=individual",
+          "--wait=primary",
+          "--stop-on-exit=true",
+          "--kill=true",
+          "--show-output=true",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-individual-1\\trace",
+          "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 6.35899999999674
+      },
+      {
+        "stage": "export",
+        "command": [
+          "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+          "export",
+          "--type=sqlite",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-individual-1\\trace.sqlite",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-individual-1\\trace.nsys-rep"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.06300000002374873
+      }
+    ],
+    "same_pid_extensions": [],
+    "earlier_attempts_unchanged": [
+      {
+        "path": "evidence\\architecture\\inference-g09-completion-observation\\receipt.json",
+        "sha256": "00c7a2350c43a0d2e8242a3778644053d3a5f9bd9914967caf71329b67c40ebf"
+      },
+      {
+        "path": "evidence\\architecture\\inference-g09-completion-observation\\wer-receipt.json",
+        "sha256": "9ebe27153a9f14c36deb33e9a5886e300e1049d731aaa091a0d268e1096dcd22"
+      },
+      {
+        "path": "evidence\\architecture\\inference-g09-completion-observation\\direct-debug-receipt.json",
+        "sha256": "bac3e6693d6159255f26338f6f57f0410fa4ac9a00daf13ec08c748ce0f04d92"
+      },
+      {
+        "path": "evidence\\architecture\\inference-g09-completion-observation\\nsys-procdump-receipt.json",
+        "sha256": "4778578211c54a4085cba3fa9f7ec6e70c6991c8d052f6457b135cd3d24974d3"
+      }
+    ]
+  },
+  "capture": {
+    "table_counts": {
+      "ANALYSIS_DETAILS": 1,
+      "ANALYSIS_FILE": 3,
+      "DIAGNOSTIC_EVENT": 17,
+      "ENUM_DIAGNOSTIC_SEVERITY_LEVEL": 5,
+      "ENUM_DIAGNOSTIC_SOURCE_TYPE": 4,
+      "ENUM_DIAGNOSTIC_TIMESTAMP_SOURCE": 3,
+      "ENUM_NSYS_EVENT_CLASS": 99,
+      "ENUM_NSYS_EVENT_TYPE": 155,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_ETW_FLAGS": 7,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_ETW_PROPERTY": 8,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_ETW_TYPE": 22,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_TYPE": 4,
+      "ENUM_NSYS_GENERIC_EVENT_GROUP": 5,
+      "ENUM_NSYS_GENERIC_EVENT_SOURCE": 4,
+      "ENUM_VULKAN_HEAP_FLAGS": 3,
+      "ENUM_VULKAN_HEAP_TYPE": 5,
+      "ENUM_VULKAN_MEMORY_PROPERTY_FLAGS": 9,
+      "ENUM_VULKAN_PIPELINE_CREATION_FLAGS": 3,
+      "META_DATA_CAPTURE": 166,
+      "META_DATA_EXPORT": 34,
+      "NVTX_EVENTS": 361,
+      "PROFILER_OVERHEAD": 76,
+      "ProcessStreams": 3,
+      "StringIds": 89,
+      "TARGET_INFO_GPU": 3,
+      "TARGET_INFO_SESSION_START_TIME": 1,
+      "TARGET_INFO_SYSTEM_ENV": 48,
+      "ThreadNames": 20,
+      "VULKAN_API": 3881,
+      "VULKAN_MEMORY_OPERATION": 240,
+      "VULKAN_MEMORY_TYPES": 240,
+      "VULKAN_PIPELINE_CREATION_EVENTS": 16,
+      "VULKAN_PIPELINE_STAGE_EVENTS": 16,
+      "VULKAN_WORKLOAD": 274
+    },
+    "diagnostics": [
+      {
+        "timestamp": 0,
+        "timestampType": 1,
+        "source": 3,
+        "severity": 1,
+        "text": "Profiling has started.",
+        "globalPid": -144115188075855872
+      },
+      {
+        "timestamp": 19820000,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "Not all NVTX events might have been collected.",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 19823900,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 1,
+        "text": "Number of NVTX events collected: \t361.",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 19828700,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 1,
+        "text": "Number of Vulkan events collected: \t4153.",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 83226900,
+        "timestampType": 1,
+        "source": 2,
+        "severity": 1,
+        "text": "Process 43320 was launched by the profiler",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 189009464,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "Common injection library initialized successfully.",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 195875251,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "NVTX injection initialized successfully.",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 414487103,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 513477847,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 631510102,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 2,
+        "text": "Vulkan command buffers containing a compute or copy command were re-submitted before their previous GPU execution ended, and therefore were ignored by the profiler.\nThe command buffers were traced if submitted to synchronous queue. On asynchronous queues, such workloads might appear shorter than their actual execution time.",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 1037601158,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 1117945409,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 1617154631,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 1707242702,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 2582725730,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 2657911106,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282201765707776
+      },
+      {
+        "timestamp": 3621986400,
+        "timestampType": 1,
+        "source": 3,
+        "severity": 1,
+        "text": "Profiling has stopped.",
+        "globalPid": -144115188075855872
+      }
+    ],
+    "complete_gpu_trace": "NOT_ESTABLISHED",
+    "nvtx_clock_markers_matched": 352,
+    "nvtx_clock_markers_unmatched": [],
+    "global_constant_qpc_offset": [
+      -436773685562031,
+      -436773685562035
+    ],
+    "global_constant_qpc_offset_verdict": "UNKNOWN_NO_COMMON_OFFSET",
+    "gpu_workload_rows": 274,
+    "uniquely_linked_gpu_rows": 270,
+    "unassigned_gpu_rows": [
+      {
+        "workload": 270,
+        "api_ids": []
+      },
+      {
+        "workload": 271,
+        "api_ids": []
+      },
+      {
+        "workload": 272,
+        "api_ids": []
+      },
+      {
+        "workload": 273,
+        "api_ids": []
+      }
+    ],
+    "measured_submission_coverage": [
+      {
+        "block": 0,
+        "tag": "candidate-1",
+        "measurement_replays": 12,
+        "queue_submit_apis": 36,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      },
+      {
+        "block": 1,
+        "tag": "candidate-2",
+        "measurement_replays": 12,
+        "queue_submit_apis": 36,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      },
+      {
+        "block": 2,
+        "tag": "candidate-1",
+        "measurement_replays": 12,
+        "queue_submit_apis": 36,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      },
+      {
+        "block": 3,
+        "tag": "candidate-2",
+        "measurement_replays": 12,
+        "queue_submit_apis": 36,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      },
+      {
+        "block": 4,
+        "tag": "candidate-1",
+        "measurement_replays": 12,
+        "queue_submit_apis": 120,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      },
+      {
+        "block": 5,
+        "tag": "candidate-2",
+        "measurement_replays": 12,
+        "queue_submit_apis": 120,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      },
+      {
+        "block": 6,
+        "tag": "candidate-1",
+        "measurement_replays": 12,
+        "queue_submit_apis": 60,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      },
+      {
+        "block": 7,
+        "tag": "candidate-2",
+        "measurement_replays": 12,
+        "queue_submit_apis": 60,
+        "submits_with_recorded_gpu_rows": 0,
+        "gpu_rows": 0,
+        "replays_with_any_gpu_rows": 0
+      }
+    ],
+    "native_readiness": "UNKNOWN"
+  },
+  "host_measurement_scope": "Exactly12 original measured replays per image/shape; exclude8warmups and before/after oracles. Park intervals are unions and not summed with overlapping caller waits.",
+  "host_measurement": {
+    "0": {
+      "tag": "candidate-1",
+      "replays": 22,
+      "records": 788,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 6.1583,
+        "median": 7.01995,
+        "maximum": 9.0364
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 2.8338,
+        "median": 3.94725,
+        "maximum": 5.1977
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.4601594595911209,
+        "median": 0.5419907658680696,
+        "maximum": 0.6324005353449325
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 2,
+        "median": 2.5,
+        "maximum": 3
+      },
+      "unsignaled_progress_park_count": 0,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 6.1281,
+        "median": 6.982150000000001,
+        "maximum": 9.0113
+      }
+    },
+    "1": {
+      "tag": "candidate-2",
+      "replays": 22,
+      "records": 748,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 6.0333,
+        "median": 6.80045,
+        "maximum": 9.0163
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 2.8935,
+        "median": 3.46665,
+        "maximum": 4.5984
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.4257622306267538,
+        "median": 0.5012692701613721,
+        "maximum": 0.565483656754962
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 2,
+        "median": 2.0,
+        "maximum": 3
+      },
+      "unsignaled_progress_park_count": 0,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 6.0103,
+        "median": 6.7787500000000005,
+        "maximum": 8.9929
+      }
+    },
+    "2": {
+      "tag": "candidate-1",
+      "replays": 22,
+      "records": 756,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 6.3162,
+        "median": 7.67975,
+        "maximum": 8.9319
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 3.1565,
+        "median": 4.20815,
+        "maximum": 4.9527
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.42693515846464236,
+        "median": 0.5443097080088547,
+        "maximum": 0.581158850003689
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 2,
+        "median": 2.5,
+        "maximum": 3
+      },
+      "unsignaled_progress_park_count": 0,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 6.2805,
+        "median": 7.646050000000001,
+        "maximum": 8.8935
+      }
+    },
+    "3": {
+      "tag": "candidate-2",
+      "replays": 22,
+      "records": 758,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 6.1424,
+        "median": 6.98385,
+        "maximum": 8.7456
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 2.8713,
+        "median": 3.46795,
+        "maximum": 4.711
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.4674557176348007,
+        "median": 0.49879046915625247,
+        "maximum": 0.5760372319327287
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 2,
+        "median": 2.0,
+        "maximum": 3
+      },
+      "unsignaled_progress_park_count": 0,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 6.1113,
+        "median": 6.95005,
+        "maximum": 8.7074
+      }
+    },
+    "4": {
+      "tag": "candidate-1",
+      "replays": 22,
+      "records": 1432,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 12.8448,
+        "median": 13.756450000000001,
+        "maximum": 17.696
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 0,
+        "median": 0.0,
+        "maximum": 0
+      },
+      "unsignaled_progress_park_count": 84,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 12.82,
+        "median": 13.7196,
+        "maximum": 17.6687
+      }
+    },
+    "5": {
+      "tag": "candidate-2",
+      "replays": 22,
+      "records": 1446,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 12.2832,
+        "median": 14.776599999999998,
+        "maximum": 17.3448
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 0,
+        "median": 0.0,
+        "maximum": 0
+      },
+      "unsignaled_progress_park_count": 85,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 12.2604,
+        "median": 14.738,
+        "maximum": 17.3207
+      }
+    },
+    "6": {
+      "tag": "candidate-1",
+      "replays": 22,
+      "records": 904,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 10.3106,
+        "median": 12.03655,
+        "maximum": 17.9995
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 0,
+        "median": 0.0,
+        "maximum": 0
+      },
+      "unsignaled_progress_park_count": 39,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 10.2785,
+        "median": 12.013200000000001,
+        "maximum": 17.9674
+      }
+    },
+    "7": {
+      "tag": "candidate-2",
+      "replays": 22,
+      "records": 898,
+      "scope": "Only original12 measurement replays; before/after full oracles and8warmups excluded",
+      "replay_ms": {
+        "count": 12,
+        "minimum": 9.9372,
+        "median": 11.3353,
+        "maximum": 17.1191
+      },
+      "native_frontier_park_union_ms": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_fraction": {
+        "count": 12,
+        "minimum": 0.0,
+        "median": 0.0,
+        "maximum": 0.0
+      },
+      "native_frontier_park_count": {
+        "count": 12,
+        "minimum": 0,
+        "median": 0.0,
+        "maximum": 0
+      },
+      "unsignaled_progress_park_count": 39,
+      "finished_wait_union_ms": {
+        "count": 12,
+        "minimum": 9.8926,
+        "median": 11.3117,
+        "maximum": 17.077
+      }
+    }
+  },
+  "conclusions": [
+    "This sole individual capture completed allfourshapes with the original mathematical/lifecycle/host identity gates.",
+    "Successful individual execution supports one usable diagnostic configuration, not a batch/profiler/driver root-cause certificate.",
+    "Measured replay queue-submit APIs are recorded, but no uniquely linked GPU workload rows lie in any of the96 measured replay bookends. Missing rows do not mean zero GPU work.",
+    "The collector warns resubmitted command buffers were ignored/shortened. This is not by itself a Vulkan misuse certificate.",
+    "All352 clock markers match, but the global constant-offset bounds miss by4ns; retain UNKNOWN without a new tolerance or clock/statistics contract.",
+    "Native/public Completion readiness and causes of the original A/A failures remain UNKNOWN. No product FIX or formal qualification recovery is established.",
+    "This one candidate is terminal. No further profiler/debugger/driver/provider configuration is authorized by it."
+  ],
+  "original_formal_receipt_sha256": "0eaf29dcc6e661c46af7bc7715937c80768c7a144258a667833281f811ae07df",
+  "valid_formal_ab": 0,
+  "formal_status": "CUDA original P1 qualified/PASS; Windows Vulkan/Air Apple/Air Vulkan original A/A unqualified, unchanged.",
+  "artifacts": [
+    {
+      "path": "evidence\\architecture\\inference-g09-completion-observation\\individual-raw.zip",
+      "bytes": 418547,
+      "sha256": "7c28852ab086e41c907ef3e26d9e33bac7ab6e697ecc8c9595ca4b3ed8ac72d5"
+    },
+    {
+      "path": "evidence\\architecture\\inference-g09-completion-observation\\28.json",
+      "bytes": 11179,
+      "sha256": "0c9cdfb14c0e0a993d1193b726d28769da9c4145ad4d89abff24bde3d033dae9"
+    },
+    {
+      "path": "evidence\\architecture\\inference-g09-completion-observation\\individual-source.zip",
+      "bytes": 57200,
+      "sha256": "9b7060691e34981e2b62d5bbef732a49ad6fbe03c1823404c40314b905e08547"
+    },
+    {
+      "path": "evidence\\architecture\\inference-g09-completion-observation\\individual-authorization.json",
+      "bytes": 103830,
+      "sha256": "15e92945c2b5a1263b098300feb3e6157533a871e5f617de1dd3f79df56676d3"
+    }
+  ]
+}
