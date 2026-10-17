@@ -1,0 +1,191 @@
+{
+  "schema": "hyle.g09.localdump-crash-terminal/v1",
+  "state": "AV_REPRODUCED_NO_DUMP",
+  "scope_commit": "72058ddee",
+  "fixed_auth_sha256": "3e1fb1f011bbc123e3173521829735a7fe064754d004e92ae294229d38a1807f",
+  "all417_frozen_inputs_matched_after_run": true,
+  "local_dump_attempt": {
+    "state": "APPLICATION_ATTEMPT_TERMINAL",
+    "key": "SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\g09_observed_driver.exe",
+    "parent_preexisted": true,
+    "per_app_preexisted": false,
+    "settings": {
+      "DumpFolder": {
+        "value": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\wer-crash-1\\dumps",
+        "type": 2
+      },
+      "DumpCount": {
+        "value": 1,
+        "type": 4
+      },
+      "DumpType": {
+        "value": 1,
+        "type": 4
+      }
+    },
+    "auto_debug": null,
+    "source_product_changes": 0,
+    "builds": 0,
+    "planned_application_processes": 1,
+    "ranking": false,
+    "elapsed_seconds": 6.547000000020489,
+    "owned_launcher_pid": 9004,
+    "launcher_exit_code": 1,
+    "registry_restored": true,
+    "dumps": []
+  },
+  "original_profile_result": {
+    "state": "DIAGNOSTIC_FAIL",
+    "stages": [
+      {
+        "stage": "profile",
+        "command": [
+          "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+          "profile",
+          "--trace=vulkan,nvtx",
+          "--sample=none",
+          "--cpuctxsw=none",
+          "--backtrace=none",
+          "--vulkan-gpu-workload=batch",
+          "--wait=primary",
+          "--stop-on-exit=true",
+          "--kill=true",
+          "--show-output=true",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-wer-crash-1\\trace",
+          "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe"
+        ],
+        "exit_code": 3221225477,
+        "elapsed_seconds": 4.85899999999674
+      }
+    ],
+    "qualification": "DIAGNOSTIC_ONLY",
+    "valid_formal_ab": 0,
+    "source_manifest_sha256": "742a0ef719e64baad3725db455a7b2ffbbcf86617bb3160132131cd03721379f",
+    "authorization_sha256": "3e1fb1f011bbc123e3173521829735a7fe064754d004e92ae294229d38a1807f",
+    "physical_machine": {
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "profile_id": "W1-WIN",
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "environment": "windows",
+      "independent_hardware": true,
+      "profile_provisioned": true,
+      "registration_state": "REGISTERED_MATCH",
+      "stable_machine_id_source": "windows-machine-guid-sha256",
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_matches_registered": true,
+      "required_host_facts_match": true,
+      "mismatched_host_facts": [],
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "raw_identifier_recorded": false
+    },
+    "policy": {
+      "environment": "windows",
+      "affinity_mask": "0x14",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "sampling_topology": "native-runtime-pair",
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "caller_logical_cpu": 2,
+      "distinct_physical_cores": true,
+      "reserved_physical_core_count": 2,
+      "helper_placement": "native-runtime-managed"
+    },
+    "math_application_processes": 1,
+    "source_extra_os_threads": 0,
+    "profiler_threads": "UNKNOWN_NONPRODUCT",
+    "old_failures_preserved": true,
+    "applied_policy": {
+      "environment": "windows",
+      "affinity_mask": "0x14",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "sampling_topology": "native-runtime-pair",
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "caller_logical_cpu": 2,
+      "distinct_physical_cores": true,
+      "reserved_physical_core_count": 2,
+      "helper_placement": "native-runtime-managed",
+      "launcher_applied": true,
+      "observed_affinity_mask": "0x14",
+      "previous_affinity_mask": "0xffffffff"
+    },
+    "child_canary": {
+      "gate": "PASS",
+      "environment": "windows",
+      "mechanism": "inherited-process-policy-canary",
+      "affinity_mask": "0x14",
+      "ok": true,
+      "priority_class": "0x8000"
+    },
+    "stage": "profile",
+    "elapsed_seconds": 4.9060000000172295,
+    "error": "RuntimeError(\"Collecting data...\\nGenerating 'C:\\\\Users\\\\kiro\\\\AppData\\\\Local\\\\Temp\\\\nsys-report-4b0b.qdstrm'\\n\\n[1/1] [0%                          ] trace.nsys-rep\\n[1/1] [0%                          ] trace.nsys-rep\\n[1/1] [==========48%               ] trace.nsys-rep\\n[1/1] [==========49%               ] trace.nsys-rep\\n[1/1] [========================100%] trace.nsys-rep\\n[1/1] [========================100%] trace.nsys-rep\\nGenerated:\\n\\tC:\\\\public\\\\project-hyle\\\\hyle\\\\.scratch\\\\inference-gaps\\\\g09-completion-observation-25\\\\run-wer-crash-1\\\\trace.nsys-rep\\n\")"
+  },
+  "complete_shapes": 2,
+  "retired_states": 4,
+  "source_records": 2996,
+  "normal_main_exit": false,
+  "stable_boundary": "Both elevated diagnostic attempts completed first2shapes and fourretirements; final visible cold-create is candidate1 shape2, interrupted before candidate2 cold-create marker. This does not identify a particular instruction or module.",
+  "fault_address": "UNKNOWN",
+  "fault_module": "UNKNOWN",
+  "fault_cause": "UNKNOWN",
+  "native_readiness": "UNKNOWN; actual report contains no GPU workload table and event-completeness warnings",
+  "additional_elapsed_seconds": 6.547000000020489,
+  "offline_export_seconds": 0.0470000000204891,
+  "builds": 0,
+  "product_changes": 0,
+  "formal_performance_runs": 0,
+  "valid_formal_ab": 0,
+  "previous_failures_preserved": true,
+  "registry_restored": true,
+  "no_further_reproduction_in_this_round": true,
+  "raw_archive": {
+    "path": "evidence/architecture/inference-g09-completion-observation/wer-crash-raw.zip",
+    "bytes": 175941,
+    "sha256": "0a1e201ef12583c3e1f09df4d6a9998d438348cfdcca512b20ecdc83a411350a"
+  },
+  "source_references": [
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/win32/wer/collecting-user-mode-dumps",
+      "finding": "Official per-application mini-dump settings and restoration scope; custom crash reporters/automatic debugging can preclude output. Missing dump does not prove which limitation occurred."
+    },
+    {
+      "url": "https://docs.nvidia.com/nsight-systems/ReleaseNotes/index.html",
+      "finding": "No specific matching crash cause established from official release notes; no tool upgrade/workaround was applied."
+    }
+  ],
+  "remaining": "G09 original three profile AA qualifications/P1 and terminal acceptance still outstanding. No product or statistical correction has been justified.",
+  "independent_result_review": "PENDING_R26; delegated agent remains pending initialization"
+}

@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**AUDITED，2026-10-17；既有观察访问冲突，当前只给该具名故障收集一次 Windows 最小转储；完成时延归属和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
+状态：**BLOCKED-from-AUDITED，2026-10-17；按程序最小转储尝试已结束，同一访问冲突复现但无 dump，临时设置已恢复；具体故障位置、完成时延归属和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -194,3 +194,11 @@ CUDA 原 P1 与三个未资格平台的结论均不变。两入口均已终止�
 
 这是活动 goal 中修复自有诊断失败的有限工具动作，不是产品 FIX、性能重跑或新的采样框架。
 应用使用自有 crash reporter 时 LocalDumps 可能不产出；此限制保留为真实失败结果。
+
+[本次终态及原件](../../../../evidence/architecture/inference-g09-completion-observation/wer-receipt.json)：
+一个进程再次以 `0xC0000005` 退出，仍在前两形状 oracle/四次 State 退休后、第三形状第二实例
+的 cold-create 标记前中断；这只是可重复的边界，不是已定位的指令/模块。
+保存 2996 条 source 记录及部分 trace，未生成 mini dump，没有正常 main 退出标记。
+`registry_restored=true` 且实际复核专属键已不存在，父键原本存在且保留；417 项冻结输入均仍匹配。
+新增尝试累计 6.547 秒（内层 4.906 秒），另离线导出 0.047 秒；无编译、产品改动或有效 A/B。
+本轮按停止规则结束，不追加 native 复现，不把无 dump 推断为特定 crash reporter 的因果证明。

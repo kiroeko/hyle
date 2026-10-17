@@ -1,0 +1,15 @@
+{
+  "gate": "PASS_RESULT_RETENTION_AND_DOCS_ONLY",
+  "closure": "PASS64components/schema4",
+  "docs": "PASS1258Markdown/6574links",
+  "whitespace": "PASS",
+  "selector": "READY:selected docs,closure;146skipped/reused; plan remains .scratch/validation/g09-wer-result-plan.json",
+  "fixed_live_inputs_matched": 416,
+  "post_run_card": "Exact frozen card retained in wer-scope-source.zip; only result prose changed afterward",
+  "diagnostic_processes_remaining": [],
+  "registry_restored": true,
+  "product_changes": 0,
+  "additional_builds": 0,
+  "independent_review": "PENDING_R26; not claimed PASS",
+  "original_product_acceptance": "UNCHANGED; G09 incomplete"
+}
