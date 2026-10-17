@@ -1,0 +1,47 @@
+{
+  "task": "Remove the unused private coroutine frame around fixed-body HTTP2 sending",
+  "applied_commit": "ba85438de",
+  "change": "Private send_submitted_fixed returns ordinaryStatus; two public fixedsend coroutines directly call it. PublicTask signatures, lazy start and owning asynchronous contract remain unchanged.",
+  "retained": [
+    "AllocatorRef parameter still passes todrive_until and fallbacktransport Task allocation; it was not solely a frameallocator and was not deleted",
+    "Same operation_pins++,writer_busy/body/span setup, native resume, error reset and both cleanup paths in original order",
+    "Client copies streamid beforehelper then never dereferences the possiblyretired stream afterward",
+    "Same owner/cancel/deadline/drive_until/flush/flowcontrol and stackfulyield/readiness behavior"
+  ],
+  "reason": "Helper had no co_await. Taskawaiter drives child todone synchronously on same stackfulfiber, and drive_until already suspends that fiber with an ordinary C++ stack. No unique childframe ownership/cancel/retain responsibility existed.",
+  "object_evidence": {
+    "before": "Existing measured GCC14/O3 factory0xdaa0 contains allocator indirectcall at0xdb09 requesting256B/alignment16. Two publicparent actor callsites target thatfactory; retained before-factory.txt/before-callers.txt.",
+    "normal_trace_scope": "4request+4response fixedsends imply8private frame requests totaling2048B cumulative per successful originalepisode. Not2048B peak/RSS, not perDATAchunk and not a runtimeallocation census.",
+    "after": "Fresh sameflags object has onlyordinary send_submitted_fixed clone.isra.0, with no private coroutine Frame/actor/destroy symbols. Full symbols/disassembly and private-frame-check.json retained.",
+    "resource_tradeoff": "The private allocation and its potential OOMpoint disappear. Fallbacktransport childTask allocator domain remains identical. No totalallocation, walltime, cycle or RSS improvement was measured."
+  },
+  "verification": {
+    "default": "All15 current tests PASS (14HTTP2 protocol +feature), includingflowcontrol/backpressure, borrowedview, trailers, EOF, cancel/reset/deadline and OOM/limits.",
+    "forced_epoll": "Same15/15 PASS with HYLE_IO_FORCE_EPOLL=1.",
+    "build": "OnlycurrentHTTP2 and currenttest TU freshlycompiled. Body-borrow currenttest.o had been cleaned, so onefresh test compile was necessary. Reused previousrefresh currentproactor sharedlibrary and samefoundation/nghttp2 objects, confirmedldd.",
+    "not_run": "No newtiming, allocationprobe, wholeSDK/foundation rebuild, Windows/macOS or sanitizer.",
+    "failures": "No unexpected compile/link/test failure in thishelper batch. Earlier unrelated refresh linkfailure remains in its owncurrent-holdout package."
+  },
+  "source_identity": {
+    "before": {
+      "snapshot": "http2.before.cc",
+      "sha256": "de1be413436bef566f176ae426ee8882e1d400d83c46dd6cfb312132267e4c26"
+    },
+    "measured": {
+      "snapshot": "http2.candidate.cc",
+      "sha256": "031dea0e99cfa8d414d9e7843d2387c8b084a60208ad731402350894a378ebeb"
+    },
+    "applied": {
+      "snapshot": "http2.applied.cc",
+      "sha256": "ce572103ee51ce46b65e61aac445df76e93fd69a6ceacb80a4708e9199807b91"
+    },
+    "measured_vs_applied": "Onlyhelper parameterindentation and joining serverco_return ontooneline. Whitespace-normalized textequal, exactdiff retained; frozen measuredsource notoverwritten, no formatting-only retest.",
+    "tests": {
+      "snapshot": "http2_test.cc",
+      "sha256": "3e5142391784c3f8a892912e2b6ab2aa9cb31e18bf34390b94abde17a070a5f0"
+    }
+  },
+  "residual_limit": "The previous16-17percent current-source HTTP2manual-loop gap was measured beforethishelperchange. It remains an unresolved investigation; no posthelper speedresult or claim it explains thatgap.",
+  "control_design": "Separate source-review/http2-execution-control-design.json records protocol/storage differences and a limited oneTaskmanual-vs2endpointTask design. No suchnewcontrol implemented or run.",
+  "cleanup": "Exactmanifest contains3newWSL object/executable artifacts only; currentproactor closure and originalSDK/cache retained, no deletion performed."
+}

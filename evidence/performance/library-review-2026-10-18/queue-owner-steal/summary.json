@@ -1,0 +1,83 @@
+{
+  "result": "Both formal benchmark sources corrected; all four targeted non-timed smoke processes exit 0.",
+  "canonical_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\bench\\container\\queue_sota_bench.cc",
+      "bytes": 30212,
+      "sha256": "ac53079a5a0a7769068f3a2c2fed7f7319695baa6313488ccca2270598e9ca77"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\bench\\rust\\crossbeam_queue_bench\\src\\main.rs",
+      "bytes": 6700,
+      "sha256": "c339ebb7bbba8404c06b2afc5d7f62ce31f7ad46153b95d693d5351878a04da0"
+    }
+  ],
+  "checks": "C++ owner FIFO/LIFO plus optional actual Moody reference; C++ batch/single steal; Rust owner FIFO/LIFO and batch/single steal, each 200 checked waves.",
+  "compile": "One C++ TU /O2 /Ob2 /MD with cached nanobench/foundation; Cargo release offline locked builds only this benchmark and three already cached registry crates, no pre-existing benchmark target found.",
+  "tests": [
+    {
+      "name": "cpp-smoke-ws-owner",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal\\queue_sota.exe"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal",
+      "environment_overrides": {
+        "HYLE_BENCH_SMOKE": "1",
+        "HYLE_QUEUE_BENCH_FILTER": "ws-owner"
+      },
+      "exit": 0
+    },
+    {
+      "name": "rust-smoke-ws-owner",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal\\cargo-target\\release\\crossbeam_queue_bench.exe"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal",
+      "environment_overrides": {
+        "HYLE_BENCH_SMOKE": "1",
+        "HYLE_QUEUE_BENCH_FILTER": "ws-owner"
+      },
+      "exit": 0
+    },
+    {
+      "name": "cpp-smoke-ws-steal",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal\\queue_sota.exe"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal",
+      "environment_overrides": {
+        "HYLE_BENCH_SMOKE": "1",
+        "HYLE_QUEUE_BENCH_FILTER": "ws-steal"
+      },
+      "exit": 0
+    },
+    {
+      "name": "rust-smoke-ws-steal",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal\\cargo-target\\release\\crossbeam_queue_bench.exe"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\owner-steal",
+      "environment_overrides": {
+        "HYLE_BENCH_SMOKE": "1",
+        "HYLE_QUEUE_BENCH_FILTER": "ws-steal"
+      },
+      "exit": 0
+    }
+  ],
+  "product_queue_edit": false,
+  "unrelated_cpp_sections_byte_identical": true,
+  "no_instant_or_nanobench_timing_entered": true,
+  "no_ranking": true,
+  "no_full_benchmark": true,
+  "no_peer_algorithm_edit": true,
+  "no_sdk_copy_or_download": true,
+  "limits": [
+    "No actual timing, no new performance conclusion or sample stream was generated.",
+    "Rust normal-path sample retention was compiled and read, not executed by the smoke path.",
+    "Smoke has no concurrent actor, so Retry handling is checked structurally and not forced by a race.",
+    "Different batch limits, native Worker growth/shrink, language/compiler/harness and epoch reclamation remain disclosed policy costs.",
+    "TBB/rigtorp optional branches were not compiled in this batch; their source sections are unchanged."
+  ],
+  "peer": "Registry crossbeam-deque0.8.6, crossbeam-epoch0.9.18, crossbeam-utils0.8.21; see cargo-metadata.json, Cargo.lock and source-review.json.",
+  "cleanup": "cleanup-manifest.json distinguishes immediate consumer artifacts from the small Cargo dependency/build cache retained until parent chooses a follow-up; no deletion performed."
+}

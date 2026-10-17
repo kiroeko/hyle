@@ -1,0 +1,389 @@
+{
+  "status": "scratch_candidate_rejected_for_default_use; numerical_controls_and_space_passed_but_matched_latency_about7x_slower; not_applied",
+  "machine": {
+    "host": "kiro@172.22.10.198",
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "ram_bytes": 17179869184,
+    "free_disk_before": "41GiB",
+    "compiler": "Apple clang21.0.0 arm64"
+  },
+  "scope": "Only force_fused opt-in to exact all-F32 Sink B1/H64or128/KVheads1/D512/arraymask/sinks/Q>8 schema, selected by Hyle only on known Apple generations13-16. Ordinary, unknown/new architecture defaults, NAX/page/other dtype/vector branches remain unchanged.",
+  "native": {
+    "tile": "BQ8/BK8/WM1/WN1",
+    "actual_static_threadgroup_bytes": 32768,
+    "actual_device_cap_bytes": 32768,
+    "query_half": false,
+    "resource": "The fixed SDK header and embedded JIT source already contain compact zero-padding. Existing float template instantiated; no shader/metallib/SDK rebuild or precision reduction.",
+    "sink_semantics": "Existing kernel initializes max from raw sink and sum=1, adds F32 global additive mask to logits, keeps F32 exp probabilities/PV, normalizes only by sink+keys. Finite sink plus all -Inf key masks contributes zero weighted value.",
+    "unknown_limits": "No D512 ordinary/decode/training/CPU/other GPU support. Controls cover moderate fixed scale and finite sinks, not all finite F32 values. Source has scale and sink pre-multiplication by log2(e), which may overflow for extreme finite values before zero/masked logits; this potential boundary was not experimentally tested and cannot be claimed equivalent over the full public F32 value range."
+  },
+  "source_and_build": {
+    "canonical_changed": false,
+    "source": "Hyle baseline is current canonical source; fast.cpp baseline SHA matches current manifest. Candidate Metal selector uses current D192 materialized host projection. Original SDK native baseline predates unrelated !mask&&!sinks ordinary D192/D256 host selector edits; those do not affect this Sink domain.",
+    "fresh_tus": [
+      "fast.candidate.cpp",
+      "native.candidate.cpp",
+      "apple_tensor.candidate.cc"
+    ],
+    "reused": "Original SDK/foundation/gtest archives, previous fixed tests.o/space.o and baseline executables. No configure, dependency copy/download, test source/input/budget change or whole-library build.",
+    "commands": "measured/*-command.json",
+    "identity": "measured/runtime-identities.json and prior-sdk-runtime-identities.json",
+    "maps": {
+      "tests": {
+        "fresh_apple": true,
+        "fresh_fast": true,
+        "fresh_native": true,
+        "old_apple_tensor_object": false,
+        "old_fast_object": false,
+        "old_native_sdpa_object": false
+      },
+      "space": {
+        "fresh_apple": true,
+        "fresh_fast": true,
+        "fresh_native": true,
+        "old_apple_tensor_object": false,
+        "old_fast_object": false,
+        "old_native_sdpa_object": false
+      }
+    },
+    "compile_failure": "Initial standalone fast.cpp compile under -Wall/-Wextra/-Werror stopped on pre-existing upstream sign-compare/unused-lambda-capture warnings. All initial command/output retained as measured/initial-fast-compile*. Native-only warning-category exceptions added; three candidate TUs then compiled/linked. No product warning suppression changed."
+  },
+  "controls": {
+    "processes": "Exactly one baseline and one candidate process, same original two corrected-lease tests.",
+    "original_failed_harness": "Prior batch initial lease-reuse failure and negative Q16 candidate remain archived separately; this run reuses its authorized corrected test object without further changes.",
+    "cases": [
+      "H64/Q1025/KV2049 nonzero QK, global per-row mask/finite per-head sink, allmasked rows15/16/last, unaligned tail, two invocations, all-five-port rebind, independent old result/native output lifetime",
+      "Original H128/Q17/KV31 numerical control; same test name mentions fallback but candidate intentionally opts into full fused forQ>8. DecodeQ<=8 remains unchanged and was not added to this batch."
+    ],
+    "oracle": "Independent FP64 separable-V oracle over every output channel, original F32 rel6e-6+abs2e-6; no shader or input retuning.",
+    "results": {
+      "baseline": {
+        "tests": 2,
+        "failures": 0,
+        "numeric_observations": [
+          {
+            "kind": "sink_numeric",
+            "Q": 1025,
+            "H": 64,
+            "maximum_error": 4.33824060126764e-07,
+            "maximum_budget_fraction": 0.18268049532022862,
+            "finite": true
+          },
+          {
+            "kind": "sink_numeric",
+            "Q": 1025,
+            "H": 64,
+            "maximum_error": 3.259787679996129e-07,
+            "maximum_budget_fraction": 0.13726738925953508,
+            "finite": true
+          },
+          {
+            "kind": "sink_numeric",
+            "Q": 1025,
+            "H": 64,
+            "maximum_error": 3.259787679996129e-07,
+            "maximum_budget_fraction": 0.13726738925953508,
+            "finite": true
+          },
+          {
+            "kind": "sink_numeric",
+            "Q": 17,
+            "H": 128,
+            "maximum_error": 2.206993009179481e-08,
+            "maximum_budget_fraction": 0.009138941820000641,
+            "finite": true
+          }
+        ],
+        "max_abs_error": 4.33824060126764e-07,
+        "max_budget_fraction": 0.18268049532022862
+      },
+      "candidate": {
+        "tests": 2,
+        "failures": 0,
+        "numeric_observations": [
+          {
+            "kind": "sink_numeric",
+            "Q": 1025,
+            "H": 64,
+            "maximum_error": 3.1776021743035177e-07,
+            "maximum_budget_fraction": 0.12872797980968304,
+            "finite": true
+          },
+          {
+            "kind": "sink_numeric",
+            "Q": 1025,
+            "H": 64,
+            "maximum_error": 3.5378110130324103e-07,
+            "maximum_budget_fraction": 0.1433203400342995,
+            "finite": true
+          },
+          {
+            "kind": "sink_numeric",
+            "Q": 1025,
+            "H": 64,
+            "maximum_error": 3.5378110130324103e-07,
+            "maximum_budget_fraction": 0.1433203400342995,
+            "finite": true
+          },
+          {
+            "kind": "sink_numeric",
+            "Q": 17,
+            "H": 128,
+            "maximum_error": 2.3926949158092903e-08,
+            "maximum_budget_fraction": 0.009797177291236608,
+            "finite": true
+          }
+        ],
+        "max_abs_error": 3.5378110130324103e-07,
+        "max_budget_fraction": 0.1433203400342995
+      }
+    },
+    "pso_gate": {
+      "test_exitcodes": {
+        "baseline": 0,
+        "candidate": 0
+      },
+      "pso_observations": [
+        [
+          32768,
+          32768
+        ],
+        [
+          32768,
+          32768
+        ],
+        [
+          32768,
+          32768
+        ],
+        [
+          32768,
+          32768
+        ],
+        [
+          32768,
+          32768
+        ],
+        [
+          32768,
+          32768
+        ]
+      ],
+      "controls_passed": true,
+      "pso_observed_and_within_cap": true,
+      "allow_fixed_space": true
+    }
+  },
+  "fixed_space": {
+    "processes": "Exactly one baseline and one candidate process, after controls/PSO passed.",
+    "input": "Same pre-fixed Q1025/KV2049/H64/KVhead1/D512, Q/K/mask/sinks0, V alternates+1.25/-1.25 by KVrow; no shape/input/budget change.",
+    "oracle": "FP64 expected1.25/2050, all33587200 output elements; rel6e-6+abs2e-6.",
+    "baseline": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 1025,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 151142660,
+      "output_bytes": 134348800,
+      "original_score_bytes": 537657600,
+      "active_before": 151175428,
+      "cache_before": 0,
+      "active_after": 285524228,
+      "peak": 1495482628,
+      "peak_minus_active_before": 1344307200,
+      "cache_after": 1209958400,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 33587200,
+      "oracle_passed": true
+    },
+    "candidate": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 1025,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 151142660,
+      "output_bytes": 134348800,
+      "original_score_bytes": 537657600,
+      "active_before": 151175424,
+      "cache_before": 0,
+      "active_after": 285524224,
+      "peak": 285524224,
+      "peak_minus_active_before": 134348800,
+      "cache_after": 0,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 33587200,
+      "oracle_passed": true
+    },
+    "extra_peak_reduction_bytes": 1209958400,
+    "extra_peak_reduction_fraction": 0.9000609384521633,
+    "boundary": "MLX active/peak/cache after public prepare/create_invocation/bind, clear_cache/reset_peak then submit/wait/synchronize. Original SDK allocator counts, not whole-device VRAM/RSS; cold JIT/prepare excluded.",
+    "conclusion": "Candidate extra peak equals its134348800B output; no cached extra scratch after this shape. Actual fixed-shape space result, not a global peak proof or latency claim."
+  },
+  "prior_negative_preserved": "Q16 lazy-block wrapper extra peak+136724480B remains a valid negative result; compact native fusion is a distinct candidate and does not rewrite that evidence.",
+  "matched_latency": {
+    "order": [
+      "baseline",
+      "candidate",
+      "candidate",
+      "baseline"
+    ],
+    "process_results": [
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          166741375,
+          167589542,
+          165942833,
+          166530959,
+          166466667,
+          165388500,
+          165881042,
+          165699250,
+          166133750
+        ],
+        "process_order": 0,
+        "arm": "baseline",
+        "median_ns": 166133750
+      },
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          1166134625,
+          1165052250,
+          1169797125,
+          1179353750,
+          1162697167,
+          1157852167,
+          1174552541,
+          1160481042,
+          1191734875
+        ],
+        "process_order": 1,
+        "arm": "candidate",
+        "median_ns": 1166134625
+      },
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          1177182209,
+          1170603834,
+          1182163750,
+          1158019209,
+          1163371167,
+          1157922834,
+          1195304666,
+          1142625208,
+          1191426333
+        ],
+        "process_order": 2,
+        "arm": "candidate",
+        "median_ns": 1170603834
+      },
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          167720458,
+          167564750,
+          167293875,
+          167550708,
+          167663084,
+          167325625,
+          166341875,
+          167714833,
+          167352459
+        ],
+        "process_order": 3,
+        "arm": "baseline",
+        "median_ns": 167550708
+      }
+    ],
+    "candidate_over_baseline_median_ratios": [
+      7.019251807654976,
+      6.986564533048705
+    ],
+    "processes": "Exactly four sequential independent processes. Two untimed warm invocations, one full independent FP64 oracle before and one after, nine timed complete submit-to-checked-wait samples each. All36 durations and8 complete-oracle outcomes retained.",
+    "boundary": "Same one consumer TU and fixed inputs. Input creation, prepare/isolated warmup/JIT, invocation creation/bind, two warm invocations, oracle checks, lease/result destruction, final Context drain/destruction all outside sample timing. Each sample includes real public submit and successful checked Completion wait. ResultLease and OwnedResult destroyed before slot reuse. No cache clearing or retuning between timed samples.",
+    "native_change": "Only removed cstdio/fprintf diagnostics from measured host source, retained actual PSO<=device guard; compiled one fresh native host TU plus the shared timing consumer. Other candidate TUs and SDK reused. Original PSO/raw space source and observations preserved separately.",
+    "maps": {
+      "baseline": {
+        "fresh_shared_consumer": true,
+        "fresh_apple": false,
+        "fresh_fast": false,
+        "diagnostic_free_native": false,
+        "original_apple": true,
+        "sdk_fast_object": true,
+        "sdk_native_sdpa_object": true
+      },
+      "candidate": {
+        "fresh_shared_consumer": true,
+        "fresh_apple": true,
+        "fresh_fast": true,
+        "diagnostic_free_native": true,
+        "original_apple": false,
+        "sdk_fast_object": false,
+        "sdk_native_sdpa_object": false
+      }
+    },
+    "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=51314787)\t77%; AC attached; not charging present: true\n",
+    "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=51314787)\t77%; AC attached; not charging present: true\n",
+    "thermal_before": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "thermal_after": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "environment_limits": "AC power77% unchanged and no recorded pmset thermal/performance warnings; no actual GPU frequency/power or temperature sampling, no clock/power/environment changes. No AA, confidence interval, new shape or retry; about7x latency penalty is consistent across both process orders.",
+    "conclusion": "Actual90% extra-peak reduction comes with about7x higher checked-completion latency on this same shape. Root explicitly rejected default product application; no product/resource edit. Not a high-performance optimization."
+  },
+  "pending": "No further experiment authorized this batch. A private completion/retirement pipeline remains a future design, not implemented or tested here.",
+  "cleanup": "cleanup-candidates.json lists only this batch new nine obj/exe products. Previous apple-sink eight-file manifest remains separate; originals were reused without modification."
+}

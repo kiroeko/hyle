@@ -1,0 +1,435 @@
+{
+  "result": "With common caller-owned Episode setup/teardown and the same raw protocol callbacks, two endpoint Tasks have higher point latency than one Task driving both endpoints in both fixed orders. This is a finite combined execution-policy control, not a replacement peer ranking or a pure context-switch measurement.",
+  "head_at_packaging": "ba85438de4f7f41bb3beee3b6b84096a3cc19902",
+  "scope": {
+    "trace": "Only4 streams x256KiB request and response, reverse completion in each pair, original connection-window holdout",
+    "processes": 2,
+    "orders": [
+      "manual1Task then endpoints2Tasks",
+      "endpoints2Tasks then manual1Task"
+    ],
+    "epochs_per_arm": 9,
+    "all36epochs_retained": true,
+    "extra_AA_shapes_or_formal_retries": false,
+    "product_or_canonical_modified_by_this_control": false,
+    "preformal": [
+      "Initial diagnostic smoke SIGSEGV preserved.",
+      "One gdb reproduction reached the same uninitialized idle RawHarness state.",
+      "After the exact startup-order fix, one complete diagnostic episode per driver passed.",
+      "Formal counter-free executable also ran one complete warmup per arm per process."
+    ]
+  },
+  "results": [
+    {
+      "order": "ab",
+      "arms": [
+        {
+          "name": "one Task manual loop",
+          "median_ns_per_episode": 660782.9411764711,
+          "median_ns_per_stream": 165195.73529411777,
+          "median_absolute_percent_error": 0.0142798243969498,
+          "clock_resolution_seconds": 1.1e-08,
+          "configured_min_epoch_seconds": 0.01,
+          "epochs": [
+            {
+              "iterations": 14,
+              "seconds_per_episode": 0.000651995714285714,
+              "actual_duration_seconds": 0.009127939999999996
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0006552395625,
+              "actual_duration_seconds": 0.010483833
+            },
+            {
+              "iterations": 18,
+              "seconds_per_episode": 0.000682249611111111,
+              "actual_duration_seconds": 0.012280492999999998
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0006489821875,
+              "actual_duration_seconds": 0.010383715
+            },
+            {
+              "iterations": 18,
+              "seconds_per_episode": 0.000668641166666667,
+              "actual_duration_seconds": 0.012035541000000005
+            },
+            {
+              "iterations": 17,
+              "seconds_per_episode": 0.000676354941176471,
+              "actual_duration_seconds": 0.011498034000000006
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0006472955625,
+              "actual_duration_seconds": 0.010356729
+            },
+            {
+              "iterations": 17,
+              "seconds_per_episode": 0.000660782941176471,
+              "actual_duration_seconds": 0.011233310000000007
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0006703555,
+              "actual_duration_seconds": 0.010725688
+            }
+          ]
+        },
+        {
+          "name": "two endpoint Tasks",
+          "median_ns_per_episode": 740997.384615385,
+          "median_ns_per_stream": 185249.34615384624,
+          "median_absolute_percent_error": 0.022934197076688,
+          "clock_resolution_seconds": 1.1e-08,
+          "configured_min_epoch_seconds": 0.01,
+          "epochs": [
+            {
+              "iterations": 14,
+              "seconds_per_episode": 0.000768670357142857,
+              "actual_duration_seconds": 0.010761384999999998
+            },
+            {
+              "iterations": 13,
+              "seconds_per_episode": 0.000740997384615385,
+              "actual_duration_seconds": 0.009632966000000005
+            },
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.0007231232,
+              "actual_duration_seconds": 0.010846848
+            },
+            {
+              "iterations": 14,
+              "seconds_per_episode": 0.000724384214285714,
+              "actual_duration_seconds": 0.010141378999999996
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.000770609,
+              "actual_duration_seconds": 0.012329744
+            },
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.000805900333333333,
+              "actual_duration_seconds": 0.012088504999999994
+            },
+            {
+              "iterations": 14,
+              "seconds_per_episode": 0.000729477714285714,
+              "actual_duration_seconds": 0.010212687999999996
+            },
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.000743684933333333,
+              "actual_duration_seconds": 0.011155273999999996
+            },
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.000730044,
+              "actual_duration_seconds": 0.010950660000000001
+            }
+          ]
+        }
+      ],
+      "dual_slower_percent": 12.139303005628221
+    },
+    {
+      "order": "ba",
+      "arms": [
+        {
+          "name": "two endpoint Tasks",
+          "median_ns_per_episode": 739687.266666667,
+          "median_ns_per_stream": 184921.81666666674,
+          "median_absolute_percent_error": 0.0174208349341131,
+          "clock_resolution_seconds": 1.1e-08,
+          "configured_min_epoch_seconds": 0.01,
+          "epochs": [
+            {
+              "iterations": 13,
+              "seconds_per_episode": 0.000744494,
+              "actual_duration_seconds": 0.009678421999999999
+            },
+            {
+              "iterations": 14,
+              "seconds_per_episode": 0.000711369857142857,
+              "actual_duration_seconds": 0.009959177999999999
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.000718707,
+              "actual_duration_seconds": 0.011499312
+            },
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.000725804333333333,
+              "actual_duration_seconds": 0.010887064999999994
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0007554553125,
+              "actual_duration_seconds": 0.012087285
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0007270219375,
+              "actual_duration_seconds": 0.011632351
+            },
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.000752142266666667,
+              "actual_duration_seconds": 0.011282134000000004
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0007408791875,
+              "actual_duration_seconds": 0.011854067
+            },
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.000739687266666667,
+              "actual_duration_seconds": 0.011095309000000005
+            }
+          ]
+        },
+        {
+          "name": "one Task manual loop",
+          "median_ns_per_episode": 661907.0,
+          "median_ns_per_stream": 165476.75,
+          "median_absolute_percent_error": 0.016769842854729,
+          "clock_resolution_seconds": 1.1e-08,
+          "configured_min_epoch_seconds": 0.01,
+          "epochs": [
+            {
+              "iterations": 15,
+              "seconds_per_episode": 0.000655035333333333,
+              "actual_duration_seconds": 0.009825529999999996
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0006751270625,
+              "actual_duration_seconds": 0.010802033
+            },
+            {
+              "iterations": 17,
+              "seconds_per_episode": 0.000650343411764706,
+              "actual_duration_seconds": 0.011055838000000004
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.000661907,
+              "actual_duration_seconds": 0.010590512
+            },
+            {
+              "iterations": 18,
+              "seconds_per_episode": 0.000674214388888889,
+              "actual_duration_seconds": 0.012135859000000002
+            },
+            {
+              "iterations": 17,
+              "seconds_per_episode": 0.00065099,
+              "actual_duration_seconds": 0.011066830000000001
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0006543956875,
+              "actual_duration_seconds": 0.010470331
+            },
+            {
+              "iterations": 17,
+              "seconds_per_episode": 0.000710656529411765,
+              "actual_duration_seconds": 0.012081161000000005
+            },
+            {
+              "iterations": 16,
+              "seconds_per_episode": 0.0006696,
+              "actual_duration_seconds": 0.0107136
+            }
+          ]
+        }
+      ],
+      "dual_slower_percent": 11.750935806188334
+    }
+  ],
+  "common_responsibilities": [
+    "Same caller-owned Episode contains two RawEndpoint, two RawWire and two adopted TcpStream owners; session initialization on caller in client/server order.",
+    "Same socketpair options, nghttp2 callbacks/options/settings, headers, per-stream body buffers and complete byte oracle; reverse pair responses and separate stream/connection flow acknowledgments.",
+    "Two RawWire each contain64KiB pending+64KiB input, zero-initialized by the same Episode construction in both arms; source total256KiB.",
+    "Sessions and fd owners destroyed in the same common destructor after join; storage destructors and Task lifecycle included in timed episode.",
+    "Workload strings and persistent one-worker Scheduler/IoContext plus idle RawHarness thread live outside both timed arms."
+  ],
+  "deliberate_differences": [
+    "One spawn_task+join with the original manual interleaving and poll fallback versus two endpoint spawn_task+join, endpoint-local progress cadence, adaptive yields, readiness-aware TcpStream async fallback and completion Event.",
+    "Both arms now pay common TcpStream adoption and a caller-owned Episode; the original manual peer had no Task and used a separate worker. This control cannot replace that peer.",
+    "The endpoint policy may issue different empty I/O operations and split wire chunks differently while preserving the same payload/protocol responsibility. These are part of the tested combined policy.",
+    "Observed smoke server-to-client wire counts differ by65B. Neither actual control-frame composition nor terminal pending queue contents were recorded."
+  ],
+  "diagnostic": {
+    "counters_compiletime_on_only_for_smoke": true,
+    "formal_nm_has_no_control_recv_send_or_active_counts": true,
+    "counters_owner_local_no_added_atomics_locks_QPC_or_worker": true,
+    "successful_smokes": [
+      {
+        "mode": "manual-1Task",
+        "completed": 4,
+        "descriptors_closed": true,
+        "polls": 0,
+        "roles": [
+          {
+            "role": 0,
+            "recv_calls": 400,
+            "recv_ready": 262,
+            "recv_empty": 138,
+            "recv_bytes": 1050092,
+            "send_calls": 386,
+            "send_ready": 258,
+            "send_empty": 128,
+            "send_bytes": 1050124,
+            "yields": 0,
+            "async_reads": 0,
+            "async_writes": 0,
+            "async_recv_bytes": 0,
+            "async_send_bytes": 0
+          },
+          {
+            "role": 1,
+            "recv_calls": 400,
+            "recv_ready": 258,
+            "recv_empty": 142,
+            "recv_bytes": 1050124,
+            "send_calls": 390,
+            "send_ready": 262,
+            "send_empty": 128,
+            "send_bytes": 1050092,
+            "yields": 0,
+            "async_reads": 0,
+            "async_writes": 0,
+            "async_recv_bytes": 0,
+            "async_send_bytes": 0
+          }
+        ]
+      },
+      {
+        "mode": "endpoint-2Tasks",
+        "completed": 4,
+        "descriptors_closed": true,
+        "polls": 0,
+        "roles": [
+          {
+            "role": 0,
+            "recv_calls": 517,
+            "recv_ready": 163,
+            "recv_empty": 354,
+            "recv_bytes": 1050027,
+            "send_calls": 387,
+            "send_ready": 257,
+            "send_empty": 130,
+            "send_bytes": 1042060,
+            "yields": 258,
+            "async_reads": 0,
+            "async_writes": 1,
+            "async_recv_bytes": 0,
+            "async_send_bytes": 8064
+          },
+          {
+            "role": 1,
+            "recv_calls": 515,
+            "recv_ready": 160,
+            "recv_empty": 355,
+            "recv_bytes": 1041963,
+            "send_calls": 385,
+            "send_ready": 257,
+            "send_empty": 128,
+            "send_bytes": 1050027,
+            "yields": 257,
+            "async_reads": 1,
+            "async_writes": 0,
+            "async_recv_bytes": 8161,
+            "async_send_bytes": 0
+          }
+        ]
+      }
+    ],
+    "wire_bytes_client_to_server": 1050124,
+    "wire_bytes_server_to_client": {
+      "manual_1Task": 1050092,
+      "endpoints_2Tasks": 1050027
+    },
+    "wire_difference": "TwoTasks transferred65 fewer server-to-client wire bytes in the diagnostic episode. Payload, headers and consume/ack callback responsibilities are retained; actual control-frame composition was not decoded. Do not claim identical wire work or pureTask cost.",
+    "full_payload_bytes_each_direction": 1048576,
+    "limits": [
+      "These counts are from one non-timed complete episode per driver, not the formal episodes.",
+      "Direct recv/send wrappers count only the raw immediate seams; internal TcpStream/kernel async attempts are not counted. Async results record bytes and entry counts separately.",
+      "Both final descriptor-closed checks happen after the common Episode destructor and only in diagnostic builds.",
+      "Terminal RawWire begin/end, nghttp2_session_want_write and queued frame types were not recorded. No claim which frames account for65B."
+    ]
+  },
+  "terminal_boundary": {
+    "manual": "Loop exits when client.completed==4, then checks both endpoint.completed==4 and failure flags; no final want_write/drain check.",
+    "endpoints": "Client exits at completed==4 and signals Event. Server waits for Event after all response pairs submitted, lastfirstresponse.output_done and its RawWire empty; both completed==4 checked after joins.",
+    "common": "Both destroy sessions and transport owners after successful joins. Both source exit conditions permit nghttp2 control frames to remain queued; whether any actually remained was not recorded.",
+    "credit": "Both arms execute the same raw_consume_readable callback loop: every consumed body chunk checks bytes and calls consume_stream and consume_connection. Emitting all terminal queued credit frames is not an additional completion requirement in either original boundary."
+  },
+  "source_and_cache": {
+    "fresh_TU": "common-episode/main.cc includes frozen protocol.cc and split_advance.h; compiled twice with CONTROL_DIAGNOSTIC1/0",
+    "build_identity": "build-identity.json",
+    "raw_nghttp2_not_Hyle_HTTP2": true,
+    "corrected_http2_object": "Status-helper-fixed object is linked only to satisfy unused frozen original-benchmark symbols; the control does not call Hyle HTTP2 APIs.",
+    "current_core": "ldd confirms current proactor override; other foundation shared libraries are retained cache, not wholeHEAD rebuild.",
+    "canonical_at_build": {
+      "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+      "bytes": 34492,
+      "sha256": "48763f0426902bd6810d9c9c9c49f083c55a0fd12c0904f09a86f52ca3134259"
+    },
+    "canonical_applied": {
+      "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+      "bytes": 34571,
+      "sha256": "349e49e8d64c1f5f3d1c5ff5dd18433973fd3cb8aab025cbcdc63fefff8b6e90"
+    },
+    "frozen_before_startup_fix": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2/common-episode/protocol.before-startup-fix.cc",
+      "bytes": 35820,
+      "sha256": "4f298a7cc943073c72018ab2572964cd5c1514d42972ae677b32fef87d4071a6"
+    },
+    "frozen_after_startup_fix": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2/common-episode/protocol.cc",
+      "bytes": 35897,
+      "sha256": "893d116a2a421f347258a337c25cdcef8303ded6db5d56ccf061eca66b545d48"
+    },
+    "canonical_race_fix": "Root applied the same worker_ declaration reorder independently; initialization-order comment differs. Other protocol-vs-canonical differences are the frozen stage8 diagnostic accessors and raw_write single_attempt seam."
+  },
+  "resources": {
+    "configured": "caller + one Scheduler worker + same persistent idle RawHarness thread for both arms",
+    "cpu": "WSL2 Intel i9-13900K, GCC14.2, taskset CPU2 inherited by created user threads",
+    "formal_command_affinity": "taskset -c2 is recorded for both actual formal processes",
+    "limitations": [
+      "No in-interval actual TID/affinity or kernel-driver-thread snapshot was taken.",
+      "metadata taskset pid0-31 belongs to the metadata parent, not formal; it is not backfilled as a formal snapshot.",
+      "The IoContext backend was not printed in this control; no io_uring/epoll selection claim."
+    ]
+  },
+  "failure": {
+    "cause": "RawHarness starts worker_ before workload_/pending_/complete_/stopping_ are initialized; new idle worker entered run_raw with invalid workload. Episode had not started.",
+    "gdb": "failed-smoke-gdb.stdout.txt",
+    "fix": "Move only worker_ declaration after all state it reads. No driver, session, protocol or Episode semantics changed.",
+    "canonical_location": "bench/io_http2/http2_p1_bench.cc classRawHarness formerly worker899 before fields900-904",
+    "failed_source": "protocol.before-startup-fix.cc",
+    "failed_artifact_identity": "failed-build-artifacts.json"
+  },
+  "limitations": [
+    "Only two fixed-order processes; no cross-process confidence interval, significance or general-equivalence claim.",
+    "The observed delta includes Task count, join, progress/readiness cadence and yield strategy. It is not isolated fcontext cost or generic scheduler overhead.",
+    "Do not subtract this delta from another round Hyle-versus-manual number to claim attribution of the previously observed16-17% residual.",
+    "No Hyle HTTP2 public route runs here, so this does not remeasure the helper-fixed Hyle route.",
+    "ClockResolution is nanobench sampled resolution metadata; actual epoch durations and cross-process variability are separate and all preserved.",
+    "Hardware performance counters were disabled; JSON zero cycle/instruction fields are not measurements."
+  ],
+  "cleanup": {
+    "manifest": "cleanup-candidates.json",
+    "files": 4,
+    "bytes": 2079656,
+    "deleted": false
+  }
+}

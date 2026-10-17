@@ -1,0 +1,284 @@
+{
+  "scope": "Finite read-only recheck of the central report, present source/bench and existing evidence. No build, execution, timing, product/README edit or new qualification framework.",
+  "head": "afba9ab40d014319d0af8b36c9fa6b301c669957",
+  "coverage": {
+    "factor_count": 64,
+    "includes": "62 unindented declarations plus indented compute_batch/graph_batch; includes retired Marlin placeholder",
+    "noncompute_count": 29,
+    "noncompute_factors": [
+      "core",
+      "container_intrusive",
+      "util_core",
+      "error",
+      "obs",
+      "math",
+      "time",
+      "timer_queue",
+      "platform",
+      "platform_thread",
+      "platform_fs",
+      "mem_reclaim",
+      "mem",
+      "mem_vm",
+      "simd",
+      "container",
+      "util_runtime",
+      "sched",
+      "io_core",
+      "io_tls",
+      "io_http",
+      "io_http2",
+      "io_transfer",
+      "container_concurrent",
+      "container_queue",
+      "container_text",
+      "io_watch",
+      "process",
+      "io_websocket"
+    ],
+    "finding": "All29 noncompute names map to existing report families; no whole noncompute family omission found. This is source/evidence-index coverage, not64 current peer measurements.",
+    "still_without_broad_current_measurement": [
+      "Core/error/math/time/obs/util cold and information-bearing paths",
+      "Mem/VM/reclaim lifecycle variants",
+      "Container/text/intrusive/concurrent scale and policy variants",
+      "Sched priority-enabled/cancellation/fanout and BlockingPool round-trip/retirement cases",
+      "IO DNS/UDP/local/signal/file-region, whole WebSocket framing/backpressure, recursive watch",
+      "Platform/thread/FS and process cold launch paths"
+    ]
+  },
+  "current_matched_negative_observations": [
+    {
+      "item": "Linux atomic-replace watch after removing CLOSE_WRITE",
+      "source": "evidence/performance/library-review-2026-10-18/io-watch/summary.json",
+      "ratios": [
+        0.998941,
+        0.990137
+      ],
+      "classification": "Current watch TU same SHA; same-responsibility negative point estimates remain. Stable loss, strict equivalence and complete resolution are NOT established. Shared foundation was retained, not entire currentHEAD rebuilt."
+    },
+    {
+      "item": "io_uring mixed16 index experiment and other local control negatives",
+      "source": "evidence/performance/library-review-2026-10-18/io-cqe/summary.json",
+      "classification": "Mixed16 median ratio.993 and individual pure-read negative pairs retained; same-path AA spans these scales. No stable current regression established. These compare internal variants, not an external engine."
+    }
+  ],
+  "stable_current_losses_established_in_this_finite_review": [],
+  "historical_pending_refresh": [
+    {
+      "item": "HTTP2 manual-loop4x256KiB",
+      "source": "evidence/performance/library-review-2026-10-18/http2/stage3-summary.json",
+      "old_slower_percent": [
+        15.1,
+        12.71
+      ],
+      "source_limit": "Measured107715B http2.cc predates both contiguous header storage and receive-ring body-borrow fixes. Metrics remain true for frozen old source, not current rankings. Same protocol work but two endpoint fibers vs manual dual-endpoint loop remains a deliberate execution strategy difference.",
+      "next": "Only current corrected source refresh of this same holdout; no new shape."
+    },
+    {
+      "item": "TaskScope old32child/4worker placement+peer-first",
+      "classification": "Old CI and initial current-prelayout4-7% losses cannot transfer to applied aligned State. No new broad scope/workload claim."
+    },
+    {
+      "item": "UTF/membership/Error-success minor historic point negatives",
+      "classification": "Existing report records CI crossing1; no new finite evidence establishing stable current loss. Do not use old5% PASS or0.2ns empty-harness value as proof/resolution."
+    }
+  ],
+  "aligned_not_reproduced": [
+    {
+      "item": "TaskScope post-layout",
+      "source": "evidence/performance/library-review-2026-10-18/task-scope/summary.json",
+      "points": "Three applied-layout mixed ratios1.028-1.053 favorHyle; manual peer drift remains. Scope-only fourprocesses show local absolute improvement signal, not a new external-peer ranking. Current applied TU SHA matches archive."
+    },
+    {
+      "item": "G09 Air and WindowsVulkan",
+      "classification": "Current limited same-owner controls did not establish existing observer path slower. Windows uses Add/Neg/Add rather than oldAbs and actual18/19thread variation remains; no general native/oldG09 ranking."
+    },
+    {
+      "item": "Queues",
+      "classification": "Bounded4P4C cold vsrigtorp, warm ST512 vsactualMoody, SPSC vsactualFolly and nonfull Sharded4P1C vsactualMoody did not reproduce a current loss in their finite traces. Different units/capacity/full/token policies and noise prohibit general queue ranking."
+    },
+    {
+      "item": "Apple ragged D256",
+      "classification": "Defaultfast is faster but fails the weak-probability numerical contract; same-contract forcefused did not establish currentloss. No old1-2% loss inheritance."
+    },
+    {
+      "item": "G04/G05 andG07",
+      "classification": "G04/G05 kept solved under user decision after load/decode boundary correction; G07 attempt3 supersedes earlier loss. Do not reopen obsolete rankings."
+    }
+  ],
+  "unfair_until_responsibilities_align": [
+    "CPU paged peer cold continuous-KV copy vs actual paged reads; retain cold/growth/space cost",
+    "Arena.clear retains backing vs pmr.release/reallocate; reclaim safety vs bareatomic pointer",
+    "Obs concurrentatomic limiter vs singleowner scalar gate",
+    "Full-domain SIMD semantics vs valid-domain ceiling; oldSIMD perop losses now useHighway",
+    "GPU raw-native wait/kernel-only vs owning completion/dependency/retirement; controls are causal interventions not full rankings",
+    "Queue bounded/full/retry, crossproducer ordering, producer token and growable allocation differences",
+    "F16 fast probabilitiestile/PV loss vs original F32 intermediate contract; CUDA F32 long native reduction error is shared with same-native control, not proven Hyleextra precision loss"
+  ],
+  "source_complexity_only_open": [
+    {
+      "item": "CPU recipes with dynamic PagedRead",
+      "source": "src/compute_provider_ggml/ggml_cpu_provider.cc:1316",
+      "finding": "Still excluded from general gallocr lifetime reuse; manual arena remains. Cache side effects, dynamic bindings and alias lifespan prevent blindly removing the guard. No fresh throughput loss assigned."
+    },
+    {
+      "item": "HTTP2 eager header/trailer capacity",
+      "source": "src/io_http2/http2.cc:107",
+      "finding": "Perstream initializes both maxcount arrays even if fewheaders/no trailers. Bounded O(max_header_count) cold work, not a proven cause of the largebody residual. No candidate promoted."
+    },
+    {
+      "item": "Apple remaining Sink/short fallback score storage",
+      "source": "evidence/performance/library-review-2026-10-18/apple-attention-and-io-hint.json",
+      "finding": "Concrete source domain and memory/liveness limits recorded; not measured losses. Owned by parallel Apple investigation."
+    }
+  ],
+  "historical_io_ci_recheck": {
+    "summaries": 12,
+    "strata": 68,
+    "negative_points": 11,
+    "ci_entirely_below_one": 4,
+    "finding": "OnlyoldHTTP2-v1 two strata andWSLwatch two strata have upperCI<1. All other negative IO points cross1; legacy verdict/5% bands ignored.",
+    "negative_rows": [
+      {
+        "source": "evidence/performance/io-http-p1-v1-400e015e/summary.json",
+        "workload": "persistent-http1-rest-stream-128x1k",
+        "stratum": "candidate-first",
+        "ratio": 0.9941347135518155,
+        "ci": [
+          0.9843100132956034,
+          1.028751198564488
+        ],
+        "ci_upper_below_one": false
+      },
+      {
+        "source": "evidence/performance/io-http-p1-v2-18bf62f8/summary.json",
+        "workload": "persistent-http1-rest-stream-128x1k",
+        "stratum": "peer-first",
+        "ratio": 0.9894354674398558,
+        "ci": [
+          0.9549632412301851,
+          1.006591841873269
+        ],
+        "ci_upper_below_one": false
+      },
+      {
+        "source": "evidence/performance/io-http2-p1-v1-705b2111/summary.json",
+        "workload": "flow-control-holdout-4x256k",
+        "stratum": "candidate-first",
+        "ratio": 0.9658588647690666,
+        "ci": [
+          0.9516475478357793,
+          0.9734432525072997
+        ],
+        "ci_upper_below_one": true
+      },
+      {
+        "source": "evidence/performance/io-http2-p1-v1-705b2111/summary.json",
+        "workload": "flow-control-holdout-4x256k",
+        "stratum": "peer-first",
+        "ratio": 0.9691074195247413,
+        "ci": [
+          0.9544102299923393,
+          0.9791085537777694
+        ],
+        "ci_upper_below_one": true
+      },
+      {
+        "source": "evidence/performance/io-watch-p1-v1-30e133db-m1-mac-4c06445c/summary.json",
+        "workload": "exact-file-atomic-replace",
+        "stratum": "primary-candidate-first",
+        "ratio": 0.9995313964386129,
+        "ci": [
+          0.9948429442100328,
+          1.0037682524729157
+        ],
+        "ci_upper_below_one": false
+      },
+      {
+        "source": "evidence/performance/io-watch-p1-v1-30e133db-m1-mac-4c06445c/summary.json",
+        "workload": "nonrecursive-directory-burst",
+        "stratum": "primary-candidate-first",
+        "ratio": 0.9999349593495935,
+        "ci": [
+          0.9976108994640666,
+          1.0018135889630158
+        ],
+        "ci_upper_below_one": false
+      },
+      {
+        "source": "evidence/performance/io-watch-p1-v1-30e133db-m1-mac-4c06445c/summary.json",
+        "workload": "nonrecursive-directory-burst",
+        "stratum": "placement-candidate-first",
+        "ratio": 0.9998699356181309,
+        "ci": [
+          0.9959826346141385,
+          1.0003253302101633
+        ],
+        "ci_upper_below_one": false
+      },
+      {
+        "source": "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json",
+        "workload": "exact-file-atomic-replace",
+        "stratum": "primary-candidate-first",
+        "ratio": 0.986377939350912,
+        "ci": [
+          0.9756952270670941,
+          1.0071147932619682
+        ],
+        "ci_upper_below_one": false
+      },
+      {
+        "source": "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json",
+        "workload": "exact-file-atomic-replace",
+        "stratum": "primary-peer-first",
+        "ratio": 0.9681340036434125,
+        "ci": [
+          0.9546605735846664,
+          0.9936745125520424
+        ],
+        "ci_upper_below_one": true
+      },
+      {
+        "source": "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json",
+        "workload": "exact-file-atomic-replace",
+        "stratum": "placement-candidate-first",
+        "ratio": 0.982040638111061,
+        "ci": [
+          0.9481037482431213,
+          1.0095633543547164
+        ],
+        "ci_upper_below_one": false
+      },
+      {
+        "source": "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json",
+        "workload": "exact-file-atomic-replace",
+        "stratum": "placement-peer-first",
+        "ratio": 0.9732306838250127,
+        "ci": [
+          0.9462325302748056,
+          0.9861144090548343
+        ],
+        "ci_upper_below_one": true
+      }
+    ]
+  },
+  "report_reading_corrections": [
+    "Treat effective historicloss table as an index with perrow disposition, not4 current confirmed losses.",
+    "HTTP2 top-level unresolved means currentquestion pendingrefresh, not proof that postheader/body source is12-15% slower.",
+    "Coverage bullet blockingpool insufficientmeasurement means roundtrip/retirement breadth; local submit probe exists.",
+    "No whole-factor omission found; no exhaustive/per-shape or all64 timing claim justified."
+  ],
+  "one_next_nonapple_action": {
+    "action": "Refresh only current HTTP2 public vs correctedmanual-loop4x256KiB, oneAB andoneBA process,9epochs/arm, all full-body/header/reverse/flow-credit/completion/session/socket lifecycle checks retained.",
+    "reason": "Largest meaningful unresolved finite historical gap and source has sincechanged. Establish whether residual survives correctness fixes before further attribution or optimization.",
+    "closure": "Fresh currentHTTP2 TU plus currentproactor in same retainedIOclosure where feasible; fresh matchingconsumer only as needed. Identify peer/source/librarySHA and preservedfoundation limitations. No probes, newshape, smallbody, broadmatrix or retry-selection."
+  },
+  "current_source_sha256": {
+    "src/sched/task_scope.cc": "6528236cf04082481385ed17ae372415922d476c2f9005f033817908bcdf5ae2",
+    "src/io_watch/watch_linux.cc": "3bc874d60fe6862e3f6e5d5e1a0f150ede989658917087425bf40d1a696ffcfb",
+    "src/io_http2/http2.cc": "de1be413436bef566f176ae426ee8882e1d400d83c46dd6cfb312132267e4c26",
+    "bench/io_http2/http2_p1_bench.cc": "48763f0426902bd6810d9c9c9c49f083c55a0fd12c0904f09a86f52ca3134259",
+    "src/io_core/proactor.cc": "a88642932ed4db672c91997e151f0bf6c72f60a4635d2489570c8cb35d15f2ca",
+    "cmake/HyleComponents.cmake": "5c6f0d22c8359d165459d0f0519f92dd5fc0d695f3addf944c678ac37ab8d490"
+  }
+}

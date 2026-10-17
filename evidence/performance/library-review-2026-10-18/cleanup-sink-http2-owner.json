@@ -1,0 +1,28 @@
+{
+  "windows": {
+    "files": 15,
+    "retained_logical_bytes": 9933362,
+    "retained_files": 43,
+    "logical_bytes": 4172826
+  },
+  "wsl": {
+    "phase": "remove",
+    "files": 10,
+    "logical_bytes": 5593616,
+    "retained_files": 2,
+    "retained_logical_bytes": 612576
+  },
+  "mac": {
+    "phase": "remove",
+    "files": 13,
+    "logical_bytes": 72832928,
+    "retained_files": 4,
+    "retained_logical_bytes": 284024
+  },
+  "total_files": 38,
+  "total_logical_bytes": 82599370,
+  "retained_files": 49,
+  "retained_logical_bytes": 10829962,
+  "plan_sha256": "0d092401b43c4208d2fbc688f54a20ff14a8b591b479e2109f46c5e69075b0bb",
+  "note": "Exact listed generated files only. Source/log/data/archives/SDK/shared caches retained. Logical size sums; hardlinks mean this is not measured physical disk reclamation."
+}

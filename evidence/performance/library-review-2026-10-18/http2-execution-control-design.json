@@ -1,0 +1,45 @@
+{
+  "scope": "Read-only causal-control design and source/object audit. No compile, consumer execution, product change or timing in this design step.",
+  "existing_control_comparison": {
+    "callbacks_and_storage": "Stage8 plain_bench.cc differs from canonical only by twoHyleHarness accessors and raw_write single-attempt parameter/branch. RawEndpoint/RawStream/RawHeader, nghttp2callbacks/options, body buffers/checks, window consumes and wire payload copy functions are otherwise the same source.",
+    "wire_initialization": "Both canonical manual run_raw and stage8 Episode contain TWO RawWire objects; EACH has64KiB pending plus64KiB input with value initialization. Total explicit wire-array zero initialization is256KiB per rawcold episode in BOTH. It is not an extra256KiB unique to the fiber control. Actual compiler memset/DSE was not separately measured.",
+    "wire_placement": "Manual wires live on RawHarness worker stack. Stage8 Episode/wires live on externalcaller stack outside its two64KiB fiber stacks; this changes placement/first-touch/allocator context despite same source capacities.",
+    "extra_fiber_owner_work": "Stage8 adds sharedEpisode/Event/failure state, TcpStream::adopt/bind wrappers, twoendpointTask/JoinHandle/ownedfiber lifecycles, perendpoint EndpointCleanup, server wait forclientconsumed, and perendpoint session destruction/socket wrapper teardown. Manual uses RawHarness CV dispatch and central cleanup after its dual-endpoint loop.",
+    "initialization_and_teardown_order": "Canonical initializes client thensever together on rawworker and centrally deletes bothsessions/closesfds. Stage8 initializes each inside its endpointTask and deletes/closes there; interleaving, thread and order differ.",
+    "driver_difference": "Stage8 splits advance_client/advance_server, flush-reentry and singletry afteryield to matchHyle cadence; bounded adaptiveyield plus perendpoint asyncfallback. Canonical retains dual-endpoint fill/write/read/consume cycle and poll2fds only when neither progresses. Equal payload and successfulIO counts do not make syscall ordering or hostwork identical.",
+    "conclusion": "Stage8 Hyle-vsraw2fiber close results are a useful restricted control, not a pure contextswitch cost or an explanation by subtraction of current16-17percent manual-loop residual."
+  },
+  "smallest_reasonable_new_control_design": {
+    "recommendation": "A separate restricted oneScheduler-worker control, same commonRawEpisode owner and same canonical rawprotocol functions in both arms: one spawnedTask executes canonical manual dual-endpoint loop versus two spawnedTask endpoint drivers. Keep original public-vsmanual ranking unchanged.",
+    "common_cold_owner": "Inside BOTH timedcallbacks create the same socketpair and TcpStream adoptions, same stack-resident Episode on externalcaller, same twoRawWire value initialization, endpointstream reserve, and client/server raw_initialize in identical order. Keep caller-owned state alive through alljoins.",
+    "common_protocol": "Reuse one copy of canonical callback/header/body/wire functions; do not clone/forkcallbacks. Existing splitadvance helpers must remain exact corresponding halves of canonical raw_advance. Same nativeallocator/options, bodyverification, reverse pair, fullACK/EOF/endstream responsibilities.",
+    "common_cleanup": "After alljobs join, perform identical server/clientcompletion checks, delete both native sessions and close both adopted sockets in the same sharedcleanup order/context; do not retain oldperendpoint EndpointCleanup as a second teardown policy.",
+    "manual_arm": "Spawn ONE job on the sameScheduler/owner, running the original raw_advance plus client/server fill-write-read-consume ordering and dual-fd poll fallback. Coordinatorjoins thatjob.",
+    "two_endpoint_arm": "Spawn twojobs on thatsameworker; each owns onlyits endpoint and uses existing bounded-yield/readiness fallback, with common terminal coordination so server is not closed before client consumes. Coordinatorjoins both.",
+    "resources": "Same persistentScheduler+IoContext and inactiveRawHarness thread exist forbotharms; all inherit sameaffinity. Protocol IO occurs on sameScheduler worker, unlike comparing rawworker protocol with schedulerworker protocol.",
+    "what_is_variable": "One versus twoTask/fiber/JoinHandle lifecycles, cooperative endpoint scheduling, retry/syscall cadence and readiness policy. Extra driverallocation/wakes are part of the independent variable, not storage changes to be hidden.",
+    "what_cannot_be_claimed": "It intentionally gives the controlmanual arm oneTask and commonadoption/owner placement absent from originalpeer. It is not a zeroTask baseline, originalpeer ranking or pure fcontext cyclemeasurement. Completely identical syscalltrace/readiness/handoffs cannot be guaranteed while changing this driver strategy.",
+    "bounded_validation_if_later_authorized": "Onlysame4x256KiB completeepisode perarm first, verify fullpayload/reverseACK/session/socket teardown. No generalizeddriverframework or matrix; any counts are eventfacts, not timeattribution. No implementation currentlymade."
+  },
+  "concrete_private_helper_cost": {
+    "source": "src/io_http2/http2.cc:2392-2445 send_submitted_fixed has no co_await but returns Task<Status> and is awaited by both public fixedsendTask entrypoints.",
+    "task_semantics": "include/hyle/sched/coro.h:66-85 allocates frame via AllocatorRef;153-167 nestedTaskawaiter drives todone on same stackfulfiber. This does not imply an extra Scheduler contextswitch for everyTask.",
+    "compiled_fact": "Existing measured GCC14/O3 http2.o has two direct caller actor calls tofactory0xdaa0. Factorymov0x100 toesi then allocator indirectcall at0xdb09 requests256B/alignment16. Staticdisassembly only, not a new runtimeallocation probe.",
+    "normal_episode_bound": "4request sends plus4response sends invoke8 privateframes, nominal2048B requested and8 allocation/free lifecycles, apart from publictasks and transportfallbacktasks. This is not perbodychunk and not elapsed-time explanation.",
+    "minimum_fix": "Return ordinaryStatus from privatehelper, retaining allocator parameter because drive_until forwards it to fallbacktransport tasks. Keep publicTask signatures/allocator/pins/error/owner/spanlifetime unchanged; directcall thehelper from the twopublicTasks.",
+    "do_not_delete_allocator": "The parameter is not solely a frameallocator: it is forwarded todrive_until and transportread/write Task allocation. Changing it tostate.allocator could change lowlevelentry allocationdomain.",
+    "other_limits": "body.consume already has a singlecoroutine and calls synchronousread_body perchunk; do not claim oneframe perDATA fragment. Runtime allocationcounts outside this confirmedfactory were not measured."
+  },
+  "pre_fix_source_sha256": {
+    "src/io_http2/http2.cc": "de1be413436bef566f176ae426ee8882e1d400d83c46dd6cfb312132267e4c26",
+    "include/hyle/sched/coro.h": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54",
+    "bench/io_http2/http2_p1_bench.cc": "48763f0426902bd6810d9c9c9c49f083c55a0fd12c0904f09a86f52ca3134259",
+    ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/main.cc": "116d02db3761202fc73e9af42ab79c540358b8c6595d8729dc6c8c47dbf86ebc",
+    ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/plain_bench.cc": "4f298a7cc943073c72018ab2572964cd5c1514d42972ae677b32fef87d4071a6"
+  },
+  "asm_files": [
+    "http2-send-fixed-factory.txt",
+    "http2-send-fixed-callers.txt"
+  ],
+  "next": "Root separately authorized only the privatehelper Status simplification; causalcontrol remains a design, no implementation or timing."
+}

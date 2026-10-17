@@ -1,0 +1,242 @@
+{
+  "result": "Current corrected HTTP2 retains a larger point latency than the unchanged corrected manual-loop peer in both fixed orders. This is a finite current same-application-work observation, not universal performance or statistical-significance proof.",
+  "head_at_packaging": "afba9ab40d014319d0af8b36c9fa6b301c669957",
+  "scope": {
+    "trace": "Only original4streams x256KiB request andresponse, reverse pair completion, original connection-window holdout",
+    "processes": 2,
+    "orders": [
+      "Hyle thenmanual",
+      "manual thenHyle"
+    ],
+    "epochs_per_arm": 9,
+    "all_epochs_retained": true,
+    "no_extra_AA_retry_or_shape": true,
+    "product_modified": false
+  },
+  "results": [
+    {
+      "order": "ab",
+      "arms": [
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_ns_per_stream": 200399.5,
+          "MAPE": 0.0357163237922266,
+          "clock_resolution_seconds": 1.2e-08,
+          "configured_min_epoch_seconds": 0.001,
+          "all_epoch_seconds_per_stream": [
+            0.00020568835,
+            0.00019428615,
+            0.0001927851,
+            0.00019348879166666675,
+            0.00023513885,
+            0.00021477266666666676,
+            0.0002003995,
+            0.0002129167,
+            0.000198740625
+          ],
+          "all_epoch_iterations": [
+            5,
+            5,
+            5,
+            6,
+            5,
+            6,
+            6,
+            5,
+            6
+          ],
+          "all_actual_epoch_durations_seconds": [
+            0.004113767,
+            0.0038857229999999998,
+            0.0038557020000000003,
+            0.004643731000000002,
+            0.004702777,
+            0.005154544000000002,
+            0.004809588,
+            0.004258334,
+            0.004769775
+          ]
+        },
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_ns_per_stream": 170613.75,
+          "MAPE": 0.0094858481460601,
+          "clock_resolution_seconds": 1.2e-08,
+          "configured_min_epoch_seconds": 0.001,
+          "all_epoch_seconds_per_stream": [
+            0.0001863982,
+            0.00017390495,
+            0.0001696688,
+            0.00017197458333333325,
+            0.00016826385,
+            0.00016901054166666674,
+            0.00017061375,
+            0.00017019315,
+            0.00017905966666666674
+          ],
+          "all_epoch_iterations": [
+            5,
+            5,
+            5,
+            6,
+            5,
+            6,
+            6,
+            5,
+            6
+          ],
+          "all_actual_epoch_durations_seconds": [
+            0.003727964,
+            0.003478099,
+            0.003393376,
+            0.004127389999999998,
+            0.003365277,
+            0.004056253000000002,
+            0.0040947299999999996,
+            0.003403863,
+            0.004297432000000002
+          ]
+        }
+      ],
+      "hyle_slower_percent": 17.458000893831827
+    },
+    {
+      "order": "ba",
+      "arms": [
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_ns_per_stream": 177000.05000000002,
+          "MAPE": 0.0137155096997369,
+          "clock_resolution_seconds": 1.2e-08,
+          "configured_min_epoch_seconds": 0.001,
+          "all_epoch_seconds_per_stream": [
+            0.00017700005,
+            0.00016792385,
+            0.000178559,
+            0.00017939195833333325,
+            0.0001753996,
+            0.00021840741666666674,
+            0.00017108804166666674,
+            0.00017460525,
+            0.00018006320833333325
+          ],
+          "all_epoch_iterations": [
+            5,
+            5,
+            5,
+            6,
+            5,
+            6,
+            6,
+            5,
+            6
+          ],
+          "all_actual_epoch_durations_seconds": [
+            0.003540001,
+            0.003358477,
+            0.00357118,
+            0.004305406999999998,
+            0.003507992,
+            0.005241778000000002,
+            0.0041061130000000015,
+            0.0034921049999999997,
+            0.004321516999999998
+          ]
+        },
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_ns_per_stream": 204654.25,
+          "MAPE": 0.0374593714541112,
+          "clock_resolution_seconds": 1.2e-08,
+          "configured_min_epoch_seconds": 0.001,
+          "all_epoch_seconds_per_stream": [
+            0.0002021704,
+            0.0001936269,
+            0.00020328925,
+            0.00023157295833333325,
+            0.00021210905,
+            0.00020465425,
+            0.000214375375,
+            0.0002235477,
+            0.00019726483333333325
+          ],
+          "all_epoch_iterations": [
+            5,
+            5,
+            5,
+            6,
+            5,
+            6,
+            6,
+            5,
+            6
+          ],
+          "all_actual_epoch_durations_seconds": [
+            0.004043408,
+            0.003872538,
+            0.004065785,
+            0.005557750999999998,
+            0.004242181,
+            0.004911702,
+            0.005145009000000001,
+            0.004470954,
+            0.004734355999999998
+          ]
+        }
+      ],
+      "hyle_slower_percent": 15.623837394396212
+    }
+  ],
+  "correctness_and_timing": {
+    "smoke": "One same-trace uninstrumented smoke, hyle=4/peer=4. Each formal arm also has the original one complete warmup outside its measured bench.",
+    "retained_work": "Fresh socketpair/nonblocking setup, sessions/HPACK/headers, all request/response bytes and comparisons, reverse responses, stream+connection flow consumption, external completion handoff and session/socket cleanup remain in each run callback.",
+    "hyle_driver": "Original public TcpStream::adopt, two spawn_task endpoint fibers and JoinHandle::join on one persistent Scheduler worker. Existing wrapper unchanged; no new explicit Scheduler::drain/offstack barrier was added.",
+    "manual_driver": "Same original corrected next_response_pair scheduling plus recv(MSG_DONTWAIT)/send(MSG_DONTWAIT|MSG_NOSIGNAL). Persistent rawworker and caller CV handoff; original directnghttp2 state/body storage and teardown.",
+    "shared_outside_timing": "Body-string generation and both persistent harnesses/workercreation/destruction outside callbacks, one route active at a time.",
+    "not_equal_strategy": "The two-fiber public driver and one manual dual-endpoint loop are deliberately different execution strategies. No attribution to pure scheduler, kernel time, a removed copy or the recent correctness fixes is made.",
+    "hardware_counters": "Both formal stdout preserve perf_event_open unavailable notice. Zero/missing cycle/instruction/contextswitch fields are not interpreted as measured absence of work."
+  },
+  "closure": {
+    "fresh_TUs": [
+      "Current src/io_http2/http2.cc including headerstorage and bodyring fixes",
+      "Current src/io_core/proactor.cc includingCQE tokenindex/directslot/hint changes",
+      "Onlyholdout wrapper TU including a byte-identical canonicalbench snapshot"
+    ],
+    "peer_sha256": "48763f0426902bd6810d9c9c9c49f083c55a0fd12c0904f09a86f52ca3134259",
+    "peer_matches": "Exactly matches canonical bench and stage3 product/http2_p1_bench.cc bytes; fixture and both implementations unchanged.",
+    "loader": "ldd confirms current-holdout/libhyle_io_core.so.0.1.0. Existing remaining io_core objects and shared foundation retained; not a wholeHEAD rebuild.",
+    "reused_source_matches": [
+      {
+        "path": "src/io_http/http.cc",
+        "same_sha256": true
+      },
+      {
+        "path": "src/io_http2/feature.cc",
+        "same_sha256": true
+      },
+      {
+        "path": "bench/nanobench_impl.cc",
+        "same_sha256": true
+      },
+      {
+        "path": "third_party/picohttpparser/picohttpparser.c",
+        "same_sha256": true
+      }
+    ],
+    "source_sha256": {
+      "http2.current.cc": "de1be413436bef566f176ae426ee8882e1d400d83c46dd6cfb312132267e4c26",
+      "proactor.current.cc": "a88642932ed4db672c91997e151f0bf6c72f60a4635d2489570c8cb35d15f2ca",
+      "http2_p1_bench.cc": "48763f0426902bd6810d9c9c9c49f083c55a0fd12c0904f09a86f52ca3134259",
+      "main.cc": "250aae59840b1626cff1658e653b8a07e164867d7c65a46cab582630f2841986"
+    },
+    "no_configure_SDK_copy_download": true
+  },
+  "resource_limits": {
+    "affinity": "Both recorded commands tasksetCPU2; not a physicalhost Pcore claim. Source config retains1Hyle worker plus1RawHarness worker and caller. No during-formal actual perTID/count snapshot collected.",
+    "backend": "Same fresh io_core library loaded in both processes. No capability query/counter instrumented in these formal runs, so prior separate io_uring evidence is not silently a current-run backend certificate.",
+    "cache": "All reusable objects/libraries and freshconsumer hashes recorded in build-identity.json. Post-run host metadata separately labeled."
+  },
+  "previous_data": "Old stage3 12.7/15.1% belongs to its preheader/prering source. New15.62/17.46% points establish the issue survives this source refresh, but comparing these separate rounds cannot assign causal speed change to either correctness fix.",
+  "failures_preserved": "Initial corelink failed because inheritedrelativebin libraries were resolved from the new working directory. Frozen failure runner/commands/stderr retained. Onlypath resolution fixed, three already compiled TUs reused; no fixture change or formal retry.",
+  "next": "Stopped after the two planned processes. Current gap remains unresolved; no extra shape, repeated AB/AA, probe, product optimization or cause claim."
+}

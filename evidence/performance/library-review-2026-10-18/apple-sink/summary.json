@@ -1,0 +1,149 @@
+{
+  "status": "negative_space_candidate_not_applied; Apple Sink full-score space issue remains unresolved",
+  "machine": {
+    "host": "kiro@172.22.10.198",
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "ram_bytes": 17179869184,
+    "available_disk_before": "41GiB",
+    "compiler": "Apple clang21.0.0 arm64"
+  },
+  "candidate": "Scratch-only private Q16 wrapper; Q>=1024 plus (Q-16)*KV>2*Q*Dv. Slice Q and global additive mask rows, share complete KV/sinks, depends both Q/mask sources on preceding output, invoke same native fast fallback each block, concatenate BHSD once then original BSHD transpose. No hand-written normalization/new shader/native SDK patch/dtype/TF32/env/CB/sync change.",
+  "source_scope": "Current canonical lowerer frozen as baseline; original SDK native is used on both sides. D512 always rejects both vector/full fused admission including Q1 tail, so current D192/D256 selector patches absent from the historical SDK are irrelevant to this tested Sink domain. All library hashes and actual link maps retained.",
+  "tests": {
+    "initial_failure": {
+      "baseline": "1/2 PASS, long case FAIL at invalid slot reuse after first two full numerical checks passed",
+      "candidate": "same1/2 result and same failure stage",
+      "cause": "Harness retained work_a OwnedResult and result_a ResultLease, then called first.submit().value(). result_slot.begin() must return FailedPrecondition(\"result is still retained\"): src/compute/result.cc:90-94; thrown bad_expected_access was not a numerical failure.",
+      "source": "sink_tests.initial-failure.cc matches original tests-compile-command source body before replacement; original failed logs/JSON/maps/runtime identities retained."
+    },
+    "authorized_harness_fix": "Keep output_a native array copy, release that slot ResultLease/OwnedResult before bind/submit again. Independent second-slot old result stays live. Replace unchecked rebind submit.value() with explicit Result assertion.",
+    "final": {
+      "baseline_passed": 2,
+      "candidate_passed": 2,
+      "same_original_two_tests": "No shape/input/scale/FP64 budget change. Only the fixed test TU and two test executables rebuilt; no lowerer rebuild or new space run.",
+      "raw": "measured/rebindfix-{baseline,candidate}-tests.{stdout.txt,json}",
+      "max_F32_error": 4.33824060126764e-07,
+      "max_budget_fraction": 0.18268049532022862
+    },
+    "coverage": [
+      "Selected H64/Q1025/KV2049 nonzero two-channel QK and exact dyadic V, per-head sink logits, finite positive/negative additive masks and -Inf entries, full global bottom-right causal mask already supplied by caller",
+      "All-masked rows15/16/last and65 Q blocks with one-row tail; each33,587,200-element output checked by independent stable FP64 separable-V formula, preserving6e-6*abs(expected)+2e-6",
+      "Two independent invocations/sets of all five ports, actual rebind of first invocation to second set, copied old output hash unchanged after slot reuse and producer handles released before completion wait",
+      "H128/Q17/KV31 short-query native fallback control"
+    ],
+    "oracle_limits": "Two nonzero Q/K channels and exactly dyadic separable V, not arbitrary dense random dot-product oracle; no whole NaN/Inf matrix expansion."
+  },
+  "fixed_space": {
+    "executions": "Exactly one independent baseline and one independent candidate process; never repeated after the negative result or harness correction.",
+    "input": "Pre-fixed Q/K/mask/sinks0, V alternates+1.25/-1.25 by KV row. Every output independently checked against1.25/2050; original F32 rel6e-6+abs2e-6.",
+    "baseline": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 1025,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 151142660,
+      "output_bytes": 134348800,
+      "original_score_bytes": 537657600,
+      "active_before": 151175428,
+      "cache_before": 0,
+      "active_after": 285524228,
+      "peak": 1495482628,
+      "peak_minus_active_before": 1344307200,
+      "cache_after": 1209958400,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 33587200,
+      "oracle_passed": true
+    },
+    "candidate": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 1025,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 151142660,
+      "output_bytes": 134348800,
+      "original_score_bytes": 537657600,
+      "active_before": 151175428,
+      "cache_before": 0,
+      "active_after": 285524228,
+      "peak": 1632207108,
+      "peak_minus_active_before": 1481031680,
+      "cache_after": 1346682880,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 33587200,
+      "oracle_passed": true
+    },
+    "extra_peak_increase_bytes": 136724480,
+    "extra_peak_increase_fraction": 0.10170627666057275,
+    "metric": "Actual MLX allocator peak-minus-active-before after public prepare/create_invocation/bind, clear_cache/reset_peak, then submit/wait/synchronize. Includes output and native pending buffers, excludes cold prepare/JIT; not whole-device VRAM or RSS."
+  },
+  "liveness_analysis": {
+    "actual_observation": "Both active-before values151175428B and retained output134348800B match. Candidate extra peak adds136724480B, close to an additional full block-output frontier134348800B, plus2375680B. The Q16 logical score width reduction did not lower actual peak.",
+    "source": "Locked MLX backend/metal/eval.cpp:47-67 captures primitive input/sibling data_shared_ptr in command-buffer completion handlers; device.cpp:471-475 also retains temporaries/outputs to completion,511-513/605-626 preserve original operation/byte commit windows. depends orders work but does not retire these native references. Blocks vector plus final concat retain a linear output frontier.",
+    "shape_derived_payload_sizes_not_allocation_trace": {
+      "full_q_scale": 134348800,
+      "all_qk_scores": 537657600,
+      "all_sink_concat_scores": 537920000,
+      "full_output": 134348800
+    },
+    "illustrative_sum": {
+      "baseline_q_scale_scores_sink_scores_output": 1344275200,
+      "candidate_same_plus_block_output_frontier": 1478624000,
+      "baseline_measured_minus_sum": 32000,
+      "candidate_measured_minus_sum": 2407680
+    },
+    "limit": "These shape sums are consistent with broad intermediate residency plus an extra output frontier, but no per-buffer allocation/donation or command-buffer trace was collected. They cannot uniquely attribute the peak or prove all65 score blocks simultaneously resided. Do not infer throughput."
+  },
+  "next_engineering_direction": "A real lifetime change must stop submitting one whole lazy graph with all block intermediates at once. Use a native-completion-driven bounded number of block evaluations: precompile full/tail block math, submit from the existing owner stream, retire prior temporary roots only on actual GPU completion, then enqueue the next block on that owner thread. Keep one user Completion and the O(output) result frontier. This needs a native retirement/event adapter and invocation-state/lifetime design, not another depends or per-block host synchronize/wait. An explicit reusable-workspace native plan is an alternative if output/scratch binding exists. Same full KV and F32 arithmetic/work must remain; no new shader/precision reduction is implied. Only a future design direction, not implemented or proven feasible with current public MLX hooks.",
+  "build_scope": "Initial4 fresh host TUs and4links; authorized rebind correction1 test TU+2test links. Original SDK/foundation/gtest reused; no configure/native/metallib rebuild or dependency copy/download. Compile/link all passed. No latency/throughput/shape/tile/CB/environment follow-up.",
+  "link_maps": {
+    "baseline-tests": {
+      "fresh_lowerer": true,
+      "old_archive_lowerer": false,
+      "original_native_MLX_archive_selector": true
+    },
+    "candidate-tests": {
+      "fresh_lowerer": true,
+      "old_archive_lowerer": false,
+      "original_native_MLX_archive_selector": true
+    },
+    "baseline-space": {
+      "fresh_lowerer": true,
+      "old_archive_lowerer": false,
+      "original_native_MLX_archive_selector": true
+    },
+    "candidate-space": {
+      "fresh_lowerer": true,
+      "old_archive_lowerer": false,
+      "original_native_MLX_archive_selector": true
+    },
+    "rebindfix-baseline-tests": {
+      "fresh_lowerer": true,
+      "old_archive_lowerer": false,
+      "original_native_MLX_archive_selector": true
+    },
+    "rebindfix-candidate-tests": {
+      "fresh_lowerer": true,
+      "old_archive_lowerer": false,
+      "original_native_MLX_archive_selector": true
+    }
+  },
+  "final_sources": {
+    "apple_tensor.baseline.cc": "b5268bd56d13f597dbc06a960ad3b7948958dd38c236cd8e0f37623f3ec99b2f",
+    "apple_tensor.candidate.cc": "3f95041ab208c104294467a493af3fc5235ed503a140ae52116ac885b1655f5e",
+    "apple_tensor.diff": "62704ec0c346d34fc3f4402d94cce8fd899c2553a5a2e0156112e3e524e087b2",
+    "sink_tests.cc": "dcbd590a562ba8865de3261b1478e44f21c9c10cefc83d6540372211b802532c",
+    "sink_tests.initial-failure.cc": "592af8cc5593740435ba1f74fe155912b58587021d56d58081e698cb61332037",
+    "space.cc": "7aceb3c321a04696dd7d243513da66e6a34ea47ef285600403b1abc998a7c12a"
+  },
+  "canonical_unchanged": "canonical-unchanged.json",
+  "cleanup": "cleanup-candidates.json contains actual final eight object/executable files with exact size/SHA; old overwritten binary generations are not extra cleanup targets."
+}
