@@ -5,6 +5,9 @@
 `hyle-flashinfer-bf16-kv-page-index-v14`：实际完整调用相对 C2 约快1%，八个矩阵全部同向。
 该收益属于 C5 整体，不能从跨进程 C4 的无稳定收益结果中相减，宣称为页索引的纯因子收益。
 
+后续将预取继续提前的 [C6/v15](../earlier-k-prefetch/README.md) 已接入；本页保留 C5
+这份源码和测量，C6 的新结果单列，不改写或拼接以下原始数值。
+
 ## 源码与机器码
 
 范围沿用 C4：私有 BF16-partial marker、SM89、paged/causal、D256、CTA64、

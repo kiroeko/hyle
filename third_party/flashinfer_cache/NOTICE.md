@@ -91,3 +91,9 @@ format and does not expand the resident cache.
 Within that same private scope, K and V offsets share one guarded page-index
 load while preserving each tensor's own base and strides. Invalid rows keep
 both offsets zero; every other producer path retains its original indexing.
+
+Within the same SM89 private BF16-partial scope, the C++ source places the
+unchanged paired raw K prefetch after the QK call and before logits transform
+and masking, ahead of online softmax. The compiler can schedule these raw
+loads across the QK tail. Decoder/publication timing, shared K/V page indexing,
+row guards, arithmetic, barriers and all other routes remain.
