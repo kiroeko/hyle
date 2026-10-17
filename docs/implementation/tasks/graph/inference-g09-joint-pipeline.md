@@ -6,6 +6,8 @@ candidate为`3524413272cb52d06af5e64d634edbfef09b9864`；产品实现自`e09f309
 G07/G08/G10已接受，当前G07–G10 goal完成3/4；剩余G09的三组测量资格与聚合终审，完整文本CLI未开始。
 最新[有限诊断](../../../../evidence/architecture/inference-g09-completion-observation/receipt.json)
 在用户授权的管理员重试中留下前两形状记录，但访问冲突中断、native readiness 归属未得；不恢复资格。
+后续[具体故障现场](../../../../evidence/architecture/inference-g09-completion-observation/nsys-procdump-receipt.json)
+已取得驱动 NULL-read 及经过 Nsight 拦截层的上传提交栈；根因未签，直接调试同程序则四形状完整通过。
 
 ## 需求、真实事实与owner
 

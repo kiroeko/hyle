@@ -1,0 +1,567 @@
+{
+  "schema": "hyle.g09.targeted-av-capture-terminal/v1",
+  "state": "FIRST_CHANCE_AV_LOCATED_NOT_CAUSALLY_RESOLVED",
+  "scope_commit": "313679186",
+  "fixed_authorization_sha256": "b01fbc5f30e03eca7c11450691bb29ed2e7f8ae60f0a3a3517de6406d7c61bc9",
+  "all430_frozen_inputs_unchanged_after_run": true,
+  "result": {
+    "state": "FIRST_CHANCE_DUMP_CAPTURED_NOT_INTERPRETED",
+    "stages": [
+      {
+        "stage": "profile",
+        "command": [
+          "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+          "profile",
+          "--trace=vulkan,nvtx",
+          "--sample=none",
+          "--cpuctxsw=none",
+          "--backtrace=none",
+          "--vulkan-gpu-workload=batch",
+          "--wait=all",
+          "--stop-on-exit=true",
+          "--kill=true",
+          "--show-output=true",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\trace",
+          "C:\\h7\\g09-procdump-1\\procdump64.exe",
+          "-accepteula",
+          "-mt",
+          "-e",
+          "1",
+          "-f",
+          "C0000005",
+          "-n",
+          "1",
+          "-x",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\dumps",
+          "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 7.7189999999827705
+      },
+      {
+        "stage": "export",
+        "command": [
+          "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+          "export",
+          "--type=sqlite",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\trace.sqlite",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\trace.nsys-rep"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.0470000000204891
+      }
+    ],
+    "qualification": "DIAGNOSTIC_ONLY",
+    "valid_formal_ab": 0,
+    "math_application_processes_planned": 1,
+    "first_chance_only": true,
+    "maximum_dumps": 1,
+    "builds": 0,
+    "source_product_changes": 0,
+    "authorization_sha256": "b01fbc5f30e03eca7c11450691bb29ed2e7f8ae60f0a3a3517de6406d7c61bc9",
+    "policy": {
+      "environment": "windows",
+      "affinity_mask": "0x14",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "sampling_topology": "native-runtime-pair",
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "caller_logical_cpu": 2,
+      "distinct_physical_cores": true,
+      "reserved_physical_core_count": 2,
+      "helper_placement": "native-runtime-managed",
+      "launcher_applied": true,
+      "observed_affinity_mask": "0x14",
+      "previous_affinity_mask": "0xffffffff"
+    },
+    "child_canary": {
+      "gate": "PASS",
+      "environment": "windows",
+      "mechanism": "inherited-process-policy-canary",
+      "affinity_mask": "0x14",
+      "ok": true,
+      "priority_class": "0x8000"
+    },
+    "elapsed_seconds": 8.953000000037719,
+    "stage": "export",
+    "profile_nonzero_retained": "Collecting data...\nGenerating 'C:\\Users\\kiro\\AppData\\Local\\Temp\\nsys-report-431e.qdstrm'\n\n[1/1] [0%                          ] trace.nsys-rep\n[1/1] [0%                          ] trace.nsys-rep\n[1/1] [==========48%               ] trace.nsys-rep\n[1/1] [==========49%               ] trace.nsys-rep\n[1/1] [========================100%] trace.nsys-rep\n[1/1] [========================100%] trace.nsys-rep\nGenerated:\n\tC:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\trace.nsys-rep\n",
+    "normal_main_exit_observed": false,
+    "diagnostics": [
+      {
+        "timestamp": 0,
+        "timestampType": 1,
+        "source": 3,
+        "severity": 1,
+        "text": "Profiling has started.",
+        "globalPid": -144115188075855872
+      },
+      {
+        "timestamp": 11515500,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "Not all NVTX events might have been collected.",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 11518700,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 1,
+        "text": "Number of NVTX events collected: \t185.",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 11519900,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "Not all NVTX events might have been collected.",
+        "globalPid": 282881511391232
+      },
+      {
+        "timestamp": 11520800,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 1,
+        "text": "Number of NVTX events collected: \t9.",
+        "globalPid": 282881511391232
+      },
+      {
+        "timestamp": 11524500,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "Not all Vulkan events might have been collected.",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 11526100,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 1,
+        "text": "Number of Vulkan events collected: \t1354.",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 11526700,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "Vulkan profiling might have not been started correctly.",
+        "globalPid": 282881511391232
+      },
+      {
+        "timestamp": 11527400,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "No Vulkan events collected. Does the process use Vulkan?",
+        "globalPid": 282881511391232
+      },
+      {
+        "timestamp": 83702600,
+        "timestampType": 1,
+        "source": 2,
+        "severity": 1,
+        "text": "Process 83836 was launched by the profiler",
+        "globalPid": 282881511391232
+      },
+      {
+        "timestamp": 172703355,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "Common injection library initialized successfully.",
+        "globalPid": 282881511391232
+      },
+      {
+        "timestamp": 182178647,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "NVTX injection initialized successfully.",
+        "globalPid": 282881511391232
+      },
+      {
+        "timestamp": 274269374,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "Common injection library initialized successfully.",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 280932401,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "NVTX injection initialized successfully.",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 1470682411,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 1753107573,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 2359783555,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 2789228497,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 3727437714,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 3974015514,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 1,
+        "text": "VkCreateInstance called. Requested Vulkan API version 1.4.341",
+        "globalPid": 282863928868864
+      },
+      {
+        "timestamp": 5019976100,
+        "timestampType": 1,
+        "source": 3,
+        "severity": 1,
+        "text": "Profiling has stopped.",
+        "globalPid": -144115188075855872
+      }
+    ],
+    "table_counts": {
+      "ANALYSIS_DETAILS": 1,
+      "ANALYSIS_FILE": 3,
+      "DIAGNOSTIC_EVENT": 21,
+      "ENUM_DIAGNOSTIC_SEVERITY_LEVEL": 5,
+      "ENUM_DIAGNOSTIC_SOURCE_TYPE": 4,
+      "ENUM_DIAGNOSTIC_TIMESTAMP_SOURCE": 3,
+      "ENUM_NSYS_EVENT_CLASS": 99,
+      "ENUM_NSYS_EVENT_TYPE": 155,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_ETW_FLAGS": 7,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_ETW_PROPERTY": 8,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_ETW_TYPE": 22,
+      "ENUM_NSYS_GENERIC_EVENT_FIELD_TYPE": 4,
+      "ENUM_NSYS_GENERIC_EVENT_GROUP": 5,
+      "ENUM_NSYS_GENERIC_EVENT_SOURCE": 4,
+      "ENUM_VULKAN_HEAP_FLAGS": 3,
+      "ENUM_VULKAN_HEAP_TYPE": 5,
+      "ENUM_VULKAN_MEMORY_PROPERTY_FLAGS": 9,
+      "ENUM_VULKAN_PIPELINE_CREATION_FLAGS": 3,
+      "META_DATA_CAPTURE": 177,
+      "META_DATA_EXPORT": 34,
+      "NVTX_EVENTS": 194,
+      "PROFILER_OVERHEAD": 101,
+      "ProcessStreams": 3,
+      "StringIds": 95,
+      "TARGET_INFO_GPU": 3,
+      "TARGET_INFO_SESSION_START_TIME": 1,
+      "TARGET_INFO_SYSTEM_ENV": 48,
+      "ThreadNames": 23,
+      "VULKAN_API": 1355,
+      "VULKAN_MEMORY_OPERATION": 120,
+      "VULKAN_MEMORY_TYPES": 120,
+      "VULKAN_PIPELINE_CREATION_EVENTS": 10,
+      "VULKAN_PIPELINE_STAGE_EVENTS": 10
+    },
+    "dumps": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\dumps\\g09_observed_driver.exe_261017_125131.dmp",
+        "bytes": 383182,
+        "sha256": "876b83f0ae2090f76bd876d05d579dc03901fe15963042d75af08cadd02772a7"
+      }
+    ],
+    "target_cleanup": {
+      "pid": 82788,
+      "state": "NO_LONGER_OPENABLE"
+    }
+  },
+  "exception": {
+    "state": "FIRST_CHANCE_EXCEPTION_OFFLINE_DECODED",
+    "dump_file": ".scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\dumps\\g09_observed_driver.exe_261017_125131.dmp",
+    "streams": {
+      "3": {
+        "size": 1300,
+        "rva": 1836
+      },
+      "4": {
+        "size": 8212,
+        "rva": 3148
+      },
+      "14": {
+        "size": 84,
+        "rva": 11360
+      },
+      "13": {
+        "size": 10176,
+        "rva": 11444
+      },
+      "5": {
+        "size": 2596,
+        "rva": 63270
+      },
+      "6": {
+        "size": 168,
+        "rva": 1668
+      },
+      "7": {
+        "size": 56,
+        "rva": 248
+      },
+      "15": {
+        "size": 1364,
+        "rva": 304
+      },
+      "12": {
+        "size": 18096,
+        "rva": 365086
+      },
+      "21": {
+        "size": 524,
+        "rva": 21620
+      },
+      "22": {
+        "size": 152,
+        "rva": 22144
+      },
+      "24": {
+        "size": 76,
+        "rva": 22296
+      },
+      "11": {
+        "size": 620,
+        "rva": 62650
+      },
+      "0": {
+        "size": 0,
+        "rva": 0
+      }
+    },
+    "thread_id": 71868,
+    "exception_code": "0xc0000005",
+    "exception_flags": "0x0",
+    "exception_address": "0x7fffe0b3b77a",
+    "exception_information": [
+      "0x0",
+      "0x0"
+    ],
+    "rip": "0x7fffe0b3b77a",
+    "rsp": "0x1c4bee0fe40",
+    "rip_matches_exception_address": true,
+    "fault_module": {
+      "path": "nvoglv64.dll",
+      "actual_base": "0x7fffdfca0000",
+      "image_size": 48934912,
+      "rva": "0xe9b77a"
+    },
+    "context": {
+      "bytes": 1232,
+      "rax": "0x1",
+      "rcx": "0x1c43c94fb08",
+      "rdx": "0x0",
+      "r8": "0x1c43c94f880",
+      "r9": "0x1c4bee10201"
+    },
+    "first_chance_not_fatal_certificate": true,
+    "root_cause": "UNKNOWN; instruction module alone does not establish cause"
+  },
+  "driver_identity": {
+    "path": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_da865124972e1f80\\nvoglv64.dll",
+    "bytes": 48639720,
+    "sha256": "68b2d0f82e69e6bb7af67ea554c11caba783e2c75f5ab475db108ff55bf1313c",
+    "pe_timestamp": 1789685756,
+    "dump_module_timestamp_matches": true,
+    "loaded_dump_file_version": "32.0.16.1714",
+    "disassembly": "fault-disassembly.txt",
+    "fact": "Fault context RDX=0; instruction at rva0xe9b77a in matching on-disk image is movl (%rdx),%ecx. Export-nearest vkGetInstanceProcAddr+offset is NOT established function identity.",
+    "actual_code_window_in_dump": true,
+    "actual_dump_code_bytes": "8b0a85c9742e83f9",
+    "matching_disk_code_bytes": "8b0a85c9742e83f9",
+    "actual_code_bytes_match": true
+  },
+  "real_unwind_and_map": {
+    "module": {
+      "base": 140737391820800,
+      "size": 69382144,
+      "name": "g09_observed_1.dll"
+    },
+    "mapped_return_addresses": [
+      {
+        "return_rva": "0x1233d66",
+        "nearest_public_function": "?with_native_queue@?A0xd34daa84@bridge@ggml_vulkan@compute@hyle@@YA?AUFailure@2345@PEAURuntime@2345@_NP6A?AW4VkResult@@PEAXPEAUVkQueue_T@@@Z2@Z",
+        "offset": "0xe6",
+        "object": "ggml-vulkan:ggml-vulkan.cpp.obj"
+      },
+      {
+        "return_rva": "0x10a9db8",
+        "nearest_public_function": "?with_queue@NativeDevice@detail@ggml_vulkan@compute@hyle@@QEBA?AVStatus@5@P6A?AW4VkResult@@PEAXPEAUVkQueue_T@@@Z0@Z",
+        "offset": "0x28",
+        "object": "hyle_compute_provider_ggml_vulkan:native_device.cc.obj"
+      },
+      {
+        "return_rva": "0x1067fb1",
+        "nearest_public_function": "?submit_transfer@?A0xa7b5d391@detail@vulkan@compute@hyle@@YA?AVStatus@5@AEAURun@2345@AEA_N@Z",
+        "offset": "0x191",
+        "object": "hyle_compute_route_vulkan:vulkan_run.cc.obj"
+      },
+      {
+        "return_rva": "0x10678dc",
+        "nearest_public_function": "?submit_locked@detail@vulkan@compute@hyle@@YA?AV?$Result@VCompletion@compute@hyle@@@4@AEBV?$shared_ptr@URun@detail@vulkan@compute@hyle@@@std@@_N@Z",
+        "offset": "0x39c",
+        "object": "hyle_compute_route_vulkan:vulkan_run.cc.obj"
+      },
+      {
+        "return_rva": "0x105e08c",
+        "nearest_public_function": "?upload@TransferSlot@vulkan@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@AEBVTensor@234@VConstTensorView@34@@Z",
+        "offset": "0x2fc",
+        "object": "hyle_compute_route_vulkan:vulkan_transfer_slot.cc.obj"
+      },
+      {
+        "return_rva": "0x1112a",
+        "nearest_public_function": "?drive_stage@?A0x3382dc94@cpu_vulkan@graph@hyle@@YA?AVStatus@4@AEAURunState@detail@234@_KAEA_N@Z",
+        "offset": "0x34a",
+        "object": "invocation.cc.obj"
+      },
+      {
+        "return_rva": "0xfe2f",
+        "nearest_public_function": "?drive_graph@?A0x3382dc94@cpu_vulkan@graph@hyle@@YA?AVStatus@4@AEAURunState@detail@234@AEA_N@Z",
+        "offset": "0x9f",
+        "object": "invocation.cc.obj"
+      },
+      {
+        "return_rva": "0xf3a6",
+        "nearest_public_function": "?drive@?A0x3382dc94@cpu_vulkan@graph@hyle@@YAXPEAX@Z",
+        "offset": "0x26",
+        "object": "invocation.cc.obj"
+      },
+      {
+        "return_rva": "0x136d20e",
+        "nearest_public_function": "?entry@DetachedDriver@?A0x84c51b6e@sched@hyle@@SAXPEAX@Z",
+        "offset": "0xe",
+        "object": "hyle_sched:scheduler.cc.obj"
+      },
+      {
+        "return_rva": "0x13740d8",
+        "nearest_public_function": "?trampoline@FiberLaunch@sched@hyle@@SAXUtransfer_t@23@@Z",
+        "offset": "0x18",
+        "object": "i hyle_sched:fiber.cc.obj"
+      },
+      {
+        "return_rva": "0x1374445",
+        "nearest_public_function": "make_fcontext",
+        "offset": "0x75",
+        "object": "hyle_sched:make_x86_64_ms_pe_masm.asm.obj"
+      }
+    ],
+    "limits": "Nearest preceding text symbols for real DbgEng-unwound return addresses; export-nearest C10 labels are not function identity."
+  },
+  "dbgeng_offline": {
+    "exit_code": 0,
+    "elapsed_seconds": 0.25,
+    "offline_dump_only": true,
+    "command": [
+      "C:\\h7\\g09-offline-dbgeng-1\\dump-reader.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\dumps\\g09_observed_driver.exe_261017_125131.dmp",
+      "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_da865124972e1f80;C:/h7/g09-completion-observation-25/bin;C:/Windows/System32;C:/Program Files/NVIDIA Corporation/Nsight Systems 2026.1.3/target-windows-x64",
+      "C:\\h7\\g09-offline-dbgeng-1\\empty-symbols"
+    ],
+    "one_offline_utility_tu": true,
+    "gpu_or_product_runs": 0
+  },
+  "offline_reader": {
+    "source_sha256": "0f452729e5752743c8c6aa07a580eb7e73d4a4927267b7788ce938fabc90b5fe",
+    "exe_sha256": "ce440cacfb3f1a12d0245513bfa96715a23bb6d7680d68e807c251a3e109299c",
+    "system_dbgeng_sha256": "bfa188b10eb64a94f1eb59bfb0f8d85eb5dfc803cd0f6b5c554816fe311a236e",
+    "source_tus": 1,
+    "compile_seconds_approx": 0.5,
+    "product_or_workload_builds": 0,
+    "preflight": "First cl CreateProcess lookup failed before compiler start; absolute existing MSVC used for the single actual compilation. Preserved logs.",
+    "allowed_actions": "Only OpenDumpFile, local symbol/image paths and offline exception/register/stack/module commands; never starts or attaches to a target."
+  },
+  "correction_to_previous_inference": "Last captured cold-create marker is only a log visibility boundary. Unwound stack proves a coarse drive_graph upload submission was in flight; do not claim the fault instruction was in second-instance initialization.",
+  "actual_call_path": [
+    "Sched fiber/DetachedDriver",
+    "cpu_vulkan drive_graph -> drive_stage",
+    "Vulkan TransferSlot::upload -> submit_locked -> submit_transfer",
+    "provider with_queue/bridge with_native_queue",
+    "ToolsInjection64!NSYS_VK_vkQueueSubmit",
+    "nvoglv64.dll+0xe9b77a reads [RDX=0]"
+  ],
+  "narrow_source_review": {
+    "anchors": [
+      "src/compute_route_vulkan/vulkan_transfer_slot.cc:154",
+      "src/compute_route_vulkan/vulkan_run.cc:39",
+      "src/compute_route_vulkan/vulkan_run.cc:458",
+      "src/compute_provider_ggml_vulkan/native_runtime_impl.h:124"
+    ],
+    "findings": [
+      "Upload holds runtime mutex; each Run owns its command pool/fence and retained resources.",
+      "SubmitInfo and callback carrier remain live across synchronous with_queue callback.",
+      "Bridge holds original optional NVIDIA device-submit lock and queue lock around callback."
+    ],
+    "verdict": "No specific product MUST established by this narrow source check; not a general Vulkan API-validity certificate."
+  },
+  "contrasts": "Same observed binary completed allfourshapes/8retire/7472records in the single direct ProcDump run without Nsight. This does not prove profiler causality or exclude timing-sensitive application defects.",
+  "limits": [
+    "This is one first-chance access violation, not a proven matching fatal exception of the prior attempts.",
+    "NVIDIA instruction location and Nsight interception frame do not assign root cause.",
+    "Triage dump has limited/sanitized memory; nearest exported C10/vkGetInstanceProcAddr labels are not reliable function names; mapped HYLE returns use real link map.",
+    "Original performance A/A causes and independent native-completion timing remain unknown."
+  ],
+  "independent_result_review": "PENDING_R26; not claimed PASS",
+  "product_fix": [],
+  "formal_instrument_fix": [],
+  "valid_formal_ab": 0,
+  "current_goal": "ACTIVE_INCOMPLETE: G07/G08/G10 accepted, G09 outstanding",
+  "raw_archive": {
+    "path": "evidence/architecture/inference-g09-completion-observation/nsys-procdump-raw.zip",
+    "bytes": 212307,
+    "sha256": "f55f8745a69d4e7d36c01f90b63822303703f4ab89d80d3e618f26b716ce3cd1"
+  },
+  "stop": "This one targeted debugger/profile combination is terminal. No further native/debugger/profile combinations are authorized by this record. Only read-only review and a specific independently reviewed correction may precede a newly frozen entry.",
+  "original_receipt_sha256": "0eaf29dcc6e661c46af7bc7715937c80768c7a144258a667833281f811ae07df"
+}

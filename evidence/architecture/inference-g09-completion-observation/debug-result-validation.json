@@ -1,0 +1,15 @@
+{
+  "state": "PASS_DOCUMENTATION_AND_RETENTION_ONLY",
+  "closure": "PASS64components/schema4",
+  "docs": "PASS1258Markdown/6577relativeLinks",
+  "whitespace": "PASS",
+  "selector": "READY:docs,closure;146skipped/reused; .scratch/validation/g09-debug-result-plan.json",
+  "protected_live_files_matched": 428,
+  "changed_result_cards": "Exact frozen copies matched archived source members; only postrun result prose changed.",
+  "module_registry_changed": false,
+  "product_or_sdk_builds": 0,
+  "offline_reader_tus": 1,
+  "diagnostic_processes_remaining": [],
+  "actual_independent_review": "PENDING_R26:queued agent has not initialized; no review PASS claimed",
+  "formal_qualifications": "UNCHANGED; G09 incomplete"
+}

@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**AUDITED，2026-10-17；直接调试完整通过，当前只捕获原 Nsight 采集组合的一次 access-violation first-chance 现场；完成时延和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
+状态：**BLOCKED-from-AUDITED，2026-10-17；已捕获 NVIDIA 驱动内的 first-chance NULL-read，真实栈经过 Nsight vkQueueSubmit 拦截层及 HYLE 上传提交；具体根因、完成时延和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -235,3 +235,22 @@ NUL/换行后全部完整标记通过，保留原 result，不重跑、不替换
 源码、SDK、facade/driver 全部复用；无编译、无产品/测量统计修正。
 若 collector 未对该 child 成功注入、无复现或无 dump，均保留 UNKNOWN 并停止这个组合，
 不增加另一个 debugger/profile 组合。原直接调试终态与费用不覆盖，也不恢复原资格。
+
+[捕获及离线终态](../../../../evidence/architecture/inference-g09-completion-observation/nsys-procdump-receipt.json)：
+取得一个 383182 字节 first-chance triage dump。Windows 自带 DbgEng 只离线打开该原件，
+与精确 link map 一起确定调用路径为 `drive_graph/drive_stage` → `TransferSlot::upload` →
+`submit_transfer` → provider queue bridge → `ToolsInjection64!NSYS_VK_vkQueueSubmit` → NVIDIA ICD。
+故障指令为 `nvoglv64.dll+0xe9b77a` 的 `mov ecx,[rdx]`，`RDX=0`；dump 中实际代码与
+已匹配时间戳/版本 `32.0.16.1714` 的 driver 文件一致。无 PDB 时显示的最近 C10/vkGetInstanceProcAddr
+export 名称不充当真实函数名；HYLE 返回地址用原 map 裁决。
+
+这修正此前从缺失后续输出推断的初始化阶段：最后可见 cold-create 标记只代表日志可见边界，
+实际栈证明上传提交已经在进行。first-chance dump 不自动等同前两次原始 fatal 异常，
+driver 指令与 Nsight frame 也不证明是哪一方违反合同。
+窄源码核查见上传持 runtime mutex、每 Run 自有 command pool/fence、同步回调内 SubmitInfo
+存活，以及原 device-submit/queue 锁；未取得具体产品 MUST，不重开底层 owner 或修改等待。
+
+本次捕获累计 8.953 秒（含 0.047 秒离线 export）；另只编译一个不启动/附加目标的离线 dump
+读取工具，约 0.500 秒，读取 0.250 秒，无 HYLE/SDK/consumer 重编译。
+原件、完整栈、map 对照、工具源码/日志和失败成本保留；无残留诊断进程，0 个有效 A/B。
+该组合已结束；后续仅先做只读独立复核并提出具名有限纠正，不追加 debugger/profile 组合。
