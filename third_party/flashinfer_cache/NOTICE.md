@@ -65,7 +65,8 @@ change alone does not assert a qualified throughput improvement.
 An explicit private BF16-partial attention marker also admits the existing
 direct FP8 tile producer for BF16 output at equal D256 and CTA64. All other
 direct-stage gates, the packed decoder, shared layout and synchronization
-remain unchanged; this does not include the unadopted K-load or overlap experiments.
+remain unchanged. The scoped SM89 K-pair prefetch described below changes
+only the timing of the two raw K loads.
 The caller opts into intermediate BF16 partial values while attention and
 merge accumulation remain FP32. Final scaling still precedes the final output
 cast. Intermediate rounding can differ from the default FP32-partial path.
@@ -77,3 +78,16 @@ value; other plans retain four. Temporary scores remain FP32. The native
 adapter must admit the finite domain before passing this flag and select
 the same predicate for execution. This changes required workspace bytes;
 actual reserved memory still follows the caller's workspace cap.
+
+On SM89 only, the private BF16-partial marker enables paired raw K prefetch
+for paged causal direct-stage BF16 Q/output at equal D256, CTA64, MMA_KV1
+and Q/KV warps4/1. The next tile's two packed16-byte K vectors are loaded
+before online softmax; the original row-validity guard applies to both.
+The same decoder publishes both vectors in original order and shared layout
+at the original producer site. Initial K/V loads, V scheduling, consumer
+retirement, all barriers/async waits and other device architectures retain
+their original paths. This scheduling change adds no public API or numeric
+format and does not expand the resident cache.
+Within that same private scope, K and V offsets share one guarded page-index
+load while preserving each tensor's own base and strides. Invalid rows keep
+both offsets zero; every other producer path retains its original indexing.
