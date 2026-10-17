@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**AUDITED，2026-10-17；R25 源码及实际产物复核通过，精确封存后只执行一次非排名观察；产品/正式测量 FIX 集为空**。
+状态：**AUDITED，2026-10-17；首次观察被 Nsight 注册权限拒绝；用户已明确授权在实际管理员 token 下重试，复用原产物和采集设置；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -138,3 +138,17 @@ Windows AboveNormal/0x14，避免 profiler 子进程默认优先级冒充原身�
 
 这不是恢复正式 P1，也不授权改 epoch/估计量/阈值/工作负载或基础库。
 一次诊断后只接受可定位机制和可审的有限纠正，或保留未决；不扩成新的观测框架。
+
+### 用户授权：实际管理员身份重试
+
+上述首次入口的 Nsight 以 code=1、0.250 秒退出，累计 0.344 秒；报错为注册 Vulkan extension JSON
+需要注册表写权限，未生成 trace，也无目标 policy/oracle/退出标记。原 `run` 与原授权保留。
+用户随后明确要求“你已经在管理员终端了，重试”；新进程已实际核验 `IsUserAnAdmin=true`，
+组身份为 High Mandatory Level。该外部状态变化和本次明确授权覆盖上面的不重试停止规则，
+只允许再执行一次原配置，不把权限失败解释为 A/A 原因。
+
+重试 launcher 为 `.scratch/inference-gaps/g09_run_completion_observation_admin_retry.py`，
+只更换授权/输出路径并加入实际管理员断言；原源码、已审产物、四形状和 Vulkan/NVTX 采集参数均不变，
+不重建。独立输出为 `g09-completion-observation-25/run-admin-retry-1`，原失败不覆盖；
+输入由[重试封存](../../../../evidence/architecture/inference-g09-completion-observation/retry-authorization.json)固定。
+采集之后仍须实际 oracle/退休/正常退出、记录完整度、时钟与 submission 归属裁决；不恢复 A/A/P1。
