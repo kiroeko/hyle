@@ -1,0 +1,106 @@
+{
+  "result": "One full non-timed matched Hyle 4x256KiB episode passes all existing protocol/payload/reverse-completion/cleanup oracles. 513/515 adaptive yields dispatch the other endpoint and observe its successful IO bytes. Two yields directly redispatch the same fiber and observe zero peer IO. This does not establish the cost of either category or resolve the formal HTTP2 latency residual.",
+  "evidence": {
+    "completed": 4,
+    "counter_checks_passed": true,
+    "resume_interposition": {
+      "original_image": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+      "executable_image": "/root/hyle-scratch/http2-current-20261018/yield-progress/consumer",
+      "dispatch_calls": 520,
+      "unknown_fiber_dispatches": 0
+    },
+    "overflow_count": 0,
+    "endpoints": [
+      {
+        "role": "client",
+        "fiber": "0x4f630240170",
+        "session": "0x4f630300300",
+        "dispatches": 260,
+        "recv_bytes": 1050027,
+        "send_bytes": 1050124
+      },
+      {
+        "role": "server",
+        "fiber": "0x4f6302400b0",
+        "session": "0x4f630300080",
+        "dispatches": 260,
+        "recv_bytes": 1050124,
+        "send_bytes": 1050027
+      }
+    ],
+    "yield_categories": [
+      {
+        "kind": "write",
+        "total": 256,
+        "direct_same_fiber": 1,
+        "with_peer_dispatch": 255,
+        "peer_dispatches": 255,
+        "unknown_dispatches": 0,
+        "with_peer_io": 255,
+        "without_peer_io": 1,
+        "peer_recv_bytes": 2097521,
+        "peer_send_bytes": 1543
+      },
+      {
+        "kind": "read",
+        "total": 259,
+        "direct_same_fiber": 1,
+        "with_peer_dispatch": 258,
+        "peer_dispatches": 258,
+        "unknown_dispatches": 0,
+        "with_peer_io": 258,
+        "without_peer_io": 1,
+        "peer_recv_bytes": 2338,
+        "peer_send_bytes": 2082356
+      }
+    ]
+  },
+  "direct_same_fiber_records": [
+    {
+      "fiber": "0x4f6302400b0",
+      "kind": 1,
+      "first_dispatch": 1,
+      "resumed_dispatch": 2,
+      "peer_recv_before": 0,
+      "peer_recv_after": 0,
+      "peer_send_before": 0,
+      "peer_send_after": 0
+    },
+    {
+      "fiber": "0x4f630240170",
+      "kind": 0,
+      "first_dispatch": 3,
+      "resumed_dispatch": 4,
+      "peer_recv_before": 0,
+      "peer_recv_after": 0,
+      "peer_send_before": 27,
+      "peer_send_after": 27
+    }
+  ],
+  "dispatch_accounting": {
+    "total": 520,
+    "client": 260,
+    "server": 260,
+    "unknown_fiber": 0,
+    "adaptive_yield_resumptions": 515,
+    "initial_fiber_entries": 2,
+    "other_resumption_sequences": [
+      5,
+      6,
+      520
+    ],
+    "limitation": "Three resume events outside the two marked adaptive-yield sites are visible but not assigned to individual asynchronous IO/Event waits; their causes and time costs were not instrumented."
+  },
+  "method": "Cached scheduler ELF has four calls through Fiber::resume()@plt. Executable exports the same symbol, resolves the original once through dlsym(RTLD_NEXT) before constructing harnesses, and forwards every call. Fixed2048-entry owner-worker-local arrays, no atomics/QPC/extra locks/workers/yields. Each marked HTTP2 yield saves dispatch sequence and peer IO byte totals before and after the original Fiber::yield. Explicit endpoint roles register at original client/server entry. Record IO after the original valid-byte checks, covering immediate and asynchronous reads/writes. Read counters only after the pre-existing harness destructors shutdown/join workers.",
+  "validation": "Executable dynamic-symbol dump and runtime different executable/original image addresses plus520 intercepted resume calls establish that PLT interposition actually ran. No missing/unknown fiber, counter overflow, unfinished yield or invalid dispatch sequence. Client sent1050124 equals server received1050124; server sent1050027 equals client received1050027. Successful wire byte total2100151 in each direction includes async progress that earlier immediate-only syscall counters did not include.",
+  "runtime_scope": "Exactly one executable invocation after compiling. HyleHarness and inactive RawHarness retained: one scheduler worker, one inactive raw worker and caller; taskset CPU2 inherited. No fresh live resource census; no alternate route, AA, timing, profiler or hardware counter run. Existing HTTP/feature/nanobench/nghttp2/foundation binaries reused. Only diagnostic HTTP2, consumer-main and probe-state TUs compiled; no scheduler/fiber or SDK build/copy.",
+  "retained_build_failure": "First probe_state compile used a noexcept method definition but the public Fiber::resume declaration is not noexcept. Compiler rejected it before any link/run. Corrected only the diagnostic forwarding signature and compiled that TU again; original failure stderr and command remain. HTTP2/main were not recompiled, and the only runtime invocation exits0.",
+  "observation_limits": [
+    "513 peer-progress events have no time weights; do not derive a percentage of the12\u201315% formal latency gap from these counts.",
+    "Two direct redispatches occur at sequence1->2(server read) and3->4(client write), near initial startup in this episode. No claim their cost is negligible or that they characterize every episode.",
+    "No peer returned IO bytes does not mean no kernel progress, and it does not authorize dropping cancellation, fairness, owner, readiness or completion responsibilities.",
+    "Probe functions and fixed-array writes perturb execution; diagnostic is supplementary evidence about this episode, not an unperturbed formal thread/call census.",
+    "Three non-adaptive resume causes, exact per-turn CPU cost, kernel work, backend pending-operation state and empty nghttp2 encode counts remain unobserved. No extrapolation to a universal scheduler bottleneck."
+  ],
+  "product": "No product source edited. Existing submit_epoch dead-state finding remains a separate cleanup, not a measured explanation of the latency gap."
+}

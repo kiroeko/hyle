@@ -589,6 +589,10 @@ Hyle控制也有漂移，不将其当作稳定普遍比例或声称旧差额已�
 软件采样先因现有perf缺DWARF unwinder只能取得leaf，后用frame pointer取到部分收发/consume父调用；
 缓存foundation未重编FP，Hyle2578样本有1662个无效栈尾，peer2016样本有685个，均截断保留。
 这是定位线索，不能累加inclusive占比、用样本总量排名或将差额归因为fiber；[stage4摘要](http2/stage4-summary.json)/[raw](http2/stage4-raw.zip)记录限制，产品未改。
+随后仅跑一次非timed完整holdout，以exe拦截现有`Fiber::resume`的PLT调用，未重编foundation。
+520次dispatch中，515个adaptive yield有513个实际切到peer并见其成功I/O字节，仅2个直接调回自身；三次其它恢复原因未分类。
+原payload/反序完成/cleanup全部通过；该事件计数排除“主要在无效yield自转”的猜测，不能量化时间或解决当前残差。
+[stage5摘要](http2/stage5-summary.json)/[raw](http2/stage5-raw.zip)保留全部dispatch/yield及初次编译失败；没有追加计时或产品改动。
 
 本批源码/日志/原始数据归档后，先写`test.ps1`再按精确路径、大小及hash清理可重建产物：
 Windows Concat27文件197362252 B、Air普通SDPA8文件36649824 B；未删除源码、日志、数据或原有SDK/cache。
