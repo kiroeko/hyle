@@ -1,0 +1,97 @@
+{
+  "scope": "CPU ggml and Vulkan ggml Concat pairwise balanced trees only. CPU repeated-port metadata capacity adds 4 nodes per port with overflow checks.",
+  "tests": {
+    "cpu_baseline_direct": "PASS: one parameterized-in-body GTest, 15 scalar types x 3 axes x 4 nonempty port counts x 2 replays; includes empty ports, padded strides, single owned copy and arbitrary scalar bytes.",
+    "cpu_candidate_direct": "PASS same cases",
+    "cpu_candidate_public_graph": "PASS public CPU factory + Generic Graph, 70 repeated SSA ports, Concat + Neg, both published, one region and ggml provider id asserted, 2 replays.",
+    "cpu_baseline_public_graph": "Not run with under-sized original arena; zero-payload lowering census demonstrates actual metadata exceeds original capacity.",
+    "vulkan_baseline_candidate": "Each PASS 3/3: four admitted dtypes F32/F16/BF16/I32 x 3 axes x 4 port counts x 2 replays; native Region70 repeated ports+published Concat+Neg; existing strided/empty decline boundary.",
+    "no_tolerance_change": true
+  },
+  "space": {
+    "cpu_64x64KiB": {
+      "owned_aligned_payload_arena_bytes": [
+        132120576,
+        20971520
+      ],
+      "lowered_copy_output_bytes": [
+        136314880,
+        25165824
+      ],
+      "caller_output_bytes": 4194304,
+      "method": "Exact no-payload-allocation lowering census with the provider allocation predicate. Excludes metadata, execution workspace and caller ports. Census uses one SSA input repeated64 times; the public Direct timing uses64 logical ports aliasing one actual input buffer. These differ in leaf metadata, but have identical owned prefix/copy payloads."
+    },
+    "cpu_repeated_strided70_plus_neg_metadata": {
+      "baseline_actual_tensors": 285,
+      "candidate_actual_tensors": 284,
+      "candidate_graph_nodes": 283,
+      "old_capacity": 84,
+      "candidate_capacity": 364,
+      "method": "Larger safe probe-only metadata arena, zero graph payload allocation; no deliberate native OOB/assert executed."
+    },
+    "vulkan_64x64KiB": {
+      "actual_native_gallocr_backing_bytes": [
+        11796480,
+        8126464
+      ],
+      "lowered_copy_output_bytes": [
+        136249344,
+        25165824
+      ],
+      "sum_logical_owned_node_payload_bytes": [
+        132055040,
+        20971520
+      ],
+      "caller_output_bytes": 4194304,
+      "method": "Actual Region creation and native gallocr backing capacity. Logical node payload sum is separately labeled, not simultaneous resident memory or total VRAM. Probe-only fprintf runs in cold preparation before timing."
+    }
+  },
+  "timing": {
+    "shape": "F32 64 equal ports of64KiB; output4MiB, same one physical input buffer; exact independent per-index copy oracle over1048576 elements before and after each aggregate timer.",
+    "process_order": [
+      "baseline",
+      "candidate",
+      "candidate",
+      "baseline"
+    ],
+    "pairs": 2,
+    "cpu_public_direct_ns": {
+      "baseline": [
+        53098900,
+        52894400
+      ],
+      "candidate": [
+        10018400,
+        10056000
+      ],
+      "iterations": 16,
+      "warmup": 4,
+      "native_threads": 1,
+      "boundary": "submit + wait + Completion destruction"
+    },
+    "vulkan_native_region_ns": {
+      "baseline": [
+        669503,
+        738594
+      ],
+      "candidate": [
+        245219,
+        321750
+      ],
+      "iterations": 32,
+      "warmup": 4,
+      "boundary": "Region.submit + Region.wait"
+    },
+    "limits": "Only two process pairs; no CI or general/engine tokens-per-second claim. Retain visible Vulkan absolute drift; no extra shape search. Setup/allocation/cold graph build excluded."
+  },
+  "probe_setup_failures_preserved": [
+    "First direct link omitted /SUBSYSTEM:CONSOLE (LNK1561).",
+    "Second direct link omitted advapi32 (LNK1120).",
+    "First CPU runtime test could not resolve optimized DLL from DEFAULT_DIRS; exact existing DLL preload fixed only the validation harness.",
+    "Loader TU first compile omitted <cwchar>."
+  ],
+  "independent_review": "configuration_consistency_scan read-only reviewed two source diffs; no confirmed ordering, owned-copy, empty-domain or overflow regression.",
+  "products_not_committed": true,
+  "no_native_rebuild_or_sdk_copy": true,
+  "no_additional_markdown_report": true
+}

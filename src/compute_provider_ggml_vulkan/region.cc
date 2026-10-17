@@ -890,14 +890,28 @@ Result<Region> Region::create(NativeDevice device,
         const auto inner =
             extent_product(description.dimensions().subspan(axis + 1));
         const auto outer = extent_product(description.dimensions().first(axis));
-        for (const auto input : node.inputs) {
-          auto *part =
-              ggml_reshape_3d(context, tensors[input], inner,
-                              recipe.values[input].dimensions()[axis], outer);
-          output = output ? ggml_concat(context, output, part, 1) : part;
+        std::vector<ggml_tensor *> parts;
+        parts.reserve(node.inputs.size());
+        for (const auto input : node.inputs)
+          parts.push_back(ggml_reshape_3d(
+              context, tensors[input], inner,
+              recipe.values[input].dimensions()[axis], outer));
+        if (parts.size() == 1) {
+          output = ggml_dup(context, parts.front());
+        } else {
+          // Balanced native dependencies avoid copying each growing prefix;
+          // gallocr continues to own intermediate payload reuse.
+          while (parts.size() > 1) {
+            const auto count = parts.size();
+            std::size_t next = 0;
+            for (std::size_t i = 0; i + 1 < count; i += 2)
+              parts[next++] = ggml_concat(context, parts[i], parts[i + 1], 1);
+            if (count % 2 != 0)
+              parts[next++] = parts.back();
+            parts.resize(next);
+          }
+          output = parts.front();
         }
-        if (node.inputs.size() == 1)
-          output = ggml_dup(context, output);
       } else if (const auto clamp = node.operation.custom_as<model_ops::Clamp>()) {
         output = ggml_clamp(context, arguments[0], clamp->minimum, clamp->maximum);
       } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {

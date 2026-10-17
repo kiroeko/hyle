@@ -780,14 +780,30 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       outer *= output.dimensions()[i];
     for (std::size_t i = selected + 1; i < output.rank(); ++i)
       inner *= output.dimensions()[i];
+    std::vector<ggml_tensor *> parts;
+    parts.reserve(node.inputs.size());
     for (std::size_t i = 0; i < node.inputs.size(); ++i) {
       const auto &description = recipe.values[node.inputs[i]];
       if (elements(description) == 0)
         continue;
-      auto *part = ggml_reshape_3d(context, input(i), inner,
-                                   description.dimensions()[selected], outer);
-      result = result ? ggml_concat(context, result, part, 1)
-                      : ggml_dup(context, part);
+      parts.push_back(ggml_reshape_3d(context, input(i), inner,
+                                      description.dimensions()[selected], outer));
+    }
+    if (parts.size() == 1) {
+      result = ggml_dup(context, parts.front());
+    } else if (!parts.empty()) {
+      // Each level copies at most the complete output, without retaining and
+      // copying every growing prefix. Pairing adjacent ports preserves order.
+      while (parts.size() > 1) {
+        const auto count = parts.size();
+        std::size_t next = 0;
+        for (std::size_t i = 0; i + 1 < count; i += 2)
+          parts[next++] = ggml_concat(context, parts[i], parts[i + 1], 1);
+        if (count % 2 != 0)
+          parts[next++] = parts.back();
+        parts.resize(next);
+      }
+      result = parts.front();
     }
   } else if (const auto *gather = node.operation.get_if<Gather>()) {
     const auto &source = recipe.values[node.inputs[0]];
@@ -1076,8 +1092,16 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
     if (recipe.nodes.size() > (SIZE_MAX - 8) / 32 ||
         recipe.values.size() > (SIZE_MAX - 8 - recipe.nodes.size() * 32) / 4)
       return allocation_failure();
-    const auto capacity =
-        recipe.nodes.size() * 32 + recipe.values.size() * 4 + 8;
+    auto capacity = recipe.nodes.size() * 32 + recipe.values.size() * 4 + 8;
+    for (const auto &node : recipe.nodes) {
+      if (!node.operation.get_if<Concat>())
+        continue;
+      // A repeated port can still need Cont, matrix/axis reshapes and Concat;
+      // unique SSA values alone do not bound this metadata.
+      if (node.inputs.size() > (SIZE_MAX - capacity) / 4)
+        return allocation_failure();
+      capacity += node.inputs.size() * 4;
+    }
     auto arena =
         ggml_runtime::MetadataArena::for_graph(capacity, capacity, allocator);
     if (!arena)
