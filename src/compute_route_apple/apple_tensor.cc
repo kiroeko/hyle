@@ -14,6 +14,7 @@
 
 #include <mlx/fast.h>
 #include <mlx/ops.h>
+#include <mlx/utils.h>
 
 #include "apple_internal.h"
 #include "apple_checks.h"
@@ -298,6 +299,99 @@ mx::array lower_rope(const RoPE &rope, std::span<const mx::array> inputs,
   return rotated;
 }
 
+constexpr int kAttentionQueryBlock = 16;
+
+bool chunk_attention_math(const ScaledDotProductAttention &attention,
+                          const mx::array &query, const mx::array &key,
+                          const mx::array &value, bool force_fused) {
+  const auto rows = std::int64_t{query.shape(2)};
+  const auto keys = std::int64_t{key.shape(2)};
+  const auto depth = query.shape(3);
+  const auto value_depth = std::int64_t{value.shape(3)};
+  const bool causal = attention.mask == MaskKind::kNone && attention.causal;
+  if (force_fused || query.shape(0) == 0 || depth == 0 || value_depth == 0 ||
+      rows < 1024 || keys == 0 ||
+      (rows - kAttentionQueryBlock) * keys <= 2 * rows * value_depth)
+    return false;
+
+  const bool full_kernel_shape = depth == value_depth &&
+      (depth == 64 || depth == 72 || depth == 80 || depth == 96 ||
+       depth == 128 || depth == 192 || depth == 256);
+  // Mirror only statically certain fallback cases in the locked MLX. Leave
+  // existing fused shapes alone, including its possible NAX D256 causal path.
+  return !full_kernel_shape || (causal && rows > keys) ||
+      depth == 192 ||
+      (depth == 256 && (attention.mask != MaskKind::kNone || !causal));
+}
+
+mx::array attention_math_blocks(const ScaledDotProductAttention &attention,
+                                const mx::array &query, const mx::array &key,
+                                const mx::array &value,
+                                const std::optional<mx::array> &mask,
+                                mx::Stream stream) {
+  const int rows = query.shape(2), keys = key.shape(2);
+  const int kv_heads = key.shape(1);
+  const int repeats = query.shape(1) / kv_heads;
+  const bool causal = !mask && attention.causal;
+  auto k = repeats > 1 ? mx::expand_dims(key, 2, stream) : key;
+  auto v = repeats > 1 ? mx::expand_dims(value, 2, stream) : value;
+  auto transposed_key = mx::swapaxes(k, -1, -2, stream);
+  std::optional<mx::array> broadcast_mask;
+  if (mask)
+    broadcast_mask = mx::broadcast_to(*mask,
+        {query.shape(0), query.shape(1), rows, keys}, stream);
+  const auto key_indices = mx::arange(0, keys, mx::int32, stream);
+  std::vector<mx::array> blocks;
+  blocks.reserve(static_cast<std::size_t>((rows - 1) / kAttentionQueryBlock + 1));
+  for (int begin = 0; begin < rows;) {
+    const int end = begin + std::min(kAttentionQueryBlock, rows - begin);
+    auto start = mx::Shape(4, 0), stop = query.shape();
+    start[2] = begin;
+    stop[2] = end;
+    std::vector<mx::array> sources{mx::slice(query, start, stop, stream)};
+    if (broadcast_mask) {
+      stop[3] = keys;
+      sources.push_back(mx::slice(*broadcast_mask, start, stop, stream));
+    } else if (causal) {
+      sources.push_back(mx::arange(keys - rows + begin, keys - rows + end,
+                                   mx::int32, stream));
+    }
+    // Also sequence mask generation, not only QK: MLX otherwise schedules
+    // independent block masks ahead of their consumers. This remains a pure
+    // lazy graph; Metal owns command-buffer retirement and buffer lifetimes.
+    if (!blocks.empty())
+      sources = mx::depends(sources, {blocks.back()});
+    auto q = mx::multiply(mx::array(attention.scale, query.dtype()),
+                           sources[0], stream);
+    if (repeats > 1)
+      q = mx::unflatten(q, 1, {kv_heads, repeats}, stream);
+    auto scores = mx::matmul(q, transposed_key, stream);
+    if (mask || causal) {
+      auto block_mask = causal
+          ? mx::greater_equal(mx::expand_dims(sources[1], 1, stream),
+                              mx::expand_dims(key_indices, 0, stream), stream)
+          : sources[1];
+      if (repeats > 1 && block_mask.ndim() >= 3)
+        block_mask = mx::unflatten(block_mask, -3, {kv_heads, repeats}, stream);
+      if (block_mask.dtype() == mx::bool_) {
+        // Match the original fallback, including its uniform fully masked row.
+        scores = mx::where(block_mask, scores,
+            mx::array(mx::finfo(scores.dtype()).min, scores.dtype()), stream);
+      } else {
+        scores = mx::add(scores,
+                         mx::astype(block_mask, query.dtype(), stream), stream);
+      }
+    }
+    scores = mx::softmax(scores, std::vector<int>{-1}, true, stream);
+    auto result = mx::matmul(scores, v, stream);
+    if (repeats > 1)
+      result = mx::flatten(result, 1, 2, stream);
+    blocks.push_back(std::move(result));
+    begin = end;
+  }
+  return mx::concatenate(std::move(blocks), 2, stream);
+}
+
 mx::array lower_attention(const ScaledDotProductAttention &attention,
                           std::span<const mx::array> inputs,
                           mx::Stream stream) {
@@ -333,9 +427,15 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
       query.shape(3) == value.shape(3) &&
       (query.shape(3) == 192 || query.shape(3) == 256) &&
       (!attention.causal || query.shape(2) <= key.shape(2));
-  auto result = mx::fast::scaled_dot_product_attention(
-      query, key, value, attention.scale, mask_mode, mask, std::nullopt,
-      force_fused, stream);
+  // Keep the native mask dtype admission before choosing a different graph.
+  const bool compatible_mask = !mask ||
+      mx::promote_types(mask->dtype(), query.dtype()) == query.dtype();
+  auto result = stream.device == mx::Device::gpu && compatible_mask &&
+          chunk_attention_math(attention, query, key, value, force_fused)
+      ? attention_math_blocks(attention, query, key, value, mask, stream)
+      : mx::fast::scaled_dot_product_attention(
+            query, key, value, attention.scale, mask_mode, mask, std::nullopt,
+            force_fused, stream);
   return sequence_first ? mx::transpose(result, {0, 2, 1, 3}, stream) : result;
 }
 } // namespace

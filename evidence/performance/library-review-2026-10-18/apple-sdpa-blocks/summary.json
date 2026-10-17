@@ -1,0 +1,275 @@
+{
+  "status": "implemented_focused_numerical_and_space_validation_passed",
+  "canonical_source_root": "C:\\public\\project-hyle\\hyle",
+  "scope": "Apple ordinary SDPA fallback only; no public API, native SDK patch, metallib, CPU, or lock changes",
+  "source_sha256": {
+    "src/compute_route_apple/apple_tensor.cc": "d5795062e007cac2b54963e5d9b476dcee1783d69f8cd237394d7b084af1b850",
+    "tests/compute_route_apple/attention_test.cc": "02d14bdda8dea36cd36e17703f195f4f36008fdbdbd7b1932762c0968e8a3600"
+  },
+  "measured_final_candidate_sha256": "690bdf2de15888d2110d32053aefc0d342eecabbdbd46e58295bc84f65c1caba",
+  "applied_vs_measured_source": "After the measured final16-row run, root review requested an explicit GPU-stream selection guard, deletion of the dead D256 rows<1024 alternative, and explicit !mask&&causal normalization inside fallback helpers. Public lower_tensor already rejects combined causal+explicit mask, so these preserve every measured valid GPU path. A reject assertion was appended to the existing broadcast/rebind test; only that test was freshly rebuilt and rerun on baseline/candidate, both PASS. No extra space/full-suite/CPU run. Exact applied source/test snapshots are apple_tensor.applied.cc and attention_test.applied.cc.",
+  "baseline_source_sha256": "69356e2025eb669ddb62e7c5b86bb57ccc6a17d7cfb7f923b0c59f8cbeeace92",
+  "initial_64row_candidate_sha256": "241e9f84bd0692b547f4934d7088177072e246f4df2e9be3cda494758a8fa6bd",
+  "machine": {
+    "host": "kiro@172.22.10.198",
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "gpu_cores": 8,
+    "architecture": "arm64",
+    "compiler": "Apple clang 21.0.0 (clang-2100.3.34.2)",
+    "free_space_before": "41 GiB",
+    "raw": "machine.stdout.txt"
+  },
+  "product_domain": {
+    "device": "GPU only; CPU stream retains original native entry",
+    "block_rows": 16,
+    "query_rows": ">=1024",
+    "benefit_guard": "(Q - 16) * KV > 2 * Q * Dv; nonempty batch, K/V, Q depth and V depth",
+    "static_native_fallback": "Unsupported full-kernel depth/Q-V-depth pair, or causal Q>KV, or depth192, or depth256 outside its possibly fused causal no-array-mask Q>=1024 case.",
+    "priority": "Existing force_fused narrow-dtype domain wins first; existing native fused paths such as F32 D128 remain native.",
+    "mask_dtype_admission": "Keep the existing MLX promote_types requirement; incompatible masks still use native validation.",
+    "math": "Existing fallback dtype and scale, native GQA unflatten/flatten, complete KV per Q block, boolean finite dtype minimum, precise softmax, then PV; concatenate once.",
+    "causal_index": "key_index <= KV - full_Q + block_begin + local_row; never trim K/V to a shorter prefix.",
+    "lifetime": "Pure lazy graph. depends sequences Q and mask sources after the previous final output; no eval/synchronize in tracing. Existing compiled input replacement, array owners, Invocation and Completion retain lifetime."
+  },
+  "validation": {
+    "compile": "Only fresh apple_tensor baseline/candidate and attention test host TUs; O3 C++23, arm64, Wall/Wextra/Wpedantic/Werror; linked existing fixed SDK and gtest archives. Final adjustment rebuilt only candidate/test TUs and relinked affected executables.",
+    "final_candidate_tests": 6,
+    "final_baseline_tests": 6,
+    "final_exit_codes": {
+      "candidate": 0,
+      "baseline": 0
+    },
+    "applied_targeted_regression": {
+      "baseline": 1,
+      "candidate": 1,
+      "both_exit": 0,
+      "filter": "AppleAttention.MathQueryBlocksRetainBroadcastMasksAndReboundOwners",
+      "assertion": "Combined explicit Bool mask and causal flag still rejected during public prepare as Unimplemented; no API domain expansion. Valid broadcast/rebind and additive-mask checks remain in the same test.",
+      "raw": "applied-regression/*-combination-regression*"
+    },
+    "tested_final_block_paths": [
+      "Nonzero QK F32 D192 BHSD GQA, Q1025/KV1281 causal, 16-row blocks and one-row tail; independent FP64 oracle.",
+      "F32 D40 BSHD GQA Q1025>KV769 causal: first256 globally fully masked rows retain uniform output.",
+      "F16/BF16 D192/256 boolean Q1025/KV769, fully masked rows including block boundaries and final tail.",
+      "F32 B2/H2/Hkv1 Q1025/KV769 rank4 broadcast Bool mask: two independent invocation bindings, submit/wait and rebind.",
+      "Same broadcast shape additive mask: all -Inf head retains native NaNs; partially visible head retains finite analytic output."
+    ],
+    "controls": "Existing small D192/256 shapes/layouts, zero/negative scale, unsupported fused shape/decode/Q>KV control, and F16 weak probabilities remain checked.",
+    "oracle": "Original FP64 sum; V is exactly periodic over17 channels, so compute its17 independent sums once and reuse them. No error budget change.",
+    "error_budgets": "Existing F32 rel6e-6+abs2e-6; F16 rel.001+abs2e-7; BF16 rel.008+abs2e-7; weak probabilities abs.002. Space analytic check abs2e-6.",
+    "link_maps": {
+      "initial-c64/baseline": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "initial-c64/candidate": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "final-c16/baseline": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "final-c16/candidate": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      }
+    },
+    "native_identity": {
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/baseline.o": {
+        "bytes": 106680,
+        "sha256": "4f7edc5bad28d86029168fe38c63f3d0fe9c7888e982207424364bc830305701"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/candidate-tests": {
+        "bytes": 9364976,
+        "sha256": "95ef3b8cd63f72b332cc71192cb543b3f2a6c6c17f99600a534535111d1c2c81"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/space.o": {
+        "bytes": 44320,
+        "sha256": "bd964d45a9ee34b6a6b090fa9c11558b4b2fd9eb32fd50be83a773250aad0846"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/tests.o": {
+        "bytes": 159272,
+        "sha256": "b073357f80ebeffb92296b3b5943643215a5aa843e8eaf0dbae4cbacddde025b"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/baseline-tests": {
+        "bytes": 9348400,
+        "sha256": "51ac412ac7e97021c65af3d3807aef4bd7e3a03bbb564c6bf6e2bb8cad3bef71"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/candidate-space": {
+        "bytes": 8827072,
+        "sha256": "2356e6bddbc277e870610d8db0fae63cf49b5ab8f0047b2a1665808f8921e75e"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/candidate.o": {
+        "bytes": 122296,
+        "sha256": "295173551d67a9b97e57b9cde68a10408d5d3a3581cb1a19b320c2a16e2b0b7a"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/baseline-space": {
+        "bytes": 8826992,
+        "sha256": "707ad9f37806edf4893a6575f9bfd90169982a6f73f84b0f19bbc043c6f3435b"
+      },
+      "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmlx.a": {
+        "bytes": 11510272,
+        "sha256": "0ec0cd1a0e00c3f75c1ecf9db549b023e6fdc64f3d2f1a63a9a8be809eea9af9"
+      }
+    },
+    "applied_regression_binary_identity": {
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/baseline.o": {
+        "bytes": 106680,
+        "sha256": "4f7edc5bad28d86029168fe38c63f3d0fe9c7888e982207424364bc830305701"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/candidate-tests": {
+        "bytes": 9365296,
+        "sha256": "0b7e11878947316df18b04f0b06798185eeed6f9be1b001fb8ade7b96cda9309"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/space.o": {
+        "bytes": 44320,
+        "sha256": "bd964d45a9ee34b6a6b090fa9c11558b4b2fd9eb32fd50be83a773250aad0846"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/tests.o": {
+        "bytes": 162280,
+        "sha256": "cb68eb24a0a9626757998f445b2fe09f28caca2d7c1ab54d7652edb030a67366"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/baseline-tests": {
+        "bytes": 9365232,
+        "sha256": "1dcda6cdd906d34622ec4a4ae34a34d177adbb92dac7fbbdbae9745680bf155f"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/candidate-space": {
+        "bytes": 8827072,
+        "sha256": "2356e6bddbc277e870610d8db0fae63cf49b5ab8f0047b2a1665808f8921e75e"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/candidate.o": {
+        "bytes": 122304,
+        "sha256": "fa25b6d1417a4d94ac7723e589420ab543debabeb6d3dd09d5513d9e8ddc9c3d"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-sdpa-blocks/baseline-space": {
+        "bytes": 8826992,
+        "sha256": "707ad9f37806edf4893a6575f9bfd90169982a6f73f84b0f19bbc043c6f3435b"
+      },
+      "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmlx.a": {
+        "bytes": 11510272,
+        "sha256": "0ec0cd1a0e00c3f75c1ecf9db549b023e6fdc64f3d2f1a63a9a8be809eea9af9"
+      }
+    },
+    "raw_logs": "initial-c64/ and final-c16/: command JSON, stdout, stderr, maps and exact source snapshots"
+  },
+  "space": {
+    "shape": "F32 B1/Hq4/Hkv2/D256/Q2048/KV2048, explicit dense Bool[Q,KV], including fully masked rows, V1.25.",
+    "boundary": "Separate processes per arm. Public Context prepare/create_invocation/bind complete first; clear_cache/reset_peak then submit/wait/synchronize. All2,097,152 outputs checked, maxerror0 both sides.",
+    "metric": "Native MLX allocator active/peak/cache; not whole-device memory, process RSS, exact provider-private storage, or first cold prepare peak. peak-minus-active-before includes output and pending native buffers.",
+    "caller_qkv_bytes": 16777216,
+    "caller_mask_bytes": 4194304,
+    "output_bytes": 8388608,
+    "initial_64row_negative": {
+      "baseline": {
+        "dtype": "F32",
+        "B": 1,
+        "Hq": 4,
+        "Hkv": 2,
+        "D": 256,
+        "Q": 2048,
+        "KV": 2048,
+        "mask": "Bool dense QxKV",
+        "causal": false,
+        "caller_qkv_bytes": 16777216,
+        "caller_mask_bytes": 4194304,
+        "output_bytes": 8388608,
+        "active_before": 20971528,
+        "cache_before": 0,
+        "active_after": 29360136,
+        "peak": 104857608,
+        "peak_minus_active_before": 83886080,
+        "cache_after": 75497472,
+        "max_abs_error": 0,
+        "checked_elements": 2097152
+      },
+      "candidate": {
+        "dtype": "F32",
+        "B": 1,
+        "Hq": 4,
+        "Hkv": 2,
+        "D": 256,
+        "Q": 2048,
+        "KV": 2048,
+        "mask": "Bool dense QxKV",
+        "causal": false,
+        "caller_qkv_bytes": 16777216,
+        "caller_mask_bytes": 4194304,
+        "output_bytes": 8388608,
+        "active_before": 20971528,
+        "cache_before": 0,
+        "active_after": 29360136,
+        "peak": 113246216,
+        "peak_minus_active_before": 92274688,
+        "cache_after": 83886080,
+        "max_abs_error": 0,
+        "checked_elements": 2097152
+      }
+    },
+    "initial_64row_conclusion": "Extra peak80MiB ->88MiB (+10%); preserved as a real negative result, not accepted.",
+    "final_16row": {
+      "baseline": {
+        "dtype": "F32",
+        "B": 1,
+        "Hq": 4,
+        "Hkv": 2,
+        "D": 256,
+        "Q": 2048,
+        "KV": 2048,
+        "mask": "Bool dense QxKV",
+        "causal": false,
+        "caller_qkv_bytes": 16777216,
+        "caller_mask_bytes": 4194304,
+        "output_bytes": 8388608,
+        "active_before": 20971528,
+        "cache_before": 0,
+        "active_after": 29360136,
+        "peak": 104857608,
+        "peak_minus_active_before": 83886080,
+        "cache_after": 75497472,
+        "max_abs_error": 0,
+        "checked_elements": 2097152
+      },
+      "candidate": {
+        "dtype": "F32",
+        "B": 1,
+        "Hq": 4,
+        "Hkv": 2,
+        "D": 256,
+        "Q": 2048,
+        "KV": 2048,
+        "mask": "Bool dense QxKV",
+        "causal": false,
+        "caller_qkv_bytes": 16777216,
+        "caller_mask_bytes": 4194304,
+        "output_bytes": 8388608,
+        "active_before": 20972536,
+        "cache_before": 0,
+        "active_after": 29361144,
+        "peak": 82641912,
+        "peak_minus_active_before": 61669376,
+        "cache_after": 61669376,
+        "max_abs_error": 0,
+        "checked_elements": 2097152
+      }
+    },
+    "final_extra_peak_reduction_fraction": 0.26484375000000004,
+    "interpretation": "Under this SDK/device/default native settings, extra peak83,886,080 ->61,669,376 bytes (~26.49% less). Actual scheduling still retains multiple blocks. This is not a one-block hard peak guarantee.",
+    "warm_constant_difference_bytes": 1008
+  },
+  "mechanism_and_limitations": [
+    "Locked MLX eval builds a finite-width BFS tape. depends gives evaluation order, not immediate GPU retirement.",
+    "Metal retains primitive inputs until command buffer completion. Native commit limits and active-task backpressure remain in control; changing their environment settings can change the peak.",
+    "More native operations/launches and linear graph metadata are introduced. Throughput is unmeasured; test wall times are not throughput evidence.",
+    "Dense caller masks remain quadratic API input storage; only internal scores/probabilities avoid a whole-Q allocation in the selected domain.",
+    "Q<1024, shapes failing the benefit guard, and possible D256 causal no-mask NAX domains retain existing behavior, including square fallback where the native heuristic chooses it.",
+    "In particular, if the current Air lacks NAX or the native settings do not enable that fused path, long-Q D256 causal no-mask F32 can remain a square fallback. This batch intentionally does not duplicate the complete native selector or patch the SDK.",
+    "No full Apple suite, whole HEAD SDK build, full default Graph roster, other hardware, or nondefault MLX environment validation."
+  ],
+  "diagnostics_and_failures_retained": [
+    "Initial64-row actual space regression retained in initial-c64; final16-row test was the only block-size adjustment.",
+    "One SSH python-c wrapper failed with a quoting SyntaxError before launching a workload; subsequent stdin runner succeeded. No numerical/compile test failure was hidden."
+  ],
+  "cleanup": "cleanup-candidates.json lists only new remote objects/executables. Original SDK/cache/metallib are not cleanup targets. Delete only after root writes exact operations to test.ps1."
+}

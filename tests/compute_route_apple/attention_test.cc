@@ -29,7 +29,7 @@ void attention_case(int depth, mx::Dtype type, c::AttentionLayout layout,
   for (int t = 0; t < queries; ++t)
     for (int s = 0; s < keys; ++s)
       mask[t * keys + s] = mask_kind == c::MaskKind::kBoolean
-          ? double(t != 0 && s % 3 != 0) : double((t + s) % 3 - 1) / 4;
+          ? double(t % 64 != 0 && s % 3 != 0) : double((t + s) % 3 - 1) / 4;
 
   auto query = make(q, {1, heads, queries, depth}, type);
   auto key = make(k, {1, kv_heads, keys, depth}, type);
@@ -79,12 +79,13 @@ void attention_case(int depth, mx::Dtype type, c::AttentionLayout layout,
         score = any ? std::exp(score - maximum) : 1;
         denominator += score;
       }
-      for (int d = 0; d < depth; ++d) {
-        double sum = 0;
+      // V repeats every 17 channels; compute those FP64 oracle sums once.
+      std::array<double, 17> sums{};
+      for (int d = 0; d < std::min(depth, 17); ++d)
         for (int s = 0; s < keys; ++s)
-          sum += scores[s] * v[(kh * keys + s) * depth + d];
-        expected[(h * queries + t) * depth + d] = sum / denominator;
-      }
+          sums[d] += scores[s] * v[(kh * keys + s) * depth + d];
+      for (int d = 0; d < depth; ++d)
+        expected[(h * queries + t) * depth + d] = sums[d % 17] / denominator;
     }
   expect(*output, expected);
 }
@@ -115,11 +116,11 @@ TEST(AppleAttention, UnsupportedFusedDomainsKeepTheirExistingFallback) {
 }
 
 TEST(AppleAttention, NarrowBooleanMasksRetainFullyMaskedRowSemantics) {
-  constexpr int queries = 17, keys = 31, heads = 4, kv_heads = 2;
+  constexpr int queries = 1025, keys = 769, heads = 4, kv_heads = 2;
   std::vector<std::uint8_t> mask(queries * keys);
-  for (int t = 1; t < queries; ++t)
+  for (int t = 0; t < queries; ++t)
     for (int s = 0; s < keys; ++s)
-      mask[t * keys + s] = s % 3 != 0;
+      mask[t * keys + s] = t % 64 != 0 && s % 3 != 0;
   for (int depth : {192, 256})
     for (const auto type : {mx::float16, mx::bfloat16}) {
       SCOPED_TRACE(::testing::Message() << depth << " " << type);
@@ -139,6 +140,94 @@ TEST(AppleAttention, NarrowBooleanMasksRetainFullyMaskedRowSemantics) {
       ASSERT_TRUE(output) << output.error().message();
       expect(*output, std::vector<double>(heads * queries * depth, 1.25));
     }
+}
+
+TEST(AppleAttention, MathQueryBlocksKeepMasksLayoutsAndGlobalCausalOffset) {
+  attention_case(192, mx::float32, c::AttentionLayout::kBatchHeadSequenceDepth,
+                 1025, 1281, 0.125F, true, c::MaskKind::kNone);
+  attention_case(256, mx::float32, c::AttentionLayout::kBatchSequenceHeadDepth,
+                 193, 769, 0, false, c::MaskKind::kBoolean);
+  attention_case(192, mx::float32, c::AttentionLayout::kBatchHeadSequenceDepth,
+                 193, 769, -0.25F, false, c::MaskKind::kAdditive);
+  // The first 256 global rows are fully masked, across many block boundaries.
+  attention_case(40, mx::float32, c::AttentionLayout::kBatchSequenceHeadDepth,
+                 1025, 769, -0.25F, true, c::MaskKind::kNone);
+}
+
+TEST(AppleAttention, MathQueryBlocksRetainBroadcastMasksAndReboundOwners) {
+  constexpr int batches = 2, heads = 2, queries = 1025, keys = 769, depth = 192;
+  const auto q = make(std::vector<double>(batches * heads * queries * depth),
+                       {batches, heads, queries, depth}, mx::float32);
+  const auto k = make(std::vector<double>(batches * keys * depth),
+                       {batches, 1, keys, depth}, mx::float32);
+  std::vector<double> v(batches * keys * depth);
+  for (int b = 0; b < batches; ++b)
+    for (int s = 0; s < keys; ++s)
+      std::fill_n(v.begin() + (b * keys + s) * depth, depth,
+                   double(2 * (s % 2)) + double(b) / 4);
+  const auto value = make(v, {batches, 1, keys, depth}, mx::float32);
+  std::vector<std::uint8_t> bits(heads * keys);
+  for (int s = 0; s < keys; ++s)
+    bits[keys + s] = s % 2 == 0;
+  const auto boolean_mask = ready(mx::astype(
+      mx::array(bits.data(), {1, heads, 1, keys}, mx::uint8), mx::bool_, stream()));
+  auto context = a::Context::create().value();
+  const std::array inputs{q, k, value, boolean_mask};
+  auto program = context.prepare(c::Operation(c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
+      .mask = c::MaskKind::kBoolean, .scale = -0.25F}), inputs).value();
+  auto first = program.create_invocation().value();
+  auto second = program.create_invocation().value();
+  auto expected = [&](bool all_visible) {
+    std::vector<double> result(batches * heads * queries * depth);
+    for (int b = 0; b < batches; ++b)
+      for (int h = 0; h < heads; ++h) {
+        const double mean = (h == 0 || all_visible ? double(keys - 1) / keys : 0)
+            + double(b) / 4;
+        std::fill_n(result.begin() + (b * heads + h) * queries * depth,
+                     queries * depth, mean);
+      }
+    return result;
+  };
+  {
+    // bind retains the real arrays independently for each lazy invocation.
+    const std::array alternate{q, k, value,
+        ready(mx::ones({1, heads, 1, keys}, mx::bool_, stream()))};
+    ASSERT_TRUE(first.bind(inputs).ok());
+    ASSERT_TRUE(second.bind(alternate).ok());
+    auto first_work = first.submit().value();
+    auto second_work = second.submit().value();
+    auto first_result = first_work.wait().value();
+    auto second_result = second_work.wait().value();
+    expect(first_result.get()->arrays()[0], expected(false));
+    expect(second_result.get()->arrays()[0], expected(true));
+  }
+  ASSERT_TRUE(first.bind(inputs).ok());
+  auto rebound_work = first.submit().value();
+  auto rebound_result = rebound_work.wait().value();
+  expect(rebound_result.get()->arrays()[0], expected(false));
+
+  // Unlike boolean masking, an all -Inf additive row retains native NaNs.
+  std::vector<double> additive(heads * keys, -std::numeric_limits<double>::infinity());
+  for (int s = 0; s < keys; s += 2)
+    additive[keys + s] = 0;
+  const std::array additive_inputs{q, k, value,
+      make(additive, {1, heads, 1, keys}, mx::float32)};
+  auto output = execute(context, c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
+      .mask = c::MaskKind::kAdditive, .scale = 0}, additive_inputs);
+  ASSERT_TRUE(output) << output.error().message();
+  auto additive_expected = expected(false);
+  for (int b = 0; b < batches; ++b)
+    std::fill_n(additive_expected.begin() + b * heads * queries * depth,
+                 queries * depth, std::numeric_limits<double>::quiet_NaN());
+  expect(*output, additive_expected);
+
+  auto combined_mask = context.prepare(c::Operation(c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
+      .mask = c::MaskKind::kBoolean, .causal = true}), inputs);
+  ASSERT_FALSE(combined_mask);
+  EXPECT_EQ(combined_mask.error().code(), hyle::StatusCode::Unimplemented);
 }
 
 TEST(AppleAttention, HalfPrefillRetainsWeakProbabilitiesBeforeLargeValues) {
