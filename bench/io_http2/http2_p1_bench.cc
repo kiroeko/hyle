@@ -896,12 +896,13 @@ private:
   std::mutex mutex_;
   std::condition_variable ready_;
   std::condition_variable done_;
-  std::thread worker_;
   const Workload *workload_ = nullptr;
   int result_ = -1;
   bool pending_ = false;
   bool complete_ = false;
   bool stopping_ = false;
+  // The worker can run immediately, so initialize every field it reads first.
+  std::thread worker_;
 };
 
 void run_workload(const Workload &workload, HyleHarness &hyle,
