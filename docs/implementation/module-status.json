@@ -518,9 +518,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
-      "summary": "G09 completion-wake correction SCOPED: user selected product repair after bounded causal diagnosis; freeze borrowed Vulkan BlockingPool and Apple original-owner notification, single-worker/multi-slot/cancel/actual-retirement contracts before implementation. Original performance failures and unchanged CUDA qualification retained."
+      "summary": "G09 completion-wake correction AUDITED W1-W4: resident caller-pool Vulkan waiter starts before runtime prefix acceptance; Apple original-owner private readiness notification with release barrier. Freeze single-worker/multi-slot/cancel/shutdown/actual-retirement and public pool borrow; ordinary gates and new qualification pending."
     },
     {
       "module": "graph_route_apple",
@@ -659,15 +659,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
-      "summary": "G09 completion-wake correction SCOPED: user selected product repair after bounded causal diagnosis; freeze borrowed Vulkan BlockingPool and Apple original-owner notification, single-worker/multi-slot/cancel/actual-retirement contracts before implementation. Original performance failures and unchanged CUDA qualification retained."
+      "summary": "G09 completion-wake correction AUDITED W1-W4: resident caller-pool Vulkan waiter starts before runtime prefix acceptance; Apple original-owner private readiness notification with release barrier. Freeze single-worker/multi-slot/cancel/shutdown/actual-retirement and public pool borrow; ordinary gates and new qualification pending."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
-      "summary": "G09 completion-wake correction SCOPED: user selected product repair after bounded causal diagnosis; freeze borrowed Vulkan BlockingPool and Apple original-owner notification, single-worker/multi-slot/cancel/actual-retirement contracts before implementation. Original performance failures and unchanged CUDA qualification retained."
+      "summary": "G09 completion-wake correction AUDITED W1-W4: resident caller-pool Vulkan waiter starts before runtime prefix acceptance; Apple original-owner private readiness notification with release barrier. Freeze single-worker/multi-slot/cancel/shutdown/actual-retirement and public pool borrow; ordinary gates and new qualification pending."
     },
     {
       "module": "compute_stream",

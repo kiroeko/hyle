@@ -1,6 +1,6 @@
 # G09 完成驱动修正
 
-状态：**SCOPED，2026-10-17**。用户明确要求“我们先修复g09”。
+状态：**AUDITED，2026-10-17**。SCOPED checkpoint `13cbba94b`；用户明确要求“我们先修复g09”。
 baseline `8119dc6c2c02f5b3e588cc6e3b64b36b41222c59`；原 G09 产品候选
 `3524413272cb52d06af5e64d634edbfef09b9864`、原功能/交付/CUDA P1 与三组未资格结果保留。
 本卡替代本轮三个 owner 的施工入口，不重新授权旧 profiler/重试脚本。
@@ -87,4 +87,58 @@ SCOPED 以上门均待本轮运行；审计后补精确 filters/构建入口与�
 6. 按实际 headers/export/直接依赖检查 source/static/shared，未变依赖不全量重建。
 7. Vulkan pool 借用及关闭顺序写在类型附近、guide 与公开 sample，Apple 保原普通调用。
 
-当前仅 SCOPED；有限 FIX、API freeze、候选、运行 verdict、红队/LOC 在后续实际完成时填写。
+## AUDITED：有限 FIX 与合同冻结
+
+独立 Apple owner 审查与 CPU/Sched 审查已分别完成并与原设计对照；原 SCOPED 的候选方案
+据此收敛如下。旧卡 J-F5 的“无新 public API/OS thread”仅描述旧候选，不能约束新需求掩盖
+实际等待资源。本轮 Vulkan 明确增加 caller-owned pool 借用，费用与能力取舍一并公开。
+
+| FIX | 唯一采用的机制 | 有限产品文件/直接验收 |
+|---|---|---|
+| W1 | Vulkan 每 episode 一个冷内嵌常驻 BlockingJob。Sched root 启动后先等 job started，才接受该 episode 任何 CPU/native 运行前缀。job 在私有 monitor 下接收原 Completion wait 请求，root 用原 fiber-aware CV 等响应，活动句柄由 job 独占；另有 ready native/CPU 可继续推进 | cpu_vulkan.h、cpu_vulkan/invocation.cc；真实两顺序/两 slots、1/2 workers，active wait 时新 ready、多 pending |
+| W2 | Apple native/copy owner 内部按值三指针 notification packet；subscribe_completion(CompletionDependency, CompletionNotification) 为窄 private C++ export，普通 public API/Completion 不变 | 新 apple_completion_internal.h，apple_context.cc、apple_copy_recording.mm、cpu_apple/invocation.cc；已完成/inline/登记竞态、普通及 paged/copy |
+| W3 | Vulkan pool 拒绝/queued shutdown 发生在 started 前，零本 episode 运行前缀，Status 失败；started 后 job 已 RUNNING，原 pool shutdown 不取消它，它继续服务所有错误/取消的 native wait/needs_drain；最后 stop→destroy_done 后才发布终态/复用 | 无 poll/collect fallback、无 Scheduler worker 上的 native wait；cold/worker OOM、queued/running shutdown、cancel/abandon/close、旧结果 |
+| W4 | Vulkan 唯一冷创建形状 create_invocation(Scheduler&, compute::Queue&, sched::BlockingPool&)，迁移所有实际 in-tree 调用；Apple 保原入口 | 公开头、contracts/pipeline/page/state joint、SDK sample/user guide；source/static/shared 与逐头 |
+
+### Vulkan 独占、进展与费用
+
+每 RunState 一个 embedded job/cell，warm 不创建 JoinState/job heap；原 pool 可懒创建线程，
+cold worker/stack/锁与每 episode 一次队列入场计费。job started 前拒绝或 queued cancel 不会
+留下本 episode 的 native 前缀；Scheduler root 未 admission 时也不投递 job。纯 CPU episode
+不启动 native waiter。冷 prepare 的既有显式 native barrier 保持原独立合同。
+
+running job 在 std CV 上等请求/stop，Sched root 在原 Sched CV 上挂起。请求、完成与回交都在
+同一私有 monitor 下发布；job 处理期间 root 不 poll/wait/move/reset 该 Completion。
+root 仍推进其它 ready/pending 项；有其它未桥接 pending 时可保原有界观察，不能把单 waiter
+改写成通用 wait-any。native 完成通知的谓词/epoch 必须在一轮观察前 capture，避免 poll→park
+间丢唤醒。所有 accepted 前缀都由原 checked wait/结果/退休处理，绝不靠 job cancel 签 GPU 完成。
+stop/destroy_done 与 admitted root/ref handoff 阻止旧 episode 尾部写入新 episode。
+
+pool 容量是调用方的有界进展预算：max1 可以排队，**不承诺任意容量下跨 slot 乱序完成**。
+本轮主消费者两个活跃 slots 配 max2，另测 max1 的有限无环 liveness；单 Scheduler worker
+不因此要求额外数学 worker。pool worker 不得同步等待一个依赖同池 waiter 的 Graph 结果。
+pool/allocator/native contexts 必须存活到全部 Graph/job/native 尾部返回；通常先 close Graph，
+再 drain Scheduler，最后 shutdown pool。并发 shutdown 的 queued/running 分支分别验证，
+不将关闭中的 pool 悄悄换成另一执行器。native 永久无法证明退休时保留原等待与所有权，
+Scheduler worker 仍可运行，不伪造成功。
+
+### Apple hint 与寿命
+
+成功订阅消费调用方一份引用，ready→release 恰一次，可 inline；失败不消费。只接受原 native
+或 copy vtable，未知/重复 pending subscriber 返回错误；不为未知 Completion 加 timer fallback。
+finish 在原 completion_mutex 内 exchange packet，沿原 retire/wake/deliver 尾部后 ready/release；
+不改变 done 的旧语义，也不把 hint 当 actual retirement。Graph 在锁下先计 outstanding/retain，
+解锁再登记；ready 只更新 epoch/通知，release 归还 outstanding/ref，尾部归零后才复用/完成。
+epoch 在本轮 poll/advance 前 capture，避免通知落在最后 poll 与 park 之间。原 LeaseSubmission
+与 native owner 仍负责实际资源退休；普通/paged fragment 返回原 native Completion 已只读确认。
+
+### 测试与阶段约束
+
+沿原 hyle_cpu_{vulkan,apple}_{contracts,pipeline} 及 native page/state joint；新增定向 tests
+只覆盖本表新增的竞争、拒绝和资源尾部风险，不复制一套 fake 数学去代签真实设备进展。
+Apple 内部 seam 可用 owner 级定向 fixture 验恰一次/inline/拒绝；真实 Graph 流水仍必跑。
+Windows Vulkan validation、Air Metal validation 与三个 host sanitizer profile 适用风险保留。
+每个 selected source/static/shared 必须绑定新源码及重新链接后的新 owner，未变叶与 shader DATA
+按精确 hash 复用。公共 API 仅 W4，组件图不改，不重开公共等待/构建/统计核心。
+
+当前 AUDITED，允许上述有限实现；候选/实际验证/性能入口/终审和 LOC 尚未签发。
