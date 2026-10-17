@@ -299,7 +299,7 @@ public:
     const std::uint64_t hash = hash_(key);
     Shard &shard = shard_for(hash);
     shard.lock.lock();
-    const bool erased = shard.table.erase(key);
+    const bool erased = shard.table.erase_prehashed(key, hash);
     shard.lock.unlock();
     return erased;
   }

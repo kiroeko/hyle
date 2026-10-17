@@ -475,3 +475,19 @@ QPC10 MHz，最短聚合355 μs，不将几ns/op差额当成100 ns tick以下不
 
 原blocking_bench将每批创建/销毁runtime叫warm pool，现改名amortized runtime lifecycle，保留原计时边界；
 补全任务失败/值检查，不能少完成工作却记为快。该TU无Marl宏编译通过，未重跑其完整bench或编译可选Marl分支。
+
+## Concurrent erase：复用选分片时已有的hash
+
+ConcurrentHashMap原来在选shard后，由flat table再次hash同一个query；现在走与find/emplace一致的私有prehashed入口。
+原probe/比较/slot析构/tombstone及锁范围不变，helper保留原Hash/Eq的noexcept受理约束。
+诊断中hit及已分配shard的miss均2→1；零容量flat-map仍不hash直接返回，不把调用次数变成新的公开API保证。
+20项定向测试通过，覆盖ConstAccessor阻塞erase、并发更新、OOM锁恢复、碰撞、异构query及非平凡析构。
+
+Windows CPU4，固定8192个512-byte owning string keys、64 shards、同seed/shuffle，以string_view公开erase。
+计入hash/锁/比较/析构free，生成/refill与最终检查在外；正式无counter，所有删除数与空表状态核对。
+两对AB/BA中位数为220.850→195.837 ns、221.619→194.067 ns；每进程4warm、31原始样本，未删离群点。
+基线AA225.806/253.174 ns有12.1%漂移，新AA195.789/196.265 ns差0.24%，全部保留。
+少一次hash独立确认，不能把这一有限trace精确倍率归为纯hash耗时或宣称外部胜出、普遍收益与跨进程CI。
+QPC10 MHz，最短聚合1.1782 ms；实际波动与100 ns计时分辨率分开处理。
+[摘要](concurrent-erase/summary.json)及[原始包](concurrent-erase/raw-results.zip)保留248个样本、old/new header overlays、
+命令、hash与测试，只编相关probe/test TU并复用相同静态基础缓存，没有库/SDK全量重建。

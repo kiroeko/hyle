@@ -600,24 +600,7 @@ class FlatHashMap {
                                            const Q&>)
   bool erase(const Q& key) noexcept {
     if (cap_ == 0) return false;
-    std::uint64_t h = hash_(key);
-    std::size_t pos = detail::h1(h) & mask_;
-    std::size_t stride = 0;
-    ctrl_t want = detail::h2(h);
-    for (;;) {
-      detail::Group g(ctrl_ + pos);
-      for (std::uint32_t i : g.match(want)) {
-        std::size_t idx = (pos + i) & mask_;
-        if (HYLE_LIKELY(eq_(slots_[idx].key_, key))) {
-          slots_[idx].~Slot();
-          erase_at(idx);
-          return true;
-        }
-      }
-      if (g.match_empty()) return false;  // hit empty => key absent
-      stride += kGroup;
-      pos = (pos + stride) & mask_;
-    }
+    return erase_prehashed(key, hash_(key));
   }
 
   // Erasing through an iterator avoids hashing and probing the key again. The
@@ -748,6 +731,35 @@ class FlatHashMap {
         if (HYLE_LIKELY(eq_(slots_[idx].key_, key))) return slots_ + idx;
       }
       if (g.match_empty()) return nullptr;
+      stride += kGroup;
+      pos = (pos + stride) & mask_;
+    }
+  }
+
+  // As with lookup, a concurrent shard already has the query's hash. Keep the
+  // public erase query constraints and the same probe/destruction sequence.
+  template <class Q>
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  HYLE_SWISS_HOT_INLINE bool erase_prehashed(
+      const Q& key, std::uint64_t h) noexcept {
+    if (cap_ == 0) return false;
+    std::size_t pos = detail::h1(h) & mask_;
+    std::size_t stride = 0;
+    ctrl_t want = detail::h2(h);
+    for (;;) {
+      detail::Group g(ctrl_ + pos);
+      for (std::uint32_t i : g.match(want)) {
+        std::size_t idx = (pos + i) & mask_;
+        if (HYLE_LIKELY(eq_(slots_[idx].key_, key))) {
+          slots_[idx].~Slot();
+          erase_at(idx);
+          return true;
+        }
+      }
+      if (g.match_empty()) return false;
       stride += kGroup;
       pos = (pos + stride) & mask_;
     }

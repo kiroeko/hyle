@@ -202,7 +202,7 @@ TEST(ConcurrentHashMap, FallibleInsertDoesNotStrandLockOrEntry) {
   EXPECT_EQ(*accessor, 2);
 }
 
-TEST(ConcurrentHashMap, LongKeyLookupHashesOnlyOnce) {
+TEST(ConcurrentHashMap, LongKeyLookupAndEraseReuseTheShardHash) {
   std::atomic<std::size_t> calls{0};
   using Map = ConcurrentHashMap<std::string, int, CountingStringHash,
                                 StringEqual>;
@@ -218,6 +218,15 @@ TEST(ConcurrentHashMap, LongKeyLookupHashesOnlyOnce) {
   Map::ConstAccessor found;
   ASSERT_TRUE(map.find(found, std::string_view(std::string(200, 'x'))));
   EXPECT_EQ(*found, 3);
+  EXPECT_EQ(calls.load(), 1u);
+  found.release();
+
+  const std::string query(200, 'x');
+  calls.store(0);
+  EXPECT_TRUE(map.erase(std::string_view(query)));
+  EXPECT_EQ(calls.load(), 1u);
+  calls.store(0);
+  EXPECT_FALSE(map.erase(std::string_view(query)));
   EXPECT_EQ(calls.load(), 1u);
 }
 

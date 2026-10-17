@@ -1,0 +1,155 @@
+{
+  "scope": "One confirmed redundant hash in ConcurrentHashMap erase. No public API/ABI/locking/reclamation algorithm change; no external peer speed claim.",
+  "mechanism": {
+    "before": "Wrapper hashes key to choose shard, table.erase hashes same query again while shard lock is held.",
+    "after": "Wrapper reuses hash through private FlatHashMap::erase_prehashed; the original probe, slot destruction, tombstone update and shard unlock order remain.",
+    "query_admission": "Private helper retains original const Hash and Eq noexcept constraints, including Hash even though it is not invoked there; outer/public query signatures unchanged.",
+    "ordinary_flat_map": "Public FlatHashMap erase still hashes once only when allocated, and returns without hashing at zero capacity.",
+    "diagnostic_counts": {
+      "baseline": {
+        "hit": 2,
+        "allocated_shard_miss": 2
+      },
+      "candidate": {
+        "hit": 1,
+        "allocated_shard_miss": 1
+      }
+    },
+    "counter_limit": "CountingHash is a single-thread diagnostic with stable returned hash. Exact user-hasher invocation count is not a new public API guarantee; no counter or counter atomics are in the formal trace."
+  },
+  "correctness": {
+    "tests_passed": 20,
+    "tests_failed": 0,
+    "log": "tests.stdout.txt",
+    "coverage": [
+      "ConstAccessor keeps concurrent erase waiting",
+      "disjoint concurrent insert/shared update",
+      "fallible insert/reserve and lock recovery",
+      "constant-hash collision/tombstone reserve",
+      "heterogeneous erase without key construction",
+      "move-only/nontrivial slot destruction",
+      "public flat-map erase/oracle/iterator filtering",
+      "new hit+allocated-shard miss single-hash regression"
+    ]
+  },
+  "trace": {
+    "platform": "Windows; existing MSVC14.50.35717 toolchain and current static foundation cache",
+    "compiler_flags": "/O2 /Ob2 /DNDEBUG /std:c++latest /MD /W4 /WX; HYLE_STATIC; no sanitizer, trace or test instrumentation",
+    "affinity": "Logical CPU4 explicitly pinned and observed; no physical-core/P/E assertion",
+    "entries": 8192,
+    "key_bytes": 512,
+    "shards": 64,
+    "keys": "Fixed generation and shuffle seeds, unique owning std::string keys, string_view erase queries, fixed hash seed 0x71236ab4",
+    "work": "8192 successful public erase calls per sample; final erased count and empty map checked for every sample",
+    "timed": "erase hashes/probes, key equality, shard lock/unlock, slot/key destruction and owned string deallocation",
+    "excluded": "key generation, map construction/reserve, key copies/insertion/refill, final checks and map destruction",
+    "warm_rounds_per_process": 4,
+    "raw_samples_per_process": 31,
+    "process_count": 8,
+    "process_order": [
+      "aa-baseline-1",
+      "aa-baseline-2",
+      "ab-baseline",
+      "ab-candidate",
+      "ba-candidate",
+      "ba-baseline",
+      "aa-candidate-1",
+      "aa-candidate-2"
+    ],
+    "qpc_frequency": 10000000,
+    "qpc_tick_ns": 100.0,
+    "minimum_aggregated_ticks": 11782
+  },
+  "aa": [
+    {
+      "variant": "baseline",
+      "first_ns": 225.805664062,
+      "second_ns": 253.173828125,
+      "first_over_second": 0.8918997107019788
+    },
+    {
+      "variant": "candidate",
+      "first_ns": 195.788574219,
+      "second_ns": 196.264648438,
+      "first_over_second": 0.9975743251635539
+    }
+  ],
+  "ab_ba": [
+    {
+      "order": "ab",
+      "baseline_ns": 220.849609375,
+      "candidate_ns": 195.837402344,
+      "baseline_over_candidate": 1.1277192545020822
+    },
+    {
+      "order": "ba",
+      "baseline_ns": 221.618652344,
+      "candidate_ns": 194.067382812,
+      "baseline_over_candidate": 1.1419675430914111
+    }
+  ],
+  "interpretation": "Both representative AB/BA pairs have lower candidate medians (~12.8/14.2% throughput ratio improvement), but baseline A/A medians drifted ~12.1%. Preserve every raw sample; no cross-process CI, universal benefit, hash-only timing attribution, model throughput, or external peer win is claimed. Source work elimination and exact diagnostic count are independently confirmed.",
+  "build": "Only fresh probe TUs (frozen old/new two-header include overlays) and two current test TUs; same existing foundation static libraries. No CMake reconfigure/build, dependency download, SDK copy or product library rebuild.",
+  "remaining_readonly_candidates": [
+    {
+      "item": "FlatHashMap near-load-limit rolling churn",
+      "source": "flat_hash_table.h grow and src/container/flat_hash_map.cc swiss_resize",
+      "observation": "At exhausted growth budget the map rebuilds same capacity whenever live size is below 7/8 capacity; allocates control+slots and rehashes all live entries. Near threshold this may produce frequent full rebuilds. Not measured and not a confirmed loss.",
+      "coverage_gap": "Existing bounded churn uses a 256-key universe or the same erased key7; benchmark erase includes a fresh build. Neither establishes high-occupancy rolling new-key behavior.",
+      "next": "If pursued, first count allocations/rehashed keys on one fixed-cardinality trace and record actual slots/headroom. Do not compare speed if peer grows to more slots without reporting that memory-policy difference."
+    },
+    {
+      "item": "Queue empty/full/retry",
+      "observation": "No current same-contract loss confirmed. Sharded empty pop scans every shard by its contract; capacity is shards*per-shard, unlike single ring. Existing unbounded4P4C result does not cover bounded/retry policies.",
+      "next": "Only select matched FIFO, exact capacity, wait/retry policy and persistent worker lifecycle before any representative test."
+    },
+    {
+      "item": "Concurrent erase/reclaim peer scope",
+      "observation": "Default node map retains retired tables without a read-side reclamation guard; AfterReaders is explicit. Old read-only membership peer oneTBB concurrent_unordered_set cannot be used as safe concurrent erase evidence."
+    }
+  ],
+  "identity": {
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_container.lib": {
+      "sha256": "5f014b65f203f823e02c91c4b368b31bb4e8cadb25110771d5e6c6415bcb4d6b",
+      "bytes": 300918
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib": {
+      "sha256": "10fe859d66dcd68d391c65d1a933e1a4de902d8bb49003f8dca768d65b19dbe4",
+      "bytes": 1280686
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib": {
+      "sha256": "4b88eede9ed8ef3813059bc6db5c87baefbae7266a4a7304ec24ede1904f1b6f",
+      "bytes": 764086
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib": {
+      "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326",
+      "bytes": 136936
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib": {
+      "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858",
+      "bytes": 989658
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concurrent-erase\\baseline.exe": {
+      "sha256": "19c4125dbb869ab312d5eeafcc615cf1d0e0a26152963a832b1b6d75fa3d9fd6",
+      "bytes": 156672
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concurrent-erase\\candidate.exe": {
+      "sha256": "6735e9a6515f2cc67f920f8d1282893e309441de7428d896a3abe3a6dfff2e11",
+      "bytes": 157184
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concurrent-erase\\tests.exe": {
+      "sha256": "38f035b41fe23089a957ebb2c72c9d3eab7db93259acfaadc5761542c8e54469",
+      "bytes": 833536
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concurrent-erase\\probe.cc": {
+      "sha256": "06fa386770b0cb3e9d21d9b76b0b8e6d599fb2fbb3946c3ba636f6058cdd1515",
+      "bytes": 3758
+    },
+    "product": {
+      "include/hyle/container/concurrent_hash_map.h": "0a6ca3447f6c9c700d59612fb4facb392b2db30bc3e8752de3f6c5dec275154b",
+      "include/hyle/container/detail/flat_hash_table.h": "5a0a2cde4159259a597e1bc6a7cba5c4a7b4f1211e9fe22e6e6457eb33af9503",
+      "tests/container_concurrent/concurrent_hash_map_test.cc": "7acfd4e1d086c5c2b40caf764cf403014444cba9518fd6c488485ebdf8b7b6ba"
+    }
+  },
+  "reproduce": "run.py build-baseline / build-candidate / count --variant ... / tests / perf --variant ... --tag ... ; source overlays and exact command/stdout/stderr preserved."
+}
