@@ -1,0 +1,140 @@
+{
+  "change": "Process environment duplicate validation and inherited merge: sorted name index replaces repeated scans.",
+  "baseline_git": "50fcf099c061e0ac5a08a09a191947bf74551350",
+  "canonical_source_sha256": {
+    "src/process/process.cc": "f729cd96b042cd4cd4db4c5a3ad6d9caf853347f2b10701df80ac519719443d2",
+    "src/process/process_posix.cc": "253e8439c9ee92d46877efbe31cb240957c71766b8bb3f107c982766666fe51f",
+    "src/process/process_windows.cc": "40e573953366f346dba45e1a99f4e7967b13db7bbf608365dbf28f1137f9b129",
+    "tests/process/process_test.cc": "cac9f3c06a2f261acb5bee102e2533438d78e8b24666dc621f9729b189de7251"
+  },
+  "algorithm": {
+    "common": "Validate names and values, sort borrowed string_view names, adjacent duplicate check. Inline16 entries; fallible AllocatorRef reserve larger than16.",
+    "posix": "Exact case names sorted in inline16 Scratch index; one strchr per inherited entry plus binary_search; original appended-change order remains.",
+    "windows": "Sort existing UTF16 WideChange metadata using length then original CompareStringOrdinal(TRUE), reject adjacent equal names and lower_bound inherited names. Original special-name extraction and full-entry ordinal output sort remain; no additional native index allocation.",
+    "complexity": "O(M log M + E log M) name work, plus Windows pre-existing final output sort; compared with common M(M-1)/2 and native E*M scans."
+  },
+  "correctness": {
+    "windows": {
+      "tests": 21,
+      "passed": 21,
+      "raw": "win-tests.stdout.txt",
+      "compiler": "MSVC19.50.35728 x64 Release /O2 /MD /W4 /WX, static foundation"
+    },
+    "wsl": {
+      "tests": 23,
+      "passed": 23,
+      "raw": "wsl-tests.stdout.txt",
+      "compiler": "GCC14 C++23 Release -O3 -Wall -Wextra -Wpedantic -Werror, shared foundation"
+    },
+    "added_or_expanded": "128-change replacement and inherited/unset, large duplicate then runtime retry, Windows Unicode ordinal case equivalence vs POSIX exact case distinction, common index allocation failure and successful retry with balanced allocator.",
+    "instrumented_environment_bytes_identical": {
+      "windows": {
+        "16": true,
+        "1024": true
+      },
+      "posix": {
+        "16": true,
+        "1024": true
+      }
+    },
+    "native_count_fixture": "M16 control and M1024 representative; E=M+2 regular inherited entries, half changed names match existing, every third change unset. Windows adds one inherited =C: special entry. Exact serialized old/new environment blocks compared. Unicode case equivalence/distinction is separately covered by the canonical Process test, not this count fixture.",
+    "small_index_allocation": "Common validation allocator calls are0 on both sides at16 changes; candidate1024 calls1, baseline0."
+  },
+  "isolated_operation_counts": {
+    "windows": {
+      "baseline": [
+        {
+          "changes": 16,
+          "inherited_regular": 18,
+          "validation_name_comparisons": 120,
+          "validation_allocator_calls": 0,
+          "native_name_comparisons": 396,
+          "native_separator_scans": 0,
+          "serialized_bytes": 700
+        },
+        {
+          "changes": 1024,
+          "inherited_regular": 1026,
+          "validation_name_comparisons": 523776,
+          "validation_allocator_calls": 0,
+          "native_name_comparisons": 1444608,
+          "native_separator_scans": 0,
+          "serialized_bytes": 43036
+        }
+      ],
+      "candidate": [
+        {
+          "changes": 16,
+          "inherited_regular": 18,
+          "validation_name_comparisons": 30,
+          "validation_allocator_calls": 0,
+          "native_name_comparisons": 131,
+          "native_separator_scans": 0,
+          "serialized_bytes": 700
+        },
+        {
+          "changes": 1024,
+          "inherited_regular": 1026,
+          "validation_name_comparisons": 10639,
+          "validation_allocator_calls": 1,
+          "native_name_comparisons": 21942,
+          "native_separator_scans": 0,
+          "serialized_bytes": 43036
+        }
+      ]
+    },
+    "posix": {
+      "baseline": [
+        {
+          "changes": 16,
+          "inherited_regular": 18,
+          "validation_name_comparisons": 120,
+          "validation_allocator_calls": 0,
+          "native_name_comparisons": 260,
+          "native_separator_scans": 260,
+          "serialized_bytes": 337
+        },
+        {
+          "changes": 1024,
+          "inherited_regular": 1026,
+          "validation_name_comparisons": 523776,
+          "validation_allocator_calls": 0,
+          "native_name_comparisons": 919808,
+          "native_separator_scans": 919808,
+          "serialized_bytes": 21505
+        }
+      ],
+      "candidate": [
+        {
+          "changes": 16,
+          "inherited_regular": 18,
+          "validation_name_comparisons": 30,
+          "validation_allocator_calls": 0,
+          "native_name_comparisons": 110,
+          "native_separator_scans": 18,
+          "serialized_bytes": 337
+        },
+        {
+          "changes": 1024,
+          "inherited_regular": 1026,
+          "validation_name_comparisons": 9353,
+          "validation_allocator_calls": 1,
+          "native_name_comparisons": 19621,
+          "native_separator_scans": 1026,
+          "serialized_bytes": 21505
+        }
+      ]
+    }
+  },
+  "counts_method": "make_count_probe.py extracts the exact actual source validation and environment-builder functions from frozen baseline/canonical candidate, instruments name-comparison/strchr sites, substitutes only inherited-environment acquisition with fixed arrays. Windows name count includes duplicate/equality/lookup comparisons, excludes unchanged final full-output ordering comparisons. POSIX count includes sort/lookup comparisons or old name-match attempts. These are operations, not elapsed time or public API count guarantees.",
+  "limits": [
+    "No spawn-time benchmark or external-peer ranking; this fixes a source-confirmed complexity issue without claiming a measured end-to-end speedup.",
+    "macOS Process was not built or run; it shares changed process_posix.cc but its native runtime was not validated this round.",
+    "Zero-change inherited default path already bypasses environment packing; this change does not claim that default spawn previously paid E*M.",
+    "Additional common scratch allocation for more than16 changes may fail with ResourceExhausted before child admission; regression confirms typed failure and retry.",
+    "Validation now checks all name/value fields before sorted duplicate detection; when multiple inputs are malformed, the InvalidArgument message precedence may differ.",
+    "No full library build, CMake configure, dependency download or SDK copy. Current cached foundation library hashes/loader paths are in windows-identity.json and wsl-identity.json."
+  ],
+  "cleanup": "cleanup.json",
+  "source_diff": "source.diff"
+}

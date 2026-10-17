@@ -4,6 +4,7 @@
 #include <mutex>
 #include <utility>
 
+#include "hyle/container/small_vector.h"
 #include "hyle/core/assert.h"
 #include "process_internal.h"
 
@@ -40,7 +41,8 @@ Status validate_stdio(ProcessStdio value, bool stderr_slot) noexcept {
   return Status{};
 }
 
-Status validate_start_options(const ProcessStartOptions& options) noexcept {
+Status validate_start_options(const ProcessStartOptions& options,
+                              mem::AllocatorRef allocator) noexcept {
   if (options.executable.empty() || contains_nul(options.executable))
     return Status::InvalidArgument(
         "process executable must be non-empty and contain no NUL");
@@ -76,11 +78,19 @@ Status validate_start_options(const ProcessStartOptions& options) noexcept {
       return Status::InvalidArgument(
           "replacement environment cannot contain unset entries");
     }
-    for (std::size_t j = 0; j < i; ++j) {
-      if (options.environment_changes[j].name == change.name)
-        return Status::InvalidArgument(
-            "process environment contains duplicate variable names");
-    }
+  }
+  if (options.environment_changes.size() > 1) {
+    container::SmallVector<std::string_view, 16, mem::AllocatorRef> names(
+        allocator);
+    if (!names.try_reserve(options.environment_changes.size()))
+      return Status::ResourceExhausted(
+          "process environment index allocation failed");
+    for (const EnvironmentChange& change : options.environment_changes)
+      names.push_back(change.name);
+    std::sort(names.begin(), names.end());
+    if (std::adjacent_find(names.begin(), names.end()) != names.end())
+      return Status::InvalidArgument(
+          "process environment contains duplicate variable names");
   }
   Status status = validate_stdio(options.stdin_stream, false);
   if (!status.ok()) return status;
@@ -280,7 +290,7 @@ ProcessRuntime::spawn(const ProcessStartOptions& options) noexcept {
   if (state_ == nullptr)
     return make_unexpected(
         Status::FailedPrecondition("process runtime is not valid"));
-  Status validation = detail::validate_start_options(options);
+  Status validation = detail::validate_start_options(options, state_->allocator);
   if (!validation.ok()) return make_unexpected(std::move(validation));
 
   {

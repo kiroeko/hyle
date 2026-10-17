@@ -553,8 +553,14 @@ TEST(Process, ReplacementEnvironmentIsCopiedForChild) {
 
   const std::array<std::string_view, 2> arguments{
       "environment", "HYLE_PROCESS_VALUE"};
-  const std::array<EnvironmentChange, 1> changes{{
-      {"HYLE_PROCESS_VALUE", std::string_view{"value-12345"}}}};
+  std::vector<std::string> names;
+  names.reserve(128);
+  std::vector<EnvironmentChange> changes;
+  for (int i = 127; i >= 0; --i) {
+    names.push_back("HYLE_PROCESS_FILLER_" + std::to_string(i));
+    changes.push_back({names.back(), std::string_view{"unused"}});
+  }
+  changes.push_back({"HYLE_PROCESS_VALUE", std::string_view{"value-12345"}});
   ProcessStartOptions options = helper_options(arguments);
   options.environment_mode = EnvironmentMode::kReplace;
   options.environment_changes = changes;
@@ -581,9 +587,14 @@ TEST(Process, InheritedEnvironmentCanRemoveVariable) {
   ProcessRuntime runtime = std::move(*runtime_result);
   const std::array<std::string_view, 2> arguments{
       "environment_absent", "PATH"};
-  const std::array<EnvironmentChange, 1> changes{{
-      {"PATH", std::nullopt},
-  }};
+  std::vector<std::string> names;
+  names.reserve(128);
+  std::vector<EnvironmentChange> changes;
+  for (int i = 127; i >= 0; --i) {
+    names.push_back("HYLE_PROCESS_FILLER_" + std::to_string(i));
+    changes.push_back({names.back(), std::string_view{"unused"}});
+  }
+  changes.push_back({"PATH", std::nullopt});
   ProcessStartOptions options = helper_options(arguments);
   options.environment_changes = changes;
   auto child = runtime.spawn(options);
@@ -591,6 +602,61 @@ TEST(Process, InheritedEnvironmentCanRemoveVariable) {
   auto exit = child->wait();
   ASSERT_TRUE(exit.has_value());
   EXPECT_EQ(exit->exit_code, 0u);
+  EXPECT_TRUE(runtime.shutdown().ok());
+}
+
+TEST(Process, LargeEnvironmentRejectsDuplicateWithoutPoisoningRuntime) {
+  auto made = ProcessRuntime::create();
+  ASSERT_TRUE(made.has_value());
+  auto runtime = std::move(*made);
+  std::vector<std::string> names;
+  names.reserve(128);
+  std::vector<EnvironmentChange> changes;
+  for (int i = 127; i >= 0; --i) {
+    names.push_back("HYLE_PROCESS_NAME_" + std::to_string(i));
+    changes.push_back({names.back(), std::string_view{"value"}});
+  }
+  const std::array<std::string_view, 2> arguments{"exit", "0"};
+  auto options = helper_options(arguments);
+  options.environment_mode = EnvironmentMode::kReplace;
+  changes.push_back(changes.front());
+  options.environment_changes = changes;
+  auto duplicate = runtime.spawn(options);
+  ASSERT_FALSE(duplicate.has_value());
+  EXPECT_TRUE(duplicate.error().IsInvalidArgument());
+  EXPECT_EQ(runtime.active_processes(), 0u);
+  changes.pop_back();
+  options.environment_changes = changes;
+  auto child = runtime.spawn(options);
+  ASSERT_TRUE(child.has_value()) << child.error().message();
+  auto exit = child->wait();
+  ASSERT_TRUE(exit.has_value());
+  EXPECT_EQ(exit->exit_code, 0u);
+  EXPECT_TRUE(runtime.shutdown().ok());
+}
+
+TEST(Process, EnvironmentNamesRetainPlatformUnicodeCaseRules) {
+  auto made = ProcessRuntime::create();
+  ASSERT_TRUE(made.has_value());
+  auto runtime = std::move(*made);
+  const std::array<std::string_view, 2> arguments{"exit", "0"};
+  const std::array<EnvironmentChange, 2> changes{{
+      {"HYLE_CASE_\xC3\x84", std::string_view{"upper"}},
+      {"hyle_case_\xC3\xA4", std::string_view{"lower"}},
+  }};
+  auto options = helper_options(arguments);
+  options.environment_mode = EnvironmentMode::kReplace;
+  options.environment_changes = changes;
+  auto child = runtime.spawn(options);
+#if defined(_WIN32)
+  ASSERT_FALSE(child.has_value());
+  EXPECT_TRUE(child.error().IsInvalidArgument());
+#else
+  ASSERT_TRUE(child.has_value()) << child.error().message();
+  auto exit = child->wait();
+  ASSERT_TRUE(exit.has_value());
+  EXPECT_EQ(exit->exit_code, 0u);
+#endif
   EXPECT_TRUE(runtime.shutdown().ok());
 }
 
@@ -812,19 +878,38 @@ TEST(Process, AllocatorFailureIsTypedAndBalanced) {
   ASSERT_FALSE(invalid.has_value());
   EXPECT_TRUE(invalid.error().IsInvalidArgument());
 
-  FailAfterAllocator failing;
-  failing.fail_after = 1;
-  {
-    auto runtime_result = ProcessRuntime::create(failing.get());
-    ASSERT_TRUE(runtime_result.has_value());
-    ProcessRuntime runtime = std::move(*runtime_result);
-    const std::array<std::string_view, 2> arguments{"exit", "0"};
-    auto child = runtime.spawn(helper_options(arguments));
-    ASSERT_FALSE(child.has_value());
-    EXPECT_TRUE(child.error().IsResourceExhausted());
-    EXPECT_TRUE(runtime.shutdown().ok());
+  for (const std::size_t count : {0u, 32u}) {
+    SCOPED_TRACE(count);
+    FailAfterAllocator failing;
+    failing.fail_after = 1;
+    {
+      auto runtime_result = ProcessRuntime::create(failing.get());
+      ASSERT_TRUE(runtime_result.has_value());
+      ProcessRuntime runtime = std::move(*runtime_result);
+      const std::array<std::string_view, 2> arguments{"exit", "0"};
+      std::vector<std::string> names;
+      names.reserve(count);
+      std::vector<EnvironmentChange> changes;
+      for (std::size_t i = 0; i < count; ++i) {
+        names.push_back("HYLE_PROCESS_OOM_" + std::to_string(i));
+        changes.push_back({names.back(), std::string_view{"value"}});
+      }
+      auto options = helper_options(arguments);
+      options.environment_changes = changes;
+      auto child = runtime.spawn(options);
+      ASSERT_FALSE(child.has_value());
+      EXPECT_TRUE(child.error().IsResourceExhausted());
+      EXPECT_EQ(runtime.active_processes(), 0u);
+      failing.fail_after = std::numeric_limits<std::size_t>::max();
+      auto retry = runtime.spawn(options);
+      ASSERT_TRUE(retry.has_value()) << retry.error().message();
+      auto exit = retry->wait();
+      ASSERT_TRUE(exit.has_value());
+      EXPECT_EQ(exit->exit_code, 0u);
+      EXPECT_TRUE(runtime.shutdown().ok());
+    }
+    EXPECT_EQ(failing.live, 0u);
   }
-  EXPECT_EQ(failing.live, 0u);
 }
 
 TEST(Process, SpawnDoesNotLeakUnrelatedInheritableHandles) {

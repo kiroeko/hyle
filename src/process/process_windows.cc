@@ -5,6 +5,7 @@
 #include <climits>
 #include <cwchar>
 #include <mutex>
+#include <string_view>
 #include <utility>
 
 #include "hyle/container/small_vector.h"
@@ -153,6 +154,16 @@ bool equal_name(const wchar_t* left, std::size_t left_size,
          CSTR_EQUAL;
 }
 
+bool less_name(const wchar_t* left, std::size_t left_size,
+               const wchar_t* right, std::size_t right_size) noexcept {
+  // Match equal_name's length-first equivalence, retaining Windows' ordinal
+  // Unicode case comparison rather than approximating it with byte folding.
+  if (left_size != right_size) return left_size < right_size;
+  return ::CompareStringOrdinal(left, static_cast<int>(left_size), right,
+                                static_cast<int>(right_size), TRUE) ==
+         CSTR_LESS_THAN;
+}
+
 std::size_t environment_name_size(const wchar_t* text,
                                   std::size_t size) noexcept {
   std::size_t cursor = text[0] == L'=' ? 1u : 0u;
@@ -191,14 +202,6 @@ class EnvironmentBlock {
       Status status = append_utf8(change_text_, change.name);
       if (!status.ok()) return status;
       const std::size_t name_size = change_text_.size() - offset;
-      for (const WideChange& existing : changes_) {
-        if (equal_name(change_text_.data() + existing.offset,
-                       existing.name_size, change_text_.data() + offset,
-                       name_size)) {
-          return Status::InvalidArgument(
-              "Windows process environment contains duplicate names");
-        }
-      }
       if (change.value.has_value()) {
         if (!change_text_.try_push_back(L'='))
           return Status::ResourceExhausted(
@@ -214,6 +217,21 @@ class EnvironmentBlock {
       }
     }
 
+    std::sort(changes_.begin(), changes_.end(), [&](const WideChange& left,
+                                                  const WideChange& right) {
+      return less_name(change_text_.data() + left.offset, left.name_size,
+                        change_text_.data() + right.offset, right.name_size);
+    });
+    for (std::size_t i = 1; i < changes_.size(); ++i) {
+      const auto& left = changes_[i - 1];
+      const auto& right = changes_[i];
+      if (equal_name(change_text_.data() + left.offset, left.name_size,
+                       change_text_.data() + right.offset, right.name_size)) {
+        return Status::InvalidArgument(
+            "Windows process environment contains duplicate names");
+      }
+    }
+
     if (options.environment_mode == EnvironmentMode::kInherit) {
       inherited_ = ::GetEnvironmentStringsW();
       if (inherited_ == nullptr)
@@ -222,15 +240,15 @@ class EnvironmentBlock {
       while (*current != L'\0') {
         const std::size_t size = std::wcslen(current);
         const std::size_t name_size = environment_name_size(current, size);
-        bool replaced = false;
-        for (const WideChange& change : changes_) {
-          if (equal_name(current, name_size,
-                         change_text_.data() + change.offset,
-                         change.name_size)) {
-            replaced = true;
-            break;
-          }
-        }
+        const auto found = std::lower_bound(changes_.begin(), changes_.end(),
+            std::wstring_view(current, name_size),
+            [&](const WideChange& change, std::wstring_view name) {
+              return less_name(change_text_.data() + change.offset,
+                                 change.name_size, name.data(), name.size());
+            });
+        const bool replaced = found != changes_.end() &&
+            equal_name(current, name_size,
+                         change_text_.data() + found->offset, found->name_size);
         if (!replaced && !items_.try_push_back(
                              EnvironmentItem{current, 0, size, false})) {
           return Status::ResourceExhausted(

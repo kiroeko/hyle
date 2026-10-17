@@ -76,33 +76,25 @@ struct PackedStrings {
   Scratch<char*, 17> values;
 };
 
-bool environment_name_matches(const char* entry,
-                              std::string_view name) noexcept {
-  const char* separator = std::strchr(entry, '=');
-  if (separator == nullptr ||
-      static_cast<std::size_t>(separator - entry) != name.size()) {
-    return false;
-  }
-  return std::memcmp(entry, name.data(), name.size()) == 0;
-}
-
-bool environment_entry_replaced(
-    const char* entry,
-    std::span<const EnvironmentChange> changes) noexcept {
-  for (const EnvironmentChange& change : changes) {
-    if (environment_name_matches(entry, change.name)) return true;
-  }
-  return false;
-}
-
 Result<PackedStrings> build_environment(
     mem::AllocatorRef allocator, const ProcessStartOptions& options) noexcept {
   PackedStrings result(allocator);
   if (options.environment_mode == EnvironmentMode::kInherit) {
+    Scratch<std::string_view, 16> changed_names(allocator);
+    if (!changed_names.try_reserve(options.environment_changes.size()))
+      return make_unexpected(Status::ResourceExhausted(
+          "process environment index allocation failed"));
+    for (const EnvironmentChange& change : options.environment_changes)
+      changed_names.push_back(change.name);
+    std::sort(changed_names.begin(), changed_names.end());
     for (char** current = environ; current != nullptr && *current != nullptr;
          ++current) {
-      if (!environment_entry_replaced(*current, options.environment_changes) &&
-          !result.add(*current)) {
+      const char* separator = std::strchr(*current, '=');
+      const bool replaced = separator != nullptr &&
+          std::binary_search(changed_names.begin(), changed_names.end(),
+              std::string_view(*current,
+                  static_cast<std::size_t>(separator - *current)));
+      if (!replaced && !result.add(*current)) {
         return make_unexpected(Status::ResourceExhausted(
             "process environment allocation failed"));
       }
