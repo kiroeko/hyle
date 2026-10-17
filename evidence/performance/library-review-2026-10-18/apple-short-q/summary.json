@@ -1,0 +1,119 @@
+{
+  "status": "negative_space_result; candidate_reverted; short-Q long-KV remains unresolved",
+  "baseline_commit": "90724728445468583775b981d038f0bd53015bb4",
+  "scope": "One conservative short-Q extension of existing Apple GPU fallback Q16 blocks. No SDK/native/environment/tracing-eval change, no throughput measurement.",
+  "machine": {
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "host": "kiro@172.22.10.198",
+    "free_space_before": "41GiB",
+    "compiler": "Apple clang21.0.0",
+    "architecture": "arm64",
+    "SDK": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk"
+  },
+  "attempted_change": {
+    "policy": "Retain existing Q>=1024 policy. Short Q admitted only for original scores>=64MiB plus unchanged benefit/static-fallback/force/GPU/mask-admission rules.",
+    "safe_size": "Compare batch*heads against divided Q*KV threshold, avoiding overflow of the four-dimension byte product.",
+    "native_fused": "D2568<Q<1024 is a definite native fallback in the pinned selector, independently of NAX. Existing narrow force/native fused domains unchanged.",
+    "source_sha256": "8104bf3210d190578f78e5e15936760a5132d4d00d49d57a7c8adf2648169baa",
+    "baseline_source_sha256": "aab9ac5849084ba2555784ec4b2856de0bb02a4dcb7e9d13225c7986bda27e32",
+    "test_sha256": "fa0834fcfc994439684cab240a9555250fb977edbcf40e7c852ec702043762b0"
+  },
+  "execution": {
+    "fresh_compilation": "Only4 host TUs: baseline/candidate apple_tensor, targeted test TU and fixed space consumer;4 links. Original SDK/foundation/gtest/metallib reused.",
+    "targeted_tests": "AppleAttention.ShortQueriesWithLongKvRetainFp32Reference:AppleAttention.UnsupportedFusedDomainsKeepTheirExistingFallback",
+    "test_result": {
+      "baseline_passed": 2,
+      "candidate_passed": 2
+    },
+    "numerical_regression": "Nonzero QK, F32 BSHD/GQA, Q129/KV32768/D256, full-KV bottom-right causal offset and1-row tail. Existing independent FP64 oracle and rel6e-6+abs2e-6 unchanged.",
+    "process_scope": "One test executable invocation per arm; one independent space process per arm. No retries, AA/AB latency runs, block retuning, new shapes or follow-up workloads.",
+    "link_maps": {
+      "baseline-tests": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "baseline-space": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "candidate-tests": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "candidate-space": {
+        "fresh_object": true,
+        "old_apple_tensor_archive_member": false
+      }
+    }
+  },
+  "space": {
+    "shape": "F32 B1/Hq4/Hkv2/D256, Q129/KV32768, causal,None mask input.",
+    "fixed_input": "Q/K0; V+1.25 at even KV rows and-1.25 at odd rows, identical across heads/channels. Fixed before any execution.",
+    "oracle": "FP64 alternating prefix sum / (KV-Q+t+1), every132096 output elements; abs(error)<=6e-6*abs(expected)+2e-6. Neither input nor budget changed after observing results.",
+    "metric": "MLX allocator peak minus active-before-submit, including full output/native pending buffers. Public prepare/create_invocation/bind and caller inputs precede clear_cache/reset_peak; submit/wait/synchronize then sample. Not process RSS, whole-device VRAM or exact provider-private census.",
+    "baseline": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 256,
+      "Q": 129,
+      "KV": 32768,
+      "mask": "None",
+      "causal": true,
+      "input": "QK0,V alternating +1.25/-1.25 per KV row",
+      "caller_qkv_bytes": 134746112,
+      "caller_mask_bytes": 0,
+      "output_bytes": 528384,
+      "original_score_bytes": 67633152,
+      "active_before": 134758408,
+      "cache_before": 0,
+      "active_after": 135299080,
+      "peak": 203604492,
+      "peak_minus_active_before": 68846084,
+      "cache_after": 68305412,
+      "max_abs_error": 3.1831897889605075e-12,
+      "checked_elements": 132096,
+      "oracle_passed": true
+    },
+    "candidate": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 256,
+      "Q": 129,
+      "KV": 32768,
+      "mask": "None",
+      "causal": true,
+      "input": "QK0,V alternating +1.25/-1.25 per KV row",
+      "caller_qkv_bytes": 134746112,
+      "caller_mask_bytes": 0,
+      "output_bytes": 528384,
+      "original_score_bytes": 67633152,
+      "active_before": 134758424,
+      "cache_before": 0,
+      "active_after": 135299096,
+      "peak": 204120604,
+      "peak_minus_active_before": 69362180,
+      "cache_after": 68821508,
+      "max_abs_error": 3.1831897889605075e-12,
+      "checked_elements": 132096,
+      "oracle_passed": true
+    },
+    "extra_peak_delta_bytes": 516096,
+    "extra_peak_increase_fraction": 0.007496374085706803,
+    "interpretation": "Unique sampled candidate point is516096B worse (about0.75%), despite both numerical oracles passing. Do not accept the threshold expansion as a memory optimization or infer universal regression from one pair.",
+    "theoretical_only": "Full scores64.5MiB versus one16-row scores8MiB/9blocks does not predict actual peak."
+  },
+  "mechanism_limits": [
+    "Pinned MLX retains primitive inputs to command-buffer completion. depends sequences evaluation; it does not force GPU retirement or a one-block peak.",
+    "Native40-operation/40MiB commit thresholds and asynchronous completion are mechanism context only. Peak totals do not isolate an exact cause for the516096B difference.",
+    "No further environment/SDK/block-size/synchronization tuning attempted after the negative result.",
+    "Existing separate Q2048/KV2048 uniformV1.25 F32 large-space oracle failed on both variants in apple-nax-capability; unchanged and unresolved. This alternating-input success does not supersede it.",
+    "No full Apple/Graph suite, other hardware, whole HEAD SDK rebuild or throughput claim."
+  ],
+  "product": "Frozen candidate source/test/diff retained. Precisely restored only src/compute_route_apple/apple_tensor.cc and tests/compute_route_apple/attention_test.cc to907247284. git diff --exit-code for these paths returned0; unrelated CPU/time edits preserved.",
+  "cleanup": "cleanup-candidates.json;8 new remote objects/executables only, original SDK/caches preserved; no deletion performed."
+}

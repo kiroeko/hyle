@@ -1,0 +1,158 @@
+{
+  "result": "One aligned raw-nghttp2 driver episode passed. Two scratch driver strategy corrections reduce empty immediate attempts by194 in this episode, while successful IO, full protocol payload/close checks and520resume/515yield counts remain. No elapsed time or ranking collected.",
+  "runtime_invocations": 1,
+  "timed": false,
+  "workload": "4streams,256KiB body each direction, paired reverse completion",
+  "source": "Only separate scratch main/diag/probe copies; original stage6, formal bench and product unchanged. Fresh2TUs plus existing identical cached closure; no SDK copy/download/foundation build.",
+  "changes": [
+    "Restart the outer protocol/flush loop immediately after an entire wire frame was sent, matching flush_once progressed handling.",
+    "After yield, retry only one immediate send before returning to the ordinary flush loop, preventing raw_write from consuming EAGAIN after partial success and immediately repeating it at the top.",
+    "Four endpoint-owned per-site fixed counters record calls/EAGAIN/bytes; callbacks,body-consume,reversal,readiness,spawn_task,Event and cleanup unchanged."
+  ],
+  "checks": {
+    "passed": true,
+    "completed": 4,
+    "overflow": 0,
+    "descriptors_closed": true,
+    "request_order": [
+      1,
+      3,
+      5,
+      7
+    ],
+    "response_submit_order": [
+      3,
+      1,
+      7,
+      5
+    ],
+    "client_completion_order": [
+      3,
+      1,
+      7,
+      5
+    ],
+    "body_validations": 8,
+    "sessions_destroyed": 2,
+    "sockets_closed": 2
+  },
+  "counts": {
+    "stage6_frozen_before": {
+      "recv_attempts": 1162,
+      "recv_eagain": 839,
+      "recv_ready": 323,
+      "recv_bytes": 2091981,
+      "send_attempts": 836,
+      "send_eagain": 322,
+      "send_ready": 514,
+      "send_bytes": 2092087,
+      "async_reads": 1,
+      "async_writes": 1,
+      "async_recv_bytes": 8170,
+      "async_sent_bytes": 8064,
+      "nonempty_mem_send": 259,
+      "mem_recv_calls": 324,
+      "consumes": 264,
+      "consumed_bytes": 2097152,
+      "resumes": 520,
+      "yields": 515,
+      "wire_by_direction": [
+        1050124,
+        1050027
+      ]
+    },
+    "aligned_after": {
+      "recv_attempts": 1032,
+      "recv_eagain": 709,
+      "recv_ready": 323,
+      "recv_bytes": 2091990,
+      "send_attempts": 772,
+      "send_eagain": 258,
+      "send_ready": 514,
+      "send_bytes": 2092087,
+      "async_reads": 1,
+      "async_writes": 1,
+      "async_recv_bytes": 8161,
+      "async_sent_bytes": 8064,
+      "nonempty_mem_send": 259,
+      "mem_recv_calls": 324,
+      "consumes": 264,
+      "consumed_bytes": 2097152,
+      "resumes": 520,
+      "yields": 515,
+      "wire_by_direction": [
+        1050124,
+        1050027
+      ]
+    },
+    "fewer_empty_reads": 130,
+    "fewer_empty_writes": 64
+  },
+  "sites": [
+    {
+      "site": 0,
+      "calls": 579,
+      "eagain": 257,
+      "bytes": 1534272
+    },
+    {
+      "site": 1,
+      "calls": 517,
+      "eagain": 515,
+      "bytes": 8091
+    },
+    {
+      "site": 2,
+      "calls": 515,
+      "eagain": 194,
+      "bytes": 2083899
+    },
+    {
+      "site": 3,
+      "calls": 193,
+      "eagain": 1,
+      "bytes": 557815
+    }
+  ],
+  "scheduling": {
+    "workers": [
+      0
+    ],
+    "owner_tuples": [
+      {
+        "worker": 0,
+        "before": -1,
+        "after": -1,
+        "count": 518
+      },
+      {
+        "worker": 0,
+        "before": -1,
+        "after": 0,
+        "count": 1
+      },
+      {
+        "worker": 0,
+        "before": 0,
+        "after": -1,
+        "count": 1
+      }
+    ],
+    "phases": 1060,
+    "original_resume": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+    "interposed_resume": "/root/hyle-scratch/http2-current-20261018/raw-fiber-aligned/consumer"
+  },
+  "prior_hyle": "Aligned counts709empty-read/258empty-write,323ready-read/514ready-write match the separately recorded stage2 Hyle aggregate.520resume/515yield and full directional bytes also match separate stage5 Hyle evidence. These separate episodes are not one timing control or cost subtraction.",
+  "byte_distribution": "Same full directional bytes. Immediate recv changes2091981->2091990B and async recv8170->8161B (9B moves between paths); successful call counts remain equal.",
+  "limits": [
+    "Single non-timed episode, both driver changes combined, plus low-cost counter writes/interposition; no one-change-at-a-time attribution of130/64 to individual sites.",
+    "Matching aggregate counts does not make all codec,session,lifecycle and scheduling work identical. Formal manual-loop peer remains unchanged; no scheduler/framework percentage or tokens/s conclusion.",
+    "Retained Event explicit-default aggregate warning matches stage6; no compile/link/runtime failure. No concurrent/full public IO test suite or foundation rebuild.",
+    "Stage6 source/log hashes verified unchanged; only exact new object/executable outputs are cleanup candidates."
+  ],
+  "stage6_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\raw-fiber\\source-results.zip",
+    "bytes": 93176,
+    "sha256": "2ac5d77b73a9f8cec514bcf5bfbf88d57c157178d3a94583f1eada958d69d451"
+  }
+}

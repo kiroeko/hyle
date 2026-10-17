@@ -1,0 +1,219 @@
+{
+  "status": "Read-only source/policy review; no product or benchmark edit, no compile, timing or new runtime.",
+  "report": "evidence/performance/library-review-2026-10-18/README.md:625-644",
+  "already_handled": "Existing bounded4P/4C fair comparison is not reopened. Current central report has no other confirmed current queue loss ranking; container-mpmc scorecard is an old Unbounded-vs-oneTBB WIN, not a fresh measurement.",
+  "remaining": [
+    {
+      "item": "Warm single-thread512 fill/drain",
+      "minimal_alignment": "Use existing512-item wave below1024 capacity. Check every push/pop and exact count/payload; place constructor and implicit-producer first touch in an explicit untimed warmup if claiming warm operations. Keep destruction outside both arms. Current ignored try/enqueue results plus opaque sum are insufficient correctness evidence.",
+      "scope": "Smallest controlled overhead case; no contention/general-MPMC claim."
+    },
+    {
+      "item": "Bounded SPSC1024 usable",
+      "minimal_alignment": "Reuse current persistent runner and checksum/wait fix; verify actual affinity/resources, run both execution orders. The local peer is only a controlled sentinel shape. An external Folly comparison needs the actual pinned ProducerConsumerQueue with constructor1025 for1024 usable, not this label.",
+      "scope": "Still unmeasured current external result. No full/growth/batch-policy mismatch in the controlled local fixture."
+    },
+    {
+      "item": "Sharded versus Moody stable-producer non-full trace",
+      "minimal_alignment": "Declare per-producer order/stable producer identities. Keep Sharded P shards x1024; use actual Moody ProducerToken per producer instead of conflating implicit registration with caller-supplied p. For the smallest bounded non-full application episode each producer may submit512 items (<1024), with preallocated peer pool and producer metadata validated before a warm interval. Both retain actual count/sum/xor drain and identical external yield policy, or both charge registration/allocation/thread lifecycle in a clearly cold episode.",
+      "guard": "Do not claim current P*1024 vs initial1024 growable rows are same full/backpressure contract. MAX_SUBQUEUE_SIZE=1024 alone does not fix it: block32 admission can still reject before an exact ring would. Avoid a new external-limit synchronization framework just to force a ranking.",
+      "scope": "Wait for a real same-policy trace; no historical multiplier inherited. Producer/consumer tokens and batch APIs must be stated, not silently enabled for only one arm."
+    }
+  ],
+  "timing_and_units": [
+    "queue_sota MPMC is cold callback scope: local queue, fresh P+C threads, transfer+postcheck, joins and destructor. Producers are launched before consumers without a start barrier; bounded-full retries versus growable progress can diverge during startup.",
+    "queue_sota single-thread uses static queues and512 scalar enqueues/pops; batch1024 means1024 individual operations per wave. Moody bulk enqueue/dequeue is not used.",
+    "product_v6 unbounded uses precreated queue, warmup, then worker start/finish envelope; thread creation/join, queue construction and final destruction are not in its reported seconds. It reports2*transferred operations, so do not compare its Mops/s directly with ns/transferred-item cold rows."
+  ],
+  "implementation_conclusion": "No new definite asymptotic implementation defect established. Sharded round-robin empty scan O(P) and different peer traversal/registration are real candidate costs once an application trace is aligned; they are not themselves evidence of current slower performance or a reason to erase a future fair loss.",
+  "references": [
+    {
+      "path": "bench/container/queue_sota_bench.cc",
+      "lines": [
+        89
+      ],
+      "meaning": "Single-thread queue persists across waves; constructor occurs at first invocation, destructor at process teardown."
+    },
+    {
+      "path": "bench/container/queue_sota_bench.cc",
+      "lines": [
+        101,
+        422
+      ],
+      "meaning": "Single-thread and owner reference use implicit enqueue and ignore return; doNotOptimizeAway(sum) is not an expected-payload assertion."
+    },
+    {
+      "path": "bench/container/queue_sota_bench.cc",
+      "lines": [
+        203
+      ],
+      "meaning": "P shards each1024, totalP*1024; stable producer index."
+    },
+    {
+      "path": "bench/container/queue_sota_bench.cc",
+      "lines": [
+        250
+      ],
+      "meaning": "Moody current row is growable implicit enqueue; failure is fatal, not bounded full retry."
+    },
+    {
+      "path": "bench/container/queue_sota_bench.cc",
+      "lines": [
+        158
+      ],
+      "meaning": "MPMC denominator is one transferred item (push+pop), not one try operation; batch is only normalization, not a bulk API."
+    },
+    {
+      "path": "bench/container/queue_sota_bench.cc",
+      "lines": [
+        195,
+        236,
+        272,
+        309,
+        346,
+        643,
+        668
+      ],
+      "meaning": "Queue/thread construction, join, conservation and queue destruction are within each MPMC benchmark callback."
+    },
+    {
+      "path": "bench/container/product_v6_concurrent_bench.cc",
+      "lines": [
+        155
+      ],
+      "meaning": "Warm worker timing begins at earliest worker start and ends at latest worker finish, excludes construction/join/destruction."
+    },
+    {
+      "path": "bench/container/product_v6_concurrent_bench.cc",
+      "lines": [
+        157
+      ],
+      "meaning": "Worker finish envelope; not the cold MPMC episode boundary."
+    },
+    {
+      "path": "bench/container/product_v6_concurrent_bench.cc",
+      "lines": [
+        372
+      ],
+      "meaning": "Unbounded historical denominator is individual push or pop, twice the transferred-item count."
+    },
+    {
+      "path": "bench/container/product_v6_concurrent_bench.cc",
+      "lines": [
+        359
+      ],
+      "meaning": "Queue constructed before warmup and measurement; destroyed after measurement/output."
+    },
+    {
+      "path": "bench/container/spsc_bench.cc",
+      "lines": [
+        115
+      ],
+      "meaning": "SPSC fixture requests CPU affinity but does not validate success."
+    },
+    {
+      "path": "bench/container/spsc_bench.cc",
+      "lines": [
+        183
+      ],
+      "meaning": "Hyle is always first; queue allocation and persistent pair creation/destruction are outside timed runner.run."
+    },
+    {
+      "path": "bench/container/spsc_bench.cc",
+      "lines": [
+        199
+      ],
+      "meaning": "Peer is local Folly-shaped sentinel code, not compiled Folly; only one worker pair alive at a time."
+    },
+    {
+      "path": "include/hyle/container/sharded_queue.h",
+      "lines": [
+        116,
+        131,
+        169
+      ],
+      "meaning": "try_pop/try_consume scan at mostP shards; documented per-shard policy, not a newly proved redundant complexity defect."
+    },
+    {
+      "path": "C:/public/project-hyle/moodycamel-ConcurrentQueue/concurrentqueue.h",
+      "lines": [
+        275
+      ],
+      "meaning": "Local default block size32."
+    },
+    {
+      "path": "C:/public/project-hyle/moodycamel-ConcurrentQueue/concurrentqueue.h",
+      "lines": [
+        1796,
+        2009,
+        2405,
+        2566
+      ],
+      "meaning": "Subqueue maximum enforced when advancing blocks; not an exact ring-style full condition after every freed item."
+    },
+    {
+      "path": "C:/public/project-hyle/moodycamel-ConcurrentQueue/concurrentqueue.h",
+      "lines": [
+        719
+      ],
+      "meaning": "capacity requests initial pool, does not establish fixed usable or no later allocation for multiple producers."
+    },
+    {
+      "path": "C:/public/project-hyle/moodycamel-ConcurrentQueue/concurrentqueue.h",
+      "lines": [
+        743
+      ],
+      "meaning": "Existing producer-aware preallocation entry, still requires real validation of hot allocations/try failures."
+    }
+  ],
+  "source_identities": [
+    {
+      "key": "mpmc",
+      "path": "bench/container/queue_sota_bench.cc",
+      "bytes": 27400,
+      "sha256": "c108ccf6bb187e22915ed7ae86ddee4f542b988a8e7bb60b6d3a162e66b66e4a"
+    },
+    {
+      "key": "unbounded_bench",
+      "path": "bench/container/product_v6_concurrent_bench.cc",
+      "bytes": 14437,
+      "sha256": "1a9177485cb6e657ebbf4cb525bf49ab88fd53483dddaf72d1752a8b76cae319"
+    },
+    {
+      "key": "spsc_bench",
+      "path": "bench/container/spsc_bench.cc",
+      "bytes": 6594,
+      "sha256": "9cb725943ad8c33a9f23281dfec5af82bdade954edad5c432d1a5d3fc099f740"
+    },
+    {
+      "key": "sharded",
+      "path": "include/hyle/container/sharded_queue.h",
+      "bytes": 8176,
+      "sha256": "2bb473724a1cd6011f0e0183c69239fa5b5d8f68dd9343abf5e011825a540a61"
+    },
+    {
+      "key": "bounded",
+      "path": "include/hyle/container/bounded_queue.h",
+      "bytes": 10617,
+      "sha256": "fbf607da23ef58190f81fa6f58be24402ad19749c9d44018db05e5b947ea7f30"
+    },
+    {
+      "key": "spsc",
+      "path": "include/hyle/container/spsc_queue.h",
+      "bytes": 7272,
+      "sha256": "25b7da4ed5c9988309d7d09af4efe395f56a9c4ba29847b860ef22116a5790f7"
+    },
+    {
+      "key": "unbounded",
+      "path": "include/hyle/container/unbounded_queue.h",
+      "bytes": 7084,
+      "sha256": "db346ccfc311529b5cee6d8f2ff23662031e4171049a6cae9543c3c3ac5e64f6"
+    },
+    {
+      "key": "moody",
+      "path": "C:/public/project-hyle/moodycamel-ConcurrentQueue/concurrentqueue.h",
+      "bytes": 146001,
+      "sha256": "0a5930089aa1c9b9146f8a633574f5b55d30b0c23ddd9d7821132d51c778d1c2"
+    }
+  ]
+}

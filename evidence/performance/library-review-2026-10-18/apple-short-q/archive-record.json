@@ -1,0 +1,7 @@
+{
+  "path": ".scratch\\perf-review-2026-10-18\\apple-short-q\\source-results.zip",
+  "bytes": 1506130,
+  "sha256": "4d1cea8a486b5bcec14650e3f22c8f2869e54f7d1deb592114ac889cbc7200c7",
+  "files": 62,
+  "scope": "Small source/commands/logs/maps/summary/identities only. No objects/executables/SDK copies."
+}

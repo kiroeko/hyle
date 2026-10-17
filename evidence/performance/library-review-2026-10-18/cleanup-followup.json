@@ -1,0 +1,56 @@
+{
+  "total_files": 83,
+  "total_bytes": 143854404,
+  "retained_cpu_native_bytes": 4281627,
+  "batches": [
+    {
+      "windows": {
+        "bytes": 39496449,
+        "files": 33
+      },
+      "wsl": {
+        "host": "wsl",
+        "phase": "remove",
+        "files": 5,
+        "bytes": 2669392
+      },
+      "mac": {
+        "host": "mac",
+        "phase": "remove",
+        "files": 8,
+        "bytes": 36849664
+      },
+      "total_files": 46,
+      "total_bytes": 79015505,
+      "retained_cpu_files": 4,
+      "retained_cpu_bytes": 4281627,
+      "scope": "Only named rebuildable artifacts; sources/logs/raw archives and original SDK/native caches retained.",
+      "script": {
+        "path": ".scratch\\perf-review-2026-10-18\\cleanup-20261018-timer-paged-http2-shortq.ps1",
+        "sha256": "2e89fdfe2106be5540aa7f1a257c132bb6ddae0516a39d3f91bf16b5fa433683"
+      }
+    },
+    {
+      "windows": {
+        "files": 29,
+        "bytes": 37289483
+      },
+      "mac": {
+        "host": "mac",
+        "phase": "remove",
+        "files": 8,
+        "bytes": 27549416
+      },
+      "total_files": 37,
+      "total_bytes": 64838899,
+      "retained_cpu_files": 4,
+      "retained_cpu_bytes": 4281627,
+      "scope": "Only named rebuildable artifacts; sources/logs/raw archives and original SDK/native caches retained.",
+      "script": {
+        "path": ".scratch\\perf-review-2026-10-18\\cleanup-20261018-cache-encode-steel-f32.ps1",
+        "sha256": "e6234ec49643968c3dffb1fe08975a4e5c801c39f73d5e3b56a9b70563ffcc39"
+      }
+    }
+  ],
+  "note": "Actual successful exact-file cleanups after archive freeze; second batch includes Python bytecode regenerated after first cleanup. No whole directory/SDK/source removal."
+}

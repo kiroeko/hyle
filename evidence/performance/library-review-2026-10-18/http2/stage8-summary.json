@@ -1,0 +1,205 @@
+{
+  "result": "Fixed two uninstrumented AB/BA processes completed successfully. Hyle public and aligned direct-nghttp2 both use the same single-worker two-fiber episode model. Point medians are close in these samples; no equivalence or pure scheduler-cost claim.",
+  "scope": {
+    "processes": 2,
+    "orders": [
+      "Hyle then raw",
+      "raw then Hyle"
+    ],
+    "epochs_per_arm": 9,
+    "configured_min_epoch_time_seconds": 0.01,
+    "min_complete_episodes_per_epoch": 5,
+    "payload": "4streams,256KiB request and response each, reverse pair completion",
+    "all_epochs_retained": true,
+    "filtering": false,
+    "additional_trials": false,
+    "formal_manual_peer_changed": false
+  },
+  "results": [
+    {
+      "order": "ab",
+      "rows": [
+        {
+          "name": "Hyle public two-fiber session",
+          "median_ns_per_stream": 193082.66071428574,
+          "median_absolute_percent_error": 0.0131086247652495,
+          "all_epoch_ns_per_stream": [
+            189452.38461538477,
+            193082.66071428574,
+            192071.66666666677,
+            195224.78571428577,
+            195647.328125,
+            191084.25,
+            188711.25,
+            199021.25,
+            244554.25
+          ],
+          "all_epoch_iterations": [
+            13,
+            14,
+            15,
+            14,
+            16,
+            15,
+            14,
+            15,
+            14
+          ],
+          "all_epoch_durations_seconds": [
+            0.009851524000000007,
+            0.010812629,
+            0.011524300000000006,
+            0.010932588000000003,
+            0.012521429,
+            0.011465055,
+            0.01056783,
+            0.011941275,
+            0.013695038
+          ]
+        },
+        {
+          "name": "aligned raw two-fiber session",
+          "median_ns_per_stream": 196431.86538461526,
+          "median_absolute_percent_error": 0.0294561235262555,
+          "all_epoch_ns_per_stream": [
+            202393.59615384624,
+            192212.2115384615,
+            188872.08333333323,
+            189055.375,
+            196038.26666666675,
+            225961.85,
+            196431.86538461526,
+            196853.0,
+            208078.03571428574
+          ],
+          "all_epoch_iterations": [
+            13,
+            13,
+            15,
+            14,
+            15,
+            15,
+            13,
+            14,
+            14
+          ],
+          "all_epoch_durations_seconds": [
+            0.010524467000000004,
+            0.009995034999999998,
+            0.011332324999999994,
+            0.010587101,
+            0.011762296000000005,
+            0.013557711,
+            0.010214456999999993,
+            0.011023768,
+            0.011652370000000002
+          ]
+        }
+      ],
+      "raw_over_hyle_median": 1.0173459629049006
+    },
+    {
+      "order": "ba",
+      "rows": [
+        {
+          "name": "aligned raw two-fiber session",
+          "median_ns_per_stream": 199225.19642857148,
+          "median_absolute_percent_error": 0.0223797821083073,
+          "all_epoch_ns_per_stream": [
+            211335.89583333326,
+            207509.22916666674,
+            194864.1785714285,
+            200125.07692307702,
+            217577.66666666674,
+            189527.4285714285,
+            195998.01923076925,
+            196239.51785714275,
+            199225.19642857148
+          ],
+          "all_epoch_iterations": [
+            12,
+            12,
+            14,
+            13,
+            15,
+            14,
+            13,
+            14,
+            14
+          ],
+          "all_epoch_durations_seconds": [
+            0.010144122999999996,
+            0.009960443000000003,
+            0.010912393999999995,
+            0.010406504000000004,
+            0.013054660000000004,
+            0.010613535999999996,
+            0.010191897000000002,
+            0.010989412999999995,
+            0.011156611000000004
+          ]
+        },
+        {
+          "name": "Hyle public two-fiber session",
+          "median_ns_per_stream": 197469.20833333326,
+          "median_absolute_percent_error": 0.012369349769993,
+          "all_epoch_ns_per_stream": [
+            197469.20833333326,
+            199942.36538461552,
+            202185.14285714275,
+            203097.2115384615,
+            195268.48333333325,
+            196427.67857142852,
+            222255.5714285715,
+            194883.9285714285,
+            196213.32142857148
+          ],
+          "all_epoch_iterations": [
+            12,
+            13,
+            14,
+            13,
+            15,
+            14,
+            14,
+            14,
+            14
+          ],
+          "all_epoch_durations_seconds": [
+            0.009478521999999996,
+            0.010397003000000007,
+            0.011322367999999994,
+            0.010561054999999998,
+            0.011716108999999995,
+            0.010999949999999996,
+            0.012446312000000005,
+            0.010913499999999996,
+            0.010987946000000004
+          ]
+        }
+      ],
+      "raw_over_hyle_median": 1.0088924653623672
+    }
+  ],
+  "measured_boundary": "Each call starts on the external caller: new socketpair/adopt, immutable workload references, session endpoints, ordinary spawn_task on the same persistent1worker Scheduler/IoContext, all request/response bytes with16KiB consume+both flow-control windows, reverse completion, final client-consumed Event, both joins, session/socket close, and remaining per-episode owner cleanup before return.",
+  "differences_kept_visible": [
+    "Raw Episode zero-initializes two RawWire objects (128KiB per endpoint) inside every measured call, outside64KiB fiber stacks; raw allocation/container/codec/lifecycle work is still its own.",
+    "Raw direct-nghttp2 and Hyle public sessions differ in headers/body/session storage and host responsibilities. Matching execution model and aggregate counters does not isolate scheduler cost.",
+    "HyleHarness and an inactive persistent RawHarness thread are constructed for the lifetime of each process, identically for both measured arms. Construction/destruction is outside timed episodes."
+  ],
+  "functional_checks": "Each process performs one untimed warmup per arm in its selected order using the exact timed workload and full original header/body/reversal oracle; raw warmup additionally checks both descriptorEBADF after joins. Timed calls retain full protocol validation/status/cleanup but omit extra fd observation. Both warmup stderr lines hyle4/raw4/raw_fds_closed=true and all timed calls succeeded.",
+  "instrumentation_removed": "No raw_probe/owner/phase/dispatch/syscall counters, no resume interposition, no probe object, no dynamic-export or dl link flag; readelf verifies no own Fiber::resume definition or raw_probe symbols. Nanobench performance counters disabled; only normal epoch wall timing remains.",
+  "build": "One fresh GCC14 Release/O3 C++23 TU and link using identical retained stage6 cached HTTP/nghttp2/nanobench/foundation closure. No SDK copy/download/configure/foundation rebuild. New TimerQueue implementation not rebuilt into this scheduler.",
+  "limitations": [
+    "Only two process samples, nine epochs each arm; retain all epoch variation. No CI/equivalence claim, no repeat to chase a result.",
+    "Nanobench minEpochTime is configured10ms; calibrated actual epoch durations include a few below10ms (minimum9.478522ms). All raw durations retained; no replacement or rerun.",
+    "This is a diagnostic same-execution-model total-episode comparison, not a replacement for the formal manual-loop peer. Its previously recorded large-body loss remains separate and is not declared solved.",
+    "No new hot IO/dispatch counters during timing; use the preceding separate aligned diagnostic solely to establish driver work/semantic boundaries, not for time subtraction.",
+    "Explicit-default Event aggregate warning retained in compiler stderr; no compile/link/warmup/runtime failure."
+  ],
+  "prior_aligned_diagnostic": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\raw-fiber-aligned\\source-results.zip",
+    "bytes": 63484,
+    "sha256": "bc60ee11411f72e7385ee9e0a5819772451fa078e924352b635eb79037dd3116"
+  }
+}
