@@ -85,11 +85,19 @@ struct FieldRef {
   bool present = false;
 };
 
-struct StoredHeader {
+struct alignas(HttpHeader) StoredHeader {
   FieldRef name;
   FieldRef value;
-  HttpHeader view{};
 };
+
+constexpr std::size_t kHeaderSlotBytes = sizeof(StoredHeader) + sizeof(HttpHeader);
+
+HttpHeader *header_views(StoredHeader *storage, std::size_t slots) noexcept {
+  // Keep the views contiguous: a span cannot stride over the stored offsets.
+  // StoredHeader's alignment also aligns this second array in the allocation.
+  return storage == nullptr ? nullptr
+                            : reinterpret_cast<HttpHeader *>(storage + slots);
+}
 
 struct Http2StreamState {
   explicit Http2StreamState(mem::AllocatorRef allocator) noexcept
@@ -99,29 +107,41 @@ struct Http2StreamState {
     if (limits.max_header_count == 0)
       return true;
     if (limits.max_header_count >
-        (std::numeric_limits<std::size_t>::max)() / sizeof(StoredHeader))
+        (std::numeric_limits<std::size_t>::max)() / kHeaderSlotBytes)
       return false;
-    const std::size_t bytes = limits.max_header_count * sizeof(StoredHeader);
+    const std::size_t bytes = limits.max_header_count * kHeaderSlotBytes;
     header_slots_bytes = bytes;
     headers = static_cast<StoredHeader *>(
         head_bytes.allocator.allocate(bytes, alignof(StoredHeader)));
+    if (headers != nullptr) {
+      std::uninitialized_value_construct_n(headers, limits.max_header_count);
+      std::uninitialized_value_construct_n(
+          header_views(headers, limits.max_header_count),
+          limits.max_header_count);
+    }
     trailers = static_cast<StoredHeader *>(
         head_bytes.allocator.allocate(bytes, alignof(StoredHeader)));
-    if (headers == nullptr || trailers == nullptr)
-      return false;
-    std::uninitialized_value_construct_n(headers, limits.max_header_count);
-    std::uninitialized_value_construct_n(trailers, limits.max_header_count);
-    return true;
+    if (trailers != nullptr) {
+      std::uninitialized_value_construct_n(trailers, limits.max_header_count);
+      std::uninitialized_value_construct_n(
+          header_views(trailers, limits.max_header_count),
+          limits.max_header_count);
+    }
+    return headers != nullptr && trailers != nullptr;
   }
 
   ~Http2StreamState() {
     if (headers != nullptr) {
-      std::destroy_n(headers, header_slots_bytes / sizeof(StoredHeader));
+      const std::size_t slots = header_slots_bytes / kHeaderSlotBytes;
+      std::destroy_n(header_views(headers, slots), slots);
+      std::destroy_n(headers, slots);
       head_bytes.allocator.deallocate(headers, header_slots_bytes,
                                       alignof(StoredHeader));
     }
     if (trailers != nullptr) {
-      std::destroy_n(trailers, header_slots_bytes / sizeof(StoredHeader));
+      const std::size_t slots = header_slots_bytes / kHeaderSlotBytes;
+      std::destroy_n(header_views(trailers, slots), slots);
+      std::destroy_n(trailers, slots);
       head_bytes.allocator.deallocate(trailers, header_slots_bytes,
                                       alignof(StoredHeader));
     }
@@ -465,10 +485,10 @@ StringView field_view(const ByteBuffer &buffer, FieldRef field) noexcept {
 }
 
 void materialize_headers(ByteBuffer &bytes, StoredHeader *headers,
-                         std::size_t count) noexcept {
+                         HttpHeader *views, std::size_t count) noexcept {
   for (std::size_t index = 0; index < count; ++index) {
-    headers[index].view = HttpHeader{field_view(bytes, headers[index].name),
-                                     field_view(bytes, headers[index].value)};
+    views[index] = HttpHeader{field_view(bytes, headers[index].name),
+                             field_view(bytes, headers[index].value)};
   }
 }
 
@@ -708,6 +728,8 @@ void queue_completed_head(Http2SessionState &state,
                           Http2StreamState &stream) noexcept {
   if (stream.parsing_trailers) {
     materialize_headers(stream.trailer_bytes, stream.trailers,
+                        header_views(stream.trailers,
+                                     stream.header_slots_bytes / kHeaderSlotBytes),
                         stream.trailer_count);
     return;
   }
@@ -717,7 +739,10 @@ void queue_completed_head(Http2SessionState &state,
     stream.status = 0;
     return;
   }
-  materialize_headers(stream.head_bytes, stream.headers, stream.header_count);
+  materialize_headers(stream.head_bytes, stream.headers,
+                      header_views(stream.headers,
+                                   stream.header_slots_bytes / kHeaderSlotBytes),
+                      stream.header_count);
   stream.initial_headers_done = true;
   stream.head_ready = true;
   state.queue_ready(&stream);
@@ -1738,13 +1763,19 @@ submit_response_head(Http2SessionState &state, Http2StreamState &stream,
 
 HttpHeadersView regular_headers(Http2StreamState &stream) noexcept {
   return HttpHeadersView(std::span<const HttpHeader>(
-      stream.header_count == 0 ? nullptr : &stream.headers[0].view,
+      stream.header_count == 0
+          ? nullptr
+          : header_views(stream.headers,
+                         stream.header_slots_bytes / kHeaderSlotBytes),
       stream.header_count));
 }
 
 HttpHeadersView trailer_headers(Http2StreamState &stream) noexcept {
   return HttpHeadersView(std::span<const HttpHeader>(
-      stream.trailer_count == 0 ? nullptr : &stream.trailers[0].view,
+      stream.trailer_count == 0
+          ? nullptr
+          : header_views(stream.trailers,
+                         stream.header_slots_bytes / kHeaderSlotBytes),
       stream.trailer_count));
 }
 

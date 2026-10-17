@@ -1,0 +1,13 @@
+{
+  "archive": {
+    "path": ".scratch/perf-review-2026-10-18/http2/header-storage/source-results.zip",
+    "bytes": 76263,
+    "sha256": "d84a4949d3cc840054ee4fd0589b50cc5355997a3c180194f5115128b6158df9"
+  },
+  "members": 29,
+  "cleanup_manifest": {
+    "path": ".scratch/perf-review-2026-10-18/http2/header-storage/cleanup-candidates.json",
+    "bytes": 1191,
+    "sha256": "b0a1c88de3789c42f899b4da000fcfd1d9758435468365f9610de80e89dfbd49"
+  }
+}

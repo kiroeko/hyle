@@ -1,0 +1,65 @@
+{
+  "result": "Fixed a current HTTP/2 correctness bug discovered during the read-only residual performance review. No throughput measurement or performance conclusion.",
+  "bug": "StoredHeader interleaved FieldRef metadata and HttpHeader view, but regular_headers/trailer_headers exposed the view member as a count-element contiguous span. Elements after the first had the wrong stride.",
+  "fix": "Keep metadata array and truly contiguous HttpHeader array in the same original allocation. alignas(HttpHeader) aligns the second array; checked capacity multiplication preserves OOM handling. Construct and destroy both arrays for each successful allocation, including partial initialization failure.",
+  "allocation_change": {
+    "calls": "Unchanged: one headers allocation and one trailers allocation per stream.",
+    "maximum_capacity": "Unchanged: limits.max_header_count for each array; no lazy growth or cold allocation optimization.",
+    "payload_formula_before": "count * sizeof(original StoredHeader{FieldRef,FieldRef,HttpHeader})",
+    "payload_formula_after": "count * (sizeof(alignas(HttpHeader) StoredHeader{FieldRef,FieldRef}) + sizeof(HttpHeader))",
+    "supported_64bit_layout": "FieldRef=12B, metadata=24B aligned to8, HttpHeader=32B: both formulas56B/slot. Default128slots=7168B per header/trailer block. No per-stream pointer or field added.",
+    "layout_basis": "Derived from current supported 64-bit type layout/source; not a runtime allocation/RSS census."
+  },
+  "verification": {
+    "build": "Fresh GCC14/O3 before+candidate HTTP2 product TU and shared fresh test TU, directly linked existing nghttp2/foundation/http objects and gtest. No configure, SDK copy/download, or foundation rebuild.",
+    "before": "Same new regression fails with original product source, exit1; no crash.",
+    "candidate": "All14 current tests pass (13IoHttp2+1feature). Forced epoll regression passes.",
+    "coverage": "Both directions: 2custom regular headers plus typed content-length, 2trailers, full range iteration/content; regular view remains stable across incremental body reads and later trailer HEADERS; trailer view remains stable across final acknowledgement/read.",
+    "limits": "No Windows/macOS run, no sanitizer, no forced HEADERS/CONTINUATION packet split or per-allocation fault injection, no timing."
+  },
+  "source_identity": [
+    {
+      "path": "src/io_http2/http2.cc",
+      "bytes": 109144,
+      "sha256": "cc1c741cfdfdd5d2fa69779cd2307c941d6cd0b53eb789bdfb85072182ea115c"
+    },
+    {
+      "path": "tests/io_http2/http2_test.cc",
+      "bytes": 73992,
+      "sha256": "09c634b0653cb1a70475b5b42b163098fdb4a1dd15490ebd262ad2b658683b32"
+    },
+    {
+      "path": "include/hyle/io/http.h",
+      "bytes": 38757,
+      "sha256": "0523b32e1f9799ce895cfb9e76a4c0dd76b50f6b50e72121f9eb78f55f62f4e6"
+    },
+    {
+      "path": "include/hyle/io/http2.h",
+      "bytes": 21467,
+      "sha256": "43e10a543765b15023ae343b2b0e6deb99a4c8b244e55887df5448849f8272df"
+    }
+  ],
+  "bench_driver_unchanged": [
+    {
+      "path": "bench/io_http2/http2_p1_bench.cc",
+      "bytes": 34492,
+      "sha256": "48763f0426902bd6810d9c9c9c49f083c55a0fd12c0904f09a86f52ca3134259"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/main.cc",
+      "bytes": 8132,
+      "sha256": "116d02db3761202fc73e9af42ab79c540358b8c6595d8729dc6c8c47dbf86ebc"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/plain_bench.cc",
+      "bytes": 35820,
+      "sha256": "4f298a7cc943073c72018ab2572964cd5c1514d42972ae677b32fef87d4071a6"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/split_advance.h",
+      "bytes": 1573,
+      "sha256": "a9a985317f58ded69240f4868067bcb294d4e41ca31fac13533d84f3ffa5f8e0"
+    }
+  ],
+  "cleanup": "Only exact remote files in cleanup-candidates.json; root owns test.ps1 cleanup. No deletion performed."
+}

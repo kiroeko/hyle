@@ -721,10 +721,42 @@ struct TrailerResult {
   Event client_finished;
 };
 
+bool headers_match(hyle::io::HttpHeadersView actual,
+                   std::span<const hyle::io::HttpHeader> expected) noexcept {
+  if (actual.size() != expected.size())
+    return false;
+  for (const auto &wanted : expected) {
+    std::size_t matches = 0;
+    for (const auto &header : actual) {
+      // Check lengths before dereferencing so the old strided-span bug fails
+      // this regression without following its invalid StringView pointers.
+      if (header.name.size() == wanted.name.size() &&
+          header.value.size() == wanted.value.size() &&
+          header.name == wanted.name && header.value == wanted.value) {
+        ++matches;
+      }
+    }
+    if (matches != 1)
+      return false;
+  }
+  return true;
+}
+
+constexpr hyle::io::HttpHeader kMultipleHeaders[] = {
+    {"x-hyle-first", "first-value"}, {"x-hyle-second", "second-value"}};
+constexpr hyle::io::HttpHeader kExpectedHeaders[] = {
+    {"x-hyle-first", "first-value"}, {"x-hyle-second", "second-value"},
+    {"content-length", "6"}};
+constexpr hyle::io::HttpHeader kRequestTrailers[] = {
+    {"x-hyle-check", "request"}, {"x-hyle-extra", "request-extra"}};
+constexpr hyle::io::HttpHeader kResponseTrailers[] = {
+    {"x-hyle-check", "response"}, {"x-hyle-extra", "response-extra"}};
+
 Task<Status> read_body_and_trailer(AllocatorRef,
-                                   hyle::io::Http2BodyReader &body,
-                                   std::string *output,
-                                   std::string *trailer) noexcept {
+                                 hyle::io::Http2BodyReader &body,
+                                 std::string *output, std::string *trailer,
+                                 std::span<const hyle::io::HttpHeader>
+                                     expected_trailers) noexcept {
   for (;;) {
     auto chunk = co_await body.read(2, budget());
     if (!chunk.has_value())
@@ -735,9 +767,18 @@ Task<Status> read_body_and_trailer(AllocatorRef,
       if (!body.done())
         co_return Status::Internal(
             "HTTP/2 reader did not expose trailer completion");
+      if (!headers_match(chunk->trailers, expected_trailers))
+        co_return Status::DataLoss("HTTP/2 trailer range was not contiguous");
+      const auto trailers = chunk->trailers;
+      const auto *entries = trailers.begin();
       auto value = chunk->trailers.find("x-hyle-check");
       if (value.has_value())
         trailer->assign(value->data(), value->size());
+      auto terminal = co_await body.read(2, budget());
+      if (!terminal.has_value() || !terminal->end_stream ||
+          terminal->trailers.begin() != entries ||
+          !headers_match(trailers, expected_trailers))
+        co_return Status::DataLoss("HTTP/2 trailer view changed after read");
       co_return Status::Ok();
     }
   }
@@ -756,20 +797,27 @@ Task<int> trailer_server(AllocatorRef allocator, TcpListener *listener,
   if (!incoming.has_value() || !incoming->has_value())
     co_return 0;
   Http2IncomingRequest request = std::move(**incoming);
+  const auto request_headers = request.head.headers();
+  const auto *request_entries = request_headers.begin();
+  if (!headers_match(request_headers, kExpectedHeaders))
+    co_return 0;
   if (!(co_await read_body_and_trailer(allocator, request.body,
-                                       &result->request_body,
-                                       &result->request_trailer))
+                                     &result->request_body,
+                                     &result->request_trailer, kRequestTrailers))
            .ok())
+    co_return 0;
+  if (request.head.headers().begin() != request_entries ||
+      !headers_match(request_headers, kExpectedHeaders))
     co_return 0;
 
   auto started = co_await session.start_response(
-      request.stream_id, Http2ResponseHead{.status = 200}, 6, budget());
+      request.stream_id,
+      Http2ResponseHead{.status = 200, .headers = kMultipleHeaders}, 6, budget());
   if (!started.has_value() ||
       !(co_await started->write(bytes("ghi"), budget())).ok() ||
       !(co_await started->write(bytes("jkl"), budget())).ok())
     co_return 0;
-  const hyle::io::HttpHeader trailer{"x-hyle-check", "response"};
-  if (!(co_await started->finish(std::span(&trailer, 1), budget())).ok())
+  if (!(co_await started->finish(kResponseTrailers, budget())).ok())
     co_return 0;
   result->server_ok.store(true, std::memory_order_release);
   (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
@@ -791,25 +839,32 @@ Task<int> trailer_client(AllocatorRef allocator, IoContext *io,
   if (!made.has_value())
     co_return 0;
   Http2ClientSession session = std::move(*made);
-  auto started =
-      co_await session.start_request(Http2RequestHead{.method = "POST",
-                                                      .scheme = "http",
-                                                      .authority = "127.0.0.1",
-                                                      .path = "/trailers"},
-                                     6, budget());
+  const Http2RequestHead head{.method = "POST",
+                             .scheme = "http",
+                             .authority = "127.0.0.1",
+                             .path = "/trailers",
+                             .headers = kMultipleHeaders};
+  auto started = co_await session.start_request(head, 6, budget());
   if (!started.has_value() ||
       !(co_await started->body.write(bytes("abc"), budget())).ok() ||
       !(co_await started->body.write(bytes("def"), budget())).ok())
     co_return 0;
-  const hyle::io::HttpHeader trailer{"x-hyle-check", "request"};
-  if (!(co_await started->body.finish(std::span(&trailer, 1), budget())).ok())
+  if (!(co_await started->body.finish(kRequestTrailers, budget())).ok())
     co_return 0;
   auto response = co_await session.read_response(started->stream_id, budget());
   if (!response.has_value() || response->head.status() != 200 ||
-      !(co_await read_body_and_trailer(allocator, response->body,
-                                       &result->response_body,
-                                       &result->response_trailer))
+      !headers_match(response->head.headers(), kExpectedHeaders))
+    co_return 0;
+  const auto response_headers = response->head.headers();
+  const auto *response_entries = response_headers.begin();
+  if (!(co_await read_body_and_trailer(allocator, response->body,
+                                     &result->response_body,
+                                     &result->response_trailer,
+                                     kResponseTrailers))
            .ok())
+    co_return 0;
+  if (response->head.headers().begin() != response_entries ||
+      !headers_match(response_headers, kExpectedHeaders))
     co_return 0;
   result->client_ok.store(true, std::memory_order_release);
   co_return 0;
