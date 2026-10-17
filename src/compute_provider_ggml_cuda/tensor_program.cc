@@ -653,19 +653,37 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       outer *= output.dimensions()[i];
     for (std::size_t i = selected + 1; i < output.rank(); ++i)
       inner *= output.dimensions()[i];
+    std::vector<ggml_tensor *> parts;
+    parts.reserve(node.inputs.size());
     for (std::size_t i = 0; i < node.inputs.size(); ++i) {
       const auto &description = recipe.values[node.inputs[i]];
       if (elements(description) == 0)
         continue;
       auto *part = ggml_reshape_3d(context, input(i), inner,
                                    description.dimensions()[selected], outer);
+      parts.push_back(part);
+    }
+    if (parts.size() == 1) {
       // This runtime admits I32 CPY/CONCAT but explicitly declines I32 DUP.
       // Keep indices as integers, including a one-input Concat's owned copy.
-      if (!result && part->type == GGML_TYPE_I32)
-        result = ggml_cpy(context, part, ggml_dup_tensor(context, part));
-      else
-        result = result ? ggml_concat(context, result, part, 1)
-                        : ggml_dup(context, part);
+      auto *part = parts.front();
+      result = part->type == GGML_TYPE_I32
+                   ? ggml_cpy(context, part, ggml_dup_tensor(context, part))
+                   : ggml_dup(context, part);
+    } else if (!parts.empty()) {
+      // Retaining every growing prefix costs quadratic storage and copying.
+      // A balanced tree keeps the original native dependencies and bit copies,
+      // with at most one full output's worth of payload per level.
+      while (parts.size() > 1) {
+        const auto count = parts.size();
+        std::size_t next = 0;
+        for (std::size_t i = 0; i + 1 < count; i += 2)
+          parts[next++] = ggml_concat(context, parts[i], parts[i + 1], 1);
+        if (count % 2 != 0)
+          parts[next++] = parts.back();
+        parts.resize(next);
+      }
+      result = parts.front();
     }
   } else if (node.operation.get_if<Gather>()) {
     result =

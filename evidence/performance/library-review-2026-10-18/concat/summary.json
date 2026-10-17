@@ -1,0 +1,152 @@
+{
+  "change": "Balanced native concat tree; no Graph region split, implicit write dependency, native CUDA/kernel change, or public API change.",
+  "product_files": [
+    "src/compute_provider_ggml_cuda/tensor_program.cc",
+    "tests/compute_provider_ggml_cuda/tensor_test.cc"
+  ],
+  "domain": "F32/F16/BF16 and established dense I32 domain; arbitrary normalized axis, floating strided inputs packed once, order retained, odd ports carried, single nonempty input owns a copy; empty parts still skipped.",
+  "tests": {
+    "baseline_direct": "3/3 pass, same executable; provider_module actual loader path recorded in baseline-tensor-tests.log",
+    "candidate_direct": "3/3 pass, same executable; provider_module actual loader path recorded in candidate-tensor-tests.log",
+    "new_test": "48 combinations: four dtypes, three axes (negative notation), 1/7/8/9 unequal-length distinct ports. Raw storage comparison; floating padded+strided input, dense I32; single input plus odd/even levels. Existing test also checks I32 rebind.",
+    "graph": "Existing 70 repeated-port Concat -> Neg, publish intermediate+downstream, one native region, passed on current static foundation and Graph.",
+    "compile": "Fresh provider/tensor/region/test host TUs compiled /W4 /WX. No CMake configure/build, SDK staging, CUDA kernel build, or dependency download."
+  },
+  "exact_lowered_graph_census": {
+    "baseline": {
+      "ports": 64,
+      "one_input_bytes": 1048576,
+      "caller_output_bytes": 67108864,
+      "owned_tensor_roots": 63,
+      "owned_payload_bytes": 2113929216,
+      "native_allocation_request_bytes": 2113929216,
+      "largest_owned_payload_bytes": 66060288,
+      "tensor_metadata_count": 130,
+      "graph_nodes": 129,
+      "cuda_malloc_performed": false,
+      "measurement": "Exact lowered-arena tensor census using the provider allocation predicate and native buft allocation sizes; no owned workspace allocated"
+    },
+    "candidate": {
+      "ports": 64,
+      "one_input_bytes": 1048576,
+      "caller_output_bytes": 67108864,
+      "owned_tensor_roots": 62,
+      "owned_payload_bytes": 335544320,
+      "native_allocation_request_bytes": 335544320,
+      "largest_owned_payload_bytes": 33554432,
+      "tensor_metadata_count": 129,
+      "graph_nodes": 128,
+      "cuda_malloc_performed": false,
+      "measurement": "Exact lowered-arena tensor census using the provider allocation predicate and native buft allocation sizes; no owned workspace allocated"
+    }
+  },
+  "memory_conclusion": "Native payload/allocation-request census, not actual VRAM sampling: owned scratch requests 2016 -> 320 MiB, -84.12698412698413%; caller output 64 MiB separate; no owned scratch cudaMalloc. Arena was really lowered by baseline and candidate source and every non-view root enumerated using provider allocation predicate/native buft allocation sizes.",
+  "complexity": "O(total input bytes * log(port count)) scratch retained and copying; not the optimal single-write O(total bytes) implementation.",
+  "validation_limitations": [
+    "Legacy pinned native ggml header lacks three IQ1 extension enums. Both tensor helper probe copies explicitly decline only those three mappings; product mappings remain unchanged and probe adapter diffs are saved. No IQ1 validation is claimed.",
+    "Initial shared Graph test link failed because old b-cuda-d5 core lacks current ResourceBudget move/dtor symbols. Raw error preserved in region-tests-link.log. Final Graph check instead used existing current build-compute-v2-dev static libraries with fresh host TUs; no stub, core rebuild, or API change.",
+    "No throughput timing or full provider/route suite run.",
+    "Direct checks reuse existing shared foundation from b-cuda-d5; Graph check uses current static foundation. These are distinct validation closures, not a full common SDK build."
+  ],
+  "identity": {
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\tensor_program.baseline.cc": {
+      "sha256": "c25c915b548b48298388ad0ffdf796aafbf0a2508ce7808f29bd96e4acf098e0",
+      "bytes": 35761
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\tensor_program.candidate.cc": {
+      "sha256": "07a85adc3891a16700a156c72686579d75471ae992ce73e59506fed0a726f92f",
+      "bytes": 36478
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\provider-frozen.cc": {
+      "sha256": "a5240312d4eeaf00a059184bcc4aca77852380dc8ed1ed379eba04eb91bac01a",
+      "bytes": 37482
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\region-frozen.cc": {
+      "sha256": "eac7158fe8ab163e6eef6799fe4c1f101938e42877f9d3778ec65e9d037a196a",
+      "bytes": 13331
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\tensor-tests.exe": {
+      "sha256": "5117b53e4d1535c620b91c4a7127daea6af3c33e3f2d93577b526dd460104f8e",
+      "bytes": 1169408
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\static-region-tests.exe": {
+      "sha256": "bb913d0874eb97d062b3e6a0f805cda257294b4f97cf475141a162c64150d17c",
+      "bytes": 33679360
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\baseline-census.exe": {
+      "sha256": "6776f94740e0bd725679d76611659ba450b2990a1f2f87a473f19e2c634720f5",
+      "bytes": 32257024
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\candidate-census.exe": {
+      "sha256": "66c9c66fdbda02ebd6490aa65143bc5f32bc0fe9a951866677f34e76545b6e48",
+      "bytes": 32258560
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\baseline\\hyle_compute_provider_ggml_cuda.dll": {
+      "sha256": "88e92c34cd04df61af08d52db2f4e3ab724ee4d82c577b9d5e764369f4080e13",
+      "bytes": 32308736
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\concat\\candidate\\hyle_compute_provider_ggml_cuda.dll": {
+      "sha256": "eaccb1ae96dd6fcc886a7503378f4dc7996944fe33586a7b8b51324dc2213976",
+      "bytes": 32310272
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\ggml-attention-provider\\ggml-cuda.strict.obj": {
+      "sha256": "f532f9f60b6aa3f99caeae163c66381daebef5d414a7aaa2a4053046c742df24",
+      "bytes": 1519262
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\bin\\ggml-cuda.lib": {
+      "sha256": "2fa829ef2ca9a8a9608609bde231fbccf001a1b00c9d49eaa61bbddef2de453c",
+      "bytes": 103301622
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\bin\\ggml-base.lib": {
+      "sha256": "20b21d0ee6bf11350446fd5441b883ecc05f5a35d426814e275a915594beadb5",
+      "bytes": 5569334
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph.lib": {
+      "sha256": "797141c825a7689a04fcb0978322fbe8b1a59c13d2ed4a79592fffb346cb8516",
+      "bytes": 5975418
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute.lib": {
+      "sha256": "470e3e6e8cf8349c238f4633d5b0565563699671b2c6200c85a854e1624e3a46",
+      "bytes": 4633248
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops.lib": {
+      "sha256": "0602ddf0946f48522932a1b7ee6f490694375cf2a6025993698404ef5938f584",
+      "bytes": 858826
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cuda.lib": {
+      "sha256": "5a34352607dab2b4b73546bce7ec0e4a8443770d9c90e65f5162a20372889e4e",
+      "bytes": 931092
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ggml_runtime.lib": {
+      "sha256": "b395b176471d277a9b938fba73cd899547be5a20ce3f5eebe4c2c41443e66054",
+      "bytes": 158570
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\bin\\hyle_compute.dll": {
+      "sha256": "1c8b076c4566f0ee0bd236c5e7a714b797c43f526fee4712081af1bb172a9b42",
+      "bytes": 189440
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\bin\\hyle_compute_ops.dll": {
+      "sha256": "f32c66b852d30ce33ab4a943e50f672ea947be93af7abb3994a29d823b53dbd5",
+      "bytes": 70144
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\bin\\hyle_mem.dll": {
+      "sha256": "68b2f3c7ed763bdefd7c48108554b1ca0f37561d15567af8933661653e03f703",
+      "bytes": 230912
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\bin\\hyle_compute_backend_cuda.dll": {
+      "sha256": "6dceb71944bb6d16387ff32157c425dacb5a3a8352eb961a5a99acdaa43e33b2",
+      "bytes": 158208
+    },
+    "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\bin\\hyle_compute_ggml_runtime.dll": {
+      "sha256": "3204545d9e95dbda016be2f2a3f5b5e416d4b7b83310d0ebb5fc883d87df92cc",
+      "bytes": 306176
+    }
+  },
+  "reproduce": [
+    "python -X utf8 .scratch/perf-review-2026-10-18/concat/run.py compile",
+    "python -X utf8 .scratch/perf-review-2026-10-18/concat/run.py identity",
+    "python -X utf8 .scratch/perf-review-2026-10-18/concat/run.py direct",
+    "python -X utf8 .scratch/perf-review-2026-10-18/concat/run.py graph-static",
+    "python -X utf8 .scratch/perf-review-2026-10-18/concat/run.py census"
+  ]
+}

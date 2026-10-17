@@ -12,7 +12,7 @@
 | StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；回收形成的前缀空洞也被逐块重扫，`replace` / `import` 等会调用它 | 已在命中后停止，并将前缀空洞一次跳过。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
 | CUDA attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原BF16/F32物化scores，F16物化causal mask。B1/H8/Q=KV8192时，单个F32 scores为2 GiB | BF16适用域已融合；ggml大型独立SDPA已按Q分块、复用完整KV与临时空间。实际8K F32显式private从8368降至48.5 MiB，见下 |
 | CUDA SinkAttention的按头展开平方scratch | 同provider的独立Sink原来仍分配完整scores/probabilities；H64、Q=KV2048时两块各1 GiB，属于schema允许的prefill | 已复用Q分块并使Graph走单Compute步骤。1025×1041实际private从651.17降至27.57 MiB；调用方mask仍为O(Q·KV)，见下 |
-| CUDA variadic Concat重复复制前缀 | [lowering](../../../src/compute_provider_ggml_cuda/tensor_program.cc) 线性链保留每个累积前缀；64个各1 MiB输入会额外保留2016 MiB前缀，最终输出仅64 MiB | 正在改为原生平衡树，保持Graph依赖。目标是消除二次复制/空间，不宣称一次写完的最优线性算法 |
+| CUDA variadic Concat重复复制前缀 | [lowering](../../../src/compute_provider_ggml_cuda/tensor_program.cc) 线性链保留每个累积前缀；64个各1 MiB输入会额外保留2016 MiB前缀，最终输出仅64 MiB | 已改为原生平衡树，保持Graph依赖。同输入图的private分配请求2016→320 MiB；消除二次项，不宣称一次写完的最优线性算法 |
 | CUDA Hadamard平方矩阵 | [准备与lowering](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 保存并上传W²矩阵；W4096时主机/设备各64 MiB。64–512宽度即使可走FWHT仍创建矩阵 | 尚未改。原生融合可能绕过FWHT而读取矩阵，不能直接删payload；4096也不在当前FWHT支持域，需明确执行路线后再优化 |
 | CUDA声明F32但实际缩精度 | ggml默认cuBLAS handle启用TF32；F16 flash的PV为Half累加且不读PREC_F32 | 显式F32源请求局部切DEFAULT_MATH并恢复；ggml F16改F32 math再转最终端口。未把旧低精度速度作同合同输项 |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
@@ -155,6 +155,21 @@ cudaMemGetInfo仅为同步边界驻留快照，不是峰值；上述private计�
 [摘要](sink-attention/summary.json)及[源码/命令/原始包](sink-attention/source-evidence.zip)记录限定验证闭包：
 直接编译当前provider、dense rank1/2/4与Sink专用helper、现成strict host overlay及同pin native缓存，
 没有SDK复制或CUDA全量构建。region TU编译通过，generic Graph实际执行、全provider/IQ1与吞吐未测。
+
+### Concat：保留原生依赖，去掉累积前缀链
+
+每层相邻输入两两原生concat，奇数尾项进入下一层，保留输入顺序；单个非空输入仍独立复制，
+I32仍走原生CPY而非DUP，不经F32。没有拆Graph region或引入额外写依赖；冷lowering增加O(ports)临时指针vector。
+每字节至多经历ceil(log2 ports)层，保留的scratch及复制量为O(total bytes·log ports)，仍非最优的一次写入。
+
+同一64×1 MiB recipe的实际原生lowering逐根统计：旧private payload/native allocation请求
+2113929216 B（2016 MiB），修后335544320 B（320 MiB），caller输出64 MiB另计。
+这里调用native buft的分配尺寸查询，**没有cudaMalloc这批旧2 GiB workspace**，不是VRAM峰值或吞吐实测。
+新旧同exe的3项Direct测试均通过：新增48种dtype/负轴/不同端口长度/奇偶层/单输入组合，
+浮点strided输入与raw bits核对，以及原有I32重绑；另以现成静态基础库实际通过70重复ports→Neg的同region Graph测试。
+[摘要](concat/summary.json)及[原始包](concat/raw-results.zip)保留loader落点、源码、命令和旧Graph链接失败。
+定向helper仅将旧native缓存缺失的3个IQ1映射显式拒绝，产品映射不变；Direct与Graph使用不同基础缓存闭包，
+provider/region冻结版本早于本批Sink改动且不含Sink输入，不能称全HEAD/default roster或IQ1验证。没有SDK或CUDA全量重建。
 
 ## 有效历史小输，当前版本待复测
 

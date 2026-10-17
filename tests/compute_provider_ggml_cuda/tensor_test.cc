@@ -8,6 +8,7 @@
 #include <ggml.h>
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 
 #include "hyle/compute/low_precision.h"
@@ -477,6 +478,89 @@ TEST(GgmlCudaTensor, StridedCopyAndVariadicConcatPreserveBits) {
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_EQ(actual[i], copied[(i / (inner * 4)) * inner + i % inner]);
   }
+}
+
+template <class Value> void balanced_concat(Context &ctx) {
+  constexpr bool integer = std::is_same_v<Value, std::int32_t>;
+  const auto type = integer ? DataType::kInt32 : half_test::data_type<Value>();
+  using Bits = std::conditional_t<sizeof(Value) == 2, std::uint16_t,
+                                  std::uint32_t>;
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  for (std::size_t selected = 0; selected < 3; ++selected) {
+    for (const std::size_t count : {1u, 7u, 8u, 9u}) {
+      SCOPED_TRACE(::testing::Message() << selected << '/' << count);
+      std::vector<mem::Buffer> storage;
+      std::vector<ConstTensorView> inputs;
+      std::vector<TensorDesc> descriptions;
+      std::vector<std::vector<Value>> logical;
+      for (std::size_t port = 0; port < count; ++port) {
+        std::array<std::int64_t, 3> shape{2, 3, 7};
+        shape[selected] = static_cast<std::int64_t>(port % 3 + 1);
+        // Integer Concat's established domain is dense; floating inputs also
+        // exercise padded rows and a two-element final-axis stride.
+        const std::int64_t last = integer ? 1 : 2;
+        const auto row = shape[2] * last + (integer ? 0 : 1);
+        const auto plane = shape[1] * row + (integer ? 0 : 3);
+        const std::array strides{plane * sizeof(Value), row * sizeof(Value),
+                                 last * sizeof(Value)};
+        auto description = TensorDesc::strided_bytes(type, shape,
+            std::array<std::int64_t, 3>{static_cast<std::int64_t>(strides[0]),
+              static_cast<std::int64_t>(strides[1]),
+              static_cast<std::int64_t>(strides[2])}).value();
+        std::vector<Value> physical(
+            description.required_bytes().value() / sizeof(Value));
+        std::vector<Value> values;
+        for (std::int64_t a = 0; a < shape[0]; ++a)
+          for (std::int64_t b = 0; b < shape[1]; ++b)
+            for (std::int64_t c = 0; c < shape[2]; ++c) {
+              const auto index = values.size();
+              // Raw payloads catch accidental floating conversions, including
+              // NaN payloads and integer values beyond exact F32 range.
+              const auto bits = static_cast<Bits>(
+                  (sizeof(Value) == 2 ? 0x7e00u : 0x7fc00000u) |
+                  ((port * 97 + index + 1) & 0x1ffu));
+              const auto value = std::bit_cast<Value>(bits);
+              values.push_back(value);
+              physical[static_cast<std::size_t>(a * plane + b * row + c * last)] = value;
+            }
+        storage.push_back(upload<Value>(memory.ref(), physical));
+        inputs.push_back(ConstTensorView::create(description,
+                                                 storage.back().view()).value());
+        descriptions.push_back(description);
+        logical.push_back(std::move(values));
+      }
+      const auto operation = Concat{static_cast<std::int32_t>(selected) - 3};
+      const auto output_desc =
+          infer_single_output(Operation(operation), descriptions).value();
+      auto output = output_buffer(memory.ref(), output_desc);
+      const auto status = execute(ctx, operation, inputs,
+          TensorView::create(output_desc, output.view()).value());
+      ASSERT_TRUE(status.ok()) << status.message();
+      std::size_t outer = 1;
+      for (std::size_t axis = 0; axis < selected; ++axis)
+        outer *= static_cast<std::size_t>(output_desc.dimensions()[axis]);
+      std::vector<Value> expected;
+      for (std::size_t row = 0; row < outer; ++row)
+        for (const auto &part : logical) {
+          const auto width = part.size() / outer;
+          expected.insert(expected.end(), part.begin() + row * width,
+                          part.begin() + (row + 1) * width);
+        }
+      const auto actual = half_test::read<Value>(output);
+      ASSERT_EQ(actual.size(), expected.size());
+      EXPECT_EQ(std::memcmp(actual.data(), expected.data(),
+                            expected.size() * sizeof(Value)), 0);
+    }
+  }
+}
+
+TEST(GgmlCudaTensor, BalancedConcatRetainsPortOrderAndStorageBits) {
+  auto ctx = context();
+  balanced_concat<float>(ctx);
+  balanced_concat<hyle::simd::float16_t>(ctx);
+  balanced_concat<hyle::simd::bfloat16_t>(ctx);
+  balanced_concat<std::int32_t>(ctx);
 }
 
 TEST(GgmlCudaTensor, UnsupportedNumericDomainsDeclineBeforeNativeExecution) {
