@@ -78,60 +78,81 @@ void require_conservation(const std::array<ConsumerResult, N>& consumers,
 // Purest queue overhead: no contention, no thread scheduling. Fill `kBatch`
 // then drain `kBatch`; one op == one push or one pop. This is the floor every
 // MPMC algorithm pays even when uncontended (per-slot seq CAS for Vyukov).
+template <class Push, class Pop>
+void checked_single_thread_wave(Push push, Pop pop) {
+  for (int i = 0; i < kBatch; ++i) {
+    if (!push(static_cast<std::uint64_t>(i))) std::abort();
+  }
+  std::uint64_t out = 0;
+  for (int i = 0; i < kBatch; ++i) {
+    if (!pop(out) || out != static_cast<std::uint64_t>(i)) std::abort();
+  }
+  if (pop(out)) std::abort();
+  ankerl::nanobench::doNotOptimizeAway(out);
+}
+
 void bench_single_thread() {
-  ankerl::nanobench::Bench b;
-  b.title("queue single-thread fill+drain (1024 cap, 512 batch)")
-      .relative(true)
-      .batch(static_cast<std::uint64_t>(kBatch) * 2)  // push + pop
-      .minEpochIterations(2000);
-
-  b.run("HYLE BoundedQueue", [&] {
-    static BoundedQueue<std::uint64_t> q(kCap);
-    for (int i = 0; i < kBatch; ++i) q.try_push(static_cast<std::uint64_t>(i));
-    std::uint64_t out = 0, sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      q.try_pop(out);
-      sum += out;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
-
+  BoundedQueue<std::uint64_t> bounded(kCap);
+  if (!bounded.valid()) std::abort();
+  auto bounded_wave = [&] {
+    checked_single_thread_wave(
+        [&](std::uint64_t value) { return bounded.try_push(value); },
+        [&](std::uint64_t& value) { return bounded.try_pop(value); });
+  };
 #if defined(HYLE_BENCH_MOODYCAMEL)
-  b.run("moodycamel ConcurrentQueue", [&] {
-    static moodycamel::ConcurrentQueue<std::uint64_t> q(kCap);
-    for (int i = 0; i < kBatch; ++i) q.enqueue(static_cast<std::uint64_t>(i));
-    std::uint64_t out = 0, sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      q.try_dequeue(out);
-      sum += out;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
+  moodycamel::ConcurrentQueue<std::uint64_t> moody(kCap);
+  auto moody_wave = [&] {
+    checked_single_thread_wave(
+        [&](std::uint64_t value) { return moody.enqueue(value); },
+        [&](std::uint64_t& value) { return moody.try_dequeue(value); });
+  };
 #endif
 #if defined(HYLE_BENCH_TBB)
-  b.run("tbb concurrent_bounded_queue", [&] {
-    static tbb::concurrent_bounded_queue<std::uint64_t> q;
-    static bool init = [] { q.set_capacity(kCap); return true; }();
-    (void)init;
-    for (int i = 0; i < kBatch; ++i) q.try_push(static_cast<std::uint64_t>(i));
-    std::uint64_t out = 0, sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      q.try_pop(out);
-      sum += out;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
+  tbb::concurrent_bounded_queue<std::uint64_t> tbb_queue;
+  tbb_queue.set_capacity(kCap);
+  auto tbb_wave = [&] {
+    checked_single_thread_wave(
+        [&](std::uint64_t value) { return tbb_queue.try_push(value); },
+        [&](std::uint64_t& value) { return tbb_queue.try_pop(value); });
+  };
 #endif
 #if defined(HYLE_BENCH_RIGTORP)
-  b.run("rigtorp MPMCQueue (bounded ring)", [&] {
-    static rigtorp::mpmc::Queue<std::uint64_t> q(kCap);
-    for (int i = 0; i < kBatch; ++i) q.try_push(static_cast<std::uint64_t>(i));
-    std::uint64_t out = 0, sum = 0;
-    for (int i = 0; i < kBatch; ++i) {
-      if (q.try_pop(out)) sum += out;
-    }
-    ankerl::nanobench::doNotOptimizeAway(sum);
-  });
+  rigtorp::mpmc::Queue<std::uint64_t> rigtorp_queue(kCap);
+  auto rigtorp_wave = [&] {
+    checked_single_thread_wave(
+        [&](std::uint64_t value) { return rigtorp_queue.try_push(value); },
+        [&](std::uint64_t& value) { return rigtorp_queue.try_pop(value); });
+  };
+#endif
+  // Construction, implicit producer registration and first-touch are cold work.
+  // Destruction is also outside each timed callback for every enabled peer.
+  for (unsigned wave = 0; wave != 32; ++wave) {
+    bounded_wave();
+#if defined(HYLE_BENCH_MOODYCAMEL)
+    moody_wave();
+#endif
+#if defined(HYLE_BENCH_TBB)
+    tbb_wave();
+#endif
+#if defined(HYLE_BENCH_RIGTORP)
+    rigtorp_wave();
+#endif
+  }
+
+  ankerl::nanobench::Bench b;
+  b.title("queue warm single-thread fill+drain (512 checked items)")
+      .relative(true)
+      .batch(static_cast<std::uint64_t>(kBatch) * 2)  // push + pop; empty check extra
+      .minEpochIterations(2000);
+  b.run("HYLE BoundedQueue", bounded_wave);
+#if defined(HYLE_BENCH_MOODYCAMEL)
+  b.run("moodycamel ConcurrentQueue", moody_wave);
+#endif
+#if defined(HYLE_BENCH_TBB)
+  b.run("tbb concurrent_bounded_queue", tbb_wave);
+#endif
+#if defined(HYLE_BENCH_RIGTORP)
+  b.run("rigtorp MPMCQueue (bounded ring)", rigtorp_wave);
 #endif
 }
 
