@@ -54,7 +54,7 @@ scripts/hyle-windows.ps1 -Action Build -Preset windows --target hyle_core_tests 
 多个 agent/session 并行时不得复用上述 preset 的固定 build tree。为每个会话分配独占绝对路径：
 
 ```powershell
-$scratch = 'C:\hyle-scratch\core-<session-id>'
+$scratch = Join-Path (Get-Location).Path '.scratch\build\core-<session-id>'
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
   -BinaryDir $scratch -Component core `
   -DHYLE_BUILD_TESTS=ON -DHYLE_BUILD_BENCH=OFF
@@ -66,8 +66,9 @@ scripts/hyle-windows.ps1 -Action Test -BinaryDir $scratch --output-on-failure
 模块交接再用独立 scratch 跑 source/shared/static/relocated consumer 全旅程：
 
 ```powershell
+$smokeRoot = Join-Path (Get-Location).Path '.scratch\smoke\core-delivery-<session-id>'
 scripts/hyle-windows.ps1 -Action SelectedComponentSmoke `
-  -Component core -SmokeRoot C:\hyle-scratch\core-delivery-<session-id>
+  -Component core -SmokeRoot $smokeRoot
 ```
 
 `-BinaryDir` 只用于 Configure/Build/Test，且必须是绝对、由当前会话拥有的路径；
@@ -147,7 +148,9 @@ IO 的 TLS/HTTP2 和 trace 默认 OFF，并只在 owner 闭包中声明。
 若 CMake 已提示 object 目录过长，随后 compiler probe 在生成文件时失败，先检查生成物的完整路径。
 不要只量源码路径，也不要把所有 `C1083` 都归因为长路径。
 
-优先使用会话独占的短 binary root，例如 `C:\hyle-scratch\vk-y1`；源码工作区不必搬迁。
+优先使用会话独占的短 binary root，例如仓库内的 `.scratch\b\vk-y1`；源码工作区不必搬迁。
+构建、缓存和实验输出放在项目目录内，不在 `C:\` 根目录创建项目目录。若完整路径仍过长，
+先缩短项目内的 build 名称和第三方子构建层级。
 第三方 owner 应用 CMake 的
 [`EP_PREFIX` / `BINARY_DIR`](https://cmake.org/cmake/help/latest/module/ExternalProject.html#directory-options)
 控制子构建层级。ggml Vulkan 的 host shader 工具已放到当前 build 的
@@ -176,7 +179,7 @@ Windows 的 sanitizer 配置只支持 ASan；TSan/UBSan 应在 WSL/Linux 的独�
 clang-cl 都必须使用 fresh、互不复用的 build tree：
 
 ```powershell
-$scratch = 'C:\hyle-scratch\platform-msvc-asan-<session-id>'
+$scratch = Join-Path (Get-Location).Path '.scratch\build\platform-msvc-asan-<session-id>'
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
   -BinaryDir $scratch -Component platform -DHYLE_SANITIZER=asan
 scripts/hyle-windows.ps1 -Action Build -BinaryDir $scratch `

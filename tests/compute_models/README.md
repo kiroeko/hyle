@@ -21,9 +21,9 @@ owning capability packages; the current Python reference does not prove any HYLE
 
 ```powershell
 python tests/compute_models/inputs_test.py
-python tests/compute_models/local_inputs.py verify --inventory docs/implementation/tasks/compute/qwen35-2b-local-input.json --source C:\Users\kiro\Downloads\Qwen3.5-2B --receipt C:\hyle-scratch\model-input.json
-python tests/compute_models/qwen35_reference.py --source C:\Users\kiro\Downloads\Qwen3.5-2B --inventory docs/implementation/tasks/compute/qwen35-2b-local-input.json --cases tests/compute_models/qwen35_cases.json --output C:\hyle-scratch\new-b16-reference --device cuda
-python tests/compute_models/prepare_quantized.py --source C:\Users\kiro\Downloads\Qwen3.5-2B --inventory docs/implementation/tasks/compute/qwen35-2b-local-input.json --contract tests/compute_models/qwen35_quantization.json --profile Q8-B32 --output C:\hyle-cache\new-q8-artifact
+python tests/compute_models/local_inputs.py verify --inventory docs/implementation/tasks/compute/qwen35-2b-local-input.json --source C:\Users\kiro\Downloads\Qwen3.5-2B --receipt .scratch\model-input.json
+python tests/compute_models/qwen35_reference.py --source C:\Users\kiro\Downloads\Qwen3.5-2B --inventory docs/implementation/tasks/compute/qwen35-2b-local-input.json --cases tests/compute_models/qwen35_cases.json --output .scratch\new-b16-reference --device cuda
+python tests/compute_models/prepare_quantized.py --source C:\Users\kiro\Downloads\Qwen3.5-2B --inventory docs/implementation/tasks/compute/qwen35-2b-local-input.json --contract tests/compute_models/qwen35_quantization.json --profile Q8-B32 --output .scratch\model-cache\new-q8-artifact
 ```
 
 Use a new output directory; existing derivatives are reused by receipt and hash, not regenerated per machine.

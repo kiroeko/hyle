@@ -5,10 +5,10 @@ source、shared SDK、static SDK 使用相同 C++ 入口；安装消费仍链接
 单路线 SDK 不包含组合，示例在 configure 时明确报告缺少 `cpu;cuda`。
 
 ```powershell
-cmake -S samples/package/graph/cpu_cuda -B C:/hyle-demo -G Ninja `
-  -DHYLE_SAMPLE_SOURCE=C:/public/project-hyle/hyle
-cmake --build C:/hyle-demo --parallel 1
-ctest --test-dir C:/hyle-demo --output-on-failure -j 1
+cmake -S samples/package/graph/cpu_cuda -B .scratch/samples/cpu-cuda -G Ninja `
+  "-DHYLE_SAMPLE_SOURCE=$PWD"
+cmake --build .scratch/samples/cpu-cuda --parallel 1
+ctest --test-dir .scratch/samples/cpu-cuda --output-on-failure -j 1
 
 # 已安装 SDK：省略 HYLE_SAMPLE_SOURCE，传 CMAKE_PREFIX_PATH。
 ```

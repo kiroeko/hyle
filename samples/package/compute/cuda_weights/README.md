@@ -6,10 +6,10 @@ TensorDesc/ID 固定于冷创建，选择与源地址可以逐批改变，机制
 保留 WeightBatch 到消费计算完成；Slot 拒绝在仍上传或被绑定/批次持有时复用。
 
 ```powershell
-cmake -S samples/package/compute/cuda_weights -B C:/hyle-weights -G Ninja `
-  -DHYLE_SAMPLE_SOURCE=C:/public/project-hyle/hyle
-cmake --build C:/hyle-weights --parallel 1
-ctest --test-dir C:/hyle-weights --output-on-failure -j 1
+cmake -S samples/package/compute/cuda_weights -B .scratch/samples/cuda-weights -G Ninja `
+  "-DHYLE_SAMPLE_SOURCE=$PWD"
+cmake --build .scratch/samples/cuda-weights --parallel 1
+ctest --test-dir .scratch/samples/cuda-weights --output-on-failure -j 1
 ```
 
 安装消费时省略 HYLE_SAMPLE_SOURCE 并传 CMAKE_PREFIX_PATH，source/static/shared 使用相同 C++。

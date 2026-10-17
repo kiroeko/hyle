@@ -49,12 +49,23 @@ Windows 共享同一物理主机，不是独立性能机，结果也不能直接
 
 - `/mnt/c/...` 是 **9p 网络挂载**（Windows 盘），不稳、慢、CPU 打不饱和——重 IO / 构建 / 压力测试在上面**性能数字全废**，还可能触发诡异卡顿。
 - **唯一权威源是 Windows 工作树** `C:\public\project-hyle\hyle`；`/root/hyle` 只是可丢弃、可覆盖的原生 ext4 执行镜像，不从 WSL 目录反向恢复或合并代码。
-- 每次 WSL 验证前，从 `/mnt/c/public/project-hyle/hyle/` 受控执行 `rsync -a --delete` 覆盖 `/root/hyle/`。可排除并保留 WSL 本机 `build*/`；锁定第三方源码位于 WSL 自己的
-  `$HOME/.cache/hyle/dependencies/v1`，各 build 的 `_deps` 只含 binary/subbuild。HYLE 源码必须单向
-  同步为 Windows 当前工作树，包括未提交改动。
+- 验证前只同步源码和本次未提交改动，不复制 Windows 的构建、`.scratch` 或 `.git`。
+  使用下面的明确排除项；被排除的 WSL 本机目录保留，不加 `--delete-excluded`。
+  目标固定为 `/root/hyle/`，不得解压或同步到 Linux 根目录 `/`。
+- 锁定第三方源码位于 WSL 自己的 `$HOME/.cache/hyle/dependencies/v1`；优先复用已有构建，
+  只有工具链、配置冲突或确需隔离时才另建目录。
 - 同步只负责搬源码；构建、测试、调试、压力与 benchmark 全部在 `/root/hyle` 运行，`/mnt/c` 上的执行结果不作验收证据。
 - build 目录及其 `_deps` 留在 `/root/hyle`；共享 source cache 也必须位于 WSL ext4，不能指向
   `/mnt/c` 或与 Windows cache 跨 9p 共用。
+
+```bash
+mkdir -p /root/hyle
+rsync -a --delete \
+  --exclude='/.git/' --exclude='/.scratch/' \
+  --exclude='/build/' --exclude='/build-*/' \
+  --exclude='/out/' --exclude='/cmake-build-*/' \
+  /mnt/c/public/project-hyle/hyle/ /root/hyle/
+```
 
 ## 三、构建
 

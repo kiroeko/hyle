@@ -49,16 +49,18 @@ Windows Ninja 使用 wrapper 配合 `windows-ninja`；clang-cl 使用独立的 `
 安装，也不会产生用户 `hyle::<factor>` target。
 
 ```powershell
+$scratch = Join-Path (Get-Location).Path '.scratch\build\container-intrusive-dev'
 scripts/hyle-windows.ps1 -Action Configure `
-  -Preset windows-ninja -BinaryDir C:\hyle-scratch\container-intrusive-dev `
+  -Preset windows-ninja -BinaryDir $scratch `
   -Factor container_intrusive
 ```
 
 影响 source embedding 或 SDK 时，可用所选组件 smoke 检查源码、静态/共享安装包及搬迁后的消费者：
 
 ```powershell
+$smokeRoot = Join-Path (Get-Location).Path '.scratch\smoke\mem-dev'
 scripts/hyle-windows.ps1 -Action SelectedComponentSmoke `
-  -Component mem -SmokeRoot C:\hyle-scratch\mem-dev
+  -Component mem -SmokeRoot $smokeRoot
 ```
 
 ```bash

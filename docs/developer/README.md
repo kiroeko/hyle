@@ -14,5 +14,5 @@
 用户用法放在 [user](../user/README.md)，设计解释放在 [architecture](../architecture/README.md)。
 实验报告链接原始数据和复现命令即可，不要求填模板、登记状态或维护重复账本。
 
-[CI](../../.github/workflows/build.yml) 直接运行三系统基础组件构建、CTest、统计解析及 SIMD
-配置生成检查；不代表 Compute/Graph 或 GPU 已全部验证。设备测试与性能实验按实际改动运行。
+日常以本地验证为主。[CI](../../.github/workflows/build.yml) 按需手动运行三系统基础组件构建、CTest、
+统计解析及 SIMD 配置生成检查；额度耗尽不阻挡本地工作，也不代表 Compute/Graph 或 GPU 已全部验证。
