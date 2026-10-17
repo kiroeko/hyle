@@ -1,0 +1,325 @@
+{
+  "schema": "hyle.inference-g09-air-sdk-checkpoint/v1",
+  "state": "SIX_AIR_DELIVERIES_AND_RUNTIME_ISOLATION_PASS",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "machine": "actual MacBook Air Mac16,12 M4",
+  "scope": "Apple and Vulkan each source/static/shared. Three unchanged actual public consumers per configuration: original Graph contracts, two-slot/65-step joint pipeline and G06 pending native-joint receiver; two standalone public Graph headers. Source embedding uses add_subdirectory; installed SDK staging is renamed to relocated before fresh find_package with installed-only includes. Actual dyld library paths and hashes are checked with a fresh original contracts process for each configuration. Full SDK file manifests, original compile/link commands, consumer logs and exact canonical source manifest are retained.",
+  "cases": [
+    {
+      "route": "apple",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "runtime": "RUNTIME_PATH_ISOLATION_PASS",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "binaries": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/evidence/bin/g09_contracts",
+          "sha256": "7091aa0ef162154813975113d70bf8da24af5c72f19e178b6fabfc79f4cc206e"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/evidence/bin/g09_pipeline",
+          "sha256": "974274bee29dd1d68a7d537eee4b69dbfe99b162b137b304d1e16320bc1f1f5b"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/evidence/bin/g09_pending",
+          "sha256": "421d6a2ebb08e8e46aba88be3f23f1cc7bd05583f6aded17755cd5bb1d15522b"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        }
+      ],
+      "relocated_prefix": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-static-1/relocated",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+      "actual_cumulative_seconds": 25.666842625,
+      "preflight_edges": {
+        "producer_build_edges": 37,
+        "consumer_build_edges": 12
+      },
+      "result_origin": "apple-static-1/result.json",
+      "runtime_origin": "apple-static-1/runtime-audit.json"
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "runtime": "RUNTIME_PATH_ISOLATION_PASS",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "binaries": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-shared-1/evidence/bin/g09_contracts",
+          "sha256": "cdedd7cae109b8649860065916f0b48e324bbe4ced3f9d9c84e151a6370ed21b"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-shared-1/evidence/bin/g09_pipeline",
+          "sha256": "dad38626918d8a101ae7ba11d497678be33a099a433ac032c4afe67f5300a06a"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-shared-1/evidence/bin/g09_pending",
+          "sha256": "1cec12a6a7c2211ed0baf2a09dee42d1f104feb4e057b2b59fb2103a43287002"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        }
+      ],
+      "relocated_prefix": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-shared-1/relocated",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+      "actual_cumulative_seconds": 31.450658167,
+      "preflight_edges": {
+        "producer_build_edges": 53,
+        "consumer_build_edges": 12
+      },
+      "result_origin": "apple-shared-1/result.json",
+      "runtime_origin": "apple-shared-1/runtime-audit.json"
+    },
+    {
+      "route": "apple",
+      "mode": "source",
+      "state": "SOURCE_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "runtime": "RUNTIME_PATH_ISOLATION_PASS",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "binaries": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-source-1/evidence/bin/g09_contracts",
+          "sha256": "e5a6fd37744d3e2f096b06bbfe8149ef685daa16128f6a8d9af20c831ce3061f"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-source-1/evidence/bin/g09_pipeline",
+          "sha256": "b4ae7a989358a45c717e42dfd1108301306820c8c2730454d1a65228b200adf9"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/apple-source-1/evidence/bin/g09_pending",
+          "sha256": "1759580d20d4dae3fcaee5de26b32c1af70572f421b5d6e5301de53252f37010"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        }
+      ],
+      "relocated_prefix": null,
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+      "actual_cumulative_seconds": 20.570519165999997,
+      "preflight_edges": {
+        "consumer_build_edges": 61
+      },
+      "result_origin": "apple-source-1/result.json",
+      "runtime_origin": "apple-source-1/runtime-audit.json"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "runtime": "RUNTIME_PATH_ISOLATION_PASS",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "binaries": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/evidence/bin/g09_contracts",
+          "sha256": "adc9fe47f5377caf4d6b4e22943d4d9d8b37195d32c8435b4542db9a5b067d35"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/evidence/bin/g09_pipeline",
+          "sha256": "c87f540125bf2ee66d9d92a37d131e141c39d6932f59a02264f64ebf9d2c19ce"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/evidence/bin/g09_pending",
+          "sha256": "d7e71f792451555ccff62e9f4420b814264817139a9af56fb440a8e318752262"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ],
+      "relocated_prefix": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-static-1/relocated",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+      "actual_cumulative_seconds": 36.836882792000004,
+      "preflight_edges": {
+        "producer_build_edges": 35,
+        "consumer_build_edges": 9
+      },
+      "result_origin": "vulkan-static-1/result.json",
+      "runtime_origin": "vulkan-static-1/runtime-audit.json"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "runtime": "RUNTIME_PATH_ISOLATION_PASS",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "binaries": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-shared-1/evidence/bin/g09_contracts",
+          "sha256": "d8b44a880f438ead600dd87bf85c9b3071b363c4827838c79d3405081be5ff4c"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-shared-1/evidence/bin/g09_pipeline",
+          "sha256": "0a038e3e2a42efd3f7cf3fb04c5d6b7439c6795bf83c62bf090e7939c9c6d56e"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-shared-1/evidence/bin/g09_pending",
+          "sha256": "cc39c34f9e323ee6748077a07a6165c3d246bbf21cf703067e052e93f5a041af"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ],
+      "relocated_prefix": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-shared-1/relocated",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+      "actual_cumulative_seconds": 42.465459417,
+      "preflight_edges": {
+        "producer_build_edges": 49,
+        "consumer_build_edges": 9
+      },
+      "result_origin": "vulkan-shared-1/result.json",
+      "runtime_origin": "vulkan-shared-1/runtime-audit.json"
+    },
+    {
+      "route": "vulkan",
+      "mode": "source",
+      "state": "SOURCE_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "runtime": "RUNTIME_PATH_ISOLATION_PASS",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "model": "Mac16,12",
+        "chip": "Apple M4",
+        "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+      },
+      "binaries": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-source-1/evidence/bin/g09_contracts",
+          "sha256": "95bc719d384d07a83e96e163a9acb9976597e1880332fc22e093b1c3b43afcdb"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-source-1/evidence/bin/g09_pipeline",
+          "sha256": "de662480ec0dd31cf6b099cbfc5146e4c0046b34037221307756f69c1e47516a"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-sdk/vulkan-source-1/evidence/bin/g09_pending",
+          "sha256": "6b99827f066f96f9a0b250b346fb5c557709267294399e20c941a5f79d4b3c82"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ],
+      "relocated_prefix": null,
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+      "actual_cumulative_seconds": 34.019374958,
+      "preflight_edges": {
+        "consumer_build_edges": 45
+      },
+      "result_origin": "vulkan-source-1/result.json",
+      "runtime_origin": "vulkan-source-1/runtime-audit.json"
+    }
+  ],
+  "actual_cumulative_seconds": 191.00973712500002,
+  "cost_reset": false,
+  "retained_failure": "The first Vulkan static preflight called an existing helper that expected embedded hyle/_deps paths instead of root SDK _deps. It failed before build. Same source/tree/configuration resumed without reinstall/reset; original result and matrix are retained. The data-only helper now selects the actual layout, checks all 152 donor DATA hashes against the already accepted prior G09 ASan proof and checks unchanged source/generator commands/features before reusing those data. Every C++ object remains on the current ordinary shipping compile path.",
+  "reuse_boundary": "Public include/CMake/export/package seams are unchanged from the qualified G08/baseline; the wider independent-header, license and unchanged leaf math/barrier qualifications are borrowed by identity. This record does not count all existing leaf tests as newly run. New candidate Graph/common and hybrid owners are actually incrementally built; this is not the earlier runtime-only phony archive projection.",
+  "qualification_boundary": "Only six named actual Air deliveries. Windows/WSL delivery, sanitizer/device facets, physical overlap, P1, final review and aggregate G09 acceptance are not signed by this record.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "c6c0292a30b44e70223a36bc40f658788192bfe43dba92971ff705c40ac8806f",
+    "bytes": 3239947,
+    "crc": "PASS"
+  }
+}
