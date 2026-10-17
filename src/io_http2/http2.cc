@@ -2389,11 +2389,11 @@ sched::Task<Status> write_source(mem::AllocatorRef allocator,
   }
 }
 
-sched::Task<Status> send_submitted_fixed(mem::AllocatorRef allocator,
-                                         detail::Http2SessionState &state,
-                                         detail::Http2StreamState &stream,
-                                         std::span<const std::byte> body,
-                                         OperationOptions options) noexcept {
+Status send_submitted_fixed(mem::AllocatorRef allocator,
+                            detail::Http2SessionState &state,
+                            detail::Http2StreamState &stream,
+                            std::span<const std::byte> body,
+                            OperationOptions options) noexcept {
   // A fixed body is one logical submission. Feed its borrowed bytes and EOF to
   // nghttp2 before the first drive so HEADERS, DATA and END_STREAM share one
   // protocol lifecycle rather than constructing a public streaming writer and
@@ -2417,7 +2417,7 @@ sched::Task<Status> send_submitted_fixed(mem::AllocatorRef allocator,
     --stream.operation_pins;
     state.maybe_retire(&stream);
     state.collect_garbage();
-    co_return failure;
+    return failure;
   }
   state.notify_owner();
   auto complete = [&]() noexcept {
@@ -2442,7 +2442,7 @@ sched::Task<Status> send_submitted_fixed(mem::AllocatorRef allocator,
   --stream.operation_pins;
   state.maybe_retire(&stream);
   state.collect_garbage();
-  co_return result;
+  return result;
 }
 
 } // namespace
@@ -2581,8 +2581,7 @@ sched::Task<Status> http2_server_send_fixed(mem::AllocatorRef allocator,
       detail::submit_response_head(*state, *stream, head, body.size());
   if (!submitted.ok())
     co_return submitted;
-  co_return co_await send_submitted_fixed(allocator, *state, *stream, body,
-                                          options);
+  co_return send_submitted_fixed(allocator, *state, *stream, body, options);
 }
 
 sched::Task<Status>
@@ -2723,8 +2722,7 @@ sched::Task<Result<Http2StreamId>> http2_client_send_fixed(
     co_return make_unexpected(std::move(submitted).error());
   detail::Http2StreamState *stream = *submitted;
   const Http2StreamId id = *Http2StreamId::from_value(stream->id);
-  Status sent =
-      co_await send_submitted_fixed(allocator, *state, *stream, body, options);
+  Status sent = send_submitted_fixed(allocator, *state, *stream, body, options);
   if (!sent.ok())
     co_return make_unexpected(std::move(sent));
   co_return id;
