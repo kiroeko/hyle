@@ -1,0 +1,186 @@
+{
+  "schema": "hyle.independent-review/g09-completion-observation/v1",
+  "review": "R25",
+  "created_utc": "2026-10-17T04:21:42.580585+00:00",
+  "phase": "SOURCE_AND_BUILD_ENTRY_ONLY",
+  "decision": "SUPPORT_FIXED_FOUR_TU_DISPOSABLE_BUILD_ONLY; PROFILE_NOT_AUTHORIZED_PENDING_ACTUAL_ARTIFACT_REVIEW_AND_FROZEN_AUTH",
+  "scope": "One same-shape nonranking WindowsVulkan candidate observation. Read-only source/manifest/build-run helper and necessary original scheduler/help review. Reviewer performed no configure/build/native/GPU/profile/A/A/P1.",
+  "source_musts": [],
+  "checks": [
+    {
+      "item": "Exact observational delta",
+      "verdict": "PASS_STATIC",
+      "anchors": [
+        "source/invocation.cc:21-24,100-119,242-253,305-308,440-444,473-480,566-573",
+        "source/facade.cc:26,295-315",
+        "source/driver.cc:185-222,229-260"
+      ],
+      "finding": "Read actual unified differences against ae521 original invocation and immutable facade. Only extern record declaration, equivalent poll wrapper, original progress/finished wait wrappers and frontier wait records were inserted. Original conditions, locks, wait arguments, Completion waits, math, ownership and RunState fields are unchanged. facade adds enter/after-State-replay markers and post-close flush. driver.cc and facade_api.h are byte-identical to original. source-proof PASS_STATIC_ONLY is consistent with those direct reads, not a runtime certificate."
+    },
+    {
+      "item": "Recorder publication and flush",
+      "verdict": "PASS_FOR_FIXED_SINGLE_STATE_PER_IMAGE_CONSUMER",
+      "anchors": [
+        "source/recorder.h:8-36",
+        "source/facade.cc:228-275,295-315",
+        "src/sched/scheduler.cc:907-939,1082-1097,1741-1748"
+      ],
+      "finding": "Relaxed fetch_add reserves distinct slots but is NOT a publication/release protocol for Record fields; used.load(acquire) alone would not make concurrent flush safe. Here added writers run only on caller or original Sched drivers. State.close closes every slot without early return, then Scheduler.drain; drain acquire-observes the acq_rel outstanding decrements after fiber finish hooks. Caller records are sequenced before flush. The fixed driver has one State per image at a time and synchronous replay/finish, so no remaining writer races flush/reset. This does not license concurrent States/flush or foreign callback writers. Overflow is reported and destroy returns error; no silent truncation PASS."
+    },
+    {
+      "item": "Record boundaries and time meaning",
+      "verdict": "PASS_STATIC_WITH_ATTRIBUTION_LIMITS",
+      "anchors": [
+        "source/recorder.h:12-17,32-47",
+        "source/facade.cc:295-301",
+        "source/invocation.cc:100-119,566-573",
+        "source-manifest.json record_kinds"
+      ],
+      "finding": "Kind3 is after State.replay and its original Drain return but before the C status formatter/return; it is not driver-side return. Poll tokens are Completion object addresses and may be reused; combine image, enclosing State replay interval, joint RunState and temporal lifetime before attributing them. Concurrent producer timestamp order need not equal reserved slot order, so analysis must use recorded times/thread/lifetimes rather than assume rows are clock-sorted. Native public terminal may be poll-driven; these records do not supply independent native-ready time.",
+      "clock": "QPC converted to integer ns. NVTX payload is QPC before nvtxMarkEx and kind2 has QPC after. Actual trace must support a consistent bounded offset interval; source markers alone do not prove the mapping. GPU batch end is not checked public completion. Record/marker overhead and profiler threads remain diagnostic UNKNOWN, not P1."
+    },
+    {
+      "item": "One local externC recorder per image",
+      "verdict": "SOURCE_SHAPE_SUPPORTS_BUILD; ACTUAL_BINDING_PENDING",
+      "anchors": [
+        "source/invocation.cc:23",
+        "source/recorder.h:32-37",
+        "source/facade.cc:26",
+        "source/CMakeLists.txt:11-20"
+      ],
+      "finding": "The invocation object has only one global externC g09_record declaration. Only facade.cc includes the defining recorder header; wrapper/unchanged driver do not. One direct invocation object plus one facade TU is linked into each of two separate PE DLLs. Original graph_route_cpu_vulkan static target has no declared whole-archive extraction in this seam. PE local resolution is plausible; a successful build and actual maps/imports/exports are still necessary to prove no original invocation member, no duplicate or cross-image recorder binding."
+    },
+    {
+      "item": "Finite build isolation",
+      "verdict": "SUPPORT_BUILD_ONLY",
+      "anchors": [
+        "source/CMakeLists.txt:7-34",
+        "g09_build_completion_observation.py:18-23,37-80,82-100"
+      ],
+      "finding": "Only static Windows qualified SDK imports, four compile records (one invocation, two facade, one wrapper), original imported nanobench archive, LTO off, no SDK/native/kernel targets. Builder refuses existing build/logs, hashes source manifest and unchanged owner source, checks exactly4 compile commands and small dry run, uses2jobs/BelowNormal/up-to4logical CPUs, retains failures and same-PID timeout extensions. Runtime copy/actual artifact/map capture occurs only after build; no application command is present."
+    },
+    {
+      "item": "Owned failure cleanup and run gate",
+      "verdict": "PASS_STATIC; ACTUAL_RUN_NOT_GRANTED",
+      "anchors": [
+        "g09_build_completion_observation.py:37-70,101-102",
+        "g09_run_completion_observation.py:25-44,56-78,80-117,119-151",
+        "source/wrapper.cc:5-28"
+      ],
+      "finding": "Both helpers stop still-live owned Popen trees on exceptions and wait the owned parent. Nsight target may outlive profiler: run helper also checks the nonce-bound emitted PID, current full exe path equals this unique diagnostic image, and terminates/waits only that owned target. Wrapper sets/checks actual AboveNormal32768/0x14, then original caller affinity/QoS and emits normal business-return code. No broad process kill or restart. Run requires not-yet-generated auth and actual build metadata/artifact hashes; ordinary OBS env is set and external CUDA/NVTX injection rejected."
+    },
+    {
+      "item": "Installed Nsight option semantics",
+      "verdict": "HELP_MATCHES; ACTUAL_CAPABILITY_UNKNOWN",
+      "anchors": [
+        "g09-nsys-profile-help-24.txt:334-340,490-527,555-560",
+        "g09_run_completion_observation.py:123-145"
+      ],
+      "finding": "Read retained installed-tool help: trace vulkan,nvtx, GPU batch activity, sample/cpuctxsw/backtrace none, wait primary, stop-on-exit true, kill true and show-output true have stated syntax. Only this owned process is intended; no CUDA/WDDM/CPU sampling requested. No profiler was invoked by reviewer. Successful injection, permissions, target exit, GPU workload/submission attribution, dropped data and clock alignment remain unknown until the one authorized capture. CAPTURED_NOT_INTERPRETED is correctly weaker than qualification."
+    }
+  ],
+  "fixed_build": "C:/h7/g09-completion-observation-25",
+  "fixed_sdk": "C:/h7/g09-sdk/vulkan-static-1/relocated",
+  "fixed_executable": "C:/h7/g09-completion-observation-25/bin/g09_observed_driver.exe",
+  "actual_artifact_phase": {
+    "state": "PENDING_SEPARATE_READ_ONLY_REVIEW",
+    "no_runtime_authorization": true,
+    "required_before_profile": [
+      "Actual build terminal, exact4 compile inputs/flags/include SDK identity and original nanobench object identity.",
+      "Both actual maps: replacement invocation object fulfills relevant symbols; original archive invocation member not extracted; g09_record and its record storage resolve inside each own image. Inspect actual exports/imports and linked SDK closure; do not infer solely from absence of link error.",
+      "Hash actual DLLs/driver, maps, SDK/runtime/resources, source manifest/proof, reviewed helpers and this review; bind to one fixed build/run paths and immutable auth.",
+      "Keep one candidate-first/allocation-first candidate self-pair process, original4 shapes/4M/8warmups/12paired/exact1 and complete oracles/retirement. No original A/A/P1 qualification or estimator change.",
+      "Only then may root freeze the one profile permission. Runtime attribution/clock failures or record overflow remain UNKNOWN/FAIL and stop; no retry or further profiler framework."
+    ]
+  },
+  "limits": [
+    "This is validation-copy instrumentation, not a product FIX or public API/layout change. The source records add perturbation and are not ranking evidence.",
+    "Scheduler drain proves this recorder HB only because all inserted writers are caller/Sched and the fixed per-image State lifetime is serial. No general concurrent recorder API is signed.",
+    "No actual map/compiled object, native dispatch, profiler capture, dropped-record count, GPU-to-host clock mapping or native completion attribution is signed by this source phase.",
+    "Initial nonranking numeric tables from unchanged driver remain diagnostics and cannot repair or replace any retained A/A FAIL."
+  ],
+  "source_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\CMakeLists.txt",
+      "sha256": "016e5cccd8db233e8b771ca849060255e33cdd6afd5d2c6e7bd93ff0379b5049",
+      "bytes": 2228
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\driver.cc",
+      "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+      "bytes": 11711
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\facade.cc",
+      "sha256": "673729edffeb93c4d51cd5b8dc5e88c0e3cfe5bca17055aa0efd5c5725181bbf",
+      "bytes": 13808
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\facade_api.h",
+      "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+      "bytes": 905
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\invocation.cc",
+      "sha256": "beb735311c470bdd0ed326506d1a07d8c69d9b02ea2cbe6789fd8996b32f19eb",
+      "bytes": 61046
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\recorder.h",
+      "sha256": "8c00345352f56d1f0e2fb0511df92b9611dddf2020e7a14bea0c7834b2078738",
+      "bytes": 2454
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\wrapper.cc",
+      "sha256": "ee59a3d9d8721bfb46b084838d8712b0bbd20e79a7b299e286e3f1748fda11ef",
+      "bytes": 2142
+    }
+  ],
+  "other_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source-manifest.json",
+      "sha256": "742a0ef719e64baad3725db455a7b2ffbbcf86617bb3160132131cd03721379f",
+      "bytes": 3024
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source-proof.json",
+      "sha256": "0d18211ec68b16e9d511ddbbfdb7f5fd929a0a4149e0668e8b86f950ff9173fa",
+      "bytes": 1922
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_build_completion_observation.py",
+      "sha256": "f1500a3e2b562732d8ee67dd2b1e0e73250404647f8ea9a097c8e8f80487d91f",
+      "bytes": 5881
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_completion_observation.py",
+      "sha256": "9219abce6f522b8ca70aed525d78975cfc77f0fd30091b72f17f545d15d43ef3",
+      "bytes": 9418
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\sched\\scheduler.cc",
+      "sha256": "c774348a896f24ce7194223a97d42d5b2bffb1f7832b5701b89386895be7c47c",
+      "bytes": 104090
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\scheduler.h",
+      "sha256": "38a0dd5081479ddb3dc41b149be84bbedb8928cfbf67d9bf6b38f8ccf9354c5b",
+      "bytes": 20666
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-nsys-profile-help-24.txt",
+      "sha256": "a743dc0d78bf222294b8b94e853542d3f159711abb49d66777baa0ff4e5df4b5",
+      "bytes": 25570
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-nsys-export-help-24.txt",
+      "sha256": "35523923c7dd0e634d65f72e894636ac97af6ef79360f3e82741bca9533b0e75",
+      "bytes": 12169
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\tooling\\inference-g09-native-workload-aa.md",
+      "sha256": "b1e27b0b59d2bb997c5e41abab0c014e07104c5b53366d431fb432f621d24aa9",
+      "bytes": 11326
+    }
+  ]
+}

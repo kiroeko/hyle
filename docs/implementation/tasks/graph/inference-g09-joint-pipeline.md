@@ -3,7 +3,7 @@
 状态：**BLOCKED-from-CANDIDATE，2026-10-17；产品形状冻结，选定交付及 CUDA P1 已通过，另三组 A/A 资格未通过，聚合 P1/终审未验收**。
 baseline为`9e2f25c469634a6f723e76eaf1aa2db5973bca9a`。
 candidate为`3524413272cb52d06af5e64d634edbfef09b9864`；产品实现自`e09f30925`未再变化。
-G07/G08已接受，当前G07–G10 goal完成2/4；G10已另卡AUDITED并开始定向验证，完整文本CLI未开始。
+G07/G08/G10已接受，当前G07–G10 goal完成3/4；剩余G09的三组测量资格与聚合终审，完整文本CLI未开始。
 
 ## 需求、真实事实与owner
 

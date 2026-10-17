@@ -1,0 +1,463 @@
+{
+  "schema": "hyle.independent-review/g09-completion-qualification/v1",
+  "review": "R24",
+  "decision": "CONFIRM_EXISTING_POLLING_COST_AND_EXACT1_OVERRIDE; NO_PROVEN_PRODUCT_MUST_OR_INSTRUMENT_CORRECTION; RETAIN_UNQUALIFIED_STOP",
+  "scope": "One completion-observation/short-epoch mechanism family. Read-only pinned source, prior audit and retained raw A/A inspection; no native, GPU, build, A/A, P1 or new profiler execution, no product/old-evidence/public-instrument edits.",
+  "product_baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "immutable_product_candidate": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "facts": [
+    {
+      "item": "Apple/Vulkan serial/coarse observation",
+      "verdict": "PROVEN_SOURCE_FACT_SHARED_WITH_BASELINE",
+      "anchors": [
+        "src/graph_route_cpu_apple/invocation.cc:42-71,201-210; baseline9e2:55,183-192",
+        "src/graph_route_cpu_vulkan/invocation.cc:46-75,221-232; baseline9e2:201-212",
+        "include/hyle/sched/sync.h:465-489; src/sched/sync.cc:355-364"
+      ],
+      "finding": "Both current and baseline RunState.progress are default-constructed unsignaled Events. All references are timed waits; no signal call or passed-out progress notification exists in either native hybrid owner. After a pending poll, await_completion requests a 1ms timeout, then polls again; a completed poll is followed by the original checked wait. The same unsignaled Event is also used at cold weight preparation. This parks a fiber, not a busy loop or proof of a blocked OS worker.",
+      "boundary": "Requested 1ms is not measured notification delay, actual sleep duration, a strict upper bound or a whole-replay quantization theorem."
+    },
+    {
+      "item": "New native frontier and CUDA counterexample",
+      "verdict": "PROVEN_SOURCE_FACT_NOT_FULL_PLATFORM_DICHOTOMY",
+      "anchors": [
+        "src/graph_route_cpu_apple/invocation.cc:433-488",
+        "src/graph_route_cpu_vulkan/invocation.cc:495-549",
+        "src/graph_route_cpu_cuda/progress.cc:12-37",
+        "src/graph_route_cpu_cuda/invocation.cc:311-338,400-451,507-540"
+      ],
+      "finding": "Apple/Vulkan pending native frontier uses pipeline_ready.wait_for(1ms); notifications originate from admission/CPU progress/claim/error/cancel/driver state, not GPU completion itself. A CPU-ready change can still end a wait early. CUDA's unchanged wait_cuda_prefix enqueues cudaLaunchHostFunc -> Event.signal, with timed fallback for callback suppression/error, and checks the prefix before releasing the Event. However CUDA's new parallel CPU dependency/native-fallback paths also contain 1ms timed observation. It is false to characterize all CUDA progress as callback-driven or all native steps as necessarily paying a full millisecond."
+    },
+    {
+      "item": "Timer representation",
+      "verdict": "COUNTEREVIDENCE_TO_TIMER_WHEEL_OR_CLOCK_BUG_CLAIM",
+      "anchors": [
+        "include/hyle/time/timer_queue.h:24-26,54-76,122-160,192-203",
+        "src/sched/sync.cc:301-316,355-364"
+      ],
+      "finding": "The unchanged radix queue stores absolute nanosecond deadlines and tests deadline<=now without tick rounding. Event::wait_for creates a monotonic deadline; actual owner resumption also depends on scheduler/OS activity. No trace in this review proves faulty Windows timer resolution, a fixed-tick wheel, or a specific oversleep distribution."
+    },
+    {
+      "item": "Cost/contract already acknowledged",
+      "verdict": "NOT_A_NEW_PRODUCT_MUST",
+      "anchors": [
+        "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md:151-161,306-313",
+        ".scratch/inference-gaps/g09-p0-cost-review-7.json (native pending observations/CUDA retries)",
+        "include/hyle/graph/cpu_apple.h:94-100,157-160; include/hyle/graph/cpu_vulkan.h:98-104,161-164"
+      ],
+      "finding": "G09 explicitly retained original 1ms fiber observation and latency-dependent repeated polling in P0. The public coarse journey requires real completion, owner retirement, cancellation and no worker-stranding; the examined contracts do not promise immediate GPU-to-joint notification or a sub-millisecond notice bound. Existing correctness/overlap evidence and declared costs are not invalidated merely by finding these waits.",
+      "product_must": "NONE established. A new product FIX needs a concrete consumer/contract failure or separately admitted performance defect, not unqualified A/A fluctuations."
+    },
+    {
+      "item": "exact1 history, meaning and rationale limit",
+      "verdict": "PREFROZEN_OVERRIDE_NOT_HIDDEN_LATE_CHANGE",
+      "anchors": [
+        "evidence/architecture/inference-g09-p1-prospective/proposal.json:93-106",
+        ".scratch/inference-gaps/g09-p1-prospective-review-11.json (reviewed2026-10-16T23:55:08Z before benchmark construction)",
+        ".scratch/inference-gaps/g09-p1-consumer-source-review-12.json (reviewed2026-10-17T00:21:36Z; exact1/12 rounds source check)",
+        ".scratch/inference-gaps/g09-p1-instrument-adapter/driver.cc:185-222; retained/facade.cc:227-259"
+      ],
+      "finding": "The preconstruction proposal already fixed min=max1 iteration,11 requested epochs,8 warmups, one complete logical replay and n15->31. R12 inspected actual epochIterations(1); the private frozen driver retained it before P1. This fixes the logical unit and work budget, but the records examined do not give a source-derived necessity for one call per epoch, a per-epoch mutable setup dependency, or a demonstrated adequacy calculation for 5%. Each replay independently prepares/submits/waits/observes/releases/drains and is already repeated by warmups/rounds. Lack of such rationale is not proof that the declared configuration is an implementation bug, nor permission to tune it after FAIL."
+    },
+    {
+      "item": "Original calibration and exact override",
+      "verdict": "PROVEN_SOURCE; REMOVING_EXACT1_NOT_A_PROVEN_FIX",
+      "anchors": [
+        "instrument/third_party/nanobench/nanobench.h:476-478,1090-1119,1338-1347,2608-2616,4133-4195,4209-4239,4262-4272",
+        "instrument/bench/integration/perf_control_bench.cc:30"
+      ],
+      "finding": "Original compare normally chooses a shared iteration count by calibration towards clamp(clockResolution*1000,minEpochTime,maxEpochTime). Defaults are min1ms/max100ms. Nonzero epochIterations returns immediately and bypasses that calibration, as the local primary documentation explicitly says. With exact disabled, compareCalibrate starts at min1 and returns it whenever one replay already reaches target; observed2-17ms calls therefore do not establish that default calibration would choose more than1. The control workload sets minEpochTime8ms, while product does not. Calibration is a time/clock-resolution policy, not a target-5%-variance solver. Removing exact1, raising an epoch time or repeating more calls is not signed as a correction."
+    }
+  ],
+  "retained_log_observations": {
+    "method": "Offline raw-table extraction only: 8 A/A logs x4 shapes x2 arm rows per cohort. ns/op converted to milliseconds; err% retained as displayed. Paired relative CI is read as the original within-process paired statistic, never substituted for original op/s process ratios or factor/gross rules.",
+    "cohorts": [
+      {
+        "profile": "windows-vulkan-original",
+        "processes": 8,
+        "arm_rows": 64,
+        "paired_intervals": 32,
+        "row_ms_min_median_max": [
+          6.0869,
+          9.58645,
+          14.6969
+        ],
+        "err_percent_min_median_max": [
+          1,
+          5.199999999999999,
+          13.9
+        ],
+        "arm_rows_err_over5": 33,
+        "paired_ci_width_percentage_points_min_median_max": [
+          6.799999999999997,
+          18.549999999999997,
+          44.599999999999994
+        ],
+        "paired_intervals_wholly_inside_5percent_band": 0,
+        "paired_intervals_containing100": 31,
+        "logs": [
+          {
+            "log": "baseline-0-0.log",
+            "sha256": "f0c7b94713176b0ec306a3034187deeca983b3c2c328d0ff34a2a3e60d735a4e"
+          },
+          {
+            "log": "baseline-0-1.log",
+            "sha256": "a4cc747f575686c08877a99a17cd32548b86a624af847de9ee785f6bd0687ff3"
+          },
+          {
+            "log": "baseline-1-0.log",
+            "sha256": "aa0531f0e56ed129e4758f657a4974e413b83448f8fe27e3d01096353a6b5470"
+          },
+          {
+            "log": "baseline-1-1.log",
+            "sha256": "fcf3cd6bc18c1d32391042de826f5f22c9381373710e96f7ea971a062add9b2b"
+          },
+          {
+            "log": "candidate-0-0.log",
+            "sha256": "25060caba21e0b400070ec6f85ee693af7018e9afbe299c3c748430f2e8542ad"
+          },
+          {
+            "log": "candidate-0-1.log",
+            "sha256": "8650d25d98ae75e1eab0b0bdf2b78e83ebb7193cc6385a564c011e8ec6e87eb0"
+          },
+          {
+            "log": "candidate-1-0.log",
+            "sha256": "6df3b818f7fcada5bdc694fff41df146d400e86ed6f9c66c4f09fa31c33f3154"
+          },
+          {
+            "log": "candidate-1-1.log",
+            "sha256": "b0f79e1fa3ce8e335d683288536ee50d5799a74cc2fe2d9e638ccc6899031800"
+          }
+        ]
+      },
+      {
+        "profile": "air-apple-original",
+        "processes": 8,
+        "arm_rows": 64,
+        "paired_intervals": 32,
+        "row_ms_min_median_max": [
+          2.0694795,
+          5.419916499999999,
+          6.8088125
+        ],
+        "err_percent_min_median_max": [
+          0.5,
+          4.449999999999999,
+          36
+        ],
+        "arm_rows_err_over5": 27,
+        "paired_ci_width_percentage_points_min_median_max": [
+          2,
+          22.349999999999994,
+          71.19999999999999
+        ],
+        "paired_intervals_wholly_inside_5percent_band": 5,
+        "paired_intervals_containing100": 31,
+        "logs": [
+          {
+            "log": "baseline-0-0.log",
+            "sha256": "e4b88e6602ef44c86e1c6c5bf422f473299ae67a11fc3b6e36fe94ccbe53eb36"
+          },
+          {
+            "log": "baseline-0-1.log",
+            "sha256": "e323924c1579cf816fc641ca6ffc32243e7d55211831b1605c2ba34ed175e96c"
+          },
+          {
+            "log": "baseline-1-0.log",
+            "sha256": "a2e5e6d0e683f7334aa6d858e75f8ad05f9cc4a8eb297dfdf2ca387983ed301e"
+          },
+          {
+            "log": "baseline-1-1.log",
+            "sha256": "b682d9d5af07ac24049216bdf924c959ff4bbea4e4228b9adc496fa5933b5849"
+          },
+          {
+            "log": "candidate-0-0.log",
+            "sha256": "1005b580d554d97b27fc43c4181561f22601453bc6d205e9f4e456b1bf4104ca"
+          },
+          {
+            "log": "candidate-0-1.log",
+            "sha256": "a2dae95f806928f5fbeb4cbbcc8c7565b0ba75533291ec577ef99392b3e056e8"
+          },
+          {
+            "log": "candidate-1-0.log",
+            "sha256": "8822c2cf152c5ac1d967c2a62e561a22371bc2f7733dc49c79a9cee3f84b167c"
+          },
+          {
+            "log": "candidate-1-1.log",
+            "sha256": "239fdc86734610e574f5fb4c5eb21331d6a8c31fc6ac197376b5343bf5227b26"
+          }
+        ]
+      },
+      {
+        "profile": "air-vulkan-original",
+        "processes": 8,
+        "arm_rows": 64,
+        "paired_intervals": 32,
+        "row_ms_min_median_max": [
+          8.3003955,
+          12.16366675,
+          16.913042
+        ],
+        "err_percent_min_median_max": [
+          0.7,
+          8.7,
+          26.9
+        ],
+        "arm_rows_err_over5": 47,
+        "paired_ci_width_percentage_points_min_median_max": [
+          13.200000000000003,
+          41.4,
+          74.70000000000002
+        ],
+        "paired_intervals_wholly_inside_5percent_band": 0,
+        "paired_intervals_containing100": 31,
+        "logs": [
+          {
+            "log": "baseline-0-0.log",
+            "sha256": "1e6ef1e849adb5ba664a40a394f537b0b66240ad12406055ab1928e0401775e6"
+          },
+          {
+            "log": "baseline-0-1.log",
+            "sha256": "bce2a22e1f93109f060ffa16fcb9543d027809131d69a571b8be6f785d8bb36f"
+          },
+          {
+            "log": "baseline-1-0.log",
+            "sha256": "c20ea5f230995a60ee25853558365ec42016615767a88bb0f4af108d17c5a4b2"
+          },
+          {
+            "log": "baseline-1-1.log",
+            "sha256": "958fb5673e97666b634dec5a2725e963ba7b0b3dc771a84c7f3b83f312988731"
+          },
+          {
+            "log": "candidate-0-0.log",
+            "sha256": "fe644b304151f6402656de64487a84faf2cb94c4b4aabc11c0baa983f6563748"
+          },
+          {
+            "log": "candidate-0-1.log",
+            "sha256": "b55beab76405569f46679b062a49eea83e9c7a80f26a21b80b7a58a273c008b8"
+          },
+          {
+            "log": "candidate-1-0.log",
+            "sha256": "557f2b3a5860b8ce01395acfcab88a767d33005e3125c677c53d5f8539fc4837"
+          },
+          {
+            "log": "candidate-1-1.log",
+            "sha256": "e1e1d73037868ca93998f768d158442397b846bb78422ea4405aa3cb0f271460"
+          }
+        ]
+      },
+      {
+        "profile": "windows-vulkan-obs-free",
+        "processes": 8,
+        "arm_rows": 64,
+        "paired_intervals": 32,
+        "row_ms_min_median_max": [
+          6.05265,
+          9.9869,
+          14.89135
+        ],
+        "err_percent_min_median_max": [
+          2.5,
+          6.15,
+          10.6
+        ],
+        "arm_rows_err_over5": 46,
+        "paired_ci_width_percentage_points_min_median_max": [
+          8.299999999999997,
+          20.14999999999999,
+          29.099999999999994
+        ],
+        "paired_intervals_wholly_inside_5percent_band": 0,
+        "paired_intervals_containing100": 29,
+        "logs": [
+          {
+            "log": "baseline-0-0.log",
+            "sha256": "2dbbd2722d24e894f09f4b2be183df8b019b37f282f0b8e9c5775ba879509783"
+          },
+          {
+            "log": "baseline-0-1.log",
+            "sha256": "b39d51b50cb8d499527559d40f39f278dd7ee878018d09f1309ac5c76aaddddf"
+          },
+          {
+            "log": "baseline-1-0.log",
+            "sha256": "95f5ffcfb955bdb8b5ad70920d56c0deb077b355aa92b03681c5b7f116823a60"
+          },
+          {
+            "log": "baseline-1-1.log",
+            "sha256": "c3a904d3810f1a2a97ec25ab653232ed18375163f018e72b037970698878a557"
+          },
+          {
+            "log": "candidate-0-0.log",
+            "sha256": "9c8eb66b65f5f7490094b8a406784b579971af4f1bd35f2d318d5841a5d203e1"
+          },
+          {
+            "log": "candidate-0-1.log",
+            "sha256": "ef2e15f3caf06eba1114680391bc50b63b5bf274f14cfaaa2c0c6e6edae4ab03"
+          },
+          {
+            "log": "candidate-1-0.log",
+            "sha256": "8de26cc74f8f359ed3a34ec682d420ce0bf56e30b27b2d51ab50decca3b36d5e"
+          },
+          {
+            "log": "candidate-1-1.log",
+            "sha256": "e78a0ed4456956b97d2054beb4d1205adf1bd77b81552fe3bd093944ac3b1750"
+          }
+        ]
+      }
+    ],
+    "interpretation": "The retained rows directly establish substantial within-process spread under the frozen exact1 topology, and wide paired intervals. err% is the original per-arm median absolute percentage error, not uncertainty of the comparison; the pinned nanobench primary documentation distinguishes them. A paired 95% interval and the factor/gross A/A rules answer different questions. Intervals wholly inside the 5% band are descriptive counts here, not a replacement gate. There are no saved per-round raw elapsed arrays/native readiness timestamps in these logs from which to assign the spread to a particular wait.",
+    "scale_only": {
+      "global_row_ms_min": 2.0694795,
+      "global_row_ms_max": 16.913042,
+      "five_percent_budget_ms_range": [
+        0.103473975,
+        0.8456521000000001
+      ],
+      "nominal_one_ms_fraction_range": [
+        0.059125969178105274,
+        0.4832132910714989
+      ],
+      "caveat": "Dimensional comparison only. A requested1ms wait is large relative to a5% budget for these episodes, but no constant full1ms charge, uniform phase, elapsed rounding, independent jitter or causal contribution is assumed."
+    }
+  },
+  "determination": {
+    "source_mechanism": "PROVEN: native paths have the described timeout-based observation; exact1 overrides calibration.",
+    "product_must": "NOT_PROVEN",
+    "specific_instrument_implementation_bug": "NOT_PROVEN",
+    "claim_current_contract_cannot_ever_resolve5percent": "NOT_PROVEN; this attempt failed its actual qualification gates, which correctly prevent a verdict.",
+    "claim_polling_caused_the_AA_failures": "NOT_PROVEN",
+    "legal_minimal_correction_now": "NONE identified by this bounded source/log review. Keep original failures, costs, qualified CUDA results and unqualified native verdicts unchanged."
+  },
+  "at_most_one_prospective_falsification": {
+    "authorization": "NOT_AUTHORIZED_TO_RUN_BY_THIS_REVIEW; requires separate prior finite tool-card/source/identity freeze, not a new P1 configuration.",
+    "profile": "Windows Vulkan only, current OBS-free host condition; same original4M/F32/2workers/four logical journeys and two same-SDK clone topology. Do not try other overlays, sizes/providers or rank candidate vs baseline.",
+    "minimal_observation": "One bounded non-ranking diagnostic in a discardable validation copy, using small preallocated records at the existing joint pending-poll / wait-arm / resume / complete-poll boundaries and full-replay return. Where original native terminal publication can be unambiguously linked to that same submission, record its actual terminal time as well. Preserve original original Completion::wait/retirement and mathematics; flush records after the complete episode. No shipping source/API/layout/perf core change and no new scheduler/profiler framework.",
+    "required_before_launch": "First demonstrate exact source/object/submission identity for those existing record points and the shared monotonic time domain; merely having wpr/wpa/xperf or native function names is insufficient. If actual leaf completion cannot be attributed without building a new instrument framework, do not pretend GPU end equals full terminal completion: retain UNKNOWN and stop this protocol.",
+    "falsifiable_predicate": "Per recorded replay, separate pending count, requested deadline, actual park/resume duration, last-pending-to-first-complete observation interval, actual leaf-terminal-to-notice gap when available, and full checked-return time. If the path seldom parks or its measured contribution/variation is small relative to the original5% budget, reject this named explanation. If matching terminal times fall within parks and the residual notice gap covaries with the apparent episode spread, support that narrower mechanism only; it still does not qualify a new statistical configuration or automatically justify a product FIX.",
+    "bounds_and_stop": "Freeze one process/work budget before launch (existing warmup8/paired12/exact1 topology is a sufficient bounded diagnostic budget); no result-driven loops, threshold or n/epoch changes. Any attribution failure stays unknown. Finish with evidence or a retained inconclusive stop, not A/A/P1 reruns.",
+    "limitations": "Instrumentation can perturb scheduling; its output is diagnostic, never comparative performance or a replacement for original formal gates. No new execution was performed here."
+  },
+  "remaining_musts": [],
+  "product_source_hashes": [
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "current_sha256": "658cf19a02df86177cd3a0ad54b0821154dcd1f29477736580059a69335d565e",
+      "baseline_sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3",
+      "same_as_product_candidate": true,
+      "byte_equal_baseline": false
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "current_sha256": "ae521a0c6d01b7c48d573da875c34bf897e9dcfefc17c249b087ae20c0c4984e",
+      "baseline_sha256": "538b67c55718a79d0ec54bc0d7e7fce15cf55679690c3abbf686849767c93580",
+      "same_as_product_candidate": true,
+      "byte_equal_baseline": false
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "current_sha256": "fe2fe21832261a8869ef67a6a3228585be5b405e5d0b9c656670e8d4686e4604",
+      "baseline_sha256": "d069fb89c22f6f9f1d8b794859fe126a59eac465f046591d84f2880b57b1509e",
+      "same_as_product_candidate": true,
+      "byte_equal_baseline": false
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/progress.cc",
+      "current_sha256": "fd9aa5491165e58ad6d4db9f8fd83b1e6dc139a9199b8760476f9bcbe0b2d3d5",
+      "baseline_sha256": "fd9aa5491165e58ad6d4db9f8fd83b1e6dc139a9199b8760476f9bcbe0b2d3d5",
+      "same_as_product_candidate": true,
+      "byte_equal_baseline": true
+    },
+    {
+      "path": "include/hyle/sched/sync.h",
+      "current_sha256": "dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5",
+      "baseline_sha256": "dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5",
+      "same_as_product_candidate": true,
+      "byte_equal_baseline": true
+    },
+    {
+      "path": "src/sched/sync.cc",
+      "current_sha256": "564d5dc96e20ba9da6db1188455a360c005b6de8eeb75ed6d3e1501295f0572d",
+      "baseline_sha256": "564d5dc96e20ba9da6db1188455a360c005b6de8eeb75ed6d3e1501295f0572d",
+      "same_as_product_candidate": true,
+      "byte_equal_baseline": true
+    },
+    {
+      "path": "include/hyle/time/timer_queue.h",
+      "current_sha256": "c902b7e6ce94409f47a09568ec0bff309ffae8059e6b8253a6c0cb94c4d79330",
+      "baseline_sha256": "c902b7e6ce94409f47a09568ec0bff309ffae8059e6b8253a6c0cb94c4d79330",
+      "same_as_product_candidate": true,
+      "byte_equal_baseline": true
+    }
+  ],
+  "created_utc": "2026-10-17T04:07:01.332552+00:00",
+  "other_read_inputs": [
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/driver.cc",
+      "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/retained/facade.cc",
+      "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/instrument/third_party/nanobench/nanobench.h",
+      "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/instrument/bench/integration/perf_control_bench.cc",
+      "sha256": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/retained/prospective.json",
+      "sha256": "cd1313900da629a38d98cceda97604d19b3484b3bb8043ac1911fe5b5e0303a6"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-prospective-review-11.json",
+      "sha256": "f15bc5fd2cbbdc1f04159425ff58aafaf0eb6867d0c8dc9128922062ca659220"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-consumer-source-review-12.json",
+      "sha256": "7612d820f5e64c5b7e90693cf1def0ddc6790f9e08fc058d397362683b358d5b"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p0-cost-review-7.json",
+      "sha256": "a15ff27405f4915970d03a3b96621a19b812dd77bc3d4340ab57e9e91e768b62"
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-obs-result-review-23.json",
+      "sha256": "e2835d1bbc3357e96b9519e24cf19cc9308f1fa6b1405ed9cc9b9430ebd90b05"
+    },
+    {
+      "path": "evidence/architecture/inference-g09-p1-prospective/proposal.json",
+      "sha256": "cd1313900da629a38d98cceda97604d19b3484b3bb8043ac1911fe5b5e0303a6"
+    },
+    {
+      "path": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+      "sha256": "e14e671f13827415790c1b372317e69bdd957b0324a71c8bf7f45e2dd243e867"
+    },
+    {
+      "path": "docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
+      "sha256": "bbb5bb1a5164f78d62e47dbf5110f413bcad4e110f8566ea68a6d39acdab2cf3"
+    }
+  ],
+  "contract_correction_clarification": {
+    "initial_review_sha256": "7fc463db16c5260f6630ce04d9d97c2e1d51f3c64def0780a2d6e0d4cfdc125b",
+    "reviewed_utc": "2026-10-17T04:08:06.970691+00:00",
+    "verdict": "NO_CURRENT_AUTHORITY_OR_SUFFICIENT_MECHANISM_EVIDENCE_TO_REPLACE_EXACT1_WITH_LONGER_EPOCHS_AS_A_CORRECTION",
+    "principle": "A new separately admitted measurement-capability contract is possible in principle, while preserving product semantics. That possibility does not make a particular post-failure duration change a proved correction or permit execution under the frozen old contract.",
+    "reasons": [
+      "The1ms interval is requested inside each real complete logical replay. It is not a once-per-epoch measurement overhead or a known timing-error upper bound. Dividing that interval by a5% error budget to pick a batch duration assumes a distribution/independence/amortization model not established by the retained source/logs. Correlated or systematic per-replay stalls can scale with the number of replays.",
+      "About20 percentage points of displayed paired CI describes uncertainty of the original12 within-process pairs. It is not a measured completion-notification residual or an error bound from which a guaranteed epoch length can be computed. Original factor/gross A/A remains the actual qualification policy.",
+      "Grouping K complete prepare/wait/drain calls inside an epoch preserves each call boundary but changes epoch-level averaging and alternation granularity. Keeping outer n15->31,5%/10%,4orders and dimensions does not by itself prove the full measurement contract unchanged.",
+      "Original adaptive calibration targets elapsed time/clock resolution, not arbitrary variance or5% equivalence. Removing the explicit override may still calibrate to1 for the observed2-17ms calls. Raising minEpochTime is therefore a new predeclared policy candidate, not a source-proven recovery in this evidence.",
+      "The current failure already demonstrates nonqualification under the frozen contract. It does not establish that all otherwise valid measurement contracts are incapable of resolving5%, or that product waiting must be changed."
+    ],
+    "minimal_falsification_before_any_duration_candidate": [
+      "At most one separately frozen, same-shape, non-ranking WindowsVulkan observation as described above; do not tune n/epochs/size/provider/thresholds to obtain PASS. First establish whether a small disposable-source record of existing poll/park/resume/public-return points is feasible, with exact submission attribution and bounded records, without a new profiler framework.",
+      "Recording the actual count and duration of parks can falsify a park-dominated explanation if parks are absent or their contribution/variation is small. A large park fraction alone cannot distinguish necessary native execution time from avoidable notice delay.",
+      "For a positive completion-to-notice claim, require an independently attributable native-completed instant for the same submission plus the original host-tail/retirement boundary. If native terminal publication itself is driven by joint.poll, timestamping that publication is not an independent readiness timestamp; a GPU kernel-end timestamp is also not the whole public Completion.",
+      "wpr/wpa/xperf presence, a non-elevated token and missing private Vulkan PDB do not alone establish trace capability or lack of permission. No ETW/profiler was started here. If attribution cannot be obtained within this finite existing-tool/source-record seam, retain UNKNOWN rather than construct a broad framework.",
+      "Only after a mechanism and a defensible error model are separately demonstrated could a new fixed epoch-duration/calibration policy be reviewed and frozen before any fresh qualification. No such model/duration is selected or authorized by R24."
+    ]
+  }
+}

@@ -1,0 +1,342 @@
+{
+  "schema": "hyle.independent-review/g09-completion-observation/v1",
+  "review": "R25",
+  "created_utc": "2026-10-17T04:21:42.580585+00:00",
+  "phase": "SOURCE_AND_ACTUAL_ARTIFACT_FINAL_REVIEW",
+  "decision": "SUPPORT_ONE_FROZEN_NONRANKING_COMPLETION_OBSERVATION_AFTER_EXACT_AUTH_SEAL",
+  "scope": "One nonranking Windows Vulkan completion-observation source and actual artifact review. Read-only source, helpers, original scheduler/help, COFF symbols/relocations, maps, PE metadata, compile/link inputs and hashes; no reviewer build/application/GPU/profiler run.",
+  "source_musts": [],
+  "fixed_build": "C:/h7/g09-completion-observation-25",
+  "fixed_sdk": "C:/h7/g09-sdk/vulkan-static-1/relocated",
+  "fixed_executable": "C:/h7/g09-completion-observation-25/bin/g09_observed_driver.exe",
+  "source_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\CMakeLists.txt",
+      "sha256": "016e5cccd8db233e8b771ca849060255e33cdd6afd5d2c6e7bd93ff0379b5049",
+      "bytes": 2228
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\driver.cc",
+      "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+      "bytes": 11711
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\facade.cc",
+      "sha256": "673729edffeb93c4d51cd5b8dc5e88c0e3cfe5bca17055aa0efd5c5725181bbf",
+      "bytes": 13808
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\facade_api.h",
+      "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+      "bytes": 905
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\invocation.cc",
+      "sha256": "beb735311c470bdd0ed326506d1a07d8c69d9b02ea2cbe6789fd8996b32f19eb",
+      "bytes": 61046
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\recorder.h",
+      "sha256": "8c00345352f56d1f0e2fb0511df92b9611dddf2020e7a14bea0c7834b2078738",
+      "bytes": 2454
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\wrapper.cc",
+      "sha256": "ee59a3d9d8721bfb46b084838d8712b0bbd20e79a7b299e286e3f1748fda11ef",
+      "bytes": 2142
+    }
+  ],
+  "other_inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source-manifest.json",
+      "sha256": "742a0ef719e64baad3725db455a7b2ffbbcf86617bb3160132131cd03721379f",
+      "bytes": 3024
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source-proof.json",
+      "sha256": "0d18211ec68b16e9d511ddbbfdb7f5fd929a0a4149e0668e8b86f950ff9173fa",
+      "bytes": 1922
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_build_completion_observation.py",
+      "sha256": "f1500a3e2b562732d8ee67dd2b1e0e73250404647f8ea9a097c8e8f80487d91f",
+      "bytes": 5881
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_completion_observation.py",
+      "sha256": "9219abce6f522b8ca70aed525d78975cfc77f0fd30091b72f17f545d15d43ef3",
+      "bytes": 9418
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\sched\\scheduler.cc",
+      "sha256": "c774348a896f24ce7194223a97d42d5b2bffb1f7832b5701b89386895be7c47c",
+      "bytes": 104090
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\scheduler.h",
+      "sha256": "38a0dd5081479ddb3dc41b149be84bbedb8928cfbf67d9bf6b38f8ccf9354c5b",
+      "bytes": 20666
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-nsys-profile-help-24.txt",
+      "sha256": "a743dc0d78bf222294b8b94e853542d3f159711abb49d66777baa0ff4e5df4b5",
+      "bytes": 25570
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-nsys-export-help-24.txt",
+      "sha256": "35523923c7dd0e634d65f72e894636ac97af6ef79360f3e82741bca9533b0e75",
+      "bytes": 12169
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\tooling\\inference-g09-native-workload-aa.md",
+      "sha256": "b1e27b0b59d2bb997c5e41abab0c014e07104c5b53366d431fb432f621d24aa9",
+      "bytes": 11326
+    }
+  ],
+  "source_phase_reference": {
+    "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\25-source.json",
+    "sha256": "299df5e54c70a761b80f0df3374f7c199a4b305ae3fd68dd0b0679a39ef9e1b0",
+    "bytes": 13104
+  },
+  "source_phase_original_decision": "SUPPORT_FIXED_FOUR_TU_DISPOSABLE_BUILD_ONLY; PROFILE_NOT_AUTHORIZED_PENDING_ACTUAL_ARTIFACT_REVIEW_AND_FROZEN_AUTH",
+  "source_phase_checks": [
+    {
+      "item": "Exact observational delta",
+      "verdict": "PASS_STATIC",
+      "anchors": [
+        "source/invocation.cc:21-24,100-119,242-253,305-308,440-444,473-480,566-573",
+        "source/facade.cc:26,295-315",
+        "source/driver.cc:185-222,229-260"
+      ],
+      "finding": "Read actual unified differences against ae521 original invocation and immutable facade. Only extern record declaration, equivalent poll wrapper, original progress/finished wait wrappers and frontier wait records were inserted. Original conditions, locks, wait arguments, Completion waits, math, ownership and RunState fields are unchanged. facade adds enter/after-State-replay markers and post-close flush. driver.cc and facade_api.h are byte-identical to original. source-proof PASS_STATIC_ONLY is consistent with those direct reads, not a runtime certificate."
+    },
+    {
+      "item": "Recorder publication and flush",
+      "verdict": "PASS_FOR_FIXED_SINGLE_STATE_PER_IMAGE_CONSUMER",
+      "anchors": [
+        "source/recorder.h:8-36",
+        "source/facade.cc:228-275,295-315",
+        "src/sched/scheduler.cc:907-939,1082-1097,1741-1748"
+      ],
+      "finding": "Relaxed fetch_add reserves distinct slots but is NOT a publication/release protocol for Record fields; used.load(acquire) alone would not make concurrent flush safe. Here added writers run only on caller or original Sched drivers. State.close closes every slot without early return, then Scheduler.drain; drain acquire-observes the acq_rel outstanding decrements after fiber finish hooks. Caller records are sequenced before flush. The fixed driver has one State per image at a time and synchronous replay/finish, so no remaining writer races flush/reset. This does not license concurrent States/flush or foreign callback writers. Overflow is reported and destroy returns error; no silent truncation PASS."
+    },
+    {
+      "item": "Record boundaries and time meaning",
+      "verdict": "PASS_STATIC_WITH_ATTRIBUTION_LIMITS",
+      "anchors": [
+        "source/recorder.h:12-17,32-47",
+        "source/facade.cc:295-301",
+        "source/invocation.cc:100-119,566-573",
+        "source-manifest.json record_kinds"
+      ],
+      "finding": "Kind3 is after State.replay and its original Drain return but before the C status formatter/return; it is not driver-side return. Poll tokens are Completion object addresses and may be reused; combine image, enclosing State replay interval, joint RunState and temporal lifetime before attributing them. Concurrent producer timestamp order need not equal reserved slot order, so analysis must use recorded times/thread/lifetimes rather than assume rows are clock-sorted. Native public terminal may be poll-driven; these records do not supply independent native-ready time.",
+      "clock": "QPC converted to integer ns. NVTX payload is QPC before nvtxMarkEx and kind2 has QPC after. Actual trace must support a consistent bounded offset interval; source markers alone do not prove the mapping. GPU batch end is not checked public completion. Record/marker overhead and profiler threads remain diagnostic UNKNOWN, not P1."
+    },
+    {
+      "item": "One local externC recorder per image",
+      "verdict": "SOURCE_SHAPE_SUPPORTS_BUILD; ACTUAL_BINDING_PENDING",
+      "anchors": [
+        "source/invocation.cc:23",
+        "source/recorder.h:32-37",
+        "source/facade.cc:26",
+        "source/CMakeLists.txt:11-20"
+      ],
+      "finding": "The invocation object has only one global externC g09_record declaration. Only facade.cc includes the defining recorder header; wrapper/unchanged driver do not. One direct invocation object plus one facade TU is linked into each of two separate PE DLLs. Original graph_route_cpu_vulkan static target has no declared whole-archive extraction in this seam. PE local resolution is plausible; a successful build and actual maps/imports/exports are still necessary to prove no original invocation member, no duplicate or cross-image recorder binding."
+    },
+    {
+      "item": "Finite build isolation",
+      "verdict": "SUPPORT_BUILD_ONLY",
+      "anchors": [
+        "source/CMakeLists.txt:7-34",
+        "g09_build_completion_observation.py:18-23,37-80,82-100"
+      ],
+      "finding": "Only static Windows qualified SDK imports, four compile records (one invocation, two facade, one wrapper), original imported nanobench archive, LTO off, no SDK/native/kernel targets. Builder refuses existing build/logs, hashes source manifest and unchanged owner source, checks exactly4 compile commands and small dry run, uses2jobs/BelowNormal/up-to4logical CPUs, retains failures and same-PID timeout extensions. Runtime copy/actual artifact/map capture occurs only after build; no application command is present."
+    },
+    {
+      "item": "Owned failure cleanup and run gate",
+      "verdict": "PASS_STATIC; ACTUAL_RUN_NOT_GRANTED",
+      "anchors": [
+        "g09_build_completion_observation.py:37-70,101-102",
+        "g09_run_completion_observation.py:25-44,56-78,80-117,119-151",
+        "source/wrapper.cc:5-28"
+      ],
+      "finding": "Both helpers stop still-live owned Popen trees on exceptions and wait the owned parent. Nsight target may outlive profiler: run helper also checks the nonce-bound emitted PID, current full exe path equals this unique diagnostic image, and terminates/waits only that owned target. Wrapper sets/checks actual AboveNormal32768/0x14, then original caller affinity/QoS and emits normal business-return code. No broad process kill or restart. Run requires not-yet-generated auth and actual build metadata/artifact hashes; ordinary OBS env is set and external CUDA/NVTX injection rejected."
+    },
+    {
+      "item": "Installed Nsight option semantics",
+      "verdict": "HELP_MATCHES; ACTUAL_CAPABILITY_UNKNOWN",
+      "anchors": [
+        "g09-nsys-profile-help-24.txt:334-340,490-527,555-560",
+        "g09_run_completion_observation.py:123-145"
+      ],
+      "finding": "Read retained installed-tool help: trace vulkan,nvtx, GPU batch activity, sample/cpuctxsw/backtrace none, wait primary, stop-on-exit true, kill true and show-output true have stated syntax. Only this owned process is intended; no CUDA/WDDM/CPU sampling requested. No profiler was invoked by reviewer. Successful injection, permissions, target exit, GPU workload/submission attribution, dropped data and clock alignment remain unknown until the one authorized capture. CAPTURED_NOT_INTERPRETED is correctly weaker than qualification."
+    }
+  ],
+  "source_phase_original_pending_artifact_conditions": {
+    "state": "PENDING_SEPARATE_READ_ONLY_REVIEW",
+    "no_runtime_authorization": true,
+    "required_before_profile": [
+      "Actual build terminal, exact4 compile inputs/flags/include SDK identity and original nanobench object identity.",
+      "Both actual maps: replacement invocation object fulfills relevant symbols; original archive invocation member not extracted; g09_record and its record storage resolve inside each own image. Inspect actual exports/imports and linked SDK closure; do not infer solely from absence of link error.",
+      "Hash actual DLLs/driver, maps, SDK/runtime/resources, source manifest/proof, reviewed helpers and this review; bind to one fixed build/run paths and immutable auth.",
+      "Keep one candidate-first/allocation-first candidate self-pair process, original4 shapes/4M/8warmups/12paired/exact1 and complete oracles/retirement. No original A/A/P1 qualification or estimator change.",
+      "Only then may root freeze the one profile permission. Runtime attribution/clock failures or record overflow remain UNKNOWN/FAIL and stop; no retry or further profiler framework."
+    ]
+  },
+  "artifact_reviewed_utc": "2026-10-17T04:25:36.394689+00:00",
+  "artifact_phase": {
+    "verdict": "STATIC_ARTIFACTS_SUPPORT_ONE_EXACTLY_FROZEN_NONRANKING_PROFILE_AFTER_AUTH_SEAL",
+    "reviewed_artifact_data": {
+      "all_artifact_binding_rehashed": true,
+      "linked_archive_count": 42,
+      "linked_archive_bytes": 1016433088,
+      "nvtx_headers_count": 36,
+      "runtime_count": 8,
+      "original_qualified_installed_hyle_headers_rehashed": 237,
+      "pe": [
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_1.dll",
+          "sha256": "5c52845fabdf308ff1105d63ec87fb9b9d17a361e71cd1c786a14d7c08243ad8",
+          "bytes": 66080768,
+          "text_sha256": "da857384ced8662a0ce5fe2185fb16c178fd7a7ccca406e447be4f4cac75b433"
+        },
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_2.dll",
+          "sha256": "030948791f8961a87cc91a855c2460180f03ffa18146bfe57a9f9a9d4035142c",
+          "bytes": 66080768,
+          "text_sha256": "da857384ced8662a0ce5fe2185fb16c178fd7a7ccca406e447be4f4cac75b433"
+        },
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe",
+          "sha256": "455e646f367f667afb0c41cd5ff3ae2386627057b3e933220c2c1ea038c46a96",
+          "bytes": 135168,
+          "text_sha256": "fbf7d4763c6609b108e093492ad5d9bc669e0928b299085900428c224eafcbe1"
+        }
+      ],
+      "maps": [
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\g09_observed_1.map",
+          "sha256": "757503c26bca7c16dbcfb7cdbe107f18dc2b6b49de4a6c383b3663bc144f5153",
+          "bytes": 29657020
+        },
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\g09_observed_2.map",
+          "sha256": "6d2f38e8b980ad2303b947171eee8cab4e02616c99e78d06b4c9a539220dc422",
+          "bytes": 29657021
+        }
+      ],
+      "objects": [
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_invocation.dir\\invocation.cc.obj",
+          "sha256": "20645ad107400a7c35b75be7974f1a711c00d5656b83cd4a10f55d06e7f116f6",
+          "bytes": 1617664
+        },
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_1.dir\\facade.cc.obj",
+          "sha256": "3e4dd41c7d3bcf4e6f64c09ca78eeb599e8365a478f08ac97fbf8f9138000f23",
+          "bytes": 390823
+        },
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_2.dir\\facade.cc.obj",
+          "sha256": "1e1adda624ecaca055d576ad8188a2e3eafd2d249368c11ae9b8f0f102d168ce",
+          "bytes": 390824
+        },
+        {
+          "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_driver.dir\\wrapper.cc.obj",
+          "sha256": "1b6a7cb893610b8035e4e031518d5a7d5205ad9c25783b317da3aaa767a245ac",
+          "bytes": 563196
+        }
+      ],
+      "compile_commands": {
+        "path": "C:\\h7\\g09-completion-observation-25\\compile_commands.json",
+        "sha256": "120b2ed05de5b354c213e7e37d4df7d89469b4eedd7c3cb81018d99d07a2314f",
+        "bytes": 4614
+      },
+      "original_nanobench_archive": {
+        "path": "C:\\h7\\g09-p1-instrument\\vulkan\\qualified-build-obs-free-1\\g09_nanobench.lib",
+        "sha256": "1fe49b2a6c7718d5cc2b9d3bd3f452317eaab07713367a99e70b2d526f368951",
+        "bytes": 2236544
+      },
+      "old_source_review": {
+        "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\25-source.json",
+        "sha256": "299df5e54c70a761b80f0df3374f7c199a4b305ae3fd68dd0b0679a39ef9e1b0",
+        "bytes": 13104
+      },
+      "helper_run": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_completion_observation.py",
+        "sha256": "9219abce6f522b8ca70aed525d78975cfc77f0fd30091b72f17f545d15d43ef3",
+        "bytes": 9418
+      },
+      "helper_build": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_build_completion_observation.py",
+        "sha256": "f1500a3e2b562732d8ee67dd2b1e0e73250404647f8ea9a097c8e8f80487d91f",
+        "bytes": 5881
+      },
+      "artifact_binding": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-binding.json",
+        "sha256": "1649b8c8480fdc222fc4f9df1956f9ef222cda2f03721cddd9f72358fd8500a1",
+        "bytes": 41981
+      },
+      "build_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\build-result.json",
+        "sha256": "5f61416341d074ebdd075e6c8e43bb5de7ecf67a221b8eac2265515ba3050bb6",
+        "bytes": 4072
+      },
+      "auth_exists": false,
+      "run_exists": false
+    },
+    "checks": [
+      {
+        "item": "Actual four-TU build and provenance",
+        "verdict": "PASS_STATIC",
+        "evidence": "compile_commands.json has exactly4 records: invocation.cc once, facade.cc twice with candidate-1/2, wrapper.cc once. All source paths are this disposable directory; /O2 /MD NDEBUG, no LTO/testing/sanitizer. HYLE_STATIC and installed SDK include root apply to replacement invocation/facades; driver only original consumer headers. build and dry-run show4CXX+3link=7 edges, no SDK/native/kernel compiler edges.",
+        "cost": "Builder terminal BUILT_NOT_RUN: configure60.046s, actual build stage8.484s, total70.890s including remaining metadata/copy work. No application was invoked by builder. C4819 warning in unchanged nanobench header was retained; not silently rewritten or declared an algorithm change."
+      },
+      {
+        "item": "Actual strong symbol and replacement member",
+        "verdict": "PASS_STATIC",
+        "evidence": "Independently invoked installed dumpbin /symbols on the actual3 relevant COFF objects and /relocations on invocation object. Its cpu_vulkan::Executable::create_invocation is a defined External function and g09_record is UNDEF External. Each facade object defines g09_record as External and references create_invocation as UNDEF. Invocation has24 REL32 relocations to that one external g09_record symbol.",
+        "maps": "Both maps have exactly one strong create_invocation public function at preferred RVA0xcfd0 -> invocation.cc.obj; exactly one g09_record at RVA0x1f070 -> facade.cc.obj. records RVA0x3eac010 and used RVA0x412c010 also come from each own facade.cc.obj. No hyle_graph_route_cpu_vulkan:invocation.cc.obj member appears. The original archive is still a legal input for other members; it was not removed wholesale.",
+        "caveat": "These are preferred PE RVAs, not actual ASLR load addresses. Actual module/table ownership still has the unchanged runtime checks."
+      },
+      {
+        "item": "Actual private binding and vendor envelope",
+        "verdict": "PASS_STATIC",
+        "evidence": "Independently parsed actual dumpbin export logs. Both DLLs have exactly78 exports, byte-name set equal to prior qualified Vk candidate export set: original77 ATen/c10 vendor directives plus only hyle_g09_facade_v1. g09_record/recorder data/private HYLE types are not exported; import logs contain no private HYLE/g09 imports or cross-facade DLL dependency. Driver has0exports and no HYLE link dependency. Both DLL .text hashes are equal; whole-PE differences are retained."
+      },
+      {
+        "item": "Actual SDK/runtime/header/instrument identities",
+        "verdict": "PASS_STATIC",
+        "evidence": "Read actual two response files: direct replacement object then matching facade object, followed by unchanged SDK imports. Independently rehashed all42 explicit absolute linked libraries and proved their exact set equals RSP library set.39 installed SDK archives match original R17 candidate SDK-file hashes; other3 are fixed Torch import libraries.237 installed HYLE headers were rehashed against the original qualified candidate inventory.3PE,8 copied runtime DLLs,36 NVTX headers and Nsys.exe all match artifact-binding/build-result hashes.",
+        "nanobench": "Driver imports the existing original nanobench archive and no nanobench rebuild edge exists. Current archive hash is independently bound below; include it in auth because the42-library list is only the facade RSP union, not the driver archive input.",
+        "limits": "Current hashes are not a claim to reconstruct unrelated historical host DLLs. No SDK/native compute object was rebuilt."
+      },
+      {
+        "item": "One-process runtime admission",
+        "verdict": "SUPPORT_AFTER_EXACT_AUTHORIZATION_SEAL",
+        "evidence": "Reviewed run helper source remains SHA9219abce6f522b8ca70aed525d78975cfc77f0fd30091b72f17f545d15d43ef3. observation-authorization.json and run directory were still absent at review. Exact auth must bind this final review, source/proof/helpers, actual maps/objects/PE/SDK/runtime/resources/original nanobench archive/NVTX/Nsys identities and fixed paths. This permits only one candidate self-pair, candidate-first/allocation-first, original4shapes4M/8warmups/12paired/exact1 nonranking Vulkan+NVTX capture.",
+        "not_signed": "No runtime, collector permission, injected-module identity, no-OBS snapshot, overflow/drop count, normal application exit, SQL export, QPC/NVTX offset, native submission correspondence, actual notice gap, causal explanation, A/A qualification or P1 is signed by static artifact review."
+      }
+    ],
+    "musts": [],
+    "authorization_conditions": [
+      "Seal an exact observation-authorization.json only after this final review hash is known; include all actually linked inputs, especially the original imported nanobench archive not present in facade library union.",
+      "Preserve the unique build and once-only run directory, original product/math/waits/ownership and original driver/nanobench; no rebuild/retry/overlay or calibration/statistical change.",
+      "At execution require original actual policy/nonce-bound PID, full4+4 oracles/8destroy, no recorder overflow, four-phase noOBS, normal main marker/target exit and real trace artifacts; fail/unknown stops.",
+      "Only actual trace may establish bounded clock offset and same-submission relationship. Poll-driven terminal or GPU batch end must not be relabelled complete public readiness. Any mapping failure remains UNKNOWN; no new instrument framework or repeat is allowed by this review."
+    ]
+  },
+  "remaining_musts": [],
+  "reviewer_execution": "Only read-only file/hash, dumpbin COFF symbol/relocation and static metadata inspection. No configure/build/application/native/GPU/profiler/A-A/P1 execution by reviewer.",
+  "source_phase_limits": [
+    "This is validation-copy instrumentation, not a product FIX or public API/layout change. The source records add perturbation and are not ranking evidence.",
+    "Scheduler drain proves this recorder HB only because all inserted writers are caller/Sched and the fixed per-image State lifetime is serial. No general concurrent recorder API is signed.",
+    "No actual map/compiled object, native dispatch, profiler capture, dropped-record count, GPU-to-host clock mapping or native completion attribution is signed by this source phase.",
+    "Initial nonranking numeric tables from unchanged driver remain diagnostics and cannot repair or replace any retained A/A FAIL."
+  ],
+  "limits": [
+    "Static source/artifact review permits only the one fixed nonranking observation after exact auth seal; it does not grant original A/A/P1 qualification or any product/statistical correction.",
+    "Actual native completion correspondence, QPC/NVTX offset, no-OBS/normal exit, profiler record completeness and causal notice-gap attribution await that one capture. Unknown remains unknown; source/PE metadata cannot substitute.",
+    "The historical source-stage pending conditions and limits are retained explicitly as source_phase fields, not as claims that artifact metadata remains unread."
+  ]
+}

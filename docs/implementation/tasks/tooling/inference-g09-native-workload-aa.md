@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**BLOCKED，2026-10-17；一次 Windows Vulkan OBS 宿主排除已执行，原 A/A 仍失败，产品 FIX 集为空**。
+状态：**AUDITED，2026-10-17；R25 源码及实际产物复核通过，精确封存后只执行一次非排名观察；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -95,3 +95,46 @@ G09 四产品 owner 保持 BLOCKED-from-CANDIDATE。旧失败、0 有效 A/B 和
 这一次尝试已终止，不重复、不试其他 overlay 设置。当前阻塞 owner 为本工具任务；
 恢复仍须新的具名 instrument/host/contract 机制、独立复核和新测量前冻结的有限修正，
 不能继续复用 R21/R22 为同配置或另一开关授权。Air/CUDA、G10 和四产品 owner 状态不变。
+
+## R24：一次完成观察的有限诊断
+
+[独立 R24](../../../../evidence/architecture/inference-g09-completion-observation/24.json)确认：
+Apple/Vulkan 的既有 pending 路径有未 signal 的 1ms 定时观察，新 frontier 同样没有 GPU 完成通知；
+CUDA 原 prefix 有回调，但其新并行 fallback 仍会定时观察。baseline 已有同类成本，原卡也已披露。
+TimerQueue 使用纳秒 deadline，没有固定 tick 舍入；未证 Windows 时钟错误、A/A 因果或产品 MUST。
+原 exact1 确实绕过校准，但默认目标也是 1ms；不能把去掉 exact1 或加 epoch 时长预签成修正。
+
+当前只审计一个诊断入口：在可丢弃的 Windows Vulkan candidate 副本中，对原 joint 的
+poll/park/resume/complete-poll 及原公开完整 replay 边界追加预分配记录，保留原数学、ownership、
+checked wait/结果观察/drain。只替换一个 hybrid invocation TU，并重链两份 private facade，
+其余 SDK/叶实现、原 driver 主体与 nanobench 对象不变；driver wrapper 仅设置并核对真实
+Windows AboveNormal/0x14，避免 profiler 子进程默认优先级冒充原身份。总计四个小 TU，
+没有产品/API/layout、公共仪器、Scheduler 或新线程池改动。
+实际代码/链接映射和有界记录归属须先独立审查，再冻结一次进程入口；未审查前不运行。
+[R25 源码与产物终审](../../../../evidence/architecture/inference-g09-completion-observation/25.json)
+确认：记录写者限 caller/Sched，flush 在原 close/drain 的独立 happens-before 之后；
+计数器不冒充发布屏障。四个 TU 构建及离线检查通过，两 map/COFF 证明替换 invocation 与本地 recorder
+绑定，旧 invocation archive member 未抽取；3 个 PE、8 个 runtime、42 个 facade 链接库、
+原 driver 的 nanobench archive、237 个 SDK 头及 36 个 NVTX 头身份均已核对。
+构建累计 70.890 秒（配置 60.046 秒、实际构建 8.484 秒）；此时尚未执行应用或 profiler。
+一次入口及精确输入由[运行前封存](../../../../evidence/architecture/inference-g09-completion-observation/authorization.json)
+固定；源码、原 help、helpers、map 与构建日志保存在同目录的两个 ZIP 中。
+
+固定诊断边界如下：
+
+- source：`.scratch/inference-gaps/g09-completion-observation-25/source`；
+  build：`C:/h7/g09-completion-observation-25`；两者首次生成，不覆盖历史尝试。
+- 原 Windows Vulkan 4M F32、四形状、两 candidate 映像、原 8 warmups/12 paired rounds/exact1，
+  一个进程、candidate-first/candidate-allocation-first。这里只观察成本，任何数字都不签 A/A/P1 或排名。
+- 单独固定 `DISABLE_VULKAN_OBS_CAPTURE=1`；最多 4 核、BelowNormal、build 2 jobs，重型任务串行。
+  原 caller CPU2/parent0x14 采样身份保留；一个进程中额外 tracing 开销明确属于 diagnostic。
+- 使用现有 Nsight Systems 2026.1.3 的 Vulkan/NVTX 应用 tracing，关闭 CPU sampling/context-switch/
+  WDDM/CUDA tracing；不请求管理员、不启动 kernel ETW。只收集该 owned child，正常退出后离线导出。
+- 记录计数溢出、源/对象/SDK/映像归属错误、oracle/退休或正常退出失败即停止；不重试、不换采样设置。
+  1800 秒观察超时只延长同 PID；owned launcher 异常须终止自己的任务树，不放任后代采样。
+- poll 驱动的 terminal 时间不充当独立 native readiness；GPU kernel/batch end 不充当公共 Completion。
+  有明确同 submission 归属与共享时钟后才分析完成到观察的间隔，否则该项 UNKNOWN。
+  park 很少或贡献/波动很小可反证本假说；park 多仍不证明等待可避免或可平均。
+
+这不是恢复正式 P1，也不授权改 epoch/估计量/阈值/工作负载或基础库。
+一次诊断后只接受可定位机制和可审的有限纠正，或保留未决；不扩成新的观测框架。
