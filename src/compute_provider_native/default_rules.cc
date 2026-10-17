@@ -1,4 +1,5 @@
 #include "default_rules.h"
+#include "torch_cpu_program.h"
 #include "hyle/core/environment.h"
 
 #include <algorithm>
@@ -172,6 +173,10 @@ RoutePolicyId policy(const Domain &d) noexcept {
 } // namespace
 
 bool qualified_default_environment() noexcept {
+  // Explicit new shared-runtime settings do not inherit the old one-thread
+  // recipe. Unconfigured legacy callers keep their original admission rules.
+  if (!thread_runtime_allows_qualified_default())
+    return false;
 #if defined(HYLE_NATIVE_DEFAULT_PEER_F4) && HYLE_OS_WINDOWS && \
     HYLE_BUILD_RELEASE && defined(_MSC_FULL_VER) && _MSC_FULL_VER == 195035728
   const auto &identity = platform::cpu_identity();

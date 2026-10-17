@@ -1489,6 +1489,34 @@ scratch，count>1继续调用 `std::partial_sort`，按 value 与原下标
 当前固定画像已完成普通入口验证；Windows代表消费者的源码/static/shared及两个完整片段P1已通过，
 见[覆盖与限定环境](model-fragment-coverage.md)。其它硬件、形状与未通过画像不能据此取得资格。
 
+需要约束 ATen 共享运行时时，在启动期、任何相关 HYLE Context 或外部 ATen 用户使用前，调用
+`cpu::configure_runtime_threads(N)`。成功表示实际 intra-op getter 与 N 相符；这不是 context 局部设置。
+随后仍分别为各 phase 显式传入原 executor 和 `native_threads`，并为并发调用创建独立 Queue、
+invocation、workspace 与输出。CPU+GPU 消费也先配置 CPU，GPU 的驱动/service 线程另有其合同。
+
+```cpp
+namespace cpu = hyle::compute::cpu;
+HYLE_RETURN_IF_ERROR(cpu::configure_runtime_threads(2));
+auto prefill = cpu::create_context({.native_threads = 2});
+auto decode = cpu::create_context({.native_threads = 1});
+auto runtime = cpu::runtime_thread_info();
+```
+
+`runtime_thread_info()` 区分 OpenMP、Native、不可用后端，以及成功配置的 requested、当前 caller 的
+intra-op/inter-op limits、配置窗口和首次使用状态。未配置且未使用时查询不初始化运行时，limits
+为 unknown；feature OFF 返回不可用和 unknown，合法配置返回 `Unimplemented`。interop 只报告。
+limits 不是 live OS 线程计数：两个 OpenMP caller 可各有一组 team，ggml 的两个 invocation 也可
+各有原生 workers。executor、BLAS、vendor 私有池与 GPU 服务线程不能据此推导为零或合并成总上界。
+
+普通 CPU 工厂在首层 metadata 分配前关闭窗口，失败也不重开；专家 Context 以相关 provider callback
+入场为界，callback 前的通用参数/metadata 拒绝尚无该 provider 副作用。销毁 Context 不还原。
+相同显式值只有实际 getter 仍匹配才幂等；
+不同值、晚配置和已发生 setter 部分失败的请求被拒绝，HYLE 不回滚、不自动重试或修复 foreign 漂移。
+窗口属于当前 native 实现代码映像：多个静态 HYLE 副本可能共享同一个 Torch DLL，应用须在所有副本
+与 foreign 用户之间协调启动并保持设置，不能假定已存在的 OpenMP caller TLS 都被同步更新。
+显式非1或已检测失败的配置不继承原单线程 CPU 优选规则资格，数学仍走其原合法实现。
+该新增能力正在 [G10](../implementation/tasks/compute/inference-g10-cpu-thread-budget.md) 中验证，尚未签最终交付。
+
 ```cpp
 #include <hyle/compute/providers/onednn.h>
 

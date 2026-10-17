@@ -2,6 +2,7 @@
 #include "default_policy.h"
 
 #include "../compute_provider_native/default_rules.h"
+#include "../compute_provider_native/torch_cpu_program.h"
 #include <array>
 
 #include "hyle/compute/providers/native.h"
@@ -14,7 +15,37 @@
 
 namespace hyle::compute::cpu {
 
+Status configure_runtime_threads(std::uint32_t intra_op_threads) noexcept {
+  return native::internal::configure_thread_runtime(intra_op_threads);
+}
+
+Result<RuntimeThreadInfo> runtime_thread_info() noexcept {
+  auto result = native::internal::thread_runtime_info();
+  if (!result)
+    return std::unexpected(std::move(result).error());
+  RuntimeThreadBackend backend = RuntimeThreadBackend::kUnavailable;
+  switch (result->backend) {
+  case native::internal::ThreadRuntimeBackend::kUnavailable:
+    break;
+  case native::internal::ThreadRuntimeBackend::kOpenMP:
+    backend = RuntimeThreadBackend::kOpenMP;
+    break;
+  case native::internal::ThreadRuntimeBackend::kNative:
+    backend = RuntimeThreadBackend::kNative;
+    break;
+  }
+  return RuntimeThreadInfo{
+      .backend = backend,
+      .configured_intra_op_threads = result->configured_intra_op_threads,
+      .intra_op_limit = result->intra_op_limit,
+      .inter_op_limit = result->inter_op_limit,
+      .configuration_open = result->configuration_open,
+      .usage_started = result->usage_started};
+}
+
 Result<Context> create_context(DefaultContextOptions options) noexcept {
+  // A failed outer metadata allocation must not reopen the startup contract.
+  native::internal::mark_thread_runtime_used();
   using internal::DefaultProvider;
   const bool single_thread = options.native_threads == 1 &&
                              options.executor.concurrency() <= 1;

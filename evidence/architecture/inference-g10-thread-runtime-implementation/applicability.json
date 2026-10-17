@@ -1,0 +1,28 @@
+{
+  "schema": "hyle.inference-g10-recipe-applicability/v1",
+  "date": "2026-10-17",
+  "reviewer": "/root/single_machine_completeness_audit",
+  "verdict": "POSITIVE_F4_CACHED_RECIPE_RUNTIME_COUNTEREXAMPLE_NOT_APPLICABLE_TO_CURRENT_NORMAL_DELIVERY_IDENTITIES",
+  "retained_failure": "raw.zip/g10-windows-targeted-4/qualified-recipe-drift.log",
+  "original_attempt_verdict_unchanged": "FAIL_ELIGIBLE_ZERO",
+  "cpu_only": {
+    "peer": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+    "locked_patch_tree_sha256": "bc351a8d9a3d2eaedc8993f8de119730921ae2e3731cd94811e61b561c477c09",
+    "source_id_rule": "SHA256(locked_patch_tree_sha256 as ASCII hex string)[:16]",
+    "actual_source_id": "e74fc9bb8964d04f",
+    "required_f4_source_id": "bdae1e43311ee486",
+    "formula_source": "src/compute_ggml_runtime/CMakeLists.txt:33-54,161-169",
+    "qualification_source": "src/compute_provider_native/CMakeLists.txt:23-28",
+    "existing_cpu_only_manifest": ".scratch/build-compute-v2-dev/build.ninja",
+    "existing_cpu_only_manifest_sha256": "76f245e8473586cf53d37d94747250b6bb5c8ce9c5885739ce373f60f6428e6f",
+    "macro_defined": false
+  },
+  "cpu_cuda": {
+    "peer": "456172ec733a135778adcd32d00e576a58232e45",
+    "macro_defined": false,
+    "evidence": "raw.zip/g10-windows-targeted-4/preview.ninja"
+  },
+  "decision": "Current normal builds cannot enter the original positive cached recipe branch. Preserve the extra required-precondition failure, sign current actual rejection/foreign behavior and the finite cold-gate source review only; do not claim positive cached runtime coverage. No forced macro, old-vendor rollback, changed recipe or new P1.",
+  "other_review_disposition": "R1 three source/test MUSTs fixed and confirmed by R2; R2 Native drift applicability fixed with explicit return 77 plus CTest skip, required mode rejects non-OpenMP, independently read and confirmed. No additional MUST.",
+  "remaining": "CPU/Graph/executor direct consumers, nine Windows/WSL/Air deliveries, feature OFF, applicable new-state sanitizer and final acceptance."
+}

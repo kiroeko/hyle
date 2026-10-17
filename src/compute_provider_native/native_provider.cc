@@ -12,6 +12,7 @@
 #include "../compute/native_route.h"
 #include "../compute/provider_internal.h"
 #include "default_rules.h"
+#include "torch_cpu_program.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/sampling_ops.h"
 #include "hyle/math/scalar.h"
@@ -19,9 +20,6 @@
 #include "hyle/simd/math.h"
 #include "hyle/simd/ops.h"
 #include "native_plan.h"
-#if defined(HYLE_COMPUTE_TORCH_CPU)
-#include "torch_cpu_program.h"
-#endif
 
 namespace hyle::compute::native {
 namespace {
@@ -163,6 +161,11 @@ Status create_context(const Provider &provider_value, Device device, void *,
   *context_output = nullptr;
   if (device.device_class() != DeviceClass::kCpu)
     return Status::Unimplemented("HYLE native provider requires a CPU device");
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  // This provider can prepare the original private ATen low-precision path.
+  // Freeze before even an allocation-failed Context attempt or cached recipe.
+  internal::mark_thread_runtime_used();
+#endif
   void *storage =
       allocator.allocate(sizeof(NativeContext), alignof(NativeContext));
   if (storage == nullptr)
@@ -784,6 +787,7 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
               (request.shape.exact() ? 0 : (std::uint64_t{1} << 32))},
   };
   if (request.shape.exact() && context->qualified_environment &&
+      internal::thread_runtime_allows_qualified_default() &&
       context->scope != internal::DefaultRuleScope::kExpert) {
     const auto policy =
         internal::qualified_default_policy(operation, inputs, outputs);

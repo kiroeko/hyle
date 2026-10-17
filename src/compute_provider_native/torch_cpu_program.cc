@@ -423,6 +423,7 @@ ProviderPrepareOutcome prepare_torch_cpu(const detail::ProviderPrepareRequest &r
       : ProviderPrepareOutcome::error(std::move(shape).error());
   // Initialize the library's persistent CPU workers/dispatch on isolated data.
   // No user payload, model state or provider competition is evaluated here.
+  mark_thread_runtime_used();
   static std::once_flag initialized;
   try {
     std::call_once(initialized, [] {

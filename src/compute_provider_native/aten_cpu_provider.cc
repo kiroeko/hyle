@@ -2,6 +2,10 @@
 #include "hyle/core/environment.h"
 
 #include "../compute/provider_internal.h"
+#include "torch_cpu_program.h"
+
+#include <limits>
+#include <mutex>
 
 #if defined(HYLE_COMPUTE_TORCH_CPU)
 #if HYLE_COMPILER_MSVC || HYLE_COMPILER_CLANG_CL
@@ -10,6 +14,7 @@
 #endif
 
 #include <ATen/ATen.h>
+#include <ATen/Parallel.h>
 #include <ATen/core/grad_mode.h>
 #include <c10/util/Exception.h>
 
@@ -18,7 +23,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <limits>
 #include <memory>
 #include <new>
 #include <numbers>
@@ -916,9 +920,10 @@ Status create_context(const Provider &, Device device, void *,
   if (!out)
     return Status::InvalidArgument("ATen CPU context output is null");
   *out = nullptr;
-  return device.device_class() == DeviceClass::kCpu
-             ? Status::Ok()
-             : Status::Unimplemented("ATen CPU provider requires a CPU device");
+  if (device.device_class() != DeviceClass::kCpu)
+    return Status::Unimplemented("ATen CPU provider requires a CPU device");
+  native::internal::mark_thread_runtime_used();
+  return Status::Ok();
 }
 void destroy_context(void *, mem::AllocatorRef) noexcept {}
 Status drain(void *) noexcept { return Status::Ok(); }
@@ -1076,3 +1081,139 @@ namespace hyle::compute::aten_cpu {
 Provider provider() noexcept { return {}; }
 } // namespace hyle::compute::aten_cpu
 #endif
+
+namespace hyle::compute::native::internal {
+namespace {
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+// This state belongs to one HYLE code image. Independent static copies may
+// share a Torch DLL; their application must coordinate startup externally.
+struct ThreadRuntimeState final {
+  std::mutex mutex;
+  std::uint32_t requested = 0;
+  bool closed = false;
+  bool used = false;
+  bool failed = false;
+};
+ThreadRuntimeState &thread_state() noexcept {
+  static ThreadRuntimeState value;
+  return value;
+}
+constexpr ThreadRuntimeBackend compiled_thread_backend() noexcept {
+#if AT_PARALLEL_OPENMP
+  return ThreadRuntimeBackend::kOpenMP;
+#elif AT_PARALLEL_NATIVE
+  return ThreadRuntimeBackend::kNative;
+#else
+  return ThreadRuntimeBackend::kUnavailable;
+#endif
+}
+#endif
+} // namespace
+
+Status configure_thread_runtime(std::uint32_t threads) noexcept {
+  if (threads == 0 || threads > static_cast<std::uint32_t>(
+                                   (std::numeric_limits<int>::max)()))
+    return Status::InvalidArgument("CPU runtime thread count is outside int range");
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  if (compiled_thread_backend() == ThreadRuntimeBackend::kUnavailable)
+    return Status::Unimplemented("ATen CPU thread runtime is unavailable");
+  auto &state = thread_state();
+  std::lock_guard lock(state.mutex);
+  if (state.failed || (state.requested != 0 && state.requested != threads) ||
+      (state.closed && state.requested == 0))
+    return Status::FailedPrecondition("CPU runtime thread configuration is closed");
+  try {
+    if (at::in_parallel_region())
+      return Status::FailedPrecondition(
+          "CPU runtime threads require startup outside a parallel region");
+    if (state.requested != 0) {
+      if (at::get_num_threads() == static_cast<int>(threads))
+        return Status::Ok();
+      state.failed = true;
+      return Status::FailedPrecondition("External CPU runtime thread setting changed");
+    }
+    // Even a void-returning setter can fail after partial foreign effects or
+    // only warn that an existing native pool cannot be resized. Never retry or
+    // claim rollback; publish requested only after the actual getter matches.
+    state.closed = true;
+    at::set_num_threads(static_cast<int>(threads));
+    if (at::get_num_threads() != static_cast<int>(threads)) {
+      state.failed = true;
+      return Status::FailedPrecondition("ATen CPU thread request was not applied");
+    }
+    state.requested = threads;
+    return Status::Ok();
+  } catch (const std::bad_alloc &) {
+    state.closed = state.failed = true;
+    return Status::ResourceExhausted("CPU thread runtime initialization failed");
+  } catch (const c10::Error &error) {
+    state.closed = state.failed = true;
+    return aten_cpu::exception_status(error);
+  } catch (const std::exception &error) {
+    state.closed = state.failed = true;
+    return Status::Internal(error.what());
+  }
+#else
+  return Status::Unimplemented("ATen CPU thread runtime is not built");
+#endif
+}
+
+Result<ThreadRuntimeInfo> thread_runtime_info() noexcept {
+  ThreadRuntimeInfo info;
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  info.backend = compiled_thread_backend();
+  if (info.backend == ThreadRuntimeBackend::kUnavailable)
+    return info;
+  auto &state = thread_state();
+  std::lock_guard lock(state.mutex);
+  info.configuration_open = !state.closed;
+  info.usage_started = state.used;
+  if (state.requested != 0)
+    info.configured_intra_op_threads = state.requested;
+  // Getters can lazily initialize TLS/pools. Observation must not consume the
+  // startup window or initialize a caller before another thread configures it.
+  if (!state.closed)
+    return info;
+  try {
+    if (at::in_parallel_region())
+      return std::unexpected(Status::FailedPrecondition(
+          "CPU runtime limits must be observed outside a parallel region"));
+    const int intra = at::get_num_threads();
+    const auto inter = at::get_num_interop_threads();
+    if (intra <= 0 || inter == 0 ||
+        inter > (std::numeric_limits<std::uint32_t>::max)())
+      return std::unexpected(Status::OutOfRange("ATen CPU runtime thread limits"));
+    info.intra_op_limit = static_cast<std::uint32_t>(intra);
+    info.inter_op_limit = static_cast<std::uint32_t>(inter);
+    if (state.requested != 0 && state.requested != *info.intra_op_limit)
+      state.failed = true;
+  } catch (const std::bad_alloc &) {
+    return std::unexpected(
+        Status::ResourceExhausted("CPU thread runtime observation failed"));
+  } catch (const c10::Error &error) {
+    return std::unexpected(aten_cpu::exception_status(error));
+  } catch (const std::exception &error) {
+    return std::unexpected(Status::Internal(error.what()));
+  }
+#endif
+  return info;
+}
+
+void mark_thread_runtime_used() noexcept {
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  auto &state = thread_state();
+  std::lock_guard lock(state.mutex);
+  state.closed = state.used = true;
+#endif
+}
+
+bool thread_runtime_allows_qualified_default() noexcept {
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  auto &state = thread_state();
+  std::lock_guard lock(state.mutex);
+  return !state.failed && (state.requested == 0 || state.requested == 1);
+#else
+  return true;
+#endif
+}
+} // namespace hyle::compute::native::internal

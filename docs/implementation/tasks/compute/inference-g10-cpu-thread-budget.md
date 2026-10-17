@@ -1,6 +1,6 @@
 # G10 CPU 线程预算与实际消费
 
-状态：**AUDITED，2026-10-17；四项有限 FIX 与 API/消费/风险冻结，尚未实现验收**。
+状态：**AUDITED，2026-10-17；四项有限 FIX 已实现，Windows 首轮9项独立进程测试通过，完整交付/风险与终审尚未验收**。
 
 本轮由当前 G07–G10 goal 明确授权，承接[原 G10 候选](../project/inference-single-machine-foundation-audit-2026-10.md)
 和[消费适配](../project/inference-consumer-adaptation-plan-2026-10.md)。
@@ -69,7 +69,9 @@ open且未配置时查询只返回编译可用性和unknown limits，不调用AT
 应用在任何相关HYLE/foreign ATen用户启动前显式配置一次，再构造phase专用contexts/queues/invocations；
 phase的executor和ggml native_threads继续显式传入原options。`0`或`>INT_MAX`拒绝，featureOFF报告缺席。
 配置实际调用setter后须getter相等才发布requested；同值幂等不重设，foreign漂移仅报告/拒绝。
-合法首次Context创建尝试及原Native低精度初始化也关闭窗口，OOM/失败不重开；Context全部销毁后不还原。
+普通CPU facade首次尝试在外层metadata分配前关闭窗口，OOM/失败不重开；expert Context以相关provider
+callback入场为界，不把尚未进入provider的common参数/metadata拒绝称为运行时使用。原Native低精度
+初始化同样关闭窗口；Context全部销毁后不还原。
 
 guard属于当前`compute_provider_native`实际代码映像，不是跨DSO registry。两个STATIC副本可有两份guard
 却共享Torch DLL；其他HYLE副本和foreign库由应用统一startup并保持设置。不能检测/回滚任意foreign既有
@@ -100,3 +102,32 @@ native completion组合，GPU vendor/service线程另有其合同。正交消费
 
 达到有限FIX/验证停止点即裁决；实际外部阻塞保留原失败与精确恢复条件，不为通过而扩改公共仪器。
 G09三组资格阻塞与本轮无因果结论，仍由其独立工具卡按恢复条件处理。
+
+## 实现与首轮 Windows 检查点
+
+T-F1–T-F3及T-F4消费者/guide已写入，未增加数学算法、每次replay字段或新线程池。
+有限代码审查发现并修复：Native Context缓存资格在检测foreign漂移后仍用于新prepare；
+普通CPU工厂首层metadata OOM未关闭窗口；测试第二线程创建失败时双参与者barrier可能死锁。
+分别在原cold propose重查允许状态、facade最早入场关闭窗口、测试采用异常安全的单向start gate。
+OpenMP漂移反例不套用到Native后端，后者保留真实两线程数学后晚setter拒绝的独立场景。
+
+Windows/MSVC19.50.35728静态CPU+CUDA树实际定向编译通过。9项fresh-process检查全部通过：
+startup/same/conflict/invalid与两个phase并发数值、query-first、late-Native含原低精度数学、
+late-ATen、configure-vs-use、conflicting-config race、外部漂移、已有Context新prepare及metadata OOM。
+实际4 logical/4 jobs/BelowNormal；未编译CUDA kernel，原146对象的242个派生依赖与5个canonical输入
+逐字节及原命令/依赖新鲜度核对后复用。测试模式引起的原SIMD内部测试定义重编译已如实留账，
+不将它称为G10数学改动，也不据此签shipping SDK。
+
+额外的`qualified-drift-required`前置检查失败并保留：该CPU+CUDA树绑定另一ggml peer，
+原`HYLE_NATIVE_DEFAULT_PEER_F4`构建条件不成立，CPU2 placement也不会使其获得旧recipe。
+9项功能PASS不因此改写。随后有限独立核查确认，当前CPU-only锁的patch身份同样为
+`e74fc9bb8964d04f`，不等于旧F4的`bdae1e43311ee486`；正常当前交付域均不能进入该正向分支。
+因此仅这个正向缓存运行反例记`NOT_APPLICABLE`，保留原required前置FAIL，不记cached runtime PASS；
+原cold guard保留源审与当前真实拒绝/foreign验证。不能为制造覆盖而强开宏、回退vendor或修改peer条件，
+依据与精确源公式见[适用性裁决](../../../../evidence/architecture/inference-g10-thread-runtime-implementation/applicability.json)。
+
+尚待：原executor/native预算及Graph/CPU+CUDA直接消费者、
+Windows/WSL/Air三种交付共9项、featureOFF、新状态适用sanitizer与终审。G10未接受；
+G09三组A/A资格阻塞仍独立保留。
+[检查点原始输入、代码审查及全部尝试](../../../../evidence/architecture/inference-g10-thread-runtime-implementation/receipt.json)
+绑定这次实际构建、9项PASS、保留的拒绝与累计629.67秒；不是完整交付/风险验收。
