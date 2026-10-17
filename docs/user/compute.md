@@ -1504,7 +1504,8 @@ auto runtime = cpu::runtime_thread_info();
 
 `runtime_thread_info()` 区分 OpenMP、Native、不可用后端，以及成功配置的 requested、当前 caller 的
 intra-op/inter-op limits、配置窗口和首次使用状态。未配置且未使用时查询不初始化运行时，limits
-为 unknown；feature OFF 返回不可用和 unknown，合法配置返回 `Unimplemented`。interop 只报告。
+为 unknown。普通CPU路线自动启用该运行时；内部缺席构建的返回值为不可用与 unknown，合法配置返回
+`Unimplemented`，这不提供单独关闭ATen的普通CPU构建选项。interop 只报告。
 limits 不是 live OS 线程计数：两个 OpenMP caller 可各有一组 team，ggml 的两个 invocation 也可
 各有原生 workers。executor、BLAS、vendor 私有池与 GPU 服务线程不能据此推导为零或合并成总上界。
 

@@ -43,3 +43,7 @@ nanobench 的 paired relative 与两行各自 elapsed median 的倒数之比是�
 下一阶段仅可裁决具名机制及最小 FIX，或保留工具阻塞；不能扩成无期限测量框架工程。
 G09 四产品 owner 暂记 BLOCKED-from-CANDIDATE，正确性/交付及 CUDA P1 证据保留；
 线程预算 G10 作为本 goal 已授权的独立能力另卡审计，不在此任务修改，也不假定它会修复 A/A。
+
+本次有限静态审计的[独立R20](../../../../evidence/architecture/inference-g09-p1-instrument-attempt/20.json)
+反证错绑/顺序/漏计完成边界两类假说；宿主调度及idle worker竞争仍证据不足，未得到可定向修复的机制。
+没有新产品FIX或重跑授权，三组原A/A失败和0个有效A/B样本保持；本段不改变上述阶段与恢复条件。

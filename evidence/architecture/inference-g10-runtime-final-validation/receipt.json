@@ -1,0 +1,160 @@
+{
+  "schema": "hyle.g10-runtime-final-validation/v1",
+  "verdict": "PUBLIC_CPU_CUDA_AND_FEATURE_ON_ASAN_UBSAN_TSAN_PASS",
+  "owner_state": "PENDING_CANDIDATE_AND_FINAL_MAINTENANCE_GATES",
+  "source_commit": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+  "source_tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+  "source_archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410",
+  "all_source_cohort_hashes_rechecked": true,
+  "attempts": [
+    {
+      "path": "windows/cpu-cuda-1",
+      "state": "FAIL",
+      "stage": "build",
+      "seconds": 132.10899999999674,
+      "result_sha256": "72fdacb99b8352014e1c5bbcf6cbd999845eb105bda0cdcdd93af7dda5331fad"
+    },
+    {
+      "path": "windows/cpu-cuda-2",
+      "state": "PUBLIC_CPU_CUDA_MATH_LIFECYCLE_WITH_SHARED_STARTUP_LIMIT_PASS",
+      "stage": "public-joint",
+      "seconds": 134.0,
+      "result_sha256": "819186a7cfc701202410c594598077d3ad625f4192eec7d905a21fff8fc7747e"
+    },
+    {
+      "path": "windows/off-1",
+      "state": "FAIL",
+      "stage": "configure",
+      "seconds": 0.8279999999795109,
+      "result_sha256": "2dd4364aaada09b9cefcddac118c76496f3e785d4ed1354366a589989dd19070"
+    },
+    {
+      "path": "windows/off-2",
+      "state": "FAIL",
+      "stage": "configure",
+      "seconds": 0.7649999999557622,
+      "result_sha256": "0801107e3616717e539d3d5044c934d2a775d56c786fa1d638d6e8b094d500f2"
+    },
+    {
+      "path": "windows/asan-preflight-1",
+      "state": "FAIL",
+      "stage": "dry-run",
+      "seconds": 24.76600000000326,
+      "result_sha256": "d0dcd9e3eb6908e265a87cb2f4351182c2f01203678f85da8fe8239ccc8d6558"
+    },
+    {
+      "path": "wsl/asan-1",
+      "state": "FEATURE_ON_INSTRUMENTED_G10_STATE_AND_PUBLIC_CONSUMERS_PASS",
+      "stage": "private-qualified-drift",
+      "seconds": 93.723968436,
+      "result_sha256": "23a139b1ac757d1acf4b393043cb5a5d18b38aa55b7ef4192bef9ec2c1f46322"
+    },
+    {
+      "path": "wsl/ubsan-1",
+      "state": "FEATURE_ON_INSTRUMENTED_G10_STATE_AND_PUBLIC_CONSUMERS_PASS",
+      "stage": "private-qualified-drift",
+      "seconds": 72.042546734,
+      "result_sha256": "59cba21e34e3a20a4d061c83f502ddb42fc4d4230213d705fce1689bb6985a15"
+    },
+    {
+      "path": "air/tsan-1",
+      "state": "FAIL",
+      "stage": "configure",
+      "seconds": 0.565596875,
+      "result_sha256": "d7ac25c85ff5cdc290df2b51f0d7794121da649a0b17009ca37c2f9634202dc7"
+    },
+    {
+      "path": "air/tsan-2",
+      "state": "FEATURE_ON_INSTRUMENTED_G10_STATE_AND_PUBLIC_CONSUMERS_PASS",
+      "stage": "private-qualified-drift",
+      "seconds": 22.104094791,
+      "result_sha256": "6d251fc10a834d3431b9120fd83db162f7b82d5eae89b3ca5989ebd871f649c4"
+    }
+  ],
+  "retained_elapsed_seconds": 480.90420683593527,
+  "direct_consumer": {
+    "verdict": "PASS",
+    "result": "windows/cpu-cuda-2/result.json",
+    "binary": {
+      "path": "C:\\h7\\w-cuda\\selected-graph\\static-sdk-build\\bin\\g10_joint.exe",
+      "sha256": "b79223c987dd7295f80f448396653382c182aab7a8e7d15eb2e7a447fc46f32a"
+    },
+    "scope": "Actual RTX4070 CPU normalization/casts around CUDA gated FFN, two real slots, weight fragment DMA, leases/native completion/replay and close/drain after startup limit2. TESTS ON/instrumentation OFF tree; no installed SDK or P1 claim."
+  },
+  "sanitizers": [
+    {
+      "host": "wsl",
+      "mode": "asan",
+      "verdict": "PASS",
+      "result": "wsl/asan-1/result.json"
+    },
+    {
+      "host": "wsl",
+      "mode": "ubsan",
+      "verdict": "PASS",
+      "result": "wsl/ubsan-1/result.json"
+    },
+    {
+      "host": "air",
+      "mode": "tsan",
+      "verdict": "PASS",
+      "result": "air/tsan-2/result.json"
+    }
+  ],
+  "applicability": {
+    "off_current_public_cpu": "NOT_APPLICABLE: CPU route derives required Torch ON; old option is rejected; GPU-only removes CPU facade. Both OFF config failures retained, no forced macro/new feature switch and no OFF runtime PASS.",
+    "native_thread_backend": "NOT_APPLICABLE on the current three qualified SDKs: each actual backend=OpenMP. Real Native provider/lowprecision admission remains actually exercised, distinct from the ATen Native threading backend.",
+    "positive_f4_cached_recipe": "Previously sealed NOT_APPLICABLE source identity precondition retained; no positive cached runtime claim.",
+    "foreign_setter_exceptions": "SOURCE_REVIEW/NOT_EXERCISED: actual vendor setter/getter bad_alloc/c10/std::exception paths were not induced. Source verifies close-before-set, publish-after-check and conservative failure; metadata OOM is a separate actual HYLE entry test."
+  },
+  "preserved_failures": [
+    "Windows joint wrapper missing original relative headers, repaired by including the unchanged canonical sample with its natural relative header layout.",
+    "OFF configure1 rejects two defined selectors; configure2 rejects retired provider option. Actual CPU-only ordinary product derives Torch ON.",
+    "Windows ASan preflight618edges rejected before build; no identified Windows-specific new memory mechanism; common state memory on warm WSL ASan, UB on WSL UBSan, concurrency on Air TSan per independent review.",
+    "Air TSan parent initially omitted original explicit macOS14.4 deployment requirement; restored in private parent, same product/build/toolchain/model; failure and elapsed retained."
+  ],
+  "limits": [
+    "No leak sanitizer/private Torch/OpenMP/BLAS pool/GPU-driver instrumentation claim. Original refcount final-fence TSan model only, exact hash/source-equivalence verified; no annotation or suppression for the new mutex/state.",
+    "No G09 A/A recovery, P1 qualification, or engine token/s conclusion."
+  ],
+  "collector_repair": "Sealing initially named a nonexistent extra sample header after already capturing all real sample files. Partial source zip retained; corrected manifest/source zip rebuilt, exact original raw zip member bytes verified; no test rerun or product change.",
+  "archives": [
+    {
+      "path": "raw.zip",
+      "bytes": 1104887,
+      "sha256": "e31edac03bad44f8f5a4c102128158f27c41faf2e5e2ad389bfcba5a1b2db89d"
+    },
+    {
+      "path": "source.zip",
+      "bytes": 186209,
+      "sha256": "b09fb9f2cc65e306aa9f907ae069fe8a731c6f6e9723af3f1c1a029542be5284"
+    },
+    {
+      "path": "retained-partial-source.zip",
+      "bytes": 19924,
+      "sha256": "7a54b18f286a85afc9f5f8a07ab562cb76b46be0b6661036f2bf810b81fce0b5"
+    }
+  ],
+  "files": [
+    {
+      "path": "review.json",
+      "sha256": "5fb52ec37d506de87a90551dc5cfebca69946f86d9739fd2e6e7388d226fc351"
+    },
+    {
+      "path": "p0.json",
+      "sha256": "2fd209f486b21f07c7102b3c9168b2bd458c6bc933afacad5030f7a7a9f41749"
+    },
+    {
+      "path": "p0-symbols.txt",
+      "sha256": "4841dfefa465b77d051c097e9301f1d9cb234eafee2d09c408f1fdb5fa039377"
+    },
+    {
+      "path": "loc-cpu.txt",
+      "sha256": "7d689568e424e41e8e822e4257f790a9388b5dcd0e94bdc90ab57a0a35813467"
+    },
+    {
+      "path": "loc-native.txt",
+      "sha256": "67797e38f68d43d3e654d318956ee2236055055f37c4856d7b2fa45423bc0a8e"
+    }
+  ]
+}

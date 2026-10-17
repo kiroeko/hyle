@@ -429,15 +429,17 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
-      "summary": "G10 AUDITED: four finite fixes for startup-only shared ATen intra-op configuration/reporting, native/ATen first-use freeze and failure/foreign-drift boundaries, cold qualified-rule thread premise, scoped consumers/risks/CPU deliveries. Existing executor and ggml per-invocation budgets reused; no process live-thread cap, per-replay setter, product math rewrite or G09 qualification waiver."
+      "summary": "G10 CANDIDATE: startup shared runtime control/reporting and first-use/foreign failure boundaries implemented; nine CPU deliveries, public CPU+CUDA math and feature-ON ASan/UBSan/TSan passed. P0 cold state, prior math and G09 qualification boundaries retained; final maintenance/terminal registration pending.",
+      "candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba"
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
-      "summary": "G10 AUDITED: four finite fixes for startup-only shared ATen intra-op configuration/reporting, native/ATen first-use freeze and failure/foreign-drift boundaries, cold qualified-rule thread premise, scoped consumers/risks/CPU deliveries. Existing executor and ggml per-invocation budgets reused; no process live-thread cap, per-replay setter, product math rewrite or G09 qualification waiver."
+      "summary": "G10 CANDIDATE: startup shared runtime control/reporting and first-use/foreign failure boundaries implemented; nine CPU deliveries, public CPU+CUDA math and feature-ON ASan/UBSan/TSan passed. P0 cold state, prior math and G09 qualification boundaries retained; final maintenance/terminal registration pending.",
+      "candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba"
     },
     {
       "module": "graph_route_cpu",

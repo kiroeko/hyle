@@ -1,6 +1,6 @@
 # G10 CPU 线程预算与实际消费
 
-状态：**AUDITED，2026-10-17；四项有限 FIX 已实现，Windows 首轮9项独立进程测试通过，完整交付/风险与终审尚未验收**。
+状态：**CANDIDATE，2026-10-17；四项有限 FIX、9项独立进程检查、9项交付、CPU+CUDA消费及三项宿主sanitizer通过，待最终维护门与terminal登记**。
 
 本轮由当前 G07–G10 goal 明确授权，承接[原 G10 候选](../project/inference-single-machine-foundation-audit-2026-10.md)
 和[消费适配](../project/inference-consumer-adaptation-plan-2026-10.md)。
@@ -126,8 +126,77 @@ late-ATen、configure-vs-use、conflicting-config race、外部漂移、已有Co
 原cold guard保留源审与当前真实拒绝/foreign验证。不能为制造覆盖而强开宏、回退vendor或修改peer条件，
 依据与精确源公式见[适用性裁决](../../../../evidence/architecture/inference-g10-thread-runtime-implementation/applicability.json)。
 
-尚待：原executor/native预算及Graph/CPU+CUDA直接消费者、
-Windows/WSL/Air三种交付共9项、featureOFF、新状态适用sanitizer与终审。G10未接受；
-G09三组A/A资格阻塞仍独立保留。
+本检查点当时尚待原executor/native预算、Graph/CPU+CUDA直接消费者、九项交付、
+featureOFF适用性和新状态sanitizer；后续实际结果见下方。G09三组A/A资格阻塞独立保留。
 [检查点原始输入、代码审查及全部尝试](../../../../evidence/architecture/inference-g10-thread-runtime-implementation/receipt.json)
 绑定这次实际构建、9项PASS、保留的拒绝与累计629.67秒；不是完整交付/风险验收。
+
+## 不可变候选与完整消费
+
+候选为`0022dd6adc3b2d903f91e9a1db0e73517dd142ba`，tree由Git唯一导出。
+之后只补文档、状态及证据，没有再改public API、对象字段、数学或常态成本。
+[九项交付原件](../../../../evidence/architecture/inference-g10-runtime-delivery/receipt.json)
+绑定同一完整tracked源码cohort：Windows、WSL、MacBook Air各自source、迁址static、迁址shared。
+每格独立编译CPU/Graph公开头并执行七个fresh-process状态场景和原Graph FFN/executor消费者，
+后者覆盖worker=1/2、独立数值oracle、双调用/嵌套进展及平衡回收。shipping producer为tests、bench、
+fault instrumentation和sanitizer OFF；安装消费者仅使用迁址前缀。九格实际通过，累计755.96秒。
+Windows source首轮收集器误找private fixture目录，原构建已完成；核对原manifest及全部源码/fixture后，
+直接执行既有产物完成检查，保留首次失败，没有重编或重置费用。
+
+[联合消费及风险原件](../../../../evidence/architecture/inference-g10-runtime-final-validation/receipt.json)
+包含RTX4070上的原CPU+CUDA样例：共享limit=2后，CPU norm/casts与CUDA gated FFN、两个真实slot、
+weight fragments/DMA依赖、leases、replay和close/drain均通过。首轮包装丢失原相对头路径的编译失败保留；
+修正包装为包含原样例及其自然相对头布局，产品不变。原146个CUDA对象按字节、命令和依赖证明复用，
+没有编译kernel；该tests-on树不冒充安装SDK或P1。
+
+新状态实际feature ON的WSL ASan、WSL UBSan、Air TSan均通过同一七状态场景、Graph/executor数学与
+foreign消费。每格保留四个changed core TU和三个app的实际instrumented命令。
+TSan只复用原RefCount final acquire-fence模型，精确hash及去注解后canonical字节一致；新mutex/state
+没有HB注解或suppression。不签vendor私有池、LSan或GPU driver风险。
+Windows ASan旧Vulkan-only树的618-edge冷依赖预检被拒绝，未build；按独立源审选择已有WSL CPU树，
+不签Windows ASan。Air首轮父工程漏带原macOS14.4 deployment配置的拒绝同样保留。
+联合/风险全部尝试累计480.90秒，包含失败；不是仅成功耗时。
+
+### 适用性与逐能力证据
+
+| 能力/消费 | 正常与边界 | 失败/生命周期 | 并发与实际消费 | 平台/交付 |
+|---|---|---|---|---|
+| startup set/report | PASS：invalid、same、conflict、query-first、真实getter | PASS：late拒绝、成功requested保留、foreign漂移不修复 | PASS：configure-vs-use/configure竞态；新state三sanitizer | PASS：九交付实际OpenMP |
+| first-use与Native旁路 | PASS：普通ATen、expert Native及原低精度数学 | PASS：普通facade外层metadata OOM也冻结；close不重开 | PASS：入口与配置竞态，数学完成后checked释放 | PASS：九交付及风险消费者 |
+| phase/executor/ggml | KEEP/PASS：原options不变，native_threads=1/2 | PASS：独立workspace/output、close/drain、平衡回收 | PASS：双phase并发及原Graph FFN/executor worker1/2与嵌套消费 | PASS：九交付；未重跑原算子全域 |
+| CPU+GPU组合 | PASS：原placement、native DMA与CPU norm/CUDA FFN | PASS：两slot、lease、完成与teardown | PASS：显式共享启动limit后消费 | PASS：Windows CPU+CUDA；其余GPU数学/原交付按未改身份复用 |
+| vendor setter/getter异常 | SOURCE_REVIEW：close-before-set、核实后publish | 源审保守关闭/无回滚；实际bad_alloc/c10/std::exception未诱发 | 不把metadata OOM或正常漂移冒充这个分支的runtime PASS | 未运行分支如实保留；未制造vendor替身 |
+
+当前普通CPU路线由唯一route集合派生Torch ON；旧`HYLE_COMPUTE_TORCH_CPU`开关被明确拒绝，
+GPU-only又不交付CPU facade。因此本批三平台的公开CPU+ATen-OFF消费语义上`NOT_APPLICABLE`；
+两次OFF配置拒绝保留，不新增开关、不强宏、不签OFF runtime PASS。
+当前三平台实际线程backend都是OpenMP，ATen Native singleton晚setter反例同样不适用；
+它与已经实际覆盖的HYLE Native provider/低精度旁路是两个不同维度。
+旧F4正向cached-recipe条件按前述peer身份不适用，仍不签正向运行覆盖。
+
+### 有限审查与七门
+
+[独立R3](../../../../evidence/architecture/inference-g10-runtime-final-validation/review.json)
+核对九交付、源码适用性及风险入口，产品和private runner的open MUST均为空；
+R1/R2已修问题由首轮原件保留。R3不代签随后才实际执行的sanitizer或CPU+CUDA，后者分别绑定自身原件。
+原生setter异常仅源审的限制保留，没有扩展fault seam或新仪器。
+
+| Gate | 判据与当前裁决 |
+|---|---|
+| scope | PASS：固定T-F1–T-F4；不加引擎政策或G09修复假说 |
+| architecture | PASS：原CPU public头/Native owner承载；原executor、ggml与native完成语义复用 |
+| correctness | PASS：具名状态、OOM、竞态、真实数学/生命周期及新状态适用sanitizer；不适用/仅源审格明确区分 |
+| delivery | PASS：同候选九项source/static/shared公开头与消费者；原GPU资格不混签 |
+| usability_docs | PENDING：guide已说明启动期共享作用域、foreign协调、非总线程上界及当前CPU路线强制依赖；待最终docs检查 |
+| red_team | PASS：有限独立审查无open MUST，全部前置失败/费用与未运行限制保留 |
+| engineering_performance | PASS/P0：仅cold常数状态与锁，数学/replay无新增字段、setter或锁；不新增P1 |
+
+[P0账与实际符号](../../../../evidence/architecture/inference-g10-runtime-final-validation/p0.json)
+记录一个native代码映像的固定state；Linux/GCC14 x86_64实际shipping对象的该BSS符号为48 bytes，
+不是所有平台统一sizeof。原`DefaultContextOptions`逐字节源块相同，没有新per-Context/Invocation字段或
+HYLE线程池。vendor/platform启动内存、池及锁竞争OS费用继续unknown，不记0。
+两个owner的统一LOC工具`--commit ... --self-check`通过；当前conventional边界只统计src，
+分别为CPU252行/4文件、Native5343行/17文件，不冒充含split public头的总量。
+
+本轮产品停止变化。只有当前合同的可复现缺陷、真实消费者新语义或SDK/threading backend变化等具名事实
+可以触发新轮；普通复看或未资格化benchmark不重开。G09三组A/A/P1不因G10获得豁免。

@@ -1,0 +1,550 @@
+{
+  "schema": "hyle.bounded-delivery-risk-review.v1",
+  "review": "G10 delivery / host-risk prospective review 3",
+  "date": "2026-10-17",
+  "product": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+  "decision": "NINE_CPU_DELIVERIES_SUPPORT_FINITE_CLAIM_NO_NEW_PRODUCT_MUST_HOST_RISKS_STILL_PENDING_OFF_PUBLIC_CONSUMER_NOT_APPLICABLE",
+  "scope": "Read existing SDK source/results/logs/commands and current private sanitizer runner only. No reviewer build/test/GPU execution or product/document edit. Only this ignored audit JSON written; no capability scan or matrix expansion.",
+  "identities": [
+    {
+      "path": ".scratch/inference-gaps/g10-delivery-inputs/inputs.json",
+      "sha256": "e4d5a6010d1c97e0934dac204b05b4a8ff039a8e146f909ac6e4da5c2cdfdab0",
+      "bytes": 542162
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-delivery-inputs/graph_runtime.cc",
+      "sha256": "d8ed6bbdbba5d7759512dee2cb57cac2e2f71d53e81e99d6ae9c8f23faf5a101",
+      "bytes": 941
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-delivery-inputs/cpu_executor.cc",
+      "sha256": "583d8f13501a4b2ca12615b87a2c5cec1d4e386a72ea6a137cc0b38dc795f535",
+      "bytes": 13826
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-delivery-inputs/thread_runtime_consumer.cc",
+      "sha256": "2cb5e2d39abfa031fcce83141b75d59e00fc6fbb203750723702b2a2f4ede926",
+      "bytes": 20474
+    },
+    {
+      "path": "cmake/HyleComputeRoutes.cmake",
+      "sha256": "d28495f74f8ee144c2f8320c78515b62ab1b82b26cef0effec7ea1fcfddd2671",
+      "bytes": 5856
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "9ecd0235fa3078046b9d0cd3edaed69f525a02b65d8cf90c811aca886f237b99",
+      "bytes": 53100
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_sdk.cmake",
+      "sha256": "48f330c77cac812a9bb7451e8115a1d681cf1152db55195aff874870b3a05453",
+      "bytes": 1834
+    },
+    {
+      "path": "cmake/HyleSanitizers.cmake",
+      "sha256": "b00d5ba375c8d51ed2ab0d96745a999d7f81cf45c03ed5cb73436959eb4867bb",
+      "bytes": 7528
+    },
+    {
+      "path": "include/hyle/util/ref_counted.h",
+      "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6",
+      "bytes": 15931
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
+      "sha256": "67b25b8fe4790e98dae773d7c57b38573e8b7477112eb33c4df30051e2cda103",
+      "bytes": 12096
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-windows-host-disabled-1/result.json",
+      "sha256": "2dd4364aaada09b9cefcddac118c76496f3e785d4ed1354366a589989dd19070",
+      "bytes": 1875
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-windows-host-disabled-1/configure.log",
+      "sha256": "82636b614547a451cfe8fc0fa36a4ec149fdd7242622e61b99756671ee13a78b",
+      "bytes": 386
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-windows-host-disabled-2/result.json",
+      "sha256": "0801107e3616717e539d3d5044c934d2a775d56c786fa1d638d6e8b094d500f2",
+      "bytes": 1874
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-windows-host-disabled-2/configure.log",
+      "sha256": "a8525dd679bc57da4bd33fe0cbac3fe34a97be3f7f6edbcf05a72e61f06968dc",
+      "bytes": 704
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-sdk-windows/source-1/path-repair.py",
+      "sha256": "856593b8151fadbe958f0cad78f23e87673c179542ce877edd43c4ccab3f8f8e",
+      "bytes": 5049
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-sdk-windows/source-1/retained-source-path-error.json",
+      "sha256": "67c9c6083531b737d170147fe48d3e6e192e35c68276278a8b8b49f722a34fbb",
+      "bytes": 3177
+    },
+    {
+      "path": ".scratch/inference-gaps/g10_host_risk.py",
+      "sha256": "59121b1132fff47327f9dc15130caed6b5a6a7bd35f4a7f7cc021ba60aeba035",
+      "bytes": 14206
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-windows-host-asan-1/result.json",
+      "sha256": "d0dcd9e3eb6908e265a87cb2f4351182c2f01203678f85da8fe8239ccc8d6558",
+      "bytes": 16471
+    },
+    {
+      "path": ".scratch/inference-gaps/g10-windows-host-asan-1/dry-run.log",
+      "sha256": "11be82772c1d4ef30c92440edbadae47c413b834e5d03fc2aa2eaf66e35566fc",
+      "bytes": 77073
+    }
+  ],
+  "sdk_evidence": [
+    {
+      "platform": "windows",
+      "mode": "source",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-windows\\source-1\\result.json",
+      "result_sha256": "1d08ede5c6bf61d46f86b360ca8d7e15a6c74c9b1e981da877a740c9879c2bb1",
+      "state": "CPU_SOURCE_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "11feba2458329dd480c54413a2b5bb568d9e911aa4e0ab5e7633d9d95e349905",
+      "installed_header_only": "SOURCE_EMBEDDING_NOT_INSTALLED_ONLY",
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "23",
+          "23",
+          "3"
+        ],
+        [
+          "2",
+          "23",
+          "46",
+          "3"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "ef598600a66e38a754dcff2b1d8631a83d0b16b41892447d40b988d7f616113a",
+      "retained_failure": "retained-source-path-error.json"
+    },
+    {
+      "platform": "windows",
+      "mode": "static",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-windows\\static-1\\result.json",
+      "result_sha256": "b68d350e79db4348b0e493c3490e2c934857b531fe07c57919d5aa39789d1af6",
+      "state": "CPU_RELOCATED_SDK_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "33b364a64978216f9057624c7c131c716a48f16e239bcef9cb4a50edafd21a96",
+      "installed_header_only": true,
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "23",
+          "23",
+          "3"
+        ],
+        [
+          "2",
+          "23",
+          "46",
+          "3"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "e341514fd4da645c9860ad7700702e224684efe3c23599ce411db37bc97e53d5",
+      "retained_failure": null
+    },
+    {
+      "platform": "windows",
+      "mode": "shared",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-windows\\shared-1\\result.json",
+      "result_sha256": "f99ff0f847f52408800cc8fa585d5845d29ea950a4dedc8b27dfaae3be05cd54",
+      "state": "CPU_RELOCATED_SDK_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "406c86ea6586750302ae31eccf4850adc16470cdc771787c8fc6cb4dea23dcd5",
+      "installed_header_only": true,
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "23",
+          "23",
+          "3"
+        ],
+        [
+          "2",
+          "23",
+          "46",
+          "3"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "c6ad17c3ebc9e3a27b0ba8f28f3651c4f8358eff7ade0b87b2b163a766e785c1",
+      "retained_failure": null
+    },
+    {
+      "platform": "air",
+      "mode": "source",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-air\\collected\\source-1\\result.json",
+      "result_sha256": "2abc816c82de5a59b4d4181f96c38389da362f9a967937a470db7da833e64acf",
+      "state": "CPU_SOURCE_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "5d5c05575bb78d9238f2a77fe2252450949165f38198fed4bb2e1064c3408cd4",
+      "installed_header_only": "SOURCE_EMBEDDING_NOT_INSTALLED_ONLY",
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "24",
+          "24",
+          "4"
+        ],
+        [
+          "2",
+          "24",
+          "24",
+          "4"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "1d5dd8a7d8580d768307b6094523d2274847753ed364915ec01de7db99e7cc0c",
+      "retained_failure": null
+    },
+    {
+      "platform": "air",
+      "mode": "static",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-air\\collected\\static-1\\result.json",
+      "result_sha256": "9e8435bae94fad20621a76a4c725771e7ae03f1f6129089f7e7aa45a57cc8be9",
+      "state": "CPU_RELOCATED_SDK_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "639c8758bf198bd79fb138fa71da37a53e17d26a8d583184bf39fef1490499ff",
+      "installed_header_only": true,
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "24",
+          "24",
+          "4"
+        ],
+        [
+          "2",
+          "24",
+          "24",
+          "4"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "574ec717278cff42be8a87a763d46d410dc615442a2f03472c442f2f143d6e55",
+      "retained_failure": null
+    },
+    {
+      "platform": "air",
+      "mode": "shared",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-air\\collected\\shared-1\\result.json",
+      "result_sha256": "54306d9f2e59d69311cae9192c0c7de731916812e839c4bb4dfdf7315a6c4be3",
+      "state": "CPU_RELOCATED_SDK_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "941fb84558772aa79599ea79d527f1d913f1c8696e21642236f99784d5a2bdfa",
+      "installed_header_only": true,
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "24",
+          "24",
+          "4"
+        ],
+        [
+          "2",
+          "24",
+          "24",
+          "4"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "162c1c80a67d956d6dd40b096e4dacd902b14dab9eb5e68ab1bcb6e64a7bde7c",
+      "retained_failure": null
+    },
+    {
+      "platform": "wsl",
+      "mode": "source",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-wsl\\collected\\source-1\\result.json",
+      "result_sha256": "b13ea0ce28b8b0451b72125daffe2e082a3c6e837c612887ec2f1ce90f41e104",
+      "state": "CPU_SOURCE_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "3a93a860bf8cfab7805e21dc48ca1028a887fe2d834b2ae80ede2fdc06a319e0",
+      "installed_header_only": "SOURCE_EMBEDDING_NOT_INSTALLED_ONLY",
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "23",
+          "23",
+          "3"
+        ],
+        [
+          "2",
+          "23",
+          "46",
+          "3"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "49f9a70d832e7ada7de4773897840523276901b44fe230414b55034a827e92dc",
+      "retained_failure": null
+    },
+    {
+      "platform": "wsl",
+      "mode": "static",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-wsl\\collected\\static-1\\result.json",
+      "result_sha256": "58e7f1f49c35515f4532cc71b146eda7a4920dfc30838cc87be80425494f0057",
+      "state": "CPU_RELOCATED_SDK_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "7a967bbfd8e709ab6a238d53d34f643b6aea073ff49ef066807d71269624b608",
+      "installed_header_only": true,
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "23",
+          "23",
+          "3"
+        ],
+        [
+          "2",
+          "23",
+          "46",
+          "3"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "4c076c42f67809c6506d026e44189e1ef9c6167889e807a978a681d9ea7f49f0",
+      "retained_failure": null
+    },
+    {
+      "platform": "wsl",
+      "mode": "shared",
+      "result_path": ".scratch\\inference-gaps\\g10-sdk-wsl\\collected\\shared-1\\result.json",
+      "result_sha256": "977e26aad3f5c0cb266f0e39046a74d6fb0321356043b1ca6bdc7ed4ab5d626e",
+      "state": "CPU_RELOCATED_SDK_PUBLIC_RUNTIME_GRAPH_HEADERS_PASS",
+      "snapshot": {
+        "head": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+        "tree": "6fdcb7652a722a11faeff48f4cfb902002d81544",
+        "archive_sha256": "3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410"
+      },
+      "all_recorded_stages_exit0": true,
+      "executed_scenarios": 10,
+      "runtime_backend_values": [
+        1
+      ],
+      "public_commands_sha256": "edecf7885d1573ca5918f805944558bed2ba1507d20b0abad60dc0cf15ca1839",
+      "installed_header_only": true,
+      "graph_executor_one_two_worker_configs": [
+        [
+          "1",
+          "23",
+          "23",
+          "3"
+        ],
+        [
+          "2",
+          "23",
+          "46",
+          "3"
+        ]
+      ],
+      "raw_scenario_log_manifest_sha256": "524c8cad43cc1aa115b223e2f0021a02c219199525f4ffa96044f61058097eb1",
+      "retained_failure": null
+    }
+  ],
+  "raw_log_manifest_algorithm": "For each SDK, select the ten result.stages whose stage contains startup/query-first/late-native/late-aten/race-use/race-config/metadata-oom/graph-executor/foreign/qualified-drift. SHA256(concatenate sorted(stage + NUL + SHA256(raw stage.log bytes) + LF), UTF-8). This binds all90 inspected scenario logs without duplicating their contents.",
+  "sdk_coverage": {
+    "verdict": "EXISTING_RECORDED_FINITE_SOURCE_STATIC_SHARED_CPU_DELIVERY_PASS_SUPPORTED",
+    "common_identity": "All9 use head0022dd6a, tree6fdcb7652a722a11faeff48f4cfb902002d81544, source archive SHA3b99a2cd1e9a248bf8c787629720a814de2719c39fa7a8aa305f774df35cc410.",
+    "headers": {
+      "cpu_h_sha256": "7caa6d441fb924f5e2d16b6683a34834c2b28892db703fd1a4b9b8a63f0009b9",
+      "graph_cpu_h_sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99",
+      "independent_header_TUs": 2
+    },
+    "installed_seam": "Six static/shared public consumers compile four TUs using relocated include paths and public HYLE targets, without source/src includes or HYLE_TESTING. New symbols are linked and actually called by installed consumers; static/shared metadata are distinct. Source embedding is separately identified, not called installed-only.",
+    "api_journeys": "Each delivery executes7 fresh-process public startup/query-first/late-Native/late-ATen/config-vs-use/config-vs-config/metadata-OOM scenarios; public Graph+executor; two separately identified producer-side vendor fixtures. All90 stages recorded exit0 and actual runtime markers report backend1=OpenMP.",
+    "real_graph_executor": "graph_runtime.cc wraps the existing public cpu_executor consumer: startup configure2, real5-node RMSNorm/3MatMul/SiLU-gate graph, independent double oracle, two independent Run objects/queues/output, concurrent callers and nested scheduled execution, executor episode/task counters, one/two-worker Scheduler configurations, checked completion/shutdown and balanced scoped metadata owners. It rechecks shared limit2 and late-conflict refusal after original consumer completion.",
+    "limits": [
+      "The Graph consumer uses real computations and executor episodes; it is not just API enumeration.",
+      "Reported replay allocation zero is scoped Compute metadata accounting, not global/vendor zero allocation.",
+      "Private vendor fixture executes against producer/source inputs and is not claimed as installed-only public code.",
+      "No GPU dispatch/CPU+GPU SDK claim, all-operator qualification, total live-thread cap, P1 or native-pool internals certificate follows from these9 CPU-only deliveries.",
+      "Windows source initial fixture binary-location inspection FAIL is retained in retained-source-path-error.json; path-repair verified unchanged completed build, fixtures/commands/product identity, then ran existing binaries. Terminal PASS does not erase that failure."
+    ]
+  },
+  "applicability": [
+    {
+      "item": "ATen OpenMP startup control, first-use, current caller TLS, foreign drift",
+      "classification": "APPLICABLE_ACTUALLY_EXERCISED",
+      "basis": "All3 platforms/all9 deliveries report backend1 and actual configured/observed limits; foreign2->1 or1->2 drift is observed without a repair setter."
+    },
+    {
+      "item": "Native provider low-precision first-use bypass",
+      "classification": "APPLICABLE_ACTUALLY_EXERCISED",
+      "basis": "late-native performs original BF16 float8 block roundtrip with private-thread runtime property and exact output after provider admission froze startup. This Native provider must not be confused with ATen Native threading backend2."
+    },
+    {
+      "item": "ATen Native threading backend2 consumed-pool late setter",
+      "classification": "NOT_APPLICABLE_TO_SELECTED_ACTUAL_RUNTIME_BUILDS",
+      "basis": "None of the three locked SDKs used in this delivery resolves backend2; all actually report OpenMP. Its conditional source checks remain source-reviewed only. Do not force a different SDK/backend or count the OpenMP foreign case as a Native-pool runtime PASS."
+    },
+    {
+      "item": "F4 positive cached qualified recipe revocation",
+      "classification": "NOT_APPLICABLE_TO_CURRENT_QUALIFIED_PRODUCT_IDENTITY",
+      "basis": "Previously verified current CPU-only provider suffix e74fc9bb8964d04f differs from original F4-required bdae1e43311ee486; mixed456 also differs. Existing required eligible=0 failure remains preserved. Normal drift test verifies actual failed state/no stale namespace but does not demonstrate a positive cached path; current cold guard has separate source review."
+    },
+    {
+      "item": "Actual external setter/getter bad_alloc or c10/std exception",
+      "classification": "SOURCE_REVIEW_ONLY_NOT_EXERCISED_BY_THESE_SDK_RUNS",
+      "basis": "The new setter closes state before foreign mutation and catch paths latch failed/closed without publishing an unsuccessful requested value. Ordinary zero-quota metadata OOM is real but is not ATen setter allocation-failure injection. Do not relabel these external exceptions PASS or semantically impossible. No new failure-injection hook/model or uncontrolled huge-thread request is justified merely to manufacture branch execution."
+    },
+    {
+      "item": "Unavailable/CPU+ATen-OFF ordinary public consumer",
+      "classification": "NOT_APPLICABLE_TO_CURRENT_THREE_PLATFORM_PUBLIC_DELIVERY_DOMAIN",
+      "basis": "See independent source decision below; absence of a supported product shape is distinct from an applicable test that failed or was not run."
+    }
+  ],
+  "off_source_decision": {
+    "verdict": "CURRENT_PUBLIC_CPU_ATEN_OFF_CONSUMER_IS_SEMANTICALLY_NOT_APPLICABLE_NO_NEW_SWITCH_OR_FORCED_MACRO",
+    "anchors": [
+      "cmake/HyleComputeRoutes.cmake:5–16,49–61,77–99,127–149",
+      "cmake/HyleComponents.cmake:414–424,773–784",
+      "src/compute_provider_native/torch_cpu_sdk.cmake:3–18,39"
+    ],
+    "facts": "Public resolver rejects the legacy HYLE_COMPUTE_TORCH_CPU option. On selected Windows/Linux x86_64 and macOS ARM64, complete cpu route derives Torch ON automatically. GPU-only route removes CPU facade and native CPU provider from product factors. Exact native-provider maintenance closure also derives CPU route/availability; it is not a normal public CPU-lite product.",
+    "preserved_attempts": [
+      {
+        "path": ".scratch/inference-gaps/g10-windows-host-disabled-1/result.json",
+        "state": "FAIL",
+        "reason": "Mutually exclusive legacy HYLE_DEV_FACTORS= plus HYLE_COMPONENTS; configure only."
+      },
+      {
+        "path": ".scratch/inference-gaps/g10-windows-host-disabled-2/result.json",
+        "state": "FAIL",
+        "reason": "HYLE_COMPUTE_TORCH_CPU is no longer a public option; configure only."
+      }
+    ],
+    "boundaries": "Neither rejection is an OFF runtime PASS or no-Torch import certificate. Current private host runner accepts only asan/ubsan/tsan, so retained disabled branches do not produce a hidden OFF certificate. Existing unavailable code remains a source/portability branch; this review does not remove it or authorize product option/CMake changes. If a future authorized product actually exposes a CPU facade without ATen, its ordinary absence journey becomes applicable then."
+  },
+  "host_risk_runner": {
+    "status": "PROSPECTIVE_SOURCE_REVIEW_ACCEPTABLE_ACTUAL_SANITIZER_TERMINALS_NOT_SIGNED",
+    "inspected_runner_sha256": "59121b1132fff47327f9dc15130caed6b5a6a7bd35f4a7f7cc021ba60aeba035",
+    "current_minimum_matrix": [
+      {
+        "host": "WSL",
+        "mode": "ASan",
+        "facet": "Common new state/DTO and real CPU owner memory lifetime; no Windows ASan claim."
+      },
+      {
+        "host": "WSL",
+        "mode": "UBSan",
+        "facet": "New count/enum/optional conversions and normal public CPU paths."
+      },
+      {
+        "host": "MacBook Air",
+        "mode": "TSan",
+        "facet": "Shared cold mutex/state plus actual concurrent configure/first-use, concurrent phase callers and Graph/executor lifecycle."
+      }
+    ],
+    "why_not_full_matrix": "New G10 logic has no Windows-specific heap owner, packing scheme, pointer arithmetic or allocator algorithm. Its shared state and public DTO/limits conversion are common C++ code; real Windows API/math/source/static/shared delivery is present. No identified Windows-exclusive memory MUST requires building618 unrelated/missing legacy dependencies. This is risk-based host facet coverage, not cross-platform substitution for all old vendor runtime qualifications.",
+    "actual_guard_rejection": "Windows ASan attempt1 configured and produced a618-edge dry-run; <450 preflight rejected before build. Its FAIL/dry-run and costs stay preserved; it is not an ASan runtime pass. Root chose existing warm WSL ASan tree instead, without resetting the failure or pretending Windows instrumentation completed.",
+    "positive_wiring": [
+      "Uses -UHYLE_DEV_FACTORS and -UHYLE_COMPUTE_TORCH_CPU to remove invalid retained selectors; cpu route automatically enables actual Torch.",
+      "Checks feature ON plus selected sanitizer, then compile flags for4 changed core TUs and3 real app compile TUs. g10_runtime/g10_graph/g10_vendor all call original hyle_apply_sanitizer; no featureOFF empty path substitutes for state instrumentation.",
+      "Current app compdb filter first limits file suffix to.cc/.cpp/.cxx before matching target path; link records no longer inflate the3-TU check. Both core and app command records are saved.",
+      "TSan model is the previously approved exact RefCount header SHA2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416. Script strips only existing known annotation/transformation and compares canonical bytes. It adds no annotation/suppression around ThreadRuntimeState or its std::mutex.",
+      "Low-load read of selected Air TSan cache found parent project entry, tests/bench OFF, SIMD_EXACT empty and source archive has no.git; the scoped model traversal has no observed source-package/exact-check utility target trap in that selected CPU configuration."
+    ],
+    "corrected_private_issue": {
+      "issue": "Original app filter also matched link command strings containing CMakeFiles/app.dir, causing an incorrect app-count preflight refusal.",
+      "verdict": "SOURCE_FIX_CONFIRMED",
+      "anchor": ".scratch/inference-gaps/g10_host_risk.py:184–188",
+      "limit": "Root reports WSL ASan passed4core/3app assertions and entered build; no actual runtime or sanitizer verdict follows from that report."
+    },
+    "evidence_needed_without_new_runs": "Retain planned actual4core/3app compile commands, selected sanitizer/link runtime identity and original model include entry with the terminal raw logs; if an actual conflicting overlay appears, inspect existing compiler dependencies then. No new scheduler/model, broad suppression, extra shape, new matrix or repeat sampling is proposed.",
+    "limits": [
+      "Instrumented HYLE code and consumers do not make the locked Torch/OpenMP/BLAS/private vendor binaries fully instrumented.",
+      "ASan detect_leaks=0 and TSan report_thread_leaks=0 are explicit facet boundaries; do not sign LSan, vendor leaks, private worker internals or GPU/driver memory.",
+      "Final ASan/UBSan/TSan outcomes remain applicable pending gates. This review cannot mark G10 complete before their actual allowed verdicts."
+    ]
+  },
+  "musts": {
+    "open_product": [],
+    "open_private_runner_in_inspected_snapshot": [],
+    "fixed_during_review": [
+      "Private app compdb filter compile-vs-link distinction; current source read after correction."
+    ],
+    "remaining_applicable_evidence": [
+      "The three predeclared host sanitizer terminal records.",
+      "CPU+CUDA real public consumer is outside these9 SDKs. Root reports it has just passed after preserving missing-relative-header first failure; its raw artifact was not independently signed by this review. Reuse its own record, do not rerun solely for this review."
+    ]
+  },
+  "terminal": "FINITE_READ_ONLY_REVIEW_COMPLETE_NO_NEW_SCOPE_NO_SANITIZER_OR_OFF_RUNTIME_PASS_INFERRED"
+}

@@ -1,0 +1,16 @@
+{
+  "verdict": "PASS_P0_COMMON_COLD_STATE",
+  "source_commit": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+  "symbol_object": {
+    "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/aten_cpu_provider.cc.o",
+    "sha256": "6966f8b21ce72d34cefd1cf58ac1ccd8a6752c1153173918f484b26fa287eff6"
+  },
+  "fixed_state_bytes_on_observed_linux_gcc14_x86_64": 48,
+  "hyle_storage": "One fixed std::mutex + requested uint32 + three bools per loaded native code image; original DefaultContextOptions unchanged; no new Program/Invocation/Queue/replay fields or explicit HYLE pool/heap owner.",
+  "configure": "Cold only. Invalid count returns before runtime access. One mutex; first request closes window before original ATen setter then checks getter before publishing. Same value is getter-only. Failure closes conservatively without rollback.",
+  "observation": "Cold only. One mutex. Open query never calls ATen getters; closed query calls original intra/inter-op getters and observes drift without setting.",
+  "first_use": "Bounded cold mutex/state updates at ordinary CPU factory admission, actual Native/ATen provider admission and Native low-precision prepare before original warmup; qualified premise checked only on cold rule/propose paths.",
+  "hot_math": "No setter/reset/lock or new state in math/replay; existing provider algorithms, data/workspaces and executor/ggml budget fields unchanged.",
+  "unknown": "ATen/OpenMP/BLAS/platform startup allocation/private pools and contended mutex OS costs remain vendor/platform costs, not zero or a process live-thread cap.",
+  "loc": "Unified loc-report.py --module ... --commit 0022... --self-check both PASS; conventional module implementation boundaries count src only (CPU252/4files, Native5343/17files), not split public-header ownership. No manual addition or new whole-repository report."
+}

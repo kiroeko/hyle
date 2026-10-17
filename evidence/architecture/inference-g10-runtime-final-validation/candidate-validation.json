@@ -1,0 +1,28 @@
+{
+  "schema": "hyle.g10-candidate-maintenance-checkpoint/v1",
+  "previous_ref": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+  "product_candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+  "owner_state": "CANDIDATE",
+  "gates": [
+    {
+      "kind": "selector",
+      "exit_code": 0,
+      "output": "READY: selected=docs,closure; skipped/reused=146\r\n"
+    },
+    {
+      "kind": "closure_previous_ref",
+      "exit_code": 0,
+      "output": "module closure contract passed: 64 components, schema 4\r\n"
+    },
+    {
+      "kind": "docs",
+      "exit_code": 0,
+      "output": "documentation contract passed: 1258 Markdown files, 6558 relative links checked\r\n"
+    },
+    {
+      "kind": "diff",
+      "exit_code": 0,
+      "output": " docs/implementation/module-status.json             | 10 +--\n docs/implementation/status.md                      |  4 +-\n .../compute/inference-g10-cpu-thread-budget.md     | 77 ++++++++++++++++++++--\n .../tasks/graph/inference-g09-joint-pipeline.md    |  4 +-\n .../tooling/inference-g09-native-workload-aa.md    |  4 ++\n docs/user/compute.md                               |  3 +-\n 6 files changed, 89 insertions(+), 13 deletions(-)\n"
+    }
+  ]
+}

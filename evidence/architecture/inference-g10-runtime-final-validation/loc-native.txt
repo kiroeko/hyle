@@ -1,0 +1,21 @@
+HYLE canonical LOC report
+root:   C:\public\project-hyle\hyle
+commit: 0022dd6adc3b2d903f91e9a1db0e73517dd142ba
+dirty:  no
+cloc:   2.08
+
+metric                                           code   counted files
+------------------------------------------ ---------- ---------------
+full repository code                        3,858,840           7,627
+self-written excluding tests                  183,565             761
+module implementation (compute_provider_native)      5,343              17
+
+path/language policy:
+  full repository: immutable Git commit tree; every cloc language
+  self-written - tests: include/hyle, src; C++, C/C++ Header, C, CUDA, Objective-C++, GLSL
+  self-written excludes bench, docs, third_party, samples, CMake and build/cache/scratch trees
+  current unit languages: C++, C/C++ Header, C, CUDA, Objective-C++, GLSL
+  module boundary (conventional):
+    - src/compute_provider_native
+self-check: PASS
+

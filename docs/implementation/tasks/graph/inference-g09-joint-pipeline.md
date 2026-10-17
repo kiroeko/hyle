@@ -525,5 +525,5 @@ engineering_performance为`INCONCLUSIVE`；阶段功能/风险/P0、15项交付�
 仅docs/closure，146项skip/reuse；带原registry revision的64组件/schema4检查、文档链接和diff检查通过。
 初次生成状态投影过期的FAIL及纠正记录保留；没有触发全局构建。
 
-本goal保持active，验收仍为2/4；[G10](../compute/inference-g10-cpu-thread-budget.md)进入独立SCOPED
-审计，未写产品代码，不以它代签G09。全部重型进程已终态，本轮不再启动性能采样。
+本goal保持active；[G10](../compute/inference-g10-cpu-thread-budget.md)的当前阶段和验收由自身卡与
+registry记录，不以它代签G09。本卡停止点后没有启动新的性能采样；后续有限静态机制审计见独立工具卡。

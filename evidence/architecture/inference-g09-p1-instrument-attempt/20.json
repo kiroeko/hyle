@@ -1,0 +1,234 @@
+{
+  "schema": "hyle.bounded-aa-mechanism-review.v1",
+  "review": "R20 G09 native workload A/A independent static mechanism review",
+  "date": "2026-10-17",
+  "decision": "THREE_HYPOTHESES_EXHAUSTED_WITHIN_THIS_PASS_NO_PROVEN_REPAIR_MECHANISM_RETAIN_TOOL_BLOCKER",
+  "fixed_private_source": "35ec95dbfb7012c746c4a4114c5b3bcffaf3d12e",
+  "product_candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_implementation": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "scope": "Read-only fixed-source/R18/R19/contracts and all24 existing A/A logs. No build, benchmark, GPU, A/A/A-B rerun, product/perf-core change, new sample, shape/threshold/estimator change or additional capability scan. Only this ignored JSON written.",
+  "read_identity": {
+    "additional_files": [
+      {
+        "path": "docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
+        "sha256": "39a1b588312078b5cd8958fcc391595e89e2aae15c64d52c6a07e8e161624a85"
+      },
+      {
+        "path": ".scratch/inference-gaps/g09-p1-instrument-review-18.json",
+        "sha256": "62c044fb6081434171fd3941fd259a8550d89b27ecdad555c7e94b62cbf0feec"
+      },
+      {
+        "path": ".scratch/inference-gaps/g09-p1-vulkan-aa-review-19.json",
+        "sha256": "37ad0e9740bb2900290f47670011bdc8c2f5d89c2da8bd9bf4f4839a8c5f85a8"
+      },
+      {
+        "path": "docs/developer/review/module-closure-methodology.md",
+        "sha256": "558ae336f2fb960db5e2089a8c148e683888bb674e80d6aaaf5d81f6b20e9823"
+      },
+      {
+        "path": "docs/developer/performance/benchmark-evidence-standard.md",
+        "sha256": "e1b1e352bb99d447d728cdc4bc1cf8122a708dfd956efc03459e116ff8d3a88d"
+      },
+      {
+        "path": "C:/h7/g09-p1-peer-9e2/scripts/hyle_perf/runner.py",
+        "sha256": "df415c5bb04c1096c568cae75c84e83672d2282ef43c7965d905f3ba1d21e022"
+      }
+    ],
+    "fixed_private_files": [
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\driver.cc",
+        "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\wrapper.cc",
+        "sha256": "b0057be32be8c64cc8bfc701e46a75ff933b6abc26a38bd5dba4822047419151",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\retained\\facade.cc",
+        "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\facade_api.h",
+        "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\CMakeLists.txt",
+        "sha256": "66cda4c10e246806c47a18465f4acbc9212fba2740e104c10d23f83d65a320a8",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\validate_aa.py",
+        "sha256": "1b72362ddf5189a5fc5df7eaa8034b8ae57df0ba0dfe1437867e380757e28ecf",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\instrument\\bench\\common\\perf_process.h",
+        "sha256": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\instrument\\bench\\integration\\perf_control_bench.cc",
+        "sha256": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\instrument\\third_party\\nanobench\\nanobench.h",
+        "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\contract-windows-vulkan.json",
+        "sha256": "25a85764b3d91b69ddbd08a06503bc772b45a451733890424a2ed00e162280c0",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\contract-air-apple.json",
+        "sha256": "e296d112b1b1059b77acd114cc730e7bc0e4f7445424181906a9c333ad773294",
+        "matches_fixed_git": true
+      },
+      {
+        "path": ".scratch\\inference-gaps\\g09-p1-instrument-adapter\\contract-air-vulkan.json",
+        "sha256": "0076d7bdc028c9afa52bc5eccf976a9e7c9bcccefb643c8f5a6e377c6e3a3cf9",
+        "matches_fixed_git": true
+      }
+    ],
+    "scheduler_fixed_source": {
+      "path": "src/sched/scheduler.cc",
+      "sha256": "c774348a896f24ce7194223a97d42d5b2bffb1f7832b5701b89386895be7c47c",
+      "baseline_ref": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+      "candidate_ref": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "bytes_equal": true
+    }
+  },
+  "log_crosscheck": [
+    {
+      "profile": "windows-vulkan",
+      "log_count": 8,
+      "checks_all_pass": true,
+      "unexpected_failures": [],
+      "checks_count": {
+        "sha_matches_r19": 8,
+        "distinct_same_sdk_images": 8,
+        "order_matches": 8,
+        "aa_route_matches": 8,
+        "real_measurement": 8,
+        "oracles_destroy": 8,
+        "eight_rows": 8
+      },
+      "row_elapsed_ns_minmax": [
+        6086900,
+        14696900
+      ],
+      "row_MdAPE_percent_minmax": [
+        1,
+        13.9
+      ]
+    },
+    {
+      "profile": "air-apple",
+      "log_count": 8,
+      "checks_all_pass": true,
+      "unexpected_failures": [],
+      "checks_count": {
+        "sha_matches_r19": 8,
+        "distinct_same_sdk_images": 8,
+        "order_matches": 8,
+        "aa_route_matches": 8,
+        "real_measurement": 8,
+        "oracles_destroy": 8,
+        "eight_rows": 8
+      },
+      "row_elapsed_ns_minmax": [
+        2069479.5,
+        6808812.5
+      ],
+      "row_MdAPE_percent_minmax": [
+        0.5,
+        36
+      ]
+    },
+    {
+      "profile": "air-vulkan",
+      "log_count": 8,
+      "checks_all_pass": true,
+      "unexpected_failures": [],
+      "checks_count": {
+        "sha_matches_r19": 8,
+        "distinct_same_sdk_images": 8,
+        "order_matches": 8,
+        "aa_route_matches": 8,
+        "real_measurement": 8,
+        "oracles_destroy": 8,
+        "eight_rows": 8
+      },
+      "row_elapsed_ns_minmax": [
+        8300395.5,
+        16913042
+      ],
+      "row_MdAPE_percent_minmax": [
+        0.7,
+        26.9
+      ]
+    }
+  ],
+  "log_crosscheck_meaning": "Every raw log matched its preserved R19 SHA. Checks above are binding/measurement/oracle sanity, not A/A equivalence PASS. Table MdAPE and elapsed ranges are existing printed row summaries, not new estimates or grounds to alter statistics. CRLF normalized only for text-marker matching; raw hashes remain unchanged.",
+  "hypotheses": [
+    {
+      "id": "H1",
+      "hypothesis": "A/A accidentally binds baseline against candidate, aliases one image, reverses factors, or inherits verify-only flags.",
+      "verdict": "REFUTED_BY_FIXED_CODE_AND_ALL24_RAW_LOGS",
+      "anchors": [
+        "driver.cc:233–255",
+        "driver.cc:51–90",
+        "validate_aa.py:145–162,183–229",
+        "wrapper.cc:4–24"
+      ],
+      "evidence": "A/A baseline selects baseline1/baseline2; candidate selects candidate1/candidate2. All24 logs show two distinct same-SDK image tags/paths and telemetry agrees with recorded execution/allocation/AA route. All24 run verify_only=0 and have four measured12-round markers/eight timing rows. Original R13–18 private image binding/artifact qualification remains exact-identity evidence, not re-performed here.",
+      "repair": "None justified. Renaming arms or changing parser/ratio direction would not be a repair."
+    },
+    {
+      "id": "H2",
+      "hypothesis": "One side measures enqueue-only, omits small result or retirement, runs a different iteration count, or places cold/destroy work inside only one timing interval.",
+      "verdict": "REFUTED_FOR_THE_FIXED_PUBLIC_MEASUREMENT_BOUNDARY",
+      "anchors": [
+        "retained/facade.cc:227–260",
+        "driver.cc:183–226",
+        "instrument/third_party/nanobench/nanobench.h:4133–4137,4190–4195,4209–4239,4262–4272"
+      ],
+      "evidence": "Both lambdas call identical facade replay: prepare all active slots, double submit before waits, successful ResultLease, exact4B subview read per slot, release all views/results, drain before return. compareEpoch wraps the actual function call; fixed epochIterations1 overrides calibration and both alternatives share12 ABBA/BAAB rounds. Full pre/post replays and Arm destroy are outside timing on both sides. All24 logs have4before+4after full oracle markers and8destroy status0. No source finding makes one arm asynchronous at the user-visible return.",
+      "limits": "This does not certify internal driver/cache/background quiescence or reconstruct every GPU command from logs. Original contract deliberately leaves final persistent State/vendor image cache outside warm; no newly invented perfect trace gate.",
+      "repair": "None justified. Sleeping, moving ownership out of timing, changing epochs/warmups or dropping drain would alter the accepted consumer."
+    },
+    {
+      "id": "H3",
+      "hypothesis": "Host/control plumbing or independent scheduler/native idle state biases otherwise identical images.",
+      "verdict": "PUBLIC_CONTROL_CAUSATION_REFUTED_NATIVE_HOST_IDLE_CAUSATION_INSUFFICIENT_EVIDENCE",
+      "anchors": [
+        "wrapper.cc:5–18",
+        "instrument/bench/common/perf_process.h:36–98",
+        "validate_aa.py:164–229",
+        "fixed runner.py:1044–1101,1157–1196,1266–1293,2239–2254",
+        "retained/facade.cc:179,227–260",
+        "fixed scheduler.cc:171–178,1741–1748"
+      ],
+      "established_facts": "Windows logged original process mask0x14 (physical CPUs2,4), callerCPU2, above-normal; Air logged user-interactive caller QoS and explicitly no hard affinity. Fixed runner clears controlled env and supplies/validates policy. Each image owns a2-worker Scheduler; original unchanged Scheduler drain waits outstanding work, not the separate idle-search/park state. Balanced idle policy has4096 search polls and4yields. Thus natural cross-image idle/native interference is possible in principle, but logs lack actual per-worker scheduling/core residency, per-episode clocks/thermal/frequency or idle-state observations that identify it as the cause.",
+      "counterevidence": "Same two-image/worker lifecycle and factor coverage apply to both arms; timing markers and complete retirement are present. Windows CUDA qualified under its own reviewed topology, which neither proves nor disproves other native routes. Three failures occur before public common control collection: runner first collects product observations, and private ready guard rejects its first entry before compare. Public delta/timer-floor control arithmetic cannot cause the earlier local A/A ratios.",
+      "not_a_proven_fix": "No evidence selects scheduler idle policy, helper placement, vendor spin, QoS, frequency or allocator as the causal mechanism. No source basis to change HYLE math/Sched, insert wait/sleep, force G10 setter, change placement policy or declare missing private threads zero. Generic controls would not replace workload A/A.",
+      "repair": "None currently justified; this remains a named unproven host mechanism, not AUDITED FIX or authorization for a new profiler/run."
+    }
+  ],
+  "current_verdict": {
+    "windows_vulkan": "Original A/A FAIL; 0 valid A/B samples; engineering NI unresolved; direction INCONCLUSIVE.",
+    "air_apple": "Original A/A FAIL; 0 valid A/B samples; engineering NI unresolved; direction INCONCLUSIVE.",
+    "air_vulkan": "Original A/A FAIL; 0 valid A/B samples; engineering NI unresolved; direction INCONCLUSIVE.",
+    "windows_cuda": "Own already QUALIFIED n15/P1 receipt preserved; not rerun or generalized.",
+    "product_must": "None established by this bounded pass.",
+    "tool_fix": "No concrete repair mechanism proven; no new FIX or run justified."
+  },
+  "stop_and_recovery": "Stop this static pass after the three hypotheses. Preserve all original failures, code identities, cost and readyFAIL. Tool card remains the authority: only new specific instrument/host/contract mechanism evidence plus independently reviewed minimal correction and frozen original5%/10%/four-order/n15-to31 contract can authorize new qualification. More epochs/warmups/samples, alternate estimator, threshold/size/provider changes or blind same-config repetition are not recovery. G10 capability does not imply causation or recovery for G09.",
+  "terminal": "FINITE_STATIC_PASS_COMPLETE_STILL_UNLOCATED"
+}
