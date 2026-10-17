@@ -15,12 +15,14 @@
 // Plus a HYLE-only fan-out row: N concurrent blocking jobs, one joiner -- the pool's
 // concurrency (up to max_threads) the single-shot row can't show.
 //
-// Run under scripts/bench-stat.py -n 15 for the statistical verdict.
+// These rows include each runtime's construction and teardown, amortized over
+// the offloads in one measured episode; they are not isolated warm-pool latency.
 
 #include <nanobench.h>
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include <vector>
 
@@ -61,7 +63,8 @@ void hyle_blocking_body(void* p) noexcept {
   for (int i = 0; i < a->rounds; ++i) {
     auto h = spawn_blocking(*a->pool, system_allocator(), [i] { return i * 2; });
     auto r = h.join();
-    if (r.has_value()) sink += static_cast<std::uint64_t>(*r);
+    if (!r.has_value() || *r != i * 2) std::abort();
+    sink += static_cast<std::uint64_t>(*r);
   }
   a->sink = sink;
 }
@@ -81,9 +84,10 @@ void hyle_fanout_body(void* p) noexcept {
   for (int i = 0; i < a->n; ++i)
     handles.push_back(spawn_blocking(*a->pool, system_allocator(), [i] { return i; }));
   std::uint64_t sink = 0;
-  for (auto& h : handles) {
-    auto r = h.join();
-    if (r.has_value()) sink += static_cast<std::uint64_t>(*r);
+  for (int i = 0; i < a->n; ++i) {
+    auto r = handles[static_cast<std::size_t>(i)].join();
+    if (!r.has_value() || *r != i) std::abort();
+    sink += static_cast<std::uint64_t>(*r);
   }
   a->sink = sink;
 }
@@ -91,15 +95,15 @@ void hyle_fanout_body(void* p) noexcept {
 }  // namespace
 
 int main() {
-  // ---- 1. HYLE spawn_blocking sequential round-trip (warm pool) ----
+  // ---- 1. HYLE spawn_blocking sequential round-trip (amortized lifecycle) ----
   // A driver fiber offloads `kRounds` trivial closures, joining each. batch=kRounds ->
-  // ns per submit+run+join round-trip. The pool is created ONCE per epoch (outside the
-  // inner loop) so thread-creation is amortized -- this is the steady-state offload
-  // cost, the number that matters for a server offloading many blocking calls.
+  // ns per submit+run+join plus amortized runtime lifecycle. Each measured episode
+  // creates and destroys its pool, Scheduler and driver fiber; its inner loop
+  // reuses that pool across kRounds offloads.
   {
     constexpr int kRounds = 2000;
     nb::Bench b;
-    b.title("spawn_blocking round-trip (warm pool)").batch(kRounds).minEpochIterations(10);
+    b.title("spawn_blocking round-trip (amortized runtime lifecycle)").batch(kRounds).minEpochIterations(10);
     b.run("HYLE spawn_blocking submit+join", [&] {
       BlockingPool pool(system_allocator());
       Scheduler sched(2, system_allocator(), 256);

@@ -1,0 +1,232 @@
+{
+  "change": "Skip retired-record scan under mu when retained handles == live threads; no new state/allocation/API, original join and retirement slow path unchanged.",
+  "invariant": "A worker decrements num_threads and sets its retired flag while holding mu. New thread record push/count increment also hold mu. The equality proves all retained records are live. A concurrent reaper extracts only retired records under the same mutex.",
+  "tests": {
+    "passed": 18,
+    "log": "tests-final.stdout.txt",
+    "added": "ReapsIdleHandleWhileAnotherWorkerRemainsBusy; existing shutdown/cancel/failure/cap/burst tests remain."
+  },
+  "method": "Exactly two independent process pairs AB then BA. Each shape prestarts 1 or32 actual busy pool workers gated on an external condition variable. Times8192 public spawn_blocking submissions including job/JoinState allocation and storing pre-reserved handles. Releases gate, joins every result/checksum, then shutdown and live/handle zero checks outside timer. Not offload round-trip or external peer rank.",
+  "shape_order_note": "1-worker shape precedes32 in every process, so allocator warmth differs across shapes; do not compare their absolute latencies to infer thread-count scaling.",
+  "clock": {
+    "qpc_frequency_hz": 10000000,
+    "tick_ns": 100,
+    "caller_affinity_logical_cpu": 4,
+    "physical_core_type_verified": false
+  },
+  "formal": [
+    {
+      "tag": "pair1-ab-baseline",
+      "arm": "baseline",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 659600,
+          "ns_per_submit": 80.517578125,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 380800,
+          "ns_per_submit": 46.484375,
+          "checksum": 33550336
+        }
+      ]
+    },
+    {
+      "tag": "pair1-ab-candidate",
+      "arm": "candidate",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 675400,
+          "ns_per_submit": 82.446289062,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 358100,
+          "ns_per_submit": 43.713378906,
+          "checksum": 33550336
+        }
+      ]
+    },
+    {
+      "tag": "pair2-ba-candidate",
+      "arm": "candidate",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 673300,
+          "ns_per_submit": 82.189941406,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 364500,
+          "ns_per_submit": 44.494628906,
+          "checksum": 33550336
+        }
+      ]
+    },
+    {
+      "tag": "pair2-ba-baseline",
+      "arm": "baseline",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 687700,
+          "ns_per_submit": 83.947753906,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 414800,
+          "ns_per_submit": 50.634765625,
+          "checksum": 33550336
+        }
+      ]
+    }
+  ],
+  "aa_controls": [
+    {
+      "tag": "aa-baseline-0",
+      "arm": "baseline",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 691800,
+          "ns_per_submit": 84.448242188,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 397600,
+          "ns_per_submit": 48.53515625,
+          "checksum": 33550336
+        }
+      ]
+    },
+    {
+      "tag": "aa-baseline-1",
+      "arm": "baseline",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 673900,
+          "ns_per_submit": 82.263183594,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 389800,
+          "ns_per_submit": 47.583007812,
+          "checksum": 33550336
+        }
+      ]
+    },
+    {
+      "tag": "aa-candidate-0",
+      "arm": "candidate",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 722400,
+          "ns_per_submit": 88.18359375,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 361900,
+          "ns_per_submit": 44.177246094,
+          "checksum": 33550336
+        }
+      ]
+    },
+    {
+      "tag": "aa-candidate-1",
+      "arm": "candidate",
+      "rows": [
+        {
+          "qpc_frequency_hz": 10000000,
+          "caller_logical_cpu": 4,
+          "scope": "submission only; setup, gate release, joins, result checks and shutdown outside timer"
+        },
+        {
+          "workers": 1,
+          "jobs": 8192,
+          "aggregate_ns": 707800,
+          "ns_per_submit": 86.401367188,
+          "checksum": 33550336
+        },
+        {
+          "workers": 32,
+          "jobs": 8192,
+          "aggregate_ns": 355000,
+          "ns_per_submit": 43.334960938,
+          "checksum": 33550336
+        }
+      ]
+    }
+  ],
+  "conclusion": "32-worker AB old46.484/new43.713ns, BA old50.635/new44.495ns. Same-path32-worker AA varies about2%; this finite sample supports a shape-specific saving, not a universal percent or CI. 1-worker AB+2.40%/BA-2.09% and absolute AA drift retained; no stable direction or strict equality claimed. Structural no-retire lookup changes O(live handles) toO(1).",
+  "scope": "Fresh BlockingPool TU/probe/tests; existing identical static foundation libraries. No CMake build/download/staging, full Scheduler/TSan/cross-platform test or inference throughput claim.",
+  "source_sha256": {
+    "src\\sched\\blocking.cc": "63cfeda2c70d104438d063653169d8b1cbd9fb2aed61bde84f7f9496326b9c49",
+    "tests\\sched\\blocking_test.cc": "de947c5f087958e301ff0331cd7f4b1939f894877fe362074a03ee90a67595b7",
+    "include\\hyle\\sched\\blocking.h": "6ac68f05f6f1dce2ada469956d823bc52827e11aea781a74cc896877f145db41",
+    "include\\hyle\\sched\\join.h": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4",
+    "bench/sched/blocking_bench.cc": "97cb6da1733a31c0e46790d4c943438b2fa63e3cf688bdcf5dae100f0c7b1b53"
+  },
+  "setup_note": "Initial scratch runner assumed an absent hyle_sched_test target; no compiler ran. Corrected to cached gtest plus explicit existing scheduler foundation libraries. Final test TU separately rebuilt; measured baseline/candidate binaries unchanged.",
+  "benchmark_repair": "Existing blocking_bench label corrected from warm pool to amortized runtime lifecycle; original timing still includes per-episode pool/Scheduler construction and teardown. Both Hyle sequential/fanout loops now reject failed or wrong task results. TU compiles /W4 /WX without Marl; this legacy full benchmark was not timed or its optional Marl branch rebuilt."
+}

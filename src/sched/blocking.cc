@@ -140,6 +140,9 @@ struct BlockingPool::Impl {
       ThreadRecord* retired = nullptr;
       {
         std::lock_guard<std::mutex> lk(mu);
+        // Every retained record is live until its worker decrements this
+        // count under the same lock. No retired records means no scan.
+        if (threads.size() == num_threads) return;
         std::size_t found = threads.size();
         for (std::size_t i = 0; i < threads.size(); ++i) {
           if (!threads[i]->retired) continue;

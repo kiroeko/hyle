@@ -417,6 +417,43 @@ TEST(Blocking, RetiredThreadHandlesStayBoundedAcrossBursts) {
   }
 }
 
+TEST(Blocking, ReapsIdleHandleWhileAnotherWorkerRemainsBusy) {
+  std::atomic<bool> entered{false}, release{false};
+  BlockingPool pool(system_allocator(), 2, std::chrono::milliseconds(5));
+  auto busy = spawn_blocking(pool, system_allocator(), [&] {
+    entered.store(true, std::memory_order_release);
+    while (!release.load(std::memory_order_acquire)) release.wait(false);
+    return 1;
+  });
+  const auto wait_until = [](auto predicate) {
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (!predicate() && std::chrono::steady_clock::now() < deadline)
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    return predicate();
+  };
+  EXPECT_TRUE(wait_until([&] { return entered.load(std::memory_order_acquire); }));
+  auto short_job = spawn_blocking(pool, system_allocator(), [] { return 2; });
+  auto short_result = short_job.join();
+  EXPECT_TRUE(short_result.has_value());
+  if (short_result) EXPECT_EQ(*short_result, 2);
+  EXPECT_TRUE(wait_until([&] { return pool.live_threads() == 1; }));
+  EXPECT_EQ(pool.retained_thread_handles(), 2u);
+
+  auto replacement = spawn_blocking(pool, system_allocator(), [] { return 3; });
+  auto result = replacement.join();
+  EXPECT_TRUE(result.has_value());
+  if (result) EXPECT_EQ(*result, 3);
+  EXPECT_LE(pool.retained_thread_handles(), 2u);
+  release.store(true, std::memory_order_release);
+  release.notify_all();
+  auto busy_result = busy.join();
+  EXPECT_TRUE(busy_result.has_value());
+  if (busy_result) EXPECT_EQ(*busy_result, 1);
+  pool.shutdown();
+  EXPECT_EQ(pool.live_threads(), 0u);
+  EXPECT_EQ(pool.retained_thread_handles(), 0u);
+}
+
 // Concurrency stress (TSan gate): many spawn_blocking + join from the main thread,
 // Churn pool threads and JoinState allocation/free through the shipping
 // allocator. mimalloc is built with MI_TSAN in sanitizer configurations, so

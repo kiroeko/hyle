@@ -18,6 +18,8 @@
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
 | Linux watch重复close-write唤醒 | [inotify mask](../../../src/io_watch/watch_linux.cc) 同时订阅IN_MODIFY和IN_CLOSE_WRITE；公开接口只提供内容变化提示，未承诺writer-close。即使最终忽略sibling名称，额外通知也会唤醒owner | 已去冗余close订阅；实际减少约1.97次上下文切换/发布。16项watch测试通过，剩余小负样本未声称全部解决 |
 | TaskScope读写状态布局 | [私有State](../../../src/sched/task_scope.cc) 的cancel token与admission写入共用cache line；32-child消费者当前复现小输 | 已分隔control字段。scope-only绝对时间有改善信号，代价为本机每scope冷状态增加48 B；31项测试通过，未直接测硬件cache事件或跨平台收益 |
+| BlockingPool每次受理扫描所有线程 | [reap_retired](../../../src/sched/blocking.cc) 即使没有退休记录也扫描所有保留句柄，每次submit均付O(live threads)查找 | 同锁下以现有存活数/句柄数跳过无退休扫描，无新增状态；18项测试通过。32 busy-worker同工提交两对约46.5/50.6→43.7/44.5 ns，见下；不是round-trip或外部排名 |
+| ConcurrentHashMap erase重复hash | [erase](../../../include/hyle/container/concurrent_hash_map.h) 先hash选shard，再由table.erase重算同key | 复用私有prehashed路径，锁/回收/析构顺序不变。计数2→1；长key形状两对改善与AA漂移见下，不声称外部赢 |
 
 原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
 这条分支已因实际Half累加问题替换，不能仅凭主kernel融合推断整个调用空间或精度。
@@ -426,6 +428,17 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 
 ## 模块覆盖与未测范围
 
+跨provider再查同类机制，确认以下额外范围；这是当前源码缺口，不是已完成对手实测的输项：
+
+| 路线 | 已确认工作/空间 | 下一步 |
+|---|---|---|
+| CPU ggml / Vulkan Concat | 两边仍是左折叠的二次复制；CPU还保留全部中间payload，Vulkan已有gallocr，不能将两边峰值混为一谈 | 正实施平衡树；CPU额外核重复ports元数据预算，保持各自现有dtype/stride域 |
+| CPU / Vulkan ordinary causal SDPA | 无外部mask端口仍物化内部Q×KV mask；CPU直接借冷Half常量，Vulkan用seed/diag/cast构建 | 先核原生cache/boxed causal字段能否同义复用，再决定Q分块；不把构造尺寸和实测峰值混同 |
+| CPU / Vulkan Sink与Vulkan wide fallback | scores/probabilities仍带H×Q×KV；caller原mask是必须输入，额外head维不是 | 保持F32数学与单节点边界，先明确allocator生命周期再分块，不能只拆图而保留全部块 |
+| Apple ordinary SDPA | [普通入口](../../../src/compute_route_apple/apple_tensor.cc) 仍force_fused=false；锁定MLX在Q>8、D192/256主动走unfused，私有ragged/paged的融合结果不能替代它 | 正核支持域、mask及数值，再验证只绕过该启发式；D512 Sink仍在fused域外 |
+| CPU Hadamard冷常量 | 仍准备W² host矩阵，4096为64 MiB；但CPU pin的原生FWHT已支持任意power-of-two，运算本身为O(WlogW) | 不盲移可能拖慢单级FWHT的两级GPU算法；保留为冷空间项，借用host矩阵不能称双份device分配 |
+| FlatHash近阈值rolling churn / Queue政策 | grow耗尽可能same-capacity全表rehash；queue容量、空扫与重试合同尚未同责核齐 | 先计数/匹配实际容量与职责，再选代表trace；目前不判输赢，不以membership读取代替安全erase/reclaim |
+
 - Core/Error/Obs/Math/Time/TimerQueue/Platform/Thread/FS/Process/Util：查现有证据与机制；
   没有确认新的当前同责输项。许多冷查询只有结构依据，timer主要覆盖64项生命周期。
 - Mem/VM/Reclaim、Container/Intrusive/Concurrent/Queue/Text：查容量、生命周期、查找/删除机制与现有数据；
@@ -444,3 +457,21 @@ HTTP2 benchmark的私有构造接口已改为公开 `TcpStream::adopt`，保留�
 现已用Linux GCC14.2/C++23、当前Windows源码与公开头、锁定nghttp2缓存完成
 [`-fsyntax-only -Wall -Wextra -Wpedantic -Werror`检查](http2/syntax-result.json)，无诊断。
 未链接或运行该fixture，不据此继承旧性能排名。
+
+## BlockingPool：无退休时不扫句柄
+
+worker在同一mutex内递减live计数并标记retired，新线程也在此锁内同时登记记录/计数。
+保留句柄数等于live数时即可返回；原抽取/锁外join及shutdown慢路径保留，没有额外字段、原子或分配。
+18项原及新增混合live/retired测试通过，包含shutdown完成屏障、取消、OOM、cap与反复退休。
+
+Windows逻辑CPU4、每点8192次公共spawn_blocking；先将1或32个实际线程阻塞在外部gate，
+计入job/JoinState分配、enqueue与预留vector存句柄。gate释放、全部join/值与checksum、shutdown归零在计时外。
+这是提交受理成本，不是offload round-trip。32-worker AB为46.484→43.713 ns，BA为50.635→44.495 ns；
+同路径AA旧48.535/47.583、新44.177/43.335 ns。1-worker一正一负及AA绝对漂移均保留，不称严格等价或全形状稳定倍率。
+每过程1-worker先于32-worker，allocator暖态不同，不能用两形状绝对值推导线程数扩展曲线。
+QPC10 MHz，最短聚合355 μs，不将几ns/op差额当成100 ns tick以下不可测。
+[摘要](blocking-pool/summary.json)与[源码/原始包](blocking-pool/source-evidence.zip)记录全部AB/AA、返回值与限定闭包。
+仅fresh BlockingPool/probe/test TU及相同基础静态库，未全量Scheduler/TSan或跨平台重建。
+
+原blocking_bench将每批创建/销毁runtime叫warm pool，现改名amortized runtime lifecycle，保留原计时边界；
+补全任务失败/值检查，不能少完成工作却记为快。该TU无Marl宏编译通过，未重跑其完整bench或编译可选Marl分支。
