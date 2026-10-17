@@ -1,0 +1,78 @@
+{
+  "task": "Avoid repeated occupied-prefix scans when assigning registered fixed file slots",
+  "applied_commit": "e427c3cc8",
+  "change": "One private lowest-candidate size_t in the Linux proactor mirror. No free-list, new dynamic allocation, user option, public API or header change.",
+  "invariant": "For every mirror index i<hint, file_slots[i] is nonfree, including -3pending-close and -4accepted-before-old-close. This is a conservative mirror lower bound, not an assertion about when the kernel frees a descriptor.",
+  "transitions": {
+    "register": "Set0 for the new all-empty sparse table.",
+    "assign": "Scan fromhint, preserving the smallest free index. Only a successful native FILES_UPDATE advances toslot+1. Failure preserves the slot and hint.",
+    "release": "Only after successful FILES_UPDATE to-1, lower hint tomin(hint,index).",
+    "direct_close": "Only its successful CQE that actually creates-1 lowers the hint. Failed/cancelledclose returns to-2. -4close completion leaves the newer accepted descriptor at-2 without lowering.",
+    "direct_accept": "Assign remains blocked while accept slots are unobserved. -1\u2192-2 and-3\u2192-4 only occupy/reserve mirror entries and do not require loweringhint."
+  },
+  "complexity": {
+    "sequential_fill": "The actual1024assignments visit524800=N(N+1)/2 mirror entries before and1024=N after. Thus continuous filling of an initially free table changes fromTheta(N squared) scan work toTheta(N). Native UPDATE calls remain1024.",
+    "limits": "This is not a global constant-time guarantee for arbitrary directaccept/hole interleavings. A conservative hint can rescan occupied entries when direct accepts consume a lower candidate; no timing, latency or end-to-end throughput claim.",
+    "cost": "One private size_t field and owner-local updates; no allocation. Actual Impl sizeof/padding was not separately measured."
+  },
+  "validation": {
+    "normal_candidate": "Fresh uninstrumented proactor.cc and current test TU, linked existing io_core object closure plus cached foundation/gtest.6native fixed/direct tests PASS without SKIP.",
+    "new_regression": "8slots: failed closed-positive-fd UPDATE followed by ordered fill0..7, full rejection, holes released5then2, repeated failed UPDATE preserving hole2, reuse2then5, full clear, duplicate release rejection and reuse0.",
+    "tests": [
+      "Proactor.RegisteredFixedFiles",
+      "Proactor.FixedFileSubmissionsHonorQueueDepth",
+      "Proactor.DirectAccept",
+      "Proactor.DirectCloseBatchRetiresEachReservedSlot",
+      "Proactor.FixedTableAdmissionTracksFailedAcceptAndReleasedMappings",
+      "Proactor.FixedTableFillsAndReusesLowestHoleAfterFailedUpdate"
+    ],
+    "counter_probe": "One fresh process per before/candidate instrumented proactor variant, same1024slot native sparse table and valid /dev/null descriptor. All1024assigned in index order, then all1024released successfully. Only a plain owner-local integer increment inside the actual scan loop; no timer/atomics/new thread.",
+    "counter_results": [
+      {
+        "arm": "before",
+        "table": 1024,
+        "assigned": 1024,
+        "released": 1024,
+        "scan_visits": 524800,
+        "timed": false
+      },
+      {
+        "arm": "candidate",
+        "table": 1024,
+        "assigned": 1024,
+        "released": 1024,
+        "scan_visits": 1024,
+        "timed": false
+      }
+    ],
+    "runtime_identity": "ldd confirms each test/probe loaded its intended fresh libhyle_io_core override, using LD_LIBRARY_PATH ahead of the same retained foundation cache.",
+    "scope_limits": "WSL Linux GCC14/current proactor TU only. Existing non-proactor IO TUs and foundation reused; no fullSDK build/configure/download/copy. No Windows/macOS, sanitizer, expandedCQE matrix or throughput measurement.",
+    "failures": "No unexpected compile/link/test/probe failures. Invalid-FD operations are deliberate regression inputs and preserve the expected empty slot."
+  },
+  "source_identity": {
+    "before": {
+      "snapshot": "proactor.before.cc",
+      "sha256": "0be7da95d2e6aff87ab683db1321e5d699bbdb7b74bf5c072054b998e6955157"
+    },
+    "measured_applied_identical": {
+      "src/io_core/proactor.cc": {
+        "snapshot": "proactor.candidate.cc",
+        "sha256": "a88642932ed4db672c91997e151f0bf6c72f60a4635d2489570c8cb35d15f2ca"
+      },
+      "tests/io_core/proactor_test.cc": {
+        "snapshot": "proactor_test.cc",
+        "sha256": "fdb095bcb4600c9bb8648f9d67b5d9dc1b9e6812af32f17fa5f7e37e2a7da18f"
+      }
+    },
+    "counter_variants": {
+      "scan-before.cc": {
+        "sha256": "ba01da031671a5f5d5dd95b6b8fa42c41c0398703d9271543748a3b9314f4525"
+      },
+      "scan-candidate.cc": {
+        "sha256": "b3a018786603e470ac5af7fd8275ddc8aa1454d21cbbc3260ff8dd6c8fe53e4c"
+      }
+    }
+  },
+  "independent_review": "Apple agent read all file_slots writes and both direct-close/accept CQE orderings, confirming the mirror lower bound; no separate run by that reviewer.",
+  "cleanup": "Exact WSL9artifact manifest; no deletion performed, original caches retained."
+}

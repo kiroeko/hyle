@@ -1,0 +1,85 @@
+{
+  "kind": "read_only_source_review_and_next_batch_design; no build/test/product change",
+  "observed_head": "e427c3cc8e36fbf0bd510f9ed621b3a292439a0b",
+  "apple_ordinary": {
+    "sources": [
+      "src/compute_route_apple/apple_tensor.cc:325-467",
+      "src/compute_route_apple/apple_tensor.cc:495-498",
+      "src/compute_route_apple/apple_context.cc:131,645",
+      "locked MLX mlx/fast.cpp:865-936,941-955",
+      "projected current MLX scaled_dot_product_attention.cpp:733-866,889-902,1007-1009"
+    ],
+    "fused": [
+      "Original matching D64/72/80/96/128 full-kernel domains",
+      "F16/BF16 D192/256 no array mask, Q>8, nonempty; causal Q<=KV",
+      "Known Apple generations13-16: F32 D192 no-mask causal/noncausal, and F32 D256 no-mask causal, Q>8/nonempty; valid causal Q<=KV"
+    ],
+    "q16_math_selection": "GPU, valid native mask dtype, not forced fused, Q>=1024/nonempty, (Q-16)*KV>2*Q*Dv, and statically certain native fallback: unsupported full Dq/Dv; causal Q>KV; D192; D256 explicit mask/noncausal/known-no-NAX.",
+    "remaining_whole_scores": [
+      "Q9..1023 in native fallback domains: D512/unsupported full depth, unequal Dv, D192/256 explicit masks, F32 D256 noncausal None",
+      "Long Q rejected by the conservative benefit guard",
+      "Unknown/new architecture F32 D256 causal None when preserved native NAX conditions are false; no automatic TF32 enablement"
+    ],
+    "small_query_boundary": "Q<=8 native vector permits coupled64/96/128/192/256 or192->128, requires Q<=KV and Q*GQA<=32; coupled192 remains default math. Such scratch has <=8*KV rows and is linear in long KV, not general prefill-square storage.",
+    "mask_boundary": "Dense caller masks are required input storage. Common KV-contiguous [B,1,1,KV] masks do not force expansion. Even fused paths may contiguous-copy the whole broadcast mask when its final KV stride is0, e.g. per-query [...,Q,1] mask; source-confirmed internal Q*KV copy for that particular layout.",
+    "invalid_not_performance_domain": "Mask dtype unable to promote back to output dtype is rejected, as are typed CPU streams and causal+explicit-mask combination.",
+    "cpu_correction": "Current lower_tensor explicitly rejects non-GPU streams; earlier chat inference that public Apple typed lower accepted CPU was incorrect. Managed Context also creates a GPU stream. Do not list Apple CPU fallback as a currently legal Hyle typed attention path.",
+    "q16_liveness": "Per-operation score arrays have16*KV rows, but depends is ordering, not GPU retirement. Metal device.cpp:471-475 retains temporaries/outputs to CB completion;511-513,605-626 preserve native commit windows. No one-block physical peak guarantee. Ordinary Bool Q2048 measured80->58.81MiB only; prior short-Q math negative was D256 causal, now resolved by Steel, and is not a measured regression of other remaining domains.",
+    "native_reuse_limits": "D256 noncausal None is the simplest remaining ordinary existing-float-tile candidate. D512 is rejected by full native admission and the16/8/2/1 F32 template estimates57600B, above Air cap. Unequal-Dv full attention also needs native admission/resource/numerical work; private BV templates alone do not establish ordinary support."
+  },
+  "io_lowest_candidate_hint": {
+    "sources": [
+      "src/io_core/proactor.cc:Impl::file_slots and first_free_file_candidate",
+      "Proactor::reap direct-accept/direct-close branches",
+      "Proactor::register_file_table/assign_fixed_slot/release_fixed_slot"
+    ],
+    "invariant": "Every mirror slot below hint is not-1, including reserved-3/-4; this is a mirror invariant, not a claim the kernel still holds the old descriptor.",
+    "transitions": "Registration=0; successful assign advances past its found lowest hole, failed FILES_UPDATE leaves it unchanged; successful release/direct-close lowers by min(hint,slot). Accept never needs to lower it because it only occupies slots. Pending unobserved accepts block assign.",
+    "out_of_order": "Accept-first reuse of closing-3 becomes-4, then old close becomes-2 without a free transition. Close-first creates-1 and lowers hint, pending accept blocks assign until accept occupies it. Both preserve conservative lower bound.",
+    "complexity_limit": "Continuous assign-only fill scan N(N+1)/2->N. No global amortized-O1 claim for arbitrary accept/hole interleavings: accept may repeatedly fill a low hole before assign scans. Free-slot count cannot identify lowest free index without stored position or rescanning.",
+    "conclusion": "No new correctness counterexample found; one private hint is simpler than an allocated freelist and preserves lowest-slot semantics."
+  },
+  "apple_sink_next_batch_design": {
+    "sources": [
+      "include/hyle/compute/model_ops.h:459-505",
+      "src/compute_route_apple/apple_tensor.cc:579-586",
+      "locked MLX mlx/fast.cpp:865-936,941-970",
+      "tests/compute_provider_ggml_cuda/sink_attention_test.cc:30-164",
+      "evidence/performance/library-review-2026-10-18/vulkan-math-attention/summary.json"
+    ],
+    "schema": "Only plain dense F32 Q/K/V BSHD, B1/H64or128/KVheads1/D512; additive F32 mask[Q,KV], F32 sinks[H]; Q/KV>0; positive finite scale. No causal flag: the supplied mask already encodes causality/cache selection. Current ordinary helpers are bypassed.",
+    "exact_math": "F32 q=scale*Q; GQA unflatten Q heads and expand K/V; F32 QK then add unscaled additive mask. Broadcast each raw per-head sink as ONE extra score column; concatenate sink BEFORE precise softmax. Slice the sink probability column off, then F32 PV with original V. Sink participates only in denominator, never scales mask/sink or adds a V row.",
+    "suggested_minimal_implementation": "Keep original short/no-benefit call. Add a small private Sink block wrapper reusing kAttentionQueryBlock=16; per block call the SAME mx::fast::scaled_dot_product_attention(...,\"array\",mask_slice,sinks,false,stream). Locked D512 rejects both vector/full fusion for every block including tail, so this directly reuses the exact original fallback, avoiding a second softmax/sink implementation or native patch.",
+    "views_and_order": "Transpose full Q/K/V to BHSD once as today. Slice Q axis2 [begin,end), caller mask axis0 [begin,end) with full KV and shared original K/V/sinks. Sequence BOTH Q and mask source slices through depends(...,{previous_block_output}); concatenate block outputs on axis2 then original transpose to BSHD. No eval/sync/host payload inspection or new ownership/runtime. Rebind all five input owners must remain dynamic.",
+    "mask_semantics": "Do not regenerate a local causal mask or trim K/V. Slicing original global mask rows preserves its KV-fullQ+globalQ offset, sparse cache selection and nonfinite entries. All -Inf key logits plus finite sink must yield zero output. Preserve original NaN/Inf behavior by calling the original fallback.",
+    "guard": "Same conservative policy as ordinary math: Q>=1024, (Q-16)*KV>2*Q*512 with int64 arithmetic; schema already guarantees nonempty/F32/shape. Use KV rather than KV+1 as a conservative savings estimate; avoid any new short-Q expansion or user option.",
+    "fixed_future_space_point": {
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 1025,
+      "KV": 2049,
+      "dtype": "F32",
+      "scale": 0.0625,
+      "input": "Q/K=0, mask=0, sinks=0, V alternates+1.25/-1.25 by KV row, identical across channels. Fix before running.",
+      "fp64_oracle": "KV is odd: every output=1.25/(KV+1)=1.25/2050. Existing F32 rel6e-6+abs2e-6 over all output elements; never change input/budget after observing a result.",
+      "caller_qkv_mask_sinks_bytes": 151142660,
+      "full_score_bytes": 537657600,
+      "one_q16_score_bytes": 8392704,
+      "output_bytes": 134348800,
+      "selection_margin": {
+        "saved_score_elements_per_head": 2067441,
+        "two_output_frontiers_per_head": 1049600
+      },
+      "measurement": "One independent baseline and one candidate process, same public prepare/bind then clear-cache/reset-peak and submit/wait/synchronize boundary; record actual MLX peak-minus-active-before, output and caller ports separately. No latency benchmark."
+    },
+    "necessary_controls": [
+      "One actually selected H64/Q1025/KV2049 finite sparse-QK/dyadic V FP64 case; row-dependent +/- additive mask and -Inf entries, all-masked rows at block boundaries/tail, per-head finite sinks; original F32 budget. Use separable V oracle to avoid enormous D inner loop.",
+      "Two invocations/independent owners, retain earlier result and rebind all five inputs including learned sinks/mask; check every output.",
+      "One small H128 fallback control covers head count and unchanged short-Q path. Keep original native classification for selected nonfinite mask/sink rows rather than adding finite-value heuristics or expanding accepted schema."
+    ],
+    "liveness_warning": "A Q16 lazy graph does not prove a physical memory reduction. Sink concat/softmax/PV intermediates and several pending CBs may coexist; final concatenate retains block-output frontier plus final output. Native may also pack shared operands. Actual space result can be flat or worse. No SDK/env/CB-window/sync/tile tuning; preserve a negative result instead of claiming one-block memory.",
+    "status": "Design only this round. Root explicitly stopped further implementation/build/probe; no Sink product edit or measurement performed."
+  }
+}

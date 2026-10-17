@@ -1,0 +1,61 @@
+{
+  "task": "Fix HTTP2 body view invalidation by receive compaction during another stream operation",
+  "applied_commit": "b8cfc70b6",
+  "scope": "Independent borrowed-view correctness fix; not a diagnosis or resolution of the large-body manual-loop throughput residual.",
+  "contract": "HttpBodyChunkView bytes remain valid until the next operation on that reader or connection destruction (include/hyle/io/http.h). HTTP2 handles are owner-worker affine; another stream may drive the same session while the reader retains a view.",
+  "before": {
+    "defect": "on_data_chunk memmoved unread bytes over an acknowledged prefix when more DATA arrived. The current borrow remained in those unread bytes, but its span still pointed at the old physical offset.",
+    "no_realloc": "inbound reserve occurs only when capacity is0; later appends use fixed capacity. This observed invalidation comes from memmove, not buffer reallocation.",
+    "window_trace": "Server consumes/ACKs32KiB then borrows another chunk. WINDOW_UPDATE permits the remainder of a96KiB request. accept() on the next stream drives those bytes before delivering that later stream head, so the old buffer needs compaction while the earlier reader has no new operation.",
+    "actual_regression": "Old product plus the new public lifecycle test exits1 solely on borrow_preserved=false. Both endpoints complete and full96KiB body plus both responses validate; no timeout/crash."
+  },
+  "fix": {
+    "representation": "Only the per-stream inbound ByteBuffer uses ring semantics: size is the unacknowledged byte count, inbound_start the physical head. ByteBuffer/header/trailer/wire implementations remain unchanged.",
+    "borrow": "Borrowed bytes remain in used size until ACK; callback appends only into free ring space in at most2memcpy calls, so it cannot overwrite the current borrow.",
+    "bounds": "Tail uses subtraction to avoid head+size overflow. read limits the returned span to the contiguous ring suffix. Thus ACK head+consumed<=capacity, with wrap at capacity. Empty DATA avoids tail/copy arithmetic.",
+    "lifecycle": "done/final trailer exposure, abandon/reset credit and readiness use the same unread count. Both flow-control consume calls and release/error responsibilities remain.",
+    "space": "No fields, extra allocation or capacity added. Original one receive-window allocation and limits preserved.",
+    "complexity": "Appends copy only new payload bytes, eliminating compaction of older unread bytes. No per-reader-operation full-buffer memmove was introduced."
+  },
+  "validation": {
+    "build": "Fresh GCC14 O3/NDEBUG old+candidate HTTP2 TU and one current test TU, direct link with existing nghttp2/static HTTP objects and cached foundation shared libraries. No configure/download/SDK copy/foundation rebuild.",
+    "before_single": "1 new test, expected FAIL, only borrowed-view comparison failed;45ms test-run output is functional logging, not a benchmark.",
+    "candidate_single": "New regression PASS with same test TU and fixture.",
+    "candidate_suite": "15/15 PASS:14protocol tests plus compiled feature test.",
+    "forced_epoll_suite": "Same15/15 PASS with HYLE_IO_FORCE_EPOLL=1.",
+    "cases": [
+      "IoHttp2.MultiplexesIncrementalMessagesInCompletionOrder",
+      "IoHttp2.ConsumerProgressDrivesBothFlowControlWindows",
+      "IoHttp2.BorrowedBodySurvivesOtherStreamReceivingMoreData",
+      "IoHttp2.DuplexProgressSurvivesSmallSocketAndFlowControl",
+      "IoHttp2.PeerCloseTerminatesBackpressuredFixedBodyWrite",
+      "IoHttp2.ConcurrentLimitDoesNotBecomeLifetimeRequestLimit",
+      "IoHttp2.StreamsFragmentedBodiesAndPublishesTrailersAtEnd",
+      "IoHttp2.OperationCancellationAndStreamResetDoNotPoisonSession",
+      "IoHttp2.ExternalCancelWakesOwnerLocalDirectionContender",
+      "IoHttp2.GoawayDrainsExistingStreamAndRejectsNewStreams",
+      "IoHttp2.RejectsInvalidHeadersAndSurfacesAllocatorAndLimitFailures",
+      "IoHttp2.RejectsInvalidClientPrefaceAsProtocolDataLoss",
+      "IoHttp2.AbandonSinkFailureAndBodyLimitIsolateStreamsWithoutPoisoningSession",
+      "IoHttp2.DeadlineInterruptsFlowControlledWriterWithoutPoisoningSession",
+      "IoHttp2Feature.ReportsTheCompiledCapability"
+    ],
+    "not_run": "Windows/macOS, sanitizer, forced allocator-failure matrix, or throughput/ranking. No further probe or repeated timing."
+  },
+  "measured_and_applied_sources_identical": {
+    "src/io_http2/http2.cc": {
+      "snapshot": "http2.candidate.cc",
+      "sha256": "de1be413436bef566f176ae426ee8882e1d400d83c46dd6cfb312132267e4c26"
+    },
+    "tests/io_http2/http2_test.cc": {
+      "snapshot": "http2_test.cc",
+      "sha256": "3e5142391784c3f8a892912e2b6ab2aa9cb31e18bf34390b94abde17a070a5f0"
+    }
+  },
+  "baseline_source": {
+    "snapshot": "http2.before.cc",
+    "sha256": "cc1c741cfdfdd5d2fa69779cd2307c941d6cd0b53eb789bdfb85072182ea115c"
+  },
+  "residual_boundary": "Prior full matched manual-loop results remain unresolved. Existing stage8 aligned2fiber control did not reproduce Hyle slower in its2processes but does not establish equivalence or attribute pure scheduler cost. The old performance consumer uses consume() and does not retain the affected view across other stream operations.",
+  "failures_preserved": "Expected original borrowed-view regression failure is retained verbatim. No unexpected compile/link or candidate test failures occurred."
+}

@@ -1,0 +1,22 @@
+{
+  "windows": {
+    "files": 8,
+    "bytes": 34748118
+  },
+  "wsl": {
+    "phase": "remove",
+    "files": 14,
+    "bytes": 7193336
+  },
+  "mac": {
+    "phase": "remove",
+    "files": 10,
+    "bytes": 36878904
+  },
+  "total_files": 32,
+  "total_bytes": 78820358,
+  "retained_cpu_files": 4,
+  "retained_cpu_bytes": 4281627,
+  "plan_sha256": "038c49d4196888678bac4233c2cf36dc1d7ea16bd73e6285eae01c34c564aa08",
+  "note": "Source, logs, data/result archives, original SDKs/native libraries and shared nanobench/foundation caches retained."
+}

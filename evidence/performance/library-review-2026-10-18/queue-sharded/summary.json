@@ -1,0 +1,853 @@
+{
+  "scope": "One fixed non-full cold 4P1C episode trace, actual local pinned Moody; no product or formal benchmark source change.",
+  "result": "Both orders pass every payload/FIFO/count/sum/XOR/final-empty check. Hyle median is lower in both orders, but 7-12% arm MAPE and process drift limit a speed claim. No current Hyle loss established in this trace.",
+  "attempts": "Exactly AB then BA, one process each; exit 0 each. No earlier failed attempt, AA, filtered epoch, rerun or additional shape.",
+  "total_measured_epochs": 36,
+  "all_epochs_retained": true,
+  "configured_min_epoch_seconds": 0.012,
+  "actual_shortest_epoch_seconds": 0.0090428,
+  "actual_longest_epoch_seconds": 0.016945099999999998,
+  "epoch_window_caveat": "nanobench adapts iteration counts; configured minEpochTime is 12ms, while some observed windows are below 10ms. Actual per-epoch durations are retained, not relabeled or rerun.",
+  "timer_resolution_seconds": 1e-07,
+  "runs": [
+    {
+      "order": "ab",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\sharded-4p1c\\consumer.exe",
+          "ab",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\sharded-4p1c\\formal-ab.epochs.json",
+          "0,2,4,6,8,10"
+        ],
+        "order": "ab",
+        "pid": 65280,
+        "exit": 0,
+        "begin_utc": "2026-10-17T22:28:06.657168+00:00",
+        "end_utc": "2026-10-17T22:28:07.118269+00:00",
+        "affinity_mask": "0x555",
+        "system_mask": "0xffffffff",
+        "priority_class": 32768,
+        "no_during_epoch_monitor": true
+      },
+      "diagnostics": [
+        {
+          "caller_tid": 89956,
+          "caller_group": 0,
+          "caller_mask": 1,
+          "caller_processor": 0,
+          "cold_episode_items": 2048
+        },
+        {
+          "route": "Hyle",
+          "live_process_threads_at_gate": 8,
+          "workers": [
+            {
+              "actor": 0,
+              "tid": 35008,
+              "group": 0,
+              "mask": 4,
+              "observed_processor": 2,
+              "priority": 0
+            },
+            {
+              "actor": 1,
+              "tid": 2408,
+              "group": 0,
+              "mask": 16,
+              "observed_processor": 4,
+              "priority": 0
+            },
+            {
+              "actor": 2,
+              "tid": 81824,
+              "group": 0,
+              "mask": 64,
+              "observed_processor": 6,
+              "priority": 0
+            },
+            {
+              "actor": 3,
+              "tid": 27624,
+              "group": 0,
+              "mask": 256,
+              "observed_processor": 8,
+              "priority": 0
+            },
+            {
+              "actor": 4,
+              "tid": 10216,
+              "group": 0,
+              "mask": 1024,
+              "observed_processor": 10,
+              "priority": 0
+            }
+          ]
+        },
+        {
+          "route": "Moody",
+          "live_process_threads_at_gate": 8,
+          "workers": [
+            {
+              "actor": 0,
+              "tid": 88884,
+              "group": 0,
+              "mask": 4,
+              "observed_processor": 2,
+              "priority": 0
+            },
+            {
+              "actor": 1,
+              "tid": 87420,
+              "group": 0,
+              "mask": 16,
+              "observed_processor": 4,
+              "priority": 0
+            },
+            {
+              "actor": 2,
+              "tid": 83692,
+              "group": 0,
+              "mask": 64,
+              "observed_processor": 6,
+              "priority": 0
+            },
+            {
+              "actor": 3,
+              "tid": 39588,
+              "group": 0,
+              "mask": 256,
+              "observed_processor": 8,
+              "priority": 0
+            },
+            {
+              "actor": 4,
+              "tid": 11044,
+              "group": 0,
+              "mask": 1024,
+              "observed_processor": 10,
+              "priority": 0
+            }
+          ]
+        }
+      ],
+      "arms": [
+        {
+          "name": "Hyle ShardedQueue",
+          "median_seconds_per_episode": 0.000190211594202899,
+          "median_ns_per_transferred_item": 92.87675498188428,
+          "median_absolute_percent_error": 7.108661478368999,
+          "configured_epochs": 9,
+          "observed_epochs": 9,
+          "configured_min_epoch_seconds": 0.012,
+          "configured_min_epoch_iterations": 5,
+          "observed_min_epoch_seconds": 0.0107964,
+          "observed_max_epoch_seconds": 0.016329900000000015,
+          "observed_min_iterations": 50,
+          "all_epoch_ns_per_transferred_item": [
+            105.43359375,
+            86.712646484375,
+            113.64708533653858,
+            92.87675498188428,
+            89.43158318014697,
+            88.60576923076904,
+            112.30399977992968,
+            91.31760817307715,
+            109.76641255040332
+          ],
+          "all_epoch_windows_seconds": [
+            0.0107964,
+            0.0113656,
+            0.015128700000000016,
+            0.01312460000000003,
+            0.012454599999999988,
+            0.011795199999999976,
+            0.016329900000000015,
+            0.01215620000000003,
+            0.013937700000000013
+          ],
+          "all_epoch_iterations": [
+            50,
+            64,
+            65,
+            69,
+            68,
+            65,
+            71,
+            65,
+            62
+          ]
+        },
+        {
+          "name": "Moody explicit4P",
+          "median_seconds_per_episode": 0.000222695454545455,
+          "median_ns_per_transferred_item": 108.73801491477295,
+          "median_absolute_percent_error": 11.3427566139499,
+          "configured_epochs": 9,
+          "observed_epochs": 9,
+          "configured_min_epoch_seconds": 0.012,
+          "configured_min_epoch_iterations": 5,
+          "observed_min_epoch_seconds": 0.009715900000000012,
+          "observed_max_epoch_seconds": 0.015127699999999994,
+          "observed_min_iterations": 44,
+          "all_epoch_ns_per_transferred_item": [
+            136.9189453125,
+            108.73801491477295,
+            138.93793845663282,
+            117.34525240384619,
+            96.81819993622462,
+            98.15463362068945,
+            95.08351293103468,
+            97.66060965401807,
+            121.09134861680323
+          ],
+          "all_epoch_windows_seconds": [
+            0.014020499999999998,
+            0.00979860000000002,
+            0.013942700000000018,
+            0.012496800000000004,
+            0.009715900000000012,
+            0.011659199999999975,
+            0.011294400000000022,
+            0.011200500000000025,
+            0.015127699999999994
+          ],
+          "all_epoch_iterations": [
+            50,
+            44,
+            49,
+            52,
+            49,
+            58,
+            58,
+            56,
+            61
+          ]
+        }
+      ],
+      "hyle_time_divided_by_moody_time": 0.8541332583152224,
+      "hyle_time_lower_percent": 14.586674168477764
+    },
+    {
+      "order": "ba",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\sharded-4p1c\\consumer.exe",
+          "ba",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\queue-contract\\sharded-4p1c\\formal-ba.epochs.json",
+          "0,2,4,6,8,10"
+        ],
+        "order": "ba",
+        "pid": 32428,
+        "exit": 0,
+        "begin_utc": "2026-10-17T22:28:07.119275+00:00",
+        "end_utc": "2026-10-17T22:28:07.559084+00:00",
+        "affinity_mask": "0x555",
+        "system_mask": "0xffffffff",
+        "priority_class": 32768,
+        "no_during_epoch_monitor": true
+      },
+      "diagnostics": [
+        {
+          "caller_tid": 63952,
+          "caller_group": 0,
+          "caller_mask": 1,
+          "caller_processor": 0,
+          "cold_episode_items": 2048
+        },
+        {
+          "route": "Hyle",
+          "live_process_threads_at_gate": 9,
+          "workers": [
+            {
+              "actor": 0,
+              "tid": 41308,
+              "group": 0,
+              "mask": 4,
+              "observed_processor": 2,
+              "priority": 0
+            },
+            {
+              "actor": 1,
+              "tid": 90312,
+              "group": 0,
+              "mask": 16,
+              "observed_processor": 4,
+              "priority": 0
+            },
+            {
+              "actor": 2,
+              "tid": 27512,
+              "group": 0,
+              "mask": 64,
+              "observed_processor": 6,
+              "priority": 0
+            },
+            {
+              "actor": 3,
+              "tid": 91012,
+              "group": 0,
+              "mask": 256,
+              "observed_processor": 8,
+              "priority": 0
+            },
+            {
+              "actor": 4,
+              "tid": 87644,
+              "group": 0,
+              "mask": 1024,
+              "observed_processor": 10,
+              "priority": 0
+            }
+          ]
+        },
+        {
+          "route": "Moody",
+          "live_process_threads_at_gate": 9,
+          "workers": [
+            {
+              "actor": 0,
+              "tid": 89076,
+              "group": 0,
+              "mask": 4,
+              "observed_processor": 2,
+              "priority": 0
+            },
+            {
+              "actor": 1,
+              "tid": 86660,
+              "group": 0,
+              "mask": 16,
+              "observed_processor": 4,
+              "priority": 0
+            },
+            {
+              "actor": 2,
+              "tid": 89864,
+              "group": 0,
+              "mask": 64,
+              "observed_processor": 6,
+              "priority": 0
+            },
+            {
+              "actor": 3,
+              "tid": 36456,
+              "group": 0,
+              "mask": 256,
+              "observed_processor": 8,
+              "priority": 0
+            },
+            {
+              "actor": 4,
+              "tid": 87012,
+              "group": 0,
+              "mask": 1024,
+              "observed_processor": 10,
+              "priority": 0
+            }
+          ]
+        }
+      ],
+      "arms": [
+        {
+          "name": "Moody explicit4P",
+          "median_seconds_per_episode": 0.000227758333333333,
+          "median_ns_per_transferred_item": 111.2101236979165,
+          "median_absolute_percent_error": 9.083327731657311,
+          "configured_epochs": 9,
+          "observed_epochs": 9,
+          "configured_min_epoch_seconds": 0.012,
+          "configured_min_epoch_iterations": 5,
+          "observed_min_epoch_seconds": 0.010681400000000016,
+          "observed_max_epoch_seconds": 0.016945099999999998,
+          "observed_min_iterations": 48,
+          "all_epoch_ns_per_transferred_item": [
+            124.521484375,
+            111.2101236979165,
+            114.74130667892139,
+            97.76504248903515,
+            94.82776988636377,
+            120.24489182692285,
+            105.65925973360645,
+            101.94969846491212,
+            133.4512033770161
+          ],
+          "all_epoch_windows_seconds": [
+            0.012751,
+            0.010932399999999984,
+            0.011984499999999981,
+            0.011412700000000008,
+            0.010681400000000016,
+            0.01600699999999997,
+            0.013199799999999986,
+            0.01190119999999998,
+            0.016945099999999998
+          ],
+          "all_epoch_iterations": [
+            50,
+            48,
+            51,
+            57,
+            55,
+            65,
+            61,
+            57,
+            62
+          ]
+        },
+        {
+          "name": "Hyle ShardedQueue",
+          "median_seconds_per_episode": 0.000211248648648649,
+          "median_ns_per_transferred_item": 103.14875422297314,
+          "median_absolute_percent_error": 10.2690989654417,
+          "configured_epochs": 9,
+          "observed_epochs": 9,
+          "configured_min_epoch_seconds": 0.012,
+          "configured_min_epoch_iterations": 5,
+          "observed_min_epoch_seconds": 0.0090428,
+          "observed_max_epoch_seconds": 0.016244299999999972,
+          "observed_min_iterations": 50,
+          "all_epoch_ns_per_transferred_item": [
+            88.30859375,
+            86.69505399816161,
+            96.19635982789843,
+            103.14875422297314,
+            103.35336538461523,
+            103.4186376284248,
+            114.95343636775341,
+            118.24389260912695,
+            87.69087357954541
+          ],
+          "all_epoch_windows_seconds": [
+            0.0090428,
+            0.012073499999999978,
+            0.013593699999999983,
+            0.015632400000000025,
+            0.01375839999999998,
+            0.015461500000000022,
+            0.016244299999999972,
+            0.015256299999999995,
+            0.011852999999999994
+          ],
+          "all_epoch_iterations": [
+            50,
+            68,
+            69,
+            74,
+            65,
+            73,
+            69,
+            63,
+            66
+          ]
+        }
+      ],
+      "hyle_time_divided_by_moody_time": 0.9275122695048815,
+      "hyle_time_lower_percent": 7.248773049511847
+    }
+  ],
+  "host": {
+    "cpu_name": "13th Gen Intel(R) Core(TM) i9-13900K",
+    "cpu_sets": [
+      {
+        "id": 256,
+        "group": 0,
+        "logical": 0,
+        "core": 0,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 257,
+        "group": 0,
+        "logical": 1,
+        "core": 0,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 258,
+        "group": 0,
+        "logical": 2,
+        "core": 2,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 259,
+        "group": 0,
+        "logical": 3,
+        "core": 2,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 260,
+        "group": 0,
+        "logical": 4,
+        "core": 4,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 261,
+        "group": 0,
+        "logical": 5,
+        "core": 4,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 0
+      },
+      {
+        "id": 262,
+        "group": 0,
+        "logical": 6,
+        "core": 6,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 0
+      },
+      {
+        "id": 263,
+        "group": 0,
+        "logical": 7,
+        "core": 6,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 264,
+        "group": 0,
+        "logical": 8,
+        "core": 8,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 265,
+        "group": 0,
+        "logical": 9,
+        "core": 8,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 266,
+        "group": 0,
+        "logical": 10,
+        "core": 10,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 267,
+        "group": 0,
+        "logical": 11,
+        "core": 10,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 0
+      },
+      {
+        "id": 268,
+        "group": 0,
+        "logical": 12,
+        "core": 12,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 269,
+        "group": 0,
+        "logical": 13,
+        "core": 12,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 0
+      },
+      {
+        "id": 270,
+        "group": 0,
+        "logical": 14,
+        "core": 14,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 0
+      },
+      {
+        "id": 271,
+        "group": 0,
+        "logical": 15,
+        "core": 14,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 272,
+        "group": 0,
+        "logical": 16,
+        "core": 16,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 273,
+        "group": 0,
+        "logical": 17,
+        "core": 17,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 274,
+        "group": 0,
+        "logical": 18,
+        "core": 18,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 275,
+        "group": 0,
+        "logical": 19,
+        "core": 19,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 276,
+        "group": 0,
+        "logical": 20,
+        "core": 20,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 277,
+        "group": 0,
+        "logical": 21,
+        "core": 21,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 278,
+        "group": 0,
+        "logical": 22,
+        "core": 22,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 279,
+        "group": 0,
+        "logical": 23,
+        "core": 23,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 280,
+        "group": 0,
+        "logical": 24,
+        "core": 24,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 281,
+        "group": 0,
+        "logical": 25,
+        "core": 25,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 282,
+        "group": 0,
+        "logical": 26,
+        "core": 26,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 283,
+        "group": 0,
+        "logical": 27,
+        "core": 27,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 284,
+        "group": 0,
+        "logical": 28,
+        "core": 28,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 285,
+        "group": 0,
+        "logical": 29,
+        "core": 29,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 286,
+        "group": 0,
+        "logical": 30,
+        "core": 30,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      },
+      {
+        "id": 287,
+        "group": 0,
+        "logical": 31,
+        "core": 31,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 0,
+        "flags": 1
+      }
+    ],
+    "selected_cpu": [
+      {
+        "id": 256,
+        "group": 0,
+        "logical": 0,
+        "core": 0,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 258,
+        "group": 0,
+        "logical": 2,
+        "core": 2,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 260,
+        "group": 0,
+        "logical": 4,
+        "core": 4,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 262,
+        "group": 0,
+        "logical": 6,
+        "core": 6,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 0
+      },
+      {
+        "id": 264,
+        "group": 0,
+        "logical": 8,
+        "core": 8,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      },
+      {
+        "id": 266,
+        "group": 0,
+        "logical": 10,
+        "core": 10,
+        "llc": 0,
+        "numa": 0,
+        "efficiency_class": 1,
+        "flags": 1
+      }
+    ],
+    "affinity_mask": "0x555",
+    "qpc_frequency_hz": 10000000,
+    "qpc_tick_seconds": 1e-07,
+    "resources": "Cold episode caller plus four producers and one consumer. Caller and5workers singleton-pin to6distinct highest-efficiency physical cores, one logical per core; actual worker group/mask/processor/priority read in one untimed warmup episode for each arm while all workers held at common gate. All timed workers check affinity setter success. Extra process threads may exist and are not attributed. No during-epoch monitor. ABOVE_NORMAL process priority. Queue/tokens/threads/gate/transfer/join/checks/destruction all inside each timed cold callback."
+  },
+  "source_review": "source-review.json",
+  "identity": "identity.json",
+  "no_product_edit": true,
+  "no_product_library_build": true,
+  "sdk_copy_or_download": false,
+  "interpretation_limits": [
+    "The no-full trace does not compare bounded full/backpressure policies or general MPMC behavior.",
+    "Hyle ring cells and Moody block pool plus four producer indexes have different storage costs. Equal nominal capacity is not equal allocated bytes; no allocation-byte census was made.",
+    "Source/API proof establishes prepared queue storage and CannotAlloc success; no malloc/global-new monitor was installed. Thread/runtime allocation remains inside the common cold callback.",
+    "Both processes contain additional auxiliary threads (8 or 9 live total at the diagnostic gate, versus 6 intended actors); their ownership/activity was not attributed.",
+    "Hyle round-robin-per-item and native Moody ConsumerToken quota are intentionally different policy implementations under the shared per-producer FIFO contract.",
+    "The fixed two-process result includes Windows thread creation, OS scheduling, gate, joins, payload checks and cleanup; it does not isolate hot queue throughput."
+  ],
+  "cleanup": "cleanup-manifest.json; parent writes exact deletion to repo-root test.ps1 and executes; this agent performed no deletion."
+}
