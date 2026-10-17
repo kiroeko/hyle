@@ -28,7 +28,7 @@ M1Q1诊断已完成。当前仅解锁末节冻结的M1F1产品实现与源码审
 
 | 项 | 当前规则与继承 |
 |---|---|
-| 产品纠正总额 | 累计最多 **6 个有限纠正批次**；按下表已有 2 次，剩余最多 4 次；新根因不刷新总额 |
+| 产品纠正总额 | 累计最多 **6 个有限纠正批次**；原2次加本次M1F1，当前登记 **3/6**，剩余最多3次；新根因不刷新总额 |
 | 同一根因 | 产品与验证纠正合计最多 2 次，分账不重复授额；下一次运行必须有新事实、具体改变和独立复核 |
 | 入口/fixture/cache | 单列账本，不占产品次数；仍占同一个总时间，不能隐去失败或反复换目录 |
 | 总时间 | 原 2026-10-17 **14:08 +0800** 起点保留；依据用户允许调整上限，本卡具体增加 2 小时，将原 4 小时调整为累计 **6 小时**，硬截止 **20:08 +0800** |
@@ -47,7 +47,7 @@ source/artifact/机器资源和语义隔离证明成立时，独立验证门可�
 | T1 | NaN consumer 只接受 wait 报错，遗漏合法同步边界 | fixture，已纠正 1 次 | 原错误/accepted prefix/坏 page 禁止发布保持；不占产品次数 |
 | P1 | Native 完成早于权限及 late-abandon 尾部发布 | 产品，V1–V3 为 1 次 | 原 source/Windows device PASS 保留；不补写其为 NaN 失败原因 |
 | P2 | split transfer 的主 fence 不证明另一 queue 的 transfer fence 已 signal | 产品，V4 为 1 次 | 原 source/Windows device PASS 保留，历史 VUID 的唯一句柄归因仍未证明 |
-| M1 | Air Metal 验证态报告 D256 threadgroup 58368 >32768，assert/exit -6 | 原因未判定，尚无纠正批次 | 审计原 shader 声明、编译后资源和验证插桩；不能先判产品缺陷或工具误报 |
+| M1 | Air验证态断言58368 >32768；M1Q1确认同pipeline的Shader Validation使static29184→58368 | M1F1产品纠正第1次，累计第3/6次 | 已实现实际资源准入及唯一compact备用，源码独审通过；实际编译、容量与数学待验 |
 | H1 | Apple TSan cache 留有 cpu route 和 G10 project hook | 验证 context，尚无本次纠正 | 设计真实 Apple route/model/cache 的新有限入口，不手改旧 receipt |
 | H2 | Vulkan ASan 实际 `/usr/bin/c++` 与 context `/usr/bin/clang++` resolve 不等 | 验证 context，尚无本次纠正 | 审定实际 compiler identity 和明确 context，不绕原 guard |
 
@@ -161,7 +161,7 @@ fixture 的 sanitizer 编译项。新 host 控制入口仍未冻结、未授权�
 这不证明内部 shadow 实现，不是所有 kernel 的固定倍数；原 encoder 动态历史仍为 NOT_OBSERVED，
 原完整设备验证仍 FAIL，不能由查询替签 correctness/SDK/P1。
 
-新命令累计1.990139168秒，继承原1228.157秒后为1230.147139168秒；产品仍已用2/6，P1未增加。
+该诊断的新命令累计1.990139168秒，继承原1228.157秒后为1230.147139168秒；诊断结束时产品仍已用2/6，P1未增加。
 私有入口原 UTC 起点09:51:52.355187，最终 receipt mtime 给出完成上界09:55:36.163807，
 root另在09:55:52 UTC确认已结束，均在600秒内。原 child 精确退出UTC没有记录。
 原跨进程 monotonic guard 的可靠性未证明，旧macOS Python存在进程间基准风险；此前认为同一启动
@@ -179,13 +179,14 @@ root另在09:55:52 UTC确认已结束，均在600秒内。原 child 精确退出
 绑定同一原patch和tar。本节据此冻结，仅授权下述两产品文件实现与随后源码审核，未签实际GPU编译、容量或数学PASS。
 
 M1Q1 已区分普通编译与验证态资源需求。M1F1 归为**产品纠正**，因为它改变实际资源准入、
-备用内核和正常提交的检查成本；进入验证时计为累计第3/6次、M1第1/2次。没有新增公共API，
+备用内核和正常提交的检查成本；本批静态重建/源码验证完成后登记累计第3/6次、M1第1/2次。没有新增公共API，
 不升级MLX，不改Graph/Completion/allocator/CommandEncoder，不改变D256、外部dtype或验证层。
 
 ### 唯一 FIX
 
 1. 只在原 `sdpa_full_self_attention_metal` 的 Hyle cache attention（`page` info 存在，包含paged/ragged）
    Steel 路径补准入；NAX/vector/two-pass及标准MLX非Hyle路径不扩改。原默认tile先正常创建，
+   共享host函数的名字/常量构造机械提取、既有线程检查前移同时适用；非Hyle默认tile、名字/常量、数学和选路保持。
    在本kernel的pipeline绑定、输入输出绑定和dispatch前，检查实际
    `staticThreadgroupMemoryLength <= device.maxThreadgroupMemoryLength`。
    此kernel签名没有动态threadgroup参数，其ABI需求为0；原encoder历史仍不能回填成0，
@@ -239,3 +240,17 @@ AppleCache.SubnormalQueryKeepsLargeKeyScores
 原CPU/Apple组合宿主风险、static/shared迁址消费者及未资格P1仍是原聚合验收的必需项；
 它们尚未解锁或未运行时继续如实记录。任一新shader编译/容量/数学/寿命失败停止受影响分支，
 不自动改tile再试；总截止20:08、原费用/产品预算和P1一次入口规则保持。
+
+### M1F1 源码 checkpoint
+
+[实现静态报告](../../../../evidence/correctness/inference-g09-completion-wake/m1f1-implementation.json)
+绑定patch `c7ec1769...19d14`、lock `6e019050...d95d4`、vendored tree `490c5876...ca83a3`；
+[独立重建](../../../../evidence/correctness/inference-g09-completion-wake/m1f1-independent-reconstruction.json)
+与[源码独审](../../../../evidence/correctness/inference-g09-completion-wake/m1f1-source-review.json)
+`f81a1e19...63ee2` 为SOURCE_ONLY_PASS，无未决MUST。17个派生文件、196条规则均严格唯一命中，
+仅full Steel host函数和compact三pad改变；其他原生分支保持。容量失败文案含实际required/device limit/hash。
+这是不可变产品checkpoint的源码证据，不是原FAIL已修好的设备证书；新ordinary/SDK/host/P1尚未执行。
+
+原selector将审定owner的vendor输入与单个in_tree treehash更新都归为公共package seam，本次计划因此
+选择全部64个factor的宽验证集合。该旧计划保留为未执行，不把全库未运行项写成PASS。
+这项工具归属精度需独立任务处理，不能在M1产品FIX里顺手改selector；M1普通入口仍需实际plan独审。

@@ -1,0 +1,610 @@
+{
+  "schema": 1,
+  "kind": "INDEPENDENT_M1F1_IMPLEMENTATION_SOURCE_REVIEW",
+  "reviewer": "/root/budget_policy_review",
+  "reviewed_utc": "2026-10-17T10:08:56.640527+00:00",
+  "verdict": "SOURCE_ONLY_PASS",
+  "unresolved_musts": [],
+  "authorization_commit": "6311fb6bcc3ee4f7426de7adbf7b96a0bdb6eb8d",
+  "implementation_reviewed": true,
+  "candidate": {
+    "patches_json_sha256": "c7ec1769d7ddc31472ddd519cfa1ba9543da45c795b0aa481459a5ef01919d14",
+    "lock_json_sha256": "6e01905024c44e10b16aa36e24821fb8d866b177eb74e265882fda163d5d95d4",
+    "MLX_archive_sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301",
+    "MLX_revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "derived_host_sha256": "6bfa592cbef5131845b5d2b5e6afa62ae31daed64ea8da9220dc2c1020f44318",
+    "derived_header_sha256": "e6cd03558594f02b0f435209a1e91ac77dec40f8ee6461e3ff308f45faadcb06",
+    "vendored_tree_sha256": "490c5876b63c15e89471a899227e2da12025b511961de5d022a44f3d20ca83a3"
+  },
+  "reconstruction": {
+    "record": "reconstruction.json",
+    "sha256": "46891b3cf07fb361a047acd5725a39d20060f3b7cd539dd357f26af907160dba",
+    "all_original_and_candidate_file_SHA_verified": true,
+    "all_ordered_rules_hit_exactly_once": true,
+    "candidate_rule_count": 196,
+    "file_count_per_side": 17,
+    "only_appended_edits": {
+      "mlx/backend/metal/scaled_dot_product_attention.cpp": 2,
+      "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h": 1
+    },
+    "unchanged_all_other_patch_entries": true,
+    "host_outside_full_steel_function_byte_identical": true,
+    "tree_hash_method": "Independent Python equivalent of cmake/HyleDependencyVersions.cmake _hyle_dependency_tree_sha256: reject symlinks, case-sensitive sorted portable path|normalized-content-SHA256 LF manifest, CRLF/CR normalized to LF. Five actual vendor files.",
+    "lock_only_change": "mlx_cast_patches.vendored.tree_sha256; all other parsed fields including upstream revision/license unchanged"
+  },
+  "source_findings": [
+    {
+      "area": "bounded resource admission",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "Candidate host329-352 creates original kernel first, resource policy strictly under if(page), reads actual device max + original pipeline static bytes. If unfit, exactly one BQ8/BK8/WM1/WN1 alternative then one actual alternative static check. No environment branch, division/twofold heuristic, retry loop, CPU fallback, assertion, zero-success or swallowed JIT exception. Overlimit runtime_error reports cached required bytes/device limit/hash without extra property read."
+    },
+    {
+      "area": "binding and thread admission order",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "Actual resource checks and original check_kernel_threadgroup_size(kernel, final_group, hash) occur before obtaining this function compute_encoder and before set_compute_pipeline_state, set_input/output_array, set_bytes or dispatch. Required dynamic bytes=0 follows unchanged attention ABI with no [[threadgroup(n)]] parameter and no host dynamic setter. This does not assert historical encoder state=0 or that no upstream copy/accepted prefix exists; no shared encoder reset is added."
+    },
+    {
+      "area": "final tile identity and dispatch parameters",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "make_kernel recomputes alignQ/K, eight function constants200/201/300-305, base bq/bk/bd/wm/wn/type/mask/bv/query_half and hash align/semantic Hyle suffix on each call; hash_name.clear avoids accumulation. Final NQ/NK/aligned/rem and grid/group follow final bq/bk/wm/wn. Constants for do_causal/mask/sinks/paged/q8/window retain old values. No same-name two-layout key is introduced: compact geometry uniquely selects padding."
+    },
+    {
+      "area": "function-constant and pipeline lifetime",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "New alignQ/K addresses are lambda locals alive through synchronous get_steel_attention_kernel. Unchanged jit_kernels.cpp1308-1340 calls Device::get_library builder immediately (device.cpp800-819), then get_kernel. device.cpp695-731 copies each pointed constant into MTL::FunctionConstantValues before newFunction returns; no pointer is retained for deferred use. Cached path uses immutable hash rather than deferred pointer. Device library_map_/library_kernels_ own shared library/pipeline entries; assignment of fallback raw pointer does not destroy original and adds no cache-clear/lifetime transition."
+    },
+    {
+      "area": "ordinary and non-Hyle behavior",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "Original default geometry/type choices and NAX early return are unchanged. page=false creates exactly the same base/hash/constants and never enters new resource branch; mechanical name-builder/encoder/thread-check reordering changes no normal math or geometry. Entire host bytes before/after full Steel function are independently identical, including NAX implementation/vector/two-pass. Shared header only changes padding for exact8/8/1/1 geometry; every other geometry retains original16byte padding."
+    },
+    {
+      "area": "compact loader, alignment, aliasing and barriers",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "Header exact compact predicate changes only padQ/K/V; all LD/alloc sizes derive these constants. BlockLoaderT scalar strided writes (loader.h142-309), QueryT mismatch manual scalar loop(header221-235), MMATile::load and BaseMMAFrag::load scalar strided reads(mma.h79-88,319-333) impose no16byte row-padding requirement. For each public DK/DV and type bridge below, source arithmetic enumerates each loader write once within allocation. TQ=TK=1; Q remains separate, K/V same original shared slab with unchanged barriers218/272/286/408/463. No new alias, synchronization, live-range or producer/consumer layout mismatch."
+    },
+    {
+      "area": "domain, type precision and tails",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "Public DK64/128/256 and independentDK64/DV128 retained. Original plainF16/BF16 and Q8 F32 reconstruction/accumulation preserved; originalF16 alone uses QueryT=half, originalBF16 remainsQueryT=float. Q/K align constants and all remainders recalc for8. Original causal/window/page/GQA/partial-row scalar loads, score masks and final stores are unchanged. Small K>0 and full Q tails remain supported; nonempty K0/invalid causal Q>K admission remains prior canonical apple_batch policy. New BK8 regrouping can change roundoff, so source review does not claim numerical equivalence without declared oracles."
+    },
+    {
+      "area": "failure bridge and lifecycle",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "No exception catch added. New runtime_error follows original native_exception std::exception->Internal bridge. Canonical apple_context.cc execute_with488-517 drains synchronize on first exception, preserves first error, poisons runtime, then finish459 retires native uses before done/notification; compile cold failure handlers also synchronize. Those files and CommandEncoder/allocator/Graph/Completion are unmodified. This is source path preservation, not executed failure/retirement evidence."
+    },
+    {
+      "area": "cost accounting",
+      "verdict": "PASS_SOURCE_ONLY",
+      "evidence": "Fitting Hyle full Steel path adds exactly device max + pipeline static Objective-C property reads and capacity branch; old max-thread read only moved before binding. Fallback adds rebuild of base/hash/function-constant list and one existing-cache lookup/JIT plus one static read. std::string/function-list allocations and two pipeline cache entries are possible, no warm-zero-allocation claim. No new allocator object/tensor copy/thread. Compact bank conflicts/performance and P1 remain unmeasured."
+    }
+  ],
+  "compact_source_arithmetic": [
+    {
+      "DK": 64,
+      "DV": 64,
+      "bridge": "plain_F16_or_BF16",
+      "T_bytes": 2,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 2048,
+      "loaders": {
+        "Q": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 64,
+      "DV": 64,
+      "bridge": "Q8_original_F16",
+      "T_bytes": 4,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 3072,
+      "loaders": {
+        "Q": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 64,
+      "DV": 64,
+      "bridge": "Q8_original_BF16",
+      "T_bytes": 4,
+      "QueryT_bytes": 4,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 4096,
+      "loaders": {
+        "Q": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 64,
+      "DV": 128,
+      "bridge": "plain_F16_or_BF16",
+      "T_bytes": 2,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 3072,
+      "loaders": {
+        "Q": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 64,
+      "DV": 128,
+      "bridge": "Q8_original_F16",
+      "T_bytes": 4,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 5120,
+      "loaders": {
+        "Q": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 64,
+      "DV": 128,
+      "bridge": "Q8_original_BF16",
+      "T_bytes": 4,
+      "QueryT_bytes": 4,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 6144,
+      "loaders": {
+        "Q": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 512,
+          "maximum_offset": 511,
+          "allocation_elements": 512,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 128,
+      "DV": 128,
+      "bridge": "plain_F16_or_BF16",
+      "T_bytes": 2,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 4096,
+      "loaders": {
+        "Q": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 128,
+      "DV": 128,
+      "bridge": "Q8_original_F16",
+      "T_bytes": 4,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 6144,
+      "loaders": {
+        "Q": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 128,
+      "DV": 128,
+      "bridge": "Q8_original_BF16",
+      "T_bytes": 4,
+      "QueryT_bytes": 4,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 8192,
+      "loaders": {
+        "Q": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 1024,
+          "maximum_offset": 1023,
+          "allocation_elements": 1024,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 256,
+      "DV": 256,
+      "bridge": "plain_F16_or_BF16",
+      "T_bytes": 2,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 8192,
+      "loaders": {
+        "Q": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 256,
+      "DV": 256,
+      "bridge": "Q8_original_F16",
+      "T_bytes": 4,
+      "QueryT_bytes": 2,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 12288,
+      "loaders": {
+        "Q": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        }
+      }
+    },
+    {
+      "DK": 256,
+      "DV": 256,
+      "bridge": "Q8_original_BF16",
+      "T_bytes": 4,
+      "QueryT_bytes": 4,
+      "TQ": 1,
+      "TK": 1,
+      "static_declaration_bytes": 16384,
+      "loaders": {
+        "Q": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        },
+        "K": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        },
+        "V": {
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "unique_scalar_writes": 2048,
+          "maximum_offset": 2047,
+          "allocation_elements": 2048,
+          "Q8_block32_condition": true
+        }
+      }
+    }
+  ],
+  "runtime_and_delivery_boundaries": {
+    "native_compiler_runs_by_reviewer": 0,
+    "SSH_calls_by_reviewer": 0,
+    "GPU_dispatch_runs_by_reviewer": 0,
+    "actual_new_MSL_compile": "NOT_RUN",
+    "actual_pipeline_capacity_ordinary_or_validation": "NOT_RUN",
+    "actual_math_completion_retirement": "NOT_RUN",
+    "seven_declared_cache_tests": "NOT_RUN",
+    "ordinary_public8_native4": "NOT_RUN",
+    "static_shared_delivery": "NOT_RUN",
+    "H1_H2_host_context": "SEPARATE_GATED_NOT_RUN",
+    "P1": "NOT_RUN",
+    "original_full_fixture_failure": "PRESERVED",
+    "old_encoder_dynamic_state": "NOT_OBSERVED",
+    "not_authorized_by_this_review": "No build/test/device/qualification GO. Root freezes immutable candidate and runner, then separately permits prepare/sync/configure/actual plan only and reviews exact finite closure before build."
+  },
+  "finite_validation_requirements": [
+    "All declared original8public/native4/encoded and new exactcache7 names, counts, completed no skip in ordinary and API+GPU.",
+    "Actual API+GPU activation per process, immutable canonical/derived MLX source, compiledDSO/metallib identity and actual loader binding; env/exit0 are insufficient.",
+    "Actual plan class caps79native+41JIT+23owners+10fixtures,41preambles,8MetalAIR+1metallib etc must be exact whitelisted; unknown source/action stops.",
+    "Global20:08 deadline, original14:08origin/inheritedledger and correction budgets stay; H1/H2/P1 separately gated."
+  ]
+}

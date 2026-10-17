@@ -1,0 +1,201 @@
+{
+  "scope": "M1F1_PRODUCT_IMPLEMENTATION_STATIC_ONLY",
+  "authorization_commit": "6311fb6bcc3ee4f7426de7adbf7b96a0bdb6eb8d",
+  "native_runs": 0,
+  "compiler_runs": 0,
+  "ssh_calls": 0,
+  "patch": {
+    "before_sha256": "51596c099e7b3a654bf4c7da4cf13298c6847dcd1e7a6d283b7eb6e5f5f7b9b4",
+    "after_sha256": "c7ec1769d7ddc31472ddd519cfa1ba9543da45c795b0aa481459a5ef01919d14"
+  },
+  "lock": {
+    "before_sha256": "b972666affe72bbb1a41626dc8ab8ba218811ee5d8bda055c7d4a4ee38dd5df3",
+    "after_sha256": "6e01905024c44e10b16aa36e24821fb8d866b177eb74e265882fda163d5d95d4",
+    "old_tree_sha256": "08f74cff0c0143c522786f517eacf5235d653cef5ca2c13fd6b8d0c6053e34a2",
+    "new_tree_sha256": "490c5876b63c15e89471a899227e2da12025b511961de5d022a44f3d20ca83a3"
+  },
+  "archive": {
+    "path": ".scratch\\inference-gaps\\g04-g05\\metal-lifetime\\mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85.tar.gz",
+    "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
+  },
+  "files": [
+    {
+      "path": "mlx/backend/metal/kernels/bf16.h",
+      "before_sha256": "abd87446a310b77ac530ef52a324feae5cb285d03ec9613e3a88ebb71410fdcb",
+      "after_sha256": "78f0871b82a1157610867e02cbcee03a37620df032e53f0c1297541d113e164a",
+      "ordered_edit_count": 1,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/jit_kernels.cpp",
+      "before_sha256": "8201a166cc426cd7b1f6983e5e6f282d3ca7a1992cc4c3a80fa42cf8dd237c46",
+      "after_sha256": "63ca81b97f2c9afad509ebd8ad7687369b0564efada95b067b4410e575e2ec68",
+      "ordered_edit_count": 6,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/compile.cpp",
+      "before_sha256": "b95efbcaa0a0173d6d2184f43e49b75af43c376ab2eb970012ef344d694358f7",
+      "after_sha256": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c",
+      "ordered_edit_count": 1,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/fast.h",
+      "before_sha256": "f3ed6a3a4e47e1061beda2594cb4dc916cf364d5021bf5e16b80ce60da8ff380",
+      "after_sha256": "df2d37f780abd40411228084aa2e38f13bd6fc92c3b659688c401f0ba09d281f",
+      "ordered_edit_count": 2,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/fast_primitives.h",
+      "before_sha256": "297e29e71f5eec513045662b7d0180769e6f2cd338039a03237f22e3b59001f7",
+      "after_sha256": "c7a392a2b331add37103fbc7f50c31c09123facae5478aa921f1452b95c32c59",
+      "ordered_edit_count": 11,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/fast.cpp",
+      "before_sha256": "29b31f96bdb02afdadbde3f2bcf42cf458fc69385a908bbde9fc3a14d23de077",
+      "after_sha256": "3c871a99874c24bdf5d78784962430f0a5c6be7abf1ea2fdc0d3ff1fb63fa2b7",
+      "ordered_edit_count": 5,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "before_sha256": "215ebac6495706cf01a2635c4dcec29802e130165ed8704f212d789679d2e673",
+      "after_sha256": "6bfa592cbef5131845b5d2b5e6afa62ae31daed64ea8da9220dc2c1020f44318",
+      "ordered_edit_count": 69,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": true
+    },
+    {
+      "path": "mlx/backend/metal/kernels/sdpa_vector.h",
+      "before_sha256": "de098d50a67a865e2e64fb1700fc4819307861f009a65642679777a9a9cec7cd",
+      "after_sha256": "6f80412a5b8d4b9f30b054051997b7b4b70ef6c5468f1d2ba47c4a98def010b5",
+      "ordered_edit_count": 41,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/nax.h",
+      "before_sha256": "fb10bcae44095e9fed5c81213d03527dd5fe5ac11be11ec7784bd357c6f317ec",
+      "after_sha256": "3e80d74e70137e59381e9d15bf8d88232d0ea1fad75dfc04223623e240b3882f",
+      "ordered_edit_count": 2,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention_nax.h",
+      "before_sha256": "dba29e9167611d30a13fda3f336c30a5db70bc2a6e8bea78dd639f4b9547c793",
+      "after_sha256": "7b9492a3afb4078e51229305690a595133eb72fcab2291593820156107de0020",
+      "ordered_edit_count": 9,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/loader.h",
+      "before_sha256": "e435f413d71d44ca4ad72a59d192046be77388f63936179c58882286f4cc5dab",
+      "after_sha256": "a1ea2458b08bd2f259024eb5a06e56036fad1ddb703d14847ce7b8209d4c038e",
+      "ordered_edit_count": 5,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "before_sha256": "3e9334c9ec3298fc7fb21a9468816d1b7c6e3c11da8494df7ae4fc7a4c04f570",
+      "after_sha256": "e6cd03558594f02b0f435209a1e91ac77dec40f8ee6461e3ff308f45faadcb06",
+      "ordered_edit_count": 31,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": true
+    },
+    {
+      "path": "mlx/backend/metal/kernels/scaled_dot_product_attention.metal",
+      "before_sha256": "f6fefad1d91b01f05c12095e69f248e255f880d65b5ae9e9d8bc2714da56fb41",
+      "after_sha256": "143cc4559aa0a9f140be4d714dc39f6d281b855a5ee74264868cfed5188c2b5a",
+      "ordered_edit_count": 2,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/kernels.h",
+      "before_sha256": "f45059a96ffa4cf38c6cb85754a818075563b455ca008d0ae624737546f7b972",
+      "after_sha256": "c40fe30e2f71e19203dac1991d1b340155881d3a94a774752d7c42ff84992e04",
+      "ordered_edit_count": 2,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "CMakeLists.txt",
+      "before_sha256": "609cc1c59996fd33c71a2c1630cec738d3b2aed690ab06407ea78d99d56d7fdc",
+      "after_sha256": "9b7b58026aa57e49000b5018323bc5ffd4c38d7394baf1f76eaa4f369091d8d6",
+      "ordered_edit_count": 1,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/allocator.h",
+      "before_sha256": "5ca3b085cc210f23c719175960921b51c39aed823a10736f95edd5b9bfbb0fff",
+      "after_sha256": "df4f9a4bd104dc783269d6605558689ee858f2f8106dfabf9e28d1405afc5985",
+      "ordered_edit_count": 3,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    },
+    {
+      "path": "mlx/backend/metal/allocator.cpp",
+      "before_sha256": "b317edbeda67afbafe63a4abe685c810b1fb0fd7d94f5f5ee17a7773bf97c65f",
+      "after_sha256": "79fb0c9f817f8f3777630f06265dce212ace3907384e99ccfd5196c04cc47603",
+      "ordered_edit_count": 5,
+      "every_edit_hit_once": true,
+      "changed_in_M1F1": false
+    }
+  ],
+  "vendored_tree_manifest": [
+    {
+      "path": "LICENSE",
+      "normalized_sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+    },
+    {
+      "path": "NOTICE.md",
+      "normalized_sha256": "83f3d580b6fcb3ffd8a538ba7fd20ca34d381f5ec8d67091b6fc1e0b0bb3db76"
+    },
+    {
+      "path": "metal-cpp-LICENSE.txt",
+      "normalized_sha256": "f4e92c7fe2aa066e294c0da9d08683dc9fb741ee6e6debbfad99a0c96e07c1f2"
+    },
+    {
+      "path": "metal-shared-ptr.json",
+      "normalized_sha256": "c1b1be840ba38792c82b280d21224a0de2e5dd2abf12a45e892050dc0ec6ad13"
+    },
+    {
+      "path": "patches.json",
+      "normalized_sha256": "c7ec1769d7ddc31472ddd519cfa1ba9543da45c795b0aa481459a5ef01919d14"
+    }
+  ],
+  "verdict": "SOURCE_CANDIDATE_NOT_COMPILED_OR_EXECUTED",
+  "tree_hash_proof": {
+    "authority": "cmake/HyleDependencyVersions.cmake:_hyle_dependency_tree_sha256",
+    "command": "cmake -P .scratch/g09-completion-wake-correction/m1f1-implementation/check-tree.cmake",
+    "result_sha256": "490c5876b63c15e89471a899227e2da12025b511961de5d022a44f3d20ca83a3",
+    "matches_python_case_sensitive_normalized_manifest": true,
+    "old_manifest_matches_old_lock": true,
+    "note": "Normalized text CRLF/CR to LF, case-sensitive sorted relative-path|SHA256 LF manifest; symbolic links forbidden."
+  },
+  "scope_checks": {
+    "host_only_full_steel_function_modified": true,
+    "nax_vector_two_pass_functions_byte_identical": true,
+    "thread_check_before_compute_encoder_and_binding": true,
+    "compact_fallback_attempts_max": 1,
+    "normal_resource_property_reads": 2,
+    "fallback_static_property_reads": 1,
+    "error_numbers_use_cached_values": true,
+    "unchanged_public_api_and_math_dtypes": true,
+    "not_actual_pipeline_or_math_verdict": true
+  }
+}
