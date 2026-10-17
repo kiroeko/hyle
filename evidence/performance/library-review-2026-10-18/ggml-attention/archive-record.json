@@ -1,0 +1,14 @@
+{
+  "summary.json": {
+    "bytes": 14889,
+    "sha256": "efb5362a57a5a2043de3028af04c1c2ea99a48d9e7840e27461ee2b892dd3889"
+  },
+  "provider-source.zip": {
+    "bytes": 143716,
+    "sha256": "29dbd2c7960ebbc8ec6fd4546d949f9cfc6272b780ae764eb547f52c6efcc6ca"
+  },
+  "raw-results.zip": {
+    "bytes": 83593,
+    "sha256": "feb9a02424ec177127980fa27a43e63157fe160e7a8dc53df00d1cde64c52497"
+  }
+}

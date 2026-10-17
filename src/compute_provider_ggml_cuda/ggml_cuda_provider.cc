@@ -11,6 +11,7 @@
 #include <new>
 
 #include <ggml-backend.h>
+#include <ggml-alloc.h>
 #include <ggml-cuda.h>
 #include <ggml.h>
 
@@ -64,6 +65,33 @@ struct Program final {
   std::size_t index_value_count = 0;
 };
 
+// Keep small attention programs unchanged. A large standalone attention can
+// reuse its row-independent intermediates without changing the KV reduction.
+std::int64_t attention_query_block(const internal::Recipe &recipe) noexcept {
+  if (recipe.nodes.size() != 1)
+    return 0;
+  const auto &node = recipe.nodes.front();
+  if (!node.operation.get_if<ScaledDotProductAttention>())
+    return 0;
+  const auto &query = recipe.values[node.inputs[0]];
+  const auto q = query.dimensions();
+  const auto k = recipe.values[node.inputs[1]].dimensions();
+  if (q[1] <= 1)
+    return 0;
+  constexpr std::uint64_t threshold = 8ULL * 1024 * 1024;
+  constexpr std::uint64_t budget = 64ULL * 1024 * 1024;
+  // The admitted full score element count fits int32, so these products fit
+  // uint64. Include scale/mask/softmax storage before liveness reuse.
+  const auto original_row = 16ULL * static_cast<std::uint64_t>(q[0]) *
+      static_cast<std::uint64_t>(q[2]) * static_cast<std::uint64_t>(k[1]);
+  if (static_cast<std::uint64_t>(q[1]) <= threshold / original_row)
+    return 0;
+  const auto rows = std::max<std::uint64_t>(
+      1, std::min<std::uint64_t>(128, budget / original_row));
+  return rows < static_cast<std::uint64_t>(q[1])
+      ? static_cast<std::int64_t>(rows) : 0;
+}
+
 // Called only from catch blocks; native namespaces and numbers survive the
 // private vendor exception boundary. No exception crosses a public callback.
 Status failure() noexcept {
@@ -99,11 +127,13 @@ struct Invocation final {
   cudaEvent_t entry = nullptr;
   cudaEvent_t exit = nullptr;
   ggml_cgraph *graph = nullptr;
+  ggml_gallocr_t attention_allocator = nullptr;
+  bool attention_allocated = false;
+  std::vector<ggml_tensor *> attention_roots;
   std::vector<ggml_tensor *> tensors;
   std::vector<ggml_tensor *> roots;
   std::vector<ggml_backend_buffer *> buffers;
   std::vector<ggml_backend_buffer *> scratch;
-  std::vector<ggml_tensor *> masks;
   std::vector<internal::ScalarConstant> constants;
   std::vector<internal::DenseConstant> dense_constants;
   std::vector<ggml_tensor *> views;
@@ -122,6 +152,7 @@ struct Invocation final {
       (void)cudaEventDestroy(entry);
     if (exit)
       (void)cudaEventDestroy(exit);
+    ggml_gallocr_free(attention_allocator);
     for (auto *buffer : buffers)
       ggml_backend_buffer_free(buffer);
     for (auto *buffer : scratch)
@@ -156,21 +187,9 @@ struct Invocation final {
     // BSHD is [D,H,S,B] in ggml. Its attention/GQA inputs are [D,S,H,B].
     query = ggml_permute(context, ggml_cast(context, query, GGML_TYPE_F32), 0,
                          2, 1, 3);
-    if (type == GGML_TYPE_F16) {
-      key = ggml_permute(context, key, 0, 2, 1, 3);
-      value = ggml_permute(context, value, 0, 2, 1, 3);
-      ggml_tensor *mask = nullptr;
-      if (operation.causal) {
-        mask = ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1], query->ne[1]);
-        masks.push_back(mask);
-      }
-      auto *result = ggml_flash_attn_ext(context, query, key, value, mask,
-                                         operation.scale, 0, 0);
-      (void)ggml_prec_set_acc(result, GGML_PREC_F32);
-      return ggml_cast(context, result, type);
-    }
-    // This upstream pin narrows BF16 K/V in its SM89 MMA flash path. Its
-    // original F32 graph preserves BF16's range and accepts native F32 ports.
+    // This CUDA flash pin has Half PV accumulation even with PREC_F32, and
+    // narrows BF16 K/V on SM89. The original F32 math path honors accumulation
+    // and source precision; only the final output narrows to the port type.
     key = ggml_permute(context, ggml_cast(context, key, GGML_TYPE_F32), 0, 2, 1,
                        3);
     value = ggml_permute(context, ggml_cast(context, value, GGML_TYPE_F32), 0,
@@ -190,6 +209,55 @@ struct Invocation final {
     (void)ggml_prec_set_acc(result, GGML_PREC_F32);
     (void)ggml_prec_set_src(result, GGML_PREC_F32, 1);
     return ggml_cast(context, ggml_permute(context, result, 0, 2, 1, 3), type);
+  }
+
+  ggml_tensor *tiled_attention(const internal::Recipe &recipe,
+                               const internal::Node &node,
+                               std::int64_t block_rows) {
+    const auto &operation = *node.operation.get_if<ScaledDotProductAttention>();
+    auto *context = arena.get();
+    auto *source = tensors[node.inputs[0]];
+    auto *key = tensors[node.inputs[1]];
+    auto *value = tensors[node.inputs[2]];
+    const auto type = source->type;
+    const auto queries = source->ne[2];
+    const auto keys = key->ne[2];
+    auto *output = internal::create_tensor_input(
+        context, recipe.values[node.outputs[0]]);
+    key = ggml_permute(context, ggml_cast(context, key, GGML_TYPE_F32),
+                       0, 2, 1, 3);
+    value = ggml_permute(context, ggml_cast(context, value, GGML_TYPE_F32),
+                         0, 2, 1, 3);
+    // Shared by every block in this single graph, not recopied per block.
+    value = ggml_cont(context, ggml_transpose(context, value));
+    for (std::int64_t begin = 0; begin < queries; begin += block_rows) {
+      const auto rows = std::min(block_rows, queries - begin);
+      auto *query = ggml_view_4d(context, source, source->ne[0], source->ne[1],
+          rows, source->ne[3], source->nb[1], source->nb[2], source->nb[3],
+          static_cast<std::size_t>(begin) * source->nb[2]);
+      query = ggml_permute(context, ggml_cast(context, query, GGML_TYPE_F32),
+                           0, 2, 1, 3);
+      const auto past = static_cast<int>(keys - queries + begin);
+      auto *scores = ggml_mul_mat(context, key, query);
+      (void)ggml_prec_set_acc(scores, GGML_PREC_F32);
+      (void)ggml_prec_set_src(scores, GGML_PREC_F32, 1);
+      scores = ggml_scale(context, scores, operation.scale);
+      if (operation.causal)
+        scores = ggml_diag_mask_inf(context, scores, past);
+      auto *probabilities = ggml_soft_max(context, scores);
+      auto *result = ggml_mul_mat(context, value, probabilities);
+      (void)ggml_prec_set_acc(result, GGML_PREC_F32);
+      (void)ggml_prec_set_src(result, GGML_PREC_F32, 1);
+      result = ggml_cast(context,
+          ggml_permute(context, result, 0, 2, 1, 3), type);
+      // B > 1 retains the full output's batch stride. MLA output depth may
+      // differ from query depth, so all output strides come from output.
+      auto *destination = ggml_view_4d(context, output, output->ne[0],
+          output->ne[1], rows, output->ne[3], output->nb[1], output->nb[2],
+          output->nb[3], static_cast<std::size_t>(begin) * output->nb[2]);
+      attention_roots.push_back(ggml_cpy(context, result, destination));
+    }
+    return output;
   }
 
   Status allocate(ggml_tensor *tensor, ggml_backend_buffer_type_t type) {
@@ -226,11 +294,21 @@ struct Invocation final {
     cuda::detail::ScopedPrimaryContext scope(primary);
     HYLE_RETURN_IF_ERROR(scope.status());
     const auto &recipe = program.recipe;
+    const auto attention_rows = attention_query_block(recipe);
     const auto count = recipe.values.size();
     constexpr auto maximum = static_cast<std::size_t>(INT32_MAX) - 16;
     if (count > maximum / 4 || recipe.nodes.size() > (maximum - count * 4) / 64)
       return Status::OutOfRange("ggml CUDA metadata count overflows");
     auto capacity = count * 4 + recipe.nodes.size() * 64;
+    if (attention_rows != 0) {
+      const auto queries = recipe.values[recipe.nodes[0].inputs[0]].dimensions()[1];
+      const auto blocks = static_cast<std::size_t>(
+          (queries - 1) / attention_rows + 1);
+      if (blocks > (maximum - capacity) / 32)
+        return Status::OutOfRange("ggml CUDA attention metadata count overflows");
+      capacity += blocks * 32;
+      attention_roots.reserve(blocks);
+    }
     for (const auto &node : recipe.nodes) {
       if (!node.operation.get_if<Concat>())
         continue;
@@ -270,7 +348,8 @@ struct Invocation final {
       std::vector<ggml_tensor *> results;
       if (node.operation.get_if<ScaledDotProductAttention>() ||
           node.operation.custom_as<model_ops::SinkAttention>()) {
-        if (auto *result = attention(node))
+        if (auto *result = attention_rows != 0
+                ? tiled_attention(recipe, node, attention_rows) : attention(node))
           results.push_back(result);
       } else {
         results = internal::lower_tensor_operation(
@@ -298,6 +377,13 @@ struct Invocation final {
       ggml_set_output(roots[id]);
       ggml_build_forward_expand(graph, tensors[id]);
     }
+    // Each copy is a graph terminal. Expanding only the external output leaf
+    // would omit them. Keep this order and the existing direct backend route
+    // (no graph_optimize/multistream reordering) for liveness reuse.
+    for (auto *copy : attention_roots) {
+      ggml_set_output(copy);
+      ggml_build_forward_expand(graph, copy);
+    }
     for (std::size_t id = 0; id < count; ++id) {
       if (!tensors[id])
         return Status::InvalidArgument("ggml CUDA recipe has an unused value");
@@ -320,9 +406,24 @@ struct Invocation final {
     scratch.reserve(resources);
     views.reserve(resources);
     auto *type = ggml_backend_cuda_buffer_type(program.device);
-    for (auto *tensor = ggml_get_first_tensor(arena.get()); tensor;
-         tensor = ggml_get_next_tensor(arena.get(), tensor))
-      HYLE_RETURN_IF_ERROR(allocate(tensor, type));
+    if (attention_rows != 0) {
+      // Standalone SDPA has no cold uploaded constants. Intermediates are
+      // allocated by lifetime rather than retaining every block's payload.
+      for (auto *tensor = ggml_get_first_tensor(arena.get()); tensor;
+           tensor = ggml_get_next_tensor(arena.get(), tensor))
+        if (tensor->view_src)
+          views.push_back(tensor);
+      attention_allocator = ggml_gallocr_new(type);
+      if (!attention_allocator ||
+          !ggml_gallocr_reserve(attention_allocator, graph))
+        return Status::ResourceExhausted("ggml CUDA attention workspace allocation failed");
+      // Binding-only external roots have null data here. alloc_graph must wait
+      // until submit supplies real ports; reserve already owns the workspace.
+    } else {
+      for (auto *tensor = ggml_get_first_tensor(arena.get()); tensor;
+           tensor = ggml_get_next_tensor(arena.get(), tensor))
+        HYLE_RETURN_IF_ERROR(allocate(tensor, type));
+    }
     for (int i = 0; i < nodes; ++i) {
       auto *tensor = ggml_graph_node(graph, i);
       if (!ggml_backend_supports_op(backend, tensor))
@@ -335,18 +436,6 @@ struct Invocation final {
     for (const auto &constant : dense_constants)
       ggml_backend_tensor_set(constant.tensor, constant.data, 0,
                               constant.bytes);
-    for (auto *mask : masks) {
-      const auto columns = static_cast<std::size_t>(mask->ne[0]);
-      const auto rows = static_cast<std::size_t>(mask->ne[1]);
-      std::vector<std::uint16_t> data(columns * rows, 0);
-      for (std::size_t row = 0; row < rows; ++row)
-        std::fill(data.begin() + static_cast<std::ptrdiff_t>(
-                                     row * columns + columns - rows + row + 1),
-                  data.begin() +
-                      static_cast<std::ptrdiff_t>((row + 1) * columns),
-                  std::uint16_t{0xfc00}); // Exact IEEE FP16 negative infinity.
-      ggml_backend_tensor_set(mask, data.data(), 0, ggml_nbytes(mask));
-    }
     return Status::Ok();
   }
 };
@@ -459,6 +548,20 @@ detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
     bind(recipe.inputs[i], invocation.pointers[i]);
   for (std::size_t i = 0; i < outputs.size(); ++i)
     bind(recipe.outputs[i], invocation.pointers[inputs.size() + i]);
+  if (invocation.attention_allocator && !invocation.attention_allocated) {
+    try {
+      if (!ggml_gallocr_alloc_graph(invocation.attention_allocator,
+                                    invocation.graph)) {
+        invocation.failed = true;
+        return detail::EnqueueResult::rejected(Status::ResourceExhausted(
+            "ggml CUDA attention workspace binding failed"));
+      }
+      invocation.attention_allocated = true;
+    } catch (...) {
+      invocation.failed = true;
+      return detail::EnqueueResult::rejected(failure());
+    }
+  }
   invocation.bind_views();
 
   Status terminal = Status::Ok();

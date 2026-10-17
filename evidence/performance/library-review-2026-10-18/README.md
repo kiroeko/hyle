@@ -10,13 +10,14 @@
 |---|---|---|
 | CPU 普通路线漏注册 ggml | [owner CMake](../../../src/compute_provider_ggml/CMakeLists.txt) 用 `NO_DEFINE`，而 [Direct](../../../src/compute_route_cpu/cpu_context.cc) / [Graph](../../../src/graph_route_cpu/cpu_context.cc) 以该 presence 宏编译注册。实际库虽链接，候选却消失，旧 CPU 排名不能直接继承 | 已恢复 target 的宏传播；实际 owner 声明的配置回归通过。未测修复后的 CPU 模型倍率 |
 | StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；`replace` / `import` 等也调用它。密集单池 B 块为二次扫描 | 已在命中后停止。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
-| CUDA BF16/F32 attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 仅 F16 走 flash，BF16/F32 物化 scores。B1/H8/Q=KV8192 时，单个 F32 scores 为 **2 GiB**，不含 softmax 等其它 scratch。Windows 当前无 FlashInfer 路线 | 已接通适用域的 BF16 融合程序，实际 Hyle 的空间结果见下；F32 和其它不受理域未改，不能外推全部 attention |
+| CUDA attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原BF16/F32物化scores，F16物化causal mask。B1/H8/Q=KV8192时，单个F32 scores为2 GiB | BF16适用域已融合；ggml大型独立SDPA已按Q分块、复用完整KV与临时空间。实际8K F32显式private从8368降至48.5 MiB，见下 |
+| CUDA声明F32但实际缩精度 | ggml默认cuBLAS handle启用TF32；F16 flash的PV为Half累加且不读PREC_F32 | 显式F32源请求局部切DEFAULT_MATH并恢复；ggml F16改F32 math再转最终端口。未把旧低精度速度作同合同输项 |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
 | Linux watch重复close-write唤醒 | [inotify mask](../../../src/io_watch/watch_linux.cc) 同时订阅IN_MODIFY和IN_CLOSE_WRITE；公开接口只提供内容变化提示，未承诺writer-close。即使最终忽略sibling名称，额外通知也会唤醒owner | 已去冗余close订阅；实际减少约1.97次上下文切换/发布。16项watch测试通过，剩余小负样本未声称全部解决 |
 | TaskScope读写状态布局 | [私有State](../../../src/sched/task_scope.cc) 的cancel token与admission写入共用cache line；32-child消费者当前复现小输 | 已分隔control字段。scope-only绝对时间有改善信号，代价为本机每scope冷状态增加48 B；31项测试通过，未直接测硬件cache事件或跨平台收益 |
 
-CUDA 的 F16 flash 分支也会物化 Q×KV 的 F16 causal mask，8K方形时为128 MiB；
-不能因为主 attention kernel 融合就假定整个调用的额外空间为线性。
+原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
+这条分支已因实际Half累加问题替换，不能仅凭主kernel融合推断整个调用空间或精度。
 锁定 Torch CUDA 的 Windows 二进制没有 FlashAttention，但已有 CUTLASS BF16 memory-efficient 内核。
 接入使用原生 `_efficient_attention_forward`、bottom-right mask type、显式scale、F32 accumulator；
 GQA按KV头分组切片，零stride view复用KV，不复制KV缓存，不物化Q×KV mask/scores。
@@ -75,12 +76,59 @@ pending时销毁artifact/invocation，以及原ATen allocator受控OOM后保活�
 不能直接把该融合入口扩至F32/F16。[锁定SDK源码复核](bf16-sdpa/f32-precision-source-review.json)确认：
 SM80+ F32的QK/PV固定选择CUTLASS TF32x3，虽为F32累加，却不是严格F32乘法；
 该入口没有allowTF32运行时开关，关闭cuBLAS TF32也不改变编译好的内核。
-F16则会把指数权重tile缩成Half后再乘V；这里只证明源级差异，未冒称已有Hyle数值回归失败。
-两种扩展均未应用，继续研究保留原精度的有界Q分块。
+F16则会把指数权重tile缩成Half后再乘V，弱概率反例已实测失败，见下。
+两种Torch扩展均未应用；保留原精度的有界Q分块已在ggml路径实现。
 
 验证中还修复了Windows CUDA13.3的`bin/x64`运行库搜索，以及backend测试覆盖用户architecture设置的问题。
 临时测试对象构建曾意外触发runtime staging；已先写`test.ps1`再执行，删除29个本轮新副本、回收4.51 GiB，
 原SDK与9个既有缓存runtime全部保留。最终复现编译直接调用生成的cl命令，不再次触发该复制步骤。
+
+### ggml CUDA：保留精度并复用Q块空间
+
+大型独立SDPA保持完整KV，只沿Q分块；因果偏移为`KV-Q总长+q0`，保持`scale→mask→softmax`。
+沿用原F32 QK、概率、PV，末端转端口dtype；分块结果copy到原BSHD输出的strided view，保留batch步幅。
+单图保持原root stream顺序，用既有ggml gallocr按生命周期复用。冷阶段reserve backing，
+首次提交绑定真实地址后alloc_graph，以后刷新所有views；不为每个Q块重复构造KV转换，无新选项或依赖。
+原score估算超过8 MiB时分块，每块最多128行；64 MiB用于选择行数，
+**不是总显存上限**：至少一完整KV行、K/V转换、原生pool、端口及driver仍另计。
+算术量仍为O(Q·KV·D)，host图元数据与launch数量随块数增加；本批未测吞吐。
+
+精度修正先于对照：[原生cuBLAS因果探针](ggml-attention/summary.json)用纯F32 A/B，
+同compute32F仅换TF32 math→DEFAULT，max误差从1.52e-4降至1.19e-6；SGEMM同样复现。
+[锁定补丁](../../../third_party/ggml_cuda_runtime/patches.json)按显式F32源约束局部切mode，
+正常与异常路径恢复私有handle，保留原kernel。仅重编native host dispatch一个TU，未重编全部CUDA实例。
+
+该pin在SM89的F16 flash使用Half PV累加，设置PREC_F32无效。
+ggml F16因此合流F32 math；原长域prefix均值误差0.00206059超过既有0.002，修后通过。
+另试Torch原生Half融合：score0/-18、V0/60000的合法F16输入期望约0.0128–0.0274，实际全0；
+max误差0.02741395，故未启用。promote-F32再融合的单例虽通过，但使用TF32x3，未混同严格F32排名。
+F16的快速融合路线仍需补齐；本修正可能付出吞吐代价，未把精度差当性能胜出。
+
+实际Hyle Direct、CUDA MemoryResource/SharedQueue消费者，每个形状独立进程；B1/H8/KV2/D256，
+Q=KV、Q/K=0、V=1.25。两侧共用修正后的native精度模式；F16旧侧仍为原flash。
+冷初始化诊断仅累计owned ggml buffers与gallocr backing：
+
+| dtype / Q=KV | 原显式private MiB | 修后显式private MiB | 常量oracle最大误差：旧 / 新 |
+|---|---:|---:|---:|
+| F32 / 512 | 43 | 5 | 7.99e-6 / 7.99e-6 |
+| F32 / 2048 | 556 | 17 | 3.43e-5 / 3.43e-5 |
+| F32 / 8192 | 8368 | 48.5 | 1.42e-4 / 1.42e-4 |
+| F16 / 2049 | 40.02 | 17.01 | 0.000977 / 0 |
+| F16 / 8193 | 256.05 | 48.25 | 0.1494 / 0 |
+
+F32的2K/8K完整输出SHA256分别相同，但两侧都超过空间探针自定的1e-5预算；
+失败/exit1完整保留，**没有改容差或称这两项数值通过**。分配计数不依赖该数值判定。
+CUDA mem-info的各阶段驻留快照也保留，它包含其它设备占用，不是瞬时峰值或上表private计数。
+
+最终10项[attention回归](../../../tests/compute_provider_ggml_cuda/attention_test.cc)通过：
+原输入预算不变，覆盖非零QK、GQA、decode、非方形causal、零/负scale、非因果Q>KV、
+跨块/尾块、双batch、双invocation/Queue、端口重绑、BF16大范围、F16弱概率及MLA冷受理边界。
+验证闭包为当前provider TU、仅dense输入的fresh helper、相同foundation缓存与同pin native库加精度overlay；
+helper显式拒绝其它算子，以复用缺新IQ1实例的旧CUDA cache。不是完整默认roster、generic Graph、
+全IQ1 backend重建、故障注入或Linux CUDA验证。
+[摘要](ggml-attention/summary.json)列边界；[运行原始包](ggml-attention/raw-results.zip)保留失败、最终测试源码/命令/hash、
+两版空间探针及Torch F16反例，[实现来源包](ggml-attention/provider-source.zip)保留native patch和provider验证闭包。
+依赖tree/NOTICE锁已同步并通过局部完整性检查。
 
 ## 有效历史小输，当前版本待复测
 

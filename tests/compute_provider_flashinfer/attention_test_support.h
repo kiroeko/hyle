@@ -42,12 +42,14 @@ struct Tensor final {
 };
 
 template <class T> T encode(float value);
+template <> inline float encode<float>(float value) { return value; }
 template <> inline __half encode<__half>(float value) {
   return __float2half_rn(value);
 }
 template <> inline __nv_bfloat16 encode<__nv_bfloat16>(float value) {
   return __float2bfloat16_rn(value);
 }
+inline float decode(float value) { return value; }
 inline float decode(__half value) { return __half2float(value); }
 inline float decode(__nv_bfloat16 value) { return __bfloat162float(value); }
 

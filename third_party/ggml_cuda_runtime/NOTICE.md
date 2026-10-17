@@ -18,8 +18,8 @@ capture selection remain upstream-owned. No mathematical kernels change.
 
 The private bridge implementation is in `src/compute_provider_ggml_cuda` and
 is compiled into the upstream translation unit. It is not an installed API.
-These source edits alone do not certify ordinary Direct/Graph execution or
-failure recovery; those need the M1-C native and delivery receipts.
+Numerical behavior, Direct/Graph execution and failure recovery still require
+tests of the operations and lifetimes being used.
 
 The narrow IQ1_XS/XXS/XXXS CUDA programs in `iq1-patches.json` and the three
 MMQ template instances originate from Unsloth llama.cpp
@@ -35,6 +35,8 @@ math remain unchanged. This source port is not runtime or performance proof.
 The F32 MMF tiles in this pin execute TF32 multiplication. The original regular
 MUL_MAT, MUL_MAT_ID and corresponding capture-suitability selection are guarded
 so a requested native F32 operand contract on F32 weights reaches the original
-F32 cuBLAS/sorting program instead. Default precision, quantized and F16/BF16
-dispatch and every mathematical kernel remain upstream. This is a private
-precision-selection integration change, not a new GEMM implementation.
+F32 cuBLAS/sorting program instead. An explicit F32 source request also uses
+DEFAULT_MATH within the F32 cuBLAS call: COMPUTE_32F alone does not disable the
+handle's TF32 mode. The private handle's previous mode is restored on return
+and exception unwind. Default precision and every mathematical kernel remain
+upstream. These are precision-selection changes, not a new GEMM implementation.
