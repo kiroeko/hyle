@@ -439,12 +439,15 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
   // The locked MLX heuristic materializes scores for these prefill depths,
   // even though the narrow-dtype full fused kernel supports them. Its F32
   // online accumulation also retains weak probabilities before the value
-  // product. F32 kernels exceed the 32 KiB threadgroup budget on some devices;
-  // keep those, empty batches/KV, other depths and causal Q > KV on fallback.
+  // product. The native F32 D256 causal Steel path has a bounded tile; force
+  // it only on known pre-NAX GPUs. Other F32 depths, empty batches/KV and
+  // causal Q > KV retain fallback; unknown/new GPUs keep native selection.
   // Keep explicit masks there too: a fully masked boolean row has different fused
   // semantics, and no mask contents are read to choose a lowering path.
   const bool force_fused = stream.device == mx::Device::gpu &&
-      (query.dtype() == mx::float16 || query.dtype() == mx::bfloat16) &&
+      ((query.dtype() == mx::float16 || query.dtype() == mx::bfloat16) ||
+       (query.dtype() == mx::float32 && query.shape(3) == 256 &&
+        attention.causal && known_gpu_without_nax())) &&
       attention.mask == MaskKind::kNone &&
       query.shape(0) > 0 && query.shape(2) > 8 && key.shape(2) > 0 &&
       query.shape(3) == value.shape(3) &&

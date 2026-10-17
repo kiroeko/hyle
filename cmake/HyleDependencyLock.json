@@ -729,7 +729,7 @@
       "version": "hyle-apple-native-patches-v2",
       "vendored": {
         "path": "third_party/mlx_cast",
-        "tree_sha256": "490c5876b63c15e89471a899227e2da12025b511961de5d022a44f3d20ca83a3"
+        "tree_sha256": "5ebbf75779c3aa9c65299bf4bfa2a5ca0eb9c0bb0ea99ea3f2ee5f675701f292"
       },
       "license": {
         "expression": "MIT AND Apache-2.0",
@@ -742,7 +742,7 @@
           {
             "root": "hyle",
             "path": "third_party/mlx_cast/NOTICE.md",
-            "sha256": "83f3d580b6fcb3ffd8a538ba7fd20ca34d381f5ec8d67091b6fc1e0b0bb3db76"
+            "sha256": "04b1625bfc1166ea7addcf4a7a0d93bd730d1a9a7ea646993476dc68861179d9"
           },
           {
             "root": "hyle",

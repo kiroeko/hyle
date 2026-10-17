@@ -426,9 +426,17 @@
         {
           "before": "  MTL::Size grid_dims = MTL::Size(NQ, H, B);\n  MTL::Size group_dims = MTL::Size(32, wm, wn);\n\n  check_kernel_threadgroup_size(kernel, group_dims, hash_name);\n  compute_encoder.dispatch_threadgroups(grid_dims, group_dims);\n}\n\nvoid sdpa_vector(",
           "after": "  MTL::Size grid_dims = MTL::Size(NQ, H, B);\n  compute_encoder.dispatch_threadgroups(grid_dims, group_dims);\n}\n\nvoid sdpa_vector("
+        },
+        {
+          "before": "  int bk = bd < 128 ? 32 : 16;",
+          "after": "  int bk = bd < 128 ? 32 : 16;\n  // Reuse the existing float Steel tile within the device's threadgroup cap.\n  // NAX was selected above; ordinary inputs retain their plain float loaders.\n  const bool ordinary_f32 = !page && !mask && !sinks && q.dtype() == float32 &&\n      bd == 256 && bv == 256 && qL > 8 && do_causal_ && qL <= kL;\n  if (ordinary_f32) { bq = 16; bk = 8; wm = 2; wn = 1; }"
+        },
+        {
+          "before": "  auto kernel = make_kernel();",
+          "after": "  auto kernel = make_kernel();\n  if (ordinary_f32) {\n    const auto required = kernel->staticThreadgroupMemoryLength();\n    const auto limit = d.mtl_device()->maxThreadgroupMemoryLength();\n    if (required > limit)\n      throw std::runtime_error(\"HYLE F32 Steel static threadgroup exceeds actual device limit\");\n  }"
         }
       ],
-      "after_sha256": "6bfa592cbef5131845b5d2b5e6afa62ae31daed64ea8da9220dc2c1020f44318"
+      "after_sha256": "3325bb041f6319ba2e82e0459683b8edeb1595dd1732f082563d747f770b205e"
     },
     {
       "path": "mlx/backend/metal/kernels/sdpa_vector.h",

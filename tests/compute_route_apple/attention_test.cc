@@ -235,6 +235,44 @@ TEST(AppleAttention, MathQueryBlocksRetainBroadcastMasksAndReboundOwners) {
   EXPECT_EQ(combined_mask.error().code(), hyle::StatusCode::Unimplemented);
 }
 
+TEST(AppleAttention, FusedFloat32KeepsGqaLayoutsAndTailReference) {
+  attention_case(256, mx::float32, c::AttentionLayout::kBatchHeadSequenceDepth,
+                 17, 31, 0.125F, true, c::MaskKind::kNone);
+  attention_case(256, mx::float32, c::AttentionLayout::kBatchSequenceHeadDepth,
+                 33, 65, -0.25F, true, c::MaskKind::kNone);
+}
+
+TEST(AppleAttention, FusedFloat32KeepsWeakProbabilities) {
+  constexpr int queries = 17, keys = 257, heads = 4, kv_heads = 2, depth = 256;
+  std::vector<double> q(heads * queries * depth), k(kv_heads * keys * depth),
+      v(kv_heads * keys * depth, 60000);
+  for (int h = 0; h < heads; ++h)
+    for (int t = 0; t < queries; ++t)
+      q[(h * queries + t) * depth] = 1;
+  for (int h = 0; h < kv_heads; ++h)
+    for (int s = 0; s < keys; ++s) {
+      k[(h * keys + s) * depth] = s == 0 ? 0 : -256;
+      if (s == 0)
+        std::fill_n(v.begin() + h * keys * depth, depth, 0);
+    }
+  const std::array inputs{make(q, {1, heads, queries, depth}, mx::float32),
+      make(k, {1, kv_heads, keys, depth}, mx::float32),
+      make(v, {1, kv_heads, keys, depth}, mx::float32)};
+  auto context = a::Context::create().value();
+  auto output = execute(context, c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
+      .scale = 0.0625F, .causal = true}, inputs);
+  ASSERT_TRUE(output) << output.error().message();
+  std::vector<double> expected(heads * queries * depth);
+  for (int h = 0; h < heads; ++h)
+    for (int t = 0; t < queries; ++t) {
+      const double weak = double(keys - queries + t) * std::exp(-16.0);
+      std::fill_n(expected.begin() + (h * queries + t) * depth, depth,
+                   60000 * weak / (1 + weak));
+    }
+  expect(*output, expected);
+}
+
 TEST(AppleAttention, HalfPrefillRetainsWeakProbabilitiesBeforeLargeValues) {
   constexpr int queries = 17, keys = 257, heads = 4, kv_heads = 2;
   for (int depth : {192, 256}) {

@@ -71,3 +71,12 @@ allocation/free paths already holding that mutex read the same fields/cache
 directly, avoiding recursive locking. This fixes the actual host TSan race
 between asynchronous evaluation and destruction of an old array. It adds no
 lock object, allocation, policy change or whole-execution serialization.
+
+Ordinary F32 D256 causal attention without an array mask or sinks additionally
+uses the existing Steel BQ16/BK8/WM2/WN1 template when its query length is greater
+than eight and does not exceed KV length. The original NAX dispatch remains
+first. The selected pipeline is checked against the device's actual static
+threadgroup-memory limit before dispatch. HYLE forces this bounded F32 route
+only on known pre-NAX Apple GPU generations 13-16; unknown/new architectures
+retain native selection. Query, probabilities, online softmax and PV remain
+F32; no new shader, half conversion, synchronization or public API is added.

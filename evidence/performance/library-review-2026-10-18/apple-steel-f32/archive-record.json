@@ -1,0 +1,7 @@
+{
+  "path": ".scratch\\perf-review-2026-10-18\\apple-steel-f32\\source-results.zip",
+  "bytes": 1281699,
+  "sha256": "0ef2c448725b616ee8cca1efeb7b4dc3042cb4e5a01a07c67e12ad223a78e925",
+  "files": 91,
+  "scope": "Sources/commands/stdout/stderr/maps/identities only; no executables/objects/SDK/native libraries."
+}

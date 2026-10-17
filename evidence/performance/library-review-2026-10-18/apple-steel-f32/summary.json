@@ -1,0 +1,165 @@
+{
+  "status": "scoped_native_f32_steel_feasible_and_applied; no throughput claim",
+  "machine": {
+    "host": "kiro@172.22.10.198",
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "architecture": "applegpu_g16g",
+    "compiler": "Apple clang21.0.0",
+    "free_space_before": "41GiB"
+  },
+  "scope": {
+    "hyle_force": "GPU ordinary matching-depth F32 D256, no mask, causal8<Q<=KV, nonempty batch/KV, only known Apple architecture generations13-16. Unknown/new architectures preserve native selection.",
+    "native_tile": "Only ordinary !page/!mask/!sinks F32 Dq=Dv256,8<Q<=KV,causal; original NAX early-return remains first. BQ16/BK8/WM2/WN1; QueryT=float and hyle_q8=false.",
+    "admission": "Actual selected PSO staticThreadgroupMemoryLength checked against actual MTLDevice max before dispatch. Exceeding rejects; no trial of another tile.",
+    "precision": "Existing native float scale, QK, probabilities, online softmax and PV; no half conversion/new shader formula/TF32 enablement.",
+    "native_resource": "Only host scaled_dot_product_attention.cpp in existing exact manifest; existing JIT/template/shader source unchanged.",
+    "unchanged": "Public C++ API/ABI, half/page branches, current array masks and causal Q>KV fallback. No native SDK/metallib rebuild, download or copy; no env or tracing eval/sync."
+  },
+  "actual_pipeline": {
+    "static_threadgroup_bytes": 28928,
+    "device_limit_bytes": 32768,
+    "key": "steel_attention_float32_bq16_bk8_bd256_wm2_wn1_maskfloat32_bv256_...",
+    "evidence": "candidate-{tests,space,uniform}.stderr.txt logs actual selected key/resources. NAX not taken on this M4; no implicit TF32 change."
+  },
+  "compilation": {
+    "fresh_host_TUs": 5,
+    "links": 3,
+    "scope": "native selector, Hyle lowerer, focused tests, frozen short-Q space consumer and old uniform consumer. Original SDK/foundation/gtest reused.",
+    "first_two_failures": "Vendor include headers/unchanged VJP unused parameters rejected by inherited project WX. Private vendor include changed to isystem; native-only Wno-unused-parameter. Failed exact commands/stderr retained. No runtime occurred before these corrections.",
+    "loader_identity": "runtime-identities.json+link maps; original libmlx.a SHA0ec0cd1a0e00c3f75c1ecf9db549b023e6fdc64f3d2f1a63a9a8be809eea9af9.",
+    "maps": {
+      "tests": {
+        "fresh_apple": true,
+        "fresh_native": true,
+        "archive_apple_tensor": false,
+        "archive_native_selector": false
+      },
+      "space": {
+        "fresh_apple": true,
+        "fresh_native": true,
+        "archive_apple_tensor": false,
+        "archive_native_selector": false
+      },
+      "uniform": {
+        "fresh_apple": true,
+        "fresh_native": true,
+        "archive_apple_tensor": false,
+        "archive_native_selector": false
+      }
+    }
+  },
+  "correctness": {
+    "gtests_passed": 3,
+    "coverage": "Nonzero QK F32 D256/GQA, BHSD and BSHD, Q17/KV31 positive scale and Q33/KV65 negative scale with unaligned tails; F32 weak-probability/V60000 case at Q17/KV257; existing small fallback controls.",
+    "oracle": "Existing independent FP64 sums with unchanged F32 rel6e-6+abs2e-6. No new tolerance or input chosen after observing failures.",
+    "execution": "One focused-test process, one short-Q candidate space process, one old-uniform candidate process. No timing/AB/AA or further tile experiment."
+  },
+  "short_q_space": {
+    "shape": "F32 B1/H4/Hkv2/D256 Q129/KV32768,causal,None",
+    "frozen_input": "Exactly the prior negative-candidate episode: Q/K0,V alternates+1.25/-1.25 per KV row. Same FP64 prefix mean and rel6e-6+abs2e-6 for every132096 outputs.",
+    "baseline": "Reused original raw result/command from apple-short-q/measured/baseline-space. Its Hyle lowerer equals current baseline; original native source SHA6bfa592cbef5131845b5d2b5e6afa62ae31daed64ea8da9220dc2c1020f44318 and same libmlx.a verified. No baseline rerun.",
+    "baseline_raw": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 256,
+      "Q": 129,
+      "KV": 32768,
+      "mask": "None",
+      "causal": true,
+      "input": "QK0,V alternating +1.25/-1.25 per KV row",
+      "caller_qkv_bytes": 134746112,
+      "caller_mask_bytes": 0,
+      "output_bytes": 528384,
+      "original_score_bytes": 67633152,
+      "active_before": 134758408,
+      "cache_before": 0,
+      "active_after": 135299080,
+      "peak": 203604492,
+      "peak_minus_active_before": 68846084,
+      "cache_after": 68305412,
+      "max_abs_error": 3.1831897889605075e-12,
+      "checked_elements": 132096,
+      "oracle_passed": true
+    },
+    "candidate_raw": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 256,
+      "Q": 129,
+      "KV": 32768,
+      "mask": "None",
+      "causal": true,
+      "input": "QK0,V alternating +1.25/-1.25 per KV row",
+      "caller_qkv_bytes": 134746112,
+      "caller_mask_bytes": 0,
+      "output_bytes": 528384,
+      "original_score_bytes": 67633152,
+      "active_before": 134758400,
+      "cache_before": 0,
+      "active_after": 135299072,
+      "peak": 135299072,
+      "peak_minus_active_before": 540672,
+      "cache_after": 0,
+      "max_abs_error": 1.7882893923277729e-12,
+      "checked_elements": 132096,
+      "oracle_passed": true
+    },
+    "extra_peak_reduction_bytes": 68305412,
+    "extra_peak_reduction_fraction": 0.9921466557197356,
+    "metric": "MLX allocator peak minus active-before-submit includes output and native buffers, after public prepare/create_invocation/bind then clear_cache/reset_peak, submit/wait/synchronize. Not whole-device VRAM/RSS or strict private memory. Cold JIT/prepare excluded.",
+    "result": "68846084B ->540672B extra peak, output528384B still fully present; both numerical checks pass. Candidate maxerror1.7882893923277729e-12. One space point only."
+  },
+  "old_uniform_candidate": {
+    "shape": "Exactly old F32 B1/H4/Hkv2/D256 Q=KV2048,causal,None,QK0/V1.25 and its9.5e-6 budget.",
+    "raw": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 256,
+      "Q": 2048,
+      "KV": 2048,
+      "mask": "None",
+      "causal": true,
+      "caller_qkv_bytes": 16777216,
+      "caller_mask_bytes": 0,
+      "output_bytes": 8388608,
+      "active_before": 16777216,
+      "cache_before": 0,
+      "active_after": 25165824,
+      "peak": 25165824,
+      "peak_minus_active_before": 8388608,
+      "cache_after": 0,
+      "max_abs_error": 0,
+      "checked_elements": 2097152
+    },
+    "exit": 0,
+    "interpretation": "Candidate all2097152 outputs pass with maxerror0; extra8MiB equals logical output. The prior two math-route FAIL records remain unaltered evidence of old routes; only this scoped new path/shape is now passing, not all F32 precision."
+  },
+  "resource_validation": {
+    "materializer": "Existing prepare_source.py projected single exact host entry + pristine pinned archive file: before/after verification passed, afterSHA3325bb041f6319ba2e82e0459683b8edeb1595dd1732f082563d747f770b205e.",
+    "cmake": "cmake -P check-lock.cmake audits only mlx_cast_patches tree and licenses/NOTICE; PASS. Independent root-resource-check.cmake/result also PASS and included in the archive.",
+    "initial_snapshot_check": "After materializer hashes passed, extra LF-vs-WindowsCRLF snapshot assert initially failed. Corrected only the comparison to existing normalization; retained error note. No consumer/SDK rerun.",
+    "lock": {
+      "old_tree": "490c5876b63c15e89471a899227e2da12025b511961de5d022a44f3d20ca83a3",
+      "new_tree": "5ebbf75779c3aa9c65299bf4bfa2a5ca0eb9c0bb0ea99ea3f2ee5f675701f292",
+      "old_notice": "83f3d580b6fcb3ffd8a538ba7fd20ca34d381f5ec8d67091b6fc1e0b0bb3db76",
+      "new_notice": "04b1625bfc1166ea7addcf4a7a0d93bd730d1a9a7ea646993476dc68861179d9"
+    }
+  },
+  "tested_vs_applied": "Applied host source removes diagnostic cstdio/fprintf and adds explanatory comments; Hyle only updates comments; tests only format whitespace. Executable code equivalence checked after those explicit exclusions. All measured sources retained separately. No claim full SDK was rebuilt from final manifest.",
+  "limits": [
+    "No throughput measurement. The old F16 BK16 tile slowdown does not measure this F32 BK8 shape.",
+    "No full Apple/Graph suite, shared SDK rebuild, other Apple GPU/OS, broad mask/dtype/head domain or unknown/new-NAX force validation.",
+    "F32 D192, explicit masks, causalQ>KV, other depths and unrecognized architectures retain existing routes and may retain full scores.",
+    "Short-Q Q16 math expansion was a negative result and reverted. Its raw archive remains separate; do not rewrite it as success.",
+    "The local patch materializer validation is a one-file projection, not full native SDK compilation."
+  ],
+  "frozen_files": "frozen-source-identities.json",
+  "cleanup": "cleanup-candidates.json;8 new Air obj/exe only, no deletion performed."
+}
