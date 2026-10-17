@@ -1060,7 +1060,8 @@ auto readonly_tensor = result.tensor().value();
 结果保留原 Invocation 和绑定数据。旧结果在时，replay/reset/rebind 会拒绝；普通 caller/source-alias 输出
 可用 `result.storage_lease()` 导出 ReadLease 再交 Direct，独立导出的读者同样阻止对应块覆盖。
 内部 workspace 与物化常量保留原 Graph owner，`tensor()` 可读，`storage_lease()` 不伪造独立 Buffer 所有权。
-`close()` 停接纳、无隐藏全设备 wait，`drain()` 明确等待本实例的实际退役并保留首错；旧结果仍可读取。
+`close()` 停接纳、无隐藏全设备 wait，`drain()` 先永久停止接纳，再等待本实例的实际退役并保留首错；
+旧结果仍可读取。需要继续重放时等待本次 Completion。
 编译时借用常量与固定 effect footprint 保持原寿命合同，不因这个运行绑定 adapter 自动获得拥有权。
 wrapper options 的 budget 计自身 metadata；原程序/workspace 预算仍在 `CompileOptions` 中设置。
 控制与 public Completion 观察须串行化。每实例一个冷完成观察槽，旧 Completion 未观察/放弃时拒绝新提交；

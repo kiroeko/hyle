@@ -143,7 +143,8 @@ struct QueueOptions final {};
 
 // Owns one backend session. close() stops admission but never hides a wait;
 // drain() explicitly waits backend work accepted before its synchronization
-// point. Queue and Completion retain the backend state they require.
+// point without closing admission. Queue and Completion retain the backend
+// state they require.
 class HYLE_COMPUTE_API Context final {
 public:
   Context() noexcept = default;
@@ -182,7 +183,8 @@ private:
 
 // Move-only ordered submission domain. close() is local to this Queue;
 // Context::close() stops every queue in the context. Destruction closes and
-// releases without waiting; call drain() when quiescence is required.
+// releases without waiting; drain() waits without closing admission. Call
+// close() before drain() when no more work may be admitted.
 class HYLE_COMPUTE_API Queue final {
 public:
   Queue() noexcept = default;

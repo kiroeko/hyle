@@ -2140,14 +2140,6 @@ Result<Completion> OperationInvocation::submit(
   return submit(queue, inputs, std::span<const TensorView>(&output, 1));
 }
 
-Result<Completion>
-OperationInvocation::submit(Queue &queue, const ConstTensorView &input,
-                            const TensorView &first_output,
-                            const TensorView &second_output) noexcept {
-  const std::array outputs{first_output, second_output};
-  return submit(queue, std::span<const ConstTensorView>(&input, 1), outputs);
-}
-
 namespace detail {
 
 struct DirectDelegatedState final : util::RefCounted<DirectDelegatedState> {

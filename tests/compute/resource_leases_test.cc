@@ -5,15 +5,28 @@
 #include <barrier>
 #include <thread>
 #include <limits>
+#include <type_traits>
 
 #include "completion_internal.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/leased_operation.h"
 #include "hyle/compute/resource_leases.h"
 
 namespace {
 using namespace hyle::compute;
 namespace mem = hyle::mem;
+
+// Writer bindings borrow a named permission; ready input leases are owned.
+static_assert(std::is_constructible_v<LeasedInput, TensorDesc, WriteLease &>);
+static_assert(std::is_constructible_v<LeasedInput, TensorDesc, const WriteLease &>);
+static_assert(std::is_constructible_v<LeasedOutput, TensorDesc, WriteLease &>);
+static_assert(std::is_constructible_v<LeasedOutput, TensorDesc, const WriteLease &>);
+static_assert(!std::is_constructible_v<LeasedInput, TensorDesc, WriteLease &&>);
+static_assert(!std::is_constructible_v<LeasedInput, TensorDesc, const WriteLease &&>);
+static_assert(!std::is_constructible_v<LeasedOutput, TensorDesc, WriteLease &&>);
+static_assert(!std::is_constructible_v<LeasedOutput, TensorDesc, const WriteLease &&>);
+static_assert(std::is_constructible_v<LeasedInput, TensorDesc, ReadLease>);
 
 struct PendingUse final {
   bool done = false;

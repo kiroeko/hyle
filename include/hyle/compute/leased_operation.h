@@ -19,12 +19,17 @@ struct LeasedInput final {
       : description(desc), read(std::move(lease)) {}
   LeasedInput(TensorDesc desc, const WriteLease &lease) noexcept
       : description(desc), exclusive(&lease) {}
+  // The binding borrows the writer through submit(), not just construction.
+  LeasedInput(TensorDesc, WriteLease &&) = delete;
+  LeasedInput(TensorDesc, const WriteLease &&) = delete;
 };
 struct LeasedOutput final {
   TensorDesc description{};
   const WriteLease *lease = nullptr;
   LeasedOutput(TensorDesc desc, const WriteLease &write) noexcept
       : description(desc), lease(&write) {}
+  LeasedOutput(TensorDesc, WriteLease &&) = delete;
+  LeasedOutput(TensorDesc, const WriteLease &&) = delete;
 };
 
 struct LeasedOperationOptions final {
@@ -58,7 +63,8 @@ public:
   // Observations of this owner and its Completion are externally serialized.
   // One cold completion slot: observe/drop an old Completion before replay.
   HYLE_COMPUTE_API Status close() noexcept;
-  // Observes this accepted run even while its public Completion is held.
+  // Permanently closes admission, then observes this accepted run even while
+  // its public Completion is held. For reusable waits, observe Completion.
   // Unknown retirement returns its original error and retains native uses.
   HYLE_COMPUTE_API Status drain() noexcept;
 private:

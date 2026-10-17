@@ -76,6 +76,8 @@ public:
   // Observe/drop the old public Completion before reusing its one cold slot.
   // Stops new admission without a device-wide wait. Existing results survive.
   HYLE_GRAPH_API Status close() noexcept;
+  // Permanently closes admission, then waits for actual retirement, preserving
+  // the first error. For reusable waits, observe the submitted Completion.
   HYLE_GRAPH_API Status drain() noexcept;
 private:
   explicit LeasedInvocation(detail::LeasedInvocationState *state) noexcept : state_(state) {}

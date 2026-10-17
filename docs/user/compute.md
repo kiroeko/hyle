@@ -327,8 +327,10 @@ convenience 都按真实 arity 推导 output desc，其中 TopK 推导 values �
 没有把 prepare 或 invocation 创建隐藏在一次性 convenience 中，因为 provider workspace 和并发状态必须
 有明确 owner。
 
-固定 arity submit 可直接传 0--4 个 input 与单 output；TopK 可直接传 input、values、indices，Concat
-则传 input-view span 与单 output。这些 convenience 只在栈上组成有界 `std::array/std::span`，不分配，
+固定 arity submit 可直接传 0--4 个 `ConstTensorView` input 与单 `TensorView` output；可写视图用
+`as_const()` 作为输入。多输出统一传两个 span，例如 TopK 使用
+`slot.submit(queue, std::array{input}, std::array{values, indices})`；Concat 可传 input-view span 与单 output。
+不提供靠可写视图位置区分“两个输入”或“两个输出”的重载。这些 convenience 只在栈上组成有界 `std::array/std::span`，不分配，
 随后进入同一通用 submit。极小 operation 的手写热循环若已经持有 descriptor/view arrays，可以直接使用
 span 入口避免重复复制；Graph 会在编译/Invocation 创建时预建 binding，不在每个 node 重新组成数组。
 
@@ -352,8 +354,9 @@ auto device_prepared = prepare(context, RmsNorm{.epsilon = 1.0e-5F},
 
 `runtime_properties()` 说明 artifact 是 `kSharedQueue` 还是 `kDelegated`，以及 workspace owner、host blocking、
 私有线程、并发 invocation 和 capture 事实。公开 direct `prepare()` 只选择 `kSharedQueue` provider，因此其
-invocation 总能提交到调用方 Queue。`kDelegated` artifact 只由 Graph 的内部精确路线创建并作为完整 island
-提交；Compute 不会把一个无法 direct submit 的对象交给普通用户。caller-owned workspace 使用 prepare 时
+invocation 总能提交到调用方 Queue。独立 runtime 通过 `prepare_delegated()` 返回另一种类型
+`PreparedDelegatedOperation`，其 invocation 无 Queue 参数；Graph 也可将这类 runtime 作为完整 island 提交。
+caller-owned workspace 使用 prepare 时
 固定的 resource；provider-owned workspace 则拒绝调用方传入 BufferView。
 
 `runtime_properties().replay_class` 独立说明 Provider 成功重放的成本合同：
@@ -791,10 +794,11 @@ auto ready = output_write_lease.publish().value();
 readonly adopt 永久只读。原 native buffer/array/tensor 的受控导入见各路线的 memory 头。
 所有未跟踪的 writable aliases 必须停止，不从裸 view 猜拥有权或就绪。
 
-`lane.close()` 停本 adapter 接纳，`lane.drain()` 观察已接受的原 Completion；调用方可以仍持有
+`lane.close()` 停本 adapter 接纳，`lane.drain()` 先永久停止接纳，再观察已接受的原 Completion；调用方可以仍持有
 尚未观察的 `done`。一个冷完成槽要求先观察/丢弃旧 Completion 再 replay。控制与 Completion
 观察须外部串行化。未知错误不证明 GPU 已停，保活仍交给原 runtime；取消也不能提前释放 backing。
-池的 drain 等待 admitted uses，保留 reader 仍有效，并且不等待这些 reader 全部销毁。
+池的 drain 也先永久停止接纳，再等待 admitted uses；保留 reader 仍有效，不等待这些 reader 全部销毁。
+需要继续重放时等待本次 Completion，不调用 adapter 或池的 drain。
 
 Apple/Vulkan 的 native Program 使用各自 memory 头里的 `LeasedInvocation` 与 `LeasedInput`；
 bind 冷建立 readonly native view，submit 自动接纳 use，原 native slot 的实际退休归还 use。
@@ -843,7 +847,8 @@ Vulkan 也必须符合原 buffer copy 约束，不能以向上取整越过邻块
 Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker host wait 会计入报告。
 
 旧 submission 保留运行槽；观察、释放它后显式 `slot.reset()` 再绑定下一批。保留的 ready reader
-仍拥有旧数据。`close()` 停止接纳，`drain()` 观察实际工作；析构放弃观察时不会隐式 host wait，
+仍拥有旧数据。`close()` 停止接纳，`drain()` 先永久停止接纳，再观察实际工作；两次重放间等待
+`CopyBatchSubmission`。析构放弃观察时不会隐式 host wait，
 原 native owner 继续保活资源。设备失败的槽不承诺自动恢复，应按返回错误和实际退役情况重建。
 两组/两槽及原编码数学组合见[批量搬运样例](../../samples/package/graph/batched_transfers/)。
 
@@ -984,7 +989,8 @@ OpenMP team、executor、ggml worker、BLAS 或 GPU service thread 的总和。
   修改中央枚举。内置 Provider 配置 inline；custom Provider 复制时保留其 owning factory（冷引用计数），
   identity 的 name/version view 借用这个 owner。`Context`、`Queue`、`OperationInvocation` 与 `Completion` 是 move-only；
   `PreparedOperation` 可复制共享。
-- `Context::close()` 与 `Queue::close()` 原子地停止新 admission；`drain()` 显式等待已接纳工作。析构只
+- `Context::close()` 与 `Queue::close()` 原子地停止新 admission；这两种对象的 `drain()` 只显式等待已接纳工作，
+  不停止后续接纳，需要终结时先 close 再 drain。租约 adapter 与池的 drain 则会先永久关闭接纳。析构只
   close/release，不把等待藏进析构路径。CPU completion 当前立即终态；异步 backend 可返回真正的
   poll/wait/cancel completion。
 - Context metadata allocator 必须活过从它保留的 handles，以及由该 Context 编译出的 Graph

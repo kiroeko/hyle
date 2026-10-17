@@ -1341,11 +1341,12 @@ TEST(GgmlCpuProvider, StandardSelectionKeepsAdjacentLargeIntegersDistinct) {
   auto invocation = prepared.create_invocation().value();
   auto queue = context.create_queue().value();
   auto done = invocation.submit(
-      queue, ConstTensorView::create(description, source.view()).value(),
-      TensorView::create(prepared.output_description(0).value(), values.view())
-          .value(),
-      TensorView::create(prepared.output_description(1).value(), indices.view())
-          .value());
+      queue, std::array{ConstTensorView::create(description, source.view()).value()},
+      std::array{
+          TensorView::create(prepared.output_description(0).value(), values.view())
+              .value(),
+          TensorView::create(prepared.output_description(1).value(), indices.view())
+              .value()});
   ASSERT_TRUE(done) << done.error().message();
   ASSERT_TRUE(done->wait().ok());
   EXPECT_EQ(half_test::read<std::int32_t>(indices),

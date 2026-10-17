@@ -255,6 +255,8 @@ public:
   HYLE_COMPUTE_API Result<Completion>
   submit(Queue &queue, std::span<const ConstTensorView> inputs,
          std::span<const TensorView> outputs) noexcept;
+  // Scalar-view conveniences below always have one output. Multiple outputs
+  // use the span/span entry so mutable inputs cannot be mistaken for outputs.
   HYLE_COMPUTE_API Result<Completion>
   submit(Queue &queue, std::span<const ConstTensorView> inputs,
          const TensorView &output) noexcept;
@@ -276,10 +278,6 @@ public:
   submit(Queue &queue, const ConstTensorView &first,
          const ConstTensorView &second, const ConstTensorView &third,
          const ConstTensorView &fourth, const TensorView &output) noexcept;
-  HYLE_COMPUTE_API Result<Completion>
-  submit(Queue &queue, const ConstTensorView &input,
-         const TensorView &first_output,
-         const TensorView &second_output) noexcept;
 
 private:
   friend class DelegatedInvocation;

@@ -124,6 +124,8 @@ public:
   // submission or unproven retirement rejects reset without changing bindings.
   HYLE_COMPUTE_API Status reset() noexcept;
   HYLE_COMPUTE_API Status close() noexcept;
+  // Permanently closes admission, then waits for this slot's submitted work.
+  // To wait between replays, observe CopyBatchSubmission instead.
   HYLE_COMPUTE_API Status drain() noexcept;
   HYLE_COMPUTE_API bool in_flight() const noexcept;
   // Metadata counts the shared program and all its live cold slots once.

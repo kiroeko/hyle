@@ -225,8 +225,8 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
                 ASSERT_TRUE(direct_done.has_value());
                 ASSERT_TRUE(direct_done->wait().ok());
                 direct_done = top_slot.submit(
-                    queues[0], direct_probabilities.view.as_const(),
-                    direct_values.view, direct_indices.view);
+                    queues[0], std::array{direct_probabilities.view.as_const()},
+                    std::array{direct_values.view, direct_indices.view});
                 ASSERT_TRUE(direct_done.has_value());
                 ASSERT_TRUE(direct_done->wait().ok());
                 // Direct and Graph use their already prepared provider

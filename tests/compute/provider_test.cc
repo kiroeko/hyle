@@ -13,6 +13,21 @@ using hyle::compute::ProviderRuntimeMode;
 using hyle::compute::ProviderRuntimeProperties;
 using hyle::compute::ProviderWorkspaceOwner;
 
+template <class... Views>
+concept ScalarSubmit = requires(hyle::compute::OperationInvocation &invocation,
+                                hyle::compute::Queue &queue,
+                                const Views &...views) {
+  invocation.submit(queue, views...);
+};
+
+// A mutable second input must never silently select a two-output operation.
+using hyle::compute::ConstTensorView;
+using hyle::compute::TensorView;
+static_assert(ScalarSubmit<ConstTensorView, ConstTensorView, TensorView>);
+static_assert(!ScalarSubmit<ConstTensorView, TensorView, TensorView>);
+static_assert(ScalarSubmit<std::array<ConstTensorView, 1>,
+                          std::array<TensorView, 2>>);
+
 TEST(ProviderImplementationId,
      IsAnOptionalImplementationIdentityNotAProviderSlot) {
   using hyle::compute::ProviderImplementationId;

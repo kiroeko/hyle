@@ -13,7 +13,10 @@
 4. 检查 Compute/Graph 的公共 C++ 接口是否符合推理引擎调用需要，包括易用性、一致性、布局
    转换及暴露给用户的内部 CMake 变量和宏。不按旧六问重新审核全项目。
    构建系统已完成路线、依赖、target 宏与资源装配的统一，见[构建设计](../architecture/build-system.md)。
-   公共 C++ 接口的实际调用形状仍待后续检查。
+   2026-10-18 已静态核对四条后端路线及三种 CPU＋GPU 桥接的公开头、所属 target、能力宏和安装闭包，
+   普通消费者仍只链接产品 target；本轮未重跑跨平台交付构建。已移除 direct submit 的双输出位置歧义，
+   多输出改用既有 span 入口；禁止租约绑定借用临时 writer，并明确各 owner 的 drain 是否永久关闭接纳。
+   同步修正独立 runtime 的公开 prepare 入口及初始化后端选择说明。
 5. 狩猎剩余性能输项；只要确认超出仪器分辨率与测量噪声，即使差距小也继续调查。
 6. 尽快完成独立的 Qwen3.5-2B 纯文本、无 MTP、无多模态、完整 CUDA C++ 推理消费者，
    在同系统、同设备、同源权重与匹配精度/输入条件下对比 llama.cpp 的 prefill/decode tokens/s。
@@ -47,6 +50,11 @@
 后续接口检查线索：锁定 ggml 的 CUDA GDN/causal conv 原实现要求 F32；这不是已证实的
 BF16/FP8 接入遗漏。上游 GDN 已有多 token 中间 recurrent snapshot，而当前 HYLE 仅输出最终
 state，后续 MTP 接入应核对这项现成能力与接受前缀恢复成本。
+
+首个完整消费者重点确认：prepare/repack 是否留在冷路径；KV 有效长度变化是否导致重编译或多余绑定；
+GDN、conv、attention 之间是否出现实体转置、dtype 转换或 host 同步；常量与状态能否按真实寿命复用。
+`TensorDesc::transposed()` 仅改变描述，不搬运 payload。静态合同无误不代表实际转换次数或热路径成本合理，
+不提前规定新的统一布局或合并各原生 runtime。
 
 ## 首个 Qwen3.5-2B 消费者的复用材料
 

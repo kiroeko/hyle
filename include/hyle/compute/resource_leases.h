@@ -131,7 +131,8 @@ public:
   // Stops allocation/new native use. No hidden wait; live read views remain
   // backed. Unavailable means an admitted use still owns storage.
   HYLE_COMPUTE_API Status close() noexcept;
-  // Explicit host-thread wait for admitted uses, never for retained readers.
+  // Permanently closes admission, then explicitly waits on this host thread
+  // for admitted uses, never for retained readers.
   // Scheduler consumers use their existing blocking handoff if needed.
   HYLE_COMPUTE_API Status drain() noexcept;
 private:
@@ -185,6 +186,7 @@ public:
   HYLE_COMPUTE_API Result<LeaseUseBatch> begin() noexcept;
   HYLE_COMPUTE_API std::uint32_t active_batches() const noexcept;
   HYLE_COMPUTE_API Status close() noexcept;
+  // Permanently closes admission, then waits for active batches to retire.
   HYLE_COMPUTE_API Status drain() noexcept;
 private:
   explicit LeaseUsePool(detail::LeaseUsePoolState *state) noexcept : state_(state) {}
