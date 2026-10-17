@@ -39,6 +39,7 @@ compile_commands.json
 
 # local build helper (machine-specific hardcoded paths)
 _build.bat
+/test.ps1
 
 # IDE / editors
 .vscode/
