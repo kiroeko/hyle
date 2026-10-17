@@ -92,3 +92,41 @@ IreeStage owner 已承担真实 device-loss 传播，不从 IREE gRPC code 猜�
 尚未实际运行旧 binary 红测。第二观察测试保证旧 observer 在外锁且第二真实 fence wait 返回，
 不声称精确调度到“retirer 已 claim 后才释放 late error”。
 所有实际运行、sizeof 与性能资格尚未取证，原预算/失败仍保留。
+
+## AUDITED 补充：最后一次普通纠正 V4
+
+产品 checkpoint `adbe3a248e74e30ba84a78bbd049d16903bd9398` 的 Windows 八消费者、三项
+native GTest 均实际通过；device 的九进程全部退出 0，但 encoded 的正常单请求 native
+D64/128 episode 报一条真实 `VUID-vkResetFences-pFences-01123`，因此 device 聚合 FAIL。
+原日志、source/bin/DLL/152 DATA 身份和累计 958.640 命令秒完整保留；不把数学通过代签设备层。
+Air 仅收到完整同提交归档并完成 source sync，未 configure/build/test。P1/SDK/sanitizer 未开始。
+
+该 raw 没有 Create/Submit/Reset 调用映射，不能仅凭 `0xe000000000e` 唯一指认 Run 或原因。
+独立源码审查却发现一条充分的权限/复用合同缺陷：`submit_transfer` 先在 transfer queue
+以 `transfer_fence` 提交并 signal `transfer_ready`，随后 compute queue wait 该 semaphore，
+以主 fence 提交 handoff。成功路线的原 observe 只观察主 fence，下一 replay 直接 reset 原
+transfer fence。正常 encoded `fill` 确实反复走 staging→device CopyBatch，具有该真实入口。
+
+[Khronos signal operation order](https://docs.vulkan.org/spec/latest/chapters/synchronization.html#synchronization-signal-operation-order)
+规定同一提交的 fence signal 在 semaphore signal 之后；跨 queue 的 semaphore handoff
+不证明另一个 queue 的该 fence signal 已完成。与此不同，同 queue 的后继 fence scope
+包含先前 fence signals，不能将缺少独立 wait 一概判错。
+[reset 合同](https://docs.vulkan.org/spec/latest/chapters/synchronization.html#VUID-vkResetFences-pFences-01123)
+要求原关联提交实际结束。这里用规范与可达源码证明 V4，尚不把它写成 raw 唯一因果定位。
+
+| FIX | 最后一次允许的机制 | 费用/验收 |
+|---|---|---|
+| V4 | 锁下固定栈上 count1/2 fence 集：completion_fence 加仅当 transfer_submitted 且不同句柄的 transfer_fence；wait 在锁外一次 waitAll，poll 必须全部 required fences 终态才进入 V1–V3 唯一退休者 | 非 split 路线保持单 fence；split 增一次 poll 查询或同一 wait 的第二 fence，无新状态/heap/thread/API；handoff 拒绝只等实际 transfer，不等未提交主 fence |
+
+未终态或观测 OOM 保留原 first-error、accepted work 及原异常双 queue drain，device loss
+继续作为原 actual-terminal proof。V1–V3 的 observer 计数/错误冻结/late abandon 尾部发布不变。
+不以 QueueWaitIdle 覆盖正常路线，不减少 validation、不换环境、不添加重试或采样。
+只改 `vulkan_run.cc` 与既有 `lifecycle_test.cc`：新增一个原 PFN seam 的真实 copy 回归，
+确定模拟主 fence 已 ready、实际已接纳 transfer fence 尚 Pending，检查不早发布/复用，
+wait 的 required 集、handoff 拒绝去重、错误/取消/close 与原输出/65 步复用。
+实际 GPU 原样执行，PFN gate 只控制宿主观测边界，失败清理必须先开 gate 再 join。
+
+本次是主卡最后一次普通定向纠正。v4 只更新私有入口累计失败/成本与四项 native filters，
+沿原 source/device/Air/host/SDK/selector 门继续；若再失败或到原四小时检查点，停止并裁决，
+不通过新卡/目录/入口补发预算。V4 的有限设计已由实现者、root 与独立 Graph 审查条件通过，
+本段固定前未修改产品；实现/source/实际验证仍待签发。
