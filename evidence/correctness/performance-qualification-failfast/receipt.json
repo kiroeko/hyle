@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "state": "CANONICAL_PYTHON_TESTS_PASS_NO_NATIVE_P1",
+  "timestamp_utc": "2026-10-17T07:36:18.661544+00:00",
+  "scope_checkpoint": "cc99356de",
+  "product_tool_files": [
+    {
+      "path": "scripts/hyle_perf/runner.py",
+      "sha256": "100bfceccd630566699de35007a43f59c193b8fdad7624a965bc80579e636549"
+    },
+    {
+      "path": "tests/tooling/hyle_perf_runner_test.py",
+      "sha256": "2cade7c016a9b456f8ff35a66f4b6c664292cc28f30a489cf35e2681f320b30f"
+    }
+  ],
+  "canonical_suites": [
+    {
+      "log": "hyle_perf_build_replay_test.log",
+      "tests": 7,
+      "sha256": "5780912a872a6803df2b419705c71bb749a64928e748c23e1d18ba922ccd60fe"
+    },
+    {
+      "log": "hyle_perf_evidence_runner_test.log",
+      "tests": 9,
+      "sha256": "65544269d13fbd74c90adfadcc41deccf831c4e77a0bf3b25e6d424b85ce200b"
+    },
+    {
+      "log": "hyle_perf_raw_replay_test.log",
+      "tests": 6,
+      "sha256": "f9da074357c7bfd0c9ea98644db74701bbc0dc89aa78ad7b201296c135d661d8"
+    },
+    {
+      "log": "hyle_perf_runner_test.log",
+      "tests": 43,
+      "sha256": "595c0b8aab1a74ca084c91b35bb5970e8525f4335fe0cd50cfb1c7497e0559a2"
+    }
+  ],
+  "canonical_total": 65,
+  "isolated_red": "Five tests/three failures on original orchestrator; raw preserved.",
+  "historical_replay": "One retained old CUDA manifest verified strictly offline; unchanged original manifest, EXACT/CURRENT and paths_verified true. No claim for all history.",
+  "native_compile_device_aa_p1_commands": 0,
+  "independent_review": {
+    "state": "PASS_SOURCE_REVIEW_ONLY",
+    "reviewer": "/root/graph_coverage_audit",
+    "patch_sha256": "2841f096a21a9dd927be8b061a8026b5b1cf84047a9b3e0a3d65df6062bbaafb",
+    "scope": "requested_qualified non-PASS stop after original source/artifact rebind, before child policy/collectors; probe/PASS/stats/manifest unchanged. Real orchestrator test uses mocked host/build/children; actual command-validator log retained. One old CUDA replay is not universal compatibility."
+  },
+  "archive": {
+    "path": "evidence/correctness/performance-qualification-failfast/raw.zip",
+    "sha256": "5e44dc405dd5739e89ee4978ca67530d780c42230bdac78ccad419f0d9e4285c",
+    "bytes": 8719,
+    "members": [
+      {
+        "name": "historical-verify.json",
+        "sha256": "239d0cce3778e9ccea8e0e4e6d2a3bc051d8c23f249986598d59c1ef72b8d7a9",
+        "bytes": 1106
+      },
+      {
+        "name": "historical-verify.log",
+        "sha256": "c92012b060623605d6419a76da52e45a248a5803aa5725c7f37a89f498f5b809",
+        "bytes": 621
+      },
+      {
+        "name": "hyle_perf_build_replay_test.log",
+        "sha256": "622c3730a605a544dab27d774d5fb7b5c1d6806cf9938609846572a283857668",
+        "bytes": 105
+      },
+      {
+        "name": "hyle_perf_evidence_runner_test.log",
+        "sha256": "b876c70cdfe478a428bc743d1511acefd0365287812cf00d821208628791ef0a",
+        "bytes": 107
+      },
+      {
+        "name": "hyle_perf_raw_replay_test.log",
+        "sha256": "45a108b84d68347ea123347a61ebdb3500a65017227e083b0c5cc2c85ccebfdd",
+        "bytes": 104
+      },
+      {
+        "name": "hyle_perf_runner_test.log",
+        "sha256": "bab343e48aa02a282ee3e57a143376da6c7f86f59f8c82ce835d857c98bca983",
+        "bytes": 142
+      },
+      {
+        "name": "proposal.patch",
+        "sha256": "b229756feaa00442644bf20bbf3fd9b782163f696db541691b02a8d254a72fe2",
+        "bytes": 658
+      },
+      {
+        "name": "red-observation.json",
+        "sha256": "464028ee83156d16dba4daf60c69667e8398041cd75973577259b955e495d361",
+        "bytes": 661
+      },
+      {
+        "name": "review.json",
+        "sha256": "5a163eb07d49b03e1e425203507144bda4348a28720ec85163f9ed83e0aaa9da",
+        "bytes": 1704
+      },
+      {
+        "name": "shadow-snapshot.json",
+        "sha256": "83bdf87f00e135551dd48ed30a7aea9f0a7f0053fe13d2b6d32de4aa17c969a5",
+        "bytes": 911
+      },
+      {
+        "name": "tool-and-tests.patch",
+        "sha256": "2841f096a21a9dd927be8b061a8026b5b1cf84047a9b3e0a3d65df6062bbaafb",
+        "bytes": 8199
+      },
+      {
+        "name": "unit-results.json",
+        "sha256": "e8e457b154cf9213c3380f65425e9630826e7390f8eaa3eee2df670774d95979",
+        "bytes": 2551
+      },
+      {
+        "name": "canonical/hyle_perf_build_replay_test.log",
+        "sha256": "5780912a872a6803df2b419705c71bb749a64928e748c23e1d18ba922ccd60fe",
+        "bytes": 110
+      },
+      {
+        "name": "canonical/hyle_perf_evidence_runner_test.log",
+        "sha256": "65544269d13fbd74c90adfadcc41deccf831c4e77a0bf3b25e6d424b85ce200b",
+        "bytes": 112
+      },
+      {
+        "name": "canonical/hyle_perf_raw_replay_test.log",
+        "sha256": "f9da074357c7bfd0c9ea98644db74701bbc0dc89aa78ad7b201296c135d661d8",
+        "bytes": 109
+      },
+      {
+        "name": "canonical/hyle_perf_runner_test.log",
+        "sha256": "595c0b8aab1a74ca084c91b35bb5970e8525f4335fe0cd50cfb1c7497e0559a2",
+        "bytes": 147
+      },
+      {
+        "name": "independent-review.json",
+        "sha256": "dadbe659874e91a73e79eabfd6550e2a809e37620a6ca036bc5e8c43f6c22697",
+        "bytes": 474
+      }
+    ]
+  },
+  "budget_reset": false
+}

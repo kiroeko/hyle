@@ -1104,5 +1104,145 @@ class RunnerBuildArtifactTest(unittest.TestCase):
                 _find_executable(build, "bench", "Release")
 
 
+
+
+class QualificationPreSamplingStopTest(unittest.TestCase):
+    """Drive the real orchestrator; every host/build/child seam is mocked."""
+
+    class CollectionReached(Exception):
+        pass
+
+    def drive(self, mode, gates, *, command_failure=False, mutate_artifact=False):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        import hyle_perf.runner as engine
+
+        with tempfile.TemporaryDirectory() as temporary, ExitStack() as stack:
+            root = pathlib.Path(temporary)
+            source, build, output = root / "source", root / "build", root / "output"
+            source.mkdir()
+            binary = root / "instrument.bin"
+            binary.write_bytes(b"reviewed instrument")
+            value = pilot_contract()
+            peer_paths = {row["id"]: root / row["id"] for row in value["peers"]}
+            revision = value["peers"][0]["revision"]
+            runner = validate_runner_extension(value)
+            real_evaluate = engine._evaluate_validators
+            profile = {"environment": "windows"}
+            record = {"clean": True, "revision": revision}
+            patches = {
+                "load_contract": value,
+                "validate_runner_extension": runner,
+                "_evaluate_product_evidence": [],
+                "product_evidence_contract_ready": False,
+                "_product_evidence_pass": False,
+                "_product_gate_workloads": [],
+                "git_record": record,
+                "load_registry": {},
+                "get_machine_profile": profile,
+                "probe_machine": {"environment": "windows"},
+                "physical_host_identity_record": {},
+                "evaluate_machine_profile": {"gate": "PASS"},
+                "_configure_and_build": {"fresh": mode == "qualify-platform"},
+                "_find_executable": binary,
+                "_attested_build_artifact_paths": {},
+                "_validate_variant_artifacts": None,
+                "expected_child_policy": {},
+                "_child_environment_policy_record": {},
+                "_creation_flags": 0,
+                "_probe_child_policy": {},
+            }
+            for name, result in patches.items():
+                stack.enter_context(mock.patch.object(engine, name, return_value=result))
+            policy = stack.enter_context(mock.patch.object(engine, "_apply_sampling_policy"))
+            policy.return_value.__enter__.return_value = {}
+            product = stack.enter_context(mock.patch.object(
+                engine, "_collect_product_observations", side_effect=self.CollectionReached))
+            structured = stack.enter_context(mock.patch.object(
+                engine, "_collect_structured_product_observations", side_effect=self.CollectionReached))
+            controls = stack.enter_context(mock.patch.object(engine, "_collect_control_runs"))
+            child = stack.enter_context(mock.patch.object(
+                engine.subprocess, "run", return_value=SimpleNamespace(
+                    returncode=7, stdout="retained qualification raw\n", stderr="AA FAIL\n")))
+            popen = stack.enter_context(mock.patch.object(
+                engine.subprocess, "Popen", side_effect=AssertionError("unexpected real child")))
+
+            def evaluate(*args, **kwargs):
+                if command_failure:
+                    result = real_evaluate(
+                        {**runner, "validators": [{"id": "pipeline-aa", "kind": "command",
+                         "command": ["{python}", "-c", "should-never-run"]}]}, **kwargs)
+                    self.assertEqual(result[0]["gate"], "FAIL")
+                else:
+                    result = [{"id": key, "gate": gate, "details": {}}
+                              for key, gate in gates]
+                if mutate_artifact:
+                    binary.write_bytes(b"changed by validator")
+                return result
+
+            validator = stack.enter_context(mock.patch.object(
+                engine, "_evaluate_validators", side_effect=evaluate))
+            error = None
+            try:
+                engine._run_contract_locked(
+                    source=source, contract_path=root / "contract.json",
+                    machine_id="W1-WIN", peer_paths=peer_paths,
+                    build=build, output=output, mode=mode, formal=False,
+                    sampling_mutex_record={})
+            except (ValidationError, self.CollectionReached) as caught:
+                error = caught
+            self.assertIsNotNone(error)
+            popen.assert_not_called()
+            self.assertFalse((output / "manifest.json").exists())
+            self.assertFalse((output / "observations.jsonl").exists())
+            if isinstance(error, self.CollectionReached):
+                self.assertEqual(product.call_count + structured.call_count, 1)
+                selected = product if product.called else structured
+                self.assertEqual(selected.call_args.kwargs["runs"],
+                                 15 if mode == "qualify-platform" else 1)
+                policy.assert_called_once()
+            else:
+                product.assert_not_called()
+                structured.assert_not_called()
+                controls.assert_not_called()
+                policy.assert_not_called()
+            validator.assert_called_once()
+            if command_failure:
+                child.assert_called_once()
+                log = output / "validators" / "pipeline-aa.log"
+                self.assertEqual(log.read_text(encoding="utf-8"),
+                                 "retained qualification raw\nAA FAIL\n")
+            else:
+                child.assert_not_called()
+            return error
+
+    def test_qualified_command_failure_preserves_raw_and_stops_before_children(self):
+        error = self.drive("qualify-platform", [], command_failure=True)
+        self.assertIsInstance(error, ValidationError)
+        self.assertIn("pre-sampling validators failed: pipeline-aa", str(error))
+
+    def test_qualified_any_nonpass_builtin_stops_before_children(self):
+        for gate in ("FAIL", "INCONCLUSIVE"):
+            with self.subTest(gate=gate):
+                error = self.drive("qualify-platform", [("build-contract", gate)])
+                self.assertIsInstance(error, ValidationError)
+                self.assertIn("build-contract", str(error))
+
+    def test_qualified_pass_reaches_original_n15_collector(self):
+        error = self.drive("qualify-platform", [("build-contract", "PASS")])
+        self.assertIsInstance(error, self.CollectionReached)
+
+    def test_probe_nonpass_keeps_diagnostic_collection(self):
+        error = self.drive("probe", [("build-contract", "FAIL")])
+        self.assertIsInstance(error, self.CollectionReached)
+
+    def test_artifact_rebind_error_still_precedes_validator_stop(self):
+        error = self.drive("qualify-platform", [("pipeline-aa", "FAIL")],
+                           mutate_artifact=True)
+        self.assertIsInstance(error, ValidationError)
+        self.assertIn("pre-sampling validator changed an attested artifact", str(error))
+        self.assertNotIn("pre-sampling validators failed", str(error))
+
+
 if __name__ == "__main__":
     unittest.main()

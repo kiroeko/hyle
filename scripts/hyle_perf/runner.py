@@ -2224,6 +2224,14 @@ def _run_contract_locked(
         raise ValidationError(
             "a pre-sampling validator changed candidate or peer inputs")
 
+    failed_pre_sampling_validators = [
+        result["id"] for result in pre_sampling_validators
+        if result["gate"] != "PASS"]
+    if requested_qualified and failed_pre_sampling_validators:
+        raise ValidationError(
+            "pre-sampling validators failed: " +
+            ", ".join(failed_pre_sampling_validators))
+
     schedule = contract["experiment"]["sample_schedule"]
     if len(schedule) > 2:
         raise ValidationError(

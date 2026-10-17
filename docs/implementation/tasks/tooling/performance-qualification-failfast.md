@@ -1,6 +1,6 @@
 # 性能资格预验证失败即停止
 
-状态：**AUDITED，2026-10-17**。SCOPED checkpoint `7175d12df`。独立工具任务，不属于 G09 产品 FIX；baseline
+状态：**CLOSED，2026-10-17**。SCOPED checkpoint `7175d12df`、AUDITED `cc99356de`。独立工具任务，不属于 G09 产品 FIX；baseline
 `3ed603a48`，`scripts/hyle_perf/runner.py` 原 SHA256
 `df415c5bb04c1096c568cae75c84e83672d2282ef43c7965d905f3ba1d21e022`。
 
@@ -28,3 +28,11 @@ AUDITED：root 逐行核八行 guard/五项真实 orchestrator 测试，独立 G
 无 must；审查确认 probe 必须继续原 diagnostic 路线、source/artifact mutation 原 guard 优先。
 隔离 patch SHA256 `2841f096a21a9dd927be8b061a8026b5b1cf84047a9b3e0a3d65df6062bbaafb`。
 批准只应用上述精确两文件补丁；工具身份独立冻结，不借原工具授权签新 P1。
+
+精确补丁已在 canonical 应用，原四套相关 Python/mock 测试 43+9+6+7=65 项全部通过。
+[完整记录](../../../../evidence/correctness/performance-qualification-failfast/receipt.json)和原日志归档
+保留隔离旧代码红证据、隔离及 canonical 绿日志、原历史 replay、源文件 hash 和独立复核。
+scope/architecture、correctness、原 CLI 错误可读性、独立红队及冷 O(validator count) 结构账通过；
+纯 Python 工具没有适用 C++ SDK/设备旅程。没有实际 compile/native/GPU/A/A/P1，也不由本任务
+验收 G09。普通 selector 的本轮最终计划会纳入这些工具测试；不会因纯 Python 修改重建产品。
+docs/closure/diff 检查通过，有限 T1/T2 到此停止。统计、采样和 manifest schema 均未改变。

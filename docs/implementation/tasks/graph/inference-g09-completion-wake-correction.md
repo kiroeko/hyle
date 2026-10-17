@@ -214,3 +214,8 @@ native build/设备执行前，原 receipt/时间完整保留，不作为通过�
 retirement 两项），并按不可变源码逐名/计数冻结；八项公开 consumer、Apple 原四通知项、
 SDK 八项加公开头与所有身份/152 DATA guard 不变。两次入口独立源码审查通过后才允许运行；
 实际 configure/plan/build/device 仍分阶段裁决，不将入口静态审查当 correctness PASS。
+
+有限性能入口的原公共 runner 在预验证非 PASS 后仍尝试首个 formal child，历史依赖私有
+ready guard 拦截。以[独立工具任务](../tooling/performance-qualification-failfast.md)补唯一
+qualify fail-fast 边界，保留 probe/PASS、统计和 manifest；相关65项 Python 测试通过，不由此
+启动 P1 或签发 G09 性能资格。
