@@ -179,27 +179,6 @@ Workload make_workload(const char *title, int streams,
   return result;
 }
 
-Task<Status> read_hyle_body(AllocatorRef,
-                            hyle::io::Http2BodyReader &body,
-                            std::string_view expected) noexcept {
-  std::size_t received = 0;
-  auto verify =
-      [&](const hyle::io::HttpBodyChunkView &next) noexcept -> Status {
-    if (received + next.bytes.size() > expected.size() ||
-        std::memcmp(next.bytes.data(), expected.data() + received,
-                    next.bytes.size()) != 0)
-      return Status::DataLoss("HTTP/2 benchmark body mismatch");
-    received += next.bytes.size();
-    return Status::Ok();
-  };
-  Status consumed = co_await body.consume(verify, 16 * 1024);
-  if (!consumed.ok())
-    co_return consumed;
-  co_return received == expected.size()
-      ? Status::Ok()
-      : Status::DataLoss("HTTP/2 benchmark body length mismatch");
-}
-
 Task<int> hyle_server(AllocatorRef allocator, TcpStream stream,
                       HyleRunState *run) noexcept {
   const Workload *workload = run->workload;
@@ -219,9 +198,19 @@ Task<int> hyle_server(AllocatorRef allocator, TcpStream stream,
       if (request.head.method() != "POST" ||
           request.head.path() != "/v1/completions")
         co_return -1;
-      Status read = co_await read_hyle_body(allocator, request.body,
-                                            workload->request_body);
-      if (!read.ok())
+      std::size_t received = 0;
+      auto verify =
+          [&](const hyle::io::HttpBodyChunkView &next) noexcept -> Status {
+        if (received + next.bytes.size() > workload->request_body.size() ||
+            std::memcmp(next.bytes.data(),
+                        workload->request_body.data() + received,
+                        next.bytes.size()) != 0)
+          return Status::DataLoss("HTTP/2 benchmark body mismatch");
+        received += next.bytes.size();
+        return Status::Ok();
+      };
+      Status read = co_await request.body.consume(verify, kBodyReadBytes);
+      if (!read.ok() || received != workload->request_body.size())
         co_return -1;
     }
     for (int index = 1; index >= 0; --index) {
@@ -268,9 +257,19 @@ Task<int> hyle_client(AllocatorRef allocator, TcpStream stream,
       if (response.head.status() != 200)
         co_return -1;
       id = response.stream_id;
-      Status read = co_await read_hyle_body(allocator, response.body,
-                                            workload->response_body);
-      if (!read.ok())
+      std::size_t received = 0;
+      auto verify =
+          [&](const hyle::io::HttpBodyChunkView &next) noexcept -> Status {
+        if (received + next.bytes.size() > workload->response_body.size() ||
+            std::memcmp(next.bytes.data(),
+                        workload->response_body.data() + received,
+                        next.bytes.size()) != 0)
+          return Status::DataLoss("HTTP/2 benchmark body mismatch");
+        received += next.bytes.size();
+        return Status::Ok();
+      };
+      Status read = co_await response.body.consume(verify, kBodyReadBytes);
+      if (!read.ok() || received != workload->response_body.size())
         co_return -1;
     }
     if (completed[0] != submitted[1] || completed[1] != submitted[0])

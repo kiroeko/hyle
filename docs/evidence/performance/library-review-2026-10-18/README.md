@@ -4,7 +4,7 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-累计31个清单条目：27项性能/复杂度问题中26项已修、HTTP2一项未解，另4项纯接线/正确性问题已修。最新对齐执行、分配器与DATA拷贝的交错对照，三进程配对中位差均为正（+1.53%～+2.74%），33/36区块较慢，支持固定场景中的小幅落后；稳定幅度和具体原因仍未定位，见末尾。
+累计31个清单条目：27项性能/复杂度问题中26项已修、HTTP2一项未解，另4项纯接线/正确性问题已修。最新去掉基准包装Task、延迟trailer分配、移除无效resume和重复read通知后，配对中位差仍为+1.78%/+2.58%，21/24区块较慢。已定位并删除这些具体冗余，残差的稳定幅度和完整原因仍未定位，见末尾。
 此前因同两Task的AB/BA中位差变号，曾把HTTP2改列为跨执行模型待归因对照；最新证据恢复为小幅输项，没有新增一项修复。这是清单条目数，包含源码已证实的多余时间/空间开销，不是当前peer实测排名或严格去重的算法家族。修复机制不等于所有shape已赢；后文按实验顺序保留当时结论。
 
 **比较边界仍需保留**：HTTP2相对专用手工单loop的历史大报文差距尚未被代码消除；同两Task的对照未复现同等幅度的差距，最新交错轮次则提示较小的正开销。不能把原差距全部归因于调度，也不能称严格等速。Apple普通attention的已知math分块、原生full mask步长和混合dtype转换机制均已修，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界。
@@ -37,7 +37,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | FlatHash近满rolling churn反复重建 | [grow](../../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 受限域已融合，其余大math域已用原生selector及checked Q128块，覆盖三种浮点dtype、不同Dv、广播mask和全Q causal偏移。原生full mask已接通KV stride、移除完整复制；受理的mixed additive mask已按实际backing紧凑转换，已知问题机制均已修。未称所有shape已跑赢 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的Q>128收益域均用单Job同步Q128块。长Q固定extra peak1344307200→285310976 B（−78.8%），短Q672825344→218202112 B（−67.57%）；新短Q未测时延。其它guard域的scores有KV/输出同阶上界，caller mask仍为Q×KV；不宣称所有shape吞吐或opaque callback自动规划 |
-| HTTP2大body背压holdout | 历史manual对照+8.22%/+11.08%；最新对齐执行/分配/DATA拷贝的三进程配对中位差+2.14%/+1.53%/+2.74% | 已删确认的冗余复制/构造/私有帧，未称残差已修。两轮A/A中位−0.09%/+0.45%，区块仍有数个百分点波动；小幅开销继续待归因，不称等速或纯调度成本 |
+| HTTP2大body背压holdout | 历史manual对照+8.22%/+11.08%；最新完整episode配对中位差+1.78%/+2.58% | 已删确认的冗余复制/构造/私有帧及额外通知/分配/resume；残差未解。最终两轮A/A中位+0.74%/−0.71%，不能称等速或纯调度成本，见末尾 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
@@ -1465,3 +1465,27 @@ WSL guest CPU2不代表物理P核/宿主隔离，未测TCP/TLS、长连接、其
 
 归档后先写根test.ps1，再精确删除本轮exe与上一轮过时consumer对象，共1012152 B；保留并复核5份
 当前产品/工具/测试缓存，不删目录、源码、raw、日志、map或SDK。[已执行脚本与日志](http2/paired-comparison/cleanup.zip)。
+
+## HTTP2：计数与叶子采样归因，删除三处产品冗余
+
+同一完整trace的软件诊断中，两臂各16预热＋1024轮的sendto/recvfrom/io_uring_enter总数分别为
+802880/1073308/1013，逐项相同。无硬件PMU；单次cpu-clock叶子采样649/634个样本，只指向
+read_body、flush_once、owner检查与条件通知等用户态路径，不能用采样比例精确解释2%差额。
+
+- 基准直接调用公开body.consume，去掉应用额外wrapper Task；每轮少8次allocate、1792 B请求，校验与16 KiB粒度不变。
+- 产品仅在首个实际regular trailer到达时分配trailer槽；本trace每轮allocate260→252、realloc20不变，累计请求少57344 B，不是RSS/峰值结论。
+- fixed-send首次驱动前provider尚未deferred，20轮的160次resume全部INVALID_ARGUMENT；移除此调用，streaming的resume保留。
+- 成功read已发布状态，release又重复发布；两行去重后20轮notify30580→24100，read6480次、42003020 B、try20640次、async20次以及allocate/realloc完全不变。无进度async读取仍通知方向释放，无新增状态/接口。
+
+最后一处只改通知，以同一个无wrapper消费者固定A/A→old→new→new→old→A/A比较。
+四轮配对中位差依次+1.9073%/+1.7752%/+2.5811%/+3.0521%；前后A/A为+0.7410%/−0.7050%。
+两顺序仅有很小的改善线索，不能宣称稳定提速。最终21/24区块仍较慢，HTTP2继续保留输项；
+不混入中途尚未去通知的final-suite，不从历史不同基准轮次相减归因。全部72区块独立重算一致。
+
+最终default/epoll各16/16通过。新增公共OOM测试验证trailer槽失败返回ResourceExhausted且同session可接下一stream；
+旧eager实现没有该晚期分配点，预期断言失败，并非旧功能缺陷复现。测试最初失败分支中的短路co_await已改显式guard，失败日志保留。
+只fresh相关TU、复用SDK；未跑Windows/macOS/TLS专用路线或sanitizer。
+[完整摘要](http2/root-cause/summary.json)／[源码、原始计数、采样、计时及日志](http2/root-cause/source-results.zip)。
+
+先写根test.ps1再精确清理22份诊断/对照及已替代对象，共13466728 B；复核并保留7份当前可复用缓存，
+包括最终产品/消费者/测试对象及两份当前exe。源码、raw、采样、日志、map、SDK与目录保留。[执行记录](http2/root-cause/cleanup.zip)。

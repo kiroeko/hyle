@@ -120,9 +120,7 @@ struct Http2StreamState {
     header_slots_bytes = bytes;
     headers = static_cast<StoredHeader *>(
         head_bytes.allocator.allocate(bytes, alignof(StoredHeader)));
-    trailers = static_cast<StoredHeader *>(
-        head_bytes.allocator.allocate(bytes, alignof(StoredHeader)));
-    return headers != nullptr && trailers != nullptr;
+    return headers != nullptr;
   }
 
   ~Http2StreamState() {
@@ -636,14 +634,26 @@ int on_header(nghttp2_session *, const nghttp2_frame *frame,
 
   std::size_t &count =
       stream->parsing_trailers ? stream->trailer_count : stream->header_count;
-  StoredHeader *slots =
-      stream->parsing_trailers ? stream->trailers : stream->headers;
   if (count >= state.limits.max_header_count) {
     fail_stream(state, *stream,
                 Status::ResourceExhausted("HTTP/2 header count exceeds limit"),
                 Http2Error::kEnhanceYourCalm);
     return NGHTTP2_ERR_TEMPORAL_CALLBACK_FAILURE;
   }
+  // Most streams have no trailers. Reserve their slots only when a real
+  // trailer field arrives; empty trailer blocks need no backing storage.
+  if (stream->parsing_trailers && stream->trailers == nullptr) {
+    stream->trailers = static_cast<StoredHeader *>(state.allocator.allocate(
+        stream->header_slots_bytes, alignof(StoredHeader)));
+    if (stream->trailers == nullptr) {
+      fail_stream(state, *stream,
+                  Status::ResourceExhausted("HTTP/2 trailer storage"),
+                  Http2Error::kInternal);
+      return NGHTTP2_ERR_TEMPORAL_CALLBACK_FAILURE;
+    }
+  }
+  StoredHeader *slots =
+      stream->parsing_trailers ? stream->trailers : stream->headers;
   const FieldRef stored_name =
       append_field(bytes, name, name_length, state.limits.max_header_bytes);
   const FieldRef stored_value =
@@ -1278,10 +1288,9 @@ ProgressResult try_read_once(Http2SessionState &state) noexcept {
   ProgressResult result;
   if (attempted.state == ImmediateTransferState::kReady)
     result = process_received(state, attempted.transfer);
-  // The immediate attempt cannot suspend, so no same-owner fiber can observe
-  // the temporary claim. If it found no protocol change there is no waiter to
-  // wake and no epoch to publish.
-  release_direction(state, state.read_busy, result.progressed);
+  // This attempt cannot suspend, so no sibling can observe the temporary claim.
+  // process_received already publishes any protocol change before we release it.
+  release_direction(state, state.read_busy, false);
   return result;
 }
 
@@ -1437,7 +1446,9 @@ ProgressResult read_once(mem::AllocatorRef allocator, Http2SessionState &state,
                            state.input.capacity),
       options);
   ProgressResult result = process_received(state, received);
-  release_direction(state, state.read_busy);
+  // A progressing read already published its state on this owner. Only a read
+  // with no progress needs a separate wake for releasing the busy direction.
+  release_direction(state, state.read_busy, !result.progressed);
   return result;
 }
 
@@ -2431,19 +2442,9 @@ Status send_submitted_fixed(mem::AllocatorRef allocator,
   stream.outbound_offset = 0;
   stream.outbound_total = body.size();
   const std::uint64_t epoch = ++stream.outbound_epoch;
-  const int resumed = nghttp2_session_resume_data(state.session, stream.id);
-  if (resumed != 0 && resumed != NGHTTP2_ERR_INVALID_ARGUMENT) {
-    const Status failure =
-        detail::status_from_nghttp2(resumed, "nghttp2_session_resume_data");
-    (void)detail::reset_stream(state, stream, Http2Error::kCancel);
-    stream.outbound_data = nullptr;
-    stream.outbound_size = stream.outbound_offset = 0;
-    stream.writer_busy = false;
-    --stream.operation_pins;
-    state.maybe_retire(&stream);
-    state.collect_garbage();
-    return failure;
-  }
+  // The provider was just submitted and has not been driven or deferred yet.
+  // Streaming writes still resume a deferred provider; this first drive does
+  // not need nghttp2_session_resume_data().
   state.notify_owner();
   auto complete = [&]() noexcept {
     return (stream.output_done && stream.flushed_epoch >= epoch) ||

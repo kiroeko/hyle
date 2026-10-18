@@ -1,0 +1,1672 @@
+{
+  "conclusion": "Three product redundancies removed and one benchmark-only wrapper removed. Remaining matched fixed-trace loss persists: final two process block medians +1.775196/+2.581064%, 21/24 blocks positive. Not declared fixed/equal. No calibrated error/CI or subtraction across historical rounds.",
+  "benchmark": {
+    "change": "Direct owner-local sink co_await of public body.consume; no extra application wrapper Task; payload, total length, head/status/order,16KiB consume and full episode retirement preserved.",
+    "four_repeated_diagnostic_episodes_each": {
+      "before": {
+        "allocate": 268,
+        "reallocate": 20,
+        "requested_bytes": 1031428
+      },
+      "after": {
+        "allocate": 260,
+        "reallocate": 20,
+        "requested_bytes": 1029636
+      }
+    },
+    "limit": "Injected AllocatorRef counts only its own route, not all process/mimalloc/libc activity. Diagnostic times not used."
+  },
+  "products": [
+    {
+      "change": "Allocate incoming trailer slots only on first actual regular trailer, after header-count limit validation. Empty/no trailer requires no slots. Initial headers and view lifetimes unchanged.",
+      "per_complete_4_stream_episode": {
+        "allocate_before": 260,
+        "allocate_after": 252,
+        "reallocate_both": 20,
+        "requested_bytes_before": 1029636,
+        "requested_bytes_after": 972292,
+        "requested_bytes_saved": 57344
+      },
+      "limit": "Cumulative allocation requests, not RSS or peak-live memory."
+    },
+    {
+      "change": "Remove first fixed-send resume_data before provider ever ran/deferred; retain streaming resume calls.",
+      "20_complete_episode_diagnostic": {
+        "old_resume_calls": 160,
+        "old_invalid_argument": 160,
+        "new_calls": 0
+      }
+    },
+    {
+      "change": "Remove duplicate read release publication. Immediate temporary claim cannot be observed; async no-progress still publishes busy-direction release.",
+      "20_complete_episode_diagnostic": {
+        "notify_before": 30580,
+        "notify_after": 24100,
+        "received_calls_both": 6480,
+        "received_bytes_both": 42003020,
+        "try_read_calls_both": 20640,
+        "async_read_calls_both": 20,
+        "allocate_per_episode_both": 252,
+        "reallocate_per_episode_both": 20
+      }
+    }
+  ],
+  "syscall_diagnostic": {
+    "status": "completed; counters only, not a latency ranking",
+    "scope": "One perf-stat process per arm; matched current two-endpoint-Task execution on shared one-worker HyleHarness; CPU2.",
+    "workload": {
+      "warmups": 16,
+      "measured_loop_episodes": 1024,
+      "complete_episodes_per_process": 1040,
+      "streams_per_episode": 4,
+      "application_bytes_per_episode": 2097152,
+      "request_bytes_per_stream": 262144,
+      "response_bytes_per_stream": 262144,
+      "all_oracles_passed": true
+    },
+    "counter_boundary": "Whole profiled process: loader/runtime initialization, harness setup, all16 warmups plus1024 loop episodes, teardown and final reporting. These are not isolated steady-state per-episode counters.",
+    "events": {
+      "hyle": {
+        "task-clock": {
+          "value": 865580214,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "context-switches": {
+          "value": 4170,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "cpu-migrations": {
+          "value": 1,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "page-faults": {
+          "value": 420,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "syscalls:sys_enter_sendto": {
+          "value": 802880,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "syscalls:sys_enter_recvfrom": {
+          "value": 1073308,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "syscalls:sys_enter_io_uring_enter": {
+          "value": 1013,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        }
+      },
+      "reference": {
+        "task-clock": {
+          "value": 889893550,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "context-switches": {
+          "value": 4174,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "cpu-migrations": {
+          "value": 1,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "page-faults": {
+          "value": 414,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "syscalls:sys_enter_sendto": {
+          "value": 802880,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "syscalls:sys_enter_recvfrom": {
+          "value": 1073308,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        },
+        "syscalls:sys_enter_io_uring_enter": {
+          "value": 1013,
+          "reported_unit": "",
+          "counter_running_percent": 100.0
+        }
+      }
+    },
+    "finding": "sendto/recvfrom/io_uring_enter entry counts exactly match in these two processes. No extra syscall-count mechanism was observed for this fixed trace.",
+    "limits": [
+      "One diagnostic process per arm; profiler changes execution; task-clock and elapsed are not used to rank.",
+      "Entry counts do not reveal result bytes, EAGAIN distribution, syscall durations, individual io_uring operation counts, or equal CPU work.",
+      "Small context-switch/fault differences are retained, not excluded or used to correct prior paired timing.",
+      "Only one consumer TU freshly compiled; accepted cached product/core/native objects reused, not whole-HEAD rebuild.",
+      "No hardware PMU counters, further samples, product changes or cleanup."
+    ],
+    "commands": [
+      "compile-consumer.command.json",
+      "link.command.json",
+      "ldd.command.json",
+      "stat-hyle.command.json",
+      "stat-reference.command.json"
+    ],
+    "identity": "identity.json",
+    "scope_source_sha256": "96c1659810ca5d9e11610f937d619d122615f17cd4e3f3519ced9c0f255f6d63",
+    "failures": []
+  },
+  "leaf_profile": {
+    "status": "completed; no additional samples or product changes",
+    "sample_config": {
+      "event": "cpu-clock:u",
+      "frequency": 1999,
+      "callgraph": false,
+      "record_processes_per_arm": 1,
+      "warmups": 16,
+      "episodes": 1024,
+      "scope": "Whole process; no latency ranking"
+    },
+    "arms": {
+      "hyle": {
+        "samples": 649,
+        "lost": 0,
+        "top_leaves": [
+          [
+            "__memcpy_avx_unaligned_erms",
+            89
+          ],
+          [
+            "__memcmp_avx2_movbe",
+            63
+          ],
+          [
+            "__libc_send",
+            56
+          ],
+          [
+            "__libc_recv",
+            56
+          ],
+          [
+            "__GI___pthread_disable_asynccancel",
+            35
+          ],
+          [
+            "__GI___pthread_enable_asynccancel",
+            28
+          ],
+          [
+            "hyle::io::detail::Http2SessionAccess::read_body(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, unsigned long, hyle::io::OperationOptions)",
+            23
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::run_worker(unsigned int)",
+            15
+          ],
+          [
+            "jump_fcontext",
+            12
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::flush_once(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::OperationOptions) [clone .isra.0]",
+            11
+          ],
+          [
+            "nghttp2_session_mem_send_internal",
+            11
+          ],
+          [
+            "mi_malloc",
+            9
+          ],
+          [
+            "hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+            8
+          ],
+          [
+            "nghttp2_map_find",
+            8
+          ],
+          [
+            "__tls_get_addr",
+            8
+          ],
+          [
+            "hyle::sched::current_worker_index()",
+            8
+          ],
+          [
+            "nghttp2_session_mem_recv2",
+            8
+          ],
+          [
+            "nghttp2_session_get_stream",
+            7
+          ]
+        ],
+        "hyle_functions": [
+          [
+            "hyle::io::detail::Http2SessionAccess::read_body(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, unsigned long, hyle::io::OperationOptions)",
+            23
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::run_worker(unsigned int)",
+            15
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::flush_once(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::OperationOptions) [clone .isra.0]",
+            11
+          ],
+          [
+            "hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+            8
+          ],
+          [
+            "hyle::sched::current_worker_index()",
+            8
+          ],
+          [
+            "hyle::sched::ConditionVariable::notify_all()",
+            7
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::on_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)",
+            7
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::reschedule(hyle::sched::Scheduler::Impl::Worker&, hyle::sched::Fiber*)",
+            7
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::try_read_once(hyle::io::detail::Http2SessionState&)",
+            7
+          ],
+          [
+            "hyle::io::detail::http2_body_consume(hyle::io::detail::http2_body_consume(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, void*, hyle::Status (*)(void*, hyle::io::HttpBodyChunkView const&) noexcept, unsigned long, hyle::io::OperationOptions)::_ZN4hyle2io6detail18http2_body_consumeENS_3mem12AllocatorRefERNS0_15Http2BodyReaderEPvPDoFNS_6StatusES6_RKNS0_17HttpBodyChunkViewEEmNS0_16OperationOptionsE.Frame*) [clone .actor]",
+            6
+          ],
+          [
+            "hyle::io::detail::http_transport_try_read(hyle::io::HttpTransport&, std::span<std::byte, 18446744073709551615ul>)",
+            6
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::find_task(hyle::sched::Scheduler::Impl::Worker&, unsigned int)",
+            6
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::check_operation(hyle::io::detail::Http2SessionState const&, hyle::io::OperationOptions) [clone .isra.0]",
+            5
+          ],
+          [
+            "hyle::io::detail::tcp_try_read_some(hyle::io::TcpStream&, std::span<std::byte, 18446744073709551615ul>)",
+            5
+          ],
+          [
+            "hyle::sched::Fiber::yield()",
+            4
+          ],
+          [
+            "hyle::io::(anonymous namespace)::send_submitted_fixed(hyle::mem::AllocatorRef, hyle::io::detail::Http2SessionState&, hyle::io::detail::Http2StreamState&, std::span<std::byte const, 18446744073709551615ul>, hyle::io::OperationOptions) [clone .isra.0]",
+            4
+          ],
+          [
+            "hyle::io::detail::http_transport_try_write(hyle::io::HttpTransport&, std::span<std::byte const, 18446744073709551615ul>)",
+            3
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::on_frame_recv(nghttp2_session*, nghttp2_frame const*, void*)",
+            3
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::on_header(nghttp2_session*, nghttp2_frame const*, unsigned char const*, unsigned long, unsigned char const*, unsigned long, unsigned char, void*)",
+            3
+          ],
+          [
+            "hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+            3
+          ],
+          [
+            "hyle::io::detail::transfer_from_native(long, hyle::io::detail::NativeOperationDomain, char const*, bool)",
+            2
+          ],
+          [
+            "hyle::sched::Fiber::resume()",
+            2
+          ],
+          [
+            "hyle::io::HttpTransport::owner_worker() const",
+            2
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::acknowledge_body(hyle::io::detail::Http2SessionState&, hyle::io::detail::Http2StreamState&)",
+            2
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::process_received(hyle::io::detail::Http2SessionState&, hyle::io::TransferResult)",
+            2
+          ],
+          [
+            "hyle::io::detail::Proactor::in_flight() const",
+            1
+          ],
+          [
+            "hyle::io::IoContext::poll(unsigned int, unsigned long long)",
+            1
+          ],
+          [
+            "hyle::io::TcpStream::~TcpStream()",
+            1
+          ],
+          [
+            "hyle::io::detail::tcp_try_write_some(hyle::io::TcpStream&, std::span<std::byte const, 18446744073709551615ul>)",
+            1
+          ],
+          [
+            "hyle::mem::(anonymous namespace)::system_alloc(void*, unsigned long, unsigned long)",
+            1
+          ],
+          [
+            "hyle::sched::detail::pop_cancel_flag(hyle::sched::detail::CancelFlagLink*)",
+            1
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::run_inline(hyle::sched::Scheduler::Impl::Worker&)",
+            1
+          ],
+          [
+            "hyle::sched::Event::wait_until(std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::h2_malloc(unsigned long, void*)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::h2_free(void*, void*)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::h2_calloc(unsigned long, unsigned long, void*)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::read_outbound(nghttp2_session*, int, unsigned char*, unsigned long, unsigned int*, nghttp2_data_source*, void*)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::materialize_headers(hyle::io::detail::ByteBuffer&, hyle::io::detail::StoredHeader*, hyle::io::HttpHeader*, unsigned long) [clone .isra.0]",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::make_request(hyle::io::detail::Http2SessionState&, hyle::io::detail::Http2StreamState&)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::append_field(hyle::io::detail::ByteBuffer&, void const*, unsigned long, unsigned long)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::queue_outbound_data(nghttp2_session*, nghttp2_frame*, unsigned char const*, unsigned long, nghttp2_data_source*, void*)",
+            1
+          ],
+          [
+            "hyle::io::detail::Http2SessionState::collect_garbage()",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::on_begin_headers(nghttp2_session*, nghttp2_frame const*, void*)",
+            1
+          ],
+          [
+            "hyle::io::http2_server_send_fixed(hyle::io::http2_server_send_fixed(hyle::mem::AllocatorRef, hyle::io::Http2ServerSession&, hyle::io::Http2StreamId, hyle::io::Http2ResponseHead const&, std::span<std::byte const, 18446744073709551615ul>, hyle::io::OperationOptions)::_ZN4hyle2io23http2_server_send_fixedENS_3mem12AllocatorRefERNS0_18Http2ServerSessionENS0_13Http2StreamIdERKNS0_17Http2ResponseHeadESt4spanIKSt4byteLm18446744073709551615EENS0_16OperationOptionsE.Frame*) [clone .actor]",
+            1
+          ],
+          [
+            "hyle::io::Http2BodyReader::valid() const",
+            1
+          ],
+          [
+            "hyle::io::http2_client_next_response(hyle::io::http2_client_next_response(hyle::mem::AllocatorRef, hyle::io::Http2ClientSession&, hyle::io::OperationOptions)::_ZN4hyle2io26http2_client_next_responseENS_3mem12AllocatorRefERNS0_18Http2ClientSessionENS0_16OperationOptionsE.Frame*) [clone .actor]",
+            1
+          ],
+          [
+            "hyle::io::detail::http2_body_consume(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, void*, hyle::Status (*)(void*, hyle::io::HttpBodyChunkView const&) noexcept, unsigned long, hyle::io::OperationOptions)",
+            1
+          ],
+          [
+            "hyle::io::Http2ClientSession::~Http2ClientSession()",
+            1
+          ],
+          [
+            "hyle::io::http2_client_send_fixed(hyle::io::http2_client_send_fixed(hyle::mem::AllocatorRef, hyle::io::Http2ClientSession&, hyle::io::Http2RequestHead const&, std::span<std::byte const, 18446744073709551615ul>, hyle::io::OperationOptions)::_ZN4hyle2io23http2_client_send_fixedENS_3mem12AllocatorRefERNS0_18Http2ClientSessionERKNS0_16Http2RequestHeadESt4spanIKSt4byteLm18446744073709551615EENS0_16OperationOptionsE.Frame*) [clone .actor]",
+            1
+          ],
+          [
+            "hyle::container::FlatHashMap<int, hyle::io::detail::Http2StreamState*, hyle::container::Hash<int, void>, std::equal_to<void>, hyle::mem::AllocatorRef>::try_insert_or_assign(int, hyle::io::detail::Http2StreamState*)",
+            1
+          ],
+          [
+            "hyle::sched::JoinHandle<int> hyle::sched::detail::spawn_task_impl<false, int>(hyle::sched::Scheduler&, unsigned int, hyle::mem::AllocatorRef, hyle::sched::Task<int>&&, hyle::sched::FiberLaunchOptions)",
+            1
+          ]
+        ],
+        "allocator_named_leaves": [
+          [
+            "mi_malloc",
+            9
+          ],
+          [
+            "__libc_calloc",
+            2
+          ],
+          [
+            "hyle::mem::(anonymous namespace)::system_alloc(void*, unsigned long, unsigned long)",
+            1
+          ],
+          [
+            "mi_bin",
+            1
+          ],
+          [
+            "mi_free_size",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::h2_malloc(unsigned long, void*)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::h2_free(void*, void*)",
+            1
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::h2_calloc(unsigned long, unsigned long, void*)",
+            1
+          ]
+        ],
+        "notify_condition_check_leaves": [
+          [
+            "hyle::sched::ConditionVariable::notify_all()",
+            7
+          ],
+          [
+            "hyle::io::detail::(anonymous namespace)::check_operation(hyle::io::detail::Http2SessionState const&, hyle::io::OperationOptions) [clone .isra.0]",
+            5
+          ]
+        ]
+      },
+      "reference": {
+        "samples": 634,
+        "lost": 0,
+        "top_leaves": [
+          [
+            "__memcpy_avx_unaligned_erms",
+            80
+          ],
+          [
+            "__libc_recv",
+            80
+          ],
+          [
+            "(anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)",
+            66
+          ],
+          [
+            "__memcmp_avx2_movbe",
+            63
+          ],
+          [
+            "__libc_send",
+            48
+          ],
+          [
+            "__GI___pthread_disable_asynccancel",
+            32
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::run_worker(unsigned int)",
+            32
+          ],
+          [
+            "__GI___pthread_enable_asynccancel",
+            30
+          ],
+          [
+            "(anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor]",
+            21
+          ],
+          [
+            "nghttp2_session_mem_send_internal",
+            18
+          ],
+          [
+            "nghttp2_session_get_stream",
+            8
+          ],
+          [
+            "nghttp2_map_find",
+            8
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::reschedule(hyle::sched::Scheduler::Impl::Worker&, hyle::sched::Fiber*)",
+            8
+          ],
+          [
+            "nghttp2_session_mem_recv2",
+            8
+          ],
+          [
+            "nghttp2_pq_top",
+            7
+          ],
+          [
+            "(anonymous namespace)::raw_consume_readable((anonymous namespace)::RawEndpoint&, bool&)",
+            7
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::find_task(hyle::sched::Scheduler::Impl::Worker&, unsigned int)",
+            6
+          ],
+          [
+            "mi_malloc",
+            6
+          ]
+        ],
+        "hyle_functions": [
+          [
+            "hyle::sched::Scheduler::Impl::run_worker(unsigned int)",
+            32
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::reschedule(hyle::sched::Scheduler::Impl::Worker&, hyle::sched::Fiber*)",
+            8
+          ],
+          [
+            "hyle::sched::Scheduler::Impl::find_task(hyle::sched::Scheduler::Impl::Worker&, unsigned int)",
+            6
+          ],
+          [
+            "hyle::sched::Fiber::yield()",
+            4
+          ],
+          [
+            "hyle::sched::Fiber::resume()",
+            3
+          ],
+          [
+            "hyle::mem::(anonymous namespace)::system_alloc(void*, unsigned long, unsigned long)",
+            1
+          ],
+          [
+            "hyle::platform::VmRegion::release()",
+            1
+          ],
+          [
+            "hyle::sched::Fiber::release_stack_()",
+            1
+          ],
+          [
+            "hyle::sched::Event::wait_for(std::chrono::duration<long, std::ratio<1l, 1000000000l> >)",
+            1
+          ]
+        ],
+        "allocator_named_leaves": [
+          [
+            "mi_malloc",
+            6
+          ],
+          [
+            "mi_free_size",
+            3
+          ],
+          [
+            "mi_free_block_mt.constprop.0",
+            2
+          ],
+          [
+            "_mi_page_retire.part.0",
+            2
+          ],
+          [
+            "__libc_calloc",
+            1
+          ],
+          [
+            "hyle::mem::(anonymous namespace)::system_alloc(void*, unsigned long, unsigned long)",
+            1
+          ],
+          [
+            "mi_bbitmap_try_find_and_clear_generic",
+            1
+          ],
+          [
+            "mi_bitmap_setN",
+            1
+          ],
+          [
+            "_mi_page_free_collect.constprop.0",
+            1
+          ],
+          [
+            "mi_page_map_set_range_prim",
+            1
+          ],
+          [
+            "mi_abandoned_page_try_reclaim",
+            1
+          ],
+          [
+            "mi_page_queue_find_free_ex",
+            1
+          ],
+          [
+            "mi_find_page",
+            1
+          ]
+        ],
+        "notify_condition_check_leaves": []
+      }
+    },
+    "finding": "Hyle read_body, flush_once, current_worker_index, notify_all and check_operation are sampled. No single allocator dominates this small leaf sample; allocator invocation frequency is not measured.",
+    "symbolization": "Installed perf was built without libelf/libdw/libbfd and emits raw DSO offsets. Matching existing ELF files were resolved offline with addr2line; original reports/data preserved. No tool installation or re-record.",
+    "limits": [
+      "perf lacks libelf; original reports retain raw offsets. addr2line resolves matching existing ELF DSO offsets offline.",
+      "Leaf samples only, no callgraph; optimized inline work is attributed to its enclosing symbol.",
+      "Only649/634 samples; no comparative percentage subtraction, exact latency decomposition, or zero-cost inference from absent symbols.",
+      "Name-based allocator/notification lists are incomplete classifications, not exhaustive cost totals.",
+      "Current task-clock profile uses the frozen cached product executable; no new product objects or profiler rebuild."
+    ],
+    "next_scope": "These are source-inspection targets, not a measured decomposition of the paired1.5-2.7% residual. Absent/low-sample symbols do not imply zero cost.",
+    "raw_data_copies": [
+      {
+        "source": "/root/hyle-scratch/http2-current-20261018/root-cause/hyle.cpu-clock.data",
+        "copy": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-root-cause/hyle.cpu-clock.data",
+        "bytes": 45868,
+        "sha256": "929640c111c41ab71f5e92507e181972b8869b6178fc3f8dac01dc5cddba7d6a"
+      },
+      {
+        "source": "/root/hyle-scratch/http2-current-20261018/root-cause/reference.cpu-clock.data",
+        "copy": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-root-cause/reference.cpu-clock.data",
+        "bytes": 45252,
+        "sha256": "6690b700ffd7718337999d99024a238bd13c8b2788d62ebfd33e4ae4da107272"
+      }
+    ],
+    "commands": [
+      "leaf-record-hyle.command.json",
+      "leaf-record-reference.command.json",
+      "leaf-report-hyle.command.json",
+      "leaf-report-reference.command.json",
+      "leaf-symbolize-commands.json"
+    ],
+    "symbolizer_source": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-root-cause/symbolize_leaf.py",
+      "sha256": "3e149c958ed355696269d68c2910157513f4199aaac46cf014cbd089bd02c760"
+    }
+  },
+  "timing": {
+    "schedule": [
+      [
+        "self-before",
+        "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "paired-self"
+      ],
+      [
+        "old-1",
+        "/root/hyle-scratch/http2-current-20261018/root-cause-product/candidate",
+        "paired"
+      ],
+      [
+        "new-1",
+        "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "paired"
+      ],
+      [
+        "new-2",
+        "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "paired"
+      ],
+      [
+        "old-2",
+        "/root/hyle-scratch/http2-current-20261018/root-cause-product/candidate",
+        "paired"
+      ],
+      [
+        "self-after",
+        "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "paired-self"
+      ]
+    ],
+    "scope": "Only duplicate read-notification change; both products already have lazy trailers and no first fixed-send resume. Shared consumer with no benchmark wrapper Task.",
+    "limit": "One predeclared six-process sequence, no retries/filtering. Complete blocks only, no independent-episode claim or confidence interval.",
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    },
+    "runs": [
+      {
+        "name": "self-before",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+          "--paired-self"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.04340607697984478,
+              "ratio_percent": 4.436190008165438
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.009822119158869214,
+              "ratio_percent": -0.9774039689337207
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.0067008956948360066,
+              "ratio_percent": 0.672339692778639
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.013551470003874577,
+              "ratio_percent": 1.3643707353121157
+            },
+            {
+              "block": 4,
+              "log_ratio": -0.026368558588898416,
+              "ratio_percent": -2.6023943790505464
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.061429986217143906,
+              "ratio_percent": -5.95812142887944
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.008063268520144717,
+              "ratio_percent": 0.8095864220152891
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.01110853950743973,
+              "ratio_percent": 1.1170468433305394
+            },
+            {
+              "block": 8,
+              "log_ratio": -0.0024182776795758087,
+              "ratio_percent": -0.2415356001725358
+            },
+            {
+              "block": 9,
+              "log_ratio": -0.0030722227016584114,
+              "ratio_percent": -0.3067508254673593
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.021225171875506987,
+              "ratio_percent": 2.145202801333921
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.011386422998547197,
+              "ratio_percent": 1.1451495057699765
+            }
+          ],
+          "median_ratio_percent": 0.7409630573969641,
+          "geomean_ratio_percent": 0.10280848868359856,
+          "range_percent": [
+            -5.95812142887944,
+            4.436190008165438
+          ],
+          "quartiles_percent": [
+            -0.4744141113339497,
+            1.1999548131555113
+          ],
+          "descriptive_iqr_percent": 1.674368924489461,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3073,
+              "involuntary_switches": 3084,
+              "minor_faults": 1,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3080,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "old-1",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-product/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 15,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.01238003376807928,
+              "ratio_percent": 1.245698360544985
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.007179782741569163,
+              "ratio_percent": -0.7154069676336625
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.029216318608414227,
+              "ratio_percent": 2.9647302257925445
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.034853090527505515,
+              "ratio_percent": 3.54675776295272
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.03201735987546872,
+              "ratio_percent": 3.2535429836013154
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.0038690083983645707,
+              "ratio_percent": 0.3876502673378523
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.0387732929480622,
+              "ratio_percent": 3.9534787067165795
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.04964174385006981,
+              "ratio_percent": 5.089453949643994
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.01684217541001143,
+              "ratio_percent": 1.6984804448953168
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.01737714071192986,
+              "ratio_percent": 1.7529001582224961
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.019193926841004405,
+              "ratio_percent": 1.9379314460670847
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.018593442511417813,
+              "ratio_percent": 1.8767376904276916
+            }
+          ],
+          "median_ratio_percent": 1.9073345682473881,
+          "geomean_ratio_percent": 2.2378197127770028,
+          "range_percent": [
+            -0.7154069676336625,
+            5.089453949643994
+          ],
+          "quartiles_percent": [
+            1.5852849238077338,
+            3.326846678439167
+          ],
+          "descriptive_iqr_percent": 1.741561754631433,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3077,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3078,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "new-1",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.024775883428575618,
+              "ratio_percent": 2.5085356162949513
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.004523313507465154,
+              "ratio_percent": -0.4513098732269035
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.036354653692990624,
+              "ratio_percent": 3.702356551784321
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.01717302170623647,
+              "ratio_percent": 1.7321325770169
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.018019268852657255,
+              "ratio_percent": 1.8182595411184297
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.05567069237653843,
+              "ratio_percent": 5.7249466095310275
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.036697734744507216,
+              "ratio_percent": 3.7379409691354795
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.009107127315349572,
+              "ratio_percent": 0.9148723376970992
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.013031651007007206,
+              "ratio_percent": 1.3116933023497452
+            },
+            {
+              "block": 9,
+              "log_ratio": -0.015610424110516163,
+              "ratio_percent": -1.5489212978746705
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.02594289225962143,
+              "ratio_percent": 2.6282338134584733
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.010243407996374465,
+              "ratio_percent": 1.0296051295453312
+            }
+          ],
+          "median_ratio_percent": 1.7751960590676648,
+          "geomean_ratio_percent": 1.9086749878021954,
+          "range_percent": [
+            -1.5489212978746705,
+            5.7249466095310275
+          ],
+          "quartiles_percent": [
+            1.0009219315832734,
+            2.896764498039935
+          ],
+          "descriptive_iqr_percent": 1.8958425664566618,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3080,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3086,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "new-2",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": -0.00011615700591871558,
+              "ratio_percent": -0.01161502599549031
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.02220928917129772,
+              "ratio_percent": 2.2457751414655505
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.0538973497461992,
+              "ratio_percent": 5.537626195345571
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.04185147582494686,
+              "ratio_percent": 4.2739595210899015
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.023306048771207344,
+              "ratio_percent": 2.357975694171803
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.033132017953020565,
+              "ratio_percent": 3.3686995474977546
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.027655561327221356,
+              "ratio_percent": 2.8041526173191516
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.01975639492042358,
+              "ratio_percent": 1.9952844066802558
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.007874400056896214,
+              "ratio_percent": 0.7905484682381747
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.015212530425761983,
+              "ratio_percent": 1.5328829955075867
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.03054728849172772,
+              "ratio_percent": 3.1018644212644295
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.036330456654971144,
+              "ratio_percent": 3.699847292278574
+            }
+          ],
+          "median_ratio_percent": 2.5810641557454774,
+          "geomean_ratio_percent": 2.6311583255212443,
+          "range_percent": [
+            -0.01161502599549031,
+            5.537626195345571
+          ],
+          "quartiles_percent": [
+            1.8796840538870885,
+            3.4514864836929595
+          ],
+          "descriptive_iqr_percent": 1.571802429805871,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3076,
+              "minor_faults": 2,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3082,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "old-2",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-product/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.027299283194329504,
+              "ratio_percent": 2.767532269673031
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.047852377400145585,
+              "ratio_percent": 4.901578545606811
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.031484006254835606,
+              "ratio_percent": 3.1984870160627565
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.007487372204666443,
+              "ratio_percent": 0.7515472665019574
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.028642398201518482,
+              "ratio_percent": 2.9056536201817895
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.059151450418996276,
+              "ratio_percent": 6.09359077610667
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.004926344618529477,
+              "ratio_percent": 0.49384990048819427
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.02299317460432526,
+              "ratio_percent": 2.3259555372039253
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.033885970351573924,
+              "ratio_percent": 3.4466640135118043
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.04555032582323637,
+              "ratio_percent": 4.660367448013088
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.03383644617716097,
+              "ratio_percent": 3.441541029737579
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.007117251720451634,
+              "ratio_percent": 0.7142639551265357
+            }
+          ],
+          "median_ratio_percent": 3.052070318122273,
+          "geomean_ratio_percent": 2.9615604853607063,
+          "range_percent": [
+            0.49384990048819427,
+            6.09359077610667
+          ],
+          "quartiles_percent": [
+            1.9323534695284335,
+            3.750089872137125
+          ],
+          "descriptive_iqr_percent": 1.8177364026086917,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3075,
+              "minor_faults": 1,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3079,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "self-after",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+          "--paired-self"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": -0.0006331632305522916,
+              "ratio_percent": -0.06329628250127345
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.031123853085610165,
+              "ratio_percent": -3.0644492029752812
+            },
+            {
+              "block": 2,
+              "log_ratio": -0.025243761113495466,
+              "ratio_percent": -2.4927801627976676
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.0015940496341428911,
+              "ratio_percent": 0.15953208066085484
+            },
+            {
+              "block": 4,
+              "log_ratio": -0.04143078990321847,
+              "ratio_percent": -4.0584265700468745
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.01630443832844719,
+              "ratio_percent": -1.6172240419852897
+            },
+            {
+              "block": 6,
+              "log_ratio": -0.005325567707690659,
+              "ratio_percent": -0.5311412012172609
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.003773557603370392,
+              "ratio_percent": 0.3780686436063133
+            },
+            {
+              "block": 8,
+              "log_ratio": -0.016550388237169145,
+              "ratio_percent": -1.6414183013420736
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.003517667024959259,
+              "ratio_percent": 0.35238612765837984
+            },
+            {
+              "block": 10,
+              "log_ratio": -0.008827642287825732,
+              "ratio_percent": -0.8788793053405028
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.023970247128593414,
+              "ratio_percent": 2.4259842765873807
+            }
+          ],
+          "median_ratio_percent": -0.7050102532788819,
+          "geomean_ratio_percent": -0.933813316376917,
+          "range_percent": [
+            -4.0584265700468745,
+            2.4259842765873807
+          ],
+          "quartiles_percent": [
+            -1.854258766705972,
+            0.2077455924102361
+          ],
+          "descriptive_iqr_percent": 2.0620043591162083,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3078,
+              "minor_faults": 2,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3078,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      }
+    ],
+    "identities": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/candidate",
+        "bytes": 897640,
+        "sha256": "8bcd1cc8791fe17a506ea517db8619e07a4fdf506a95126a6d8fc1bd435def54"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "bytes": 897640,
+        "sha256": "99feb9f6429b7a5e5631091b0800ad2ccac8bdb19e8a3e6126c36e0e61c99c2b"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+        "bytes": 111091,
+        "sha256": "c69c0200c6f950d292f51c5c8345f86a697ce75d3316d7281e5bacda39930a34"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+        "bytes": 57560,
+        "sha256": "96c1659810ca5d9e11610f937d619d122615f17cd4e3f3519ced9c0f255f6d63"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-root-cause/http2.before-notify.cc",
+        "bytes": 110955,
+        "sha256": "0c3c04bf086d5140bfc4733ca41bb9c8888a8d4964fa279cf04d7df97b43bfb1"
+      }
+    ],
+    "status": "completed"
+  },
+  "validation": {
+    "final_default": "16/16 passed",
+    "final_forced_epoll": "16/16 passed",
+    "new_oom": "Public custom allocator armed after complete body, first real trailer slots fail with ResourceExhausted; same session successfully serves subsequent stream. Earlier eager-allocation control has no failure at this injection point and its assertions fail, rather than proving an old functional bug.",
+    "fixture_failure": "Initial control error branch used a co_await inside boolean short circuit and reached invalid Task result; explicit response guard fixed the test failure path. Logs retained; not reported as product failure.",
+    "independent": "All72 final comparison block ratios/medians/geomeans/ranges/inclusiveIQR recomputed from six rawJSONL files and matched; no additional measurement.",
+    "scope": "WSL Linux caches; strict GCC14 Release warnings, only affected product/test/consumer TUs. No full current HEAD rebuild, Windows/macOS/TLS/sanitizer or other shapes."
+  },
+  "unresolved": "Sampled user-space candidates include read_body, flush_once, owner checks and condition notifications. Low-resolution leaf sample counts do not prove the full residual cost or make unobserved work free. Fixed peer still has fewer generic API contracts.",
+  "artifacts": {
+    "delete": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause/consumer.o",
+        "bytes": 153064,
+        "sha256": "79152caba6296f679434549cbf471f95ee7bc0397cfa5415059e9d09d5ac54d5"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause/profile-consumer",
+        "bytes": 900720,
+        "sha256": "93cae1b4f4de9e42acde791dfe6112a977e7a3325ab5743e587d5a1e0b5d008f"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-alloc/new",
+        "bytes": 901152,
+        "sha256": "e5ca6dff6d71131be63fb78a13a1b84c3c40d25f726f59fd7593963d009a423b"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-alloc/new.o",
+        "bytes": 154240,
+        "sha256": "78efd0810df52cd333034ff9c90489dca1ca0291bec62cbfeb022ddb33cacb0f"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-alloc/old",
+        "bytes": 902016,
+        "sha256": "dbf63273b2272e45c848a5ad9447f0351dd56d9aca313d1608701175077e3ae4"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-alloc/old.o",
+        "bytes": 157328,
+        "sha256": "23919ce270c029fc2d6ccaa50369fabd45eb4c8e9da0bb1c48bd68b52dc8e405"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/allocation-resume-new",
+        "bytes": 901448,
+        "sha256": "6aaa604f1c011507587f73a1316b0abca360e4696e0bd1eb89e8a723cc3d61f6"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/allocation-resume-old",
+        "bytes": 901464,
+        "sha256": "a473ca69ecdbccb045c929cea506f44d4d7cdef77e97ecc3691a9cb61555b463"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/candidate",
+        "bytes": 897640,
+        "sha256": "8bcd1cc8791fe17a506ea517db8619e07a4fdf506a95126a6d8fc1bd435def54"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/control",
+        "bytes": 897656,
+        "sha256": "0cd420db0dd5870d6d7f1ed3a2cc1dddc7539e3d62b1a12644b8e7698f25a647"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/http2.o",
+        "bytes": 224664,
+        "sha256": "d662c9111c048c4dd37f3b3f61755bbe9f3cbedac0913b6d6e490d58b9515595"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/resume-probe.o",
+        "bytes": 3616,
+        "sha256": "d35f80652a86df480f640405d5eba11feae8be0d01f05aeab4373bb53e5c034c"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/tests-candidate",
+        "bytes": 1588880,
+        "sha256": "166b5daec7eff898db29879522279556e390c6ec6fe0c997d5991e01525dcfba"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/tests-control",
+        "bytes": 1588888,
+        "sha256": "037dce0c752a8debe5236e0da3c70a0c8b84a815875f7691b189886f6e5c1d09"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/after.o",
+        "bytes": 227056,
+        "sha256": "853d75adffb1e3478c616f536c1f77f92b35f9f07629acd8f016d77333558843"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/before.o",
+        "bytes": 227168,
+        "sha256": "79214f032c6adb9321f0eba4c962eb35ae03d4384869e9fe2a6e0ff3cc7667d3"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/diagnostic-after",
+        "bytes": 901400,
+        "sha256": "8ac65af9d8bfb314d55bdae48c590cc4314adf2fbb596dc24eac064e1b835037"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/diagnostic-before",
+        "bytes": 901400,
+        "sha256": "18ad385c24533a9a4d0232222d06e670445adf87d54601bacd45798fee531a8e"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/report.o",
+        "bytes": 3312,
+        "sha256": "83c4508ae14353dcd3d3e251191c5a247af11466a9163bf36b31726d1d9b9d40"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/dead-submit-final/http2.o",
+        "bytes": 224784,
+        "sha256": "90fb3ebf7e71a9ee74789aaec62866c08c931a0b96413994aa532a5cb9d99302"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2_test.o",
+        "bytes": 654624,
+        "sha256": "debb22bed71cd36bbda594158905dc547ca59655ed62c81f8b4a42c0431f75d3"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/consumer.o",
+        "bytes": 154208,
+        "sha256": "bc2d83d4d00f28cfa136e7e4c466aadba5a4680ceb57f3f1ea1ab56a56388a06"
+      }
+    ],
+    "retain": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+        "bytes": 387104,
+        "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/nanobench.o",
+        "bytes": 283672,
+        "sha256": "43b16d764541dc1460c6aba273360f40403bcc35ee2feb37461f7f4d29984987"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "bytes": 897640,
+        "sha256": "99feb9f6429b7a5e5631091b0800ad2ccac8bdb19e8a3e6126c36e0e61c99c2b"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/http2.o",
+        "bytes": 224576,
+        "sha256": "91086705edabe231dc952bf2c6cb40fc9d1a13e2ca5eb5128f8ffaed405b5e62"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/tests",
+        "bytes": 1588880,
+        "sha256": "3f50e4b0ec733f62ef8c4b5f50b88f0b0b69180e2d4d2957a79aec5ab4e7d464"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/consumer.o",
+        "bytes": 151104,
+        "sha256": "62a132158e443d6fae3df9c9ea8b4ccba19e71a21aeac9ffef6042d03df5b2b2"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/http2_test.o",
+        "bytes": 697832,
+        "sha256": "e0aac0c23d5c6666a7d23c9b57521f4844bada7b6717dec4a57d29d821badab1"
+      }
+    ],
+    "scope": "Exact regular generated files only; retain current reusable caches, all source/raw/log/map/data/SDK and directories."
+  },
+  "cleanup": {
+    "status": "completed",
+    "deleted_generated_files": 22,
+    "deleted_bytes": 13466728,
+    "retained_verified_current_cache_files": 7,
+    "directories_removed": 0,
+    "script_sha256": "14d9139ba1dc0610a5bd21b54b13ee194a6277980bc22152ebc9d6bd67dee5f5",
+    "archive": "cleanup.zip",
+    "archive_sha256": "49ff4a71e7eafe29f64ca9ffda2b33d0ec5e406524c04231a3571941ef53480b",
+    "note": "Written before execution; exact paths, regular non-symlink file identities, sizes, SHA and running process state verified. Already executed; do not rerun."
+  }
+}

@@ -1027,6 +1027,153 @@ TEST(IoHttp2, StreamsFragmentedBodiesAndPublishesTrailersAtEnd) {
   EXPECT_EQ(result->response_trailer, "response");
 }
 
+struct TrailerOomResult {
+  bool fail_next_allocate = false;
+  unsigned failed_allocations = 0;
+  std::atomic<bool> oom_reported{false};
+  std::atomic<bool> server_ok{false};
+  std::atomic<bool> client_ok{false};
+  Event body_received;
+  Event client_finished;
+
+  AllocatorRef session_allocator() noexcept {
+    return AllocatorRef(
+        +[](void *opaque, std::size_t size, std::size_t alignment) noexcept -> void * {
+          auto &self = *static_cast<TrailerOomResult *>(opaque);
+          if (self.fail_next_allocate) {
+            self.fail_next_allocate = false;
+            ++self.failed_allocations;
+            return nullptr;
+          }
+          return system_allocator().allocate(size, alignment);
+        },
+        +[](void *, void *pointer, std::size_t size, std::size_t alignment) noexcept {
+          system_allocator().deallocate(pointer, size, alignment);
+        },
+        +[](void *, void *pointer, std::size_t old_size, std::size_t new_size,
+            std::size_t alignment) noexcept -> void * {
+          return system_allocator().reallocate(pointer, old_size, new_size, alignment);
+        }, this);
+  }
+};
+
+Task<int> trailer_oom_server(AllocatorRef, TcpListener *listener,
+                             TrailerOomResult *result) noexcept {
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted.has_value())
+    co_return 0;
+  auto made = Http2ServerSession::create(result->session_allocator(),
+                                         std::move(*accepted));
+  if (!made.has_value())
+    co_return 0;
+  Http2ServerSession session = std::move(*made);
+  {
+    auto next = co_await session.accept(budget());
+    if (!next.has_value() || !next->has_value())
+      co_return 0;
+    Http2IncomingRequest request = std::move(**next);
+    std::size_t received = 0;
+    auto sink = [&](const hyle::io::HttpBodyChunkView &chunk) noexcept -> Status {
+      constexpr std::string_view expected = "abcdef";
+      if (received + chunk.bytes.size() > expected.size() ||
+          std::memcmp(chunk.bytes.data(), expected.data() + received,
+                      chunk.bytes.size()) != 0)
+        return Status::DataLoss("unexpected body before trailer OOM");
+      received += chunk.bytes.size();
+      if (received == expected.size() && !chunk.bytes.empty()) {
+        // consume's frame already exists; only the session's next allocate
+        // fails. Reallocation and the allocator used by the client pass through.
+        result->fail_next_allocate = true;
+        result->body_received.signal();
+      }
+      return Status::Ok();
+    };
+    Status consumed = co_await request.body.consume(sink, 4096, budget());
+    const bool failure_pending = result->fail_next_allocate;
+    result->fail_next_allocate = false;
+    result->oom_reported.store(consumed.IsResourceExhausted());
+    if (!consumed.IsResourceExhausted() || result->failed_allocations != 1 ||
+        failure_pending || received != 6)
+      co_return 0;
+  }
+  auto next = co_await session.accept(budget());
+  if (!next.has_value() || !next->has_value() ||
+      (**next).head.path() != "/after-trailer-oom" ||
+      !(co_await (**next).body.discard(budget())).ok() ||
+      !(co_await session.send_response((**next).stream_id,
+          Http2ResponseHead{.status = 204}, std::span<const std::byte>{},
+          budget())).ok())
+    co_return 0;
+  result->server_ok.store(true);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
+  co_return 0;
+}
+
+Task<int> trailer_oom_client(AllocatorRef allocator, IoContext *io,
+                             std::uint16_t port, TrailerOomResult *result) noexcept {
+  SignalOnReturn finish{&result->client_finished};
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value())
+    co_return 0;
+  TcpStream transport = std::move(*opened);
+  if (!(co_await transport.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget())).ok())
+    co_return 0;
+  auto made = Http2ClientSession::create(allocator, std::move(transport));
+  if (!made.has_value())
+    co_return 0;
+  Http2ClientSession session = std::move(*made);
+  // Reuse exact initial headers as trailers so HPACK indexes the fields;
+  // the injected failure targets HYLE slots rather than native literal storage.
+  Http2RequestHead head{.method = "POST", .scheme = "http",
+                        .authority = "127.0.0.1", .path = "/trailer-oom",
+                        .headers = kRequestTrailers};
+  auto started = co_await session.start_request(head, 6, budget());
+  if (!started.has_value() ||
+      !(co_await started->body.write(bytes("abcdef"), budget())).ok() ||
+      !result->body_received.wait_for(hyle::time::Duration(5'000'000'000)))
+    co_return 0;
+  Status finished = co_await started->body.finish(kRequestTrailers, budget());
+  if (!finished.ok() && !finished.IsDataLoss())
+    co_return 0;
+  head.path = "/after-trailer-oom";
+  auto submitted = co_await session.send_request(
+      head, std::span<const std::byte>{}, budget());
+  if (!submitted.has_value())
+    co_return 0;
+  auto response = co_await session.read_response(*submitted, budget());
+  if (!response.has_value() || response->head.status() != 204)
+    co_return 0;
+  Status discarded = co_await response->body.discard(budget());
+  result->client_ok.store(discarded.ok());
+  co_return 0;
+}
+
+TEST(IoHttp2, TrailerSlotOomIsStreamLocalAndSessionRemainsUsable) {
+  Scheduler scheduler(2, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto listener_result = bind_test_listener(io);
+  ASSERT_TRUE(listener_result.has_value());
+  TestListener listener = std::move(*listener_result);
+  auto result = std::make_unique<TrailerOomResult>();
+  auto server = std::make_unique<Drive>();
+  auto client = std::make_unique<Drive>();
+  server->task = trailer_oom_server(system_allocator(), &listener.listener, result.get());
+  client->task = trailer_oom_client(system_allocator(), &io, listener.port, result.get());
+  Fiber server_fiber(kDefaultStackSize, drive, server.get());
+  Fiber client_fiber(kDefaultStackSize, drive, client.get());
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+  EXPECT_TRUE(result->oom_reported.load());
+  EXPECT_TRUE(result->server_ok.load());
+  EXPECT_TRUE(result->client_ok.load());
+  EXPECT_EQ(result->failed_allocations, 1u);
+  EXPECT_FALSE(result->fail_next_allocate);
+}
+
 struct ResetResult {
   std::atomic<bool> cancelled_before_io{false};
   std::atomic<bool> deadline_before_io{false};
