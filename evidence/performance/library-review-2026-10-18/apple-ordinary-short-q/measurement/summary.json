@@ -1,0 +1,345 @@
+{
+  "status": "Fixed space and sole ABBA latency complete; no further compilation or measurement",
+  "scope": "Current ordinary typed Apple attention, same native MLX SDK, old vs frozen Q128 checked-owner candidate; one fixed input, not peer ranking or all-shape precision validation",
+  "fixed_point": {
+    "B": 1,
+    "Hq": 8,
+    "Hkv": 2,
+    "Dq": 256,
+    "Dv": 256,
+    "Q": 513,
+    "KV": 8193,
+    "layout": "BSHD",
+    "ports": "Q/K/V F32; rank2 Boolean[Q,KV] mask",
+    "accumulation": "F32",
+    "scale": 0.0625,
+    "causal": false,
+    "input": "QK0; V alternates +1.25/-1.25 by global key, identical across head/channel; mask s<=KV-Q+t"
+  },
+  "actual_hardware_toolchain": "Mac16,12 Air; Apple M4 8-GPU-core,16GiB RAM; macOS27.0.1(26A434), arm64; Apple clang21.0.0(2100.3.34.2),SDK27.0; full raw hardware-toolchain.stdout.txt retained",
+  "build": {
+    "fresh_consumer_TUs": 1,
+    "successful_links": 2,
+    "product_or_native_TU_recompiled": false,
+    "sdk_copied_or_rebuilt": false,
+    "source": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/consumer.cc",
+      "bytes": 10095,
+      "sha256": "bd10a55f2143d682d3afcceb5b34ff2f0bd08c9336cd98ef170a9138121e83bb"
+    },
+    "cached8_host_objects": {
+      "baseline": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-context.o",
+          "bytes": 181672,
+          "sha256": "8d40802ad526811d9955c09809524f3e1e01cf1a9db97fd84d1eb0b27e29c937"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-operations.o",
+          "bytes": 70592,
+          "sha256": "46f9513654a2b2a52caeace1df7cf0846bee378bd5eeb43e955427ff94858ca9"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-force-scale/apple_tensor.o",
+          "bytes": 126016,
+          "sha256": "cb31c6ec728dfb5fd090468c6baf94e50698d62a364af4d8e5fe330e71c6c8d0"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-graph.o",
+          "bytes": 89144,
+          "sha256": "ae0de519f4375f4899ccce885ff0b5e5fe40e82025259629152ef01723f03e03"
+        }
+      ],
+      "candidate": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-context.o",
+          "bytes": 182048,
+          "sha256": "0ad035588062f078880e81421e75e3715233d3c7f325b3c3d368557da7bd2be2"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-operations.o",
+          "bytes": 72016,
+          "sha256": "2fa2f5bd746a5db5fbc0b19749397efd7fbc0d257435e8083bdd33dc96f439e3"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-tensor.o",
+          "bytes": 129432,
+          "sha256": "62e4a8b2668fe35811f5992d0ed48d29cc8ffbbc2b24d1fcc4b4a53fb4f40715"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+          "bytes": 87824,
+          "sha256": "13b405c34bb446496563f51db9b91439ea6004d34b00d833edcba6e25d197de6"
+        }
+      ]
+    },
+    "built_artifacts_and_maps": {
+      "artifacts": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/consumer.o",
+          "bytes": 44400,
+          "sha256": "0352a37a834e8a9726bc6a1774324a4cf1bd91bcd39e356c201306e63db774f6"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/baseline",
+          "bytes": 9574136,
+          "sha256": "7c03a1bf61fde8b5184b499bd037f8093008407c82e5afd8899975f03ce48c59"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/candidate",
+          "bytes": 9574568,
+          "sha256": "fd99ddf0e6e3eb55e0ded40b81b2c0798b23a9bdf9ea8e3284e413dc81dd8d61"
+        }
+      ],
+      "maps": {
+        "baseline": {
+          "identity": {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/baseline.map",
+            "bytes": 2664748,
+            "sha256": "8425457a082977654f9f6981e0d469dc42c4ff12b0c2b302979c3102699bea7f"
+          },
+          "complete_own_host_group": true,
+          "foreign_host_group_present": false,
+          "original_mlx_archive_selected": true
+        },
+        "candidate": {
+          "identity": {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/candidate.map",
+            "bytes": 2665228,
+            "sha256": "6918a1914a932c25ec877f0daff667a7b41f22260c67707290fc2cc115f846ad"
+          },
+          "complete_own_host_group": true,
+          "foreign_host_group_present": false,
+          "original_mlx_archive_selected": true
+        }
+      }
+    },
+    "limit": "Native archives reused at recorded exact paths; their sizes were rechecked, not all SDK archive payloads rehashed. Eight small host objects and executable/object/maps have actual SHA identities."
+  },
+  "original_loader_failures": {
+    "count": 2,
+    "results": {
+      "baseline": {
+        "exit": 4,
+        "json_rows": [
+          {
+            "failed": true,
+            "completed_timed_samples_ns": []
+          }
+        ]
+      },
+      "candidate": {
+        "exit": 4,
+        "json_rows": [
+          {
+            "failed": true,
+            "completed_timed_samples_ns": []
+          }
+        ]
+      }
+    },
+    "stderr": "Failed to load the default metallib. library not found library not found library not found library not found",
+    "not_measurements": "Both exit4 occurred before GPU computation, oracle or memory sampling; preserve stdout/stderr/commands. No numerical or space conclusion from them.",
+    "correction": {
+      "reason": "Both original processes failed before measurement while loading default metallib",
+      "previous_loader_failures_preserved": 2,
+      "link": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/mlx.metallib",
+      "target": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/mlx.metallib",
+      "no_library_copy_or_rebuild": true,
+      "cwd_after_fix": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement",
+      "no_input_budget_or_binary_change": true
+    },
+    "no_binary_input_budget_change_or_recompile": true
+  },
+  "valid_space_processes": 2,
+  "space_old": {
+    "mode": "space",
+    "dtype": "F32",
+    "accumulation": "F32",
+    "layout": "BSHD",
+    "B": 1,
+    "H": 8,
+    "Hkv": 2,
+    "D": 256,
+    "Q": 513,
+    "KV": 8193,
+    "causal": false,
+    "scale": 0.0625,
+    "mask": "Boolean[Q,KV],s<=KV-Q+t",
+    "input": "QK0,V alternating +1.25/-1.25, no channel bias",
+    "caller_port_requested_bytes": 41964033,
+    "output_requested_bytes": 4202496,
+    "theoretical_one_full_F32_score_bytes": 134496288,
+    "active_before": 42008584,
+    "cache_before": 0,
+    "active_after_with_output_lease": 46219272,
+    "peak": 184942600,
+    "peak_minus_active_before": 142934016,
+    "cache_after": 138723328,
+    "max_abs_error": 1.5703073308901208e-11,
+    "max_error_over_original_budget": 7.847738871411789e-06,
+    "checked_elements": 1050624,
+    "oracle_passed": true
+  },
+  "space_candidate": {
+    "mode": "space",
+    "dtype": "F32",
+    "accumulation": "F32",
+    "layout": "BSHD",
+    "B": 1,
+    "H": 8,
+    "Hkv": 2,
+    "D": 256,
+    "Q": 513,
+    "KV": 8193,
+    "causal": false,
+    "scale": 0.0625,
+    "mask": "Boolean[Q,KV],s<=KV-Q+t",
+    "input": "QK0,V alternating +1.25/-1.25, no channel bias",
+    "caller_port_requested_bytes": 41964033,
+    "output_requested_bytes": 4202496,
+    "theoretical_one_full_F32_score_bytes": 134496288,
+    "active_before": 42008592,
+    "cache_before": 0,
+    "active_after_with_output_lease": 46219280,
+    "peak": 80822288,
+    "peak_minus_active_before": 38813696,
+    "cache_after": 39108608,
+    "max_abs_error": 1.5703073308901208e-11,
+    "max_error_over_original_budget": 7.847738871411789e-06,
+    "checked_elements": 1050624,
+    "oracle_passed": true
+  },
+  "space_extra_peak_reduction_fraction": 0.7284502521779,
+  "memory_interpretation": "Logical caller ports41,964,033B and output4,202,496B reported separately. MLX peak minus prepared/bound live baseline includes output/private/transient native allocations; not total VRAM, allocator reserve or proof of one-block hard cap. Metrics sampled with output lease alive; cache cleared and peak reset only once before the one cold submission, never between chunks.",
+  "latency": {
+    "order": [
+      "old",
+      "new",
+      "new",
+      "old"
+    ],
+    "total_processes": 4,
+    "total_timed_samples": 36,
+    "per_process_submissions": "2warm +1untimed full oracle +9timed +1untimed full oracle =13",
+    "interval": "submit through checked wait return; excludes result/lease destruction and complete oracle; setup/prepare/bind outside",
+    "processes": [
+      {
+        "index": 0,
+        "arm": "baseline",
+        "exit": 0,
+        "all_samples_ns_in_execution_order": [
+          24755292,
+          24695083,
+          22330833,
+          23570333,
+          24227542,
+          22599875,
+          23293167,
+          24304084,
+          22716500
+        ],
+        "median_ns": 23570333,
+        "mean_ns": 23610301,
+        "minimum_ns": 22330833,
+        "maximum_ns": 24755292,
+        "before_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "after_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "checked_elements_each": 1050624,
+        "oracle_passed": true
+      },
+      {
+        "index": 1,
+        "arm": "candidate",
+        "exit": 0,
+        "all_samples_ns_in_execution_order": [
+          24223292,
+          22777125,
+          24915583,
+          24264125,
+          22718292,
+          24703709,
+          24496375,
+          24172417,
+          22840291
+        ],
+        "median_ns": 24223292,
+        "mean_ns": 23901245.444444444,
+        "minimum_ns": 22718292,
+        "maximum_ns": 24915583,
+        "before_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "after_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "checked_elements_each": 1050624,
+        "oracle_passed": true
+      },
+      {
+        "index": 2,
+        "arm": "candidate",
+        "exit": 0,
+        "all_samples_ns_in_execution_order": [
+          22760958,
+          24760084,
+          24123292,
+          24854584,
+          22681334,
+          24149625,
+          24999042,
+          24938166,
+          22712542
+        ],
+        "median_ns": 24149625,
+        "mean_ns": 23997736.333333332,
+        "minimum_ns": 22681334,
+        "maximum_ns": 24999042,
+        "before_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "after_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "checked_elements_each": 1050624,
+        "oracle_passed": true
+      },
+      {
+        "index": 3,
+        "arm": "baseline",
+        "exit": 0,
+        "all_samples_ns_in_execution_order": [
+          22555833,
+          23177916,
+          24171000,
+          22661958,
+          23173833,
+          24330375,
+          24550458,
+          22729542,
+          23101042
+        ],
+        "median_ns": 23173833,
+        "mean_ns": 23383550.777777776,
+        "minimum_ns": 22555833,
+        "maximum_ns": 24550458,
+        "before_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "after_full_oracle_max_abs_error": 1.5703073308901208e-11,
+        "checked_elements_each": 1050624,
+        "oracle_passed": true
+      }
+    ],
+    "adjacent_order_pairs": [
+      {
+        "old_process_index": 0,
+        "new_process_index": 1,
+        "median_candidate_relative_change": 0.027702578491360264,
+        "mean_candidate_relative_change": 0.012322775742860781
+      },
+      {
+        "old_process_index": 3,
+        "new_process_index": 2,
+        "median_candidate_relative_change": 0.042107492532633684,
+        "mean_candidate_relative_change": 0.02626570966028119
+      }
+    ],
+    "no_AA_retry_filtering_pooling_or_extra_shape": true
+  },
+  "precision_boundary": "Both one-shot space outputs and all eight before/after latency full-output checks pass unchanged abs2e-6+rel6e-6 against the FP64 prefix-mean formula, each over1,050,624 elements. This QK0/no-channel-bias fixed space input differs from the preserved nonzero-QK/channel-bias stress failure; no stress input/tolerance was changed and that failure is not called passed.",
+  "tradeoff": "Measured extra active peak drops72.8450%; candidate adjacent-pair means increase1.2323%/2.6266%, medians2.7703%/4.2107%. Keep all36 samples and overlap/drift; this is a space/time tradeoff at one fixed point, not free speedup, statistically universal regression or tokens/s evidence.",
+  "failed_stress_reference": "../summary.json and ../diagnostic/ remain separate evidence; frozen candidate source in ../candidate and identities in ../frozen-source-sha256.json",
+  "canonical_product_or_README_modified_by_this_measurement": false,
+  "cleanup": "All three new executable/object files retained for now at root instruction; cleanup-candidates.json is identity only, not deletion authorization. No test.ps1 or cleanup executed."
+}

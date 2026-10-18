@@ -9,10 +9,10 @@ namespace hyle::compute::apple::detail {
 
 // Compute-owned, cold region boundary used by the native Graph compiler.
 // It deliberately carries neither Graph types nor a per-kernel executor.
-enum class RegionKind { kMlx, kGgml, kSinkBlocks };
+enum class RegionKind { kMlx, kGgml, kAttentionBlocks };
 
 HYLE_COMPUTE_ROUTE_APPLE_API bool
-is_mlx_sink_blocks(const Operation &, std::span<const TensorDesc>) noexcept;
+is_mlx_attention_blocks(const Operation &, std::span<const TensorDesc>) noexcept;
 
 struct Region final {
   RegionKind kind = RegionKind::kMlx;

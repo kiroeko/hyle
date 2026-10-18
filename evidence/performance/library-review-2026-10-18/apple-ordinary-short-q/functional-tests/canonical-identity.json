@@ -1,0 +1,83 @@
+[
+  {
+    "kind": "product",
+    "path": "include/hyle/compute/detail/apple_plan.h",
+    "canonical_bytes": 2611,
+    "canonical_sha256": "f82b157754ec86fbac8e5742a64d3dafd41a28fcc4b5f89b1c94341b8f438500",
+    "reference_sha256": "f82b157754ec86fbac8e5742a64d3dafd41a28fcc4b5f89b1c94341b8f438500",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "product",
+    "path": "src/compute_route_apple/apple_context.cc",
+    "canonical_bytes": 46895,
+    "canonical_sha256": "339579d81831fcb848bb5c039dab8e3c103489013e0ef99ecb9d1135f991f602",
+    "reference_sha256": "339579d81831fcb848bb5c039dab8e3c103489013e0ef99ecb9d1135f991f602",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "product",
+    "path": "src/compute_route_apple/apple_operations.cc",
+    "canonical_bytes": 19731,
+    "canonical_sha256": "f70f8461520e92b451db53a956b25aa4bdda1028b9b65fafbc1f177f84c0c3b4",
+    "reference_sha256": "f70f8461520e92b451db53a956b25aa4bdda1028b9b65fafbc1f177f84c0c3b4",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "product",
+    "path": "src/compute_route_apple/apple_tensor.cc",
+    "canonical_bytes": 35414,
+    "canonical_sha256": "2f2be48660f9dd7809dd04dad7e1b63f40567621f49000386938bb7ca972c5d4",
+    "reference_sha256": "2f2be48660f9dd7809dd04dad7e1b63f40567621f49000386938bb7ca972c5d4",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "product",
+    "path": "src/compute_route_apple/apple_tensor.h",
+    "canonical_bytes": 634,
+    "canonical_sha256": "d7b5c818edfb984601ff6bd70cdabe25542f7ce89ae2e99061f9fbe0b27c684c",
+    "reference_sha256": "d7b5c818edfb984601ff6bd70cdabe25542f7ce89ae2e99061f9fbe0b27c684c",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "product",
+    "path": "src/graph_route_apple/apple_lowering.cc",
+    "canonical_bytes": 19858,
+    "canonical_sha256": "c2e12b16be7dd148a4eb0eebf85dccfe3cf25ed1ddd39800fef2992d281330c8",
+    "reference_sha256": "c2e12b16be7dd148a4eb0eebf85dccfe3cf25ed1ddd39800fef2992d281330c8",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "test",
+    "path": "tests/compute_route_apple/tensor_test_support.h",
+    "canonical_bytes": 10571,
+    "canonical_sha256": "c941b2840d0a2a2363f8047ca771c8b02dc37df7ebf781a22022893ec32c433d",
+    "reference_sha256": "c941b2840d0a2a2363f8047ca771c8b02dc37df7ebf781a22022893ec32c433d",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "test",
+    "path": "tests/compute_route_apple/attention_test.cc",
+    "canonical_bytes": 21015,
+    "canonical_sha256": "e6dafb3df6657f24044b3dfa82f8f27f1f9e8e6089325df832d25bdf45547ecf",
+    "reference_sha256": "e6dafb3df6657f24044b3dfa82f8f27f1f9e8e6089325df832d25bdf45547ecf",
+    "byte_identical": true,
+    "newline_only_difference": false
+  },
+  {
+    "kind": "test",
+    "path": "tests/graph_route_apple/tensor_test.cc",
+    "canonical_bytes": 14901,
+    "canonical_sha256": "7835246f97c5e72c21e4b6532c26368c8ec6c5cf913512ca2686c0d759c05385",
+    "reference_sha256": "7835246f97c5e72c21e4b6532c26368c8ec6c5cf913512ca2686c0d759c05385",
+    "byte_identical": true,
+    "newline_only_difference": false
+  }
+]

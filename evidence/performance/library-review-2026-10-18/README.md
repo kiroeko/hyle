@@ -13,7 +13,7 @@ Apple Sink最终采用单owner Job内同步Q128数学分块：固定点extra act
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
 CUDA长域F32探针的原1e-5预算仍失败，现已定位到原生PV长归约舍入；同native对照输出完全相同，没有证实Hyle额外精度损失，见下。
 普通CPU及多节点CacheEncode已复用生命周期，普通/私有paged/ragged causal冷mask已移除。动态PagedRead只有私有单节点入口，不能将其arena排除认定为当前普通多节点空间缺陷，见末尾源审。
-Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048失败形状在新路线通过；旧失败记录仍保留。
+Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048失败形状在新路线通过；显式Bool短Q的Q128 owner分块另省72.8%额外峰值，固定点均值时延增加1.2–2.6%，见末尾。旧失败记录仍保留。
 其余queue政策和旧小输仍缺当前同责数据。CPU/Vulkan math attention、Apple受限长Q fallback与CPU Hadamard冷矩阵已修；bounded、ST512、实际Folly SPSC及Sharded非满载当前有限trace均未复现输项。
 已确认的源码缺口与已实测输项分列，不能据64个factor扫描称所有shape已穷尽。
 
@@ -35,7 +35,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | ConcurrentHashMap erase重复hash | [erase](../../../include/hyle/container/concurrent_hash_map.h) 先hash选shard，再由table.erase重算同key | 复用私有prehashed路径，锁/回收/析构顺序不变。计数2→1；长key形状两对改善与AA漂移见下，不声称外部赢 |
 | CPU / Vulkan Concat重复复制前缀 | 两个provider仍线性拼接；CPU保留全部中间payload，Vulkan虽有gallocr复用，复制工作仍为二次项 | 已移植平衡树，保持各自dtype/stride受理域；CPU修正重复ports元数据预算。实测与空间边界见下 |
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
-| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；后补已知无NAX硬件的F32 D256 causal及D192 tile，两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。其余域仍待补 |
+| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；已知无NAX硬件的F32 D256 causal及D192 tile两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。F32 D256短Q/rank2 Bool另以checked Q128块省72.8%额外峰值，均值时延增加1.2–2.6%；其余域待补 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的长Q收益域改用单Job同步Q128块，原固定extra peak1344307200→285310976 B（−78.8%），同工时延未见退步。Q16图/compact负候选拒绝；guard外及opaque compile保留原路线 |
 | HTTP2大body背压holdout | 唯一4×256 KiB holdout最新NO_COPY候选仍慢8.22%/11.08%；同轮旧控制慢11.69%/15.35%，存在peer漂移与顺序差异 | DATA绕过native bounce、一次复制到原owned wire，保留所有flush/取消/借用合同。两序幅度不稳，不声称统一提速；残差保留，通用职责与手工单loop策略分开调查 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
@@ -467,7 +467,7 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 | CPU ggml / Vulkan Concat | 已改平衡树；CPU owned payload126→20 MiB，Vulkan真实gallocr容量11.25→7.75 MiB | 定向测试与唯一代表形状完成，见下；未测完整引擎或所有shape |
 | CPU / Vulkan ordinary causal SDPA | 两者受理域内的内部平方mask已消除；CPU私有paged/ragged非boxed域也复用HYCA | HYCA保持原native vector/tiled/split及Half PV，独立于boxed reference路线；不外推其它dtype、ISA或非有限值 |
 | CPU Sink与混合旧pin F32 math / 多节点 | 分块recipe、普通多节点与多节点CacheEncode已接官方gallocr与既有可恢复OOM补丁，cold reserve保留kPrepared | 两pin相关回归通过；Sink冷私有请求156.48→48.97 MB，64步Neg约67.05→3.09 MB，末端Q8约68.11→3.10 MB。动态PagedRead是私有单节点边界，未发现当前可达的深链空间缺陷 |
-| Apple ordinary SDPA | F16/BF16受限无mask域及已知无NAX硬件F32 D192、D256 causal已融合；其它GPU长Q静态fallback以原数学16行分块 | typed入口拒绝CPU stream，不列为合法慢路径；显式mask、wide/不同Dv、causal Q>KV及未知/新架构仍需分开。短Q数学分块负候选已撤回，不能称所有完整scores空间已消除 |
+| Apple ordinary SDPA | F16/BF16受限无mask域及已知无NAX硬件F32 D192、D256 causal已融合；GPU长Q静态fallback以原数学16行分块；F32 D256短Q/rank2 Bool已接checked Q128 owner | typed入口拒绝CPU stream，不列为合法慢路径；其它显式mask、wide/不同Dv、causal Q>KV及未知/新架构仍需分开。旧短Q causal负候选已撤回，新Bool空间收益伴有时延代价；完整scores空间未全部消除 |
 | CPU Hadamard冷常量 | W²冷矩阵已由原生unary桥移除 | [前置源码复核](cpu-hadamard/source-feasibility.json)的API缺口已补；实际两pin/baseline/AVX2结果见下，不以dummy/null伪造矩阵storage |
 | FlatHash近阈值rolling churn / Queue政策 | map增长策略已修；bounded、ST512、真实Folly SPSC及Sharded非满载均有当前有限对照 | 均未确认当前输项；owner/steal现补完整校验和原始epochs保留，Crossbeam batch32/动态缩容职责明确不同，不继承旧倍率 |
 
@@ -1215,23 +1215,34 @@ GCC14.2同flags旧对象的容量zero-store循环确实存在，新对象消失�
 本批先写根目录test.ps1，Windows/WSL全部精确预检后删除18个可重建产物9035979逻辑B；保留6个当前对象/core缓存4191766 B及所有源、日志、原始数据、结果包和SDK。
 [清理结果与精确范围](cleanup-state-http2.json)记录身份；本批没有Mac清理，也未将逻辑长度称为实测物理回收。
 
-## Apple普通短Q：候选保留，未应用
+## Apple普通短Q：checked分块，保留空间与时延取舍
 
-为F32 D256/显式rank2 Boolean mask、128<Q<1024的确定math fallback试作既有owner内Q128 checked分块，固定点Q513/KV8193/H8/Hkv2。
-两侧各自四host对象闭包一致，baseline复用当前缓存；仅fresh候选4产品TU及2测试TU，原SDK/native库未改。首次Graph编译的scratch重复头布局错误保留，仅续编失败TU。
-baseline原长Q广播mask控制通过；新控制在BHSD/phase0/h0/t0/d0的全false行上先失败：actual −0.1248360276222229，FP64参考转F32为−0.1248474270105362，误差1.13994e−5超过原预算2.74908e−6。
-随后仅运行候选同一新Direct test，也在同首元素得到完全相同失败；没有放宽abs2e−6+rel6e−6、换输入或降低精度。
-不能由一个相等元素推断全部输出相同、已定位PV误差根因或候选改善。throw_on_failure在此GTest闭包形成未捕获测试异常/SIGABRT，发生在数值断言之后，不当成native崩溃。
-本批两Graph、Sink、完整新控制及空间/latency均未完成；候选9源逐字冻结后已从产品工作树撤回，不计新增修复。
-[摘要](apple-ordinary-short-q/summary.json)、[完整两侧源码与失败结果](apple-ordinary-short-q/source-results.zip)、[处理结果](apple-ordinary-short-q/disposition.json)保留后续继续调查所需内容。
-另先写test.ps1并预检全部目标后，精确删除Air4个测试exe共40863904逻辑B；保留6个本批对象937096 B及原9对象、所有源/log/map/raw/包/SDK。[清理结果](apple-ordinary-short-q/cleanup.json)。
+F32 D256、显式rank2 Boolean mask、128<Q<1024且满足64MiB scores及收益guard的确定math fallback，已接入既有owner Job的Q128 checked分块。Direct两种prepare与Graph共用冷选择；保留完整KV、全局mask行及F32数学体，包括一行尾块的finite-min全遮蔽语义。其它受理域仍待补，不将本轮算作整个普通attention问题已解决。
 
-后续两步独立诊断保持原输入和预算，未把诊断完成当成数值通过。第一步逐元素比较两布局、两phase及重绑的6对输出，共6303744元素：baseline/candidate分别230508/222436项超预算，old-pass→new-fail为0、绝对误差增加为0；11568个bit差异全部位于query512尾行，旧结果保活及重绑检查通过。
-[完整输出摘要](apple-ordinary-short-q/diagnostic/summary.json)、[逐元素比较](apple-ordinary-short-q/diagnostic/full-output-comparison.json)及[原始包](apple-ordinary-short-q/diagnostic/diagnostic-results.zip)保留全部F32 bits和独立FP64参考；两侧原golden仍FAIL。
-第二步仅对baseline的BHSD/phase0作同源码数学体replay并发布PV、masked scores和P，完整1050624元素PV与原输出逐位一致；这不是opaque native函数内部hook。
-首失败h0/query0行的8193个实际F32概率均为0x38fff800，FP64概率和0.9999999850988388；对全部256通道，概率舍入带来的输出误差最多1.86e−9，而实际PV与FP64 dot(actualP,actualV)的残差最多1.14e−5。
-这将该行的主要误差边界定位到下游PV计算/归约；未确定具体Metal kernel、内部临时dtype或归约次序，也不能外推所有非零QK行。该完整PV仍有50204项违反原预算，没有本轮空间或速度结论。
-[Replay摘要](apple-ordinary-short-q/precision-replay/summary.json)、[完整比较](apple-ordinary-short-q/precision-replay/replay-comparison.json)及[原始包](apple-ordinary-short-q/precision-replay/replay-results.zip)保留实际P/V与FP64点积；此前[源审](source-review/apple-short-q-first-failure.json)和[CPU F32回放](apple-ordinary-short-q/precision-diagnostic/f32_accumulation_replay.json)仅作为调查过程证据，不能代替本次实际输出复现。
+原带通道偏置stress在旧新两侧均违反abs2e−6+rel6e−6预算，初版因此撤回；[旧失败与源码](apple-ordinary-short-q/source-results.zip)、[初版处理](apple-ordinary-short-q/disposition.json)及[当时清理](apple-ordinary-short-q/cleanup.json)保持历史事实。后续[完整比较](apple-ordinary-short-q/diagnostic/full-output-comparison.json)检查两布局、两phase及重绑共6303744元素：旧新分别230508/222436项超预算，old-pass→new-fail为0、参考误差增加为0；11568个bit差异全部在query512尾行。两侧原golden仍FAIL，没有放宽预算。
+
+[同源码replay](apple-ordinary-short-q/precision-replay/summary.json)的完整1050624元素PV与旧输出逐位一致，排除只比较一个相等元素。首失败行的全部8193个实际F32概率对输出的误差贡献最多1.86e−9，而实际PV与FP64 dot(actualP,actualV)残差最多1.14e−5，支持该行误差主要位于PV计算/归约。未确定具体Metal kernel、内部临时dtype或归约次序，不外推全部行；[原始P/V与点积](apple-ordinary-short-q/precision-replay/replay-results.zip)保留，不能以诊断完成冒充golden通过。
+
+### 空间与时延
+
+随后执行原预定的独立空间点：Air Mac16,12、F32 B1/H8/Hkv2/D256/Q513/KV8193、BSHD、显式Boolean前缀mask、非causal、scale1/16，QK全0、V按key交替±1.25且没有通道偏置。
+两侧各新进程一次冷submit→checked wait，全部1050624输出均通过原abs2e−6+rel6e−6预算，maxAbs均1.57031e−11；这不使前述带偏置stress变成PASS，原golden失败继续保留。
+只编一个consumer TU、旧新各链接一次，原SDK和8个已核SHA的host对象未重编或复制。首轮两进程在metallib加载前失败，保留原日志；仅修正工作目录的原SDK符号链接后得到两次有效空间结果。
+
+prepare/bind后仅clear cache、reset peak一次，不在块间清缓存；MLX额外active峰值142934016→38813696 B（−72.8450%）。调用方端口41964033 B、输出4202496 B单列；该差值包含输出和临时private分配，不是总VRAM或单块硬上限。
+随后只作预定old→new→new→old四进程，每进程2warm＋独立前oracle＋9次submit到checked wait计时＋独立后oracle，前后全输出校验均通过，全部36样本保留：
+
+| 顺序 | 中位时延 ms | 平均时延 ms |
+|---|---:|---:|
+| old | 23.570333 | 23.610301 |
+| new | 24.223292 | 23.901245 |
+| new | 24.149625 | 23.997736 |
+| old | 23.173833 | 23.383551 |
+
+对应顺序配对的均值增加1.23%/2.63%，中位数增加2.77%/4.21%；这是固定点空间与时间的取舍，不能称免费优化、提速或所有shape已解决。
+[摘要](apple-ordinary-short-q/measurement/summary.json)与[源码、身份、全部原始结果](apple-ordinary-short-q/measurement/source-results.zip)保留两次加载失败及完整样本；[三个可重建产物的精确身份](apple-ordinary-short-q/measurement/cleanup-candidates.json)仅供后续清理，当前仍保留，未执行删除。
+
+另以预先指定的centered dyadic V增加接线回归，shape、非零两channel QK、GQA、mask边界和原FP64预算保持；这是额外功能输入，不替代上述stress或性能点。只fresh两测试TU、旧新各链接一个合并exe，双方各一次同6项全部通过：新Direct/Graph、既有两Sink Direct、Sink Graph及longQ广播mask。覆盖两种prepare、两layout、四端口重绑、Copy/Neg发布及owner销毁/旧结果保活；测试墙钟不作性能结论。产品六文件与实测候选逐字相同，未重编SDK或native库。[功能记录](apple-ordinary-short-q/functional-tests/functional-summary.json)。
 
 ## HTTP2 DATA：少一次payload拷贝，保留owned wire
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <cstdint>
@@ -177,4 +178,87 @@ inline std::vector<double> pattern(std::size_t count, int phase = 0) {
     result[i] = (static_cast<int>((i * 7 + phase * 3) % 29) - 14) * 0.17;
   return result;
 }
+
+// Additional centered functional input for wiring/ownership regressions.
+// The original offset stress and its failed FP64 budget remain unchanged in
+// the frozen candidate. This fixture neither replaces it nor a performance point.
+namespace ordinary_short_query_centered {
+inline constexpr int queries = 513, keys = 8193, heads = 8, kv_heads = 2, depth = 256;
+inline constexpr float scale = 0.0625F;
+static_assert(1ULL * heads * queries * keys * sizeof(float) >= 64ULL * 1024 * 1024);
+
+inline bool visible(int t, int s, int phase) {
+  return t != 0 && t != 127 && t != 128 && t != queries - 1 &&
+      s <= keys - queries + t && (phase == 0 || s % 5 != 0);
+}
+inline double q0(int t, int phase) { return double((t + phase) % 7 - 3) / 8; }
+inline double q1(int h, int phase) { return double((h + phase) % 5 - 2) / 16; }
+inline double k0(int s, int phase) { return double((s + phase * 3) % 11 - 5) / 16; }
+inline double k1(int s, int phase) { return double((s + phase) % 3 - 1) / 8; }
+inline double a(int s, int phase) {
+  return 0.25 * ((s + phase) % 2 == 0 ? 1.25 : -1.25) +
+      2 * k0(s, phase) + k1(s, phase);
+}
+inline double channel(int h, int d, int phase) {
+  return double((d + phase) % 17 - 8) / 64 + double(h + phase) / 32;
+}
+
+inline std::array<mx::array, 4> ports(c::AttentionLayout layout, int phase) {
+  std::vector<float> q(heads * queries * depth), k(kv_heads * keys * depth),
+      v(kv_heads * keys * depth);
+  std::vector<std::uint8_t> mask(queries * keys);
+  for (int h = 0; h < heads; ++h)
+    for (int t = 0; t < queries; ++t) {
+      q[(h * queries + t) * depth] = static_cast<float>(q0(t, phase));
+      q[(h * queries + t) * depth + 1] = static_cast<float>(q1(h, phase));
+    }
+  for (int h = 0; h < kv_heads; ++h)
+    for (int s = 0; s < keys; ++s) {
+      k[(h * keys + s) * depth] = static_cast<float>(k0(s, phase));
+      k[(h * keys + s) * depth + 1] = static_cast<float>(k1(s, phase));
+      for (int d = 0; d < depth; ++d)
+        v[(h * keys + s) * depth + d] =
+            static_cast<float>(a(s, phase) * (1 + channel(h, d, phase)));
+    }
+  for (int t = 0; t < queries; ++t)
+    for (int s = 0; s < keys; ++s)
+      mask[t * keys + s] = visible(t, s, phase);
+  std::array result{
+      mx::array(q.data(), {1, heads, queries, depth}, mx::float32),
+      mx::array(k.data(), {1, kv_heads, keys, depth}, mx::float32),
+      mx::array(v.data(), {1, kv_heads, keys, depth}, mx::float32),
+      mx::astype(mx::array(mask.data(), {queries, keys}, mx::uint8),
+                 mx::bool_, stream())};
+  for (std::size_t i = 0; i < 3; ++i)
+    if (layout == c::AttentionLayout::kBatchSequenceHeadDepth)
+      result[i] = mx::transpose(result[i], {0, 2, 1, 3}, stream());
+  for (auto &input : result) input = ready(std::move(input));
+  return result;
+}
+
+inline std::vector<double> reference(c::AttentionLayout layout, int phase) {
+  std::vector<double> result(heads * queries * depth);
+  for (int h = 0; h < heads; ++h)
+    for (int t = 0; t < queries; ++t) {
+      // Independent FP64 two-channel QK and separable V oracle. All inputs
+      // are exactly representable dyadic F32; no native attention is called.
+      const bool all_masked = t == 0 || t == 127 || t == 128 || t == queries - 1;
+      double mass = 0, weighted = 0;
+      for (int s = 0; s < keys; ++s) {
+        const double weight = all_masked ? 1.0 : visible(t, s, phase)
+            ? std::exp(double(scale) *
+                (q0(t, phase) * k0(s, phase) + q1(h, phase) * k1(s, phase)))
+            : 0.0;
+        mass += weight;
+        weighted += weight * a(s, phase);
+      }
+      for (int d = 0; d < depth; ++d) {
+        const auto index = layout == c::AttentionLayout::kBatchSequenceHeadDepth
+            ? (t * heads + h) * depth + d : (h * queries + t) * depth + d;
+        result[index] = (weighted / mass) * (1 + channel(h / (heads / kv_heads), d, phase));
+      }
+    }
+  return result;
+}
+} // namespace ordinary_short_query_centered
 } // namespace apple_tensor_test

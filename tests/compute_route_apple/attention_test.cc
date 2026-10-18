@@ -391,4 +391,51 @@ TEST(AppleAttention, ExtremeFiniteFloat32ScaleRetainsZeroScoreReference) {
     }
   }
 }
+
+TEST(AppleAttention, CenteredShortQueryMathKeepsMasksTailAndReboundOwners) {
+  namespace sq = ordinary_short_query_centered;
+  for (const auto layout : {c::AttentionLayout::kBatchHeadSequenceDepth,
+                            c::AttentionLayout::kBatchSequenceHeadDepth}) {
+    SCOPED_TRACE(static_cast<int>(layout));
+    const auto expected_a = sq::reference(layout, 0);
+    const auto expected_b = sq::reference(layout, 1);
+    auto inputs_a = sq::ports(layout, 0), inputs_b = sq::ports(layout, 1);
+    const c::Operation operation(c::ScaledDotProductAttention{
+        .layout = layout, .mask = c::MaskKind::kBoolean, .scale = sq::scale});
+    auto context = a::Context::create().value();
+    // Exercise both typed prepare entries with this selected >64MiB shape.
+    auto program = context.prepare(operation, inputs_a).value();
+    std::array<a::InputSpec, 4> specs;
+    for (std::size_t i = 0; i < specs.size(); ++i)
+      specs[i] = {inputs_a[i].shape(), inputs_a[i].dtype()};
+    auto from_specs = context.prepare(operation, specs).value();
+    auto first = program.create_invocation().value();
+    auto second = from_specs.create_invocation().value();
+    ASSERT_TRUE(first.bind(inputs_a).ok());
+    ASSERT_TRUE(second.bind(inputs_b).ok());
+    auto work_a = first.submit().value(), work_b = second.submit().value();
+    auto result_a = work_a.wait().value(), result_b = work_b.wait().value();
+    auto old_output = result_a.get()->arrays()[0];
+    expect(old_output, expected_a);
+    expect(result_b.get()->arrays()[0], expected_b);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+    const auto old_bits = bits(old_output);
+    // Keep only an independent native copy for this slot before four-port rebind.
+    // The other invocation's result can remain held without blocking this slot.
+    result_a = {};
+    work_a = {};
+    ASSERT_TRUE(first.bind(inputs_b).ok());
+    auto rebound = first.submit().value();
+    inputs_a = inputs_b;
+    first = {};
+    second = {};
+    program = {};
+    from_specs = {};
+    context = {};
+    auto final_result = rebound.wait().value();
+    expect(final_result.get()->arrays()[0], expected_b);
+    EXPECT_EQ(bits(old_output), old_bits);
+  }
+}
+
 } // namespace

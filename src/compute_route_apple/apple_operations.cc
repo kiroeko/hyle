@@ -290,14 +290,48 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
   }
 }
 
-bool detail::is_mlx_sink_blocks(const Operation &operation,
+bool detail::is_mlx_attention_blocks(const Operation &operation,
     std::span<const TensorDesc> inputs) noexcept {
-  const auto sink=operation.custom_as<model_ops::SinkAttention>();
-  if (!sink) return false;
-  std::array<TensorDesc,1> outputs;
-  if (!sink->infer_output_descriptions(inputs,outputs).ok()) return false;
-  const auto rows=inputs[0].dimensions()[1],keys=inputs[1].dimensions()[1];
-  return rows>=1024 && (rows-128)*keys>2*rows*512;
+  std::array<TensorDesc, 1> outputs;
+  if (const auto sink = operation.custom_as<model_ops::SinkAttention>()) {
+    if (!sink->infer_output_descriptions(inputs, outputs).ok()) return false;
+    const auto rows = inputs[0].dimensions()[1], keys = inputs[1].dimensions()[1];
+    return rows >= 1024 && (rows - 128) * keys > 2 * rows * 512;
+  }
+  const auto *attention = operation.get_if<ScaledDotProductAttention>();
+  if (!attention || inputs.size() != 4 || attention->causal ||
+      attention->mask != MaskKind::kBoolean ||
+      attention->accumulation_type != DataType::kFloat32 ||
+      (attention->layout != AttentionLayout::kBatchSequenceHeadDepth &&
+       attention->layout != AttentionLayout::kBatchHeadSequenceDepth) ||
+      !infer_output_descriptions(operation, inputs, outputs).ok())
+    return false;
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    if (!inputs[i].is_plain() ||
+        (i < 3 && inputs[i].data_type() != DataType::kFloat32))
+      return false;
+  const auto axis = attention->layout == AttentionLayout::kBatchSequenceHeadDepth
+      ? 1 : 2;
+  const auto q = inputs[0].dimensions(), k = inputs[1].dimensions();
+  const auto rows = q[axis], keys = k[axis];
+  // The pinned D256 array-mask path is math, including on NAX devices.
+  // Keep the existing long-Q, fused and small-score routes unchanged.
+  if (q[0] == 0 || q[3] != 256 || inputs[2].dimensions()[3] != 256 ||
+      rows <= 128 || rows >= 1024 || keys == 0 ||
+      keys > std::numeric_limits<int>::max() || inputs[3].rank() != 2 ||
+      inputs[3].dimensions()[0] != rows || inputs[3].dimensions()[1] != keys ||
+      (rows - 128) * keys <= 2 * rows * 256)
+    return false;
+  // Stop at the 64MiB threshold instead of overflowing a complete byte product.
+  constexpr std::uint64_t minimum_elements = (64ULL * 1024 * 1024) / sizeof(float);
+  std::uint64_t elements = 1;
+  for (const auto dim : {q[0], q[axis == 1 ? 2 : 1], rows, keys}) {
+    const auto extent = static_cast<std::uint64_t>(dim);
+    if (extent == 0) return false;
+    if (elements >= (minimum_elements + extent - 1) / extent) return true;
+    elements *= extent;
+  }
+  return false;
 }
 
 Result<Program>
@@ -305,7 +339,26 @@ Context::prepare(const Operation &operation,
                  std::span<const mx::array> examples,
   const WorkloadContext &workload) const noexcept {
   try {
-    if (operation.custom_as<model_ops::SinkAttention>() ||
+    bool attention_blocks = false;
+    if (operation.get_if<ScaledDotProductAttention>() && examples.size() == 4 &&
+        examples[0].dtype() == mx::float32 && examples[1].dtype() == mx::float32 &&
+        examples[2].dtype() == mx::float32 && examples[3].dtype() == mx::bool_) {
+      std::array<TensorDesc, 4> descriptions;
+      bool described = true;
+      for (std::size_t i = 0; i < examples.size(); ++i) {
+        const auto &input = examples[i];
+        if (input.ndim() > kMaxTensorRank) { described = false; break; }
+        std::array<std::int64_t, kMaxTensorRank> shape{};
+        std::copy(input.shape().begin(), input.shape().end(), shape.begin());
+        auto description = TensorDesc::dense(
+            i == 3 ? DataType::kBool : DataType::kFloat32,
+            {shape.data(), input.ndim()});
+        if (!description) { described = false; break; }
+        descriptions[i] = std::move(*description);
+      }
+      attention_blocks = described && detail::is_mlx_attention_blocks(operation, descriptions);
+    }
+    if (attention_blocks || operation.custom_as<model_ops::SinkAttention>() ||
         fixed_ggml_model_operation(operation) ||
         detail::is_mlx_float_operation(operation, {})) {
       std::vector<InputSpec> specs;
@@ -347,12 +400,12 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
           [operation, descriptions](const auto &values, mx::Stream stream) {
             return detail::lower_mlx_float(operation, descriptions, values, stream);
           }, inputs, workload);
-    const bool sink_blocks=detail::is_mlx_sink_blocks(operation,descriptions);
-    if (sink_blocks || ggml_model_operation(operation, descriptions)) {
+    const bool attention_blocks=detail::is_mlx_attention_blocks(operation,descriptions);
+    if (attention_blocks || ggml_model_operation(operation, descriptions)) {
       detail::RegionPlan plan;
       plan.workload = workload;
       detail::Region region;
-      region.kind = sink_blocks ? detail::RegionKind::kSinkBlocks : detail::RegionKind::kGgml;
+      region.kind = attention_blocks ? detail::RegionKind::kAttentionBlocks : detail::RegionKind::kGgml;
       region.operation = operation;
       for (std::size_t i = 0; i < inputs.size(); ++i) {
         region.native_inputs.push_back(descriptions[i]);

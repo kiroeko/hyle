@@ -347,6 +347,34 @@ bool chunk_attention_math(const ScaledDotProductAttention &attention,
                         known_gpu_without_nax()));
 }
 
+mx::array attention_math_block(const ScaledDotProductAttention &attention,
+                               const mx::array &query,
+                               const mx::array &transposed_key,
+                               const mx::array &value,
+                               const std::optional<mx::array> &mask,
+                               int kv_heads, int repeats, mx::Stream stream) {
+  auto q = mx::multiply(mx::array(attention.scale, query.dtype()), query, stream);
+  if (repeats > 1)
+    q = mx::unflatten(q, 1, {kv_heads, repeats}, stream);
+  auto scores = mx::matmul(q, transposed_key, stream);
+  if (mask) {
+    auto block_mask = *mask;
+    if (repeats > 1 && block_mask.ndim() >= 3)
+      block_mask = mx::unflatten(block_mask, -3, {kv_heads, repeats}, stream);
+    if (block_mask.dtype() == mx::bool_) {
+      // Preserve the original fallback's uniform completely masked row.
+      scores = mx::where(block_mask, scores,
+          mx::array(mx::finfo(scores.dtype()).min, scores.dtype()), stream);
+    } else {
+      scores = mx::add(scores,
+                       mx::astype(block_mask, query.dtype(), stream), stream);
+    }
+  }
+  scores = mx::softmax(scores, std::vector<int>{-1}, true, stream);
+  auto result = mx::matmul(scores, value, stream);
+  return repeats > 1 ? mx::flatten(result, 1, 2, stream) : result;
+}
+
 mx::array attention_math_blocks(const ScaledDotProductAttention &attention,
                                 const mx::array &query, const mx::array &key,
                                 const mx::array &value,
@@ -384,32 +412,14 @@ mx::array attention_math_blocks(const ScaledDotProductAttention &attention,
     // lazy graph; Metal owns command-buffer retirement and buffer lifetimes.
     if (!blocks.empty())
       sources = mx::depends(sources, {blocks.back()});
-    auto q = mx::multiply(mx::array(attention.scale, query.dtype()),
-                           sources[0], stream);
-    if (repeats > 1)
-      q = mx::unflatten(q, 1, {kv_heads, repeats}, stream);
-    auto scores = mx::matmul(q, transposed_key, stream);
-    if (mask || causal) {
-      auto block_mask = causal
+    std::optional<mx::array> block_mask;
+    if (mask || causal)
+      block_mask = causal
           ? mx::greater_equal(mx::expand_dims(sources[1], 1, stream),
                               mx::expand_dims(key_indices, 0, stream), stream)
           : sources[1];
-      if (repeats > 1 && block_mask.ndim() >= 3)
-        block_mask = mx::unflatten(block_mask, -3, {kv_heads, repeats}, stream);
-      if (block_mask.dtype() == mx::bool_) {
-        // Match the original fallback, including its uniform fully masked row.
-        scores = mx::where(block_mask, scores,
-            mx::array(mx::finfo(scores.dtype()).min, scores.dtype()), stream);
-      } else {
-        scores = mx::add(scores,
-                         mx::astype(block_mask, query.dtype(), stream), stream);
-      }
-    }
-    scores = mx::softmax(scores, std::vector<int>{-1}, true, stream);
-    auto result = mx::matmul(scores, v, stream);
-    if (repeats > 1)
-      result = mx::flatten(result, 1, 2, stream);
-    blocks.push_back(std::move(result));
+    blocks.push_back(attention_math_block(attention, sources[0], transposed_key,
+                                          v, block_mask, kv_heads, repeats, stream));
     begin = end;
   }
   return mx::concatenate(std::move(blocks), 2, stream);
@@ -479,6 +489,37 @@ bool is_mlx_tensor_custom(const Operation &operation) noexcept {
          operation.custom_as<model_ops::MlxQuantized>().has_value() ||
          operation.custom_as<sampling_ops::RandomBits>().has_value() ||
          operation.custom_as<sampling_ops::Categorical>().has_value();
+}
+
+// Cold-validated ordinary blocks, including a one-row tail, stay on math SDPA.
+Result<std::vector<mx::array>> lower_attention_math_block(
+    const Operation &operation, std::span<const mx::array> inputs,
+    mx::Stream stream) noexcept {
+  try {
+    const auto *attention = operation.get_if<ScaledDotProductAttention>();
+    if (!attention || inputs.size() != 4 ||
+        attention->mask != MaskKind::kBoolean || attention->causal ||
+        attention->accumulation_type != DataType::kFloat32)
+      return std::unexpected(Status::InvalidArgument(
+          "invalid Apple ordinary attention math block"));
+    auto query = inputs[0], key = inputs[1], value = inputs[2];
+    const bool sequence_first =
+        attention->layout == AttentionLayout::kBatchSequenceHeadDepth;
+    if (sequence_first) {
+      query = mx::transpose(query, {0, 2, 1, 3}, stream);
+      key = mx::transpose(key, {0, 2, 1, 3}, stream);
+      value = mx::transpose(value, {0, 2, 1, 3}, stream);
+    }
+    const int kv_heads = key.shape(1), repeats = query.shape(1) / kv_heads;
+    auto k = repeats > 1 ? mx::expand_dims(key, 2, stream) : key;
+    auto v = repeats > 1 ? mx::expand_dims(value, 2, stream) : value;
+    auto result = attention_math_block(*attention, query,
+        mx::swapaxes(k, -1, -2, stream), v, inputs[3], kv_heads, repeats, stream);
+    return std::vector{sequence_first
+        ? mx::transpose(result, {0, 2, 1, 3}, stream) : result};
+  } catch (...) {
+    return std::unexpected(native_exception());
+  }
 }
 
 Result<std::vector<mx::array>> lower_tensor(const Operation &operation,

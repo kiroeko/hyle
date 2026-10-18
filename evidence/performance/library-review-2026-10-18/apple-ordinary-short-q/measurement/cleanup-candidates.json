@@ -1,0 +1,32 @@
+{
+  "host": "kiro@172.22.10.198",
+  "root": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement",
+  "files": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/consumer.o",
+      "bytes": 44400,
+      "sha256": "0352a37a834e8a9726bc6a1774324a4cf1bd91bcd39e356c201306e63db774f6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/baseline",
+      "bytes": 9574136,
+      "sha256": "7c03a1bf61fde8b5184b499bd037f8093008407c82e5afd8899975f03ce48c59"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/candidate",
+      "bytes": 9574568,
+      "sha256": "fd99ddf0e6e3eb55e0ded40b81b2c0798b23a9bdf9ea8e3284e413dc81dd8d61"
+    }
+  ],
+  "count": 3,
+  "logical_bytes": 19193104,
+  "preserve": "source, plans, commands, maps, raw results, summaries, all preexisting objects and SDK",
+  "performed_cleanup": false,
+  "disposition": "Retain these3 files for current consistent cache; future explicit root cleanup only",
+  "loader_link_retained": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/mlx.metallib",
+    "target": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/mlx.metallib",
+    "is_symlink": true
+  },
+  "generated_python_bytecode": null
+}

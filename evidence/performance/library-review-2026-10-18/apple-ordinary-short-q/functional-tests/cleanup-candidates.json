@@ -1,0 +1,54 @@
+{
+  "host": "kiro@172.22.10.198",
+  "root": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional",
+  "files": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/baseline-centered-tests",
+      "bytes": 10401688,
+      "sha256": "da293b73f0e37ac17ebd1b0a8dff6aef6b27c4065b7f7e751fdad15a88d1e48a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/candidate-centered-tests",
+      "bytes": 10402136,
+      "sha256": "caddc554a6711feebaee0f1e88ffc3907c0f0354f351a6069b1737bcedc37f5f"
+    }
+  ],
+  "total_bytes": 20803824,
+  "retain_new_test_cache": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/centered-attention.o",
+      "bytes": 241328,
+      "sha256": "12b17edda6e216a8fef9fcf8cf3bc2470d23e94b1466aca9d7026a1e0bd238f7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/centered-graph.o",
+      "bytes": 225672,
+      "sha256": "27d346e1915d0daa123a0c8f96ebdf99d6783d6708424a6d3d09757dd7c98fe9"
+    }
+  ],
+  "retain_existing_product_cache": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-context.o",
+      "bytes": 182048,
+      "sha256": "0ad035588062f078880e81421e75e3715233d3c7f325b3c3d368557da7bd2be2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-operations.o",
+      "bytes": 72016,
+      "sha256": "2fa2f5bd746a5db5fbc0b19749397efd7fbc0d257435e8083bdd33dc96f439e3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-tensor.o",
+      "bytes": 129432,
+      "sha256": "62e4a8b2668fe35811f5992d0ed48d29cc8ffbbc2b24d1fcc4b4a53fb4f40715"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+      "bytes": 87824,
+      "sha256": "13b405c34bb446496563f51db9b91439ea6004d34b00d833edcba6e25d197de6"
+    }
+  ],
+  "retained_bytes": 938320,
+  "note": "Final parent-directed plan: targets only the two combined test executables. Keep both fresh centered test objects and all four candidate product objects. The provisional four-artifact manifest inside immutable raw tar describes generated artifacts before this retention decision, not deletion authorization. No deletion performed.",
+  "excluded": "All original baseline/sink/other cache objects and SDK, sources, maps, commands, logs, data and archives remain untouched."
+}

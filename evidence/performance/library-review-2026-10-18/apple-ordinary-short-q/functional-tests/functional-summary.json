@@ -1,0 +1,145 @@
+{
+  "status": "PASS: baseline and candidate each run the same six functional tests once; no product/native/SDK rebuild and no performance measurement.",
+  "results": [
+    {
+      "arm": "baseline",
+      "tests": 6,
+      "failures": 0,
+      "time": "6.112s",
+      "cases": [
+        {
+          "name": "AppleAttention.MathQueryBlocksRetainBroadcastMasksAndReboundOwners",
+          "result": "COMPLETED",
+          "time": "1.148s"
+        },
+        {
+          "name": "AppleAttention.CenteredShortQueryMathKeepsMasksTailAndReboundOwners",
+          "result": "COMPLETED",
+          "time": "0.96s"
+        },
+        {
+          "name": "AppleGraph.PublishedCenteredShortQueryMathAndNegativeCrossCheckedBoundary",
+          "result": "COMPLETED",
+          "time": "0.501s"
+        },
+        {
+          "name": "AppleSinkGraph.PublishedCopySinkAndNegativeCrossPrivateBoundary",
+          "result": "COMPLETED",
+          "time": "1.365s"
+        },
+        {
+          "name": "AppleSinkAttention.QBlocksKeepMasksSinksRebindingAndOwners",
+          "result": "COMPLETED",
+          "time": "2.117s"
+        },
+        {
+          "name": "AppleSinkAttention.ShortQueriesRetainExistingFallback",
+          "result": "COMPLETED",
+          "time": "0.019s"
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "tests": 6,
+      "failures": 0,
+      "time": "4.79s",
+      "cases": [
+        {
+          "name": "AppleAttention.MathQueryBlocksRetainBroadcastMasksAndReboundOwners",
+          "result": "COMPLETED",
+          "time": "0.147s"
+        },
+        {
+          "name": "AppleAttention.CenteredShortQueryMathKeepsMasksTailAndReboundOwners",
+          "result": "COMPLETED",
+          "time": "1.004s"
+        },
+        {
+          "name": "AppleGraph.PublishedCenteredShortQueryMathAndNegativeCrossCheckedBoundary",
+          "result": "COMPLETED",
+          "time": "0.434s"
+        },
+        {
+          "name": "AppleSinkGraph.PublishedCopySinkAndNegativeCrossPrivateBoundary",
+          "result": "COMPLETED",
+          "time": "1.073s"
+        },
+        {
+          "name": "AppleSinkAttention.QBlocksKeepMasksSinksRebindingAndOwners",
+          "result": "COMPLETED",
+          "time": "2.113s"
+        },
+        {
+          "name": "AppleSinkAttention.ShortQueriesRetainExistingFallback",
+          "result": "COMPLETED",
+          "time": "0.016s"
+        }
+      ]
+    }
+  ],
+  "filter": "AppleAttention.CenteredShortQueryMathKeepsMasksTailAndReboundOwners:AppleGraph.PublishedCenteredShortQueryMathAndNegativeCrossCheckedBoundary:AppleSinkAttention.QBlocksKeepMasksSinksRebindingAndOwners:AppleSinkAttention.ShortQueriesRetainExistingFallback:AppleSinkGraph.PublishedCopySinkAndNegativeCrossPrivateBoundary:AppleAttention.MathQueryBlocksRetainBroadcastMasksAndReboundOwners",
+  "hardware": "hw.model: Mac16,12\nhw.memsize: 17179869184",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+  "canonical_identity": "All six canonical product files are byte-identical to frozen candidate; all three canonical test files are SHA-identical to centered functional copies, not merely newline-equivalent.",
+  "source_identity": "canonical-identity.json; three prepared file SHAs unchanged after execution.",
+  "closure": {
+    "remote_directory": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional",
+    "fresh_test_TUs": 2,
+    "fresh_product_TUs": 0,
+    "combined_executables": 2,
+    "reused": "Four original baseline objects or four frozen candidate objects, plus q128/applied-direct.o for the two Sink Direct tests; original common/include, half_test_support, SDK/native libraries and GTest main/library.",
+    "includes": "The three canonical test files plus original Sink helper are adjacent in one test tree. Direct/Graph/Sink includes resolve one physical tensor_test_support.h; half helper is a directory symlink to existing common/tests/compute_provider_native. No duplicate shared header physical copy is introduced.",
+    "metallib": "Symlink to original SDK lib/mlx.metallib only; no copied SDK or metallib.",
+    "object_library_hashes": "All nine retained test/product objects and the six native-source files were checked against frozen manifest before compile; linked native/foundation/GTest library SHAs and all fresh objects/exes are in runtime-identities.json."
+  },
+  "maps": [
+    {
+      "member": "baseline-centered-tests.map",
+      "bytes": 2927443,
+      "sha256": "0194c1e8cf775cbb4b20b16a8e27446b2a79b3c78adfe474e64b7a3321674f97",
+      "expected_host_and_sink_objects": [
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-context.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-operations.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-force-scale/apple_tensor.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-graph.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/applied-direct.o"
+      ],
+      "all_present": true,
+      "original_MLX_archive_present": true
+    },
+    {
+      "member": "candidate-centered-tests.map",
+      "bytes": 2927923,
+      "sha256": "3c421d359b257b22c259fe94830b916374de231777d244d23371244ea07a68b3",
+      "expected_host_and_sink_objects": [
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-context.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-operations.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-tensor.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+        "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/applied-direct.o"
+      ],
+      "all_present": true,
+      "original_MLX_archive_present": true
+    }
+  ],
+  "numerical_scope": "Centered is an additional wiring/lifetime fixture only. Original abs2e-6+rel6e-6 expectation helper, shape/layout/mask/phase/QK/GQA/rebind/reference retained. Original offset stress and native-PV failure remain unchanged; their old archive and failure summary SHAs were rechecked and preserved. This PASS does not reclassify that stress or establish broader F32 numerical accuracy.",
+  "performance": "No timing experiment. GTest wall times are recorded only for execution transparency, never baseline/candidate throughput comparisons or replacement of the fixed performance point.",
+  "failures": "No compile, link or test failure in this centered validation; every command/stdout/stderr retained. Previous original-stress failure and earlier duplicate-header failure remain in their frozen records, not overwritten.",
+  "raw_archive": {
+    "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-tests/centered-functional-raw.tar.gz",
+    "bytes": 852790,
+    "sha256": "17b7be358683b19e5cd55b994afcc58585e93d421d639f03d8185e90a1d8a466",
+    "members": 38
+  },
+  "cleanup": {
+    "manifest": "cleanup-candidates.json",
+    "target_files": 2,
+    "target_bytes": 20803824,
+    "retain_test_objects": 2,
+    "retain_product_objects": 4,
+    "retained_bytes": 938320,
+    "scope": "Final parent-directed plan: targets only the two combined test executables. Keep both fresh centered test objects and all four candidate product objects. The provisional four-artifact manifest inside immutable raw tar describes generated artifacts before this retention decision, not deletion authorization. No deletion performed."
+  },
+  "next": "Validation stopped. Publish evidence locally only; parent owns README/product commit and cleanup. No further Mac case/run."
+}

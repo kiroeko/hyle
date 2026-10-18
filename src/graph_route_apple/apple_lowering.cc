@@ -75,12 +75,16 @@ bool ggml_model_operation(const Plan &plan, const Node &node) noexcept {
               .has_value());
 }
 
-bool sink_blocks_operation(const Plan &plan,const Node &node) {
-  if(!node.operation.custom_as<compute::model_ops::SinkAttention>() || node.inputs.size()!=5)
+bool attention_blocks_operation(const Plan &plan, const Node &node) {
+  if (!node.operation.custom_as<compute::model_ops::SinkAttention>() &&
+      !node.operation.get_if<compute::ScaledDotProductAttention>())
     return false;
-  std::array<compute::TensorDesc,5> inputs;
-  for(std::size_t i=0;i<inputs.size();++i)inputs[i]=plan.descriptions[node.inputs[i]];
-  return ca::detail::is_mlx_sink_blocks(node.operation,inputs);
+  if (node.inputs.size() > 5) return false;
+  std::array<compute::TensorDesc, 5> inputs;
+  for (std::size_t i = 0; i < node.inputs.size(); ++i)
+    inputs[i] = plan.descriptions[node.inputs[i]];
+  return ca::detail::is_mlx_attention_blocks(node.operation,
+      std::span<const compute::TensorDesc>(inputs.data(), node.inputs.size()));
 }
 
 Status match(const compute::TensorDesc &description, const mx::array &value) {
@@ -170,9 +174,9 @@ Result<ca::Program> compile_regions(const ca::Context &context,
   for (std::size_t begin = 0; begin < plan->nodes.size();) {
     ca::detail::Region region;
     const auto &first = plan->nodes[begin];
-    const bool sink_blocks=sink_blocks_operation(*plan,first);
-    if (sink_blocks || ggml_model_operation(*plan, first)) {
-      region.kind = sink_blocks ? ca::detail::RegionKind::kSinkBlocks : ca::detail::RegionKind::kGgml;
+    const bool attention_blocks=attention_blocks_operation(*plan,first);
+    if (attention_blocks || ggml_model_operation(*plan, first)) {
+      region.kind = attention_blocks ? ca::detail::RegionKind::kAttentionBlocks : ca::detail::RegionKind::kGgml;
       region.operation = first.operation;
       region.inputs = first.inputs;
       region.outputs = first.outputs;
@@ -186,7 +190,7 @@ Result<ca::Program> compile_regions(const ca::Context &context,
     while (!first.control_boundary && end < plan->nodes.size() &&
            !plan->nodes[end].control_boundary &&
            !ggml_model_operation(*plan, plan->nodes[end]) &&
-           !sink_blocks_operation(*plan,plan->nodes[end]))
+           !attention_blocks_operation(*plan,plan->nodes[end]))
       ++end;
     std::vector<bool> internal(native.values.size(), false);
     std::vector<bool> argument(native.values.size(), false);
@@ -379,13 +383,13 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         });
     const bool has_control = std::ranges::any_of(plan->nodes,
         [](const auto &node) { return node.control_boundary; });
-    const bool has_sink_blocks=std::ranges::any_of(plan->nodes,
-        [&](const auto &node){return sink_blocks_operation(*plan,node);});
-    if (has_native_model_region || has_control || has_sink_blocks) {
+    const bool has_attention_blocks=std::ranges::any_of(plan->nodes,
+        [&](const auto &node){return attention_blocks_operation(*plan,node);});
+    if (has_native_model_region || has_control || has_attention_blocks) {
       if (report != nullptr) {
         report->implementation_policy = has_native_model_region
             ? "Original ggml Metal model regions and maximal MLX compiled regions; fixed cold binding"
-            : has_sink_blocks ? "Original MLX compiled regions and private checked Sink blocks; fixed cold binding"
+            : has_attention_blocks ? "Original MLX compiled regions and private checked attention blocks; fixed cold binding"
             : "Original MLX compiled regions split at explicit control endpoints; fixed cold binding";
         if (has_native_model_region)
           report->numerical_policy +=

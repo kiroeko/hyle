@@ -1,0 +1,78 @@
+{
+  "status": "Source preparation review of the additional centered fixture; subsequent baseline/candidate 6/6 functional runs are recorded in functional-summary.json. No data or tolerance edits after results.",
+  "fixture": "apple_tensor_test::ordinary_short_query_centered",
+  "scope": "Additional functional wiring/lifetime fixture. Original offset-stress candidate, failure summary and archives are byte-identical. No failure is reclassified as PASS and no performance point is replaced.",
+  "files": [
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-tests/tests/compute_route_apple/tensor_test_support.h",
+      "bytes": 10571,
+      "sha256": "c941b2840d0a2a2363f8047ca771c8b02dc37df7ebf781a22022893ec32c433d"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-tests/tests/compute_route_apple/attention_test.cc",
+      "bytes": 21015,
+      "sha256": "e6dafb3df6657f24044b3dfa82f8f27f1f9e8e6089325df832d25bdf45547ecf"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-tests/tests/graph_route_apple/tensor_test.cc",
+      "bytes": 14901,
+      "sha256": "7835246f97c5e72c21e4b6532c26368c8ec6c5cf913512ca2686c0d759c05385"
+    }
+  ],
+  "frozen_inputs_unchanged": [
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/candidate/tests/compute_route_apple/tensor_test_support.h",
+      "bytes": 10254,
+      "sha256": "642341db45617f252e1a73356d6146a50eb75a4237a28a4e1b79f847877903c1"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/candidate/tests/compute_route_apple/attention_test.cc",
+      "bytes": 21005,
+      "sha256": "46ba0cd338300a7765747dd07cc725f7de4ff699a019d2fa74b8f269e9d0ca22"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/candidate/tests/graph_route_apple/tensor_test.cc",
+      "bytes": 14884,
+      "sha256": "620f8527cab5cdd82e17630e8d9b02872e878477349ec1ead28ccfe43c383566"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/source-results.zip",
+      "bytes": 1857411,
+      "sha256": "236cd3399581b12038bf42e6ba0091475dd7d72cfeae4216e8828406a2ec820c"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-raw.tar.gz",
+      "bytes": 1646591,
+      "sha256": "b575fe889a324c9a1a1f09c360b8c2cc66cabbf50bee67406e54b1cc333bae27"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-failure-summary.json",
+      "bytes": 5902,
+      "sha256": "fbf1c8925400cd5ef98a9f2883ff423049c91e44f70d0522cd30d64f9357f7d8"
+    }
+  ],
+  "changes": {
+    "helper": "Only namespace/comment and predetermined a/V/reference formulas changed; generic expectation helper unchanged.",
+    "callers": "Each caller TU changes only the new test name and its sq namespace alias; exact reverse replacement reproduces the frozen original bytes."
+  },
+  "formulas": {
+    "a": "0.25 * (((s + phase) % 2 == 0) ? 1.25 : -1.25) + 2*k0(s,phase) + k1(s,phase)",
+    "V": "a(s,phase) * (1 + channel(kv_h,d,phase))",
+    "reference": "(weighted / mass) * (1 + channel(kv_h,d,phase)); weighted sums FP64 exp(QK*scale)*a, mass sums FP64 weights independently of native output."
+  },
+  "structural_checks": {
+    "shape": "Q=513, KV=8193, H=8, KVheads=2, D=256, scale=0.0625F; static >=64MiB scores condition unchanged.",
+    "layout": "Direct BHSD and BSHD; Graph BSHD; unchanged.",
+    "qk": "Two Q/K channels, q0/q1/k0/k1 formulas and GQA mapping head/(heads/kv_heads) unchanged.",
+    "masks": "Rows0,127,128,512 remain all-false; all-masked FP64 branch still full-KV uniform to match finite-min native masking. Phase1 s%5 holes and bottom-right boundary unchanged.",
+    "phases_lifetime": "Both phases, Direct two typed prepare entries/two invocations/four-port rebind/owner release/old-output bits, Graph Copy+attention+Neg/three outputs/held outputs unchanged.",
+    "budget": "Exactly original abs2e-6 + rel6e-6 F32 expect() code; no edits to rounding, tolerance or comparisons.",
+    "exact_F32": "a is integer/16 with numerator magnitude <=17; 1+channel is integer/64 with numerator56..76 for KVheads0..1/phases0..1. V numerator magnitude <=1292 over1024, exactly representable F32. No parameter search or native-output feedback.",
+    "include_closure": "Original caller includes are unchanged. When staging later, Sink helper must resolve the same physical shared helper as these tests, as in the corrected earlier functional build; this preparation does not add or validate a compile closure."
+  },
+  "new_test_names": [
+    "AppleAttention.CenteredShortQueryMathKeepsMasksTailAndReboundOwners",
+    "AppleGraph.PublishedCenteredShortQueryMathAndNegativeCrossCheckedBoundary"
+  ],
+  "preparation_scope": "At preparation: no canonical edit, compile, execution or Mac access. Root later applied the same nine sources; subsequent validation is documented separately. Frozen original stress/failure/archives remain unchanged."
+}
