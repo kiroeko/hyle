@@ -1,0 +1,24 @@
+[
+  {
+    "arm": "baseline",
+    "tests": 6,
+    "failures": 0,
+    "time": "8.414s",
+    "binary": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/baseline-tests",
+      "bytes": 10475312,
+      "sha256": "eb6ef905dab31b1aa89391621506124aab56f88248fe01c181d3499142e0d95a"
+    }
+  },
+  {
+    "arm": "candidate",
+    "tests": 6,
+    "failures": 0,
+    "time": "8.03s",
+    "binary": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/candidate-tests",
+      "bytes": 10474112,
+      "sha256": "20904edf6e5813574bedf726001daafed44d57ae20ea6c0edc4738ca802e0ddf"
+    }
+  }
+]

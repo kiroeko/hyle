@@ -1,0 +1,7 @@
+{
+  "status": "not accepted; under revision in worktree",
+  "reason": "Fixed checked128 window saves memory but adds 33.1180%/36.0269% median latency on the preplanned point. Native-equivalence tests pass; original FP64 failures remain separately preserved.",
+  "next_action": "Remove unnecessary tail padding and select fused query rows by mask-byte window while retaining the existing native body, inputs, numerical budgets and measurement boundary. No tuning matrix.",
+  "product_committed": false,
+  "cleanup_executed": false
+}

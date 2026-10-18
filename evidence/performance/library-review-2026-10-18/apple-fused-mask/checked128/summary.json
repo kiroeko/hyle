@@ -1,0 +1,376 @@
+{
+  "status": "native_equivalence_passed_space_saved_latency_regressed",
+  "base_commit": "8db46e4e9",
+  "product_source_sha256": {
+    "context": "39253c8508611bc37e4e68a6848fc727e895cab5772291945830ea3c1a5e326a",
+    "operations": "7ce02581c31b3f3989b881a4341a819c6aa4a0214ed76a7af8e55f0bd716695e"
+  },
+  "test_sources": [
+    {
+      "path": "tests/compute_route_apple/attention_test.cc",
+      "bytes": 25812,
+      "sha256": "42a6bb55fd45fa6584c6b4f114fca1d3298799f23404904c7c897cf0623564bb"
+    },
+    {
+      "path": "tests/compute_route_apple/tensor_test_support.h",
+      "bytes": 20386,
+      "sha256": "ed1ffd4bf70358ed38facfca61fb61f676ab04aa435d99fc6e1547a8021c887b"
+    },
+    {
+      "path": "tests/graph_route_apple/tensor_test.cc",
+      "bytes": 18567,
+      "sha256": "601f9e94edd398a065e8d4233e3384aa47566811ae4a9f81ad3bb9529b1ae10d"
+    }
+  ],
+  "functional": {
+    "filter": "AppleAttention.FusedMasksRetainNativeValuesAcrossStridesAndRebinding:AppleGraph.PublishedFusedMaskNativeResultsRetainOwnersAndRebinding",
+    "runs": [
+      {
+        "arm": "baseline",
+        "tests": 2,
+        "failures": 0,
+        "time": "1.665s"
+      },
+      {
+        "arm": "candidate",
+        "tests": 2,
+        "failures": 0,
+        "time": "1.213s"
+      }
+    ],
+    "status": "two_native_equivalence_tests_passed_both_arms"
+  },
+  "space": {
+    "baseline": {
+      "mode": "space",
+      "dtype": "F32",
+      "accumulation": "F32",
+      "layout": "BSHD",
+      "B": 1,
+      "H": 8,
+      "Hkv": 2,
+      "D": 64,
+      "Q": 1025,
+      "KV": 8193,
+      "causal": false,
+      "scale": 0.0625,
+      "mask": "Bool per-query KVstride0 view",
+      "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+      "caller_port_requested_bytes": 18886657,
+      "caller_backing_requested_bytes": 10489857,
+      "caller_mask_logical_bytes": 8397825,
+      "caller_mask_backing_requested_bytes": 1025,
+      "native_expanded_Bool_mask_bytes": 67182600,
+      "output_requested_bytes": 2099200,
+      "theoretical_one_full_F32_score_bytes": 268730400,
+      "active_before": 10535937,
+      "cache_before": 0,
+      "active_after_with_output_lease": 12649473,
+      "peak": 79840257,
+      "peak_minus_active_before": 69304320,
+      "cache_after": 67190784,
+      "max_abs_error": 2.2734592257812186e-12,
+      "max_error_over_original_budget": 1.136209560912894e-06,
+      "checked_elements": 524800,
+      "oracle_passed": true
+    },
+    "candidate": {
+      "mode": "space",
+      "dtype": "F32",
+      "accumulation": "F32",
+      "layout": "BSHD",
+      "B": 1,
+      "H": 8,
+      "Hkv": 2,
+      "D": 64,
+      "Q": 1025,
+      "KV": 8193,
+      "causal": false,
+      "scale": 0.0625,
+      "mask": "Bool per-query KVstride0 view",
+      "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+      "caller_port_requested_bytes": 18886657,
+      "caller_backing_requested_bytes": 10489857,
+      "caller_mask_logical_bytes": 8397825,
+      "caller_mask_backing_requested_bytes": 1025,
+      "native_expanded_Bool_mask_bytes": 67182600,
+      "output_requested_bytes": 2099200,
+      "theoretical_one_full_F32_score_bytes": 268730400,
+      "active_before": 10535937,
+      "cache_before": 0,
+      "active_after_with_output_lease": 12649473,
+      "peak": 21562374,
+      "peak_minus_active_before": 11026437,
+      "cache_after": 11026437,
+      "max_abs_error": 2.2734592257812186e-12,
+      "max_error_over_original_budget": 1.136209560912894e-06,
+      "checked_elements": 524800,
+      "oracle_passed": true
+    }
+  },
+  "space_difference": {
+    "peak_bytes_saved": 58277883,
+    "peak_increment_bytes_saved": 58277883,
+    "active_with_output_delta": 0
+  },
+  "latency": {
+    "order": [
+      "old",
+      "new",
+      "new",
+      "old"
+    ],
+    "processes": [
+      {
+        "process": 0,
+        "arm": "baseline",
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            12364958,
+            12670208,
+            12258083,
+            12226959,
+            13627667,
+            12307041,
+            12421958,
+            12298084,
+            12451167
+          ]
+        },
+        "minimum_ns": 12226959,
+        "median_ns": 12364958,
+        "maximum_ns": 13627667
+      },
+      {
+        "process": 1,
+        "arm": "candidate",
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            17139500,
+            16278167,
+            17209916,
+            16323791,
+            16819667,
+            16341750,
+            16953041,
+            16214333,
+            17143417
+          ]
+        },
+        "minimum_ns": 16214333,
+        "median_ns": 16819667,
+        "maximum_ns": 17209916
+      },
+      {
+        "process": 2,
+        "arm": "candidate",
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            16882375,
+            16539666,
+            16810667,
+            16579792,
+            16850000,
+            16386958,
+            17124000,
+            16348334,
+            16709917
+          ]
+        },
+        "minimum_ns": 16348334,
+        "median_ns": 16709917,
+        "maximum_ns": 17124000
+      },
+      {
+        "process": 3,
+        "arm": "baseline",
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            13031584,
+            12123917,
+            12552708,
+            12793000,
+            12232542,
+            13139791,
+            12111000,
+            12449417,
+            12850750
+          ]
+        },
+        "minimum_ns": 12111000,
+        "median_ns": 12552708,
+        "maximum_ns": 13139791
+      }
+    ],
+    "total_samples": 36,
+    "matched_order_pairs": [
+      {
+        "old_process": 0,
+        "new_process": 1,
+        "new_over_old": 1.3602688339095046,
+        "regression_fraction": 0.3602688339095046
+      },
+      {
+        "old_process": 3,
+        "new_process": 2,
+        "new_over_old": 1.3311802521017775,
+        "regression_fraction": 0.3311802521017775
+      }
+    ],
+    "conclusion": "Candidate slower in both fixed-order pairs; no speed win or universalratio claim. All samples/ranges retained; no retries/AA/newinputs.",
+    "timed_boundary": "Original fixed consumer submit+checkedwait,2warm+preoracle+9timed+postoracle; inputprep/bind/outputoracle/resultrelease outside interval."
+  },
+  "fixed_consumer_sha256": "4280b2f6737395c8b4cf653a23e2b7fa3664416c580e573105e97bc0b95e9c07",
+  "numeric_scope": {
+    "new_regressions": "Original fullQ native equivalence for dtype/strides/owners, not independent FP64 goldenPASS.",
+    "original_FP64_fixture_failure": "Preserved unchanged:847680 failures eachside under originalbudget; entire4198400outputs and4refs bit-equivalent in prior diagnostic.",
+    "space_latency_oracle": "Different preselected input QK0/Valternating+-1.25, independent1.25/8193 over all524800F32outputs, originalabs2e-6+rel6e-6, caller maskcompact1025B+stride0 assertion.",
+    "independent_FP64_budget_unchanged": true
+  },
+  "limits": [
+    "One fixedshape, no repeatedtuning/matrix or hypotheticalwholeQ2scores allocation claimed.",
+    "Baseline already nativefullfused, with quadratic expandedBoolmask; theoretical268730400B F32scores not claimed allocated.",
+    "MLXactive/cache/peak excludes driver/hostRSS; caller logical/backing/output bytes distinguished.",
+    "GTesttimes only functionalruntime, not throughput.",
+    "Runtime identity snapshot was captured beforelatency and says false historically; subsequent4command records prove authorizedABBA with samefrozenexe.",
+    "No native/SDK/CMake rebuild/copy. No lifecycle/API/report failures in diagnostic; candidate vs native numericalscope only."
+  ],
+  "original_failure_archive": {
+    "path": ".scratch/perf-review-2026-10-18/apple-fused-mask/baseline-failure-source-results.zip",
+    "bytes": 971090,
+    "sha256": "5866ce1f85c8fa987ebd7cdcaa726af12043cb0080da2be7eda7391e250c848f",
+    "members": 64,
+    "all_failed_baseline_stdout_stderr": true,
+    "no_binaries_in_archive": true
+  },
+  "original_diagnostic_archive": {
+    "path": ".scratch/perf-review-2026-10-18/apple-fused-mask/diagnostic/source-results.zip",
+    "bytes": 1453336,
+    "sha256": "34fcb56fb191731878bd5512e43d35b64a3a38964d35329ecacbae11a8483b51",
+    "members": 98,
+    "all_output_ref_flag_files": 32,
+    "all_output_ref_flag_bytes": 71372800,
+    "original_failure_archive_unchanged_sha256": "5866ce1f85c8fa987ebd7cdcaa726af12043cb0080da2be7eda7391e250c848f"
+  },
+  "raw_archive": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/raw.tar.gz",
+    "bytes": 1628957,
+    "sha256": "c5603fbe748da85e92ad07903f936b6f404bc59ec1e9a109460247ba160cd38c",
+    "members": 74,
+    "excluded": "all executable/object/SDK/nativecache/metallib binaries and links"
+  },
+  "cleanup_plan": "../mac-cleanup-plan.json",
+  "cleanup_executed": false
+}

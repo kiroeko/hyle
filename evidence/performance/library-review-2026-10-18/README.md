@@ -1341,3 +1341,20 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 四份参考的有限FP64值逐位相同、NaN/Inf类别相同；以同一旧侧float-rounded参考检查4198400元素，旧新各847680项超过原预算，最高abs约1.79708e−5、原预算倍率约3.5942，均为正常行。old-pass→new-fail、new-old超预算、类别变化、误差增长和rawbits差异全部为0；四条corner没有新增失败，旧输出/dense输出/spec结果在重绑及Context销毁后的bits均稳定。root另直接从归档逐对核8个原始F32文件，全部bytes相同。
 
 这证明固定Direct重演保留原生结果与误差，不使FP64原golden变为通过，也未证明全部shape或具体原生误差成因。后续接口回归将明确采用整Q native等价合同，原FP64失败源/日志/数据独立保留；此时空间consumer及延迟仍未运行。[摘要](apple-fused-mask/diagnostic/summary.json)/[root原始字节核对](apple-fused-mask/diagnostic/raw-byte-check.json)/[完整源码、参考、输出和对比](apple-fused-mask/diagnostic/source-results.zip)。
+
+### checked128：省内存，但固定点时延回退，尚不接受
+
+新增两项回归已明确改为整Q native等价检查，原输入、预算、重绑和寿命流程不变；旧新各一次2/2通过。这与前述原FP64失败是不同结论，后者保持FAIL。复用既有对象、只fresh两个测试TU，随后编一个预定consumer，未重编产品、SDK或native。
+
+固定空间点为F32/BSHD、B1/H8/Hkv2/D64/Q1025/KV8193、Bool全true per-query广播mask、KVstride0、QK0/V逐key交替±1.25、非causal、scale1/16。mask实际backing1025 B、逻辑8397825 B，原生按头广播后67182600 B；调用方全部逻辑18886657 B/backing10489857 B、输出2099200 B单列。两侧各一次冷submit→checked wait，完整524800输出通过原独立`1.25/8193`预算，maxAbs均2.27346e−12；MLX额外active峰值69304320→11026437 B，持输出active同为12649473 B。这不包含cold prepare峰值或驱动总显存。
+
+随后同一consumer/exe、同输入，仅一次ABBA、2warm＋前oracle＋9timed＋后oracle，全部36样本及8次独立oracle保留：
+
+| 顺序 | 中位时延 ms |
+|---|---:|
+| old | 12.364958 |
+| new | 16.819667 |
+| new | 16.709917 |
+| old | 12.552708 |
+
+两顺序中位时延回退36.0269%/33.1180%，幅度明显，不能算性能胜出。此版暂不接受，接下来纠正短尾补128行及沿用小数学窗口的多余工作，保留相同数据和数值合同；不追加shape矩阵追数。产品改动尚未提交，原raw/源/归档和对象暂留。[处理结论](apple-fused-mask/checked128/disposition.json)/[摘要](apple-fused-mask/checked128/summary.json)/[全部结果](apple-fused-mask/checked128/source-results.zip)。
