@@ -536,4 +536,86 @@ TEST(AppleAttention, FusedMasksRetainNativeValuesAcrossStridesAndRebinding) {
   }
 }
 
+TEST(AppleAttention, FullMasksKeepIndependentReferenceAcrossKvStrides) {
+  constexpr int heads = 2, kv_heads = 1, queries = 17, keys = 33, depth = 64;
+  const auto query = make(std::vector<double>(heads * queries * depth),
+                           {1, heads, queries, depth}, mx::float32);
+  const auto key = make(std::vector<double>(kv_heads * keys * depth),
+                         {1, kv_heads, keys, depth}, mx::float32);
+  std::vector<double> v(kv_heads * keys * depth);
+  for (int s = 0; s < keys; ++s)
+    std::fill_n(v.begin() + s * depth, depth, s % 2 == 0 ? 1.25 : -1.25);
+  const auto value = make(v, {1, kv_heads, keys, depth}, mx::float32);
+
+  for (const auto kind : {c::MaskKind::kBoolean, c::MaskKind::kAdditive}) {
+    SCOPED_TRACE(static_cast<int>(kind));
+    const auto mask = [&]() {
+      if (kind == c::MaskKind::kBoolean) {
+        std::vector<std::uint8_t> physical(queries * 2 * keys);
+        for (int t = 0; t < queries; ++t)
+          for (int s = 0; s < keys; ++s) {
+            const bool selected = s % 2 == t % 2;
+            physical[t * 2 * keys + 2 * s] = selected;
+            physical[t * 2 * keys + 2 * s + 1] = !selected;
+          }
+        const auto storage = ready(mx::astype(
+            mx::array(physical.data(), {queries, 2 * keys}, mx::uint8),
+            mx::bool_, stream()));
+        return ready(mx::slice(storage, {0, 0}, {queries, 2 * keys},
+                                {1, 2}, stream()));
+      }
+      std::vector<double> physical(2 * keys);
+      for (int s = 0; s < keys; ++s) {
+        physical[2 * s] = s % 2 == 0 ? 0 : -2;
+        physical[2 * s + 1] = s % 2 == 0 ? -2 : 0;
+      }
+      const auto storage = make(physical, {1, 2 * keys}, mx::bfloat16);
+      const auto sliced = mx::slice(storage, {0, 0}, {1, 2 * keys},
+                                      {1, 2}, stream());
+      return ready(mx::broadcast_to(sliced, {queries, keys}, stream()));
+    }();
+    ASSERT_EQ(mask.shape(), (mx::Shape{queries, keys}));
+    ASSERT_EQ(mask.strides()[1], 2);
+    ASSERT_EQ(mask.dtype(), kind == c::MaskKind::kBoolean
+                               ? mx::bool_ : mx::bfloat16);
+    if (kind == c::MaskKind::kAdditive)
+      ASSERT_EQ(mask.strides()[0], 0);
+
+    // QK is zero. Boolean rows retain only one V parity; additive weights
+    // are exp(0) for the 17 positive keys and exp(-2) for the 16 negative keys.
+    const double positive = std::exp(0.0), negative = std::exp(-2.0);
+    const double additive_mean =
+        1.25 * (17 * positive - 16 * negative) /
+        (17 * positive + 16 * negative);
+    std::vector<double> expected(heads * queries * depth);
+    for (int h = 0; h < heads; ++h)
+      for (int t = 0; t < queries; ++t)
+        std::fill_n(expected.begin() + (h * queries + t) * depth, depth,
+                     kind == c::MaskKind::kBoolean
+                         ? (t % 2 == 0 ? 1.25 : -1.25) : additive_mean);
+
+    const std::array inputs{query, key, value, mask};
+    std::array<a::InputSpec, 4> specs;
+    for (std::size_t i = 0; i < specs.size(); ++i)
+      specs[i] = {inputs[i].shape(), inputs[i].dtype()};
+    auto context = a::Context::create().value();
+    const c::Operation operation(c::ScaledDotProductAttention{
+        .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
+        .mask = kind, .scale = 0.125F});
+    // The additive case retains the runtime BF16-mask cast from InputSpec.
+    auto program = kind == c::MaskKind::kBoolean
+        ? context.prepare(operation, inputs) : context.prepare(operation, specs);
+    ASSERT_TRUE(program) << program.error().message();
+    auto invocation = program->create_invocation().value();
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto work = invocation.submit().value();
+    auto result = work.wait().value();
+    const auto &output = result.get()->arrays()[0];
+    ASSERT_EQ(output.shape(), query.shape());
+    ASSERT_EQ(output.dtype(), mx::float32);
+    expect(output, expected);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+  }
+}
+
 } // namespace

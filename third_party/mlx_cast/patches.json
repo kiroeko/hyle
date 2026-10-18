@@ -442,9 +442,21 @@
         {
           "before": "  if (ordinary_f32) {\n    const auto required",
           "after": "  if (ordinary_f32 || ordinary_f32_d192) {\n    const auto required"
+        },
+        {
+          "before": "  compute_encoder.set_bytes(params, 4);\n  if (page && page->table) {\n    compute_encoder.set_input_array(*page->table, 8);\n    compute_encoder.set_bytes(page->offset, 9);\n  }\n\n  if (has_mask) {\n    auto& m = *mask;\n\n    AttnMaskParams mask_params{/* int64_t M_strides[3] = */ {\n        m.strides(0), m.strides(1), m.strides(2)}};\n\n    compute_encoder.set_bytes(mask_params, 5);\n    compute_encoder.set_input_array(m, 6);\n  }\n  if (has_sinks) {\n    compute_encoder.set_input_array(*sinks, 7);\n  }\n\n  MTL::Size grid_dims = MTL::Size(NQ, H, B);\n",
+          "after": "  compute_encoder.set_bytes(params, 4);\n  if (page && page->table) {\n    compute_encoder.set_input_array(*page->table, 8);\n    compute_encoder.set_bytes(page->offset, 9);\n  }\n\n  if (has_mask) {\n    auto& m = *mask;\n\n    AttnMaskParams mask_params{/* int64_t M_strides[4] = */ {\n        m.strides(0), m.strides(1), m.strides(2), m.strides(3)}};\n\n    compute_encoder.set_bytes(mask_params, 5);\n    compute_encoder.set_input_array(m, 6);\n  }\n  if (has_sinks) {\n    compute_encoder.set_input_array(*sinks, 7);\n  }\n\n  MTL::Size grid_dims = MTL::Size(NQ, H, B);\n"
+        },
+        {
+          "before": "  if (hyle_window) compute_encoder.set_bytes(page->window, 10);\n  if (page && page->table) {\n    compute_encoder.set_input_array(*page->table, 8);\n    compute_encoder.set_bytes(page->offset, 9);\n  }\n\n  if (has_mask) {\n    auto& m = *mask;\n\n    AttnMaskParams mask_params{/* int64_t M_strides[3] = */ {\n        m.strides(0), m.strides(1), m.strides(2)}};\n\n    compute_encoder.set_bytes(mask_params, 5);\n    compute_encoder.set_input_array(m, 6);\n  }\n  if (has_sinks) {\n    compute_encoder.set_input_array(*sinks, 7);\n  }\n\n  MTL::Size grid_dims = MTL::Size(NQ, H, B);\n",
+          "after": "  if (hyle_window) compute_encoder.set_bytes(page->window, 10);\n  if (page && page->table) {\n    compute_encoder.set_input_array(*page->table, 8);\n    compute_encoder.set_bytes(page->offset, 9);\n  }\n\n  if (has_mask) {\n    auto& m = *mask;\n\n    AttnMaskParams mask_params{/* int64_t M_strides[4] = */ {\n        m.strides(0), m.strides(1), m.strides(2), m.strides(3)}};\n\n    compute_encoder.set_bytes(mask_params, 5);\n    compute_encoder.set_input_array(m, 6);\n  }\n  if (has_sinks) {\n    compute_encoder.set_input_array(*sinks, 7);\n  }\n\n  MTL::Size grid_dims = MTL::Size(NQ, H, B);\n"
+        },
+        {
+          "before": "        {str_oB, str_oH, str_oL, str_oD},\n        flags);\n\n    auto mask = has_arr_mask\n        ? std::optional<array>{copy_unless(is_matrix_contiguous, inputs[3])}\n        : std::nullopt;\n\n    sdpa_full_self_attention_metal(\n        s, d, q, k, v, scale_, o, do_causal_, mask, sinks, page);\n",
+          "after": "        {str_oB, str_oH, str_oL, str_oD},\n        flags);\n\n    // Full kernels receive all four mask strides, including broadcast/strided KV.\n    auto mask = has_arr_mask ? std::optional<array>{inputs[3]} : std::nullopt;\n\n    sdpa_full_self_attention_metal(\n        s, d, q, k, v, scale_, o, do_causal_, mask, sinks, page);\n"
         }
       ],
-      "after_sha256": "a9a0e48630e7c8eb6e8041a48b62fab497a51e1ce974759c0e6f957f4107bfa7"
+      "after_sha256": "884a79d717ab78fdc2576e41e6d30efd9a2e0838962905d57c1f54793443f2a1"
     },
     {
       "path": "mlx/backend/metal/kernels/sdpa_vector.h",
@@ -671,9 +683,25 @@
         {
           "before": "constant bool has_sinks [[function_constant(302)]];\n\n",
           "after": "constant bool has_sinks [[function_constant(302)]];\nconstant bool hyle_paged [[function_constant(303)]];\n\n"
+        },
+        {
+          "before": "            const int col_pos = base_col + ik * kU;\n\n            mfrag_t mfrag;\n            mtile_t::NAXFrag_t::load(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                Int<1>{},\n                row_pos,\n                col_pos);\n\n            thread auto& fg = Stile.frag_at(iq, ik);\n\n",
+          "after": "            const int col_pos = base_col + ik * kU;\n\n            mfrag_t mfrag;\n            if (mask_params->M_strides[3] == 1) {\n              mtile_t::NAXFrag_t::load(\n                  mfrag,\n                  mask,\n                  int64_t(mask_params->M_strides[2]),\n                  Int<1>{},\n                  row_pos,\n                  col_pos);\n            } else {\n              mtile_t::NAXFrag_t::load(\n                  mfrag,\n                  mask,\n                  int64_t(mask_params->M_strides[2]),\n                  int64_t(mask_params->M_strides[3]),\n                  row_pos,\n                  col_pos);\n            }\n\n            thread auto& fg = Stile.frag_at(iq, ik);\n\n"
+        },
+        {
+          "before": "            const int col_pos = base_col + ik * kU;\n\n            mfrag_t mfrag;\n            mtile_t::NAXFrag_t::load_safe(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                Int<1>{},\n                params->qL,\n                params->kL,\n                row_pos,\n                col_pos);\n\n            thread auto& fg = Stile.frag_at(iq, ik);\n\n",
+          "after": "            const int col_pos = base_col + ik * kU;\n\n            mfrag_t mfrag;\n            if (mask_params->M_strides[3] == 1) {\n              mtile_t::NAXFrag_t::load_safe(\n                  mfrag,\n                  mask,\n                  int64_t(mask_params->M_strides[2]),\n                  Int<1>{},\n                  params->qL,\n                  params->kL,\n                  row_pos,\n                  col_pos);\n            } else {\n              mtile_t::NAXFrag_t::load_safe(\n                  mfrag,\n                  mask,\n                  int64_t(mask_params->M_strides[2]),\n                  int64_t(mask_params->M_strides[3]),\n                  params->qL,\n                  params->kL,\n                  row_pos,\n                  col_pos);\n            }\n\n            thread auto& fg = Stile.frag_at(iq, ik);\n\n"
+        },
+        {
+          "before": "          const int col_pos = base_col + ik * kU;\n\n          mfrag_t mfrag;\n          mtile_t::NAXFrag_t::load(\n              mfrag,\n              mask,\n              int64_t(mask_params->M_strides[2]),\n              Int<1>{},\n              row_pos,\n              col_pos);\n\n          thread auto& fg = Stile.frag_at(0, ik);\n\n",
+          "after": "          const int col_pos = base_col + ik * kU;\n\n          mfrag_t mfrag;\n          if (mask_params->M_strides[3] == 1) {\n            mtile_t::NAXFrag_t::load(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                Int<1>{},\n                row_pos,\n                col_pos);\n          } else {\n            mtile_t::NAXFrag_t::load(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                int64_t(mask_params->M_strides[3]),\n                row_pos,\n                col_pos);\n          }\n\n          thread auto& fg = Stile.frag_at(0, ik);\n\n"
+        },
+        {
+          "before": "          const int col_pos = base_col + ik * kU;\n\n          mfrag_t mfrag;\n          mtile_t::NAXFrag_t::load_safe(\n              mfrag,\n              mask,\n              int64_t(mask_params->M_strides[2]),\n              Int<1>{},\n              params->qL,\n              params->kL,\n              row_pos,\n              col_pos);\n\n          thread auto& fg = Stile.frag_at(0, ik);\n\n",
+          "after": "          const int col_pos = base_col + ik * kU;\n\n          mfrag_t mfrag;\n          if (mask_params->M_strides[3] == 1) {\n            mtile_t::NAXFrag_t::load_safe(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                Int<1>{},\n                params->qL,\n                params->kL,\n                row_pos,\n                col_pos);\n          } else {\n            mtile_t::NAXFrag_t::load_safe(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                int64_t(mask_params->M_strides[3]),\n                params->qL,\n                params->kL,\n                row_pos,\n                col_pos);\n          }\n\n          thread auto& fg = Stile.frag_at(0, ik);\n\n"
         }
       ],
-      "after_sha256": "7b9492a3afb4078e51229305690a595133eb72fcab2291593820156107de0020"
+      "after_sha256": "b351119b2766d77427b3643730b7cdcac6870327e036bcc32b72de516eacb8d2"
     },
     {
       "path": "mlx/backend/metal/kernels/steel/attn/loader.h",
@@ -829,9 +857,13 @@
         {
           "before": "  constexpr short padQ = 16 / sizeof(QueryT);\n  constexpr short padK = 16 / sizeof(T);\n  constexpr short padV = 16 / sizeof(T);",
           "after": "  constexpr bool compact = BQ == 8 && BK == 8 && WM == 1 && WN == 1;\n  constexpr short padQ = compact ? 0 : 16 / sizeof(QueryT);\n  constexpr short padK = compact ? 0 : 16 / sizeof(T);\n  constexpr short padV = compact ? 0 : 16 / sizeof(T);"
+        },
+        {
+          "before": "\n          frag_t mfrag;\n\n          MMAFrag_mask_t::load_safe(\n              mfrag,\n              mask,\n              int64_t(mask_params->M_strides[2]),\n              Int<1>{},\n              params->qL,\n              params->kL,\n              row_pos,\n              col_pos);\n\n          STEEL_PRAGMA_UNROLL\n          for (short jj = 0; jj < stile_t::MMAFrag_t::kElemsPerFrag; jj++) {\n",
+          "after": "\n          frag_t mfrag;\n\n          if (mask_params->M_strides[3] == 1) {\n            MMAFrag_mask_t::load_safe(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                Int<1>{},\n                params->qL,\n                params->kL,\n                row_pos,\n                col_pos);\n          } else {\n            MMAFrag_mask_t::load_safe(\n                mfrag,\n                mask,\n                int64_t(mask_params->M_strides[2]),\n                int64_t(mask_params->M_strides[3]),\n                params->qL,\n                params->kL,\n                row_pos,\n                col_pos);\n          }\n\n          STEEL_PRAGMA_UNROLL\n          for (short jj = 0; jj < stile_t::MMAFrag_t::kElemsPerFrag; jj++) {\n"
         }
       ],
-      "after_sha256": "e6cd03558594f02b0f435209a1e91ac77dec40f8ee6461e3ff308f45faadcb06"
+      "after_sha256": "287c39d121cd252d87f2ff859d3d73e0c048d5ab386160268124b60a06c84a0c"
     },
     {
       "path": "mlx/backend/metal/kernels/scaled_dot_product_attention.metal",
@@ -917,6 +949,17 @@
         {
           "before": "  if (get_cache_memory() < max_pool_size_) {",
           "after": "  if (buffer_cache_.cache_size() < max_pool_size_) {"
+        }
+      ]
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/params.h",
+      "before_sha256": "f03c6ed73d7298fa69b75a49e7eec54954b6fafd59530a1f175934215412ed80",
+      "after_sha256": "78c77516396d91940f1413004b9fa3f6d1830858e91234fb6648bc54762a4b2c",
+      "edits": [
+        {
+          "before": "};\n\nstruct AttnMaskParams {\n  int64_t M_strides[3]; ///< Mask  strides (B, H, qL, kL = 1)\n};\n\n} // namespace steel\n",
+          "after": "};\n\nstruct AttnMaskParams {\n  int64_t M_strides[4]; ///< Mask strides (B, H, qL, kL)\n};\n\n} // namespace steel\n"
         }
       ]
     }

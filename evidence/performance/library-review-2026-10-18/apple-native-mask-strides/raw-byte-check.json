@@ -1,0 +1,96 @@
+{
+  "independent": "root byte comparison against untouched original SDK baseline archive",
+  "outputs": [
+    {
+      "output": "bf16-additive-dense-rebind0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "equal": true
+    },
+    {
+      "output": "bf16-additive-spec-dense0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "equal": true
+    },
+    {
+      "output": "bf16-additive-view0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "equal": true
+    },
+    {
+      "output": "bf16-additive-view1.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "61a9a88c615f8e91e4d91e518688f52ae75b432d0036735f13cb7bd0f88218e6",
+      "equal": true
+    },
+    {
+      "output": "bool-dense-rebind0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "equal": true
+    },
+    {
+      "output": "bool-spec-dense0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "equal": true
+    },
+    {
+      "output": "bool-view0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "equal": true
+    },
+    {
+      "output": "bool-view1.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "2dbfe12418236372c82923ffe037dc3374300bcb182e7a9162c81b6d51149a37",
+      "equal": true
+    }
+  ],
+  "total_elements": 4198400,
+  "all_equal": true,
+  "compiled_sources_match_manifest_replay": [
+    {
+      "arm": "baseline",
+      "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "sha256": "a9a0e48630e7c8eb6e8041a48b62fab497a51e1ce974759c0e6f957f4107bfa7"
+    },
+    {
+      "arm": "baseline",
+      "path": "mlx/backend/metal/kernels/steel/attn/params.h",
+      "sha256": "f03c6ed73d7298fa69b75a49e7eec54954b6fafd59530a1f175934215412ed80"
+    },
+    {
+      "arm": "baseline",
+      "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "sha256": "e6cd03558594f02b0f435209a1e91ac77dec40f8ee6461e3ff308f45faadcb06"
+    },
+    {
+      "arm": "candidate",
+      "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "sha256": "884a79d717ab78fdc2576e41e6d30efd9a2e0838962905d57c1f54793443f2a1"
+    },
+    {
+      "arm": "candidate",
+      "path": "mlx/backend/metal/kernels/steel/attn/params.h",
+      "sha256": "78c77516396d91940f1413004b9fa3f6d1830858e91234fb6648bc54762a4b2c"
+    },
+    {
+      "arm": "candidate",
+      "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "sha256": "287c39d121cd252d87f2ff859d3d73e0c048d5ab386160268124b60a06c84a0c"
+    }
+  ],
+  "original_FP64_failure_reclassification": false
+}

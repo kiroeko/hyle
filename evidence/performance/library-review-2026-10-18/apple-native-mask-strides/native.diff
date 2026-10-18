@@ -1,0 +1,224 @@
+--- a/mlx/backend/metal/kernels/steel/attn/params.h
++++ b/mlx/backend/metal/kernels/steel/attn/params.h
+@@ -37,7 +37,7 @@
+ };
+ 
+ struct AttnMaskParams {
+-  int64_t M_strides[3]; ///< Mask  strides (B, H, qL, kL = 1)
++  int64_t M_strides[4]; ///< Mask strides (B, H, qL, kL)
+ };
+ 
+ } // namespace steel
+--- a/mlx/backend/metal/scaled_dot_product_attention.cpp
++++ b/mlx/backend/metal/scaled_dot_product_attention.cpp
+@@ -195,8 +195,8 @@
+   if (has_mask) {
+     auto& m = *mask;
+ 
+-    AttnMaskParams mask_params{/* int64_t M_strides[3] = */ {
+-        m.strides(0), m.strides(1), m.strides(2)}};
++    AttnMaskParams mask_params{/* int64_t M_strides[4] = */ {
++        m.strides(0), m.strides(1), m.strides(2), m.strides(3)}};
+ 
+     compute_encoder.set_bytes(mask_params, 5);
+     compute_encoder.set_input_array(m, 6);
+@@ -419,8 +419,8 @@
+   if (has_mask) {
+     auto& m = *mask;
+ 
+-    AttnMaskParams mask_params{/* int64_t M_strides[3] = */ {
+-        m.strides(0), m.strides(1), m.strides(2)}};
++    AttnMaskParams mask_params{/* int64_t M_strides[4] = */ {
++        m.strides(0), m.strides(1), m.strides(2), m.strides(3)}};
+ 
+     compute_encoder.set_bytes(mask_params, 5);
+     compute_encoder.set_input_array(m, 6);
+@@ -1004,9 +1004,8 @@
+         {str_oB, str_oH, str_oL, str_oD},
+         flags);
+ 
+-    auto mask = has_arr_mask
+-        ? std::optional<array>{copy_unless(is_matrix_contiguous, inputs[3])}
+-        : std::nullopt;
++    // Full kernels receive all four mask strides, including broadcast/strided KV.
++    auto mask = has_arr_mask ? std::optional<array>{inputs[3]} : std::nullopt;
+ 
+     sdpa_full_self_attention_metal(
+         s, d, q, k, v, scale_, o, do_causal_, mask, sinks, page);
+--- a/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h
++++ b/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h
+@@ -382,15 +382,27 @@
+ 
+           frag_t mfrag;
+ 
+-          MMAFrag_mask_t::load_safe(
+-              mfrag,
+-              mask,
+-              int64_t(mask_params->M_strides[2]),
+-              Int<1>{},
+-              params->qL,
+-              params->kL,
+-              row_pos,
+-              col_pos);
++          if (mask_params->M_strides[3] == 1) {
++            MMAFrag_mask_t::load_safe(
++                mfrag,
++                mask,
++                int64_t(mask_params->M_strides[2]),
++                Int<1>{},
++                params->qL,
++                params->kL,
++                row_pos,
++                col_pos);
++          } else {
++            MMAFrag_mask_t::load_safe(
++                mfrag,
++                mask,
++                int64_t(mask_params->M_strides[2]),
++                int64_t(mask_params->M_strides[3]),
++                params->qL,
++                params->kL,
++                row_pos,
++                col_pos);
++          }
+ 
+           STEEL_PRAGMA_UNROLL
+           for (short jj = 0; jj < stile_t::MMAFrag_t::kElemsPerFrag; jj++) {
+--- a/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention_nax.h
++++ b/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention_nax.h
+@@ -333,13 +333,23 @@
+             const int col_pos = base_col + ik * kU;
+ 
+             mfrag_t mfrag;
+-            mtile_t::NAXFrag_t::load(
+-                mfrag,
+-                mask,
+-                int64_t(mask_params->M_strides[2]),
+-                Int<1>{},
+-                row_pos,
+-                col_pos);
++            if (mask_params->M_strides[3] == 1) {
++              mtile_t::NAXFrag_t::load(
++                  mfrag,
++                  mask,
++                  int64_t(mask_params->M_strides[2]),
++                  Int<1>{},
++                  row_pos,
++                  col_pos);
++            } else {
++              mtile_t::NAXFrag_t::load(
++                  mfrag,
++                  mask,
++                  int64_t(mask_params->M_strides[2]),
++                  int64_t(mask_params->M_strides[3]),
++                  row_pos,
++                  col_pos);
++            }
+ 
+             thread auto& fg = Stile.frag_at(iq, ik);
+ 
+@@ -362,15 +372,27 @@
+             const int col_pos = base_col + ik * kU;
+ 
+             mfrag_t mfrag;
+-            mtile_t::NAXFrag_t::load_safe(
+-                mfrag,
+-                mask,
+-                int64_t(mask_params->M_strides[2]),
+-                Int<1>{},
+-                params->qL,
+-                params->kL,
+-                row_pos,
+-                col_pos);
++            if (mask_params->M_strides[3] == 1) {
++              mtile_t::NAXFrag_t::load_safe(
++                  mfrag,
++                  mask,
++                  int64_t(mask_params->M_strides[2]),
++                  Int<1>{},
++                  params->qL,
++                  params->kL,
++                  row_pos,
++                  col_pos);
++            } else {
++              mtile_t::NAXFrag_t::load_safe(
++                  mfrag,
++                  mask,
++                  int64_t(mask_params->M_strides[2]),
++                  int64_t(mask_params->M_strides[3]),
++                  params->qL,
++                  params->kL,
++                  row_pos,
++                  col_pos);
++            }
+ 
+             thread auto& fg = Stile.frag_at(iq, ik);
+ 
+@@ -792,13 +814,23 @@
+           const int col_pos = base_col + ik * kU;
+ 
+           mfrag_t mfrag;
+-          mtile_t::NAXFrag_t::load(
+-              mfrag,
+-              mask,
+-              int64_t(mask_params->M_strides[2]),
+-              Int<1>{},
+-              row_pos,
+-              col_pos);
++          if (mask_params->M_strides[3] == 1) {
++            mtile_t::NAXFrag_t::load(
++                mfrag,
++                mask,
++                int64_t(mask_params->M_strides[2]),
++                Int<1>{},
++                row_pos,
++                col_pos);
++          } else {
++            mtile_t::NAXFrag_t::load(
++                mfrag,
++                mask,
++                int64_t(mask_params->M_strides[2]),
++                int64_t(mask_params->M_strides[3]),
++                row_pos,
++                col_pos);
++          }
+ 
+           thread auto& fg = Stile.frag_at(0, ik);
+ 
+@@ -818,15 +850,27 @@
+           const int col_pos = base_col + ik * kU;
+ 
+           mfrag_t mfrag;
+-          mtile_t::NAXFrag_t::load_safe(
+-              mfrag,
+-              mask,
+-              int64_t(mask_params->M_strides[2]),
+-              Int<1>{},
+-              params->qL,
+-              params->kL,
+-              row_pos,
+-              col_pos);
++          if (mask_params->M_strides[3] == 1) {
++            mtile_t::NAXFrag_t::load_safe(
++                mfrag,
++                mask,
++                int64_t(mask_params->M_strides[2]),
++                Int<1>{},
++                params->qL,
++                params->kL,
++                row_pos,
++                col_pos);
++          } else {
++            mtile_t::NAXFrag_t::load_safe(
++                mfrag,
++                mask,
++                int64_t(mask_params->M_strides[2]),
++                int64_t(mask_params->M_strides[3]),
++                params->qL,
++                params->kL,
++                row_pos,
++                col_pos);
++          }
+ 
+           thread auto& fg = Stile.frag_at(0, ik);
+ 

@@ -7,7 +7,7 @@
 按下面31个清单条目统计：27项性能/复杂度问题中，25项已修已确认机制、1项部分修复（Apple普通attention）、1项未解决（HTTP2）；另4项纯接线/正确性问题均已修。
 这是清单条目数，包含源码已证实的多余时间/空间开销，不是27项当前peer实测排名或严格去重的算法家族。待测、不公平对比及未稳定小负点不计入；修复机制不等于所有shape已赢。
 
-**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple普通融合attention对KV维非连续广播mask的完整拷贝。普通math fallback已扩展checked分块，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界，不当作已确认的typed空间缺陷。
+**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple普通attention中非连续混合dtype additive mask的转换/融合broadcast物化。原生full融合mask的KV非连续完整拷贝已修，见末尾。普通math fallback已扩展checked分块，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界，不当作已确认的typed空间缺陷。
 HTTP2最新以NO_COPY减少一次DATA发送拷贝后，两次候选相对同进程peer仍慢8.22%/11.08%；同轮旧实现为11.69%/15.35%，两序改善幅度不稳定，不声称统一稳定提速。此前12.25%/13.63%及14.7–17.1%保留为旧轮结果，不跨轮归因。
 Apple Sink采用单owner Job内同步Q128数学分块：原长Q固定点extra active peak降78.8%，同工时延未见退步；现扩至Q>128收益域，短Q固定点另降67.57%，该新点未测时延。Direct/Graph共用选择，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
@@ -35,7 +35,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | ConcurrentHashMap erase重复hash | [erase](../../../include/hyle/container/concurrent_hash_map.h) 先hash选shard，再由table.erase重算同key | 复用私有prehashed路径，锁/回收/析构顺序不变。计数2→1；长key形状两对改善与AA漂移见下，不声称外部赢 |
 | CPU / Vulkan Concat重复复制前缀 | 两个provider仍线性拼接；CPU保留全部中间payload，Vulkan虽有gallocr复用，复制工作仍为二次项 | 已移植平衡树，保持各自dtype/stride受理域；CPU修正重复ports元数据预算。实测与空间边界见下 |
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
-| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 受限域已融合，其余大math域已用原生selector及checked Q128块，覆盖三种浮点dtype、不同Dv、广播mask和全Q causal偏移。仍保留融合路径KV维非连续mask的完整复制问题，不将本项计为全部修复 |
+| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 受限域已融合，其余大math域已用原生selector及checked Q128块，覆盖三种浮点dtype、不同Dv、广播mask和全Q causal偏移。原生full mask已接通KV stride、移除完整复制；非连续mixed additive cast子域仍保留，不将本项计为全部修复 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的Q>128收益域均用单Job同步Q128块。长Q固定extra peak1344307200→285310976 B（−78.8%），短Q672825344→218202112 B（−67.57%）；新短Q未测时延。其它guard域的scores有KV/输出同阶上界，caller mask仍为Q×KV；不宣称所有shape吞吐或opaque callback自动规划 |
 | HTTP2大body背压holdout | 唯一4×256 KiB holdout最新NO_COPY候选仍慢8.22%/11.08%；同轮旧控制慢11.69%/15.35%，存在peer漂移与顺序差异 | DATA绕过native bounce、一次复制到原owned wire，保留所有flush/取消/借用合同。两序幅度不稳，不声称统一提速；残差保留，通用职责与手工单loop策略分开调查 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
@@ -1372,3 +1372,11 @@ v2按mask字节量选择64～512行（32MiB目标），固定点为448＋448＋1
 四个scalar read_some/write_some入口在当前worker等于owner_的原断言后，直接用owner_选择同一现成proactor，去掉二次TLS查询；保留valid、worker和ring范围检查，不跨挂起缓存。HTTP2可恢复owner检查和TCP immediate断言均不删。单个fresh TCP测试TU与既有core重链，指定echo及peer-close两项通过；只有peer-close普通scalar-write确实运行新inline代码，其余三定义此次为编译核查，echo内部预算helper仍为缓存core。没有测性能或把旧profile外推当前残差，HTTP2仍未解决。[验证与范围](http2/tcp-owner-query/summary.json)／[源码、命令与日志](http2/tcp-owner-query/source-results.zip)。
 
 融合mask两版负候选归档后，先写根test.ps1再执行一次精确清理：删除16个可重建生成物101470744 B，10个仍用于后续对照的产品/测试/probe及baseline exe保留并复核。所有源码、原始数值、日志、归档与SDK保留；旧脚本已用不可重跑。[执行记录](apple-fused-mask/artifact-cleanup/summary.json)。
+
+### Apple原生full mask：直接保留KV stride，空间和时延均改善
+
+两版checked分块回退均未应用。改为原生full kernel传4个mask stride；KV stride1保留原特化，0/2等布局复用generic loader，不再先展开完整mask。Steel/NAX与dsplit均接线，vector原路径保留。当前pin全部补丁重放和哈希通过；Air只用3个native TU更新（两侧host＋新Steel源字符串），没有整SDK或metallib重编。缓存SDK与当前manifest有差异，因此两侧都从同一current-manifest基线构建native host，避免混用版本。
+
+新独立Q17/K33两case测试先在旧SDK通过，又在同源control通过；candidate共9项通过。8组4198400个F32值与原冻结SDK基线逐位相同，原847680处FP64预算超标继续保留，不宣称golden通过。相同4280消费者/输入/边界的extra MLX active peak从69304320降至2113536 B（−96.95%），active_before和持输出lease的active相同，完整524800元素oracle通过。
+
+唯一同源ABBA的中位时延依次15.041750／10.010917／10.012250／12.019750 ms，36样本及前后oracle全部保留。新实现两顺序均更快；首old组明显波动，不给统一倍率或置信区间。接纳此补丁。NAX仅源级核查，Air未运行；其余shape未测吞吐。混合dtype不能一概称必平方：连续payload的零stride广播，AsType可保留紧凑backing；但stride2等非连续payload或后续融合head broadcast仍可能全QK物化，故Apple仍为部分修复、总计25项已修＋2项未完。[结论](apple-native-mask-strides/disposition.json)／[完整结果](apple-native-mask-strides/summary.json)／[root位值核对](apple-native-mask-strides/raw-byte-check.json)／[源码差异](apple-native-mask-strides/native.diff)／[命令、原始数据和日志](apple-native-mask-strides/source-results.zip)。

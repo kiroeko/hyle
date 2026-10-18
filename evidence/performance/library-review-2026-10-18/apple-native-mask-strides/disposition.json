@@ -1,0 +1,12 @@
+{
+  "status": "accepted: eliminate full-native mask packing while retaining arithmetic",
+  "product_change": "Pinned native full Steel/NAX mask parameters and loads honor KV stride; vector packing unchanged. Same-stride1 loader retained.",
+  "same_source_comparison": "Both measured arms override native host dispatch from the current manifest baseline/candidate; only mask-stride changes differ. Other Hyle products, SDK, consumer and inputs are identical.",
+  "numeric": "9 candidate tests pass; original SDK baseline and candidate 4198400 F32 output bits match. Original 847680 FP64-budget failures are retained, not passed.",
+  "space": "MLX extra active peak 69304320 -> 2113536 B, 96.95035% less; not total GPU/driver memory.",
+  "latency": "One ABBA median 15.041750/10.010917/10.012250/12.019750 ms; candidate lower both orders; old0 drift retained; no universal factor.",
+  "unverified": "Current Air SDK disables NAX; NAX address/template wiring is source-reviewed, not executed. Other shapes not timed.",
+  "remaining": "Strided mixed-dtype additive mask cast/fused broadcast can still materialize QK; ordinary attention remains partially fixed. HTTP2 remains open.",
+  "original_diagnostics_preserved": true,
+  "cleanup_performed": false
+}
