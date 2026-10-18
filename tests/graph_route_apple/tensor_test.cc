@@ -339,4 +339,64 @@ TEST(AppleGraph, PublishedCenteredShortQueryMathAndNegativeCrossCheckedBoundary)
   }
 }
 
+TEST(AppleGraph, PublishedFusedMaskNativeResultsRetainOwnersAndRebinding) {
+  namespace fm = fused_broadcast_mask;
+  constexpr auto layout = c::AttentionLayout::kBatchSequenceHeadDepth;
+  constexpr auto kind = c::MaskKind::kAdditive;
+  auto view0 = fm::ports(kind, layout, 0), view1 = fm::ports(kind, layout, 1);
+  auto dense0 = view0;
+  dense0[3] = fm::mask_input(kind, 0, true);
+  const auto expected0 = fm::native_reference(view0, layout);
+  const auto expected1 = fm::native_reference(view1, layout);
+  auto builder = g::GraphBuilder::create().value();
+  std::array<g::ValueId, 4> ports;
+  for (std::size_t i = 0; i < ports.size(); ++i) {
+    std::vector<std::int64_t> shape(view0[i].shape().begin(), view0[i].shape().end());
+    ports[i] = builder.input(c::TensorDesc::dense(logical(view0[i].dtype()), shape).value()).value();
+  }
+  const auto copy = builder.add(c::Copy{}, ports[0]).value();
+  const auto attention = builder.add(c::ScaledDotProductAttention{
+      .layout = layout, .mask = kind, .scale = ordinary_short_query_centered::scale},
+      copy, ports[1], ports[2], ports[3]).value();
+  const auto negative = builder.add(c::Unary{c::UnaryKind::kNeg}, attention).value();
+  ASSERT_TRUE(builder.publish(copy).ok());
+  ASSERT_TRUE(builder.publish(attention).ok());
+  ASSERT_TRUE(builder.publish(negative).ok());
+  auto graph = std::move(builder).finish().value();
+  auto context = a::Context::create().value();
+  auto program = ga::compile(context, graph, {}).value();
+  auto slot = program.create_invocation().value();
+  std::vector<mx::array> old_outputs;
+  std::vector<std::vector<std::uint64_t>> old_bits;
+  for (int stage = 0; stage < 3; ++stage) {
+    SCOPED_TRACE(stage);
+    const auto &inputs = stage == 0 ? view0 : stage == 1 ? dense0 : view1;
+    ASSERT_EQ(inputs[3].shape(), (mx::Shape{1, 1, fm::queries, fm::keys}));
+    ASSERT_EQ(inputs[3].strides()[3], stage == 1 ? 1 : 0);
+    const auto &expected = stage == 2 ? expected1 : expected0;
+    auto negated = expected;
+    for (auto &value : negated) value = -value;
+    ASSERT_TRUE(slot.bind(inputs).ok());
+    const auto query_bits = bits(inputs[0]);
+    auto accepted = slot.submit().value();
+    auto finished = accepted.wait().value();
+    const auto outputs = finished.get()->arrays();
+    ASSERT_EQ(outputs.size(), 3U);
+    ASSERT_EQ(outputs[1].dtype(), mx::float32);
+    ASSERT_EQ(outputs[2].dtype(), mx::float32);
+    EXPECT_EQ(outputs[0].shape(), inputs[0].shape());
+    EXPECT_EQ(bits(outputs[0]), query_bits);
+    expect(outputs[1], expected);
+    expect(outputs[2], negated);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+    if (stage < 2)
+      for (const auto &output : outputs) {
+        old_outputs.push_back(output);
+        old_bits.push_back(bits(output));
+      }
+  }
+  for (std::size_t i = 0; i < old_outputs.size(); ++i)
+    EXPECT_EQ(bits(old_outputs[i]), old_bits[i]);
+}
+
 } // namespace

@@ -1,0 +1,81 @@
+{
+  "comparison": "root independent archive byte comparison against original untouched baseline",
+  "outputs": [
+    {
+      "name": "bf16-additive-dense-rebind0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "identical": true
+    },
+    {
+      "name": "bf16-additive-spec-dense0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "identical": true
+    },
+    {
+      "name": "bf16-additive-view0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "identical": true
+    },
+    {
+      "name": "bf16-additive-view1.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "61a9a88c615f8e91e4d91e518688f52ae75b432d0036735f13cb7bd0f88218e6",
+      "identical": true
+    },
+    {
+      "name": "bool-dense-rebind0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "identical": true
+    },
+    {
+      "name": "bool-spec-dense0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "identical": true
+    },
+    {
+      "name": "bool-view0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "identical": true
+    },
+    {
+      "name": "bool-view1.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "2dbfe12418236372c82923ffe037dc3374300bcb182e7a9162c81b6d51149a37",
+      "identical": true
+    }
+  ],
+  "total_elements": 4198400,
+  "all_identical": true,
+  "current_product_sources_match_archive": [
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "bytes": 52819,
+      "sha256": "2d571ec72c24b54e003bfb12f1ae9e5400f07a87c806a61eea26e1b0550dd3be"
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "bytes": 23153,
+      "sha256": "199618974ed50c11674faa7eeccfa5bd10e4e718300b07a4f511cc47897d2bde"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.h",
+      "bytes": 1259,
+      "sha256": "3454045dcb74d3f6d7238715f3734de1a933c0858b8796abd8abe4edb9c0367f"
+    }
+  ],
+  "original_FP64_failures_not_reclassified": true
+}

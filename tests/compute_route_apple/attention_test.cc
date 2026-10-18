@@ -465,4 +465,75 @@ TEST(AppleAttention, CenteredShortQueryMathKeepsMasksTailAndReboundOwners) {
   }
 }
 
+TEST(AppleAttention, FusedMasksRetainNativeValuesAcrossStridesAndRebinding) {
+  namespace fm = fused_broadcast_mask;
+  for (const auto kind : {c::MaskKind::kBoolean, c::MaskKind::kAdditive}) {
+    SCOPED_TRACE(static_cast<int>(kind));
+    const auto layout = kind == c::MaskKind::kBoolean
+        ? c::AttentionLayout::kBatchHeadSequenceDepth
+        : c::AttentionLayout::kBatchSequenceHeadDepth;
+    auto view0 = fm::ports(kind, layout, 0), view1 = fm::ports(kind, layout, 1);
+    auto dense0 = view0;
+    dense0[3] = fm::mask_input(kind, 0, true);
+    ASSERT_EQ(view0[3].shape(), (mx::Shape{1, 1, fm::queries, fm::keys}));
+    ASSERT_EQ(dense0[3].shape(), view0[3].shape());
+    ASSERT_EQ(view1[3].shape(), view0[3].shape());
+    ASSERT_EQ(view0[3].strides()[3], 0);
+    ASSERT_EQ(dense0[3].strides()[3], 1);
+    ASSERT_EQ(view1[3].strides()[3], 0);
+    EXPECT_EQ(view0[3].dtype(), kind == c::MaskKind::kBoolean ? mx::bool_ : mx::bfloat16);
+    const auto expected0 = fm::native_reference(view0, layout);
+    const auto expected1 = fm::native_reference(view1, layout);
+    auto context = a::Context::create().value();
+    const c::Operation operation(c::ScaledDotProductAttention{
+        .layout = layout, .mask = kind, .scale = ordinary_short_query_centered::scale});
+    auto program = context.prepare(operation, view0).value();
+    std::array<a::InputSpec, 4> specs;
+    for (std::size_t i = 0; i < specs.size(); ++i)
+      specs[i] = {view0[i].shape(), view0[i].dtype()};
+    auto from_specs = context.prepare(operation, specs).value();
+    auto first = program.create_invocation().value();
+    auto second = from_specs.create_invocation().value();
+    ASSERT_TRUE(first.bind(view0).ok());
+    ASSERT_TRUE(second.bind(dense0).ok());
+    auto work0 = first.submit().value(), work_specs = second.submit().value();
+    auto result0 = work0.wait().value(), result_specs = work_specs.wait().value();
+    auto old_output = result0.get()->arrays()[0];
+    ASSERT_EQ(old_output.dtype(), mx::float32);
+    ASSERT_EQ(old_output.shape(), view0[0].shape());
+    ASSERT_EQ(result_specs.get()->arrays()[0].dtype(), mx::float32);
+    expect(old_output, expected0);
+    expect(result_specs.get()->arrays()[0], expected0);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+    const auto old_bits = bits(old_output);
+    result0 = {};
+    work0 = {};
+    // Rebind the same logical shape from a broadcast view to dense storage.
+    ASSERT_TRUE(first.bind(dense0).ok());
+    auto dense_work = first.submit().value();
+    auto dense_result = dense_work.wait().value();
+    auto dense_output = dense_result.get()->arrays()[0];
+    ASSERT_EQ(dense_output.dtype(), mx::float32);
+    expect(dense_output, expected0);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+    const auto dense_bits = bits(dense_output);
+    dense_result = {};
+    dense_work = {};
+    ASSERT_TRUE(first.bind(view1).ok());
+    auto rebound = first.submit().value();
+    first = {};
+    second = {};
+    program = {};
+    from_specs = {};
+    context = {};
+    auto final_result = rebound.wait().value();
+    ASSERT_EQ(final_result.get()->arrays()[0].dtype(), mx::float32);
+    expect(final_result.get()->arrays()[0], expected1);
+    EXPECT_EQ(bits(old_output), old_bits);
+    EXPECT_EQ(bits(dense_output), dense_bits);
+    expect(result_specs.get()->arrays()[0], expected0);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+  }
+}
+
 } // namespace

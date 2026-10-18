@@ -1358,3 +1358,11 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 | old | 12.552708 |
 
 两顺序中位时延回退36.0269%/33.1180%，幅度明显，不能算性能胜出。此版暂不接受，接下来纠正短尾补128行及沿用小数学窗口的多余工作，保留相同数据和数值合同；不追加shape矩阵追数。产品改动尚未提交，原raw/源/归档和对象暂留。[处理结论](apple-fused-mask/checked128/disposition.json)/[摘要](apple-fused-mask/checked128/summary.json)/[全部结果](apple-fused-mask/checked128/source-results.zip)。
+
+### 融合mask v2：减少分块开销后仍回退，拒绝应用
+
+v2按mask字节量选择64～512行（32MiB目标），固定点为448＋448＋129；仅≤8行的尾块补到9，保持原生full内核域。只重编两个产品TU，复用原测试、diagnostic和consumer对象。8项回归通过，原始基线与v2的8组4198400个F32输出逐位相同；原FP64预算的847680处失败仍保留，不改为数值通过。
+
+同一个4280 consumer、输入和计量边界下，extra MLX active peak从69304320降至31211520 B（−54.96%），两侧active_before及持输出lease的active相同。唯一old→v2→v2→old四进程时延中位数依次为12.329500／13.346167／13.414209／12.133583 ms；两顺序仍回退8.2458%／10.5544%，36样本及前后独立oracle全部保留。不能跨v1/v2轮次相减归因，也不追加矩阵追数。
+
+因此拒绝应用v2产品改动，恢复此前已接受的math分块实现；保留native等价回归与全部负结果。清单仍为25项已修、Apple部分修复、HTTP2未解决。下一步先查原生mask stride及pipeline合同。[处理结论](apple-fused-mask/v2/disposition.json)／[摘要](apple-fused-mask/v2/summary.json)／[root逐字节核对](apple-fused-mask/v2/raw-byte-check.json)／[源码、原始输出和全部日志](apple-fused-mask/v2/source-results.zip)。

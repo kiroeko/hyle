@@ -7,9 +7,11 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <optional>
 #include <span>
 #include <vector>
 
+#include <mlx/fast.h>
 #include <mlx/ops.h>
 #include <mlx/transforms.h>
 
@@ -405,4 +407,62 @@ inline std::vector<double> reference(const MathCase &test, int phase) {
   return result;
 }
 } // namespace ordinary_short_query_centered
+
+namespace fused_broadcast_mask {
+namespace sq = ordinary_short_query_centered;
+inline constexpr int queries = 1025, keys = 8193, depth = 64;
+// Original full-fused shapes; even the Bool expanded mask exceeds 64 MiB.
+static_assert(1ULL * sq::heads * queries * keys >= 64ULL * 1024 * 1024);
+inline sq::MathCase shape_case(c::AttentionLayout layout) {
+  return {"full-fused broadcast mask", queries, keys, depth, depth,
+          mx::float32, layout, c::MaskKind::kNone};
+}
+inline bool corner(int t) {
+  return t == 0 || t == 127 || t == 128 || t == queries - 1;
+}
+inline mx::array mask_input(c::MaskKind kind, int phase, bool dense) {
+  const int width = dense ? keys : 1;
+  const mx::Shape shape{1, 1, queries, width};
+  auto mask = [&] {
+    if (kind == c::MaskKind::kBoolean) {
+      std::vector<std::uint8_t> data(queries * width);
+      for (int t = 0; t < queries; ++t)
+        std::fill_n(data.begin() + t * width, width, !corner(t));
+      return mx::astype(mx::array(data.data(), shape, mx::uint8),
+                        mx::bool_, stream());
+    }
+    std::vector<double> data(queries * width);
+    for (int t = 0; t < queries; ++t)
+      std::fill_n(data.begin() + t * width, width,
+                  corner(t) ? -std::numeric_limits<double>::infinity()
+                            : double((t + phase) % 3 - 1) / 4096);
+    return make(data, shape, mx::bfloat16);
+  }();
+  return ready(mx::broadcast_to(mask, {1, 1, queries, keys}, stream()));
+}
+inline std::array<mx::array, 4> ports(c::MaskKind kind,
+                                     c::AttentionLayout layout, int phase) {
+  auto qkv = sq::ports(shape_case(layout), phase);
+  // New well-conditioned fixture only; all existing centered/stress data stay.
+  qkv[2] = ready(mx::add(qkv[2], mx::array(0.5F), stream()));
+  return {qkv[0], qkv[1], qkv[2], mask_input(kind, phase, false)};
+}
+inline std::vector<double> native_reference(std::span<const mx::array> inputs,
+                                            c::AttentionLayout layout) {
+  // Full-Q native values define these stride/dtype/owner equivalence checks.
+  // The original independent FP64 failure and full-output comparison are kept
+  // in their frozen evidence; this helper makes no FP64 accuracy claim.
+  auto q = inputs[0], k = inputs[1], v = inputs[2];
+  if (layout == c::AttentionLayout::kBatchSequenceHeadDepth) {
+    q = mx::transpose(q, {0, 2, 1, 3}, stream());
+    k = mx::transpose(k, {0, 2, 1, 3}, stream());
+    v = mx::transpose(v, {0, 2, 1, 3}, stream());
+  }
+  auto native = mx::fast::scaled_dot_product_attention(
+      q, k, v, sq::scale, "array", inputs[3], std::nullopt, false, stream());
+  if (layout == c::AttentionLayout::kBatchSequenceHeadDepth)
+    native = mx::transpose(native, {0, 2, 1, 3}, stream());
+  return values(ready(std::move(native)));
+}
+} // namespace fused_broadcast_mask
 } // namespace apple_tensor_test

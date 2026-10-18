@@ -1,0 +1,8 @@
+{
+  "path": "evidence/performance/library-review-2026-10-18/apple-fused-mask/v2/source-results.zip",
+  "bytes": 1532224,
+  "sha256": "539138af12b9258d3582c50fede0c0c12bb80178464947a03c01a4cd08d5dbf5",
+  "members": 94,
+  "all36samples_and_fourprocess_stdout_stderr": true,
+  "original_functional_space_package_unchanged": true
+}

@@ -1,0 +1,435 @@
+{
+  "status": "v2_functional_native_equivalent_space_saved_latency_regressed",
+  "functional": {
+    "tests": 8,
+    "failures": 0,
+    "arm": "candidate-v2",
+    "baseline_rerun": false
+  },
+  "diagnostic": {
+    "new_candidate_processes": 1,
+    "new_baseline_processes": 0,
+    "outputs": 8,
+    "elements": 4198400,
+    "reference_consistent": true,
+    "bits_different": 0,
+    "oldpass_newfail": 0,
+    "new_old_over_budget": 0,
+    "error_growth": 0,
+    "category_changes": 0,
+    "all_lifetimes_true": true,
+    "all_reports_consistent": true,
+    "original_FP64_budget_failures_eachside": 847680,
+    "golden_pass_claimed": false
+  },
+  "space": {
+    "baseline_reused": {
+      "mode": "space",
+      "dtype": "F32",
+      "accumulation": "F32",
+      "layout": "BSHD",
+      "B": 1,
+      "H": 8,
+      "Hkv": 2,
+      "D": 64,
+      "Q": 1025,
+      "KV": 8193,
+      "causal": false,
+      "scale": 0.0625,
+      "mask": "Bool per-query KVstride0 view",
+      "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+      "caller_port_requested_bytes": 18886657,
+      "caller_backing_requested_bytes": 10489857,
+      "caller_mask_logical_bytes": 8397825,
+      "caller_mask_backing_requested_bytes": 1025,
+      "native_expanded_Bool_mask_bytes": 67182600,
+      "output_requested_bytes": 2099200,
+      "theoretical_one_full_F32_score_bytes": 268730400,
+      "active_before": 10535937,
+      "cache_before": 0,
+      "active_after_with_output_lease": 12649473,
+      "peak": 79840257,
+      "peak_minus_active_before": 69304320,
+      "cache_after": 67190784,
+      "max_abs_error": 2.2734592257812186e-12,
+      "max_error_over_original_budget": 1.136209560912894e-06,
+      "checked_elements": 524800,
+      "oracle_passed": true
+    },
+    "candidate_v2": {
+      "mode": "space",
+      "dtype": "F32",
+      "accumulation": "F32",
+      "layout": "BSHD",
+      "B": 1,
+      "H": 8,
+      "Hkv": 2,
+      "D": 64,
+      "Q": 1025,
+      "KV": 8193,
+      "causal": false,
+      "scale": 0.0625,
+      "mask": "Bool per-query KVstride0 view",
+      "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+      "caller_port_requested_bytes": 18886657,
+      "caller_backing_requested_bytes": 10489857,
+      "caller_mask_logical_bytes": 8397825,
+      "caller_mask_backing_requested_bytes": 1025,
+      "native_expanded_Bool_mask_bytes": 67182600,
+      "output_requested_bytes": 2099200,
+      "theoretical_one_full_F32_score_bytes": 268730400,
+      "active_before": 10535937,
+      "cache_before": 0,
+      "active_after_with_output_lease": 12649473,
+      "peak": 41747457,
+      "peak_minus_active_before": 31211520,
+      "cache_after": 39960576,
+      "max_abs_error": 2.2734592257812186e-12,
+      "max_error_over_original_budget": 1.136209560912894e-06,
+      "checked_elements": 524800,
+      "oracle_passed": true
+    },
+    "baseline_rerun": false
+  },
+  "space_peak_increment_saved_bytes": 38092800,
+  "space_peak_increment_saved_fraction": 0.549645390070922,
+  "active_before_and_output_lease_active_same": true,
+  "latency": {
+    "order": [
+      "old",
+      "v2",
+      "v2",
+      "old"
+    ],
+    "driver": {
+      "driver_pid": 71768,
+      "executables": {
+        "baseline": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/baseline-space",
+        "candidate": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/v2/candidate-space"
+      },
+      "order": [
+        "baseline",
+        "candidate",
+        "candidate",
+        "baseline"
+      ]
+    },
+    "processes": [
+      {
+        "process": 0,
+        "arm": "baseline",
+        "child_pid": 71769,
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            11988500,
+            13112834,
+            12329500,
+            11986375,
+            13269125,
+            12378500,
+            12672042,
+            11977042,
+            12284083
+          ]
+        },
+        "minimum_ns": 11977042,
+        "median_ns": 12329500,
+        "maximum_ns": 13269125
+      },
+      {
+        "process": 1,
+        "arm": "candidate",
+        "child_pid": 71771,
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            13702834,
+            13346167,
+            14065500,
+            13087666,
+            13922125,
+            13115750,
+            13301583,
+            13864042,
+            13057958
+          ]
+        },
+        "minimum_ns": 13057958,
+        "median_ns": 13346167,
+        "maximum_ns": 14065500
+      },
+      {
+        "process": 2,
+        "arm": "candidate",
+        "child_pid": 71773,
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            13687666,
+            13271625,
+            13032084,
+            14004709,
+            13414209,
+            13664250,
+            13210250,
+            13120959,
+            13883042
+          ]
+        },
+        "minimum_ns": 13032084,
+        "median_ns": 13414209,
+        "maximum_ns": 14004709
+      },
+      {
+        "process": 3,
+        "arm": "baseline",
+        "child_pid": 71776,
+        "raw": {
+          "mode": "latency",
+          "dtype": "F32",
+          "accumulation": "F32",
+          "layout": "BSHD",
+          "B": 1,
+          "H": 8,
+          "Hkv": 2,
+          "D": 64,
+          "Q": 1025,
+          "KV": 8193,
+          "causal": false,
+          "scale": 0.0625,
+          "mask": "Bool per-query KVstride0 view",
+          "input": "QK0,V alternating +1.25/-1.25, all-true explicit mask",
+          "caller_port_requested_bytes": 18886657,
+          "caller_backing_requested_bytes": 10489857,
+          "caller_mask_logical_bytes": 8397825,
+          "caller_mask_backing_requested_bytes": 1025,
+          "native_expanded_Bool_mask_bytes": 67182600,
+          "output_requested_bytes": 2099200,
+          "theoretical_one_full_F32_score_bytes": 268730400,
+          "warm_invocations": 2,
+          "untimed_oracle_invocations": 2,
+          "oracle_elements_each": 524800,
+          "oracle_before_maxabs": 2.2734592257812186e-12,
+          "oracle_after_maxabs": 2.2734592257812186e-12,
+          "oracle_after_max_error_over_original_budget": 1.136209560912894e-06,
+          "oracle_passed": true,
+          "timed_submit_checkedwait_ns": [
+            11995875,
+            12133583,
+            13139292,
+            12024750,
+            12310000,
+            12354959,
+            12039125,
+            12633459,
+            11999833
+          ]
+        },
+        "minimum_ns": 11995875,
+        "median_ns": 12133583,
+        "maximum_ns": 13139292
+      }
+    ],
+    "total_samples": 36,
+    "matched_order_pairs": [
+      {
+        "old_process": 0,
+        "new_process": 1,
+        "new_over_old": 1.0824580883247497,
+        "regression_fraction": 0.08245808832474966
+      },
+      {
+        "old_process": 3,
+        "new_process": 2,
+        "new_over_old": 1.105543927131829,
+        "regression_fraction": 0.10554392713182903
+      }
+    ],
+    "conclusion": "v2 remains slower in both fixedprocesspairs; no retry/AA/input change or speedwin claim."
+  },
+  "source_inputs": {
+    "staged_sources": [
+      {
+        "path": "src/compute_route_apple/apple_context.cc",
+        "bytes": 52819,
+        "sha256": "2d571ec72c24b54e003bfb12f1ae9e5400f07a87c806a61eea26e1b0550dd3be"
+      },
+      {
+        "path": "src/compute_route_apple/apple_operations.cc",
+        "bytes": 23153,
+        "sha256": "199618974ed50c11674faa7eeccfa5bd10e4e718300b07a4f511cc47897d2bde"
+      },
+      {
+        "path": "src/compute_route_apple/apple_tensor.h",
+        "bytes": 1259,
+        "sha256": "3454045dcb74d3f6d7238715f3734de1a933c0858b8796abd8abe4edb9c0367f"
+      },
+      {
+        "path": "diagnostic/analyze.py",
+        "bytes": 9947,
+        "sha256": "c2c0b4ab3d58ccb71b8da09091aa73d1060a010acf1d9293edb7b4e0b53faf7b"
+      }
+    ],
+    "retained_objects": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/tensor.o",
+        "bytes": 131640,
+        "sha256": "25e905b914d0c28740c1e3721ba277f9b8506c1fbbc6ab5939d629c895665b40"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+        "bytes": 87824,
+        "sha256": "13b405c34bb446496563f51db9b91439ea6004d34b00d833edcba6e25d197de6"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/attention-tests.o",
+        "bytes": 302800,
+        "sha256": "a952c73389323374271c80a2f69b434ed5a8c76f4354e150e9500a36a6f03a09"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/graph-tests.o",
+        "bytes": 274408,
+        "sha256": "ed7761898b035ff80b82a7ab3595fb3e32ccdbc968d823287f277285d8498784"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/consumer.o",
+        "bytes": 44120,
+        "sha256": "a7e8ff3253f6ed221fa7bca37b7051620584c004bccd8ce4707f0deb35fcfc13"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/diagnostic.o",
+        "bytes": 94672,
+        "sha256": "4416558f54c65d1333939de74d703b78c6e2b499ba154fb5a7e804a5119987b8"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/sink-tests.o",
+        "bytes": 258920,
+        "sha256": "1f7f88bb886dc897082422be2585d775c58dc0ba115a82d0bd3f2eef2d62e051"
+      }
+    ],
+    "tensor_object": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/tensor.o",
+    "graph_object": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+    "test_objects": [
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/attention-tests.o",
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/graph-tests.o"
+    ],
+    "consumer_object": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/native-equivalence-tests/consumer.o",
+    "diagnostic_object": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/diagnostic.o",
+    "sink_object": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/sink-tests.o",
+    "baseline_raw_reused_no_baseline_run": true,
+    "baseline_space_reused_from": "../native-equivalence-tests/space-results.json"
+  },
+  "fixed_consumer_sha256": "4280b2f6737395c8b4cf653a23e2b7fa3664416c580e573105e97bc0b95e9c07",
+  "reused_no_recompile": [
+    "two native-parity test objects",
+    "cached Sink object",
+    "unchanged native tensor/Graph objects",
+    "original fd8adiagnostic.o",
+    "original4280consumer.o"
+  ],
+  "fresh_product_TUs": 2,
+  "no_SDK_native_CMake_rebuild": true,
+  "previous_functional_space_archive": {
+    "path": ".scratch/perf-review-2026-10-18/apple-fused-mask/v2/functional-space-source-results.zip",
+    "bytes": 1518713,
+    "sha256": "54493ac1903020f76c3f8d2f577e2702771ca8a62df9976b2d388eff6e9a75a4",
+    "members": 72
+  },
+  "raw_latency_archive": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/v2/latency-raw.tar.gz",
+    "bytes": 3083,
+    "sha256": "ce7e24fb51e7db949a340688bbc2f5a14dd50575cc4e7b0d8927105d61d1b16a",
+    "members": 15
+  },
+  "cleanup": "Not authorized; originalv1plan unexecuted and stale forv2, no deletion/newcleanup execution.",
+  "limits": [
+    "Baseline8db raw/refs/space immutable reused forfunctional diagnostic/space; only latency baseline was freshlyrerun as prescribedABBA.",
+    "Native equivalence does not cure the original847680 FP64-budget failure observations; originalfailedfixture/source/raw unchanged.",
+    "One fixedshape and fourprocesses/36samples, noCI or universalmultiplier claims.",
+    "Do not subtractv1/v2 crossround medians as a causal percentage; all v1records remain.",
+    "Baseline nativefullfused did not allocate268730400B wholeF32scores; only expandedBoolmask-copy and actualMLXpeak are compared.",
+    "Space MLXactive/cache/peak is not totalhostRSS/driverGPUmemory; requestedcaller/output/backing distinctions unchanged."
+  ]
+}

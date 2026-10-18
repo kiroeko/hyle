@@ -1,0 +1,9 @@
+{
+  "status": "rejected: memory saving with measured latency regression",
+  "product_accepted": false,
+  "product_action": "Restore the three product files to the accepted d1c3c23c1 implementation; retain native-equivalence regressions and all original diagnostic/failure data.",
+  "reason": "v2 saves 54.9645% extra MLX active peak at the fixed point but regresses matched-order median latency 8.2458% and 10.5544%. No further tuning sweep.",
+  "candidate_product_source_preserved_in": "source-results.zip",
+  "next_direction": "Inspect native full-mask stride contract and pipeline generation before deciding whether a direct native fix is practical.",
+  "cleanup_executed": false
+}
