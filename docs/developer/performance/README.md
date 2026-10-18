@@ -64,9 +64,10 @@ placement harness 的 `stagger/mark` 只调整代码放置，不单独证明校�
 ### HTTP/2 配对测量
 
 Linux 的 `hyle_io_http2_p1_bench` 默认保留手工单 loop 参考；`--paired` 让双方共用同一
-Scheduler、单 worker、双 endpoint Task、系统分配器和 DATA 的 NO_COPY→owned wire 路线。
+Scheduler、单 worker、双 endpoint Task、系统分配器、DATA 的 NO_COPY→owned wire 路线及 TCP
+immediate 接口。Task 参考也执行 TCP 有效性/owner 检查和 typed 结果处理，避免裸 libc 路径省略这层成本。
 双方均计入新建 socket/session、完整 payload 校验和销毁；固定 trace 参考仍不承担公共 API 的
-通用借用、取消、期限和 flush 合同，不能将差值叫作纯封装或调度成本。
+session-owner、通用借用、取消、期限和 flush 合同，不能将差值叫作纯封装或调度成本。
 
 已有该 benchmark 的 Release 构建后，在 Linux 运行（结果目录须不存在）：
 

@@ -9,8 +9,9 @@
 // nghttp2 session API directly; it does not replace HPACK or frame machinery.
 // By default the direct peer advances both endpoints in one manual loop;
 // --paired gives both routes two endpoint Tasks on the same Scheduler and
-// aligns allocator and DATA-copy choices. --paired-self runs HYLE on both
-// arms to observe comparison noise. Neither mode isolates wrapper overhead:
+// aligns allocator, DATA-copy and TCP validity/owner/typed-result handling.
+// The manual peer keeps direct libc socket calls. --paired-self runs HYLE on
+// both arms to observe comparison noise. Neither mode isolates wrapper overhead:
 // HYLE retains generic public-API responsibilities absent from the fixed peer.
 
 #include <nanobench.h>
@@ -782,6 +783,8 @@ struct RawWire {
     begin = end = 0;
   }
 
+  // Task peers borrow their coroutine-owned socket; manual peers use descriptor.
+  TcpStream *socket = nullptr;
   int descriptor = -1;
   AllocatorRef allocator;
   std::span<std::uint8_t> pending;
@@ -860,17 +863,30 @@ bool raw_fill_output(RawEndpoint &endpoint, RawWire &wire) noexcept {
 
 bool raw_write(RawWire &wire, bool &progress,
                 bool single_attempt = false) noexcept {
-  // Match TcpStream's immediate socket seam, including per-call nonblocking
-  // and SIGPIPE suppression where supported; plain write uses another libc
-  // entry and relies on the process-wide signal setting.
+  // Task peers share HYLE's TCP validity/owner checks and typed native result.
+  // Manual peers retain libc with the same nonblocking/SIGPIPE flags.
   int flags = MSG_DONTWAIT;
 #if defined(MSG_NOSIGNAL)
   flags |= MSG_NOSIGNAL;
 #endif
   while (wire.begin != wire.end) {
-    const ssize_t written = ::send(wire.descriptor,
-                                    wire.pending.data() + wire.begin,
-                                    wire.end - wire.begin, flags);
+    ssize_t written;
+    if (wire.socket != nullptr) {
+      const auto result = hyle::io::detail::tcp_try_write_some(
+          *wire.socket,
+          std::span<const std::byte>(reinterpret_cast<const std::byte *>(
+                                        wire.pending.data() + wire.begin),
+                                    wire.end - wire.begin));
+      if (result.state == hyle::io::detail::ImmediateTransferState::kWouldBlock)
+        return true;
+      if (result.state != hyle::io::detail::ImmediateTransferState::kReady ||
+          !result.transfer.ok() || result.transfer.bytes > wire.end - wire.begin)
+        return false;
+      written = static_cast<ssize_t>(result.transfer.bytes);
+    } else {
+      written = ::send(wire.descriptor, wire.pending.data() + wire.begin,
+                       wire.end - wire.begin, flags);
+    }
     if (written > 0) {
       wire.begin += static_cast<std::size_t>(written);
       progress = true;
@@ -892,6 +908,22 @@ bool raw_write(RawWire &wire, bool &progress,
 }
 
 bool raw_read(RawEndpoint &endpoint, RawWire &wire, bool &progress) noexcept {
+  if (wire.socket != nullptr) {
+    const auto result = hyle::io::detail::tcp_try_read_some(
+        *wire.socket,
+        std::span<std::byte>(reinterpret_cast<std::byte *>(wire.input.data()),
+                             wire.input.size()));
+    if (result.state == hyle::io::detail::ImmediateTransferState::kWouldBlock)
+      return true;
+    if (result.state != hyle::io::detail::ImmediateTransferState::kReady ||
+        !result.transfer.ok() || result.transfer.eof ||
+        result.transfer.bytes == 0 || result.transfer.bytes > wire.input.size())
+      return false;
+    progress = true;
+    return nghttp2_session_mem_recv2(endpoint.session, wire.input.data(),
+                                     result.transfer.bytes) ==
+           static_cast<nghttp2_ssize>(result.transfer.bytes);
+  }
   for (;;) {
     const ssize_t count =
         ::recv(wire.descriptor, wire.input.data(), wire.input.size(),
@@ -1089,6 +1121,7 @@ struct RawTaskCleanup {
     decltype(endpoint.streams){}.swap(endpoint.streams);
     endpoint.readable_head = 0;
     episode.wire[role].reset_buffers();
+    episode.wire[role].socket = nullptr;
     socket = TcpStream{};
   }
 };
@@ -1111,6 +1144,7 @@ Task<int> raw_task_endpoint(AllocatorRef allocator, TcpStream socket,
   auto &endpoint = episode->endpoint[role];
   auto &wire = episode->wire[role];
   RawTaskCleanup cleanup{*episode, role, socket};
+  wire.socket = &socket;
   if (!wire.initialize_buffers(allocator))
     co_return -1;
   try {
@@ -1196,9 +1230,10 @@ Task<int> raw_task_endpoint(AllocatorRef allocator, TcpStream socket,
   }
 }
 
-// Sharing a Scheduler and endpoint Tasks aligns execution, not all API work:
-// HYLE also maintains generic owner/cancellation/deadline, borrow/ACK and
-// flush-epoch contracts. This raw peer implements only this fixed trace.
+// Sharing a Scheduler, endpoint Tasks and TCP seam aligns execution and socket
+// checks, not all API work: HYLE also maintains session-owner, cancellation,
+// deadline, borrow/ACK and flush-epoch contracts. This raw peer implements only
+// this fixed trace.
 int run_task_peer(HyleHarness &harness, const Workload &workload,
                     bool check_descriptors = false) {
   SocketPair pair = make_socket_pair();

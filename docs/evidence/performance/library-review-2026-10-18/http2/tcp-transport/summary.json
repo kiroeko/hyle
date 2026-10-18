@@ -1,0 +1,471 @@
+{
+  "conclusion": "For this fixed single-worker two-Task trace, an important source of the prior1–2% Hyle/reference gap was reference bypassing the TCP transport seam. Controlled same-ELF raw-task intervention adds about2.4% when using that real seam. After permanent alignment, all three process block medians are negative; sustained positive residual not reproduced. This is a benchmark-boundary correction, not a new product performance fix or universal win.",
+  "permanent_change": "Only Task reference uses existing tcp_try_read_some/tcp_try_write_some, including validity/current-worker assertions and typed native results. RawWire borrows the coroutine-owned TcpStream, clears before close. No new owner, socket adoption, polling strategy, async fallback or protocol behavior. Default manual peer stays on libc. Product source restored byte-for-byte; no weakened checks or accepted const-reference ABI candidate.",
+  "counted_work_20_episodes": {
+    "matched_metrics": {
+      "incoming_callbacks": 7680,
+      "incoming_bytes": 41943040,
+      "incoming_copy_calls": 7680,
+      "incoming_copy_bytes": 41943040,
+      "delivered_chunks": 5280,
+      "delivered_bytes": 41943040,
+      "verify_calls": 5280,
+      "verify_bytes": 41943040,
+      "explicit_yield": 10300,
+      "native_recv": 6480,
+      "native_recv_bytes": 42003020,
+      "native_send": 10380,
+      "consume_stream": 5280,
+      "consume_stream_bytes": 41943040,
+      "consume_connection": 5280,
+      "consume_connection_bytes": 41943040,
+      "send_calls": 15440,
+      "send_success": 10280,
+      "send_bytes": 41841740,
+      "send_eagain": 5160,
+      "recv_calls": 20640,
+      "recv_success": 6460,
+      "recv_bytes": 41839800,
+      "recv_eagain": 14180
+    },
+    "recv_success_sizes": {
+      "9": 20,
+      "13": 120,
+      "26": 1120,
+      "27": 20,
+      "265": 80,
+      "8064": 2560,
+      "8082": 40,
+      "8097": 20,
+      "8329": 2380,
+      "8338": 20,
+      "8347": 40,
+      "8362": 40
+    },
+    "send_success_sizes": {
+      "9": 40,
+      "13": 2360,
+      "18": 80,
+      "24": 20,
+      "27": 20,
+      "33": 80,
+      "40": 20,
+      "265": 2560,
+      "8064": 5100
+    },
+    "ring_wrap": 0,
+    "reference_compaction": 0,
+    "full_normal_oracles": true,
+    "limit": "Atomic counters are untimed. Source-level incoming copy and body verification counts/bytes plus native/public and libc counts do not enumerate every branch or native-internal copy. libc wrappers omit io_uring directly completed I/O; native receive separately includes it. Native send-zero includes NO_COPY pause, not just empty encoding."
+  },
+  "machine_code": "Reference vector::insert hot path is inline16B SIMD copying; Hyle incoming callback calls libc memcpy. Callback leaf counts therefore include different work. Success Result construction has six stores and no heap/refcount/payload copy. By-value private read_body really uses64B stack outgoing area for32B AllocatorRef+24B OperationOptions; static count does not establish latency.",
+  "rejected_private_abi": {
+    "runs": [
+      {
+        "name": "self-before",
+        "median_ratio_percent": 0.03170380016598647,
+        "geomean_ratio_percent": 0.26015553620133997,
+        "range_percent": [
+          -2.029328380503043,
+          2.9182381970774043
+        ],
+        "descriptive_iqr_percent": 2.7661407729320873,
+        "positive_blocks": 6,
+        "blocks": 12
+      },
+      {
+        "name": "paired-1",
+        "median_ratio_percent": 1.6362120983439818,
+        "geomean_ratio_percent": 1.2722099287333044,
+        "range_percent": [
+          -1.9012701854922158,
+          5.087970927218902
+        ],
+        "descriptive_iqr_percent": 2.6934912901920693,
+        "positive_blocks": 8,
+        "blocks": 12
+      },
+      {
+        "name": "paired-2",
+        "median_ratio_percent": 0.3293813214925251,
+        "geomean_ratio_percent": -0.07509407185800583,
+        "range_percent": [
+          -4.951859334100192,
+          4.369848050855917
+        ],
+        "descriptive_iqr_percent": 2.3514745440783518,
+        "positive_blocks": 7,
+        "blocks": 12
+      },
+      {
+        "name": "self-after",
+        "median_ratio_percent": -0.02846856395050423,
+        "geomean_ratio_percent": 0.14377160898801558,
+        "range_percent": [
+          -2.938267837445626,
+          4.490926629831839
+        ],
+        "descriptive_iqr_percent": 2.1650831098129233,
+        "positive_blocks": 6,
+        "blocks": 12
+      }
+    ],
+    "decision": "Reject; one-ELF private ref/value path did not establish improvement. Default/forced-epoll17/17 passed for this candidate, but candidate was restored, not shipped. Bodies differ only in signature; extra cell-selected branch in both. Function addresses/branch directions still differ."
+  },
+  "controlled_transport_intervention": {
+    "runs": [
+      {
+        "name": "cost-self-before",
+        "median_ratio_percent": -0.048716588161772933,
+        "geomean_ratio_percent": -0.05883837312899786,
+        "range_percent": [
+          -2.8397255977037057,
+          2.573544706295928
+        ],
+        "descriptive_iqr_percent": 1.6760468898732928,
+        "positive_blocks": 6,
+        "blocks": 12
+      },
+      {
+        "name": "cost-1",
+        "median_ratio_percent": 2.410675897055593,
+        "geomean_ratio_percent": 1.8176691932674256,
+        "range_percent": [
+          -1.0295252349576267,
+          5.315444500751298
+        ],
+        "descriptive_iqr_percent": 3.743680954798785,
+        "positive_blocks": 8,
+        "blocks": 12
+      },
+      {
+        "name": "legacy-1",
+        "median_ratio_percent": 2.0195086780565186,
+        "geomean_ratio_percent": 2.6792466187479365,
+        "range_percent": [
+          -0.6088826266429471,
+          8.05483187122565
+        ],
+        "descriptive_iqr_percent": 2.4942935325407225,
+        "positive_blocks": 11,
+        "blocks": 12
+      },
+      {
+        "name": "matched-1",
+        "median_ratio_percent": -1.3006512986089973,
+        "geomean_ratio_percent": -1.1409057470665551,
+        "range_percent": [
+          -3.738237912801629,
+          1.9563264986855875
+        ],
+        "descriptive_iqr_percent": 1.356706623799146,
+        "positive_blocks": 3,
+        "blocks": 12
+      },
+      {
+        "name": "matched-2",
+        "median_ratio_percent": -0.8181483217044083,
+        "geomean_ratio_percent": -0.35004734683663724,
+        "range_percent": [
+          -2.6139681434613578,
+          3.3338999941715013
+        ],
+        "descriptive_iqr_percent": 2.462323340235079,
+        "positive_blocks": 4,
+        "blocks": 12
+      },
+      {
+        "name": "legacy-2",
+        "median_ratio_percent": 1.5605404235351994,
+        "geomean_ratio_percent": 1.5183391860533975,
+        "range_percent": [
+          -0.7493290456534111,
+          3.5510098734560187
+        ],
+        "descriptive_iqr_percent": 1.4193344378577164,
+        "positive_blocks": 10,
+        "blocks": 12
+      },
+      {
+        "name": "cost-2",
+        "median_ratio_percent": 2.3598296453595373,
+        "geomean_ratio_percent": 1.9594382742252014,
+        "range_percent": [
+          -0.7057047916387935,
+          4.617915339704694
+        ],
+        "descriptive_iqr_percent": 1.9222246383752701,
+        "positive_blocks": 10,
+        "blocks": 12
+      },
+      {
+        "name": "cost-self-after",
+        "median_ratio_percent": 0.733112584370019,
+        "geomean_ratio_percent": 0.7301652521308937,
+        "range_percent": [
+          -1.3296856566107602,
+          3.9050985741743274
+        ],
+        "descriptive_iqr_percent": 1.8068428502692644,
+        "positive_blocks": 7,
+        "blocks": 12
+      }
+    ],
+    "meaning": "Same ELF all modes. cost: label hyle=rawTask viaTCP seam, reference=rawTask directlibc; positive=TCP seam costs more. matched: Hyle public vs rawTask viaTCP seam. legacy: Hyle public vs rawTask directlibc in same ELF. self controls both rawTCPseam. No A/A subtraction or exact sum across processes.",
+    "method": "Same ELF: raw TCP vs raw libc, Hyle vs raw libc, Hyle vs raw TCP. Both native/body/yield/libc success/EAGAIN/size-count outputs exactly equal for20 complete episodes. Different modes run in fixed separate processes; no arithmetic subtraction across process medians or A/A correction. Cell mode is snapshotted in Task-owned wire.socket before I/O.",
+    "tcp_seam_cost_scope": "Whole real TCP seam plus reference adaptation, including function ABI, socket/current-worker checks, typed success/EOF/error conversion. Not an isolated TLS-query or individual responsibility cycle measurement."
+  },
+  "permanent_final": {
+    "runs": [
+      {
+        "name": "01-paired-self",
+        "median_ratio_percent": -0.09075091358307141,
+        "geomean_ratio_percent": 0.0028025112782623656,
+        "range_percent": [
+          -2.4131218080861756,
+          2.0363733191490363
+        ],
+        "descriptive_iqr_percent": 1.1066272546625258,
+        "positive_blocks": 5,
+        "blocks": 12
+      },
+      {
+        "name": "02-paired",
+        "median_ratio_percent": -0.9202853256018367,
+        "geomean_ratio_percent": -1.1491792446182634,
+        "range_percent": [
+          -5.811371449921153,
+          1.4135179681071879
+        ],
+        "descriptive_iqr_percent": 2.4970409383901515,
+        "positive_blocks": 4,
+        "blocks": 12
+      },
+      {
+        "name": "03-paired",
+        "median_ratio_percent": -1.4919962592808402,
+        "geomean_ratio_percent": -0.16897561772420303,
+        "range_percent": [
+          -3.871836434361557,
+          8.618774951795139
+        ],
+        "descriptive_iqr_percent": 3.033076123365208,
+        "positive_blocks": 4,
+        "blocks": 12
+      },
+      {
+        "name": "04-paired",
+        "median_ratio_percent": -0.43391954403825983,
+        "geomean_ratio_percent": -0.6462192761714229,
+        "range_percent": [
+          -8.684219134818672,
+          2.3049337624821984
+        ],
+        "descriptive_iqr_percent": 2.421171128245118,
+        "positive_blocks": 6,
+        "blocks": 12
+      },
+      {
+        "name": "05-paired-self",
+        "median_ratio_percent": 0.49165470157176216,
+        "geomean_ratio_percent": -0.13689014965005336,
+        "range_percent": [
+          -5.098911250449099,
+          3.976737056523847
+        ],
+        "descriptive_iqr_percent": 3.9946099728123925,
+        "positive_blocks": 8,
+        "blocks": 12
+      }
+    ],
+    "full_oracle": "All240timed cells,12blocks/process,64complete episodes/cell,16warmups/arm/process; legacy64x1KiB and4x256KiB manual smoke passed.",
+    "tails": "Three paired process medians/GM are negative but14/36 paired blocks remain positive, including+8.618775%. No filtering or equivalence/stable-win claim. AA not CI or bias to subtract."
+  },
+  "scope": "Only targeted diagnostic and benchmark TUs compiled, cached library/native/core reused. Current product unchanged; not a full currentHEAD SDK rebuild, TCP/TLS WAN test, other shape/platform survey or inference tokens/s result. Old manual8–11% gap remains a program comparison with different execution/contracts, not explained away by this fixed two-Task experiment.",
+  "independent_recalculation": "Separate read-only agent recomputed all48ABI+96transport+60final=204blocks and native/body/libc counters from raw; all block/logratio/median/GM/range/inclusiveIQR/counter totals matched (floating differences <=1.78e-15).",
+  "initial_failed_attempts": "First counter probe did not link (hidden wrapper; guard counter placement also corrected before successful run). ABI diagnostic consumer unused-function and renamed counter-driver missing-return errors corrected in scratch. Failed sources/commands/logs retained; no failed artifact measured.",
+  "source_identity": [
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+      "bytes": 111471,
+      "sha256": "30b57207730af05b29e3037d22427b67d35df6f5c4b69a1f99846c9630e6482f"
+    },
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+      "bytes": 59252,
+      "sha256": "f96e1379b64623bffe63d07a66bef0da66580546f1c8c4baa144ce0938212171"
+    }
+  ],
+  "final_build": {
+    "source": {
+      "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+      "bytes": 59252,
+      "sha256": "f96e1379b64623bffe63d07a66bef0da66580546f1c8c4baa144ce0938212171"
+    },
+    "product_source": {
+      "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+      "bytes": 111471,
+      "sha256": "30b57207730af05b29e3037d22427b67d35df6f5c4b69a1f99846c9630e6482f"
+    },
+    "product_object": {
+      "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/http2.o",
+      "bytes": 225824,
+      "sha256": "7c214427285e21da16dab647d0b5793b8b209554bf5f8d3ef20d4435653aa82e"
+    },
+    "artifacts": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/final/consumer.o",
+        "bytes": 151688,
+        "sha256": "cadce3affee2fa801f8d42d8a6d8bf307ac69461151af36f94fd582b4f1c5f7d"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/final/benchmark",
+        "bytes": 898496,
+        "sha256": "44cae8ca0209044da106c677c917ab272571d365cec4b6baffa79ea3c870ed36"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/final/benchmark.map",
+        "bytes": 255390,
+        "sha256": "f90083b9cb27e76e1caecc1ef187d2109d9e94ff73a2be9936ae81030040eca9"
+      }
+    ],
+    "scope": "Only permanent benchmark consumer recompiled; product source/object restored byte-for-byte to accepted owner-loop version. Cached core/native/foundation reused. Legacy two-shape smoke passed; no fullHEAD or new platform claims."
+  },
+  "artifacts": {
+    "delete": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/abi/candidate",
+        "bytes": 898504,
+        "sha256": "e16fef59b7dba88608e6e89e5fd3c60ae299a1e359d659e8eaface54b983aadb"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/abi/http2.o",
+        "bytes": 225752,
+        "sha256": "1c98187a2bb20f4122343ad5cd647638f71232e8b2fc67a8e570499f3f8b3e12"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/abi/probe",
+        "bytes": 888544,
+        "sha256": "dc9bd8109fe3175d42fda7af9d098176de1586f8ddddb5da17a2ee3fcd4b2703"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/abi/probe-consumer.o",
+        "bytes": 123304,
+        "sha256": "4ba288ac8cf086114d9eca33a4986d2bae3b110e1afd843433cb4a1cf203acbf"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/abi/probe-product.o",
+        "bytes": 231656,
+        "sha256": "bb506937bd3f72d8b8d0a83957ea7854c348c705797281ff85549d315b5155c2"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/abi/tests",
+        "bytes": 1618560,
+        "sha256": "a003bde5ef33575e4287c26f174c89fe165ee06371529d21a51fc92b114454d8"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/attempt-2/consumer.o",
+        "bytes": 160560,
+        "sha256": "4471651385c9eb7a9874c2c7c9ecf0735de066b683d4881bac3ba5903d455051"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/attempt-2/diagnostic",
+        "bytes": 898480,
+        "sha256": "6146ba9d4d9b41b1b626bdb3df360561bd191c7ee14cf5b4e5e0276464861c58"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/attempt-2/product.o",
+        "bytes": 220320,
+        "sha256": "a3850b6449e9ff2c7a6acab56018177fa12d73775d6da97d9f320644e5dbbf8a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/consumer.o",
+        "bytes": 160560,
+        "sha256": "f28be1b52923642f39493648a32497c8a7801df37bcff41b9d9d3686ae71c81f"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/product.o",
+        "bytes": 193824,
+        "sha256": "54ccb3feb298ed38beaa1cd4ba8c9c3683c64b2c433c3fbc3e2e4e9216e7e41f"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/transport/transport",
+        "bytes": 901544,
+        "sha256": "31bc99c91a8dbea3478e447953b1b3ae3882ae7101d7421cd269649448115aa3"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/transport/transport-counts",
+        "bytes": 902792,
+        "sha256": "bebe33e46e72fe3cbdd2862ec6488d2b9aa3bdb2c04a32fa3bdbf6ff3b138ebc"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/transport/transport-counts.o",
+        "bytes": 161624,
+        "sha256": "659ec65ca1ec96da55b0b7e6c746d5635c85a1ca45fcf5c9d0ddb8c400a75e10"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/transport/transport.o",
+        "bytes": 153944,
+        "sha256": "bab7355e8c535ab1651a88e4fcb7e6c64eeb060de925dc5575387a234b9d1c6a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "bytes": 898496,
+        "sha256": "3123e43a9c4e015241242673b9dc90d7c6d4ca26f72408ef53b5690cd29e4870"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/consumer.o",
+        "bytes": 151104,
+        "sha256": "62a132158e443d6fae3df9c9ea8b4ccba19e71a21aeac9ffef6042d03df5b2b2"
+      }
+    ],
+    "retain": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+        "bytes": 387104,
+        "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/http2.o",
+        "bytes": 225824,
+        "sha256": "7c214427285e21da16dab647d0b5793b8b209554bf5f8d3ef20d4435653aa82e"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/http2_test.o",
+        "bytes": 739800,
+        "sha256": "7ffb3dac38465532c8980032a5f3dbee401ac7feec915f51c26eeb2ddd879f5c"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/tests-candidate",
+        "bytes": 1618552,
+        "sha256": "97a8e618a6db7c621e770e37f349313f0ffeda99b7b66334016a96c3db52991a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/nanobench.o",
+        "bytes": 283672,
+        "sha256": "43b16d764541dc1460c6aba273360f40403bcc35ee2feb37461f7f4d29984987"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/final/consumer.o",
+        "bytes": 151688,
+        "sha256": "cadce3affee2fa801f8d42d8a6d8bf307ac69461151af36f94fd582b4f1c5f7d"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/hot-work/final/benchmark",
+        "bytes": 898496,
+        "sha256": "44cae8ca0209044da106c677c917ab272571d365cec4b6baffa79ea3c870ed36"
+      }
+    ]
+  },
+  "cleanup_execution": {
+    "status": "completed",
+    "deleted_files": 17,
+    "deleted_bytes": 8789568,
+    "retained_files_verified": 7,
+    "directories_removed": 0
+  },
+  "cleanup_archive": {
+    "bytes": 7668,
+    "sha256": "e7d7a15fd13ed60d04838af7cf16ce2ac133e6891fb3d573fee59bdcf29a4ff4"
+  }
+}

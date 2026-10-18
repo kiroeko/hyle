@@ -4,10 +4,11 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-累计31个清单条目：27项性能/复杂度问题中26项已修、HTTP2一项未解，另4项纯接线/正确性问题已修。最新继续删除固定owner查询、空通知和空flush发布：普通布局候选中位差+2.47%/+1.59%，固定公共热代码地址后+1.42%/+1.69%。冗余调用减少明确，稳定提速和完整残差原因仍未证实，见末尾；不把某一布局或A/A波动当作等速结论。
-此前因同两Task的AB/BA中位差变号，曾把HTTP2改列为跨执行模型待归因对照；最新证据恢复为小幅输项，没有新增一项修复。这是清单条目数，包含源码已证实的多余时间/空间开销，不是当前peer实测排名或严格去重的算法家族。修复机制不等于所有shape已赢；后文按实验顺序保留当时结论。
+累计31个处理条目：26项性能/复杂度机制已修，4项纯接线/正确性问题已修，HTTP2一项完成了对照失配归因，不计新增性能修复。
+最新同ELF干预确认参考绕过底层TCP接口是双Task约1–2%残差的重要来源；让Task参考使用相同TCP检查与typed结果后，正式三轮中位差为−0.92%/−1.49%/−0.43%，该固定点未再复现持续的正残差，见末尾。没有删产品检查。
+这是处理条目数，包含源码已证实的多余时间/空间开销，不是当前peer实测排名或严格去重的算法家族；不表示所有shape已赢。后文按实验顺序保留当时结论。
 
-**比较边界仍需保留**：HTTP2相对专用手工单loop的历史大报文差距尚未被代码消除；同两Task的对照未复现同等幅度的差距，最新交错轮次则提示较小的正开销。不能把原差距全部归因于调度，也不能称严格等速。Apple普通attention的已知math分块、原生full mask步长和混合dtype转换机制均已修，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界。
+**比较边界仍需保留**：HTTP2相对专用手工单loop的历史大报文差距尚未被代码消除；最新结论只针对双Task、同底层TCP职责的固定负载，不能把旧差距全部归因于调度或TCP层，也不能称严格等速。Apple普通attention的已知math分块、原生full mask步长和混合dtype转换机制均已修，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界。
 HTTP2以NO_COPY减少一次DATA发送拷贝后，相对manual peer仍慢8.22%/11.08%；同轮旧实现为11.69%/15.35%，两序改善幅度不稳定。新增同执行模型对照的中位差为+1.42%/−0.11%，均值差为+1.84%/+0.23%，见末尾。两套程序职责仍有差别，不替换原结果，不跨轮相减归因。
 Apple Sink采用单owner Job内同步Q128数学分块：原长Q固定点extra active peak降78.8%，同工时延未见退步；现扩至Q>128收益域，短Q固定点另降67.57%，该新点未测时延。Direct/Graph共用选择，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
@@ -37,7 +38,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | FlatHash近满rolling churn反复重建 | [grow](../../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 受限域已融合，其余大math域已用原生selector及checked Q128块，覆盖三种浮点dtype、不同Dv、广播mask和全Q causal偏移。原生full mask已接通KV stride、移除完整复制；受理的mixed additive mask已按实际backing紧凑转换，已知问题机制均已修。未称所有shape已跑赢 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的Q>128收益域均用单Job同步Q128块。长Q固定extra peak1344307200→285310976 B（−78.8%），短Q672825344→218202112 B（−67.57%）；新短Q未测时延。其它guard域的scores有KV/输出同阶上界，caller mask仍为Q×KV；不宣称所有shape吞吐或opaque callback自动规划 |
-| HTTP2大body背压holdout | 历史manual对照+8.22%/+11.08%；最新普通布局+2.47%/+1.59%，固定公共地址+1.42%/+1.69% | 已删确认的冗余复制/构造/私有帧及额外通知/分配/resume/owner查询；残差未解。两布局完整分布和A/A均保留，不称稳定提速、等速或纯调度成本 |
+| HTTP2大body背压holdout | 同ELF参考仅接TCP层后慢+2.41%/+2.36%；正式对齐后Hyle−0.92%/−1.49%/−0.43% | 双Task参考原绕过TCP有效/owner检查及typed结果；已校正基准，产品检查不删，不计新增性能修复。历史manual +8.22%/+11.08%仍属不同执行/职责边界，未外推到其它shape |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
@@ -1547,3 +1548,36 @@ scratch坏变体将递减改清零，回归正常断言失败；证明它能捕�
 [完整阶段数据与消融结果](http2/phase-costs/summary.json)／[源码、全部raw、命令及地址身份](http2/phase-costs/source-results.zip)。
 独立从raw重算60个阶段区块及72个消融区块，与汇总一致。先写根test.ps1再精确删除4份诊断生成物共2207600 B，
 保留并复核7份当前缓存；源码、结果、map和共享依赖保留。[已执行脚本与日志](http2/phase-costs/cleanup.zip)。
+
+## HTTP2：剩余差距的主要来源是参考绕过TCP传输层
+
+先用20轮完整trace核工作量：两边接收body复制7680次/41943040 B，内容校验与每种流控consume各5280次/41943040 B，
+native recv6480次/42003020 B、native send10380次、yield10300次；libc成功/EAGAIN数及返回长度直方图逐项相同。
+没有环回二次copy或参考压紧。libc统计不含io_uring直接完成的I/O，native输入另计；send=0含NO_COPY暂停，不能当空发送。
+机器码另确认raw的vector插入内联SIMD单遍copy，Hyle调用libc memcpy，旧叶样本归属不同，不能只比callback比例。
+
+私有read_body每chunk的64 B栈传参确实存在，但同ELF两份相同函数体的value/ref对照为+1.6362%/+0.3294%（ref较慢），
+没有稳定收益；候选default/epoll各17项通过仍不足以接受它，已逐字节恢复产品原实现。没有上线消融或弱化校验。
+
+关键干预仅改变同一raw Task的收发入口：裸libc，或现成tcp_try_read/write。
+后者保留TCP有效性/当前worker断言、EINTR/EAGAIN/EOF与typed结果；每episode涉及1032次recv及772次send。
+每个cell前选入口，Task借用自身协程参数内的TcpStream，原yield、async fallback、关闭与完整oracle均保持；
+两条raw路径的20轮全部计数及直方图完全一致。固定同ELF顺序如下，正数表示左臂更慢：
+
+| 对照 | 第一轮区块中位差 | 反序轮区块中位差 |
+|---|---:|---:|
+| raw TCP接口 / raw libc | +2.4107% | +2.3598% |
+| Hyle / raw libc | +2.0195% | +1.5605% |
+| Hyle / raw TCP接口 | −1.3007% | −0.8181% |
+
+前后raw TCP A/A为−0.0487%/+0.7331%。这是对真实TCP层的受控干预，支持它是此前约1–2%残差的重要、量级足够的来源，
+不是只据调用数猜测。不同进程的中位数不能相减作精确成本分摊，也未孤立某一次TLS查询/返回结构/分派的cycles。
+
+永久`--paired`参考现已使用同一TCP接口，manual参考保持libc；只重编benchmark consumer，产品和SDK复用原缓存。
+最终固定A/A→paired×3→A/A，中位差依次−0.0908%、−0.9203%、−1.4920%、−0.4339%、+0.4917%，
+全部240格完整oracle通过；legacy两shape smoke亦通过。三轮进程中位数均非正，未再复现持续的正残差；
+仍有14/36个paired区块为正，含+8.6188%尾块，全部保留，不称稳定胜出、全shape胜出或严格等价，
+也不外推旧manual 8–11%差额。48个ABI、96个transport、60个正式区块已独立重算一致。
+[简明摘要](http2/tcp-transport/summary.json)／[源码、全部raw、机器码及失败日志](http2/tcp-transport/source-results.zip)。
+归档后先写根test.ps1，精确删除17份诊断、拒绝候选及过时生成物，共8789568 B；保留并复核7份当前缓存，
+含正式新benchmark/consumer及原产品/测试/依赖。源码、原始数据、map和SDK保留。[已执行脚本与日志](http2/tcp-transport/cleanup.zip)。
