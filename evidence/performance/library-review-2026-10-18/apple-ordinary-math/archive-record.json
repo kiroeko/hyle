@@ -1,0 +1,9 @@
+{
+  "path": ".scratch/perf-review-2026-10-18/apple-ordinary-math/source-results.zip",
+  "bytes": 1763074,
+  "sha256": "7d18f4067df5dda378124765e7effea66dc22bbdb843bb56279cc70f44c68e75",
+  "members": 121,
+  "all_four_process_stdout_stderr": true,
+  "fixed_consumer_sha256": "034791b3b654a84ab1f775701560e6268d349763f5d0cf0736d1d16a3271c6e7",
+  "original_functional_space_archive": ".scratch/perf-review-2026-10-18/apple-ordinary-math/source-results-functional-space.zip"
+}

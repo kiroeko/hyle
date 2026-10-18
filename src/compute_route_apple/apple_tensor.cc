@@ -15,6 +15,7 @@
 
 #include <mlx/device.h>
 #include <mlx/fast.h>
+#include <mlx/fast_primitives.h>
 #include <mlx/ops.h>
 #include <mlx/utils.h>
 
@@ -322,29 +323,18 @@ bool known_gpu_without_nax() noexcept {
   }
 }
 
-bool chunk_attention_math(const ScaledDotProductAttention &attention,
-                          const mx::array &query, const mx::array &key,
-                          const mx::array &value, bool force_fused) {
+bool chunk_attention_math(const mx::array &query, const mx::array &key,
+                          const mx::array &value, AttentionPath path) {
   const auto rows = std::int64_t{query.shape(2)};
   const auto keys = std::int64_t{key.shape(2)};
   const auto depth = query.shape(3);
   const auto value_depth = std::int64_t{value.shape(3)};
-  const bool causal = attention.mask == MaskKind::kNone && attention.causal;
-  if (force_fused || query.shape(0) == 0 || depth == 0 || value_depth == 0 ||
+  if (path != AttentionPath::kMath || query.shape(0) == 0 || depth == 0 || value_depth == 0 ||
       rows < 1024 || keys == 0 ||
       (rows - kAttentionQueryBlock) * keys <= 2 * rows * value_depth)
     return false;
 
-  const bool full_kernel_shape = depth == value_depth &&
-      (depth == 64 || depth == 72 || depth == 80 || depth == 96 ||
-       depth == 128 || depth == 192 || depth == 256);
-  // Mirror only statically certain fallback cases in the locked MLX. Leave
-  // existing fused shapes alone. Query cached public device info only while
-  // cold-lowering the otherwise possibly fused D256 causal path.
-  return !full_kernel_shape || (causal && rows > keys) ||
-      depth == 192 ||
-      (depth == 256 && (attention.mask != MaskKind::kNone || !causal ||
-                        known_gpu_without_nax()));
+  return true;
 }
 
 mx::array attention_math_block(const ScaledDotProductAttention &attention,
@@ -359,8 +349,11 @@ mx::array attention_math_block(const ScaledDotProductAttention &attention,
   auto scores = mx::matmul(q, transposed_key, stream);
   if (mask) {
     auto block_mask = *mask;
-    if (repeats > 1 && block_mask.ndim() >= 3)
-      block_mask = mx::unflatten(block_mask, -3, {kv_heads, repeats}, stream);
+    if (repeats > 1 && block_mask.ndim() >= 3) {
+      block_mask = block_mask.shape(-3) == 1
+          ? mx::expand_dims(block_mask, -3, stream)
+          : mx::unflatten(block_mask, -3, {kv_heads, repeats}, stream);
+    }
     if (block_mask.dtype() == mx::bool_) {
       // Preserve the original fallback's uniform completely masked row.
       scores = mx::where(block_mask, scores,
@@ -446,18 +439,30 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
   } else if (attention.causal) {
     mask_mode = "causal";
   }
-  // The locked MLX heuristic materializes scores for these prefill depths,
-  // even though the narrow-dtype full fused kernel supports them. Its F32
-  // online accumulation also retains weak probabilities before the value
-  // product. Native F32 D192 and causal D256 Steel use a bounded float tile.
-  // Force these only on known pre-NAX GPUs. Other F32 depths, empty batches/KV and
-  // causal Q > KV retain fallback; unknown/new GPUs keep native selection.
-  // Keep explicit masks there too: a fully masked boolean row has different fused
-  // semantics, and no mask contents are read to choose a lowering path.
-  const bool force_fused = stream.device == mx::Device::gpu &&
+  const auto path = attention_path(attention, query, key, value, stream);
+  // Keep the native mask dtype admission before choosing a different graph.
+  const bool compatible_mask = !mask ||
+      mx::promote_types(mask->dtype(), query.dtype()) == query.dtype();
+  auto result = stream.device == mx::Device::gpu && compatible_mask &&
+          chunk_attention_math(query, key, value, path)
+      ? attention_math_blocks(attention, query, key, value, mask, stream)
+      : mx::fast::scaled_dot_product_attention(
+            query, key, value, attention.scale, mask_mode, mask, std::nullopt,
+            path == AttentionPath::kForcedFused, stream);
+  return sequence_first ? mx::transpose(result, {0, 2, 1, 3}, stream) : result;
+}
+} // namespace
+
+AttentionPath attention_path(const ScaledDotProductAttention &attention,
+    const mx::array &query, const mx::array &key, const mx::array &value,
+    mx::Stream stream) {
+  if (stream.device != mx::Device::gpu)
+    return AttentionPath::kNative;
+  // Preserve the existing narrow/full-float force domain, including the F32
+  // log2 scale guard. Explicit masks retain their original fallback semantics.
+  const bool force_fused =
       ((query.dtype() == mx::float16 || query.dtype() == mx::bfloat16) ||
        (query.dtype() == mx::float32 &&
-        // Keep the existing route if converting scale to log2 would overflow.
         std::abs(static_cast<double>(attention.scale)) *
                 static_cast<double>(1.4426950408889634F) <=
             static_cast<double>(std::numeric_limits<float>::max()) &&
@@ -469,18 +474,15 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
       query.shape(3) == value.shape(3) &&
       (query.shape(3) == 192 || query.shape(3) == 256) &&
       (!attention.causal || query.shape(2) <= key.shape(2));
-  // Keep the native mask dtype admission before choosing a different graph.
-  const bool compatible_mask = !mask ||
-      mx::promote_types(mask->dtype(), query.dtype()) == query.dtype();
-  auto result = stream.device == mx::Device::gpu && compatible_mask &&
-          chunk_attention_math(attention, query, key, value, force_fused)
-      ? attention_math_blocks(attention, query, key, value, mask, stream)
-      : mx::fast::scaled_dot_product_attention(
-            query, key, value, attention.scale, mask_mode, mask, std::nullopt,
-            force_fused, stream);
-  return sequence_first ? mx::transpose(result, {0, 2, 1, 3}, stream) : result;
+  if (force_fused)
+    return AttentionPath::kForcedFused;
+  const bool array_mask = attention.mask != MaskKind::kNone;
+  // The installed native selector reads only shapes/dtype, s.device and GPU
+  // capability/environment. It neither evaluates nor uses an owner encoder.
+  return mx::fast::ScaledDotProductAttention::use_fallback(query, key, value,
+      array_mask || attention.causal, array_mask, !array_mask && attention.causal,
+      false, false, false, stream) ? AttentionPath::kMath : AttentionPath::kNative;
 }
-} // namespace
 
 bool is_mlx_tensor_custom(const Operation &operation) noexcept {
   return operation.custom_as<model_ops::CausalConv1d>().has_value() ||
@@ -497,8 +499,9 @@ Result<std::vector<mx::array>> lower_attention_math_block(
     mx::Stream stream) noexcept {
   try {
     const auto *attention = operation.get_if<ScaledDotProductAttention>();
-    if (!attention || inputs.size() != 4 ||
-        attention->mask != MaskKind::kBoolean || attention->causal ||
+    if (!attention ||
+        inputs.size() != (attention->mask != MaskKind::kNone || attention->causal ? 4U : 3U) ||
+        (attention->causal && attention->mask != MaskKind::kNone) ||
         attention->accumulation_type != DataType::kFloat32)
       return std::unexpected(Status::InvalidArgument(
           "invalid Apple ordinary attention math block"));
@@ -513,8 +516,10 @@ Result<std::vector<mx::array>> lower_attention_math_block(
     const int kv_heads = key.shape(1), repeats = query.shape(1) / kv_heads;
     auto k = repeats > 1 ? mx::expand_dims(key, 2, stream) : key;
     auto v = repeats > 1 ? mx::expand_dims(value, 2, stream) : value;
+    const auto mask = inputs.size() == 4
+        ? std::optional<mx::array>{inputs[3]} : std::nullopt;
     auto result = attention_math_block(*attention, query,
-        mx::swapaxes(k, -1, -2, stream), v, inputs[3], kv_heads, repeats, stream);
+        mx::swapaxes(k, -1, -2, stream), v, mask, kv_heads, repeats, stream);
     return std::vector{sequence_first
         ? mx::transpose(result, {0, 2, 1, 3}, stream) : result};
   } catch (...) {

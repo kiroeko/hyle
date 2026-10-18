@@ -7,7 +7,7 @@
 按下面31个清单条目统计：27项性能/复杂度问题中，25项已修已确认机制、1项部分修复（Apple普通attention）、1项未解决（HTTP2）；另4项纯接线/正确性问题均已修。
 这是清单条目数，包含源码已证实的多余时间/空间开销，不是27项当前peer实测排名或严格去重的算法家族。待测、不公平对比及未稳定小负点不计入；修复机制不等于所有shape已赢。
 
-**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple部分普通fallback的scores空间与提交窗口。任意opaque compile callback不属于typed算子的自动规划，单列接口边界，不当作已确认的typed空间缺陷。
+**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple普通融合attention对KV维非连续广播mask的完整拷贝。普通math fallback已扩展checked分块，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界，不当作已确认的typed空间缺陷。
 HTTP2最新以NO_COPY减少一次DATA发送拷贝后，两次候选相对同进程peer仍慢8.22%/11.08%；同轮旧实现为11.69%/15.35%，两序改善幅度不稳定，不声称统一稳定提速。此前12.25%/13.63%及14.7–17.1%保留为旧轮结果，不跨轮归因。
 Apple Sink采用单owner Job内同步Q128数学分块：原长Q固定点extra active peak降78.8%，同工时延未见退步；现扩至Q>128收益域，短Q固定点另降67.57%，该新点未测时延。Direct/Graph共用选择，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
@@ -35,7 +35,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | ConcurrentHashMap erase重复hash | [erase](../../../include/hyle/container/concurrent_hash_map.h) 先hash选shard，再由table.erase重算同key | 复用私有prehashed路径，锁/回收/析构顺序不变。计数2→1；长key形状两对改善与AA漂移见下，不声称外部赢 |
 | CPU / Vulkan Concat重复复制前缀 | 两个provider仍线性拼接；CPU保留全部中间payload，Vulkan虽有gallocr复用，复制工作仍为二次项 | 已移植平衡树，保持各自dtype/stride受理域；CPU修正重复ports元数据预算。实测与空间边界见下 |
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
-| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；已知无NAX硬件的F32 D256 causal及D192 tile两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。F32 D256短Q/rank2 Bool另以checked Q128块省72.8%额外峰值，均值时延增加1.2–2.6%；其余域待补 |
+| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 受限域已融合，其余大math域已用原生selector及checked Q128块，覆盖三种浮点dtype、不同Dv、广播mask和全Q causal偏移。仍保留融合路径KV维非连续mask的完整复制问题，不将本项计为全部修复 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的Q>128收益域均用单Job同步Q128块。长Q固定extra peak1344307200→285310976 B（−78.8%），短Q672825344→218202112 B（−67.57%）；新短Q未测时延。其它guard域的scores有KV/输出同阶上界，caller mask仍为Q×KV；不宣称所有shape吞吐或opaque callback自动规划 |
 | HTTP2大body背压holdout | 唯一4×256 KiB holdout最新NO_COPY候选仍慢8.22%/11.08%；同轮旧控制慢11.69%/15.35%，存在peer漂移与顺序差异 | DATA绕过native bounce、一次复制到原owned wire，保留所有flush/取消/借用合同。两序幅度不稳，不声称统一提速；残差保留，通用职责与手工单loop策略分开调查 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
@@ -43,7 +43,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
 | CPU普通多节点保留已消费payload | manual arena逐一保存中间值；64个1 MiB Neg串联保留63 MiB中间payload | 普通多节点复用既有gallocr；实测冷私有请求约63.94→2.94 MiB。后补多节点CacheEncode，动态PagedRead边界保留 |
 | CPU普通causal SDPA冷mask | Program原来构造并长期保留Q×KV Half mask，普通prefill也会支付平方冷分配/填充 | HYCA隐式边界复用原生vector/tiled路径；Q1不设tag/全零mask，split策略保留。实测prepare少64 MiB payload，见下 |
-| Apple GPU长Q数学fallback | 原生unfused保留全Q scores/probabilities；逻辑分块也可能被Metal待完成command buffers同时保留 | 静态fallback域以原数学16行分块，默认设置实测额外MLX峰值80→58.81 MiB；64行版反增8 MiB的负点保留，未称覆盖全部fallback |
+| Apple GPU长Q数学fallback | 原生unfused保留全Q scores/probabilities；逻辑分块也可能被Metal待完成command buffers同时保留 | 旧lazy16行方案后补typed checked Q128 owner，原生selector确认math后覆盖三种浮点dtype；固定causal Q>KV点额外MLX峰值50868872→8819204 B。收益guard外由KV/输出或64MiB阈值约束，不宣称所有shape吞吐已赢 |
 | CPU私有paged/ragged causal冷mask | 非boxed Q>1仍构造并保留Q×逻辑KV的Half seed，batch admission还收取旧mask下界 | 复用同一HYCA逻辑行边界；两pin各6项通过。冷plan移除64 MiB seed，generic workspace pool仍单独保留，见下 |
 | TimerQueue空闲advance重复扫描 | 每次dispatch观察未到期timer，都会重扫最近bucket全部节点；相同N节点、M次空闲轮询可付O(N·M) | 缓存仍有效的最近deadline，取消最小值后只刷新一次；不改下次advance刷新取消值的合同。27项通过，节点访问计数见下 |
 | CPU算术链末端编码禁用生命周期复用 | 只要含CacheEncode，普通多节点recipe仍保留所有中间payload，退回Θ(N·M) | 移除该排除，保留callback/invalid传播/退休顺序与动态PagedRead排除；冷64Neg→Q8私有请求68112224→3100744 B，见下 |
@@ -1299,3 +1299,25 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 候选Hyle绝对中位时延增加1.33%/2.03%，未证明提速；两项改动均撤回，未追加拆分实验或重测。当前产品源SHA恢复为`dada1db18f…`，本轮候选13–15%不是当前已应用实现的排名；前述NO_COPY有效对照8.22%/11.08%仍保留。[处理结论](http2/lazy-header-idle-flush/disposition.json)、[固定摘要](http2/lazy-header-idle-flush/summary.json)及[源码、命令、测试和全部样本](http2/lazy-header-idle-flush/source-results.zip)。
 
 已有共同terminal drain只能对齐退出责任，不能消除推进顺序导致的WINDOW_UPDATE数量差；1 Task/2 Task对照也同时改变readiness和推进策略。没有将这些组合差额归因为纯协程成本，亦未强制添加协议帧求同。
+
+## Apple普通math：共享原生选择并扩展checked分块
+
+原typed checked路径仅受理F32/D256/rank2 Bool短Q；现在直接复用锁定原生`use_fallback`及既有force规则，覆盖F32/F16/BF16、不同Dv、无mask/广播Boolean或additive mask、Q大于KV的因果条件。仍保留64MiB实际dtype scores阈值和`(Q−128)·KV>2·Q·Dv`收益式；不改变数值类型、softmax、全遮蔽行及native错误受理。全Q的bottom-right偏移在owner中生成，逐块同步checked drain，保留原whole-Job输入及结果寿命。
+
+只编3个产品和2个测试TU，复用SDK、Graph及Sink对象。旧新各一次同6项全部通过，新增四个Direct固定输入及一个Graph宽Dv输入，覆盖三dtype、三端口、head-one广播、KV零stride、additive −Inf行、全Q causal、两layout、重绑及旧输出保活。低dtype新增输入在运行前固定DC分量，FP64 oracle舍入实际端口值；既有通用误差预算及原offset stress失败记录未改。
+
+固定空间点为F32/F32累加、BSHD、B1/H8/Hkv2/D64/Q2049/KV1025、无显式mask、causal、scale1/16，QK0/V逐key交替±1.25。基线已经lazy Q16，不能把单个理论full scores的67207200 B称为其实际分配。两侧各一次冷submit→checked wait，完整1049088输出均通过原预算，maxAbs均1.98682149e−8；调用方5245952 B和输出4196352 B单列：
+
+| MLX指标（B） | old | new |
+|---|---:|---:|
+| ready输入active | 5292040 | 5292048 |
+| 持输出active | 9502728 | 9502736 |
+| peak | 56160912 | 14111252 |
+| peak减ready输入active | 50868872 | 8819204 |
+| 完成后cache | 47739656 | 4662793 |
+
+额外峰值少42049668 B（约82.66%），不含host RSS或全部驱动显存。随后仅一次预定ABBA、同exe与输入，每进程2warm＋前oracle＋9次submit→checked wait计时＋后oracle，36样本全保留：中位数old/new/new/old分别14.462291/9.362459/9.024209/11.404792 ms。两顺序新侧均较低，但旧侧进程漂移与尾部波动明显，不给统一倍率或跨shape结论。[摘要](apple-ordinary-math/summary.json)、[全部时延样本](apple-ordinary-math/latency-results.json)、[源码、命令、身份及原始结果](apple-ordinary-math/source-results.zip)。
+
+普通math已受checked块/收益式/常量阈值约束；融合路径的KV维非连续mask仍会被原生完整复制，继续列为未完项，清单计数不变。
+
+归档后root先将精确模板写入test.ps1再执行，Mac先全核13文件，删除4个exe及consumer.o共40027568逻辑B，重核保留8个host/test/Graph/Sink对象1323064 B。没有重新计时或重编；源、日志、raw、map、归档和SDK未删。[范围](apple-ordinary-math/mac-cleanup-plan.json)/[执行记录](apple-ordinary-math/cleanup-execution.json)/[日志](apple-ordinary-math/cleanup-executed.log)。

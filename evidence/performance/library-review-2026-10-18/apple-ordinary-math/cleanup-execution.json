@@ -1,0 +1,22 @@
+{
+  "executor_script": "test.ps1",
+  "executor_script_sha256": "6df8a06245a00b5c2e5bf98902530abc9354ab92cca4cf1d67387b98fead4121",
+  "exit_code": 0,
+  "executed": true,
+  "preserved": "sources, logs, raw data, maps, archives, native SDK and reusable object cache",
+  "combined_deleted_files": 10,
+  "combined_deleted_logical_bytes": 43659536,
+  "this_batch": "apple-ordinary-math",
+  "this_batch_result": {
+    "deleted": [
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/baseline-tests",
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/candidate-tests",
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/consumer.o",
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/baseline-space",
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/candidate-space"
+    ],
+    "retained_files_verified": 8,
+    "deleted_bytes": 40027568
+  },
+  "log_sha256": "c2a9bd22436e370a6c3353dc2a2120b0f4fcd9c308a07602ad6de7b0db116b63"
+}

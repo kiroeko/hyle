@@ -260,5 +260,149 @@ inline std::vector<double> reference(c::AttentionLayout layout, int phase) {
     }
   return result;
 }
+
+// A few additional wiring cases, not a precision-domain sweep. Keep the
+// original centered fixture above unchanged, including its two-phase data.
+struct MathCase {
+  const char *name;
+  int queries, keys, query_depth, value_depth;
+  mx::Dtype type;
+  c::AttentionLayout layout;
+  c::MaskKind mask;
+  bool causal = false;
+};
+inline MathCase wide_bool_case() {
+  return {"wide Bool head-one broadcast", 257, 8193, 512, 17, mx::float32,
+          c::AttentionLayout::kBatchHeadSequenceDepth, c::MaskKind::kBoolean};
+}
+inline std::array<MathCase, 4> extended_cases() {
+  return {wide_bool_case(),
+          MathCase{"F16 unequal depths without mask", 513, 8193, 512, 17,
+                   mx::float16, c::AttentionLayout::kBatchSequenceHeadDepth,
+                   c::MaskKind::kNone},
+          MathCase{"BF16 per-query additive broadcast", 513, 8193, 40, 33,
+                   mx::bfloat16, c::AttentionLayout::kBatchHeadSequenceDepth,
+                   c::MaskKind::kAdditive},
+          MathCase{"long causal Q greater than KV", 2049, 1025, 64, 64,
+                   mx::float32, c::AttentionLayout::kBatchSequenceHeadDepth,
+                   c::MaskKind::kNone, true}};
+}
+inline bool empty_row(const MathCase &test, int t) {
+  return t == 0 || t == 127 || t == 128 || t == test.queries - 1;
+}
+inline bool visible(const MathCase &test, int t, int s, int phase) {
+  return !empty_row(test, t) && s <= test.keys - test.queries + t &&
+      (phase == 0 || s % 5 != 0);
+}
+inline double query_bias(const MathCase &test, int t, int phase) {
+  return empty_row(test, t) ? -std::numeric_limits<double>::infinity()
+                           : double((t + phase) % 3 - 1) / 4096;
+}
+inline double value_at(const MathCase &test, int h, int s, int d, int phase) {
+  // Only the new low-dtype cases carry this fixed DC component. Their oracle
+  // rounds the actual input V, rather than treating BF16 values as exact reals.
+  const double offset = test.type == mx::float32 ? 0 : 0.5;
+  return offset + a(s, phase) * (1 + channel(h, d, phase));
+}
+inline std::vector<mx::array> ports(const MathCase &test, int phase) {
+  std::vector<double> q(heads * test.queries * test.query_depth),
+      k(kv_heads * test.keys * test.query_depth),
+      v(kv_heads * test.keys * test.value_depth);
+  for (int h = 0; h < heads; ++h)
+    for (int t = 0; t < test.queries; ++t) {
+      q[(h * test.queries + t) * test.query_depth] = q0(t, phase);
+      q[(h * test.queries + t) * test.query_depth + 1] = q1(h, phase);
+    }
+  for (int h = 0; h < kv_heads; ++h)
+    for (int s = 0; s < test.keys; ++s) {
+      k[(h * test.keys + s) * test.query_depth] = k0(s, phase);
+      k[(h * test.keys + s) * test.query_depth + 1] = k1(s, phase);
+      for (int d = 0; d < test.value_depth; ++d)
+        v[(h * test.keys + s) * test.value_depth + d] =
+            value_at(test, h, s, d, phase);
+    }
+  std::vector<mx::array> result{
+      make(q, {1, heads, test.queries, test.query_depth}, test.type),
+      make(k, {1, kv_heads, test.keys, test.query_depth}, test.type),
+      make(v, {1, kv_heads, test.keys, test.value_depth}, test.type)};
+  if (test.mask == c::MaskKind::kBoolean) {
+    std::vector<std::uint8_t> mask(test.queries * test.keys);
+    for (int t = 0; t < test.queries; ++t)
+      for (int s = 0; s < test.keys; ++s)
+        mask[t * test.keys + s] = visible(test, t, s, phase);
+    result.push_back(mx::astype(
+        mx::array(mask.data(), {1, 1, test.queries, test.keys}, mx::uint8),
+        mx::bool_, stream()));
+  } else if (test.mask == c::MaskKind::kAdditive) {
+    std::vector<double> mask(test.queries);
+    for (int t = 0; t < test.queries; ++t)
+      mask[t] = query_bias(test, t, phase);
+    // Keep a real zero KV stride, including across the Q127/Q128 block seam.
+    result.push_back(mx::broadcast_to(
+        make(mask, {1, 1, test.queries, 1}, test.type),
+        {1, 1, test.queries, test.keys}, stream()));
+  }
+  for (std::size_t i = 0; i < 3; ++i)
+    if (test.layout == c::AttentionLayout::kBatchSequenceHeadDepth)
+      result[i] = mx::transpose(result[i], {0, 2, 1, 3}, stream());
+  for (auto &input : result) input = ready(std::move(input));
+  return result;
+}
+inline std::vector<double> reference(const MathCase &test, int phase) {
+  std::vector<double> result(heads * test.queries * test.value_depth);
+  std::vector<double> key0(test.keys), key1(test.keys);
+  for (int s = 0; s < test.keys; ++s) {
+    key0[s] = rounded(k0(s, phase), test.type);
+    key1[s] = rounded(k1(s, phase), test.type);
+  }
+  for (int h = 0; h < heads; ++h)
+    for (int t = 0; t < test.queries; ++t) {
+      const bool nan_row = test.mask == c::MaskKind::kAdditive && empty_row(test, t);
+      // Boolean/causal all-false rows retain finite-min => uniform semantics;
+      // an explicitly additive -Inf row instead preserves the NaN result.
+      const bool uniform = (test.mask == c::MaskKind::kBoolean && empty_row(test, t)) ||
+          (test.causal && test.keys - test.queries + t < 0);
+      double mass = 0, weighted = 0;
+      std::array<double, 66> residue_mass{}; // a(s, phase) has period lcm(2,11,3).
+      const double query0 = rounded(q0(t, phase), test.type);
+      const double query1 = rounded(q1(h, phase), test.type);
+      const double bias = test.mask == c::MaskKind::kAdditive
+          ? rounded(query_bias(test, t, phase), test.type) : 0;
+      if (!nan_row)
+        for (int s = 0; s < test.keys; ++s) {
+          const bool allowed = test.mask == c::MaskKind::kBoolean
+              ? visible(test, t, s, phase)
+              : !test.causal || s <= test.keys - test.queries + t;
+          const double score = double(scale) *
+              (query0 * key0[s] + query1 * key1[s]) + bias;
+          const double weight = uniform ? 1 : allowed ? std::exp(score) : 0;
+          mass += weight;
+          weighted += weight * a(s, phase);
+          residue_mass[s % residue_mass.size()] += weight;
+        }
+      for (int d = 0; d < test.value_depth; ++d) {
+        double value = std::numeric_limits<double>::quiet_NaN();
+        if (!nan_row) {
+          const int kv_h = h / (heads / kv_heads);
+          if (test.type == mx::float32)
+            value = (weighted / mass) * (1 + channel(kv_h, d, phase));
+          else {
+            // Independent FP64 weighting of actual F16/BF16 input values.
+            // Period aggregation avoids a keys-by-output-depth oracle loop.
+            double sum = 0;
+            for (std::size_t r = 0; r < residue_mass.size(); ++r)
+              sum += residue_mass[r] * rounded(
+                  value_at(test, kv_h, static_cast<int>(r), d, phase), test.type);
+            value = sum / mass;
+          }
+        }
+        const auto index = test.layout == c::AttentionLayout::kBatchSequenceHeadDepth
+            ? (t * heads + h) * test.value_depth + d
+            : (h * test.queries + t) * test.value_depth + d;
+        result[index] = value;
+      }
+    }
+  return result;
+}
 } // namespace ordinary_short_query_centered
 } // namespace apple_tensor_test

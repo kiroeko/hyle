@@ -1,0 +1,14 @@
+{
+  "baseline": {
+    "all_host_objects": true,
+    "current_test_objects": true,
+    "sink_direct_object_present": true,
+    "original_libmlx_present": true
+  },
+  "candidate": {
+    "all_host_objects": true,
+    "current_test_objects": true,
+    "sink_direct_object_present": true,
+    "original_libmlx_present": true
+  }
+}

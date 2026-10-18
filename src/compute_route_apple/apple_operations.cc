@@ -301,39 +301,77 @@ bool detail::is_mlx_attention_blocks(const Operation &operation,
         (rows - 128) * keys > 2 * rows * 512;
   }
   const auto *attention = operation.get_if<ScaledDotProductAttention>();
-  if (!attention || inputs.size() != 4 || attention->causal ||
-      attention->mask != MaskKind::kBoolean ||
+  if (!attention ||
+      (attention->causal && attention->mask != MaskKind::kNone) ||
       attention->accumulation_type != DataType::kFloat32 ||
       (attention->layout != AttentionLayout::kBatchSequenceHeadDepth &&
        attention->layout != AttentionLayout::kBatchHeadSequenceDepth) ||
       !infer_output_descriptions(operation, inputs, outputs).ok())
     return false;
-  for (std::size_t i = 0; i < inputs.size(); ++i)
-    if (!inputs[i].is_plain() ||
-        (i < 3 && inputs[i].data_type() != DataType::kFloat32))
+  for (const auto &input : inputs) {
+    if (!input.is_plain())
       return false;
+    for (const auto extent : input.dimensions())
+      if (extent > std::numeric_limits<int>::max())
+        return false;
+  }
+  const auto dtype = inputs[0].data_type();
+  if (dtype != DataType::kFloat32 && dtype != DataType::kFloat16 &&
+      dtype != DataType::kBFloat16)
+    return false;
   const auto axis = attention->layout == AttentionLayout::kBatchSequenceHeadDepth
       ? 1 : 2;
-  const auto q = inputs[0].dimensions(), k = inputs[1].dimensions();
+  const auto head_axis = 3 - axis;
+  const auto q = inputs[0].dimensions(), k = inputs[1].dimensions(),
+             v = inputs[2].dimensions();
   const auto rows = q[axis], keys = k[axis];
-  // The pinned D256 array-mask path is math, including on NAX devices.
-  // Keep the existing long-Q, fused and small-score routes unchanged.
-  if (q[0] == 0 || q[3] != 256 || inputs[2].dimensions()[3] != 256 ||
-      rows <= 128 || rows >= 1024 || keys == 0 ||
-      keys > std::numeric_limits<int>::max() || inputs[3].rank() != 2 ||
-      inputs[3].dimensions()[0] != rows || inputs[3].dimensions()[1] != keys ||
-      (rows - 128) * keys <= 2 * rows * 256)
+  if (q[0] == 0 || q[3] == 0 || v[3] == 0 || rows <= 128 || keys == 0 ||
+      (rows - 128) * keys <= 2 * rows * v[3])
     return false;
   // Stop at the 64MiB threshold instead of overflowing a complete byte product.
-  constexpr std::uint64_t minimum_elements = (64ULL * 1024 * 1024) / sizeof(float);
+  const std::uint64_t minimum_elements =
+      (64ULL * 1024 * 1024) / (dtype == DataType::kFloat32 ? 4 : 2);
   std::uint64_t elements = 1;
-  for (const auto dim : {q[0], q[axis == 1 ? 2 : 1], rows, keys}) {
+  bool large_scores = false;
+  for (const auto dim : {q[0], q[head_axis], rows, keys}) {
     const auto extent = static_cast<std::uint64_t>(dim);
     if (extent == 0) return false;
-    if (elements >= (minimum_elements + extent - 1) / extent) return true;
+    if (elements >= (minimum_elements + extent - 1) / extent) {
+      large_scores = true;
+      break;
+    }
     elements *= extent;
   }
-  return false;
+  if (!large_scores) return false;
+  try {
+    const auto type = dtype == DataType::kFloat32 ? mx::float32
+        : dtype == DataType::kFloat16 ? mx::float16 : mx::bfloat16;
+    if (attention->mask != MaskKind::kNone) {
+      const auto mask_type = inputs[3].data_type();
+      if (mask_type != DataType::kBool && mask_type != DataType::kFloat32 &&
+          mask_type != DataType::kFloat16 && mask_type != DataType::kBFloat16)
+        return false;
+      const auto native_mask_type = mask_type == DataType::kBool ? mx::bool_
+          : mask_type == DataType::kFloat32 ? mx::float32
+          : mask_type == DataType::kFloat16 ? mx::float16 : mx::bfloat16;
+      if (mx::promote_types(native_mask_type, type) != type)
+        return false;
+    }
+    // Context creation has initialized the GPU runtime. These are lazy shape
+    // carriers, not evaluated buffers; native selection does not use an encoder
+    // or stream id, and no scores or GPU work are constructed here.
+    const auto stream = mx::default_stream(mx::Device::gpu);
+    const auto query = mx::zeros({static_cast<int>(q[0]), static_cast<int>(q[head_axis]),
+        static_cast<int>(rows), static_cast<int>(q[3])}, type, stream);
+    const auto key = mx::zeros({static_cast<int>(k[0]), static_cast<int>(k[head_axis]),
+        static_cast<int>(keys), static_cast<int>(k[3])}, type, stream);
+    const auto value = mx::zeros({static_cast<int>(v[0]), static_cast<int>(v[head_axis]),
+        static_cast<int>(keys), static_cast<int>(v[3])}, type, stream);
+    return detail::attention_path(*attention, query, key, value, stream) ==
+        detail::AttentionPath::kMath;
+  } catch (...) {
+    return false; // Preserve the original native admission/error path.
+  }
 }
 
 Result<Program>
@@ -342,23 +380,23 @@ Context::prepare(const Operation &operation,
   const WorkloadContext &workload) const noexcept {
   try {
     bool attention_blocks = false;
-    if (operation.get_if<ScaledDotProductAttention>() && examples.size() == 4 &&
-        examples[0].dtype() == mx::float32 && examples[1].dtype() == mx::float32 &&
-        examples[2].dtype() == mx::float32 && examples[3].dtype() == mx::bool_) {
+    if (operation.get_if<ScaledDotProductAttention>() &&
+        (examples.size() == 3 || examples.size() == 4)) {
       std::array<TensorDesc, 4> descriptions;
       bool described = true;
       for (std::size_t i = 0; i < examples.size(); ++i) {
         const auto &input = examples[i];
         if (input.ndim() > kMaxTensorRank) { described = false; break; }
+        const auto type = logical_type(input.dtype());
+        if (!type) { described = false; break; }
         std::array<std::int64_t, kMaxTensorRank> shape{};
         std::copy(input.shape().begin(), input.shape().end(), shape.begin());
-        auto description = TensorDesc::dense(
-            i == 3 ? DataType::kBool : DataType::kFloat32,
-            {shape.data(), input.ndim()});
+        auto description = TensorDesc::dense(*type, {shape.data(), input.ndim()});
         if (!description) { described = false; break; }
         descriptions[i] = std::move(*description);
       }
-      attention_blocks = described && detail::is_mlx_attention_blocks(operation, descriptions);
+      attention_blocks = described && detail::is_mlx_attention_blocks(operation,
+          std::span<const TensorDesc>(descriptions.data(), examples.size()));
     }
     if (attention_blocks || operation.custom_as<model_ops::SinkAttention>() ||
         fixed_ggml_model_operation(operation) ||

@@ -1,0 +1,105 @@
+{
+  "base_commit": "74e28bba248da54ad7d805eeabeb8fb667038b28",
+  "actual_head": "74e28bba248da54ad7d805eeabeb8fb667038b28",
+  "sources": [
+    {
+      "variant": "baseline",
+      "path": "src/compute_route_apple/apple_context.cc",
+      "bytes": 46895,
+      "sha256": "339579d81831fcb848bb5c039dab8e3c103489013e0ef99ecb9d1135f991f602"
+    },
+    {
+      "variant": "baseline",
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "bytes": 19831,
+      "sha256": "ad108ff6dbd5cbae5c1db6b1f0a83bf3234ef295212b46835413bc8fc478517e"
+    },
+    {
+      "variant": "baseline",
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "bytes": 35414,
+      "sha256": "2f2be48660f9dd7809dd04dad7e1b63f40567621f49000386938bb7ca972c5d4"
+    },
+    {
+      "variant": "baseline",
+      "path": "src/compute_route_apple/apple_tensor.h",
+      "bytes": 634,
+      "sha256": "d7b5c818edfb984601ff6bd70cdabe25542f7ce89ae2e99061f9fbe0b27c684c"
+    },
+    {
+      "variant": "baseline",
+      "path": "tests/compute_route_apple/attention_test.cc",
+      "bytes": 21015,
+      "sha256": "e6dafb3df6657f24044b3dfa82f8f27f1f9e8e6089325df832d25bdf45547ecf"
+    },
+    {
+      "variant": "baseline",
+      "path": "tests/compute_route_apple/tensor_test_support.h",
+      "bytes": 10571,
+      "sha256": "c941b2840d0a2a2363f8047ca771c8b02dc37df7ebf781a22022893ec32c433d"
+    },
+    {
+      "variant": "baseline",
+      "path": "tests/graph_route_apple/tensor_test.cc",
+      "bytes": 14901,
+      "sha256": "7835246f97c5e72c21e4b6532c26368c8ec6c5cf913512ca2686c0d759c05385"
+    },
+    {
+      "variant": "candidate",
+      "path": "src/compute_route_apple/apple_context.cc",
+      "bytes": 48881,
+      "sha256": "c38091043d88fa28c53255efef8eafd960dc99069c8cfdabb37808904ab9e925"
+    },
+    {
+      "variant": "candidate",
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "bytes": 21518,
+      "sha256": "d7a55d8476b9cefff065ebe1087ec0cab0e2993d88d41c5cdb7ff956cc4946d8"
+    },
+    {
+      "variant": "candidate",
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "bytes": 35275,
+      "sha256": "3fb13d6903b748d2c14b202dc9441c1a129c8b32af067ea7022976129bee95c8"
+    },
+    {
+      "variant": "candidate",
+      "path": "src/compute_route_apple/apple_tensor.h",
+      "bytes": 951,
+      "sha256": "dfbd57aae017c1aaab4bb11082a09b740cf81f7382858c14783f27381bff3c1f"
+    },
+    {
+      "variant": "candidate",
+      "path": "tests/compute_route_apple/attention_test.cc",
+      "bytes": 22419,
+      "sha256": "ec9d901853f130f3af5e4ecdeccea31e7b3c6a91930c564442c8cccb366a2353"
+    },
+    {
+      "variant": "candidate",
+      "path": "tests/compute_route_apple/tensor_test_support.h",
+      "bytes": 17503,
+      "sha256": "f7683ebfc31bfae06dc82dc61ee381e48a9e51950e23ba6d79497175e172d2af"
+    },
+    {
+      "variant": "candidate",
+      "path": "tests/graph_route_apple/tensor_test.cc",
+      "bytes": 15690,
+      "sha256": "4da54d0f9af80842aab7345fa48ac1beccfdf2fde77b46be29b2adfbff83f74a"
+    }
+  ],
+  "cached_graph_source": {
+    "path": "src/graph_route_apple/apple_lowering.cc",
+    "bytes": 19858,
+    "sha256": "c2e12b16be7dd148a4eb0eebf85dccfe3cf25ed1ddd39800fef2992d281330c8",
+    "unchanged_from_base": true
+  },
+  "consumer": {
+    "path": "measurement/consumer.cc",
+    "bytes": 9827,
+    "sha256": "034791b3b654a84ab1f775701560e6268d349763f5d0cf0736d1d16a3271c6e7"
+  },
+  "preparation_failure": {
+    "stage": "local graph source freeze",
+    "error": "FileNotFoundError for apple_graph.cc; corrected to actual apple_lowering.cc, no remote command or product change"
+  }
+}

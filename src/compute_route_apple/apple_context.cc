@@ -340,6 +340,8 @@ struct AttentionBlocks {
   int rows = 0;
   int query_axis = 1;
   bool ordinary = false;
+  MaskKind mask = MaskKind::kNone;
+  bool causal = false;
 };
 
 struct PreparedPlan {
@@ -424,6 +426,17 @@ Status evaluate_attention_blocks(const AttentionBlocks &program, InvocationState
   auto &outputs=state.block_outputs;
   auto &blocks=state.output_blocks;
   blocks.clear();
+  const int keys = ports[1].shape(program.query_axis);
+  std::optional<mx::array> broadcast_mask, key_indices;
+  if (program.ordinary && program.mask != MaskKind::kNone) {
+    // Match native mask broadcasting before slicing global query rows; do not
+    // request a contiguous expansion of scalar/per-head/per-key masks.
+    broadcast_mask = mx::broadcast_to(ports[3],
+        {ports[0].shape(0), ports[0].shape(3 - program.query_axis),
+         program.rows, keys}, stream);
+  } else if (program.ordinary && program.causal) {
+    key_indices = mx::arange(0, keys, mx::int32, stream);
+  }
   for (int begin=0;begin<program.rows;) {
     const int end=begin+std::min(128,program.rows-begin);
     args.clear();
@@ -431,8 +444,20 @@ Status evaluate_attention_blocks(const AttentionBlocks &program, InvocationState
     first[program.query_axis]=begin;last[program.query_axis]=end;
     args.push_back(mx::slice(ports[0],first,last,stream));
     args.push_back(ports[1]);args.push_back(ports[2]);
-    args.push_back(mx::slice(ports[3],{begin,0},{end,ports[3].shape(1)},stream));
-    if (!program.ordinary) args.push_back(ports[4]);
+    if (broadcast_mask) {
+      auto stop = broadcast_mask->shape();
+      stop[2] = end;
+      args.push_back(mx::slice(*broadcast_mask, {0,0,begin,0}, stop, stream));
+    } else if (key_indices) {
+      // Bottom-right causality uses the original full Q, including Q > KV.
+      auto query_indices = mx::arange(keys - program.rows + begin,
+          keys - program.rows + end, mx::int32, stream);
+      args.push_back(mx::greater_equal(mx::expand_dims(query_indices, 1, stream),
+          mx::expand_dims(*key_indices, 0, stream), stream));
+    } else if (!program.ordinary) {
+      args.push_back(mx::slice(ports[3],{begin,0},{end,ports[3].shape(1)},stream));
+      args.push_back(ports[4]);
+    }
     const auto &part=end-begin==128 ? program.full : *program.tail;
     HYLE_RETURN_IF_ERROR(evaluate_mlx(part,args,outputs,stream));
     blocks.push_back(std::move(outputs[0]));
@@ -889,6 +914,8 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
             blocks.query_axis = attention &&
                 attention->layout == AttentionLayout::kBatchHeadSequenceDepth ? 2 : 1;
             blocks.rows = specs[0].shape[blocks.query_axis];
+            blocks.mask = attention ? attention->mask : MaskKind::kNone;
+            blocks.causal = attention && attention->causal;
             auto build = [operation = region.operation, workload = program->workload,
                           ordinary = blocks.ordinary](const auto &args,
                                                        mx::Stream native_stream) {
@@ -899,11 +926,22 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
               auto part_specs = specs;
               part_specs[0].shape[blocks.query_axis] = rows;
               part_specs[0].logical_description = {};
-              part_specs[3].shape[0] = rows;
-              part_specs[3].logical_description = {};
+              if (blocks.ordinary && blocks.mask != MaskKind::kNone) {
+                part_specs[3].shape = {specs[0].shape[0],
+                    specs[0].shape[3 - blocks.query_axis], rows,
+                    specs[1].shape[blocks.query_axis]};
+                part_specs[3].logical_description = {};
+              } else if (blocks.ordinary && blocks.causal) {
+                part_specs.push_back({{rows, specs[1].shape[blocks.query_axis]}, mx::bool_});
+              } else if (!blocks.ordinary) {
+                part_specs[3].shape[0] = rows;
+                part_specs[3].logical_description = {};
+              }
               auto outputs = prepare_mlx(part, build, part_specs, stream);
-              if (outputs.size() != 1 || outputs[0].shape() != part_specs[0].shape ||
-                  outputs[0].dtype() != mx::float32)
+              auto expected_shape = part_specs[0].shape;
+              expected_shape.back() = specs[2].shape[3];
+              if (outputs.size() != 1 || outputs[0].shape() != expected_shape ||
+                  outputs[0].dtype() != specs[0].dtype)
                 return Status::InvalidArgument("Apple attention block schema mismatch");
               return Status::Ok();
             };

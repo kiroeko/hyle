@@ -276,51 +276,67 @@ namespace ga = g::apple;
 TEST(AppleGraph, PublishedCenteredShortQueryMathAndNegativeCrossCheckedBoundary) {
   namespace sq = ordinary_short_query_centered;
   constexpr auto layout = c::AttentionLayout::kBatchSequenceHeadDepth;
-  auto inputs = sq::ports(layout, 0);
-  auto builder = g::GraphBuilder::create().value();
-  std::array<g::ValueId, 4> ports;
-  for (std::size_t i = 0; i < ports.size(); ++i) {
-    std::vector<std::int64_t> shape(inputs[i].shape().begin(), inputs[i].shape().end());
-    ports[i] = builder.input(c::TensorDesc::dense(
-        i == 3 ? c::DataType::kBool : c::DataType::kFloat32, shape).value()).value();
+  for (const bool wide : {false, true}) {
+    SCOPED_TRACE(wide ? "wide Bool head-one broadcast" : "original centered");
+    auto test = sq::wide_bool_case();
+    test.layout = layout;
+    const auto make_inputs = [&](int phase) {
+      if (wide) return sq::ports(test, phase);
+      const auto original = sq::ports(layout, phase);
+      return std::vector<mx::array>(original.begin(), original.end());
+    };
+    const auto reference = [&](int phase) {
+      return wide ? sq::reference(test, phase) : sq::reference(layout, phase);
+    };
+    auto inputs = make_inputs(0);
+    auto builder = g::GraphBuilder::create().value();
+    std::array<g::ValueId, 4> ports;
+    for (std::size_t i = 0; i < ports.size(); ++i) {
+      std::vector<std::int64_t> shape(inputs[i].shape().begin(), inputs[i].shape().end());
+      ports[i] = builder.input(c::TensorDesc::dense(
+          i == 3 ? c::DataType::kBool : c::DataType::kFloat32, shape).value()).value();
+    }
+    const auto copy = builder.add(c::Copy{}, ports[0]).value();
+    const auto attention = builder.add(c::ScaledDotProductAttention{
+        .layout = layout, .mask = c::MaskKind::kBoolean, .scale = sq::scale},
+        copy, ports[1], ports[2], ports[3]).value();
+    const auto negative = builder.add(c::Unary{c::UnaryKind::kNeg}, attention).value();
+    ASSERT_TRUE(builder.publish(copy).ok());
+    ASSERT_TRUE(builder.publish(attention).ok());
+    ASSERT_TRUE(builder.publish(negative).ok());
+    auto graph = std::move(builder).finish().value();
+    auto context = a::Context::create().value();
+    auto program = ga::compile(context, graph, {}).value();
+    auto slot = program.create_invocation().value();
+    std::vector<mx::array> old_outputs;
+    std::vector<std::vector<std::uint64_t>> old_bits;
+    for (int phase = 0; phase < 2; ++phase) {
+      inputs = make_inputs(phase);
+      auto expected = reference(phase), negated = expected;
+      for (auto &value : negated) value = -value;
+      ASSERT_TRUE(slot.bind(inputs).ok());
+      const auto query_bits = bits(inputs[0]);
+      auto accepted = slot.submit().value();
+      auto finished = accepted.wait().value();
+      const auto outputs = finished.get()->arrays();
+      ASSERT_EQ(outputs.size(), 3U);
+      EXPECT_EQ(outputs[0].shape(), inputs[0].shape());
+      EXPECT_EQ(bits(outputs[0]), query_bits);
+      EXPECT_EQ(outputs[1].shape(),
+                (mx::Shape{1, wide ? test.queries : sq::queries, sq::heads,
+                           wide ? test.value_depth : sq::depth}));
+      expect(outputs[1], expected);
+      expect(outputs[2], negated); // Independent signed FP64 reference, not self-comparison.
+      ASSERT_FALSE(::testing::Test::HasFailure());
+      if (phase == 0)
+        for (const auto &output : outputs) {
+          old_outputs.push_back(output);
+          old_bits.push_back(bits(output));
+        }
+    }
+    for (std::size_t i = 0; i < old_outputs.size(); ++i)
+      EXPECT_EQ(bits(old_outputs[i]), old_bits[i]);
   }
-  const auto copy = builder.add(c::Copy{}, ports[0]).value();
-  const auto attention = builder.add(c::ScaledDotProductAttention{
-      .layout = layout, .mask = c::MaskKind::kBoolean, .scale = sq::scale},
-      copy, ports[1], ports[2], ports[3]).value();
-  const auto negative = builder.add(c::Unary{c::UnaryKind::kNeg}, attention).value();
-  ASSERT_TRUE(builder.publish(copy).ok());
-  ASSERT_TRUE(builder.publish(attention).ok());
-  ASSERT_TRUE(builder.publish(negative).ok());
-  auto graph = std::move(builder).finish().value();
-  auto context = a::Context::create().value();
-  auto program = ga::compile(context, graph, {}).value();
-  auto slot = program.create_invocation().value();
-  std::vector<mx::array> old_outputs;
-  std::vector<std::vector<std::uint64_t>> old_bits;
-  for (int phase = 0; phase < 2; ++phase) {
-    inputs = sq::ports(layout, phase);
-    auto expected = sq::reference(layout, phase), negated = expected;
-    for (auto &value : negated) value = -value;
-    ASSERT_TRUE(slot.bind(inputs).ok());
-    const auto query_bits = bits(inputs[0]);
-    auto accepted = slot.submit().value();
-    auto finished = accepted.wait().value();
-    const auto outputs = finished.get()->arrays();
-    ASSERT_EQ(outputs.size(), 3U);
-    EXPECT_EQ(outputs[0].shape(), inputs[0].shape());
-    EXPECT_EQ(bits(outputs[0]), query_bits);
-    expect(outputs[1], expected);
-    expect(outputs[2], negated); // Independent signed FP64 reference, not self-comparison.
-    ASSERT_FALSE(::testing::Test::HasFailure());
-    if (phase == 0)
-      for (const auto &output : outputs) {
-        old_outputs.push_back(output);
-        old_bits.push_back(bits(output));
-      }
-  }
-  for (std::size_t i = 0; i < old_outputs.size(); ++i)
-    EXPECT_EQ(bits(old_outputs[i]), old_bits[i]);
 }
 
 } // namespace

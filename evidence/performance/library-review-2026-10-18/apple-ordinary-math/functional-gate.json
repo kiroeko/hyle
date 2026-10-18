@@ -1,0 +1,19 @@
+{
+  "filter": "AppleAttention.CenteredShortQueryMathKeepsMasksTailAndReboundOwners:AppleGraph.PublishedCenteredShortQueryMathAndNegativeCrossCheckedBoundary:AppleSinkAttention.QBlocksKeepMasksSinksRebindingAndOwners:AppleSinkAttention.ShortQueriesRetainExistingFallback:AppleSinkGraph.PublishedCopySinkAndNegativeCrossPrivateBoundary:AppleAttention.MathQueryBlocksRetainBroadcastMasksAndReboundOwners",
+  "expected_tests": 6,
+  "runs": [
+    {
+      "arm": "baseline",
+      "tests": 6,
+      "failures": 0,
+      "time": "10.637s"
+    },
+    {
+      "arm": "candidate",
+      "tests": 6,
+      "failures": 0,
+      "time": "9.143s"
+    }
+  ],
+  "status": "both_six_test_filters_passed"
+}

@@ -436,6 +436,33 @@ TEST(AppleAttention, CenteredShortQueryMathKeepsMasksTailAndReboundOwners) {
     expect(final_result.get()->arrays()[0], expected_b);
     EXPECT_EQ(bits(old_output), old_bits);
   }
+
+  // Each case adds one math-path boundary; this is not a dtype/layout matrix.
+  // The original centered case above retains its exact data and owner checks.
+  for (const auto &test : sq::extended_cases()) {
+    SCOPED_TRACE(test.name);
+    auto inputs = sq::ports(test, 0);
+    ASSERT_EQ(inputs.size(), test.mask == c::MaskKind::kNone ? 3U : 4U);
+    if (test.mask == c::MaskKind::kBoolean)
+      EXPECT_EQ(inputs[3].shape(), (mx::Shape{1, 1, test.queries, test.keys}));
+    if (test.mask == c::MaskKind::kAdditive) {
+      EXPECT_EQ(inputs[3].shape(), (mx::Shape{1, 1, test.queries, test.keys}));
+      ASSERT_EQ(inputs[3].strides()[3], 0);
+    }
+    const auto expected = sq::reference(test, 0);
+    auto context = a::Context::create().value();
+    auto output = execute(context, c::ScaledDotProductAttention{
+        .layout = test.layout, .mask = test.mask, .scale = sq::scale,
+        .causal = test.causal}, inputs);
+    ASSERT_TRUE(output) << output.error().message();
+    EXPECT_EQ(output->dtype(), test.type);
+    const auto shape = test.layout == c::AttentionLayout::kBatchSequenceHeadDepth
+        ? mx::Shape{1, test.queries, sq::heads, test.value_depth}
+        : mx::Shape{1, sq::heads, test.queries, test.value_depth};
+    ASSERT_EQ(output->shape(), shape);
+    expect(*output, expected); // Existing per-dtype budgets are unchanged.
+    ASSERT_FALSE(::testing::Test::HasFailure());
+  }
 }
 
 } // namespace

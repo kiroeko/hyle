@@ -1,0 +1,231 @@
+{
+  "model": "Mac16,12",
+  "disk_free_bytes": 43245629440,
+  "retained_objects": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-context.o",
+      "bytes": 182048,
+      "sha256": "0ad035588062f078880e81421e75e3715233d3c7f325b3c3d368557da7bd2be2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/operations.o",
+      "bytes": 72048,
+      "sha256": "52cc70b09f6291b946215fd1d5b6b6ebff8154db11f3c71e898096e3d4c13f83"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-tensor.o",
+      "bytes": 129432,
+      "sha256": "62e4a8b2668fe35811f5992d0ed48d29cc8ffbbc2b24d1fcc4b4a53fb4f40715"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+      "bytes": 87824,
+      "sha256": "13b405c34bb446496563f51db9b91439ea6004d34b00d833edcba6e25d197de6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/sink-tests.o",
+      "bytes": 258920,
+      "sha256": "1f7f88bb886dc897082422be2585d775c58dc0ba115a82d0bd3f2eef2d62e051"
+    }
+  ],
+  "staged_sources": [
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "bytes": 48881,
+      "sha256": "c38091043d88fa28c53255efef8eafd960dc99069c8cfdabb37808904ab9e925"
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "bytes": 21518,
+      "sha256": "d7a55d8476b9cefff065ebe1087ec0cab0e2993d88d41c5cdb7ff956cc4946d8"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "bytes": 35275,
+      "sha256": "3fb13d6903b748d2c14b202dc9441c1a129c8b32af067ea7022976129bee95c8"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.h",
+      "bytes": 951,
+      "sha256": "dfbd57aae017c1aaab4bb11082a09b740cf81f7382858c14783f27381bff3c1f"
+    },
+    {
+      "path": "tests/compute_route_apple/attention_test.cc",
+      "bytes": 22419,
+      "sha256": "ec9d901853f130f3af5e4ecdeccea31e7b3c6a91930c564442c8cccb366a2353"
+    },
+    {
+      "path": "tests/compute_route_apple/tensor_test_support.h",
+      "bytes": 17503,
+      "sha256": "f7683ebfc31bfae06dc82dc61ee381e48a9e51950e23ba6d79497175e172d2af"
+    },
+    {
+      "path": "tests/graph_route_apple/tensor_test.cc",
+      "bytes": 15690,
+      "sha256": "4da54d0f9af80842aab7345fa48ac1beccfdf2fde77b46be29b2adfbff83f74a"
+    },
+    {
+      "path": "tests/compute_route_apple/sink_attention_test_support.h",
+      "bytes": 6211,
+      "sha256": "a3a78d2bfd14b03710e6cc0a20385745eed77b87f2d2bb10dde8e0a002cc882f"
+    },
+    {
+      "path": "measurement/consumer.cc",
+      "bytes": 9827,
+      "sha256": "034791b3b654a84ab1f775701560e6268d349763f5d0cf0736d1d16a3271c6e7"
+    }
+  ],
+  "libraries": [
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_graph.a",
+      "bytes": 775272,
+      "sha256": "86208e55517b457680ce48e0cfdecbac47e2cc69ad211f2e46809f0825986865"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_route_apple.a",
+      "bytes": 1370040,
+      "sha256": "1878c553dbdb569de518480713c9ba21862f3ff57aa48adc9881aa8c3205004b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_stream.a",
+      "bytes": 134600,
+      "sha256": "dbf6844ba0e0a2aec0970442a778cc27a4c57275c0f2ad07ef439541fe1d47aa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_state.a",
+      "bytes": 95816,
+      "sha256": "a75ef41586d7d51a32a7db3681456abbf9b8554ea7dd05f98f1f940c73739162"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_batch.a",
+      "bytes": 364352,
+      "sha256": "6ecb6b630f66c75403b3ac2c7c81096b526de9b7cbf6b0c6125601c95f54ca37"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute.a",
+      "bytes": 607240,
+      "sha256": "c468c6cacb23eee131a0192796567367eee4b042a1f180c33b726479045e6c99"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ops.a",
+      "bytes": 119368,
+      "sha256": "32d82c7484171854455b8423be65f192993da2c17874ecd2f4935c132290eb01"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_simd.a",
+      "bytes": 1516216,
+      "sha256": "2abcc25cb1875df64876060ccb9165b37478edab080081ae04daa7b636bff1fe"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_sched.a",
+      "bytes": 254456,
+      "sha256": "dfaf3805b132d65a81c0f1f8be0f4e01df97e95d1d87106e528d2124b46887e6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_container.a",
+      "bytes": 56448,
+      "sha256": "46bc278866d2e8030609bb99725a430bf5e9f4b5ea1667d86b43e32697bae2dc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem_vm.a",
+      "bytes": 59240,
+      "sha256": "6ee1c4547412c2f5d8e2b35e6d99c2b3e3b8d9a303901a640e28efaa23285f5d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_mem.a",
+      "bytes": 201448,
+      "sha256": "29d4a1408dd314f5e021260d38a7a62e94383b390612dc1cad324f06d2668531"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmimalloc_static.a",
+      "bytes": 308632,
+      "sha256": "db2650145b4959be18b2f14bcec21064a3da169a5c77c1da316f2d0209f38c45"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform_thread.a",
+      "bytes": 20128,
+      "sha256": "b7c206dd87d69c2a9a94f2162d96f9f7659ec5aa6958d0dcc13c26925381233f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_time.a",
+      "bytes": 16096,
+      "sha256": "a5d3960f2ee4d4ed61dcfdd18847f7866708a85e855c6483b89b9622ca802b7a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_platform.a",
+      "bytes": 141920,
+      "sha256": "d3465a3e942bc642fc7f8493b66d88f0990824c95547b5da7f90bd5a98a17a60"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_error.a",
+      "bytes": 30216,
+      "sha256": "4f909f8dc2cf0ff5cedc63d6c752c6046d207fcfb64b63e6bef7a23009d54ce8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_provider_ggml_metal.a",
+      "bytes": 34184,
+      "sha256": "30cfa6cd10112bc6e8ffd95df3b4bb2bb3948107d0655f4d6af0597a745827a4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_compute_ggml_runtime.a",
+      "bytes": 21416,
+      "sha256": "f0d30fd2afc4cd7df77d8ebe5557bb77adb2a9ccd6c37a93721af511e8662479"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml.a",
+      "bytes": 41848,
+      "sha256": "7990b38448c824e4e6797181b8a397fbbe815809bcef4cd2dec8cdd18ddab0ab"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-metal.a",
+      "bytes": 2504328,
+      "sha256": "8c6d1b49777320eb72edb138b4f794ca4e539fcb441181f9a1ee3ad9ce5b0978"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libggml-base.a",
+      "bytes": 1047840,
+      "sha256": "e13017cf65b053e0205c99d1b829dc4816a95ab37316e59146a74db22a1aece1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmlx.a",
+      "bytes": 11510272,
+      "sha256": "0ec0cd1a0e00c3f75c1ecf9db549b023e6fdc64f3d2f1a63a9a8be809eea9af9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/lib/libgtest_main.a",
+      "bytes": 1336,
+      "sha256": "715971900fb54030174831f6093078bbd820de57283c66b6b71dd45b39992ac2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/lib/libgtest.a",
+      "bytes": 689648,
+      "sha256": "a2740e859d4a750bfce805444a520d407b08a4faeb2a8b40f803f174df7da22e"
+    }
+  ],
+  "half_helper": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/tests/compute_provider_native/half_test_support.h",
+    "bytes": 4399,
+    "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+  },
+  "metallib": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/mlx.metallib",
+    "target": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/mlx.metallib"
+  },
+  "environment": {},
+  "baseline_objects": [
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-context.o",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/operations.o",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-tensor.o",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o"
+  ],
+  "candidate_objects": [
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/context.o",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/operations.o",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/tensor.o",
+    "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o"
+  ],
+  "fresh_product_TUs": 3,
+  "fresh_test_TUs": 2,
+  "native_SDK_rebuild_or_copy": false,
+  "latency_authorized_or_run": false
+}

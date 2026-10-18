@@ -1,0 +1,7 @@
+{"preflight_files": 13, "delete_files": 5, "delete_bytes": 40027568, "retain_files": 8, "retain_bytes": 1323064}
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/baseline-tests
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/candidate-tests
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/consumer.o
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/baseline-space
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/candidate-space
+{"deleted": ["/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/baseline-tests", "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/candidate-tests", "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/consumer.o", "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/baseline-space", "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/candidate-space"], "retained_files_verified": 8, "deleted_bytes": 40027568}
