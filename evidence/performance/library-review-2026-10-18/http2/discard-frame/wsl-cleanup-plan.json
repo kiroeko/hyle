@@ -1,0 +1,39 @@
+{
+  "host": "WSL Ubuntu-24.04 user root",
+  "root": "/root/hyle-scratch/http2-current-20261018",
+  "targets": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/tests",
+      "bytes": 1559608,
+      "sha256": "2674a1c8b06f51a79bb4b5882ba55bff9f0da568247ac5b93ad273df55270722"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/http2.o",
+      "bytes": 223976,
+      "sha256": "4f9960ea6a93c0cd2cc7ced5f946c68e3b3cc6fdb8b045eb3201819f99a2c3a9"
+    }
+  ],
+  "retain": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+      "bytes": 223280,
+      "sha256": "0de3047e82522fddeaf24b57d576f4c7393901d9609217577ec2d5fc566303b6"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2_test.o",
+      "bytes": 654624,
+      "sha256": "debb22bed71cd36bbda594158905dc547ca59655ed62c81f8b4a42c0431f75d3"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+      "bytes": 387104,
+      "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+    }
+  ],
+  "delete_bytes": 1783584,
+  "retain_bytes": 1265008,
+  "duplicate_or_overlap": 0,
+  "preserve": "All source, logs, maps, raw data, archives, SDK, directories and other cache excluded. Only these2 exact files are deletion targets.",
+  "execution": "Template only; no WSL or Mac operation by this publication task. Parent reviews then writes root test.ps1. Preflight all5 before first unlink; reject active target use, repeat exact file checks before unlink, verify retained3 after.",
+  "old_object_source": "Exact formerly retained NO_COPY object identity from owned-wire-no-copy/wsl-cleanup-plan.json; original source/static proof archived in discard-frame/source-results.zip."
+}

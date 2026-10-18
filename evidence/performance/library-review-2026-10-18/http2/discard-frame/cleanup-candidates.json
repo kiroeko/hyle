@@ -1,0 +1,18 @@
+{
+  "host": "WSL Ubuntu-24.04 root",
+  "root": "/root/hyle-scratch/http2-current-20261018/discard-frame",
+  "files": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+      "bytes": 223280,
+      "sha256": "0de3047e82522fddeaf24b57d576f4c7393901d9609217577ec2d5fc566303b6"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/tests",
+      "bytes": 1559608,
+      "sha256": "2674a1c8b06f51a79bb4b5882ba55bff9f0da568247ac5b93ad273df55270722"
+    }
+  ],
+  "logical_bytes": 1782888,
+  "disposition": "Do not delete or overwrite current shared baseline/cache. New2files only; no cleanup executed."
+}

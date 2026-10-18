@@ -1,5 +1,6 @@
 {
-  "status": "read_only_current_source_review; no measurement, instruction count or product change",
+  "status": "historical read-only source review before the NO_COPY DATA follow-up; no measurement or instruction count in this review",
+  "current_followup": "Commit70d054fba changes only the Hyle DATA send copy path: its native provider uses NGHTTP2_DATA_FLAG_NO_COPY and the synchronous send_data callback copies frame header/payload directly into the existing owned wire. Thus the old 'both use two DATA send copies' observation below is historical; Hyle now uses one application payload copy on this path, while the unchanged manual peer still uses two. Receive retention, reader/ACK obligations and driver differences remain. Latest same-episode residual is8.22/11.08percent in owned-wire-no-copy/summary.json; this review assigns no fraction of that residual to copies or scheduling.",
   "main_conclusion": "The current canonical manual peer does not validate DATA directly in its nghttp2 callback. Both arms retain DATA in a per-stream receive buffer, then validate it in chunks and return stream plus connection credit. The remaining public-versus-manual time difference cannot be labeled a Hyle-only receive-copy cost or attributed wholesale to scheduling.",
   "same_application_work": {
     "source": "bench/io_http2/http2_p1_bench.cc:164-261,466-608,950-964",

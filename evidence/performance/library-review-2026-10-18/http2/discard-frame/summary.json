@@ -1,0 +1,122 @@
+{
+  "status": "Implemented one-line private-helper reuse; existing targeted functional tests pass; not committed or cleaned",
+  "scope": "Only http2_body_discard calls the same private read_body directly instead of co_await of public http2_body_read. Public outer discard Task and public read Task API/ABI remain.",
+  "source_before": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\discard-frame\\http2.before.cc",
+    "bytes": 111167,
+    "sha256": "4d43ec9d7eaa3480c2e06b77aa68057da88ebe42e03ddaaa6885b47b2c4ae8ad"
+  },
+  "source_after": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\discard-frame\\http2.candidate.cc",
+    "bytes": 111180,
+    "sha256": "dada1db18f4ae0e8e55adac82f74e0539ab48b53ddb98804d637d53034c83c63"
+  },
+  "promise_source": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\discard-frame\\coro.h",
+    "bytes": 11737,
+    "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+  },
+  "static_evidence": {
+    "before": {
+      "read-factory": {
+        "address": 57120,
+        "machine_code_bytes": 311,
+        "symbol": "hyle::io::http2_body_read(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, unsigned long, hyle::io::OperationOptions)",
+        "public_read_factory_relocations": []
+      },
+      "discard-actor": {
+        "address": 69072,
+        "machine_code_bytes": 990,
+        "symbol": "hyle::io::http2_body_discard(hyle::io::http2_body_discard(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, hyle::io::OperationOptions)::_ZN4hyle2io18http2_body_discardENS_3mem12AllocatorRefERNS0_15Http2BodyReaderENS0_16OperationOptionsE.Frame*) [clone .actor]",
+        "public_read_factory_relocations": [
+          "1100d: R_X86_64_PLT32\thyle::io::http2_body_read(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, unsigned long, hyle::io::OperationOptions)-0x4"
+        ]
+      }
+    },
+    "after": {
+      "read-factory": {
+        "address": 57904,
+        "machine_code_bytes": 311,
+        "symbol": "hyle::io::http2_body_read(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, unsigned long, hyle::io::OperationOptions)",
+        "public_read_factory_relocations": []
+      },
+      "discard-actor": {
+        "address": 56960,
+        "machine_code_bytes": 640,
+        "symbol": "hyle::io::http2_body_discard(hyle::io::http2_body_discard(hyle::mem::AllocatorRef, hyle::io::Http2BodyReader&, hyle::io::OperationOptions)::_ZN4hyle2io18http2_body_discardENS_3mem12AllocatorRefERNS0_15Http2BodyReaderENS0_16OperationOptionsE.Frame*) [clone .actor]",
+        "public_read_factory_relocations": []
+      }
+    },
+    "interpretation": "Original discard actor calls the public read factory on each loop, resumes/destroys its child handle. The standalone read factory allocates0xd0=208 bytes through the supplied AllocatorRef on this GCC14x86_64 build. Final discard actor has no relocation to that factory; public read remains for public callers. This is static code evidence, not a runtime allocation counter or throughput measurement."
+  },
+  "mechanism": {
+    "before": "The existing GCC14 NO_COPY object has one public-read factory relocation in the discard loop actor. That factory requests0xd0=208 bytes including allocator prefix, at alignment16, initializes a child coroutine frame, and old discard resumes/destroys its handle each iteration. This was not optimized away.",
+    "after": "Fresh object discard actor has no public-read factory relocation and calls Http2SessionAccess::read_body directly. Public http2_body_read factory remains for public callers; the reduction is private nesting, not removal of public support.",
+    "native_code_note": "Use relocation targets, not unresolved call display labels: an after-actor __stack_chk_fail relocation can be printed with the next read-destroy symbol as its temporary address label.",
+    "measurement_limit": "Static allocation-request evidence, not runtime allocation counting, total heap accounting, instructions or elapsed speedup."
+  },
+  "contracts_retained": [
+    "Outer discard coroutine remains lazily started and allocated through its first AllocatorRef. The same allocator, reader, max_bytes0 and OperationOptions reach read_body on every iteration.",
+    "Private helper still performs per-chunk valid/busy checks, cancel/deadline/transport driving, acknowledgement of the previous borrow and current EOF/error selection.",
+    "Final EOF acknowledge_body and returned Status/error path are unchanged. Reader/stream owner pins, borrowed-span lifetime and reset/retirement implementations are unchanged.",
+    "Task awaiter only drove the child to completion on the same stackful fiber, with no required continuation or additional scheduled-owner lifetime. Synchronous private driving retains the same fiber suspension behavior.",
+    "The unnecessary child frame allocation/free and its failure point disappear; remaining outer Task and helper/native allocator failure paths are retained. No Task-wide OOM handling or awaiter behavior was changed."
+  ],
+  "functional": {
+    "results": [
+      {
+        "backend": "default",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "time": "1.634s"
+      },
+      {
+        "backend": "epoll",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "time": "1.549s"
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+        "bytes": 223280,
+        "sha256": "0de3047e82522fddeaf24b57d576f4c7393901d9609217577ec2d5fc566303b6"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/tests",
+        "bytes": 1559608,
+        "sha256": "2674a1c8b06f51a79bb4b5882ba55bff9f0da568247ac5b93ad273df55270722"
+      }
+    ],
+    "fresh_product_TUs": 1,
+    "test_TUs_or_sdk_rebuilt": 0,
+    "static_before_after": "static-frame-evidence.json",
+    "timing_benchmark_or_extra_shape_run": false
+  },
+  "closure": {
+    "compiler": "WSL Ubuntu24.04 GCC14.2.0, x86_64, O3/NDEBUG/C++23",
+    "fresh_product_TUs": 1,
+    "fresh_test_TUs": 0,
+    "new_SDK_or_foundation_builds": 0,
+    "cached_inputs_verified": 16,
+    "baseline_object": {
+      "path": "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/http2.o",
+      "bytes": 223976,
+      "sha256": "4f9960ea6a93c0cd2cc7ced5f946c68e3b3cc6fdb8b045eb3201819f99a2c3a9"
+    },
+    "test_source": {
+      "path": "/mnt/c/public/project-hyle/hyle/tests/io_http2/http2_test.cc",
+      "bytes": 79326,
+      "sha256": "3e5142391784c3f8a892912e2b6ab2aa9cb31e18bf34390b94abde17a070a5f0"
+    },
+    "loader": "Actual ldd resolves /root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0; other foundation/native/GTest inputs reused at recorded exact SHA."
+  },
+  "performance_conclusion": "None. No benchmark, new shape, timing, allocation-runtime probe or performance sample ran. Current consume-based4x256KiB holdout already uses the direct private helper; this discard mechanism cannot explain or claim to fix its8-11% residual.",
+  "limitations": "Existing15tests include multiple discard call sites, duplex, trailers, cancellation/reset/deadline, borrowed-body and allocator/limit checks. No new special per-chunk-frame-OOM fixture or standalone performance test was added.",
+  "packaging_only_correction": "The first freeze.py invocation used one too many parent directories and failed before generating the archive. Corrected only the packaging path; original error recorded in freeze-initial-failure.txt. No compilation/test repetition.",
+  "product_diff": "One replacement line only in src/io_http2/http2.cc. Apple9product/test files, README and test.ps1 untouched by this task.",
+  "cleanup": "cleanup-candidates.json lists only new discard-frame/http2.o and tests with exact SHA/size; no deletion, overwrite of shared cache or commit performed."
+}

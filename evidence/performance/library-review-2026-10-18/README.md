@@ -1240,9 +1240,11 @@ prepare/bind后仅clear cache、reset peak一次，不在块间清缓存；MLX�
 | old | 23.173833 | 23.383551 |
 
 对应顺序配对的均值增加1.23%/2.63%，中位数增加2.77%/4.21%；这是固定点空间与时间的取舍，不能称免费优化、提速或所有shape已解决。
-[摘要](apple-ordinary-short-q/measurement/summary.json)与[源码、身份、全部原始结果](apple-ordinary-short-q/measurement/source-results.zip)保留两次加载失败及完整样本；[三个可重建产物的精确身份](apple-ordinary-short-q/measurement/cleanup-candidates.json)仅供后续清理，当前仍保留，未执行删除。
+[摘要](apple-ordinary-short-q/measurement/summary.json)与[源码、身份、全部原始结果](apple-ordinary-short-q/measurement/source-results.zip)保留两次加载失败及完整样本；可重建产物的实际清理见下，不改写各实验归档时的身份清单。
 
 另以预先指定的centered dyadic V增加接线回归，shape、非零两channel QK、GQA、mask边界和原FP64预算保持；这是额外功能输入，不替代上述stress或性能点。只fresh两测试TU、旧新各链接一个合并exe，双方各一次同6项全部通过：新Direct/Graph、既有两Sink Direct、Sink Graph及longQ广播mask。覆盖两种prepare、两layout、四端口重绑、Copy/Neg发布及owner销毁/旧结果保活；测试墙钟不作性能结论。产品六文件与实测候选逐字相同，未重编SDK或native库。[功能记录](apple-ordinary-short-q/functional-tests/functional-summary.json)。
+
+本批后续先将[精确清理模板](apple-ordinary-short-q/functional-tests/mac-cleanup-template.ps1)写入根test.ps1，再实际执行：23文件全部预检后逐一删除12个exe/过时对象，共69408328逻辑B；重新核对保留11个仍可复用对象1663824 B。源/data/raw/log/map/归档/SDK及目录未删。[范围](apple-ordinary-short-q/functional-tests/mac-cleanup-plan.json)/[执行日志](apple-ordinary-short-q/functional-tests/mac-cleanup-executed.log)。
 
 ## HTTP2 DATA：少一次payload拷贝，保留owned wire
 
@@ -1262,3 +1264,11 @@ read_outbound原先复制到nghttp2 bounce，再由mem_send2复制到Hyle wire�
 候选相对对应inner顺序的旧控制绝对低0.28%/8.29%、peer归一低0.54%/6.17%；前一对小于可见轮内波动，不能称统一稳定提速或残差已消除。
 已应用明确的payload两次→一次复制；未追加AA、补点或变更peer求胜。[摘要](http2/owned-wire-no-copy/summary.json)与[源码、原生合同依据、测试和全部样本](http2/owned-wire-no-copy/source-results.zip)。
 随后root将[清理模板](http2/owned-wire-no-copy/wsl-cleanup-template.ps1)写入test.ps1并实际执行：8个文件先全部核路径/size/SHA，删除5个可重建产物3625768逻辑B，再核验保留的3个当前对象/core共1265704 B；[精确范围](http2/owned-wire-no-copy/wsl-cleanup-plan.json)与[执行日志](http2/owned-wire-no-copy/cleanup-executed.log)保留，源码、原始数据、SDK/cache未删。
+
+## HTTP2 discard：去掉每块数据的子协程帧
+
+discard原先逐chunk调用只co_return私有read_body的公开Task；现与consume一致，直接调用同私有helper，保留外层公开Task及每chunk的valid/busy、取消/deadline、borrow、ACK/EOF检查和allocator传递。原GCC14/O3对象的discard actor确实调用公开read factory，后者请求208 B子frame；新对象已无该调用，公开read入口仍保留。只作静态证据，不宣称运行分配计数或时延倍率。
+
+仅fresh这一个产品TU、复用原test/core，default及epoll各15/15通过。正式大body holdout走consume，不执行discard；本批未重测排名，不能归因其8–11%残差。[摘要](http2/discard-frame/summary.json)/[源码、反汇编与全部定向结果](http2/discard-frame/source-results.zip)。
+
+随后先写根test.ps1并执行[精确清理](http2/discard-frame/wsl-cleanup-plan.json)：5文件全部预检后删除测试exe及过时NO_COPY对象共1783584逻辑B，保留并再核当前产品对象、test对象和core。[日志](http2/discard-frame/cleanup-executed.log)。

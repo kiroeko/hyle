@@ -1,0 +1,167 @@
+{
+  "host": "kiro@172.22.10.198",
+  "root": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q",
+  "targets": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/consumer.o",
+      "bytes": 44400,
+      "sha256": "0352a37a834e8a9726bc6a1774324a4cf1bd91bcd39e356c201306e63db774f6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/baseline",
+      "bytes": 9574136,
+      "sha256": "7c03a1bf61fde8b5184b499bd037f8093008407c82e5afd8899975f03ce48c59"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/measurement/candidate",
+      "bytes": 9574568,
+      "sha256": "fd99ddf0e6e3eb55e0ded40b81b2c0798b23a9bdf9ea8e3284e413dc81dd8d61"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/diagnostic/full-output-probe.o",
+      "bytes": 81112,
+      "sha256": "bdd05528047ff6b1e9b7a75f18ba29c034e64a2a30404c32797644de70419d57"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/diagnostic/probe-baseline",
+      "bytes": 9593392,
+      "sha256": "c56edfd82235aa647be22278ff4806a5f54b74027f152cc15060df23883693a3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/diagnostic/probe-candidate",
+      "bytes": 9593856,
+      "sha256": "9c870b8c2e9b3d8f7a000bd1754dd8fcf8469f0f3a5c2ba17e2a151ae6da63f3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/precision-replay/replay-probe.o",
+      "bytes": 82288,
+      "sha256": "5adc84c1c9b3c0a136211ef9ba2a760d8853be79344b831ed8ed5857d0ec1c4f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/precision-replay/replay-probe",
+      "bytes": 9594976,
+      "sha256": "21c27699fd0f43ff1cda4999f375b64cb8d1e63c802d4486e9ecc534d760176a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/baseline-centered-tests",
+      "bytes": 10401688,
+      "sha256": "da293b73f0e37ac17ebd1b0a8dff6aef6b27c4065b7f7e751fdad15a88d1e48a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/candidate-centered-tests",
+      "bytes": 10402136,
+      "sha256": "caddc554a6711feebaee0f1e88ffc3907c0f0354f351a6069b1737bcedc37f5f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/attention-tests.o",
+      "bytes": 240736,
+      "sha256": "327e48535ef84e971dc705f66cb8413e67838151db3e438b621e6a4bb3fb7639"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/graph-tests.o",
+      "bytes": 225040,
+      "sha256": "6f66303ce495214b50642e1dd1e25b97e63ef546714530f528be0a164e640641"
+    }
+  ],
+  "delete_bytes": 69408328,
+  "retain": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/centered-attention.o",
+      "bytes": 241328,
+      "sha256": "12b17edda6e216a8fef9fcf8cf3bc2470d23e94b1466aca9d7026a1e0bd238f7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/centered-functional/centered-graph.o",
+      "bytes": 225672,
+      "sha256": "27d346e1915d0daa123a0c8f96ebdf99d6783d6708424a6d3d09757dd7c98fe9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-context.o",
+      "bytes": 181672,
+      "sha256": "8d40802ad526811d9955c09809524f3e1e01cf1a9db97fd84d1eb0b27e29c937"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-graph.o",
+      "bytes": 89144,
+      "sha256": "ae0de519f4375f4899ccce885ff0b5e5fe40e82025259629152ef01723f03e03"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/candidate-operations.o",
+      "bytes": 70592,
+      "sha256": "46f9513654a2b2a52caeace1df7cf0846bee378bd5eeb43e955427ff94858ca9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-force-scale/apple_tensor.o",
+      "bytes": 126016,
+      "sha256": "cb31c6ec728dfb5fd090468c6baf94e50698d62a364af4d8e5fe330e71c6c8d0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-context.o",
+      "bytes": 182048,
+      "sha256": "0ad035588062f078880e81421e75e3715233d3c7f325b3c3d368557da7bd2be2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-operations.o",
+      "bytes": 72016,
+      "sha256": "2fa2f5bd746a5db5fbc0b19749397efd7fbc0d257435e8083bdd33dc96f439e3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-tensor.o",
+      "bytes": 129432,
+      "sha256": "62e4a8b2668fe35811f5992d0ed48d29cc8ffbbc2b24d1fcc4b4a53fb4f40715"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+      "bytes": 87824,
+      "sha256": "13b405c34bb446496563f51db9b91439ea6004d34b00d833edcba6e25d197de6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-q128/applied-direct.o",
+      "bytes": 258080,
+      "sha256": "2526c62aac5c655cdaddbe08bfae22a32da85b67ba3683eeb01398d8f7d38616"
+    }
+  ],
+  "retain_bytes": 1663824,
+  "source_manifests": [
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/measurement/cleanup-candidates.json",
+      "bytes": 1547,
+      "sha256": "45c5424bba042f96fcbed5878962c677bd5133959ec83273acc6a5c9442d92ef"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/diagnostic/cleanup-candidates.json",
+      "bytes": 1293,
+      "sha256": "de3ece04b161a667e5447e9f14d56cbc8617ca475b2f70d88287ae34c32819ef"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/precision-replay/cleanup-candidates.json",
+      "bytes": 789,
+      "sha256": "da2825ee8bfebae2bf1b84ab4d48406d58824551f12c7f670dfa3ba3e7d242f9"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-tests/cleanup-candidates.json",
+      "bytes": 2881,
+      "sha256": "cccd052c56347929eae874e3a9381f90741116a0d5f06bf5d17d22c19df8fda9"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-failure-summary.json",
+      "bytes": 5902,
+      "sha256": "fbf1c8925400cd5ef98a9f2883ff423049c91e44f70d0522cd30d64f9357f7d8"
+    },
+    {
+      "path": ".scratch/perf-review-2026-10-18/apple-ordinary-short-q/functional-tests/runtime-identities.json",
+      "bytes": 12346,
+      "sha256": "7d839ccd180efb4e1bd5476620ce5bcc8bd4565353626807fb473ff6c69296ad"
+    }
+  ],
+  "grouping": {
+    "measurement": 3,
+    "diagnostic": 3,
+    "precision_replay": 2,
+    "centered_functional_executables": 2,
+    "superseded_stress_test_objects": 2
+  },
+  "retention": "Centered two fresh test objects + original candidate four product objects + baseline four product objects + existing Sink Direct test object. All 11 exact files preflighted.",
+  "boundaries": "Unlink only the 12 exact regular files. Targets are directly in the batch root or its four named subdirectories. No recursive deletion, directory scanning or source/data/raw/log/map/SDK removal. Retained baseline/Sink files are outside this batch but are only inspected, never deletion targets.",
+  "execution": "Prepared locally only, no Mac access and no root test.ps1 edit/execution. Parent reviews and replaces the already-executed old test.ps1 with this template before running."
+}

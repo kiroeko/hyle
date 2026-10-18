@@ -1,0 +1,4 @@
+{"preflight_files": 5, "delete_files": 2, "delete_bytes": 1783584, "retain_files": 3, "retain_bytes": 1265008}
+Deleted exact file: /root/hyle-scratch/http2-current-20261018/discard-frame/tests
+Deleted exact file: /root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/http2.o
+{"deleted": ["/root/hyle-scratch/http2-current-20261018/discard-frame/tests", "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/http2.o"], "retained_files_verified": 3, "deleted_bytes": 1783584}

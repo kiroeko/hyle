@@ -2118,7 +2118,7 @@ sched::Task<Status> http2_body_discard(mem::AllocatorRef allocator,
                                        OperationOptions options) noexcept {
   for (;;) {
     Result<HttpBodyChunkView> chunk =
-        co_await http2_body_read(allocator, reader, 0, options);
+        detail::Http2SessionAccess::read_body(allocator, reader, 0, options);
     if (!chunk.has_value())
       co_return std::move(chunk).error();
     if (chunk->end_stream) {
