@@ -1,0 +1,145 @@
+{
+  "status": "baseline_original_F32_budget_failed_candidate_not_run",
+  "base_commit": "8db46e4e9",
+  "product_sources": [
+    {
+      "variant": "candidate",
+      "path": "src/compute_route_apple/apple_context.cc",
+      "bytes": 52486,
+      "sha256": "39253c8508611bc37e4e68a6848fc727e895cab5772291945830ea3c1a5e326a"
+    },
+    {
+      "variant": "candidate",
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "bytes": 22361,
+      "sha256": "7ce02581c31b3f3989b881a4341a819c6aa4a0214ed76a7af8e55f0bd716695e"
+    }
+  ],
+  "fixed_consumer": {
+    "path": "measurement/consumer.cc",
+    "bytes": 10692,
+    "sha256": "4280b2f6737395c8b4cf653a23e2b7fa3664416c580e573105e97bc0b95e9c07"
+  },
+  "machine": "Mac16,12",
+  "compile_link": {
+    "fresh_product_TUs": 2,
+    "fresh_test_TUs": 2,
+    "all_four_compile_commands_passed": true,
+    "two_combined_executables_linked": true,
+    "no_native_or_SDK_build_copy": true
+  },
+  "execution": {
+    "single_baseline_8filter_started": true,
+    "baseline_exit": -6,
+    "passed_before_failure": [
+      "AppleAttention.MathQueryBlocksRetainBroadcastMasksAndReboundOwners",
+      "AppleAttention.CenteredShortQueryMathKeepsMasksTailAndReboundOwners"
+    ],
+    "first_failure_test": "AppleAttention.FusedMasksKeepStridesDtypesTailAndReboundOwners",
+    "trace_mask_enum": 2,
+    "mask_kind": "Boolean",
+    "layout": "BHSD",
+    "output_index": 64,
+    "decoded_location": {
+      "batch": 0,
+      "head": 0,
+      "query": 1,
+      "channel": 0
+    },
+    "normal_FP64_row_not_native_corner": true,
+    "observed": 0.49878108501434326,
+    "expected_rounded_F32": 0.49877405166625977,
+    "absolute_error": 7.033348083496094e-06,
+    "original_budget": 4.992644309997558e-06,
+    "F32_absolute_budget": 2e-06,
+    "F32_relative_budget": 6e-06,
+    "candidate_executed": false,
+    "consumer_compiled": false,
+    "space_executed": false,
+    "latency_executed": false
+  },
+  "failure_mechanism": {
+    "flags": [
+      "--gtest_throw_on_failure",
+      "--gtest_fail_fast"
+    ],
+    "assertion": "EXPECT_NEAR in shared expect helper throws testing::internal::GoogleTestFailureException; uncaught libc++abi termination/SIGABRT (-6).",
+    "TestHasFailure": "ASSERT_FALSE(Test::HasFailure()) exists after expect, but not reached because first EXPECT_NEAR throws. No normal gtest JSON completion written.",
+    "runner": "run_remote.py captured full child stdout/stderr and command exit, then raised/stopped; did not execute candidate or compile consumer."
+  },
+  "limits": [
+    "This failure belongs to original native/full-Q baseline, not evidence candidate accuracy regressed.",
+    "Only prior two Attention gtests completed; Graph/Sink and remaining cases not reached. All-false/-Inf control rows are not declared passed as a group.",
+    "No input/tolerance/product edits after numerical failure; no retry or supplemental run authorized or performed.",
+    "Source-level cause of original native error is not measured yet; no PV/softmax attribution claimed."
+  ],
+  "reused_objects": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/context.o",
+      "bytes": 187280,
+      "sha256": "5c0c5c2e324f6667ec3ec18598b63330784d6977361cd97b8aef990a7102e896"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/operations.o",
+      "bytes": 73616,
+      "sha256": "1f43f11529f2582ec1103576ab700710669f80221a706aa2a7e4135815fe0f8c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-math/tensor.o",
+      "bytes": 131640,
+      "sha256": "25e905b914d0c28740c1e3721ba277f9b8506c1fbbc6ab5939d629c895665b40"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-ordinary-short-q/candidate-graph.o",
+      "bytes": 87824,
+      "sha256": "13b405c34bb446496563f51db9b91439ea6004d34b00d833edcba6e25d197de6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/sink-tests.o",
+      "bytes": 258920,
+      "sha256": "1f7f88bb886dc897082422be2585d775c58dc0ba115a82d0bd3f2eef2d62e051"
+    }
+  ],
+  "fresh_generated_objects_and_executables": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/context.o",
+      "bytes": 191760,
+      "sha256": "5c8b319aad2835f3c5bb411232fd8e91ba526cee6a6a2532cfbd15c424b2535c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/operations.o",
+      "bytes": 73832,
+      "sha256": "4dba491e511014111249cb66bea487dab8076b2d878bda76045dd78f6a9eaf0d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/attention-tests.o",
+      "bytes": 304352,
+      "sha256": "1425c7c0ecc821a18a71a48e5e5696bda1ca10889fc0ff69524b16e6a6d7b570"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/graph-tests.o",
+      "bytes": 275992,
+      "sha256": "db98a05c885361f029d378c6187c053b9a0cdf3e77eb24802b1df00af604372c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/baseline-tests",
+      "bytes": 10475312,
+      "sha256": "eb6ef905dab31b1aa89391621506124aab56f88248fe01c181d3499142e0d95a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/candidate-tests",
+      "bytes": 10474112,
+      "sha256": "20904edf6e5813574bedf726001daafed44d57ae20ea6c0edc4738ca802e0ddf"
+    }
+  ],
+  "all_generated_bytes": 21795360,
+  "raw_archive": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/failure-raw.tar.gz",
+    "bytes": 878724,
+    "sha256": "9e789b76a81f2bd3ec9c41b58c40d815d03b84e164bbe5f935ae37283f3dd08b",
+    "members": 46,
+    "excluded": "all binaries/objects/metallib/SDK/symlinks"
+  },
+  "artifacts_preserved": true,
+  "cleanup_executed": false
+}

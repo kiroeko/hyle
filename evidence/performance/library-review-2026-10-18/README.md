@@ -1323,3 +1323,11 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 普通math已受checked块/收益式/常量阈值约束；融合路径的KV维非连续mask仍会被原生完整复制，继续列为未完项，清单计数不变。
 
 归档后root先将精确模板写入test.ps1再执行，Mac先全核13文件，删除4个exe及consumer.o共40027568逻辑B，重核保留8个host/test/Graph/Sink对象1323064 B。没有重新计时或重编；源、日志、raw、map、归档和SDK未删。[范围](apple-ordinary-math/mac-cleanup-plan.json)/[执行记录](apple-ordinary-math/cleanup-execution.json)/[日志](apple-ordinary-math/cleanup-executed.log)。
+
+## Apple融合mask：首轮基线数值失败，尚未应用
+
+候选复用原full融合数学体和checked Q128 owner，按每次绑定的实际KV stride选择whole或分块；异dtype additive转换留在块内，尾Q补128后截取。只fresh两个产品、两个测试TU并链接old/new；没有SDK或native重编。
+
+新增固定Bool/BHSD与BF16 additive/BSHD、Q1025/KV8193/D64、8:2 GQA、stride0→1→0回归，保留正常行独立FP64及四条全遮蔽行的整Q native语义对照。首轮旧实现在Bool正常行h0/t1/d0实际0.49878108501434326、参考F32 0.49877405166625977，误差7.03335e−6超过原4.99264e−6预算。`--gtest_throw_on_failure`使进程abort；仅前两项旧Attention控制通过，其余未到。没有修改输入或预算，不能当作候选退化或通过。
+
+候选尚未运行，空间consumer尚未编译、时延未测，改动暂留工作树；后续先对原数据作完整旧新差异诊断。清单仍是25项已修、1项部分修复、1项未解决。[失败摘要](apple-fused-mask/baseline-failure-summary.json)/[原源码、编链命令与完整日志](apple-fused-mask/baseline-failure-source-results.zip)。
