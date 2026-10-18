@@ -4,12 +4,12 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-按下面31个清单条目统计：27项性能/复杂度问题中，24项已修已确认机制、2项部分修复（Apple普通attention/Sink）、1项未解决（HTTP2）；另4项纯接线/正确性问题均已修。
+按下面31个清单条目统计：27项性能/复杂度问题中，25项已修已确认机制、1项部分修复（Apple普通attention）、1项未解决（HTTP2）；另4项纯接线/正确性问题均已修。
 这是清单条目数，包含源码已证实的多余时间/空间开销，不是27项当前peer实测排名或严格去重的算法家族。待测、不公平对比及未稳定小负点不计入；修复机制不等于所有shape已赢。
 
-**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple部分普通fallback、typed Sink guard外及opaque compile等未覆盖域的scores空间。
+**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple部分普通fallback的scores空间与提交窗口。任意opaque compile callback不属于typed算子的自动规划，单列接口边界，不当作已确认的typed空间缺陷。
 HTTP2最新以NO_COPY减少一次DATA发送拷贝后，两次候选相对同进程peer仍慢8.22%/11.08%；同轮旧实现为11.69%/15.35%，两序改善幅度不稳定，不声称统一稳定提速。此前12.25%/13.63%及14.7–17.1%保留为旧轮结果，不跨轮归因。
-Apple Sink最终采用单owner Job内同步Q128数学分块：固定点extra active peak降78.8%，同工时延未见退步；Direct/Graph已接通，原F32预算保留。
+Apple Sink采用单owner Job内同步Q128数学分块：原长Q固定点extra active peak降78.8%，同工时延未见退步；现扩至Q>128收益域，短Q固定点另降67.57%，该新点未测时延。Direct/Graph共用选择，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
 CUDA长域F32探针的原1e-5预算仍失败，现已定位到原生PV长归约舍入；同native对照输出完全相同，没有证实Hyle额外精度损失，见下。
 普通CPU及多节点CacheEncode已复用生命周期，普通/私有paged/ragged causal冷mask已移除。动态PagedRead只有私有单节点入口，不能将其arena排除认定为当前普通多节点空间缺陷，见末尾源审。
@@ -36,7 +36,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | CPU / Vulkan Concat重复复制前缀 | 两个provider仍线性拼接；CPU保留全部中间payload，Vulkan虽有gallocr复用，复制工作仍为二次项 | 已移植平衡树，保持各自dtype/stride受理域；CPU修正重复ports元数据预算。实测与空间边界见下 |
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；已知无NAX硬件的F32 D256 causal及D192 tile两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。F32 D256短Q/rank2 Bool另以checked Q128块省72.8%额外峰值，均值时延增加1.2–2.6%；其余域待补 |
-| Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的长Q收益域改用单Job同步Q128块，原固定extra peak1344307200→285310976 B（−78.8%），同工时延未见退步。Q16图/compact负候选拒绝；guard外及opaque compile保留原路线 |
+| Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的Q>128收益域均用单Job同步Q128块。长Q固定extra peak1344307200→285310976 B（−78.8%），短Q672825344→218202112 B（−67.57%）；新短Q未测时延。其它guard域的scores有KV/输出同阶上界，caller mask仍为Q×KV；不宣称所有shape吞吐或opaque callback自动规划 |
 | HTTP2大body背压holdout | 唯一4×256 KiB holdout最新NO_COPY候选仍慢8.22%/11.08%；同轮旧控制慢11.69%/15.35%，存在peer漂移与顺序差异 | DATA绕过native bounce、一次复制到原owned wire，保留所有flush/取消/借用合同。两序幅度不稳，不声称统一提速；残差保留，通用职责与手工单loop策略分开调查 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
@@ -1117,7 +1117,7 @@ Hyle另有通用reader/generation/busy/borrow寿命及失败/取消职责，两�
 
 ## Apple Sink：既有owner内同步Q128块已应用
 
-typed Direct两个prepare入口与Graph共用私有region：仅原合法F32 Sink、Q≥1024且`(Q−128)×KV > 2×Q×512`时启用。
+该批typed Direct两个prepare入口与Graph共用私有region：仅原合法F32 Sink、Q≥1024且`(Q−128)×KV > 2×Q×512`时启用；后续短Q扩展见文末。
 full128与精确tail各一份compiled原math；切原BSHD Q轴1和全局mask轴0，共享完整KV/sinks。每块沿既有checked drain完成后才建下一块，保留块输出，末尾concat一次。
 沿用原Job/Completion/关闭/失败及whole-Job native-use退休，不增加线程、调度器、公开选项、shader或精度转换；cancel仍在整个Job前后检查。
 
@@ -1136,7 +1136,7 @@ extra peak降78.78%，包括134348800 B输出；151142660 B caller端口另计�
 最终仅fresh两canonical测试TU，过滤2Direct+1Graph通过；4产品文件与实测候选逐字一致，提交`e94f73c29`。
 最终测试复用独立ordinary scale guard lowerer，比较数据仍对应原lowerer，Sink语义无差；没有为此重跑比较。
 导入临时driver时曾误透传`--link`、多重链8个比较exe，未重跑测量/重建产品依赖；原执行身份与重链后清理身份分存，脚本修复未额外执行确认。
-短Q/收益guard外及opaque RegionFunction compile保留原路线。[摘要](apple-sink-q128/summary.json)/[源码与完整结果](apple-sink-q128/source-results.zip)记录配对host身份、全部失败与边界。
+该批短Q/收益guard外及opaque RegionFunction compile保留原路线，后续已去掉typed Sink的Q1024门槛。[摘要](apple-sink-q128/summary.json)/[源码与完整结果](apple-sink-q128/source-results.zip)记录当时配对host身份、全部失败与边界。
 
 ## Apple F32 force：极大scale回到原选择
 
@@ -1272,3 +1272,13 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 仅fresh这一个产品TU、复用原test/core，default及epoll各15/15通过。正式大body holdout走consume，不执行discard；本批未重测排名，不能归因其8–11%残差。[摘要](http2/discard-frame/summary.json)/[源码、反汇编与全部定向结果](http2/discard-frame/source-results.zip)。
 
 随后先写根test.ps1并执行[精确清理](http2/discard-frame/wsl-cleanup-plan.json)：5文件全部预检后删除测试exe及过时NO_COPY对象共1783584逻辑B，保留并再核当前产品对象、test对象和core。[日志](http2/discard-frame/cleanup-executed.log)。
+
+## Apple Sink：去掉沿用的Q1024门槛
+
+原Q≥1024只是保守范围，并非执行器限制。现对native int范围内的typed Sink统一采用`Q>128 && (Q−128)·KV>2·Q·512`，复用原full128/tail、F32数学体、逐块checked drain及五port寿命；Direct与Graph共用同一predicate，无新API或选项。
+
+原同一Direct回归body增Q513，保留Q1025与Q17/H128控制；旧新各一次同2项均通过，覆盖原非零QK、mask/sinks、两seed、五port重绑和旧输出保活。只fresh operations/test/space三个TU，SDK/native与现有其它对象复用。固定Q513/KV2049/H64/D512空间两侧全部16809984输出通过原预算，maxAbs均5.6788e−13；额外MLX active峰值672825344→218202112 B（−67.57%），caller79837444 B/output67239936 B另计。未测新点时延、不外推全部shape。
+
+这关闭typed Sink已确认的无界内部scores二次项：Q≤128时至多128行；收益式不满足时`Q·KV≤128·KV+2·Q·512`，scores受KV/输出的线性组合约束；其它域采用checked Q128块。caller显式mask本身仍为Q×KV，输出frontier仍存活，不保证单块物理硬cap，也不识别任意opaque callback。[摘要](apple-sink-short-q/summary.json)/[源码、命令和全部结果](apple-sink-short-q/source-results.zip)。
+
+随后先写根test.ps1并核对全部7项，精确删除4个exe与space.o共39990808逻辑B，保留并再核当前operations/test两个对象330968 B；源、日志、数据、maps、归档及SDK未删。[范围](apple-sink-short-q/cleanup-plan.json)/[执行日志](apple-sink-short-q/cleanup-executed.log)。

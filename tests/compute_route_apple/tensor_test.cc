@@ -437,41 +437,44 @@ namespace {
 using namespace apple_tensor_test;
 
 TEST(AppleSinkAttention, QBlocksKeepMasksSinksRebindingAndOwners) {
-  constexpr int queries = 1025, keys = 2049, heads = 64;
-  const auto reference_a = sink_reference(queries, keys, heads, 0);
-  const auto reference_b = sink_reference(queries, keys, heads, 7);
-  auto inputs_a = sink_ports(queries, keys, heads, 0);
-  auto inputs_b = sink_ports(queries, keys, heads, 7);
-  auto context = a::Context::create().value();
-  auto program = context.prepare(c::model_ops::sink_attention(kSinkScale), inputs_a).value();
-  auto first = program.create_invocation().value();
-  auto second = program.create_invocation().value();
-  ASSERT_TRUE(first.bind(inputs_a).ok());
-  ASSERT_TRUE(second.bind(inputs_b).ok());
-  auto work_a = first.submit().value(), work_b = second.submit().value();
-  auto result_a = work_a.wait().value(), result_b = work_b.wait().value();
-  auto output_a = result_a.get()->arrays()[0];
-  auto output_b = result_b.get()->arrays()[0];
-  check_sink(output_a, reference_a);
-  check_sink(output_b, reference_b);
-  ASSERT_FALSE(::testing::Test::HasFailure());
-  const auto original_hash = sink_output_hash(output_a);
-  // Reuse the slot only after its result owners retire. The copied native
-  // array keeps the old payload alive independently of the result-slot lease.
-  result_a = {};
-  work_a = {};
-  ASSERT_TRUE(first.bind(inputs_b).ok());
-  auto accepted = first.submit();
-  ASSERT_TRUE(accepted) << accepted.error().message();
-  auto rebound = std::move(*accepted);
-  inputs_a = inputs_b;
-  first = {};
-  second = {};
-  program = {};
-  context = {};
-  auto result = rebound.wait().value();
-  check_sink(result.get()->arrays()[0], reference_b);
-  EXPECT_EQ(sink_output_hash(output_a), original_hash);
+  constexpr int keys = 2049, heads = 64;
+  for (const int queries : {513, 1025}) {
+    SCOPED_TRACE(queries);
+    const auto reference_a = sink_reference(queries, keys, heads, 0);
+    const auto reference_b = sink_reference(queries, keys, heads, 7);
+    auto inputs_a = sink_ports(queries, keys, heads, 0);
+    auto inputs_b = sink_ports(queries, keys, heads, 7);
+    auto context = a::Context::create().value();
+    auto program = context.prepare(c::model_ops::sink_attention(kSinkScale), inputs_a).value();
+    auto first = program.create_invocation().value();
+    auto second = program.create_invocation().value();
+    ASSERT_TRUE(first.bind(inputs_a).ok());
+    ASSERT_TRUE(second.bind(inputs_b).ok());
+    auto work_a = first.submit().value(), work_b = second.submit().value();
+    auto result_a = work_a.wait().value(), result_b = work_b.wait().value();
+    auto output_a = result_a.get()->arrays()[0];
+    auto output_b = result_b.get()->arrays()[0];
+    check_sink(output_a, reference_a);
+    check_sink(output_b, reference_b);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+    const auto original_hash = sink_output_hash(output_a);
+    // Reuse the slot only after its result owners retire. The copied native
+    // array keeps the old payload alive independently of the result-slot lease.
+    result_a = {};
+    work_a = {};
+    ASSERT_TRUE(first.bind(inputs_b).ok());
+    auto accepted = first.submit();
+    ASSERT_TRUE(accepted) << accepted.error().message();
+    auto rebound = std::move(*accepted);
+    inputs_a = inputs_b;
+    first = {};
+    second = {};
+    program = {};
+    context = {};
+    auto result = rebound.wait().value();
+    check_sink(result.get()->arrays()[0], reference_b);
+    EXPECT_EQ(sink_output_hash(output_a), original_hash);
+  }
 }
 
 TEST(AppleSinkAttention, ShortQueriesRetainExistingFallback) {

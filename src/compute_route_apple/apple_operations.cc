@@ -296,7 +296,9 @@ bool detail::is_mlx_attention_blocks(const Operation &operation,
   if (const auto sink = operation.custom_as<model_ops::SinkAttention>()) {
     if (!sink->infer_output_descriptions(inputs, outputs).ok()) return false;
     const auto rows = inputs[0].dimensions()[1], keys = inputs[1].dimensions()[1];
-    return rows >= 1024 && (rows - 128) * keys > 2 * rows * 512;
+    return rows > 128 && rows <= std::numeric_limits<int>::max() &&
+        keys <= std::numeric_limits<int>::max() &&
+        (rows - 128) * keys > 2 * rows * 512;
   }
   const auto *attention = operation.get_if<ScaledDotProductAttention>();
   if (!attention || inputs.size() != 4 || attention->causal ||

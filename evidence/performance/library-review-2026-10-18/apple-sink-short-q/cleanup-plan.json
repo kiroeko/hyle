@@ -1,0 +1,42 @@
+{
+  "root": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q",
+  "targets": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/space.o",
+      "bytes": 36152,
+      "sha256": "b142bdc6db2bb8519071b0f88960fe8e87fac2c2c476ca7af69e563b5293f928"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/baseline-tests",
+      "bytes": 10402160,
+      "sha256": "c84f5ade85d3a4b0845c2ec7e026e1260c09a3fd1558706a16ef3f1d7cbfd708"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/baseline-space",
+      "bytes": 9575168,
+      "sha256": "be97624f21e9656c64ccacb94a73eb9e317bb86ab90a6540f0b736f8bac8abd1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/candidate-tests",
+      "bytes": 10402160,
+      "sha256": "17872b7882b28b18cfe1b5589838a8c9264740af0590b28fe3001b17278599da"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/candidate-space",
+      "bytes": 9575168,
+      "sha256": "6ddc415379d4d79e053c12445b4c28fc50ca9b456949d61af2fe282a607200c8"
+    }
+  ],
+  "retain": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/operations.o",
+      "bytes": 72048,
+      "sha256": "52cc70b09f6291b946215fd1d5b6b6ebff8154db11f3c71e898096e3d4c13f83"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/sink-tests.o",
+      "bytes": 258920,
+      "sha256": "1f7f88bb886dc897082422be2585d775c58dc0ba115a82d0bd3f2eef2d62e051"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{"preflight_files": 7, "delete_files": 5, "delete_bytes": 39990808, "retain_files": 2}
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/space.o
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/baseline-tests
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/baseline-space
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/candidate-tests
+Deleted exact file: /Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/candidate-space
+{"deleted_files": 5, "deleted_bytes": 39990808, "retained_files_verified": 2}

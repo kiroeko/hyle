@@ -1,0 +1,147 @@
+{
+  "status": "approved two-file Sink Q>128 change applied to canonical; targeted tests and fixed space comparison passed; not committed",
+  "base_commit": "8ff66c75f120c50b67bee50c2ba5a2ae868b79e1",
+  "source": {
+    "files": [
+      {
+        "path": "src/compute_route_apple/apple_operations.cc",
+        "baseline_bytes": 19731,
+        "baseline_sha256": "f70f8461520e92b451db53a956b25aa4bdda1028b9b65fafbc1f177f84c0c3b4",
+        "candidate_bytes": 19831,
+        "candidate_sha256": "ad108ff6dbd5cbae5c1db6b1f0a83bf3234ef295212b46835413bc8fc478517e"
+      },
+      {
+        "path": "tests/compute_route_apple/tensor_test.cc",
+        "baseline_bytes": 21959,
+        "baseline_sha256": "700799183fd8264a5694c9f0ff823d5d00a902ae50da3a86161aeffa4c70bd95",
+        "candidate_bytes": 22084,
+        "candidate_sha256": "32f8606e3bb9a2488f7e95ec1f71bd2ce3bbc2e3364970f44ef7c77965a34fb8"
+      }
+    ],
+    "diff_sha256": "f927766669bf1386460b04bfcb04b1a7cb8319efc32d83a8fa67b093c9932ad0",
+    "tested_source_equals_current_canonical": true,
+    "only_product_change": "Sink predicate Q>=1024 -> Q>128 plus Q/KV<=INT_MAX; existing benefit formula, schema, math, native, Graph and lifecycle unchanged",
+    "test_change": "Same existing body now runs Q513/1025 with SCOPED_TRACE, K2049/H64/seeds0/7; original Q17/K31/H128/seed3 control unchanged"
+  },
+  "machine": {
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "memory_bytes": 17179869184,
+    "compiler": "Apple clang21.0.0 clang-2100.3.34.2 arm64-apple-darwin27.0.0",
+    "actual_hardware_and_compiler_logs_preserved": true
+  },
+  "build": {
+    "fresh_product_TUs": 1,
+    "fresh_test_TUs": 1,
+    "fresh_consumer_TUs": 1,
+    "fresh_links": 4,
+    "baseline_group": "current ordinary candidate4, byte-matched to base8ff source before Sink predicate change",
+    "candidate_group": "same group with only fresh operations.o replacing candidate-operations.o",
+    "reused_centered_test_objects": 2,
+    "original_SDK_native_rebuild_or_copy": false,
+    "link_maps_all_checked": true,
+    "metallib": "new workdir symlink -> existing ordinary root symlink -> original SDK mlx.metallib, cwd=new workdir"
+  },
+  "correctness": {
+    "filter": "AppleSinkAttention.QBlocksKeepMasksSinksRebindingAndOwners:AppleSinkAttention.ShortQueriesRetainExistingFallback",
+    "processes": 2,
+    "tests_per_arm": 2,
+    "baseline": "2/2 PASS",
+    "candidate": "2/2 PASS",
+    "same_body_queries": [
+      513,
+      1025
+    ],
+    "small_control": {
+      "Q": 17,
+      "K": 31,
+      "H": 128
+    },
+    "preserved": "nonzero dyadic QK, per-row masks/-Inf/allmask, per-head sinks, two invocations, all5port rebind, old native output/result owners, seeds and original abs2e-6+rel6e-6",
+    "selected_Q513_maximum_error_both": 3.76959447753733e-07,
+    "selected_Q513_maximum_budget_fraction_both": 0.1527109738943596,
+    "Q1025_maximum_error_both": 4.33824060126764e-07,
+    "unchanged_Q17_maximum_error_both": 2.206993009179481e-08
+  },
+  "space": {
+    "processes": 2,
+    "shape": "B1/H64/Hkv1/D512/Q513/KV2049/F32/BSHD",
+    "fixed_input": "Q/K/mask/sinks0; V alternates+1.25/-1.25 by KV row, all channels; scale1/16",
+    "oracle": "Every output1.25/2050 from independent FP64, finite, original abs2e-6+rel6e-6; unchanged from prior Sink space except Q1025->513",
+    "caller_requested_bytes": 79837444,
+    "output_bytes": 67239936,
+    "full_scores_logical_bytes": 269091072,
+    "all_output_elements_checked_per_arm": 16809984,
+    "baseline": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 513,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 79837444,
+      "output_bytes": 67239936,
+      "original_score_bytes": 269091072,
+      "active_before": 79872260,
+      "cache_before": 0,
+      "active_after": 147112196,
+      "peak": 752697604,
+      "peak_minus_active_before": 672825344,
+      "cache_after": 605585408,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 16809984,
+      "oracle_passed": true
+    },
+    "candidate": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 513,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 79837444,
+      "output_bytes": 67239936,
+      "original_score_bytes": 269091072,
+      "active_before": 79872264,
+      "cache_before": 0,
+      "active_after": 147112200,
+      "peak": 298074376,
+      "peak_minus_active_before": 218202112,
+      "cache_after": 220610560,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 16809984,
+      "oracle_passed": true
+    },
+    "extra_peak_reduction_bytes": 454623232,
+    "extra_peak_reduction_fraction": 0.6756927872205718,
+    "measurement_boundary": "Same prepare/create/bind outside; clear_cache once before before/reset_peak; submit->checkedwait->same-stream synchronize; capture active/cache/peak before host oracle. No per-block cache clear. MLX active counters, not whole-device memory/RSS or physical filesystem recovery."
+  },
+  "limits": [
+    "Only this fixed short-Q/H64 space point; no H128 short selected-space result or whole-domain claim.",
+    "No latency/tokens/s/throughput measurement, AA, new shape, seed, tile, environment or precision changes.",
+    "Opaque native callback compile unchanged; typed Direct and existing shared Graph predicate only. Graph runtime was not separately exercised this batch.",
+    "Original ordinary biased stress goldenFAIL remains unchanged; new Sink tests do not reclassify it."
+  ],
+  "failures": "No compiler/link/loader/functional/space failure in this authorized batch; all14 recorded remote commands returned0. No retry.",
+  "raw": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-sink-short-q/raw-results.zip",
+    "bytes": 1615668,
+    "sha256": "cee2356017a195b2650a9db2d0d503a5867ffcd95ab0f7a8ae815694ac2cf9e9",
+    "files": 63,
+    "excludes": "objects/executables, original SDK/cache; no deletion"
+  },
+  "cleanup": {
+    "path": "cleanup-candidates.json",
+    "new_objects": 3,
+    "new_executables": 4,
+    "files": 7,
+    "logical_bytes": 40321776,
+    "deleted": false,
+    "preserved": "all prior caches/SDK/native trees, source/headers/logs/maps/data/symlinks"
+  },
+  "stop": "All authorized runs finished. No further build/run, commit or deletion; parent handles review/publication/cleanup."
+}
