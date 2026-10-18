@@ -1,0 +1,12 @@
+{
+  "status": "accepted: compact floating additive-mask conversion before broadcasting",
+  "product_change": "Already-selected Metal full SDPA retains the original raw F16/BF16 mask until actual evaluation, casts only its distinct data to F32, then restores broadcast strides. Contiguous backing keeps the original Vector conversion and physical layout; other strides use the existing GeneralGeneral copy. Original promotion, full arithmetic and other paths are retained.",
+  "interface": "No new user option, macro, constructor field, class state or serialized tuple. Live fallback recreates the original cast-before-broadcast graph. New raw-domain native exports require the updated matching SDK; cross-version import/AD runtime was not exercised.",
+  "same_source_comparison": "Both arms freshly override native fast.cpp from current-manifest baseline/candidate and use the accepted stride-aware Steel source. Control host is the accepted stride host; candidate adds only compact mask normalization. Same Hyle products, consumer, inputs and measurement boundaries.",
+  "numeric": "Control independent Bool/F16/BF16 fixture passes; candidate nine tests pass. Original frozen SDK baseline and candidate 4198400 F32 outputs are byte-identical. Original 847680 FP64-budget failures are retained.",
+  "space": "MLX extra active peak 35717120 -> 2162688 B, 93.944954% less; not total GPU/driver memory. Full B/H/Q/K mask figure 268730400B is logical, not the observed allocation; no full scores claim.",
+  "latency": "One ABBA medians 12.996708/9.524541/9.534750/10.446542 ms. Both candidate orders lower; old0 drift retained, no universal factor/CI.",
+  "limits": "NAX not run on this Air; non-Metal gating and fallback order reviewed from source. Other shapes, cold total prepare peak and model tokens/s not measured.",
+  "remaining": "All mechanisms in the known ordinary-attention entry are repaired; HTTP2 manual-loop residual remains open. Issue counts 26 fixed of 27 performance/complexity entries, plus four wiring/correctness entries fixed.",
+  "cleanup_performed": false
+}

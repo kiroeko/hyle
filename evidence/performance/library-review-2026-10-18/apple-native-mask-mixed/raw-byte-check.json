@@ -1,0 +1,94 @@
+{
+  "independent": "root byte comparison against untouched original SDK baseline archive",
+  "outputs": [
+    {
+      "output": "bf16-additive-dense-rebind0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "equal": true
+    },
+    {
+      "output": "bf16-additive-spec-dense0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "equal": true
+    },
+    {
+      "output": "bf16-additive-view0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "equal": true
+    },
+    {
+      "output": "bf16-additive-view1.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "61a9a88c615f8e91e4d91e518688f52ae75b432d0036735f13cb7bd0f88218e6",
+      "equal": true
+    },
+    {
+      "output": "bool-dense-rebind0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "equal": true
+    },
+    {
+      "output": "bool-spec-dense0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "equal": true
+    },
+    {
+      "output": "bool-view0.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "equal": true
+    },
+    {
+      "output": "bool-view1.f32bits.bin",
+      "bytes": 2099200,
+      "elements": 524800,
+      "sha256": "2dbfe12418236372c82923ffe037dc3374300bcb182e7a9162c81b6d51149a37",
+      "equal": true
+    }
+  ],
+  "total_elements": 4198400,
+  "all_equal": true,
+  "compiled_sources_and_measurement_match_current": [
+    {
+      "arm": "baseline",
+      "path": "mlx/fast.cpp",
+      "sha256": "3c871a99874c24bdf5d78784962430f0a5c6be7abf1ea2fdc0d3ff1fb63fa2b7"
+    },
+    {
+      "arm": "baseline",
+      "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "sha256": "884a79d717ab78fdc2576e41e6d30efd9a2e0838962905d57c1f54793443f2a1"
+    },
+    {
+      "arm": "candidate",
+      "path": "mlx/fast.cpp",
+      "sha256": "79c33ea6125a02edfc31eaf67d8fe3b8f599ccbbde3e4caee4a19173bd1f8873"
+    },
+    {
+      "arm": "candidate",
+      "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "sha256": "99ad980bdf18149f974ab8b80307eed76e3a3a0b64df1c89db87988203a25ad6"
+    },
+    {
+      "path": "tests/compute_route_apple/attention_test.cc",
+      "sha256": "d7e11edd44a2ae389f69729eeb1bc1b9199479d2b740e611c7dd134a35f52ea9"
+    },
+    {
+      "path": "measurement/consumer.cc",
+      "sha256": "baca12f1a5235b1fc76e2e78a4e55b223b54b76fd4ebdc7a4d6bf2badf6e7158"
+    }
+  ],
+  "original_FP64_failure_reclassification": false
+}

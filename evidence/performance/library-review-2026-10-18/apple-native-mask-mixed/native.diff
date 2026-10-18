@@ -1,0 +1,113 @@
+--- a/mlx/fast.cpp
++++ b/mlx/fast.cpp
+@@ -4,6 +4,7 @@
+ #include <cmath>
+ 
+ #include "mlx/fast.h"
++#include "mlx/backend/metal/metal.h"
+ #include "mlx/fast_primitives.h"
+ #include "mlx/ops.h"
+ #include "mlx/transforms.h"
+@@ -937,6 +938,7 @@
+   };
+ 
+   auto stream = to_stream(s);
++  const auto raw_mask = mask_arr;
+   std::vector<array> inputs = {q, k, v};
+   if (has_arr_mask) {
+     // Check type
+@@ -993,10 +995,28 @@
+           full_like(mask, 0, final_type, s),
+           full_like(mask, -inf, final_type, s));
+     }
++    std::function<std::vector<array>(std::vector<array>)> native_fallback = fallback;
++    // Keep a mixed floating mask raw until the actual Metal full evaluation.
++    // Shape/type tracing cannot distinguish a dense rebind from a broadcast.
++    // Original promotion validation limits this domain to F32 <- F16/BF16;
++    // CPU, CUDA full-F32, vector and non-floating masks retain the old cast.
++    if (metal::is_available() && stream.device == Device::gpu && q.shape(2) > 8 &&
++        has_arr_mask && final_type == float32 &&
++        (raw_mask->dtype() == float16 || raw_mask->dtype() == bfloat16)) {
++      inputs[3] = *raw_mask;
++      native_fallback = [fallback, stream](std::vector<array> arguments) {
++        auto shape = arguments[0].shape();
++        shape.back() = arguments[1].shape(2);
++        // Preserve the original cast-before-broadcast graph for transforms.
++        arguments[3] = broadcast_to(
++            astype(arguments[3], arguments[0].dtype(), stream), shape, stream);
++        return fallback(arguments);
++      };
++    }
+     Shape out_shape{q.shape(0), q.shape(1), q.shape(2), v.shape(-1)};
+     auto primitive = std::make_shared<ScaledDotProductAttention>(
+         stream,
+-        fallback,
++        std::move(native_fallback),
+         scale,
+         do_causal,
+         has_sinks,
+--- a/mlx/backend/metal/scaled_dot_product_attention.cpp
++++ b/mlx/backend/metal/scaled_dot_product_attention.cpp
+@@ -21,6 +21,52 @@
+   int window;
+   bool query_f16;
+ };
++
++// Called only for the frontend's raw F16/BF16 additive mask on F32 full SDPA.
++// Compact actual zero-stride axes before conversion, then restore their views.
++array compact_full_mask_cast(
++    const array& raw, const array& q, const array& k, const Stream& s) {
++  const Shape shape{q.shape(0), q.shape(1), q.shape(2), k.shape(2)};
++  Strides source_strides(4, 0);
++  const int diff = 4 - raw.ndim();
++  for (int i = 0; i < raw.ndim(); ++i)
++    if (raw.shape(i) != 1)
++      source_strides[i + diff] = raw.strides(i);
++
++  auto compact_shape = shape;
++  for (int i = 0; i < 4; ++i)
++    if (source_strides[i] == 0 && compact_shape[i] != 0)
++      compact_shape[i] = 1;
++  const bool contiguous = raw.flags().contiguous;
++  array converted(contiguous ? raw.shape() : compact_shape, q.dtype(), nullptr, {});
++  auto strides = source_strides;
++  if (contiguous) {
++    // Match AsType's Vector allocation and physical order, including a
++    // transpose or broadcast whose backing is contiguous but not row-dense.
++    converted.set_data(allocator::malloc(raw.data_size() * converted.itemsize()),
++        raw.data_size(), raw.strides(), raw.flags());
++  } else {
++    converted.set_data(allocator::malloc(converted.nbytes()));
++    strides = converted.strides();
++    for (int i = 0; i < 4; ++i)
++      if (source_strides[i] == 0)
++        strides[i] = 0;
++  }
++  // Retain before enqueue: a later kernel/dispatch failure must not retire an
++  // accepted conversion prefix's backing before its native completion.
++  metal::get_command_encoder(s).add_temporary(converted);
++  if (contiguous)
++    copy_gpu_inplace(raw, converted, CopyType::Vector, s);
++  else
++    copy_gpu_inplace(raw, converted, compact_shape, source_strides,
++        converted.strides(), 0, 0, CopyType::GeneralGeneral, s);
++  array mask(shape, q.dtype(), nullptr, {});
++  auto flags = converted.flags();
++  if (mask.size() > converted.size())
++    flags.row_contiguous = flags.col_contiguous = false;
++  mask.copy_shared_buffer(converted, strides, flags, converted.data_size());
++  return mask;
++}
+ 
+ void sdpa_full_self_attention_nax(
+     const Stream& s,
+@@ -1006,6 +1052,9 @@
+ 
+     // Full kernels receive all four mask strides, including broadcast/strided KV.
+     auto mask = has_arr_mask ? std::optional<array>{inputs[3]} : std::nullopt;
++    if (mask && q.dtype() == float32 &&
++        (mask->dtype() == float16 || mask->dtype() == bfloat16))
++      mask = compact_full_mask_cast(*mask, q, k, s);
+ 
+     sdpa_full_self_attention_metal(
+         s, d, q, k, v, scale_, o, do_causal_, mask, sinks, page);

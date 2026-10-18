@@ -547,8 +547,11 @@ TEST(AppleAttention, FullMasksKeepIndependentReferenceAcrossKvStrides) {
     std::fill_n(v.begin() + s * depth, depth, s % 2 == 0 ? 1.25 : -1.25);
   const auto value = make(v, {1, kv_heads, keys, depth}, mx::float32);
 
-  for (const auto kind : {c::MaskKind::kBoolean, c::MaskKind::kAdditive}) {
-    SCOPED_TRACE(static_cast<int>(kind));
+  for (const auto mask_type : {mx::bool_, mx::float16, mx::bfloat16}) {
+    const auto kind = mask_type == mx::bool_
+        ? c::MaskKind::kBoolean : c::MaskKind::kAdditive;
+    SCOPED_TRACE(::testing::Message() << "mask=" << static_cast<int>(kind)
+        << " dtype=" << mask_type);
     const auto mask = [&]() {
       if (kind == c::MaskKind::kBoolean) {
         std::vector<std::uint8_t> physical(queries * 2 * keys);
@@ -569,15 +572,14 @@ TEST(AppleAttention, FullMasksKeepIndependentReferenceAcrossKvStrides) {
         physical[2 * s] = s % 2 == 0 ? 0 : -2;
         physical[2 * s + 1] = s % 2 == 0 ? -2 : 0;
       }
-      const auto storage = make(physical, {1, 2 * keys}, mx::bfloat16);
+      const auto storage = make(physical, {1, 2 * keys}, mask_type);
       const auto sliced = mx::slice(storage, {0, 0}, {1, 2 * keys},
                                       {1, 2}, stream());
       return ready(mx::broadcast_to(sliced, {queries, keys}, stream()));
     }();
     ASSERT_EQ(mask.shape(), (mx::Shape{queries, keys}));
     ASSERT_EQ(mask.strides()[1], 2);
-    ASSERT_EQ(mask.dtype(), kind == c::MaskKind::kBoolean
-                               ? mx::bool_ : mx::bfloat16);
+    ASSERT_EQ(mask.dtype(), mask_type);
     if (kind == c::MaskKind::kAdditive)
       ASSERT_EQ(mask.strides()[0], 0);
 
@@ -602,7 +604,7 @@ TEST(AppleAttention, FullMasksKeepIndependentReferenceAcrossKvStrides) {
     const c::Operation operation(c::ScaledDotProductAttention{
         .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
         .mask = kind, .scale = 0.125F});
-    // The additive case retains the runtime BF16-mask cast from InputSpec.
+    // Additive cases retain the runtime narrow-mask cast from InputSpec.
     auto program = kind == c::MaskKind::kBoolean
         ? context.prepare(operation, inputs) : context.prepare(operation, specs);
     ASSERT_TRUE(program) << program.error().message();
