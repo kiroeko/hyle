@@ -1,0 +1,99 @@
+[
+  {
+    "name": "compiler",
+    "argv": [
+      "g++-14",
+      "--version"
+    ],
+    "cwd": "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor",
+    "exit": 0,
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    }
+  },
+  {
+    "name": "compile-tcp-test",
+    "argv": [
+      "g++-14",
+      "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++23",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-I/mnt/c/public/project-hyle/hyle/include",
+      "-isystem",
+      "/root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include",
+      "-isystem",
+      "/root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest",
+      "-c",
+      "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/tcp-owner-proactor/tcp_test.cc",
+      "-o",
+      "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor/tcp_test.o"
+    ],
+    "cwd": "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor",
+    "exit": 0,
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    }
+  },
+  {
+    "name": "link-tests",
+    "argv": [
+      "g++-14",
+      "-O3",
+      "-DNDEBUG",
+      "-o",
+      "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor/tests",
+      "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor/tcp_test.o",
+      "-Wl,-rpath,/root/hyle-scratch/io-watch-v2-dev/bin",
+      "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/lib/libgtest_main.a",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem_vm.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_time.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+      "/root/hyle-scratch/io-watch-v2-dev/lib/libgtest.a"
+    ],
+    "cwd": "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor",
+    "exit": 0,
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    }
+  },
+  {
+    "name": "loader",
+    "argv": [
+      "ldd",
+      "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor/tests"
+    ],
+    "cwd": "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor",
+    "exit": 0,
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    }
+  },
+  {
+    "name": "targeted-tests",
+    "argv": [
+      "timeout",
+      "--kill-after=2s",
+      "20s",
+      "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor/tests",
+      "--gtest_filter=IoTcp.ListenerAcceptEchoRoundTrip:IoTcp.PeerCloseReturnsTypedErrorsWithoutSigpipe",
+      "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/tcp-owner-proactor/targeted-tests.json"
+    ],
+    "cwd": "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor",
+    "exit": 0,
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    }
+  }
+]

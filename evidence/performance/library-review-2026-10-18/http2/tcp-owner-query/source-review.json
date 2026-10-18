@@ -1,0 +1,9 @@
+{
+  "immediate_path": "HTTP2 recoverable owner/lifetime checks and TCP fatal invariant remain separate; neither removed.",
+  "release_assert_survives": true,
+  "current_worker_lookup": "Accepted Linux object uses an out-of-line function reading TLS through __tls_get_addr; duplicate lookups are not compiled away.",
+  "change": "The four TCP scalar read_some/write_some overloads select the existing proactor with owner_ immediately after their unchanged current-worker equality invariant.",
+  "safety": "Selection occurs without yield or intervening user code, uses the same unsigned owner index, and retains the proactor index bounds assertion. No worker cache across suspension.",
+  "measurement": "No current frequency/time attribution or performance experiment. Old profile percentages are not used to explain current HTTP2 residual.",
+  "scope": "Small repeated-query removal only; HTTP2 remains unresolved; headline issue counts unchanged."
+}

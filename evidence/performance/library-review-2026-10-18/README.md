@@ -1366,3 +1366,7 @@ v2按mask字节量选择64～512行（32MiB目标），固定点为448＋448＋1
 同一个4280 consumer、输入和计量边界下，extra MLX active peak从69304320降至31211520 B（−54.96%），两侧active_before及持输出lease的active相同。唯一old→v2→v2→old四进程时延中位数依次为12.329500／13.346167／13.414209／12.133583 ms；两顺序仍回退8.2458%／10.5544%，36样本及前后独立oracle全部保留。不能跨v1/v2轮次相减归因，也不追加矩阵追数。
 
 因此拒绝应用v2产品改动，恢复此前已接受的math分块实现；保留native等价回归与全部负结果。清单仍为25项已修、Apple部分修复、HTTP2未解决。下一步先查原生mask stride及pipeline合同。[处理结论](apple-fused-mask/v2/disposition.json)／[摘要](apple-fused-mask/v2/summary.json)／[root逐字节核对](apple-fused-mask/v2/raw-byte-check.json)／[源码、原始输出和全部日志](apple-fused-mask/v2/source-results.zip)。
+
+### TCP异步fallback：复用刚验证的owner选择proactor
+
+四个scalar read_some/write_some入口在当前worker等于owner_的原断言后，直接用owner_选择同一现成proactor，去掉二次TLS查询；保留valid、worker和ring范围检查，不跨挂起缓存。HTTP2可恢复owner检查和TCP immediate断言均不删。单个fresh TCP测试TU与既有core重链，指定echo及peer-close两项通过；只有peer-close普通scalar-write确实运行新inline代码，其余三定义此次为编译核查，echo内部预算helper仍为缓存core。没有测性能或把旧profile外推当前残差，HTTP2仍未解决。[验证与范围](http2/tcp-owner-query/summary.json)／[源码、命令与日志](http2/tcp-owner-query/source-results.zip)。

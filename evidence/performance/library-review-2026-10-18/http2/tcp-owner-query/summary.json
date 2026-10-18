@@ -1,0 +1,31 @@
+{
+  "status": "Two requested existing tests pass.",
+  "results": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "time": "0.001s"
+  },
+  "fresh_consumer_TUs": 1,
+  "core_or_sdk_rebuilds": 0,
+  "configure_or_performance_run": false,
+  "artifacts": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor/tcp_test.o",
+      "bytes": 322128,
+      "sha256": "bbf1d2dc749f01b6c21b6a13a0b1e7b59c66874576ee3d59d7c601c397d9b568"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/tcp-owner-proactor/tests",
+      "bytes": 732352,
+      "sha256": "9d3b25ba3d46aa2e94c2a6cf910495c5e82417d325b81ca3acbb0d767693f204"
+    }
+  ],
+  "header": {
+    "path": "/mnt/c/public/project-hyle/hyle/include/hyle/io/tcp.h",
+    "bytes": 18345,
+    "sha256": "b1693ec37e0a8e47f717c339910e430f0bb64552511d38f3c5cd94b41655022a"
+  },
+  "coverage_limit": "PeerClose scalar write_some directly compiles/executes the changed ordinary-write inline path in fresh test TU. Echo calls read_exact/write_all in reused core: their internal budget inline code is cached, not rebuilt. All four changed inline definitions are type-checked by this fresh consumer. This is not new-machine-code execution coverage of all four overloads, nor an HTTP2 speed/residual claim.",
+  "deletion_or_commit_performed": false
+}

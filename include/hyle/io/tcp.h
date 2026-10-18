@@ -233,7 +233,7 @@ class TcpStream {
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
     return ReadSomeAwaitable{
-        detail::RecvOp{&detail::IoContextAccess::proactor_for_current(*io_), fd_, buffer.data(),
+        detail::RecvOp{&detail::IoContextAccess::proactor(*io_, owner_), fd_, buffer.data(),
                static_cast<std::uint32_t>(buffer.size()), 0},
         empty};
   }
@@ -245,7 +245,7 @@ class TcpStream {
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
     return WriteSomeAwaitable{
-        detail::SendOp{&detail::IoContextAccess::proactor_for_current(*io_), fd_, buffer.data(),
+        detail::SendOp{&detail::IoContextAccess::proactor(*io_, owner_), fd_, buffer.data(),
                static_cast<std::uint32_t>(buffer.size()), 0},
         empty};
   }
@@ -258,7 +258,7 @@ class TcpStream {
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
     detail::Proactor* proactor =
-        &detail::IoContextAccess::proactor_for_current(*io_);
+        &detail::IoContextAccess::proactor(*io_, owner_);
     return BudgetReadSomeAwaitable{
         detail::BudgetRecvOp{proactor, fd_, buffer.data(),
                      static_cast<std::uint32_t>(buffer.size()),
@@ -274,7 +274,7 @@ class TcpStream {
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
     detail::Proactor* proactor =
-        &detail::IoContextAccess::proactor_for_current(*io_);
+        &detail::IoContextAccess::proactor(*io_, owner_);
     return BudgetWriteSomeAwaitable{
         detail::BudgetSendOp{proactor, fd_, buffer.data(),
                      static_cast<std::uint32_t>(buffer.size()),

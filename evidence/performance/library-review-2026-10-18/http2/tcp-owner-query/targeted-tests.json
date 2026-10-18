@@ -1,0 +1,42 @@
+{
+  "tests": 2,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-10-18T09:08:40Z",
+  "time": "0.001s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "IoTcp",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-10-18T09:08:40Z",
+      "time": "0.001s",
+      "testsuite": [
+        {
+          "name": "ListenerAcceptEchoRoundTrip",
+          "file": "\/mnt\/c\/public\/project-hyle\/hyle\/.scratch\/perf-review-2026-10-18\/tcp-owner-proactor\/tcp_test.cc",
+          "line": 478,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-10-18T09:08:40Z",
+          "time": "0.001s",
+          "classname": "IoTcp"
+        },
+        {
+          "name": "PeerCloseReturnsTypedErrorsWithoutSigpipe",
+          "file": "\/mnt\/c\/public\/project-hyle\/hyle\/.scratch\/perf-review-2026-10-18\/tcp-owner-proactor\/tcp_test.cc",
+          "line": 707,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-10-18T09:08:40Z",
+          "time": "0s",
+          "classname": "IoTcp"
+        }
+      ]
+    }
+  ]
+}
