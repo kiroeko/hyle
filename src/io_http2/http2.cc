@@ -840,7 +840,7 @@ int on_stream_close(nghttp2_session *, std::int32_t stream_id,
 }
 
 nghttp2_ssize read_outbound(nghttp2_session *session, std::int32_t stream_id,
-                            std::uint8_t *buffer, std::size_t length,
+                            std::uint8_t *, std::size_t length,
                             std::uint32_t *data_flags,
                             nghttp2_data_source *source, void *user) noexcept {
   auto &state = *static_cast<Http2SessionState *>(user);
@@ -850,10 +850,8 @@ nghttp2_ssize read_outbound(nghttp2_session *session, std::int32_t stream_id,
 
   const std::size_t remaining = stream->outbound_size - stream->outbound_offset;
   const std::size_t take = (std::min)(remaining, length);
-  if (take != 0) {
-    std::memcpy(buffer, stream->outbound_data + stream->outbound_offset, take);
+  if (take != 0)
     stream->outbound_offset += take;
-  }
 
   if (stream->outbound_offset == stream->outbound_size) {
     if (stream->outbound_epoch != 0 &&
@@ -882,7 +880,52 @@ nghttp2_ssize read_outbound(nghttp2_session *session, std::int32_t stream_id,
       return NGHTTP2_ERR_DEFERRED;
     }
   }
+  *data_flags |= NGHTTP2_DATA_FLAG_NO_COPY;
   return static_cast<nghttp2_ssize>(take);
+}
+
+int queue_outbound_data(nghttp2_session *, nghttp2_frame *frame,
+                         const std::uint8_t *frame_header, std::size_t length,
+                         nghttp2_data_source *source, void *user) noexcept {
+  auto &state = *static_cast<Http2SessionState *>(user);
+  auto *stream = static_cast<Http2StreamState *>(source->ptr);
+  const std::size_t padding = frame->data.padlen;
+  if (stream == nullptr || stream->id != frame->hd.stream_id ||
+      stream->outbound_offset > stream->outbound_size ||
+      length > stream->outbound_offset ||
+      (length != 0 && stream->outbound_data == nullptr) ||
+      padding > frame->hd.length || length != frame->hd.length - padding ||
+      state.wire.size != 0) {
+    state.fail(Status::Internal("HTTP/2 no-copy DATA source mismatch"));
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
+  }
+
+  // Accept one complete DATA frame into the same owned wire buffer used by
+  // control frames. The borrowed payload is copied once, without nghttp2's
+  // intermediate payload buffer; no transport I/O or suspension occurs here.
+  constexpr std::size_t kFrameHeaderBytes = 9;
+  if (frame->hd.length >
+          (std::numeric_limits<std::size_t>::max)() - kFrameHeaderBytes ||
+      !state.wire.reserve(kFrameHeaderBytes + frame->hd.length)) {
+    state.fail(Status::ResourceExhausted("HTTP/2 wire buffer allocation"));
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
+  }
+  std::memcpy(state.wire.data, frame_header, kFrameHeaderBytes);
+  std::uint8_t *destination = state.wire.data + kFrameHeaderBytes;
+  if (padding != 0)
+    *destination++ = static_cast<std::uint8_t>(padding - 1);
+  if (length != 0) {
+    std::memcpy(destination,
+                stream->outbound_data + stream->outbound_offset - length,
+                length);
+  }
+  if (padding > 1)
+    std::memset(destination + length, 0, padding - 1);
+  state.wire.size = kFrameHeaderBytes + frame->hd.length;
+
+  // Stop native encoding until this owned frame has actually been flushed.
+  // PAUSE returns zero from mem_send2 even though wire now holds a frame.
+  return NGHTTP2_ERR_PAUSE;
 }
 
 } // namespace
@@ -927,6 +970,8 @@ bool Http2SessionState::initialize() noexcept {
                                                        on_frame_recv);
   nghttp2_session_callbacks_set_on_frame_send_callback(callbacks,
                                                        on_frame_send);
+  nghttp2_session_callbacks_set_send_data_callback(callbacks,
+                                                    queue_outbound_data);
   nghttp2_session_callbacks_set_on_stream_close_callback(callbacks,
                                                          on_stream_close);
   nghttp2_option_set_no_auto_window_update(option, 1);
@@ -1279,19 +1324,23 @@ ProgressResult flush_once(mem::AllocatorRef allocator, Http2SessionState &state,
         nghttp2_session_mem_send2(state.session, &bytes);
     state.encoding_wire_epoch = 0;
     if (encoded < 0) {
-      Status failure = status_from_nghttp2(static_cast<int>(encoded),
-                                           "nghttp2_session_mem_send2");
+      // A callback may have preserved a more specific failure, such as OOM.
+      Status failure = state.fatal_status.ok()
+          ? status_from_nghttp2(static_cast<int>(encoded),
+                                 "nghttp2_session_mem_send2")
+          : state.fatal_status;
       state.fail(failure);
       release_direction(state, state.write_busy);
       return {failure, false};
     }
-    if (encoded == 0) {
+    if (encoded == 0 && state.wire.size == 0) {
       release_direction(state, state.write_busy);
       return {};
     }
     state.next_wire_epoch = candidate_epoch;
     state.current_wire_epoch = candidate_epoch;
-    if (!state.wire.append(bytes, static_cast<std::size_t>(encoded),
+    if (encoded > 0 &&
+        !state.wire.append(bytes, static_cast<std::size_t>(encoded),
                            (std::numeric_limits<std::size_t>::max)())) {
       Status failure =
           Status::ResourceExhausted("HTTP/2 wire buffer allocation");

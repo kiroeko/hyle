@@ -8,7 +8,7 @@
 这是清单条目数，包含源码已证实的多余时间/空间开销，不是27项当前peer实测排名或严格去重的算法家族。待测、不公平对比及未稳定小负点不计入；修复机制不等于所有shape已赢。
 
 **仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple部分普通fallback、typed Sink guard外及opaque compile等未覆盖域的scores空间。
-HTTP2最新删除容量级header初始化后，两次候选相对同进程peer仍慢12.25%/13.63%；同轮旧实现为7.88%/10.46%，peer漂移大于候选绝对变化，未证明新吞吐收益。此前14.7–17.1%保留为旧轮结果，不跨轮归因。
+HTTP2最新以NO_COPY减少一次DATA发送拷贝后，两次候选相对同进程peer仍慢8.22%/11.08%；同轮旧实现为11.69%/15.35%，两序改善幅度不稳定，不声称统一稳定提速。此前12.25%/13.63%及14.7–17.1%保留为旧轮结果，不跨轮归因。
 Apple Sink最终采用单owner Job内同步Q128数学分块：固定点extra active peak降78.8%，同工时延未见退步；Direct/Graph已接通，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
 CUDA长域F32探针的原1e-5预算仍失败，现已定位到原生PV长归约舍入；同native对照输出完全相同，没有证实Hyle额外精度损失，见下。
@@ -37,7 +37,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；后补已知无NAX硬件的F32 D256 causal及D192 tile，两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。其余域仍待补 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的长Q收益域改用单Job同步Q128块，原固定extra peak1344307200→285310976 B（−78.8%），同工时延未见退步。Q16图/compact负候选拒绝；guard外及opaque compile保留原路线 |
-| HTTP2大body背压holdout | 唯一4×256 KiB holdout的最新候选仍慢12.25%/13.63%；同轮旧控制慢7.88%/10.46%，存在peer漂移 | 已去容量级header预初始化；静态冗余减少，但本轮未证明吞吐收益。残差保留，Task/通用借用与错误职责和手工单loop策略仍分开调查 |
+| HTTP2大body背压holdout | 唯一4×256 KiB holdout最新NO_COPY候选仍慢8.22%/11.08%；同轮旧控制慢11.69%/15.35%，存在peer漂移与顺序差异 | DATA绕过native bounce、一次复制到原owned wire，保留所有flush/取消/借用合同。两序幅度不稳，不声称统一提速；残差保留，通用职责与手工单loop策略分开调查 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
@@ -1225,3 +1225,21 @@ baseline原长Q广播mask控制通过；新控制在BHSD/phase0/h0/t0/d0的全fa
 本批两Graph、Sink、完整新控制及空间/latency均未完成；候选9源逐字冻结后已从产品工作树撤回，不计新增修复。
 [摘要](apple-ordinary-short-q/summary.json)、[完整两侧源码与失败结果](apple-ordinary-short-q/source-results.zip)、[处理结果](apple-ordinary-short-q/disposition.json)保留后续继续调查所需内容。
 另先写test.ps1并预检全部目标后，精确删除Air4个测试exe共40863904逻辑B；保留6个本批对象937096 B及原9对象、所有源/log/map/raw/包/SDK。[清理结果](apple-ordinary-short-q/cleanup.json)。
+
+## HTTP2 DATA：少一次payload拷贝，保留owned wire
+
+read_outbound原先复制到nghttp2 bounce，再由mem_send2复制到Hyle wire；现在NO_COPY回调同步将完整frame header/payload/padding一次写入原owned wire并返回PAUSE。
+回调不做IO、不挂起、不重入native；mem_send2返回0而wire非空仍走原partial-write/duplex/取消/完成路径，flushed_epoch只在整帧实际写完推进。
+保留原容量、操作pin、EOF/trailer及partial-cancel尾部寿命，callback OOM保留原ResourceExhausted。不是借用payload直发或零拷贝；raw peer原本也copy，不把旧残差归因于Hyle独有copy。
+只fresh产品一个TU并复用经SHA核对的test/core；default/epoll各15/15通过。callback扩容OOM、padding、TLS没有专项运行，原定向用例涵盖empty fixed、trailers、duplex、关闭/取消/deadline。
+同原唯一holdout、peer、warm/iteration/完成与计时边界，old/new各一次原smoke后固定ABBA，72epochs全部保留：
+
+| 顺序 | Hyle µs/stream | 同进程peer µs/stream | Hyle差值 |
+|---|---:|---:|---:|
+| old | 192.7972 | 172.6159 | +11.69% |
+| new | 192.2609 | 173.0772 | +11.08% |
+| new | 185.1083 | 171.0403 | +8.22% |
+| old | 201.8441 | 174.9911 | +15.35% |
+
+候选相对对应inner顺序的旧控制绝对低0.28%/8.29%、peer归一低0.54%/6.17%；前一对小于可见轮内波动，不能称统一稳定提速或残差已消除。
+已应用明确的payload两次→一次复制；未追加AA、补点或变更peer求胜。[摘要](http2/owned-wire-no-copy/summary.json)与[源码、原生合同依据、测试和全部样本](http2/owned-wire-no-copy/source-results.zip)。
