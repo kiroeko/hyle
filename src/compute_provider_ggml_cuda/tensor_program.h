@@ -34,6 +34,7 @@ ggml_tensor *create_tensor_input(ggml_context *, const TensorDesc &);
 std::vector<ggml_tensor *> lower_tensor_operation(
     ggml_context *, const Recipe &, const Node &, std::span<ggml_tensor *const>,
     std::vector<ScalarConstant> &, std::vector<DenseConstant> &,
-    std::span<const float> hadamard);
+    std::span<const float> hadamard,
+    std::span<const std::int32_t> snapshot_order);
 
 } // namespace hyle::compute::ggml_cuda::internal

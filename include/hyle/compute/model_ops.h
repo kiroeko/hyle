@@ -559,16 +559,19 @@ inline Operation causal_conv1d() noexcept {
   return Operation::custom(CausalConv1d{});
 }
 
-// Single-token Qwen recurrent region. Q/K are already normalized and use
+// Qwen recurrent region. Q/K are already normalized and use
 // GatedDeltaNet's head mapping. Inputs are Q, K, V, raw a, raw b, negative
 // decay coefficient, dt bias, state; outputs are attended values and state.
+// Raw a/b are [1,T,H,1]; the coefficient and dt bias broadcast [1,1,H,1].
+// snapshot_count follows GatedDeltaNet's state-output contract.
 // The provider owns softplus(a + dt) * negative_a and sigmoid(b) internally.
 // Their numerical qualification belongs to the complete recurrent region,
 // independently of the generic Unary softplus contract.
 struct RecurrentGatedDeltaNet final {
   static constexpr OperationId operation_id{0x48594c454d4f444cULL,
-                                             0x47444e4741540007ULL};
+                                             0x47444e4741540008ULL};
   static constexpr std::string_view operation_name = "recurrent-gated-delta-net";
+  std::uint32_t snapshot_count = 1;
 
   constexpr OperationTraits operation_traits() const noexcept {
     return {{8, 8}, 2, AliasPolicy::kNone, EffectKind::kPure,
@@ -588,26 +591,28 @@ struct RecurrentGatedDeltaNet final {
             "RecurrentGatedDeltaNet requires plain dense rank-four F32 inputs");
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
-    if (q[0] != 1 || q[1] != 1 || q[3] != 128 ||
+    if (q[0] != 1 || q[1] <= 0 || q[3] != 128 ||
         (v[2] != 16 && v[2] != 48 && v[2] != 128) ||
         (q[2] != 16 && q[2] != v[2]))
       return Status::InvalidArgument(
-          "RecurrentGatedDeltaNet requires B1/T1/D128, V16/48/128 and K16 or equal heads");
+          "RecurrentGatedDeltaNet requires B1/positive T/D128, V16/48/128 and K16 or equal heads");
     for (std::size_t i = 3; i != 7; ++i) {
       const auto gate = inputs[i].dimensions();
-      if (gate[0] != 1 || gate[1] != 1 || gate[2] != v[2] || gate[3] != 1)
+      const auto tokens = i < 5 ? q[1] : 1;
+      if (gate[0] != 1 || gate[1] != tokens || gate[2] != v[2] || gate[3] != 1)
         return Status::InvalidArgument(
-            "RecurrentGatedDeltaNet gates and parameters require [1,1,H,1]");
+            "RecurrentGatedDeltaNet raw gates require [1,T,H,1] and parameters [1,1,H,1]");
     }
     const std::array recurrent{inputs[0], inputs[1], inputs[2], inputs[3],
                                inputs[4], inputs[7]};
-    return compute::infer_output_descriptions(Operation(GatedDeltaNet{}),
+    return compute::infer_output_descriptions(
+        Operation(GatedDeltaNet{.snapshot_count = snapshot_count}),
                                                recurrent, outputs);
   }
 };
 
-inline Operation recurrent_gated_delta_net() noexcept {
-  return Operation::custom(RecurrentGatedDeltaNet{});
+inline Operation recurrent_gated_delta_net(std::uint32_t snapshot_count = 1) noexcept {
+  return Operation::custom(RecurrentGatedDeltaNet{.snapshot_count = snapshot_count});
 }
 
 // Expert-selecting matrix multiplication.  The expert id is chosen for every

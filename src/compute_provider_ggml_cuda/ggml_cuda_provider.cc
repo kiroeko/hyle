@@ -61,6 +61,7 @@ struct Program final {
   internal::Recipe recipe;
   std::vector<std::size_t> alignments;
   std::vector<std::vector<float>> hadamards;
+  std::vector<std::vector<std::int32_t>> snapshot_indices;
   std::vector<IndexCheck> index_checks;
   std::size_t index_value_count = 0;
 };
@@ -366,7 +367,10 @@ struct Invocation final {
       } else {
         results = internal::lower_tensor_operation(
             arena.get(), recipe, node, tensors, constants, dense_constants,
-            program.hadamards[node_index]);
+            program.hadamards[node_index],
+            program.snapshot_indices.empty()
+                ? std::span<const std::int32_t>{}
+                : program.snapshot_indices[node_index]);
       }
       if (results.size() != node.outputs.size())
         return Status::Unimplemented("ggml CUDA tensor lowering declined");
@@ -774,6 +778,7 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
   const auto &context = *static_cast<Context *>(value);
   std::vector<std::size_t> alignments;
   std::vector<std::vector<float>> hadamards;
+  std::vector<std::vector<std::int32_t>> snapshot_indices;
   std::vector<Program::IndexCheck> index_checks;
   std::size_t index_value_count = 0;
   try {
@@ -791,6 +796,22 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
         require(id);
       for (const auto id : node.outputs)
         require(id);
+      const auto *gdn = node.operation.get_if<GatedDeltaNet>();
+      const auto recurrent =
+          node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>();
+      const auto snapshots = gdn ? gdn->snapshot_count
+                                 : recurrent ? recurrent->snapshot_count : 1;
+      if (snapshots > 1) {
+        if (snapshot_indices.empty())
+          snapshot_indices.resize(recipe.nodes.size());
+        const auto batches = recipe.values[node.inputs[0]].dimensions()[0];
+        auto &order = snapshot_indices[node_index];
+        order.reserve(static_cast<std::size_t>(batches) * snapshots);
+        for (std::int64_t batch = 0; batch < batches; ++batch)
+          for (std::uint32_t token = 0; token < snapshots; ++token)
+            order.push_back(static_cast<std::int32_t>(
+                (snapshots - 1 - token) * batches + batch));
+      }
       const auto *gather = node.operation.get_if<Gather>();
       const bool grouped =
           node.operation.custom_as<model_ops::GroupedMatMul>().has_value();
@@ -861,6 +882,7 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
              .state = ::new (storage)
                  Program{context.primary, context.device, std::move(recipe),
                          std::move(alignments), std::move(hadamards),
+                         std::move(snapshot_indices),
                          std::move(index_checks), index_value_count},
              .workspace = {},
              .runtime = kRuntime,

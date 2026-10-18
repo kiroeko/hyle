@@ -10,6 +10,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
+#include "../compute_models/gdn_snapshot_fixture.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 
@@ -17,6 +18,57 @@ namespace {
 namespace c = hyle::compute;
 namespace a = c::apple;
 namespace mx = mlx::core;
+
+TEST(AppleRecurrent, GatedDeltaNetSnapshotsKeepBatchAndTimeOrder) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  for (const auto snapshots : {1U, 3U, 5U}) {
+    for (const auto seed : {0, 7}) {
+      SCOPED_TRACE(::testing::Message() << "K=" << snapshots << " seed=" << seed);
+      const gdn_snapshot_fixture::Fixture fixture(seed);
+      std::vector<mx::array> inputs;
+      std::vector<a::InputSpec> specs;
+      for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
+        mx::Shape shape;
+        for (const auto extent : fixture.inputs[i].dimensions())
+          shape.push_back(static_cast<int>(extent));
+        inputs.emplace_back(fixture.data[i].data(), std::move(shape));
+        specs.push_back({inputs.back().shape(), inputs.back().dtype()});
+      }
+      auto prepared = context->prepare(
+          c::GatedDeltaNet{.snapshot_count = snapshots}, specs);
+      ASSERT_TRUE(prepared) << prepared.error().message();
+      auto invocation = prepared->create_invocation();
+      ASSERT_TRUE(invocation);
+      ASSERT_TRUE(invocation->bind(inputs).ok());
+      const auto descriptions = fixture.outputs(snapshots);
+      const auto expected = fixture.oracle(snapshots);
+      for (int repeat = 0; repeat < 2; ++repeat) {
+        auto work = invocation->submit();
+        ASSERT_TRUE(work) << work.error().message();
+        auto result = work->wait();
+        ASSERT_TRUE(result) << result.error().message();
+        const auto outputs = result->get()->arrays();
+        ASSERT_EQ(outputs.size(), 2U);
+        for (std::size_t port = 0; port < outputs.size(); ++port) {
+          mx::Shape shape;
+          for (const auto extent : descriptions[port].dimensions())
+            shape.push_back(static_cast<int>(extent));
+          EXPECT_EQ(outputs[port].shape(), shape);
+          ASSERT_EQ(outputs[port].size(), expected[port].size());
+          double max_error = 0;
+          for (std::size_t i = 0; i < expected[port].size(); ++i)
+            max_error = std::max(max_error,
+                std::abs(double(outputs[port].data<float>()[i]) -
+                         expected[port][i]));
+          EXPECT_LT(max_error, 3e-6);
+        }
+      }
+      EXPECT_EQ(std::memcmp(inputs[5].data<float>(), fixture.data[5].data(),
+                            fixture.data[5].size() * sizeof(float)), 0);
+    }
+  }
+}
 
 void check(std::span<const mx::array> actual,
            const std::array<std::vector<double>, 2> &expected) {

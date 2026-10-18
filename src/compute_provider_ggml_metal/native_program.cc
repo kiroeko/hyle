@@ -177,6 +177,15 @@ bool mature_model_operation(Operation operation) noexcept {
          operation.custom_as<model_ops::HyperConnectionPost>() ||
          operation.custom_as<model_ops::LightningIndexer>();
 }
+
+std::uint32_t gdn_snapshot_count(Operation operation) noexcept {
+  if (const auto *gdn = operation.get_if<GatedDeltaNet>())
+    return gdn->snapshot_count;
+  if (const auto recurrent =
+          operation.custom_as<model_ops::RecurrentGatedDeltaNet>())
+    return recurrent->snapshot_count;
+  return 1;
+}
 } // namespace
 
 struct NativeProgram::State {
@@ -185,7 +194,10 @@ struct NativeProgram::State {
   ggml_cgraph *graph = nullptr;
   std::array<ggml_tensor *, 9> tensors{};
   std::array<BufferOwner, 9> buffers;
-  std::array<BufferOwner, 4> workspace_buffers;
+  std::array<BufferOwner, 6> workspace_buffers;
+  // K>1 exports reordered scores/state into disjoint slices of the existing
+  // external output allocation. K==1 keeps the original direct fused binding.
+  std::array<ggml_tensor *, 2> snapshot_outputs{};
   std::array<void *, 9> native_buffers{};
   std::array<std::size_t, 9> bytes{};
   std::array<std::size_t, 9> alignments{};
@@ -300,9 +312,11 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
     auto state = std::make_unique<State>();
     const bool recurrent =
         operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
+    const auto snapshots = gdn_snapshot_count(operation);
     HYLE_ASSIGN_OR_RETURN(
         state->arena,
-        ggml_runtime::MetadataArena::for_graph(recurrent ? 20 : 12, 32, allocator));
+        ggml_runtime::MetadataArena::for_graph(
+            (recurrent ? 20 : 12) + (snapshots > 1 ? 8 : 0), 32, allocator));
     state->backend = ggml_backend_metal_init();
     if (state->backend == nullptr)
       return std::unexpected(Status::Unavailable("ggml Metal backend unavailable"));
@@ -319,7 +333,8 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
     auto &t = state->tensors;
     auto allocate_intermediate = [&](ggml_tensor *tensor,
                                      std::size_t index) -> Status {
-      if (!ggml_backend_supports_op(state->backend, tensor))
+      if (tensor->op != GGML_OP_NONE &&
+          !ggml_backend_supports_op(state->backend, tensor))
         return Status::Unimplemented("ggml Metal intermediate capability unavailable");
       const auto type = ggml_backend_get_default_buffer_type(state->backend);
       auto &buffer = state->workspace_buffers[index].value;
@@ -334,6 +349,7 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
       return Status::Ok();
     };
     ggml_tensor *result = nullptr;
+    ggml_tensor *native_gdn = nullptr;
     if (operation.get_if<MatMul>() ||
         operation.custom_as<model_ops::BFloatLinearF32>()) {
       auto *activation = t[0];
@@ -368,7 +384,42 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
           HYLE_RETURN_IF_ERROR(allocate_intermediate(intermediates[i], i));
       }
       result = ggml_gated_delta_net(context, t[0], t[1], t[2], gate, beta,
-                                    initial, 1);
+                                    initial, snapshots);
+      native_gdn = result;
+      if (snapshots > 1) {
+        HYLE_RETURN_IF_ERROR(allocate_intermediate(result, 4));
+        auto *value = t[2];
+        const auto batch = initial->ne[3];
+        const auto row = ggml_nelements(initial) / batch;
+        const auto rows = batch * snapshots;
+        auto *history = ggml_view_2d(
+            context, result, row, rows, std::size_t(row) * sizeof(float),
+            ggml_nbytes(value));
+        auto *indices = ggml_new_tensor_1d(context, GGML_TYPE_I32, rows);
+        HYLE_RETURN_IF_ERROR(allocate_intermediate(indices, 5));
+        std::vector<std::int32_t> order(static_cast<std::size_t>(rows));
+        for (std::int64_t b = 0; b < batch; ++b)
+          for (std::uint32_t k = 0; k < snapshots; ++k)
+            order[std::size_t(b * snapshots + k)] =
+                static_cast<std::int32_t>((snapshots - 1 - k) * batch + b);
+        ggml_backend_tensor_set(indices, order.data(), 0,
+                                order.size() * sizeof(order[0]));
+        auto *scores = ggml_view_4d(
+            context, result, value->ne[0], value->ne[1], value->ne[2],
+            value->ne[3], value->nb[1], value->nb[2], value->nb[3], 0);
+        state->snapshot_outputs = {ggml_cont(context, scores),
+                                    ggml_get_rows(context, history, indices)};
+        for (auto *output : state->snapshot_outputs) {
+          if (!ggml_backend_supports_op(state->backend, output))
+            return std::unexpected(Status::Unimplemented(
+                "ggml Metal snapshot output capability unavailable"));
+          ggml_set_output(output);
+        }
+        // The caller still supplies one packed native allocation. The two
+        // device producers bind its scores/state slices directly in run().
+        result = ggml_new_tensor_1d(context, GGML_TYPE_F32,
+                                     ggml_nelements(native_gdn));
+      }
     } else if (const auto clamp = operation.custom_as<model_ops::Clamp>()) {
       result = ggml_clamp(state->arena.get(), t[0], clamp->minimum, clamp->maximum);
     } else if (operation.custom_as<model_ops::GroupedMatMul>()) {
@@ -411,13 +462,18 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
       return std::unexpected(Status::Unimplemented("ggml Metal model capability unavailable"));
     // Original specialization/cache, cold and shape-only; no user data or
     // mutable state is executed to manufacture a prepared replay claim.
-    if ((operation.get_if<GatedDeltaNet>() || recurrent) &&
-        !ggml_hyle_metal_prepare_gdn(state->backend, result))
+    if (native_gdn != nullptr &&
+        !ggml_hyle_metal_prepare_gdn(state->backend, native_gdn))
       return std::unexpected(Status::Unavailable("ggml Metal recurrent pipeline preparation failed"));
     state->graph = ggml_new_graph_custom(state->arena.get(), 32, false);
     if (state->graph == nullptr)
       return std::unexpected(Status::ResourceExhausted("ggml Metal graph metadata exhausted"));
-    ggml_build_forward_expand(state->graph, result);
+    if (snapshots > 1) {
+      for (auto *output : state->snapshot_outputs)
+        ggml_build_forward_expand(state->graph, output);
+    } else {
+      ggml_build_forward_expand(state->graph, result);
+    }
     return std::unique_ptr<NativeProgram>(new NativeProgram(std::move(state)));
   } catch (...) {
     return std::unexpected(exception_status());
@@ -484,6 +540,14 @@ Status NativeProgram::run(std::span<const BufferView> ports) noexcept {
       s.tensors[i]->data = static_cast<std::byte *>(
                               ggml_backend_buffer_get_base(s.buffers[i].value)) +
                           ports[i].offset;
+    }
+    for (std::size_t i = 0; i < s.snapshot_outputs.size(); ++i) {
+      if (auto *output = s.snapshot_outputs[i]) {
+        output->buffer = s.tensors[s.output_port]->buffer;
+        output->data = static_cast<std::byte *>(
+                           s.tensors[s.output_port]->data) +
+                       s.output_offsets[i];
+      }
     }
     const auto submitted = ggml_backend_graph_compute_async(s.backend, s.graph);
     const auto native_code = ggml_hyle_metal_checked_sync(s.backend);

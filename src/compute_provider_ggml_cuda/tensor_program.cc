@@ -391,9 +391,11 @@ bool tensor_operation_supports(Operation operation,
       return false;
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
+    const auto scores = *outputs[0].element_count();
+    const auto states = *outputs[1].element_count();
     return v[2] % q[2] == 0 && q[3] == v[3] &&
-           *outputs[0].element_count() + *outputs[1].element_count() <=
-               std::size_t{INT32_MAX};
+           scores <= std::size_t{INT32_MAX} &&
+           states <= std::size_t{INT32_MAX} - scores;
   }
   if (outputs.size() != 1)
     return false;
@@ -522,7 +524,8 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
                        const Node &node, std::span<ggml_tensor *const> values,
                        std::vector<ScalarConstant> &constants,
                        std::vector<DenseConstant> &dense_constants,
-                       std::span<const float> hadamard) {
+                       std::span<const float> hadamard,
+                       std::span<const std::int32_t> snapshot_order) {
   const auto &output = recipe.values[node.outputs[0]];
   const auto input = [&](std::size_t index) {
     const auto id = node.inputs[index];
@@ -822,19 +825,34 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       beta = ggml_sigmoid(context, beta);
       initial = recurrent_input(7);
     }
+    const auto *gdn = node.operation.get_if<GatedDeltaNet>();
+    const auto snapshots =
+        gdn ? gdn->snapshot_count
+            : node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()
+                  ->snapshot_count;
     auto *packed = ggml_gated_delta_net(
         context, recurrent_input(0), recurrent_input(1), recurrent_input(2),
-        decay, beta, initial, 1);
+        decay, beta, initial, snapshots);
     const auto score_count = static_cast<std::int64_t>(
         *recipe.values[node.outputs[0]].element_count());
     const auto state_count = static_cast<std::int64_t>(
         *recipe.values[node.outputs[1]].element_count());
     auto *scores =
         ggml_cont(context, ggml_view_1d(context, packed, score_count, 0));
-    auto *state =
-        ggml_cont(context, ggml_view_1d(context, packed, state_count,
-                                        static_cast<std::size_t>(score_count) *
-                                            sizeof(float)));
+    auto *state = ggml_view_1d(context, packed, state_count,
+                               static_cast<std::size_t>(score_count) *
+                                   sizeof(float));
+    if (snapshots > 1) {
+      auto *indices =
+          ggml_new_tensor_1d(context, GGML_TYPE_I32, snapshot_order.size());
+      dense_constants.push_back({indices, snapshot_order.data(),
+                                 snapshot_order.size_bytes()});
+      const auto width = ggml_nelements(initial) / initial->ne[3];
+      state = ggml_get_rows(
+          context,
+          ggml_reshape_2d(context, state, width, snapshot_order.size()), indices);
+    } else
+      state = ggml_cont(context, state);
     return {as_output(context, scores, recipe.values[node.outputs[0]]),
             as_output(context, state, recipe.values[node.outputs[1]])};
   }

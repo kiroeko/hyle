@@ -96,6 +96,20 @@ void release_writer(detail::PagedArenaData*p,std::uint32_t page,WriteLease&&writ
   if(slot.acquired && writer.valid()){slot.writer=std::move(writer);slot.acquired=false;}
   p->decref();
 }
+Status reclaim_page(detail::PagedArenaData&p,std::uint32_t page)noexcept{
+  auto&slot=p.slots[page];
+  // A range returns to the original pool only after its final permission and
+  // actual native use retire. Reallocating it therefore proves exclusivity,
+  // even when the old generation ended with an error. Park other free pages.
+  for(std::size_t i=0;!slot.writer.valid() && i<p.slots.size();++i){
+    auto allocation=p.pool.allocate(p.page_bytes,1);
+    if(!allocation){if(allocation.error().IsResourceExhausted())return Status::Unavailable("paged arena page permissions/native uses still retain storage");return allocation.error();}
+    HYLE_ASSIGN_OR_RETURN(auto range,allocation->view());const auto actual=(range.offset()-p.span.offset())/p.page_bytes;
+    if(actual>=p.slots.size() || (range.offset()-p.span.offset())%p.page_bytes)return Status::Internal("paged arena reclaimed range geometry");
+    auto&reclaimed=p.slots[actual];reclaimed.identity=detail::LeaseAccess::identity(*allocation);reclaimed.generation=allocation->generation();reclaimed.ready=false;reclaimed.initialized_rows=0;reclaimed.writer=std::move(*allocation);
+  }
+  return slot.writer.valid()?Status::Ok():Status::Unavailable("paged arena requested page is retained");
+}
 } // namespace
 PagedArena::PagedArena(const PagedArena&p)noexcept:data_(p.data_){if(data_)data_->incref();}
 PagedArena&PagedArena::operator=(const PagedArena&p)noexcept{if(this!=&p){PagedArena next(p);std::swap(data_,next.data_);}return *this;}
@@ -130,18 +144,7 @@ Result<PagedPageWriter> PagedArena::acquire(std::uint32_t page)noexcept{
   if(!data_ || data_->closed)return std::unexpected(Status::FailedPrecondition("paged arena is closed/empty"));
   if(page>=data_->slots.size())return std::unexpected(Status::OutOfRange("paged arena physical page ID"));
   auto&slot=data_->slots[page];if(slot.acquired)return std::unexpected(Status::Unavailable("paged arena page writer is retained"));
-  // No persistent readonly keeper: F4's own ledger anchor must be able to
-  // become unique and collect after real consumers retire. Reclaimed ranges
-  // are allocated through the original fixed metadata/payload pool. Park other
-  // reclaimed pages until the requested physical offset is reached.
-  for(std::size_t i=0;!slot.writer.valid() && i<data_->slots.size();++i){
-    auto allocation=data_->pool.allocate(data_->page_bytes,1);
-    if(!allocation){if(allocation.error().IsResourceExhausted())return std::unexpected(Status::Unavailable("paged arena page readers/native uses still retain storage"));return std::unexpected(allocation.error());}
-    HYLE_ASSIGN_OR_RETURN(auto range,allocation->view());const auto actual=(range.offset()-data_->span.offset())/data_->page_bytes;
-    if(actual>=data_->slots.size() || (range.offset()-data_->span.offset())%data_->page_bytes)return std::unexpected(Status::Internal("paged arena reclaimed range geometry"));
-    auto&reclaimed=data_->slots[actual];reclaimed.identity=detail::LeaseAccess::identity(*allocation);reclaimed.generation=allocation->generation();reclaimed.ready=false;reclaimed.initialized_rows=0;reclaimed.writer=std::move(*allocation);
-  }
-  if(!slot.writer.valid())return std::unexpected(Status::Unavailable("paged arena requested page is retained"));
+  HYLE_RETURN_IF_ERROR(reclaim_page(*data_,page));
   HYLE_ASSIGN_OR_RETURN(auto view,slot.writer.view());(void)view;slot.acquired=true;return PagedPageWriter(data_,page,slot.initialized_rows,std::move(slot.writer));
 }
 Result<PagedPageWriter> PagedArena::acquire(ReadLease& ready)noexcept{
@@ -263,6 +266,14 @@ Status PagedPageWriter::complete(const ReadLease&ready,std::uint32_t rows)noexce
   if(!slot.acquired || detail::LeaseAccess::identity(ready)!=slot.identity || ready.generation()!=slot.generation || view.resource()!=arena_->span.resource() || view.native_handle()!=arena_->span.native_handle() || view.offset()!=arena_->span.offset()+std::size_t(page_)*arena_->page_bytes || view.size()!=arena_->page_bytes)
     return Status::InvalidArgument("paged ready output is not the original page writer");
   slot.ready=true;slot.acquired=false;slot.initialized_rows=rows;initialized_rows_=rows;auto*p=std::exchange(arena_,nullptr);p->decref();return Status::Ok();
+}
+Status PagedPageWriter::discard()noexcept{
+  if(!arena_ || arena_->closed)return Status::FailedPrecondition("paged arena is closed/empty");
+  auto&slot=arena_->slots[page_];
+  if(writer_.valid() || !slot.acquired || slot.ready)return Status::FailedPrecondition("paged discard needs its retained consumed writer reservation");
+  HYLE_RETURN_IF_ERROR(reclaim_page(*arena_,page_));
+  HYLE_ASSIGN_OR_RETURN(auto view,slot.writer.view());(void)view;
+  writer_=std::move(slot.writer);initialized_rows_=0;return Status::Ok();
 }
 PagedArenaRead::PagedArenaRead(const PagedArenaRead&p)noexcept:data_(p.data_){if(data_)data_->incref();}
 PagedArenaRead&PagedArenaRead::operator=(const PagedArenaRead&p)noexcept{if(this!=&p){PagedArenaRead next(p);std::swap(data_,next.data_);}return *this;}

@@ -18,6 +18,7 @@
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/gdn_snapshot_fixture.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 #include "hyle/compute/backends/cpu.h"
@@ -193,6 +194,105 @@ TEST(GgmlCpuProvider, MatureKdaPublishesScoresAndStateIndependently) {
   EXPECT_EQ(half_test::read<float>(output_storage[0]),
             std::vector<float>(*output_desc[0].element_count(), 0.F));
   EXPECT_EQ(half_test::read<float>(output_storage[1]), expected_state);
+}
+
+TEST(GgmlCpuProvider, GatedDeltaNetSnapshotsKeepChronologicalBatchesOnRebind) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto queue = context.create_queue().value();
+  for (const std::uint32_t count : {1U, 3U, 5U}) {
+    const gdn_snapshot_fixture::Fixture first;
+    const auto descriptions = first.outputs(count);
+    std::vector<Buffer> storage;
+    std::vector<ConstTensorView> inputs;
+    for (std::size_t i = 0; i < first.inputs.size(); ++i) {
+      storage.push_back(half_test::buffer<float>(first.data[i]));
+      inputs.push_back(
+          ConstTensorView::create(first.inputs[i], storage.back().view()).value());
+    }
+    std::array output_storage{output_buffer(descriptions[0]),
+                              output_buffer(descriptions[1])};
+    const std::array outputs{
+        TensorView::create(descriptions[0], output_storage[0].view()).value(),
+        TensorView::create(descriptions[1], output_storage[1].view()).value()};
+    auto prepared = prepare(
+        context, Operation(GatedDeltaNet{.snapshot_count = count}), inputs,
+        outputs);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto invocation = prepared->create_invocation().value();
+    for (const int seed : {0, 7}) {
+      SCOPED_TRACE(::testing::Message() << "snapshots=" << count << " seed=" << seed);
+      const gdn_snapshot_fixture::Fixture current(seed);
+      for (std::size_t i = 0; i < inputs.size(); ++i) {
+        storage[i] = half_test::buffer<float>(current.data[i]);
+        inputs[i] = ConstTensorView::create(current.inputs[i], storage[i].view()).value();
+      }
+      auto completion = invocation.submit(queue, inputs, outputs);
+      ASSERT_TRUE(completion) << completion.error().message();
+      ASSERT_TRUE(completion->wait().ok());
+      const auto expected = current.oracle(count);
+      for (std::size_t port = 0; port < outputs.size(); ++port) {
+        const auto actual = half_test::read<float>(output_storage[port]);
+        ASSERT_EQ(actual.size(), expected[port].size());
+        for (std::size_t i = 0; i < actual.size(); ++i)
+          EXPECT_NEAR(actual[i], expected[port][i], 3.0e-6) << port << ':' << i;
+      }
+      EXPECT_EQ(half_test::read<float>(storage[5]), current.data[5]);
+    }
+  }
+}
+
+TEST(GgmlCpuProvider, RecurrentTokenBlockBroadcastsParametersAndPublishesSnapshots) {
+  gdn_snapshot_fixture::Fixture fixture(3, 1, 3, 16, 16, 128);
+  const auto parameter = dense(DataType::kFloat32, {1, 1, 16, 1});
+  std::array descriptions{fixture.inputs[0], fixture.inputs[1], fixture.inputs[2],
+                           fixture.inputs[3], fixture.inputs[4], parameter,
+                           parameter, fixture.inputs[5]};
+  std::vector<float> raw_a(fixture.data[3].size()), raw_b(raw_a.size());
+  std::vector<float> coefficient(16), bias(16);
+  for (std::size_t head = 0; head < coefficient.size(); ++head) {
+    coefficient[head] = -0.025F * float(head + 1);
+    bias[head] = 0.01F * float(head);
+  }
+  for (std::size_t i = 0; i < raw_a.size(); ++i) {
+    raw_a[i] = float(int(i % 11) - 5) / 16.F;
+    raw_b[i] = float(int(i % 7) - 3) / 8.F;
+    fixture.data[3][i] = float(
+        std::log1p(std::exp(double(raw_a[i]) + bias[i % 16])) *
+        coefficient[i % 16]);
+    fixture.data[4][i] = float(1.0 / (1.0 + std::exp(-double(raw_b[i]))));
+  }
+  const std::array<std::span<const float>, 8> values{
+      fixture.data[0], fixture.data[1], fixture.data[2], raw_a, raw_b,
+      coefficient, bias, fixture.data[5]};
+  std::vector<Buffer> storage;
+  std::vector<ConstTensorView> inputs;
+  for (std::size_t i = 0; i < values.size(); ++i) {
+    storage.push_back(half_test::buffer<float>(values[i]));
+    inputs.push_back(
+        ConstTensorView::create(descriptions[i], storage.back().view()).value());
+  }
+  const auto output_desc = fixture.outputs(3);
+  std::array output_storage{output_buffer(output_desc[0]),
+                            output_buffer(output_desc[1])};
+  const std::array outputs{
+      TensorView::create(output_desc[0], output_storage[0].view()).value(),
+      TensorView::create(output_desc[1], output_storage[1].view()).value()};
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto prepared = prepare(context, model_ops::recurrent_gated_delta_net(3),
+                           inputs, outputs);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto invocation = prepared->create_invocation().value();
+  auto queue = context.create_queue().value();
+  auto completion = invocation.submit(queue, inputs, outputs);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  const auto expected = fixture.oracle(3);
+  for (std::size_t port = 0; port < outputs.size(); ++port) {
+    const auto actual = half_test::read<float>(output_storage[port]);
+    ASSERT_EQ(actual.size(), expected[port].size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[port][i], 3.0e-6) << port << ':' << i;
+  }
 }
 
 TEST(GgmlCpuProvider, D5Qwen38GroupedHeadsUseMatureGatedDeltaNet) {

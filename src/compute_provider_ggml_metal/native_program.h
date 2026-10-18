@@ -48,6 +48,8 @@ public:
   }
   // Input ports followed by one contiguous output allocation. Multi-output
   // native regions publish non-overlapping views that retain that allocation.
+  // GDN snapshot outputs are materialized in public batch/time order on-device;
+  // K==1 binds the original fused result without another workspace or copy.
   HYLE_GGML_METAL_INTERNAL_API Status
   run(std::span<const BufferView> ports) noexcept;
   HYLE_GGML_METAL_INTERNAL_API std::size_t output_count() const noexcept;

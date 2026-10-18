@@ -24,8 +24,10 @@ inline std::size_t boundary_alignment(Operation operation,
                                       DataType type) noexcept {
   // Original scalar copy/conversion kernels accept typed subviews. Other
   // native programs keep the alignment of their qualified vectorized paths.
+  // GDN's F32 scalar loads also accept per-token gate subviews (a token's
+  // scalar decay/beta is often only four bytes past the preceding token).
   return operation.get_if<Copy>() || operation.get_if<Cast>() ||
-                 operation.get_if<Concat>()
+                 operation.get_if<Concat>() || operation.get_if<GatedDeltaNet>()
              ? data_type_size(type)
              : kBinding.minimum_alignment;
 }

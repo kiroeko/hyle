@@ -1254,6 +1254,44 @@ TEST(OperationGatedDeltaNet, RejectsWrongGatesStateTypesAndArityAtomically) {
       infer_output_descriptions(operation, valid, output).IsInvalidArgument());
 }
 
+TEST(OperationGatedDeltaNet, SnapshotCountKeepsFinalStateOrChronologicalTail) {
+  const auto f32 = DataType::kFloat32;
+  const std::array inputs{
+      tensor(f32, 2, 5, 2, 32), tensor(f32, 2, 5, 2, 32),
+      tensor(f32, 2, 5, 6, 32), tensor(f32, 2, 5, 6, 1),
+      tensor(f32, 2, 5, 6, 1), tensor(f32, 2, 6, 32, 32)};
+  for (const std::uint32_t count : {1U, 3U, 5U}) {
+    std::array<TensorDesc, 2> outputs;
+    ASSERT_TRUE(infer_output_descriptions(
+                    Operation(GatedDeltaNet{.snapshot_count = count}), inputs,
+                    outputs).ok());
+    EXPECT_EQ(outputs[0], inputs[2]);
+    EXPECT_EQ(outputs[1], count == 1 ? inputs[5]
+                                    : tensor(f32, 2, count, 6, 32, 32));
+  }
+  const auto sentinel = tensor(f32, 7);
+  for (const std::uint32_t count : {0U, 6U}) {
+    std::array outputs{sentinel, sentinel};
+    EXPECT_TRUE(infer_output_descriptions(
+                    Operation(GatedDeltaNet{.snapshot_count = count}), inputs,
+                    outputs).IsInvalidArgument());
+    EXPECT_EQ(outputs[0], sentinel);
+    EXPECT_EQ(outputs[1], sentinel);
+  }
+  constexpr auto maximum = (std::numeric_limits<std::uint32_t>::max)();
+  const std::array huge{
+      tensor(f32, 1, maximum, 1, 65536),
+      tensor(f32, 1, maximum, 1, 65536),
+      tensor(f32, 1, maximum, 1, 65536), tensor(f32, 1, maximum, 1, 1),
+      tensor(f32, 1, maximum, 1, 1), tensor(f32, 1, 1, 65536, 65536)};
+  std::array outputs{sentinel, sentinel};
+  EXPECT_FALSE(infer_output_descriptions(
+                   Operation(GatedDeltaNet{.snapshot_count = maximum}), huge,
+                   outputs).ok());
+  EXPECT_EQ(outputs[0], sentinel);
+  EXPECT_EQ(outputs[1], sentinel);
+}
+
 TEST(OperationModelOps, CausalConv1dKeepsNaturalSequenceLayout) {
   const auto operation = model_ops::causal_conv1d();
   EXPECT_EQ(operation.kind(), OperationKind::kCustom);
@@ -1335,6 +1373,30 @@ TEST(OperationModelOps, RecurrentRegionRejectsUnqualifiedPortsAtomically) {
   EXPECT_TRUE(infer_output_descriptions(operation, valid, outputs)
                   .IsInvalidArgument());
   EXPECT_EQ(outputs[0], sentinel);
+}
+
+TEST(OperationModelOps, RecurrentRegionBroadcastsParametersOverTokenBlock) {
+  const auto f32 = DataType::kFloat32;
+  const auto gate = tensor(f32, 1, 5, 48, 1);
+  const auto parameter = tensor(f32, 1, 1, 48, 1);
+  const std::array inputs{
+      tensor(f32, 1, 5, 16, 128), tensor(f32, 1, 5, 16, 128),
+      tensor(f32, 1, 5, 48, 128), gate, gate, parameter, parameter,
+      tensor(f32, 1, 48, 128, 128)};
+  std::array<TensorDesc, 2> outputs;
+  ASSERT_TRUE(infer_output_descriptions(
+                  model_ops::recurrent_gated_delta_net(3), inputs, outputs).ok());
+  EXPECT_EQ(outputs[0], inputs[2]);
+  EXPECT_EQ(outputs[1], tensor(f32, 1, 3, 48, 128, 128));
+  auto invalid = inputs;
+  invalid[5] = gate;
+  const auto sentinel = tensor(f32, 7);
+  outputs = {sentinel, sentinel};
+  EXPECT_TRUE(infer_output_descriptions(
+                  model_ops::recurrent_gated_delta_net(3), invalid, outputs)
+                  .IsInvalidArgument());
+  EXPECT_EQ(outputs[0], sentinel);
+  EXPECT_EQ(outputs[1], sentinel);
 }
 
 TEST(OperationModelOps, BFloatLinearF32KeepsNativeScorePrecision) {

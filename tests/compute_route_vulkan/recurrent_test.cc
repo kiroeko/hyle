@@ -6,12 +6,82 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
+#include "../compute_models/gdn_snapshot_fixture.h"
 #include "../sparse_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
 
 namespace {
 using namespace vulkan_recurrent_test;
+
+TEST(VulkanRecurrent, GatedDeltaNetSnapshotsKeepBatchAndTimeOrder) {
+  auto context = vulkan_test::context().value();
+  for (const auto snapshots : {1U, 3U, 5U}) {
+    for (const auto seed : {0, 7}) {
+      SCOPED_TRACE(::testing::Message() << "K=" << snapshots << " seed=" << seed);
+      const gdn_snapshot_fixture::Fixture fixture(seed);
+      std::vector<v::Argument> arguments;
+      std::array<v::Tensor, 6> resident;
+      for (std::size_t i = 0; i < resident.size(); ++i) {
+        arguments.emplace_back(fixture.inputs[i]);
+        resident[i] = vulkan_test::upload(context, fixture.inputs[i],
+                                           fixture.data[i]).value();
+      }
+      auto prepared = v::prepare(
+          context, c::Operation(c::GatedDeltaNet{.snapshot_count = snapshots}),
+          arguments);
+      ASSERT_TRUE(prepared) << prepared.error().message();
+      auto invocation = prepared->create_invocation().value();
+      ASSERT_TRUE(invocation.bind(resident).ok());
+      const auto descriptions = fixture.outputs(snapshots);
+      const auto expected = fixture.oracle(snapshots);
+      for (int repeat = 0; repeat < 2; ++repeat) {
+        auto work = invocation.submit();
+        ASSERT_TRUE(work) << work.error().message();
+        auto result = work->wait();
+        ASSERT_TRUE(result) << result.error().message();
+        const auto outputs = result->get()->tensors();
+        ASSERT_EQ(outputs.size(), 2U);
+        for (std::size_t i = 0; i < outputs.size(); ++i) {
+          EXPECT_EQ(outputs[i].description(), descriptions[i]);
+          expect(context, outputs[i], expected[i]);
+        }
+      }
+      const auto initial = vulkan_test::read(context, resident[5]);
+      ASSERT_TRUE(initial) << initial.error().message();
+      EXPECT_EQ(*initial, fixture.data[5]);
+    }
+  }
+}
+
+TEST(VulkanRecurrent, RecurrentTokenBlockBroadcastsParametersAndPublishesSnapshots) {
+  auto context = vulkan_test::context().value();
+  const gdn_snapshot_fixture::RecurrentFixture fixture;
+  std::vector<v::Argument> arguments;
+  std::array<v::Tensor, 8> resident;
+  for (std::size_t i = 0; i < resident.size(); ++i) {
+    arguments.emplace_back(fixture.inputs[i]);
+    resident[i] = vulkan_test::upload(context, fixture.inputs[i],
+                                     fixture.data[i]).value();
+  }
+  auto prepared = v::prepare(
+      context, c::model_ops::recurrent_gated_delta_net(3), arguments);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto invocation = prepared->create_invocation().value();
+  ASSERT_TRUE(invocation.bind(resident).ok());
+  auto work = invocation.submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result = work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  const auto outputs = result->get()->tensors();
+  const auto descriptions = fixture.activated.outputs(3);
+  const auto expected = fixture.activated.oracle(3);
+  ASSERT_EQ(outputs.size(), 2U);
+  for (std::size_t i = 0; i < outputs.size(); ++i) {
+    EXPECT_EQ(outputs[i].description(), descriptions[i]);
+    expect(context, outputs[i], expected[i]);
+  }
+}
 
 class VulkanQwen38GdnProfiles
     : public ::testing::TestWithParam<

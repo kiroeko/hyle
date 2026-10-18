@@ -24,6 +24,8 @@
    在同系统、同设备、同源权重与匹配精度/输入条件下对比 llama.cpp 的 prefill/decode tokens/s。
    通过实际调用发现接口、布局、状态管理和执行成本问题，不把外部参考或片段算作完整引擎。
 7. 补全 MTP 所需的底座能力与真实消费者验证。
+   2026-10-18 本轮补全 GDN 接受前缀快照、融合 recurrent 多 token 输入、页失败后的安全重试，
+   并扩展公共状态消费者；用法与引擎边界见[状态版本](../user/state-versions.md#mtp-接受前缀并继续计算)。
 8. 补全多模态所需的底座能力与真实消费者验证，优先图像 encoder/projector（mmproj）链路。
 
 ## 已确认范围
@@ -50,8 +52,8 @@
 后续实施顺序和具体改动继续按用户讨论推进，不将本页扩展为新的治理流程。
 
 后续接口检查线索：锁定 ggml 的 CUDA GDN/causal conv 原实现要求 F32；这不是已证实的
-BF16/FP8 接入遗漏。上游 GDN 已有多 token 中间 recurrent snapshot，而当前 HYLE 仅输出最终
-state，后续 MTP 接入应核对这项现成能力与接受前缀恢复成本。
+BF16/FP8 接入遗漏。本轮已接通锁定 ggml 的多 token recurrent snapshot；
+默认仍只输出最终状态，MTP 验证块显式请求快照，并按接受前缀恢复。
 
 首个完整消费者重点确认：prepare/repack 是否留在冷路径；KV 有效长度变化是否导致重编译或多余绑定；
 GDN、conv、attention 之间是否出现实体转置、dtype 转换或 host 同步；常量与状态能否按真实寿命复用。

@@ -78,3 +78,40 @@ StateCloneRoute::report返回原每slot最近episode和shared program元数据�
 host observer活跃时Unavailable，rearm后是新的slot身份。克隆bytes、更新upload、数学、
 metadata复制、host等待和opaque native私有bytes分别计费，不拿这些接口证明零复制/capture
 或整引擎吞吐。paged 布局作为 state 元数据不会自动执行分页 attention；计算接口见[批次 attention](batch-attention.md)。
+
+## MTP 接受前缀并继续计算
+
+一次验证 T 个候选 token 后，接受长度、采样/RNG、修正 token 和 main/draft 模型策略由引擎决定。
+HYLE 提供计算和状态集合，不需要专用 MTP 事务：
+
+1. 保留验证前的版本。GDN 使用 `GatedDeltaNet{.snapshot_count=T}`（T=1 保持原四维输出），
+   或 `model_ops::recurrent_gated_delta_net(T)`，得到逐 token 状态；第二输出按时间正序，
+   第 `p-1` 项是接受 p 个 token 后的状态。接受零个时继续使用旧版本。
+2. 卷积的输入为旧 history 与候选卷积输入拼成的 `[B,T+K-1,C]`。接受 p 个后，
+   下一步 history 是该输入的 `[:,p:p+K-1,:]`，而非最后 K−1 个候选。保留原始卷积输入；
+   无需逐 token 重跑卷积或从卷积输出反推 history。
+3. 将选出的 recurrent state、conv history、main/draft KV 的有效长度与布局以及必要的引擎元数据
+   放进同一 draft，再 finalize/publish。只读 KV 里可保留被拒绝后缀的字节，计算只能引用接受前缀。
+   分页 KV 使用已有 layout 有效长度与页租约；共享页需要修改时先取得独占写权限或 clone。
+   各层与 main/draft 放入同一个 StateSchema/StateHead 才能一次切换；多个独立 head 没有原子联动。
+4. 下一 token 使用已发布版本的真实输出继续计算。失败或拒绝的分支不发布；取消后仍须等原生使用退休。
+   若页写入失败且原 writer reservation 仍在，可按[页恢复说明](batch-attention.md)
+   重试，不能把失败字节当作成功前缀。
+
+B=1 的状态和 history 前缀通常是连续 byte subview，可直接用 `ReadLease::subview`，保留原资源寿命。
+B>1 在 `[B,T,...]` 中选择相同时间索引一般不是连续范围，需要 View/Gather 和必要的物化；
+不要用一个 byte subview 假装跨 batch 连续。跨 CPU/GPU 使用真实资源支持的 CopyBatch/StateCloneRoute；
+CUDA 侧需要同一 Context 的 device/pinned/managed 资源；普通 CPU system memory 先经 pinned staging，
+不能冒充 CUDA pinned 资源。
+
+多 token cached 验证的 Q 长度为 T、KV 长度为 L+T，已有右对齐 causal 保留前 L 个旧 token
+及当前 token 之前的候选。额外可见性约束可合并成完整显式 mask 并关闭 causal，由具体后端检查支持域。
+
+快照输出空间为 `K*B*Hv*Dv*Dk*sizeof(float)`，正序整理在执行设备完成，不读回全部状态，
+也不逐 token 重算。只要最终状态时保持默认 K=1；需要减少快照显存可缩短验证块或分块验证，
+不能只保留最终状态却宣称可以恢复任意中间前缀。Readonly subview 会保留整个快照 backing，
+需释放大块时可显式复制选中的状态，再释放原输出。
+
+[公共消费者](../../tests/compute_state/public_state_consumer.cc)覆盖接受 0..4 个 token 后的
+GDN、conv、KV/attention 与 Direct/Graph 接续；CPU＋CUDA 路径还复制真实快照子范围后在另一侧接续。
+它使用结构化输入和独立数值参考，不是完整 Qwen/DeepSeek MTP 引擎，也不衡量生成 tokens/s。

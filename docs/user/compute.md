@@ -104,9 +104,15 @@ CPU 数学依赖自动装配，按实际请求选择合法实现；不要求传�
 
 `GatedDeltaNet{}` 的 Q/K 是 `[B,T,Hk,Dk]`、V 是 `[B,T,Hv,Dv]`，log-decay/beta 是
 F32 `[B,T,Hv,1]`，初态是 F32 `[B,Hv,Dv,Dk]`；输出为 V 同形结果和新 F32 状态。
+值头 `h` 使用 Q/K 头 `h % Hk`；模型若采用连续头分组，需显式展开 Q/K 或重排相关权重与状态。
+默认 `snapshot_count=1` 保持最终状态的四维形状；设置 `1<K<=T` 时，第二输出为
+`[B,K,Hv,Dv,Dk]`，按时间正序保存最后 K 个 token 后的状态，不含原输入状态。
 它不隐含 Q/K 归一化、gate 激活或状态写回。`model_ops::recurrent_gated_delta_net()` 另接受
 raw a/b、negative_a、dt_bias，组合 `g = negative_a * softplus(a + dt_bias)` 与 `beta = sigmoid(b)`。
+该融合入口支持多 token 的 `[1,T,H,1]` raw a/b，参数仍为 `[1,1,H,1]` 广播；
+可传相同的 snapshot count，其余头数、D128、F32 等既有支持域不变。
 调用者显式决定何时以 next state 替换旧状态；后续节点失败不会替应用回滚已写数据。
+MTP 接受前缀时的选择、卷积历史与 KV 联合提交见[状态版本](state-versions.md#mtp-接受前缀并继续计算)。
 
 模型专用 MoE、压缩 attention、FP8/FP4 和 MTP 片段仍按真实端口、编码和形状准备，
 不会因模型名相同而继承其它接口的数值或设备支持。常用低精度接入见下文；

@@ -67,6 +67,72 @@ TEST(PagedArena, UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady){
   auto schema=c::BatchSchema::create(capacity()).value();auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();{auto writer=arena.acquire(0).value();}EXPECT_TRUE(arena.acquire(0));
   c::WriteLease escaped;{auto writer=arena.acquire(1).value();escaped=std::move(writer.lease());}EXPECT_TRUE(arena.acquire(1).error().IsUnavailable());ASSERT_TRUE(escaped.view()->fill(std::byte{7}).ok());auto ready=escaped.publish().value();EXPECT_FALSE(arena.read(layout(schema,std::array<std::int32_t,1>{1}),std::array{ready}));
 }
+TEST(PagedArena, DiscardWaitsForOriginalPermissionsAndStartsANewUninitializedGeneration){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto writer=arena.acquire(0).value();const auto generation=writer.lease().generation();
+  const auto offset=writer.lease().view()->offset();
+  EXPECT_TRUE(writer.discard().IsFailedPrecondition());EXPECT_TRUE(writer.lease().valid());
+  auto original=std::move(writer.lease());
+  EXPECT_TRUE(writer.discard().IsUnavailable());EXPECT_TRUE(writer.valid());
+  ASSERT_TRUE(original.view()->fill(std::byte{29}).ok());
+  auto retained=original.publish().value();
+  EXPECT_TRUE(writer.discard().IsUnavailable());
+  auto uses=c::LeaseUsePool::create().value();auto reading=uses.begin().value();
+  ASSERT_TRUE(reading.read(retained).ok());retained.reset();
+  EXPECT_TRUE(writer.discard().IsUnavailable());
+  reading={};ASSERT_TRUE(writer.discard().ok());
+  EXPECT_TRUE(writer.lease().valid());EXPECT_GT(writer.lease().generation(),generation);
+  EXPECT_EQ(writer.lease().view()->offset(),offset);EXPECT_EQ(writer.initialized_rows(),0u);
+  auto empty=writer.publish(0).value();
+  EXPECT_TRUE(arena.read(layout(schema,std::array<std::int32_t,1>{0},1),std::array{empty}).error().IsFailedPrecondition());
+  EXPECT_TRUE(writer.discard().IsFailedPrecondition());
+  auto retry=arena.acquire(empty).value();
+  ASSERT_TRUE(retry.lease().view()->subview(0,256)->fill(std::byte{47}).ok());
+  auto ready=retry.publish(1).value();
+  EXPECT_TRUE(arena.read(layout(schema,std::array<std::int32_t,1>{0},1),std::array{ready}));
+  EXPECT_EQ(first(ready),std::byte{47});
+}
+TEST(PagedArena, DiscardAfterAcceptedFailureDoesNotReuseAStillRetainedUseOrModifyCleanState){
+  auto context=c::Context::create(c::cpu::device()).value();auto queue=context.create_queue().value();
+  for(const auto terminal:{hyle::Status::DataLoss("accepted page failure"),hyle::Status::Cancelled("accepted page cancelled")}){
+    auto schema=c::BatchSchema::create(capacity()).value();
+    auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+    auto clean=fill(arena,1,std::byte{17});auto writer=arena.acquire(0).value();
+    const auto generation=writer.lease().generation();
+    auto original=std::move(writer.lease());
+    auto uses=c::LeaseUsePool::create({.max_batches=2}).value();
+    auto produced=uses.begin().value(),reading=uses.begin().value();
+    ASSERT_TRUE(c::detail::LeaseAccess::write_unique(produced,original,false).ok());
+    ASSERT_TRUE(c::detail::LeaseAccess::ordered_read_unique(reading,original).ok());
+    auto completion=c::cpu::submit_host(queue,[terminal]()noexcept{return terminal;}).value();
+    ASSERT_TRUE(produced.attach(completion).ok());EXPECT_FALSE(completion.wait().ok());
+    EXPECT_FALSE(original.publish());EXPECT_TRUE(writer.discard().IsUnavailable());
+    original.reset();completion={};
+    // A terminal error and dropping its public observer do not retire a
+    // separately retained permission. Recovery uses the actual pool lifetime.
+    EXPECT_TRUE(writer.discard().IsUnavailable());
+    reading={};ASSERT_TRUE(writer.discard().ok());
+    EXPECT_GT(writer.lease().generation(),generation);EXPECT_EQ(writer.initialized_rows(),0u);
+    ASSERT_TRUE(writer.lease().view()->fill(std::byte{61}).ok());auto ready=writer.publish(2).value();
+    EXPECT_EQ(first(ready),std::byte{61});EXPECT_EQ(first(clean),std::byte{17});
+  }
+}
+TEST(PagedArena, DiscardInvalidatesTheOldPendingFrameAndRespectsClose){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto writer=arena.acquire(0).value();auto original=std::move(writer.lease());
+  const std::array<c::PagedPageUpdate,1> updates{{{&writer,{1}}}};
+  auto pending=arena.pending_read(layout(schema,std::array<std::int32_t,1>{0}),{},updates).value();
+  original.reset();ASSERT_TRUE(writer.discard().ok());
+  c::detail::CopyUpdateInput input{};input.writer=&writer.lease();
+  input.root=c::detail::LeaseAccess::identity(writer.lease());input.view=writer.lease().view().value();
+  EXPECT_TRUE(c::detail::PagedArenaAccess::validate_page(pending,0,input).IsFailedPrecondition());
+  writer.lease().reset();ASSERT_TRUE(arena.close().ok());
+  EXPECT_TRUE(writer.discard().IsFailedPrecondition());EXPECT_FALSE(writer.lease().valid());
+  EXPECT_TRUE(arena.acquire(0).error().IsFailedPrecondition());
+  c::PagedPageWriter empty;EXPECT_TRUE(empty.discard().IsFailedPrecondition());
+}
 TEST(PagedArena, ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls){
   auto schema=c::BatchSchema::create(capacity()).value();EXPECT_TRUE(c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=2048}).error().IsResourceExhausted());m::QuotaAllocator quota(m::system_allocator());c::LeaseUseBatch use;
   auto uses=c::LeaseUsePool::create().value();{

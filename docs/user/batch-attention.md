@@ -477,8 +477,13 @@ Runtime、未资格的动态 queue prefix及不匹配输出拒绝。producer 槽
 正交消费者在最终 批量搬运成功后显式搬运256字节至host，不声明 GPU reduction流水或零copy。
 
 批量搬运已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
-这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按
-已声明合同保持不可再acquire，显式close/recreate arena；不能把它当普通未提交writer归还。
+这个已消费的reservation，arena不会猜测该页已退休或重新ready。
+失败或取消后，保留原PagedPageWriter，释放原copy/producer控制及所有页面权限，再调用
+`writer.discard()`。若lease()仍由自己持有，先显式reset它。discard不等待：原物理范围仍被
+writer、reader或实际native use保留时返回Unavailable，可稍后重试；公开错误或取消返回
+不构成退休凭证。成功后原writer重新持有同物理页的新generation，initialized_rows为0，
+必须重写并publish实际初始化的前缀。旧失败内容不会发布，也不保留此前的有效前缀。
+未知退休继续阻止恢复；若已丢失原reservation，仍须显式close/recreate arena，不能凭page ID夺回权限。
 
 状态版本 StateStore/StateDraft列出完整K/V/layout及其他需要保留的成员。共享干净页，dirty页显式
 clone到新writer；只把所有成功ready成员finalize为candidate，再由StateHead.publish用

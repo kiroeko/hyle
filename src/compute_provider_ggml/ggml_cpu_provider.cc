@@ -52,6 +52,7 @@ struct Program final {
     std::array<std::byte, sizeof(float)> bytes{};
   };
   std::vector<FillValue> fill_values;
+  std::vector<std::vector<std::int32_t>> snapshot_indices;
   float one = 1.0F;
   float zero = 0.0F;
   float nan = std::numeric_limits<float>::quiet_NaN();
@@ -1229,19 +1230,32 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       beta = ggml_sigmoid(context, beta);
       initial = recurrent_input(7);
     }
+    const auto *gdn = node.operation.get_if<GatedDeltaNet>();
+    const auto snapshots =
+        gdn ? gdn->snapshot_count
+            : node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()
+                  ->snapshot_count;
     auto *packed = ggml_gated_delta_net(
         context, recurrent_input(0), recurrent_input(1), recurrent_input(2),
-        decay, beta, initial, 1);
+        decay, beta, initial, snapshots);
     const auto score_count =
         static_cast<std::int64_t>(elements(recipe.values[node.outputs[0]]));
     const auto state_count =
         static_cast<std::int64_t>(elements(recipe.values[node.outputs[1]]));
     auto *scores =
         ggml_cont(context, ggml_view_1d(context, packed, score_count, 0));
-    auto *state =
-        ggml_cont(context, ggml_view_1d(context, packed, state_count,
-                                        static_cast<std::size_t>(score_count) *
-                                            sizeof(float)));
+    auto *state = ggml_view_1d(context, packed, state_count,
+                               static_cast<std::size_t>(score_count) *
+                                   sizeof(float));
+    if (snapshots > 1) {
+      const auto &order = program.snapshot_indices[node_index];
+      auto *indices = ggml_new_tensor_1d(context, GGML_TYPE_I32, order.size());
+      indices->data = const_cast<std::int32_t *>(order.data());
+      const auto width = ggml_nelements(initial) / initial->ne[3];
+      state = ggml_get_rows(
+          context, ggml_reshape_2d(context, state, width, order.size()), indices);
+    } else
+      state = ggml_cont(context, state);
     return {as_output(context, scores, recipe.values[node.outputs[0]]),
             as_output(context, state, recipe.values[node.outputs[1]])};
   }
@@ -1916,9 +1930,11 @@ bool supports(void *context, Operation operation,
       return false;
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
+    const auto scores = *outputs[0].element_count();
+    const auto states = *outputs[1].element_count();
     return v[2] % q[2] == 0 && q[3] == v[3] &&
-           *outputs[0].element_count() + *outputs[1].element_count() <=
-               std::size_t{INT32_MAX};
+           scores <= std::size_t{INT32_MAX} &&
+           states <= std::size_t{INT32_MAX} - scores;
   }
   if (outputs.size() != 1)
     return false;
@@ -2191,13 +2207,34 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
         }
       }
     }
+    std::vector<std::vector<std::int32_t>> snapshot_indices;
+    for (std::size_t node_index = 0; node_index < recipe.nodes.size();
+         ++node_index) {
+      const auto &node = recipe.nodes[node_index];
+      const auto *gdn = node.operation.get_if<GatedDeltaNet>();
+      const auto recurrent =
+          node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>();
+      const auto snapshots = gdn ? gdn->snapshot_count
+                                 : recurrent ? recurrent->snapshot_count : 1;
+      if (snapshots <= 1)
+        continue;
+      if (snapshot_indices.empty())
+        snapshot_indices.resize(recipe.nodes.size());
+      const auto batches = recipe.values[node.inputs[0]].dimensions()[0];
+      auto &order = snapshot_indices[node_index];
+      order.reserve(static_cast<std::size_t>(batches) * snapshots);
+      for (std::int64_t batch = 0; batch < batches; ++batch)
+        for (std::uint32_t token = 0; token < snapshots; ++token)
+          order.push_back(static_cast<std::int32_t>(
+              (snapshots - 1 - token) * batches + batch));
+    }
     void *storage = allocator.allocate(sizeof(Program), alignof(Program));
     if (!storage)
       return ProviderPrepareOutcome::resource_declined(allocation_failure());
     auto *program = ::new (storage)
         Program{static_cast<Configuration *>(context)->options,
                 std::move(recipe), hadamard, std::move(index_checks),
-                std::move(fill_values)};
+                std::move(fill_values), std::move(snapshot_indices)};
     *output = {.vtable = &kPrepared,
                .state = program,
                .workspace = {},

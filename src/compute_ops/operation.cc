@@ -1609,9 +1609,25 @@ Status infer_output_descriptions(const Operation &operation,
   case OperationKind::kGatedDeltaNet:
     first = infer_gated_delta_net(inputs);
     if (first) {
-      HYLE_ASSIGN_OR_RETURN(
-          inferred[1],
-          TensorDesc::dense(DataType::kFloat32, inputs[5].dimensions()));
+      const auto snapshots = operation.get_if<GatedDeltaNet>()->snapshot_count;
+      if (snapshots == 0 || snapshots > static_cast<std::uint64_t>(
+                                             inputs[0].dimensions()[1]))
+        return Status::InvalidArgument(
+            "GatedDeltaNet snapshot_count must be between one and T");
+      if (snapshots == 1) {
+        HYLE_ASSIGN_OR_RETURN(
+            inferred[1],
+            TensorDesc::dense(DataType::kFloat32, inputs[5].dimensions()));
+      } else {
+        const auto state = inputs[5].dimensions();
+        const std::array shape{state[0], static_cast<std::int64_t>(snapshots),
+                               state[1], state[2], state[3]};
+        HYLE_ASSIGN_OR_RETURN(inferred[1],
+                              TensorDesc::dense(DataType::kFloat32, shape));
+        const auto bytes = inferred[1].required_bytes();
+        if (!bytes)
+          return std::move(bytes).error();
+      }
     }
     break;
   case OperationKind::kUnknown:

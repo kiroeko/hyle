@@ -190,8 +190,12 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
       step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
     const auto dimensions = inputs[2].dimensions();
     const auto &limits = program.runtime->device->properties.limits;
-    const auto packed_elements =
-        *outputs[0].element_count() + *outputs[1].element_count();
+    const auto score_elements = *outputs[0].element_count();
+    const auto state_elements = *outputs[1].element_count();
+    const auto packed_limit = limits.maxStorageBufferRange / sizeof(float);
+    if (score_elements > packed_limit ||
+        state_elements > packed_limit - score_elements)
+      return false;
     if (static_cast<std::uint64_t>(dimensions[2]) >
             limits.maxComputeWorkGroupCount[0] ||
         static_cast<std::uint64_t>(dimensions[0]) >
@@ -199,12 +203,21 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
         static_cast<std::uint64_t>(dimensions[3]) >
             limits.maxComputeWorkGroupCount[2] ||
         limits.maxPerStageDescriptorStorageBuffers < 7 ||
-        limits.maxDescriptorSetStorageBuffers < 7 ||
-        packed_elements > limits.maxStorageBufferRange / sizeof(float))
+        limits.maxDescriptorSetStorageBuffers < 7)
       return false;
     for (const auto &input : std::span(inputs).first(input_count))
       if (*input.element_count() > limits.maxStorageBufferRange / sizeof(float))
         return false;
+    const auto snapshots = step.operation.get_if<GatedDeltaNet>()
+        ? step.operation.get_if<GatedDeltaNet>()->snapshot_count
+        : step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()->snapshot_count;
+    // GET_ROWS uses 512 threads along one complete [H,Dv,Dk] state row.
+    // Its row/batch grid dimensions are bounded by the original kernel.
+    const auto state_row = *inputs[input_count - 1].element_count() /
+                           static_cast<std::uint64_t>(dimensions[0]);
+    if (snapshots > 1 &&
+        (state_row + 511) / 512 > limits.maxComputeWorkGroupCount[0])
+      return false;
   }
   if ((step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
        step.operation.get_if<GatedActivation>() ||
@@ -651,7 +664,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       if (step.operation.get_if<Softmax>())
         for (const auto input : step.inputs)
           uses[local(input)].descriptor_aligned = true;
-      if (step.operation.get_if<GatedDeltaNet>())
+      if (step.operation.get_if<GatedDeltaNet>() ||
+          step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>())
         for (const auto input : step.inputs)
           uses[local(input)].descriptor_aligned = true;
       if (step.operation.get_if<MatMul>())

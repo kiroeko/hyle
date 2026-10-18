@@ -79,10 +79,17 @@ public:
   // caller commits actual initialized contents after successful writes.
   HYLE_COMPUTE_BATCH_API Result<ReadLease> publish(std::uint32_t initialized_rows) noexcept;
   // F2 may consume lease(). Complete only with its successfully ready output
-  // of the same original block/range. Abandoned accepted work never frees a
-  // slot speculatively; retain this writer until observation, or close/recreate.
+  // of the same original block/range. Retain this reservation until completion
+  // or explicit discard; abandoning it never speculatively frees a slot.
   HYLE_COMPUTE_BATCH_API Status complete(const ReadLease&,
       std::uint32_t initialized_rows) noexcept;
+  // Recover this retained reservation as a new uninitialized writable page.
+  // lease() must already have been consumed or explicitly reset. All original
+  // readers, writers and actual native uses must release the physical range;
+  // an observed error/cancel alone is not proof. Unavailable permits retry.
+  // Success keeps the physical page, assigns a new generation and resets the
+  // initialized prefix to zero. No old bytes become ready or are preserved.
+  HYLE_COMPUTE_BATCH_API Status discard() noexcept;
 private:
   friend class PagedArena;
   PagedPageWriter(detail::PagedArenaData*,std::uint32_t,std::uint32_t,WriteLease)noexcept;

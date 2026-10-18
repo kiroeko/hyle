@@ -19,6 +19,15 @@ namespace {
 // Host-only tag, ignored by the native backend. Keep it out of its TU seam.
 constexpr int kBatchRuntimeRequestSlot = 11;
 
+std::uint32_t gdn_snapshot_count(Operation operation) noexcept {
+  if (const auto *gdn = operation.get_if<GatedDeltaNet>())
+    return gdn->snapshot_count;
+  if (const auto recurrent =
+          operation.custom_as<model_ops::RecurrentGatedDeltaNet>())
+    return recurrent->snapshot_count;
+  return 1;
+}
+
 std::int64_t attention_query_block(const RegionRecipe &recipe,
                                    const RegionNode &node,
                                    std::uint64_t alignment) noexcept {
@@ -472,9 +481,13 @@ ggml_unary_op unary_operation(UnaryKind kind) noexcept {
 struct Imports final {
   NativeDevice device;
   std::vector<ggml_backend_buffer *> buffers;
+  std::vector<ggml_backend_buffer *> constants;
+  std::size_t constant_bytes = 0;
   ~Imports() {
     auto active = device.activate();
     for (auto *buffer : buffers)
+      ggml_backend_buffer_free(buffer);
+    for (auto *buffer : constants)
       ggml_backend_buffer_free(buffer);
   }
 };
@@ -734,12 +747,14 @@ bool region_supports(const Operation &operation,
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
     const auto depth = q[3];
+    const auto scores = *outputs[0].element_count();
+    const auto states = *outputs[1].element_count();
     return v[2] % q[2] == 0 && depth == v[3] &&
            (depth == 16 || depth == 32 || depth == 64 || depth == 128) &&
            outputs[0].data_type() == DataType::kFloat32 &&
            outputs[1].data_type() == DataType::kFloat32 &&
-           *outputs[0].element_count() + *outputs[1].element_count() <=
-               std::size_t{INT32_MAX};
+           scores <= std::size_t{INT32_MAX} &&
+           states <= std::size_t{INT32_MAX} - scores;
   }
   if (const auto *topk = operation.get_if<TopK>())
     return inputs.size() == 1 && outputs.size() == 2 && inputs[0].rank() > 0 &&
@@ -903,6 +918,8 @@ Result<Region> Region::create(NativeDevice device,
                   : node.operation.get_if<LayerNorm>()     ? 5
                   : node.operation.get_if<GatedDeltaNet>() ? 5
                                                            : 3;
+      if (gdn_snapshot_count(node.operation) > 1)
+        capacity += 3; // Snapshot matrix, immutable row indices and GET_ROWS.
       // Layout translations use at most four nodes per public dimension and
       // two per input port, in addition to the established native recipe.
       auto rank = recipe.values[node.outputs[0]].rank();
@@ -1244,19 +1261,65 @@ Result<Region> Region::create(NativeDevice device,
           initial = arguments[7];
         }
         auto *fused = ggml_gated_delta_net(
-            context, left, arguments[1], value, gate, beta, initial, 1);
+            context, left, arguments[1], value, gate, beta, initial,
+            gdn_snapshot_count(node.operation));
         // Upstream owns the fused recurrence and concatenates scores/state.
         // Published ports have independent storage; initial state stays
         // read-only.
         auto *scores = ggml_view_4d(context, fused, value->ne[0], value->ne[1],
                                     value->ne[2], value->ne[3], value->nb[1],
                                     value->nb[2], value->nb[3], 0);
-        auto *next =
-            ggml_view_4d(context, fused, initial->ne[0], initial->ne[1],
-                         initial->ne[2], initial->ne[3], initial->nb[1],
-                         initial->nb[2], initial->nb[3], ggml_nbytes(value));
         output = ggml_cont(context, scores);
-        tensors[node.outputs[1]] = ggml_cont(context, next);
+        const auto snapshots = gdn_snapshot_count(node.operation);
+        if (snapshots == 1) {
+          auto *next =
+              ggml_view_4d(context, fused, initial->ne[0], initial->ne[1],
+                           initial->ne[2], initial->ne[3], initial->nb[1],
+                           initial->nb[2], initial->nb[3], ggml_nbytes(value));
+          tensors[node.outputs[1]] = ggml_cont(context, next);
+        } else {
+          const auto batch = initial->ne[3];
+          const auto row = ggml_nelements(initial) / batch;
+          const auto rows = batch * snapshots;
+          auto *history = ggml_view_2d(
+              context, fused, row, rows, std::size_t(row) * sizeof(float),
+              ggml_nbytes(value));
+          auto *indices = ggml_new_tensor_1d(context, GGML_TYPE_I32, rows);
+          std::vector<std::int32_t> order(static_cast<std::size_t>(rows));
+          for (std::int64_t b = 0; b < batch; ++b)
+            for (std::uint32_t k = 0; k < snapshots; ++k)
+              order[std::size_t(b * snapshots + k)] =
+                  static_cast<std::int32_t>((snapshots - 1 - k) * batch + b);
+          // Native slots are [K,B,H,Dv,Dk], newest first. Gather complete
+          // per-batch states into public [B,K,H,Dv,Dk], oldest first. Keep
+          // these shape-only indices outside gallocr's reusable workspace.
+          state.imports->constants.push_back(nullptr);
+          HYLE_ASSIGN_OR_RETURN(
+              state.imports->constants.back(),
+              state.device.allocate_buffer(ggml_nbytes(indices) +
+                  state.device.native().storage_buffer_alignment));
+          auto *buffer = state.imports->constants.back();
+          const auto buffer_bytes = ggml_backend_buffer_get_size(buffer);
+          if (buffer_bytes > SIZE_MAX - state.imports->constant_bytes)
+            return std::unexpected(Status::OutOfRange(
+                "ggml Vulkan snapshot constant storage overflows"));
+          state.imports->constant_bytes += buffer_bytes;
+          if (ggml_backend_tensor_alloc(buffer, indices,
+                                        ggml_backend_buffer_get_base(buffer)) !=
+              GGML_STATUS_SUCCESS)
+            return std::unexpected(Status::ResourceExhausted(
+                "ggml Vulkan snapshot index allocation"));
+          try {
+            ggml_backend_tensor_set(indices, order.data(), 0,
+                                    order.size() * sizeof(order[0]));
+          } catch (...) {
+            return std::unexpected(Status::Internal(
+                "ggml Vulkan snapshot index upload failed"));
+          }
+          auto *next = ggml_get_rows(context, history, indices);
+          tensors[node.outputs[1]] =
+              restore_shape(context, next, recipe.values[node.outputs[1]]);
+        }
       } else if (const auto *topk = node.operation.get_if<TopK>()) {
         const auto width = left->ne[0];
         const auto rows = ggml_nelements(left) / width;
@@ -1577,6 +1640,9 @@ Result<Region> Region::create(NativeDevice device,
     HYLE_ASSIGN_OR_RETURN(state.graph,
                           NativeGraph::allocate(state.device, std::move(arena),
                                                 graph, state.imports));
+    if (state.imports->constant_bytes > SIZE_MAX - state.graph.storage_bytes())
+      return std::unexpected(
+          Status::OutOfRange("ggml Vulkan region storage overflows"));
     HYLE_ASSIGN_OR_RETURN(state.work, state.device.create_work());
     return result;
   } catch (const std::bad_alloc &) {
@@ -1706,6 +1772,7 @@ VkFence Region::fence() const noexcept {
   return state_ ? state_->work.fence() : VK_NULL_HANDLE;
 }
 std::size_t Region::storage_bytes() const noexcept {
-  return state_ ? state_->graph.storage_bytes() : 0;
+  return state_ ? state_->graph.storage_bytes() + state_->imports->constant_bytes
+                : 0;
 }
 } // namespace hyle::compute::ggml_vulkan::detail

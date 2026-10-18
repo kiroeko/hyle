@@ -183,6 +183,11 @@ struct VulkanRoute {
 };
 #endif
 
+#include "mtp_prefix_consumer.h"
+#if defined(HYLE_COMPUTE_CPU) && defined(HYLE_COMPUTE_CUDA)
+#include "mtp_hybrid_consumer.h"
+#endif
+
 template<class Route>Status exercise(Route &route,const char *name) {
   constexpr std::size_t depth=128,channels=128; // locked ggml CUDA SSM_CONV requires channels % 128 == 0
   HYLE_ASSIGN_OR_RETURN(auto state_desc,dense({1,1,depth,depth}));
@@ -282,18 +287,34 @@ template<class Route>Status exercise(Route &route,const char *name) {
 Status run() {
 #if defined(HYLE_COMPUTE_CPU)
   {HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(m::system_resource(),2u*1024u*1024u));
-   CommonRoute route{context,queue,m::system_resource(),pool,[&](const g::Graph &graph){return g::compile(graph,context);}};HYLE_RETURN_IF_ERROR(exercise(route,"CPU"));}
+   CommonRoute route{context,queue,m::system_resource(),pool,[&](const g::Graph &graph){return g::compile(graph,context);}};HYLE_RETURN_IF_ERROR(exercise(route,"CPU"));HYLE_RETURN_IF_ERROR(exercise_mtp_prefixes(route,"CPU"));}
 #endif
 #if defined(HYLE_COMPUTE_CUDA)
   {HYLE_ASSIGN_OR_RETURN(auto context,g::cuda::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());HYLE_ASSIGN_OR_RETURN(auto memory,c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),2u*1024u*1024u));
-   CommonRoute route{context,queue,memory.ref(),pool,[&](const g::Graph &graph){return g::cuda::compile(graph,context,memory.ref());}};HYLE_RETURN_IF_ERROR(exercise(route,"CUDA"));}
+   CommonRoute route{context,queue,memory.ref(),pool,[&](const g::Graph &graph){return g::cuda::compile(graph,context,memory.ref());}};HYLE_RETURN_IF_ERROR(exercise(route,"CUDA"));HYLE_RETURN_IF_ERROR(exercise_mtp_prefixes(route,"CUDA"));}
 #endif
 #if defined(HYLE_COMPUTE_APPLE)
-  {HYLE_ASSIGN_OR_RETURN(auto context,c::apple::Context::create());HYLE_ASSIGN_OR_RETURN(auto memory,c::apple::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),2u*1024u*1024u));AppleRoute route{context,memory,pool};HYLE_RETURN_IF_ERROR(exercise(route,"Apple"));}
+  {HYLE_ASSIGN_OR_RETURN(auto context,c::apple::Context::create());HYLE_ASSIGN_OR_RETURN(auto memory,c::apple::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),2u*1024u*1024u));AppleRoute route{context,memory,pool};HYLE_RETURN_IF_ERROR(exercise(route,"Apple"));HYLE_RETURN_IF_ERROR(exercise_mtp_prefixes(route,"Apple"));}
 #endif
 #if defined(HYLE_COMPUTE_VULKAN)
   {HYLE_ASSIGN_OR_RETURN(auto context,c::vulkan::Context::create());HYLE_ASSIGN_OR_RETURN(auto memory,c::vulkan::MemoryResource::create(context,c::vulkan::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto staging,c::vulkan::MemoryResource::create(context,c::vulkan::MemoryKind::kStaging));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(staging.ref(),64u*1024u));
-   VulkanRoute route{context,memory,staging,pool};HYLE_RETURN_IF_ERROR(exercise(route,"Vulkan"));}
+   VulkanRoute route{context,memory,staging,pool};HYLE_RETURN_IF_ERROR(exercise(route,"Vulkan"));HYLE_RETURN_IF_ERROR(exercise_mtp_prefixes(route,"Vulkan"));}
+#endif
+#if defined(HYLE_COMPUTE_CPU) && defined(HYLE_COMPUTE_CUDA)
+  {
+    HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
+    HYLE_ASSIGN_OR_RETURN(auto gpu,g::cuda::create_context());HYLE_ASSIGN_OR_RETURN(auto gpu_queue,gpu.create_queue());
+    HYLE_ASSIGN_OR_RETURN(auto pinned,c::cuda::MemoryResource::create(gpu,c::cuda::MemoryKind::kPinnedHost));
+    HYLE_ASSIGN_OR_RETURN(auto device,c::cuda::MemoryResource::create(gpu,c::cuda::MemoryKind::kDevice));
+    HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(pinned.ref(),2u*1024u*1024u));
+    HYLE_ASSIGN_OR_RETURN(auto device_pool,c::LeasePool::create(device.ref(),2u*1024u*1024u));
+    const std::array storage{g::StorageDomain{.resource=pinned.ref()}};
+    const std::array targets{g::ExecutionTarget{.context=&cpu,.default_storage=g::StorageDomainId{0}}};
+    CommonRoute host{cpu,cpu_queue,pinned.ref(),host_pool,[&](const g::Graph &graph){return g::compile(graph,{.storage_domains=storage,.targets=targets});}};
+    CommonRoute accelerator{gpu,gpu_queue,device.ref(),device_pool,[&](const g::Graph &graph){return g::cuda::compile(graph,gpu,device.ref());}};
+    HYLE_RETURN_IF_ERROR(exercise_mtp_hybrid(host,accelerator,"CPU to CUDA"));
+    HYLE_RETURN_IF_ERROR(exercise_mtp_hybrid(accelerator,host,"CUDA to CPU"));
+  }
 #endif
   return Status::Ok();
 }

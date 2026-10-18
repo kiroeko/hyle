@@ -425,15 +425,22 @@ struct ScaledDotProductAttention final {
 // Pure recurrent region, with explicit initial and final state. Inputs in order:
 // Q/K [B,T,Hk,Dk], V [B,T,Hv,Dv], log-decay/beta [B,T,Hv,1], and FP32
 // state [B,Hv,Dv,Dk]. Q/K/V share F16, BF16 or F32; gates/beta are FP32.
-// Hv is a positive multiple of Hk; value head h uses key head h/(Hv/Hk).
+// Hv is a positive multiple of Hk; value head h uses key head h % Hk.
+// Models with contiguous head groups must explicitly expand Q/K or reorder
+// their value heads, gates and state into this cyclic order.
 // For each token and head, with rows of S indexed by value channel:
 //   S *= exp(log_decay); d = beta * (v - S*k); S += outer(d,k);
 //   y = S*q / sqrt(Dk).
 // Accumulation/state stay FP32; y has V's type and shape. Outputs are y and
-// final state, both materialized. Inputs are unchanged. Q/K normalization,
+// state, both materialized. With snapshot_count == 1, state is the final
+// [B,Hv,Dv,Dk] state. With 1 < K = snapshot_count <= T, it is the last K
+// post-token states in chronological order, [B,K,Hv,Dv,Dk]: S(T-K+1)..S(T).
+// S(0) remains the caller's input state. Inputs are unchanged. Q/K normalization,
 // gate activation and external state writes are separate caller operations.
 // Backend support is qualified separately from this logical schema.
-struct GatedDeltaNet final {};
+struct GatedDeltaNet final {
+  std::uint32_t snapshot_count = 1;
+};
 
 struct OperationId final {
   std::uint64_t namespace_id = 0;
