@@ -1,0 +1,37 @@
+{
+  "references": [
+    {
+      "name": "bf16-additive-phase0.f64.bin",
+      "elements": 524800,
+      "finite_bit_changes": 0,
+      "category_changes": 0,
+      "nan_payload_changes": 0,
+      "first_mismatch": null
+    },
+    {
+      "name": "bf16-additive-phase1.f64.bin",
+      "elements": 524800,
+      "finite_bit_changes": 0,
+      "category_changes": 0,
+      "nan_payload_changes": 0,
+      "first_mismatch": null
+    },
+    {
+      "name": "bool-phase0.f64.bin",
+      "elements": 524800,
+      "finite_bit_changes": 0,
+      "category_changes": 0,
+      "nan_payload_changes": 0,
+      "first_mismatch": null
+    },
+    {
+      "name": "bool-phase1.f64.bin",
+      "elements": 524800,
+      "finite_bit_changes": 0,
+      "category_changes": 0,
+      "nan_payload_changes": 0,
+      "first_mismatch": null
+    }
+  ],
+  "consistent": true
+}

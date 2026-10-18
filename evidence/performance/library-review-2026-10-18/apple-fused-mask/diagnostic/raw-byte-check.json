@@ -1,0 +1,53 @@
+{
+  "scope": "Direct fixed replay, not all shapes or FP64 accuracy pass",
+  "checks": [
+    {
+      "output": "bf16-additive-dense-rebind0.f32bits.bin",
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "byte_identical": true
+    },
+    {
+      "output": "bf16-additive-spec-dense0.f32bits.bin",
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "byte_identical": true
+    },
+    {
+      "output": "bf16-additive-view0.f32bits.bin",
+      "elements": 524800,
+      "sha256": "d0f828628f1c1145c972d37f50e802130ba53376b3274774a7be47580daed6c4",
+      "byte_identical": true
+    },
+    {
+      "output": "bf16-additive-view1.f32bits.bin",
+      "elements": 524800,
+      "sha256": "61a9a88c615f8e91e4d91e518688f52ae75b432d0036735f13cb7bd0f88218e6",
+      "byte_identical": true
+    },
+    {
+      "output": "bool-dense-rebind0.f32bits.bin",
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "byte_identical": true
+    },
+    {
+      "output": "bool-spec-dense0.f32bits.bin",
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "byte_identical": true
+    },
+    {
+      "output": "bool-view0.f32bits.bin",
+      "elements": 524800,
+      "sha256": "495aad2fdef47174c9863afc0691dfcd9bed8bd9fcd5561318b8c295a6a3e2cc",
+      "byte_identical": true
+    },
+    {
+      "output": "bool-view1.f32bits.bin",
+      "elements": 524800,
+      "sha256": "2dbfe12418236372c82923ffe037dc3374300bcb182e7a9162c81b6d51149a37",
+      "byte_identical": true
+    }
+  ]
+}

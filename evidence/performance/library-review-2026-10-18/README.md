@@ -1333,3 +1333,11 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 新增固定Bool/BHSD与BF16 additive/BSHD、Q1025/KV8193/D64、8:2 GQA、stride0→1→0回归，保留正常行独立FP64及四条全遮蔽行的整Q native语义对照。首轮旧实现在Bool正常行h0/t1/d0实际0.49878108501434326、参考F32 0.49877405166625977，误差7.03335e−6超过原4.99264e−6预算。`--gtest_throw_on_failure`使进程abort；仅前两项旧Attention控制通过，其余未到。没有修改输入或预算，不能当作候选退化或通过。
 
 候选尚未运行，空间consumer尚未编译、时延未测，改动暂留工作树；后续先对原数据作完整旧新差异诊断。清单仍是25项已修、1项部分修复、1项未解决。[失败摘要](apple-fused-mask/baseline-failure-summary.json)/[原源码、编链命令与完整日志](apple-fused-mask/baseline-failure-source-results.zip)。
+
+### 同一原数据的完整差异诊断
+
+后续复用已链接exe，旧新各一次既有6项math/Sink/Graph控制全部通过；两个新增融合项仍不称FP64通过。仅fresh一个独立诊断TU，以原helper、原输入、原预算重演Direct两case及两种prepare，分别导出view0、spec-dense0、dense重绑、phase1 view共8输出。旧新各一个进程，不因数值超标提前退出，没有softmax/PV细分或新性能点。
+
+四份参考的有限FP64值逐位相同、NaN/Inf类别相同；以同一旧侧float-rounded参考检查4198400元素，旧新各847680项超过原预算，最高abs约1.79708e−5、原预算倍率约3.5942，均为正常行。old-pass→new-fail、new-old超预算、类别变化、误差增长和rawbits差异全部为0；四条corner没有新增失败，旧输出/dense输出/spec结果在重绑及Context销毁后的bits均稳定。root另直接从归档逐对核8个原始F32文件，全部bytes相同。
+
+这证明固定Direct重演保留原生结果与误差，不使FP64原golden变为通过，也未证明全部shape或具体原生误差成因。后续接口回归将明确采用整Q native等价合同，原FP64失败源/日志/数据独立保留；此时空间consumer及延迟仍未运行。[摘要](apple-fused-mask/diagnostic/summary.json)/[root原始字节核对](apple-fused-mask/diagnostic/raw-byte-check.json)/[完整源码、参考、输出和对比](apple-fused-mask/diagnostic/source-results.zip)。

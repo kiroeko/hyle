@@ -1,0 +1,385 @@
+{
+  "status": "diagnostic_complete_native_bit_equivalent_not_FP64_pass",
+  "execution": {
+    "fresh_TUs": 1,
+    "old_processes": 1,
+    "new_processes": 1,
+    "outputs_per_arm": 8,
+    "elements_per_arm": 4198400,
+    "all_lifetimes_true": true,
+    "source_sha256": "fd8a4a8134cf6ba0f979177b9792358af17be62a38c9742292c05fdea2346f86",
+    "no_product_fixture_budget_changes": true,
+    "no_consumer_space_latency": true
+  },
+  "references": {
+    "references": [
+      {
+        "name": "bf16-additive-phase0.f64.bin",
+        "elements": 524800,
+        "finite_bit_changes": 0,
+        "category_changes": 0,
+        "nan_payload_changes": 0,
+        "first_mismatch": null
+      },
+      {
+        "name": "bf16-additive-phase1.f64.bin",
+        "elements": 524800,
+        "finite_bit_changes": 0,
+        "category_changes": 0,
+        "nan_payload_changes": 0,
+        "first_mismatch": null
+      },
+      {
+        "name": "bool-phase0.f64.bin",
+        "elements": 524800,
+        "finite_bit_changes": 0,
+        "category_changes": 0,
+        "nan_payload_changes": 0,
+        "first_mismatch": null
+      },
+      {
+        "name": "bool-phase1.f64.bin",
+        "elements": 524800,
+        "finite_bit_changes": 0,
+        "category_changes": 0,
+        "nan_payload_changes": 0,
+        "first_mismatch": null
+      }
+    ],
+    "consistent": true
+  },
+  "totals": {
+    "old_FP64_budget_failures": 847680,
+    "new_same_old_reference_budget_failures": 847680,
+    "oldpass_newfail": 0,
+    "new_old_budget_failures": 0,
+    "category_changes": 0,
+    "rawbits_changes": 0,
+    "error_growth": 0,
+    "corner_budget_failures": 0
+  },
+  "per_output": [
+    {
+      "name": "bool-view0",
+      "layout": "BHSD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 106924,
+        "new_over": 106924,
+        "own_new_over": 106924,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 106924,
+        "normal_new_over": 106924,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7911195755004883e-05,
+      "new_max_error": 1.7911195755004883e-05,
+      "old_max_ratio": 3.5830157992396066,
+      "new_max_ratio": 3.5830157992396066,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    },
+    {
+      "name": "bool-spec-dense0",
+      "layout": "BHSD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 106924,
+        "new_over": 106924,
+        "own_new_over": 106924,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 106924,
+        "normal_new_over": 106924,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7911195755004883e-05,
+      "new_max_error": 1.7911195755004883e-05,
+      "old_max_ratio": 3.5830157992396066,
+      "new_max_ratio": 3.5830157992396066,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    },
+    {
+      "name": "bool-dense-rebind0",
+      "layout": "BHSD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 106924,
+        "new_over": 106924,
+        "own_new_over": 106924,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 106924,
+        "normal_new_over": 106924,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7911195755004883e-05,
+      "new_max_error": 1.7911195755004883e-05,
+      "old_max_ratio": 3.5830157992396066,
+      "new_max_ratio": 3.5830157992396066,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    },
+    {
+      "name": "bool-view1",
+      "layout": "BHSD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 103068,
+        "new_over": 103068,
+        "own_new_over": 103068,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 103068,
+        "normal_new_over": 103068,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7970800399780273e-05,
+      "new_max_error": 1.7970800399780273e-05,
+      "old_max_ratio": 3.5942157374172554,
+      "new_max_ratio": 3.5942157374172554,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    },
+    {
+      "name": "bf16-additive-view0",
+      "layout": "BSHD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 106924,
+        "new_over": 106924,
+        "own_new_over": 106924,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 106924,
+        "normal_new_over": 106924,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7911195755004883e-05,
+      "new_max_error": 1.7911195755004883e-05,
+      "old_max_ratio": 3.5830157992396066,
+      "new_max_ratio": 3.5830157992396066,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    },
+    {
+      "name": "bf16-additive-spec-dense0",
+      "layout": "BSHD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 106924,
+        "new_over": 106924,
+        "own_new_over": 106924,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 106924,
+        "normal_new_over": 106924,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7911195755004883e-05,
+      "new_max_error": 1.7911195755004883e-05,
+      "old_max_ratio": 3.5830157992396066,
+      "new_max_ratio": 3.5830157992396066,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    },
+    {
+      "name": "bf16-additive-dense-rebind0",
+      "layout": "BSHD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 106924,
+        "new_over": 106924,
+        "own_new_over": 106924,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 106924,
+        "normal_new_over": 106924,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7911195755004883e-05,
+      "new_max_error": 1.7911195755004883e-05,
+      "old_max_ratio": 3.5830157992396066,
+      "new_max_ratio": 3.5830157992396066,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    },
+    {
+      "name": "bf16-additive-view1",
+      "layout": "BSHD",
+      "checked_elements": 524800,
+      "counts": {
+        "old_over": 103068,
+        "new_over": 103068,
+        "own_new_over": 103068,
+        "oldpass_newfail": 0,
+        "new_old_over": 0,
+        "category_changes": 0,
+        "bits_different": 0,
+        "error_growth": 0,
+        "normal_old_over": 103068,
+        "normal_new_over": 103068,
+        "corner_old_over": 0,
+        "corner_new_over": 0
+      },
+      "old_max_error": 1.7970800399780273e-05,
+      "new_max_error": 1.7970800399780273e-05,
+      "old_max_ratio": 3.5942157374172554,
+      "new_max_ratio": 3.5942157374172554,
+      "max_error_growth": 0.0,
+      "max_new_old_abs": 0.0
+    }
+  ],
+  "first_failure_reproduced": {
+    "index": 64,
+    "actual": 0.49878108501434326,
+    "FP64_reference": 0.4987740559586193,
+    "float_rounded_reference": 0.49877405166625977,
+    "abs_error": 7.033348083496094e-06,
+    "original_budget": 4.992644309997559e-06
+  },
+  "controls": [
+    {
+      "arm": "baseline",
+      "tests": 6,
+      "failures": 0,
+      "time": "8.414s",
+      "binary": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/baseline-tests",
+        "bytes": 10475312,
+        "sha256": "eb6ef905dab31b1aa89391621506124aab56f88248fe01c181d3499142e0d95a"
+      }
+    },
+    {
+      "arm": "candidate",
+      "tests": 6,
+      "failures": 0,
+      "time": "8.03s",
+      "binary": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/candidate-tests",
+        "bytes": 10474112,
+        "sha256": "20904edf6e5813574bedf726001daafed44d57ae20ea6c0edc4738ca802e0ddf"
+      }
+    }
+  ],
+  "scope": [
+    "All eight native/typed/lifecycle observations compare bit-for-bit on these two fixed inputs/phases, including allfalse/-Inf corner rows; not a statement about all inputs.",
+    "Existing original six controls pass once each old/new; failed FP64 fixture is still failed under its unchanged originalbudget.",
+    "847680 total failures count repeated spec/dense/view observations across eight outputs, not distinct shape tests.",
+    "Every numeric raw value/reference and full per-element flags are preserved. Exit0 only means structural replay/dump complete; no golden numeric PASS.",
+    "No softmax/PV isolation, new inputs, space, performance or matrix expansion."
+  ],
+  "raw_data": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/raw-data.tar.gz",
+    "bytes": 1376349,
+    "sha256": "b4b00583d53fd412ad7e43661436f67e723bf8f8182f9d75ed0b54d889406253",
+    "members": 77,
+    "raw_data_files": 32,
+    "raw_data_bytes": 71372800,
+    "first_failure_reproduced": {
+      "index": 64,
+      "actual": 0.49878108501434326,
+      "FP64_reference": 0.4987740559586193,
+      "float_rounded_reference": 0.49877405166625977,
+      "abs_error": 7.033348083496094e-06,
+      "original_budget": 4.992644309997559e-06
+    },
+    "excluded": "all native/SDK caches, objects/executables, symlinkmetallib"
+  },
+  "fresh_diagnostic_artifacts": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/diagnostic.o",
+      "bytes": 94672,
+      "sha256": "4416558f54c65d1333939de74d703b78c6e2b499ba154fb5a7e804a5119987b8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/baseline-diagnostic",
+      "bytes": 9612288,
+      "sha256": "1c0feadd6bfd3fe78133e8d110eadd270c41d4b19af0472b5d244ce61d84989b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/candidate-diagnostic",
+      "bytes": 9611320,
+      "sha256": "2ceaf1453a34d9dadfeb29a950c1730f919ceebc62d09e3226945f3865d72703"
+    }
+  ],
+  "all_generated_artifacts_preserved": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/context.o",
+      "bytes": 191760,
+      "sha256": "5c8b319aad2835f3c5bb411232fd8e91ba526cee6a6a2532cfbd15c424b2535c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/operations.o",
+      "bytes": 73832,
+      "sha256": "4dba491e511014111249cb66bea487dab8076b2d878bda76045dd78f6a9eaf0d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/attention-tests.o",
+      "bytes": 304352,
+      "sha256": "1425c7c0ecc821a18a71a48e5e5696bda1ca10889fc0ff69524b16e6a6d7b570"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/graph-tests.o",
+      "bytes": 275992,
+      "sha256": "db98a05c885361f029d378c6187c053b9a0cdf3e77eb24802b1df00af604372c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/baseline-tests",
+      "bytes": 10475312,
+      "sha256": "eb6ef905dab31b1aa89391621506124aab56f88248fe01c181d3499142e0d95a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/candidate-tests",
+      "bytes": 10474112,
+      "sha256": "20904edf6e5813574bedf726001daafed44d57ae20ea6c0edc4738ca802e0ddf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/diagnostic.o",
+      "bytes": 94672,
+      "sha256": "4416558f54c65d1333939de74d703b78c6e2b499ba154fb5a7e804a5119987b8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/baseline-diagnostic",
+      "bytes": 9612288,
+      "sha256": "1c0feadd6bfd3fe78133e8d110eadd270c41d4b19af0472b5d244ce61d84989b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-fused-mask/diagnostic/candidate-diagnostic",
+      "bytes": 9611320,
+      "sha256": "2ceaf1453a34d9dadfeb29a950c1730f919ceebc62d09e3226945f3865d72703"
+    }
+  ],
+  "all_generated_bytes": 41113640,
+  "cleanup_executed": false
+}

@@ -1,0 +1,9 @@
+{
+  "path": ".scratch/perf-review-2026-10-18/apple-fused-mask/diagnostic/source-results.zip",
+  "bytes": 1453336,
+  "sha256": "34fcb56fb191731878bd5512e43d35b64a3a38964d35329ecacbae11a8483b51",
+  "members": 98,
+  "all_output_ref_flag_files": 32,
+  "all_output_ref_flag_bytes": 71372800,
+  "original_failure_archive_unchanged_sha256": "5866ce1f85c8fa987ebd7cdcaa726af12043cb0080da2be7eda7391e250c848f"
+}
