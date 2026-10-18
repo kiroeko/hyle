@@ -1,7 +1,6 @@
-# HTTP/2 P1 compares the public HYLE route with the pinned nghttp2 session
-# mechanism under the same protocol, transport, worker, stream and byte
-# contract.  This target is intentionally Linux-only: closure-perf-v1 is bound
-# to W1-WSL, while Windows/macOS remain correctness and delivery gates.
+# Linux AF_UNIX benchmark: the default keeps a manual-loop nghttp2 reference;
+# --paired uses a shared Scheduler and two endpoint Tasks on both sides.
+# Both modes validate the complete protocol payload and resource lifetime.
 if(HYLE_IO_HTTP2 AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_executable(hyle_io_http2_p1_bench http2_p1_bench.cc)
   target_link_libraries(hyle_io_http2_p1_bench PRIVATE

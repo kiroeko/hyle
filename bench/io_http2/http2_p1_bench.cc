@@ -7,10 +7,11 @@
 // byte, update both flow-control windows, and retire all connection state. The
 // HYLE route uses only public HYLE APIs. The peer uses the pinned public
 // nghttp2 session API directly; it does not replace HPACK or frame machinery.
-// Execution differs: HYLE uses two scheduled endpoint Tasks; the direct peer
-// advances both endpoints in one manual loop. The elapsed ratio includes that
-// strategy difference and generic public-API responsibilities. It does not
-// isolate HTTP/2 wrapper overhead or scheduler cost.
+// By default the direct peer advances both endpoints in one manual loop;
+// --paired gives both routes two endpoint Tasks on the same Scheduler and
+// aligns allocator and DATA-copy choices. --paired-self runs HYLE on both
+// arms to observe comparison noise. Neither mode isolates wrapper overhead:
+// HYLE retains generic public-API responsibilities absent from the fixed peer.
 
 #include <nanobench.h>
 #include <nghttp2/nghttp2.h>
@@ -18,6 +19,7 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
@@ -26,6 +28,7 @@
 #include <cstring>
 #include <condition_variable>
 #include <fstream>
+#include <limits>
 #include <mutex>
 #include <span>
 #include <string>
@@ -36,6 +39,8 @@
 
 #include <fcntl.h>
 #include <poll.h>
+#include <sched.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -43,6 +48,7 @@
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/std_allocator.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
@@ -67,6 +73,10 @@ constexpr unsigned kOwner = 0;
 constexpr std::size_t kWireBytes = 64 * 1024;
 constexpr std::size_t kBodyReadBytes = 16 * 1024;
 constexpr std::size_t kStreamWindowBytes = 64 * 1024;
+constexpr std::size_t kNativeAllocationAlignment = alignof(std::max_align_t);
+constexpr std::size_t kNativeAllocationPrefix =
+    (sizeof(std::size_t) + kNativeAllocationAlignment - 1) &
+    ~(kNativeAllocationAlignment - 1);
 
 void close_descriptor(int descriptor) noexcept {
   if (descriptor >= 0)
@@ -120,10 +130,14 @@ SocketPair make_socket_pair() noexcept {
       close_descriptor(descriptors[1]);
       return {};
     }
-    (void)::setsockopt(descriptor, SOL_SOCKET, SO_SNDBUF,
-                       &kSocketBufferBytes, sizeof(kSocketBufferBytes));
-    (void)::setsockopt(descriptor, SOL_SOCKET, SO_RCVBUF,
-                       &kSocketBufferBytes, sizeof(kSocketBufferBytes));
+    if (::setsockopt(descriptor, SOL_SOCKET, SO_SNDBUF,
+                     &kSocketBufferBytes, sizeof(kSocketBufferBytes)) != 0 ||
+        ::setsockopt(descriptor, SOL_SOCKET, SO_RCVBUF,
+                     &kSocketBufferBytes, sizeof(kSocketBufferBytes)) != 0) {
+      close_descriptor(descriptors[0]);
+      close_descriptor(descriptors[1]);
+      return {};
+    }
   }
   return {descriptors[0], descriptors[1]};
 }
@@ -274,6 +288,9 @@ public:
   }
   ~HyleHarness() { scheduler_.shutdown(); }
 
+  Scheduler &scheduler() noexcept { return scheduler_; }
+  IoContext &io() noexcept { return io_; }
+
   int run(const Workload &workload) {
     SocketPair pair = make_socket_pair();
     if (!pair.valid())
@@ -322,8 +339,8 @@ struct RawStream {
   std::size_t sent = 0;
   std::size_t received = 0;
   std::size_t inbound_start = 0;
-  std::vector<std::uint8_t> inbound;
-  std::vector<RawHeader> headers;
+  std::vector<std::uint8_t, hyle::mem::SystemStdAllocator<std::uint8_t>> inbound;
+  std::vector<RawHeader, hyle::mem::SystemStdAllocator<RawHeader>> headers;
   bool input_end_received = false;
   bool input_done = false;
   bool queued_for_read = false;
@@ -331,17 +348,79 @@ struct RawStream {
   bool output_done = false;
 };
 
+struct RawWire;
+
 struct RawEndpoint {
   const Workload *workload = nullptr;
+  AllocatorRef allocator = system_allocator();
+  nghttp2_mem ngmem{};
   nghttp2_session *session = nullptr;
-  std::vector<RawStream> streams;
-  std::vector<RawStream *> readable;
+  std::vector<RawStream, hyle::mem::SystemStdAllocator<RawStream>> streams;
+  std::vector<RawStream *, hyle::mem::SystemStdAllocator<RawStream *>> readable;
   std::size_t readable_head = 0;
   bool server = false;
   bool failed = false;
   int completed = 0;
   std::size_t next_response_pair = 0;
+  RawWire *encoding_wire = nullptr;
 };
+
+// Match the public session's SystemAllocator bridge, including size prefixes
+// and calloc/realloc semantics. The fixed-trace containers still differ from
+// the general HTTP/2 API's state; RawHeader strings keep their std::string SSO.
+void *raw_h2_malloc(std::size_t size, void *user) noexcept {
+  auto *endpoint = static_cast<RawEndpoint *>(user);
+  if (size > (std::numeric_limits<std::size_t>::max)() -
+                 kNativeAllocationPrefix)
+    return nullptr;
+  const std::size_t total = size + kNativeAllocationPrefix;
+  void *base = endpoint->allocator.allocate(total, kNativeAllocationAlignment);
+  if (base == nullptr)
+    return nullptr;
+  *static_cast<std::size_t *>(base) = total;
+  return static_cast<std::uint8_t *>(base) + kNativeAllocationPrefix;
+}
+
+void raw_h2_free(void *pointer, void *user) noexcept {
+  if (pointer == nullptr)
+    return;
+  auto *endpoint = static_cast<RawEndpoint *>(user);
+  void *base = static_cast<std::uint8_t *>(pointer) - kNativeAllocationPrefix;
+  endpoint->allocator.deallocate(base, *static_cast<std::size_t *>(base),
+                                  kNativeAllocationAlignment);
+}
+
+void *raw_h2_calloc(std::size_t count, std::size_t size, void *user) noexcept {
+  if (size != 0 && count > (std::numeric_limits<std::size_t>::max)() / size)
+    return nullptr;
+  const std::size_t bytes = count * size;
+  void *result = raw_h2_malloc(bytes, user);
+  if (result != nullptr)
+    std::memset(result, 0, bytes);
+  return result;
+}
+
+void *raw_h2_realloc(void *pointer, std::size_t size, void *user) noexcept {
+  if (pointer == nullptr)
+    return raw_h2_malloc(size, user);
+  if (size == 0) {
+    raw_h2_free(pointer, user);
+    return nullptr;
+  }
+  if (size > (std::numeric_limits<std::size_t>::max)() -
+                 kNativeAllocationPrefix)
+    return nullptr;
+  auto *endpoint = static_cast<RawEndpoint *>(user);
+  void *base = static_cast<std::uint8_t *>(pointer) - kNativeAllocationPrefix;
+  const std::size_t old_total = *static_cast<std::size_t *>(base);
+  const std::size_t new_total = size + kNativeAllocationPrefix;
+  void *replacement = endpoint->allocator.reallocate(
+      base, old_total, new_total, kNativeAllocationAlignment);
+  if (replacement == nullptr)
+    return nullptr;
+  *static_cast<std::size_t *>(replacement) = new_total;
+  return static_cast<std::uint8_t *>(replacement) + kNativeAllocationPrefix;
+}
 
 bool raw_queue_readable(RawEndpoint &endpoint, RawStream &stream) noexcept {
   if (stream.queued_for_read)
@@ -362,21 +441,25 @@ nghttp2_nv raw_nv(const char *name, const char *value) noexcept {
           std::strlen(name), std::strlen(value), NGHTTP2_NV_FLAG_NONE};
 }
 
-nghttp2_ssize raw_provider(nghttp2_session *, std::int32_t,
-                           std::uint8_t *buffer, std::size_t length,
+nghttp2_ssize raw_provider(nghttp2_session *, std::int32_t stream_id,
+                           std::uint8_t *, std::size_t length,
                            std::uint32_t *flags,
                            nghttp2_data_source *source, void *user_data) {
   auto *endpoint = static_cast<RawEndpoint *>(user_data);
-  auto *stream = static_cast<RawStream *>(source->ptr);
-  if (endpoint == nullptr || stream == nullptr)
+  auto *stream = source == nullptr ? nullptr
+                                   : static_cast<RawStream *>(source->ptr);
+  if (endpoint == nullptr || stream == nullptr || stream->id != stream_id)
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   const std::string &body = endpoint->server ? endpoint->workload->response_body
                                              : endpoint->workload->request_body;
+  if (stream->sent > body.size()) {
+    endpoint->failed = true;
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
+  }
   const std::size_t remaining = body.size() - stream->sent;
   const std::size_t count = (std::min)(remaining, length);
-  if (count != 0)
-    std::memcpy(buffer, body.data() + stream->sent, count);
   stream->sent += count;
+  *flags |= NGHTTP2_DATA_FLAG_NO_COPY;
   if (stream->sent == body.size()) {
     *flags |= NGHTTP2_DATA_FLAG_EOF;
     stream->output_done = true;
@@ -506,15 +589,13 @@ int raw_data_chunk(nghttp2_session *session, std::uint8_t,
     endpoint.failed = true;
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   }
-  const std::size_t old_size = stream->inbound.size();
   try {
-    stream->inbound.resize(old_size + length);
+    if (length != 0)
+      stream->inbound.insert(stream->inbound.end(), data, data + length);
   } catch (...) {
     endpoint.failed = true;
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   }
-  if (length != 0)
-    std::memcpy(stream->inbound.data() + old_size, data, length);
   if (!raw_queue_readable(endpoint, *stream))
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   return 0;
@@ -612,6 +693,9 @@ bool raw_consume_readable(RawEndpoint &endpoint, bool &progress) noexcept {
   return true;
 }
 
+int raw_send_data(nghttp2_session *, nghttp2_frame *, const std::uint8_t *,
+                  std::size_t, nghttp2_data_source *, void *) noexcept;
+
 bool raw_initialize(RawEndpoint &endpoint) noexcept {
   nghttp2_session_callbacks *callbacks = nullptr;
   nghttp2_option *option = nullptr;
@@ -630,16 +714,19 @@ bool raw_initialize(RawEndpoint &endpoint) noexcept {
                                                             raw_data_chunk);
   nghttp2_session_callbacks_set_on_frame_recv_callback(callbacks,
                                                        raw_frame_recv);
+  nghttp2_session_callbacks_set_send_data_callback(callbacks, raw_send_data);
   nghttp2_option_set_no_auto_window_update(option, 1);
   nghttp2_option_set_peer_max_concurrent_streams(option, 100);
   nghttp2_option_set_max_send_header_block_length(option, 64 * 1024);
   nghttp2_option_set_max_settings(option, 32);
   nghttp2_option_set_max_continuations(option, 16);
+  endpoint.ngmem = nghttp2_mem{&endpoint, raw_h2_malloc, raw_h2_free,
+                              raw_h2_calloc, raw_h2_realloc};
   const int created = endpoint.server
-                          ? nghttp2_session_server_new2(
-                                &endpoint.session, callbacks, &endpoint, option)
-                          : nghttp2_session_client_new2(
-                                &endpoint.session, callbacks, &endpoint, option);
+                          ? nghttp2_session_server_new3(&endpoint.session,
+                                callbacks, &endpoint, option, &endpoint.ngmem)
+                          : nghttp2_session_client_new3(&endpoint.session,
+                                callbacks, &endpoint, option, &endpoint.ngmem);
   nghttp2_option_del(option);
   nghttp2_session_callbacks_del(callbacks);
   if (created != 0)
@@ -662,30 +749,118 @@ bool raw_initialize(RawEndpoint &endpoint) noexcept {
 }
 
 struct RawWire {
+  RawWire() noexcept = default;
+  RawWire(const RawWire &) = delete;
+  RawWire &operator=(const RawWire &) = delete;
+  ~RawWire() { reset_buffers(); }
+
+  bool initialize_buffers(AllocatorRef selected) noexcept {
+    if (!selected.valid() || pending.data() != nullptr || input.data() != nullptr)
+      return false;
+    allocator = selected;
+    auto *pending_data = static_cast<std::uint8_t *>(
+        allocator.allocate(kWireBytes, alignof(std::max_align_t)));
+    if (pending_data == nullptr)
+      return false;
+    pending = {pending_data, kWireBytes};
+    auto *input_data = static_cast<std::uint8_t *>(
+        allocator.allocate(kWireBytes, alignof(std::max_align_t)));
+    if (input_data == nullptr) {
+      reset_buffers();
+      return false;
+    }
+    input = {input_data, kWireBytes};
+    return true;
+  }
+
+  void reset_buffers() noexcept {
+    if (input.data() != nullptr)
+      allocator.deallocate(input.data(), kWireBytes, alignof(std::max_align_t));
+    if (pending.data() != nullptr)
+      allocator.deallocate(pending.data(), kWireBytes, alignof(std::max_align_t));
+    input = {};
+    pending = {};
+    begin = end = 0;
+  }
+
   int descriptor = -1;
-  std::array<std::uint8_t, kWireBytes> pending{};
+  AllocatorRef allocator;
+  std::span<std::uint8_t> pending;
   std::size_t begin = 0;
   std::size_t end = 0;
-  std::array<std::uint8_t, kWireBytes> input{};
+  std::span<std::uint8_t> input;
 };
+
+int raw_send_data(nghttp2_session *, nghttp2_frame *frame,
+                  const std::uint8_t *frame_header, std::size_t length,
+                  nghttp2_data_source *source, void *user_data) noexcept {
+  auto *endpoint = static_cast<RawEndpoint *>(user_data);
+  auto *stream = source == nullptr ? nullptr
+                                   : static_cast<RawStream *>(source->ptr);
+  if (endpoint == nullptr)
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
+  RawWire *wire = endpoint->encoding_wire;
+  const std::string &body = endpoint->server ? endpoint->workload->response_body
+                                             : endpoint->workload->request_body;
+  const auto fail = [&]() noexcept {
+    endpoint->failed = true;
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
+  };
+  if (wire == nullptr || stream == nullptr || frame == nullptr ||
+      frame_header == nullptr || frame->hd.type != NGHTTP2_DATA ||
+      frame->hd.stream_id != stream->id || stream->sent > body.size() ||
+      length > stream->sent || wire->begin != wire->end ||
+      wire->pending.size() < 9 ||
+      frame->hd.length > wire->pending.size() - 9)
+    return fail();
+  const std::size_t padding = frame->data.padlen;
+  if (padding > frame->hd.length || length != frame->hd.length - padding)
+    return fail();
+
+  // NO_COPY skips nghttp2's DATA bounce buffer. The owned wire still retains
+  // one complete frame until every partial socket write has finished.
+  std::memcpy(wire->pending.data(), frame_header, 9);
+  std::size_t offset = 9;
+  if (padding != 0)
+    wire->pending[offset++] = static_cast<std::uint8_t>(padding - 1);
+  if (length != 0) {
+    std::memcpy(wire->pending.data() + offset,
+                body.data() + stream->sent - length, length);
+    offset += length;
+  }
+  if (padding > 1)
+    std::memset(wire->pending.data() + offset, 0, padding - 1);
+  wire->end = 9 + frame->hd.length;
+  return NGHTTP2_ERR_PAUSE;
+}
 
 bool raw_fill_output(RawEndpoint &endpoint, RawWire &wire) noexcept {
   if (wire.begin != wire.end)
     return true;
+  if (endpoint.encoding_wire != nullptr)
+    return false;
   wire.begin = wire.end = 0;
   const std::uint8_t *data = nullptr;
+  endpoint.encoding_wire = &wire;
   const nghttp2_ssize length =
       nghttp2_session_mem_send2(endpoint.session, &data);
-  if (length < 0 || static_cast<std::size_t>(length) > wire.pending.size())
+  endpoint.encoding_wire = nullptr;
+  if (endpoint.failed || length < 0 ||
+      static_cast<std::size_t>(length) > wire.pending.size())
     return false;
   if (length != 0) {
+    if (wire.end != 0 || data == nullptr)
+      return false;
     std::memcpy(wire.pending.data(), data, static_cast<std::size_t>(length));
     wire.end = static_cast<std::size_t>(length);
   }
+  // A paused NO_COPY callback returns zero while leaving its complete frame
+  // in wire; an ordinary zero return leaves the wire empty.
   return true;
 }
 
-bool raw_write(RawWire &wire, bool &progress) noexcept {
+bool raw_write(RawWire &wire, bool &progress,
+                bool single_attempt = false) noexcept {
   // Match TcpStream's immediate socket seam, including per-call nonblocking
   // and SIGPIPE suppression where supported; plain write uses another libc
   // entry and relies on the process-wide signal setting.
@@ -700,6 +875,11 @@ bool raw_write(RawWire &wire, bool &progress) noexcept {
     if (written > 0) {
       wire.begin += static_cast<std::size_t>(written);
       progress = true;
+      if (single_attempt) {
+        if (wire.begin == wire.end)
+          wire.begin = wire.end = 0;
+        return true;
+      }
       continue;
     }
     if (written < 0 && errno == EINTR)
@@ -736,9 +916,8 @@ bool raw_read(RawEndpoint &endpoint, RawWire &wire, bool &progress) noexcept {
 // open until the server has accepted the pair. The server then writes the
 // second complete response before starting the first, making completion order
 // observable without granting either route a larger hidden outbound queue.
-bool raw_advance(RawEndpoint &client, RawEndpoint &server,
-                 const RawWire &client_wire,
-                 const RawWire &server_wire) noexcept {
+bool raw_advance_client(RawEndpoint &client,
+                         const RawWire &client_wire) noexcept {
   if (client.streams.empty()) {
     if (!raw_submit_request(client))
       return false;
@@ -755,7 +934,11 @@ bool raw_advance(RawEndpoint &client, RawEndpoint &server,
       return false;
     }
   }
+  return true;
+}
 
+bool raw_advance_server(RawEndpoint &server,
+                         const RawWire &server_wire) noexcept {
   // Submitted pairs need no more response scheduling work. Do not rescan
   // completed streams on every transport turn as the connection grows.
   for (std::size_t base = server.next_response_pair;
@@ -778,6 +961,13 @@ bool raw_advance(RawEndpoint &client, RawEndpoint &server,
   return true;
 }
 
+bool raw_advance(RawEndpoint &client, RawEndpoint &server,
+                 const RawWire &client_wire,
+                 const RawWire &server_wire) noexcept {
+  return raw_advance_client(client, client_wire) &&
+         raw_advance_server(server, server_wire);
+}
+
 int run_raw(const Workload &workload) noexcept {
   SocketPair pair = make_socket_pair();
   if (!pair.valid())
@@ -787,10 +977,16 @@ int run_raw(const Workload &workload) noexcept {
   RawEndpoint server;
   server.workload = &workload;
   server.server = true;
-  client.streams.reserve(static_cast<std::size_t>(workload.streams));
-  server.streams.reserve(static_cast<std::size_t>(workload.streams));
-  RawWire client_wire{.descriptor = pair.release_client()};
-  RawWire server_wire{.descriptor = pair.release_server()};
+  try {
+    client.streams.reserve(static_cast<std::size_t>(workload.streams));
+    server.streams.reserve(static_cast<std::size_t>(workload.streams));
+  } catch (...) {
+    return -1;
+  }
+  RawWire client_wire;
+  RawWire server_wire;
+  client_wire.descriptor = pair.release_client();
+  server_wire.descriptor = pair.release_server();
   const auto cleanup = [&] {
     if (client.session != nullptr)
       nghttp2_session_del(client.session);
@@ -799,7 +995,9 @@ int run_raw(const Workload &workload) noexcept {
     close_descriptor(client_wire.descriptor);
     close_descriptor(server_wire.descriptor);
   };
-  if (!raw_initialize(client) || !raw_initialize(server)) {
+  if (!client_wire.initialize_buffers(system_allocator()) ||
+      !server_wire.initialize_buffers(system_allocator()) ||
+      !raw_initialize(client) || !raw_initialize(server)) {
     cleanup();
     return -1;
   }
@@ -849,6 +1047,198 @@ int run_raw(const Workload &workload) noexcept {
                   server.completed == workload.streams;
   cleanup();
   return ok ? workload.streams : -1;
+}
+
+struct RawTaskEpisode {
+  explicit RawTaskEpisode(const Workload &selected) noexcept
+      : workload(selected) {}
+  const Workload &workload;
+  std::array<RawEndpoint, 2> endpoint;
+  std::array<RawWire, 2> wire;
+  hyle::sched::Event client_consumed;
+  bool failed = false;
+};
+
+bool raw_task_server_flushed(const RawEndpoint &endpoint,
+                              const RawWire &wire) noexcept {
+  const auto count = static_cast<std::size_t>(endpoint.workload->streams);
+  return count >= 2 && endpoint.streams.size() == count &&
+         endpoint.next_response_pair == count &&
+         endpoint.streams[count - 2].output_done && wire.begin == wire.end;
+}
+
+struct RawTaskCleanup {
+  RawTaskEpisode &episode;
+  unsigned role;
+  TcpStream &socket;
+  bool success = false;
+
+  ~RawTaskCleanup() {
+    auto &endpoint = episode.endpoint[role];
+    if (!success) {
+      endpoint.failed = true;
+      episode.failed = true;
+      episode.client_consumed.signal();
+    }
+    if (endpoint.session != nullptr) {
+      nghttp2_session_del(endpoint.session);
+      endpoint.session = nullptr;
+    }
+    // Session callbacks refer to streams. Retire the session first, then free
+    // every endpoint-owned container and socket before its join completes.
+    decltype(endpoint.readable){}.swap(endpoint.readable);
+    decltype(endpoint.streams){}.swap(endpoint.streams);
+    endpoint.readable_head = 0;
+    episode.wire[role].reset_buffers();
+    socket = TcpStream{};
+  }
+};
+
+bool raw_task_feed_async(RawEndpoint &endpoint, RawWire &wire,
+                          hyle::io::TransferResult result) noexcept {
+  if (!result.ok() || result.eof || result.bytes == 0 ||
+      result.bytes > wire.input.size())
+    return false;
+  if (nghttp2_session_mem_recv2(endpoint.session, wire.input.data(),
+                                result.bytes) !=
+      static_cast<nghttp2_ssize>(result.bytes))
+    return false;
+  bool consumed = false;
+  return raw_consume_readable(endpoint, consumed);
+}
+
+Task<int> raw_task_endpoint(AllocatorRef allocator, TcpStream socket,
+                             RawTaskEpisode *episode, unsigned role) noexcept {
+  auto &endpoint = episode->endpoint[role];
+  auto &wire = episode->wire[role];
+  RawTaskCleanup cleanup{*episode, role, socket};
+  if (!wire.initialize_buffers(allocator))
+    co_return -1;
+  try {
+    endpoint.streams.reserve(static_cast<std::size_t>(episode->workload.streams));
+  } catch (...) {
+    co_return -1;
+  }
+  if (!raw_initialize(endpoint))
+    co_return -1;
+  for (;;) {
+    if (episode->failed || endpoint.failed)
+      co_return -1;
+    if (role == 0 && endpoint.completed == episode->workload.streams) {
+      episode->client_consumed.signal();
+      cleanup.success = true;
+      co_return episode->workload.streams;
+    }
+    if (role == 1 && raw_task_server_flushed(endpoint, wire)) {
+      const bool done =
+          episode->client_consumed.wait_for(std::chrono::seconds(5));
+      if (!done || episode->failed ||
+          endpoint.completed != episode->workload.streams)
+        co_return -1;
+      cleanup.success = true;
+      co_return episode->workload.streams;
+    }
+    if (!(role == 0 ? raw_advance_client(endpoint, wire)
+                   : raw_advance_server(endpoint, wire)) ||
+        !raw_fill_output(endpoint, wire))
+      co_return -1;
+    bool written = false;
+    if (!raw_write(wire, written))
+      co_return -1;
+    if (role == 1 && raw_task_server_flushed(endpoint, wire))
+      continue;
+    // As in the validated two-Task driver, reenter encoding after a complete
+    // flush rather than making an extra empty read before the next frame.
+    if (written && wire.begin == wire.end)
+      continue;
+    bool progress = false;
+    if (!raw_read(endpoint, wire, progress) ||
+        !raw_consume_readable(endpoint, progress))
+      co_return -1;
+    if (progress)
+      continue;
+
+    hyle::sched::Fiber::yield();
+    if (episode->failed)
+      co_return -1;
+    progress = false;
+    if (!raw_read(endpoint, wire, progress) ||
+        !raw_consume_readable(endpoint, progress))
+      co_return -1;
+    if (progress)
+      continue;
+    if (wire.begin != wire.end) {
+      written = false;
+      if (!raw_write(wire, written, true))
+        co_return -1;
+      if (written)
+        continue;
+      const auto result = co_await socket.write_some(
+          std::span<const std::byte>(
+              reinterpret_cast<const std::byte *>(wire.pending.data() +
+                                                  wire.begin),
+              wire.end - wire.begin),
+          hyle::io::OperationOptions{});
+      if (!result.ok() || result.bytes == 0 ||
+          result.bytes > wire.end - wire.begin)
+        co_return -1;
+      wire.begin += result.bytes;
+      if (wire.begin == wire.end)
+        wire.begin = wire.end = 0;
+    } else {
+      const auto result = co_await socket.read_some(
+          std::span<std::byte>(
+              reinterpret_cast<std::byte *>(wire.input.data()),
+              wire.input.size()),
+          hyle::io::OperationOptions{});
+      if (!raw_task_feed_async(endpoint, wire, result))
+        co_return -1;
+    }
+  }
+}
+
+// Sharing a Scheduler and endpoint Tasks aligns execution, not all API work:
+// HYLE also maintains generic owner/cancellation/deadline, borrow/ACK and
+// flush-epoch contracts. This raw peer implements only this fixed trace.
+int run_task_peer(HyleHarness &harness, const Workload &workload,
+                    bool check_descriptors = false) {
+  SocketPair pair = make_socket_pair();
+  if (!pair.valid())
+    return -1;
+  auto client = TcpStream::adopt(harness.io(), kOwner, pair.release_client());
+  auto server = TcpStream::adopt(harness.io(), kOwner, pair.release_server());
+  if (!client || !server)
+    return -1;
+  // Metadata lives on the caller stack. Each owner Task allocates and frees
+  // two uninitialized 64KiB buffers inside the complete timed episode.
+  RawTaskEpisode episode{workload};
+  for (unsigned role = 0; role != 2; ++role) {
+    episode.endpoint[role].workload = &workload;
+    episode.endpoint[role].server = role == 1;
+  }
+  episode.wire[0].descriptor = static_cast<int>(client->native_handle());
+  episode.wire[1].descriptor = static_cast<int>(server->native_handle());
+  auto server_join = hyle::sched::spawn_task(
+      harness.scheduler(), system_allocator(),
+      raw_task_endpoint(system_allocator(), std::move(*server), &episode, 1));
+  auto client_join = hyle::sched::spawn_task(
+      harness.scheduler(), system_allocator(),
+      raw_task_endpoint(system_allocator(), std::move(*client), &episode, 0));
+  auto client_result = client_join.join();
+  auto server_result = server_join.join();
+  // Extra descriptor observations are requested only by untimed warmup.
+  if (check_descriptors) {
+    for (const auto &wire : episode.wire) {
+      errno = 0;
+      if (::fcntl(wire.descriptor, F_GETFD) != -1 || errno != EBADF)
+        return -1;
+    }
+  }
+  return !episode.failed && client_result && server_result &&
+                 *client_result == workload.streams &&
+                 *server_result == workload.streams
+             ? workload.streams
+             : -1;
 }
 
 class RawHarness {
@@ -909,6 +1299,173 @@ private:
   std::thread worker_;
 };
 
+
+// The four cells in a block have the same mean position in time for both arms.
+// Keep complete blocks as the unit of analysis; episode iterations are not
+// independent samples. --paired-self measures this comparison chain with Hyle
+// on both sides rather than assuming the timer's resolution is its accuracy.
+int run_paired_comparison(bool self) {
+  constexpr unsigned kBlocks = 12;
+  constexpr std::uint64_t kEpisodes = 64;
+  constexpr unsigned kWarmups = 16;
+  const Workload workload = make_workload(
+      "HTTP/2 paired complete episode 4x256KiB", 4, 256 * 1024,
+      256 * 1024, NGHTTP2_INITIAL_CONNECTION_WINDOW_SIZE);
+  HyleHarness hyle;
+
+  // Read back socket capacities once outside the timed episodes. The common
+  // socket factory checks every setsockopt; Linux may round/double the request.
+  SocketPair configuration = make_socket_pair();
+  if (!configuration.valid())
+    return 2;
+  const int descriptors[] = {configuration.release_client(),
+                             configuration.release_server()};
+  int send_capacity[2]{}, receive_capacity[2]{};
+  bool socket_ok = true;
+  for (unsigned index = 0; index != 2; ++index) {
+    socklen_t length = sizeof(int);
+    socket_ok = socket_ok &&
+        ::getsockopt(descriptors[index], SOL_SOCKET, SO_SNDBUF,
+                     &send_capacity[index], &length) == 0 &&
+        length == sizeof(int);
+    length = sizeof(int);
+    socket_ok = socket_ok &&
+        ::getsockopt(descriptors[index], SOL_SOCKET, SO_RCVBUF,
+                     &receive_capacity[index], &length) == 0 &&
+        length == sizeof(int);
+    close_descriptor(descriptors[index]);
+  }
+  if (!socket_ok)
+    return 2;
+
+  for (unsigned round = 0; round != kWarmups; ++round) {
+    const auto warm_hyle = [&] { return hyle.run(workload); };
+    const auto warm_reference = [&] {
+      return self ? hyle.run(workload)
+                  : run_task_peer(hyle, workload, round == 0);
+    };
+    const int first = round % 2 == 0 ? warm_hyle() : warm_reference();
+    const int second = round % 2 == 0 ? warm_reference() : warm_hyle();
+    if (first != workload.streams || second != workload.streams) {
+      std::fprintf(stderr, "paired warmup failed round=%u\n", round);
+      return 2;
+    }
+  }
+  // Observe the smallest nonzero delta of the same steady clock used for
+  // timing. This is a clock quantum observation, not a calibrated error bound.
+  using Clock = ankerl::nanobench::Clock;
+  auto clock_delta = Clock::duration::max();
+  for (unsigned sample = 0; sample != 20; ++sample) {
+    const auto begin = Clock::now();
+    auto end = Clock::now();
+    while (end == begin)
+      end = Clock::now();
+    clock_delta = (std::min)(clock_delta, end - begin);
+  }
+  const double clock_ns =
+      std::chrono::duration<double, std::nano>(clock_delta).count();
+  std::printf("{\"type\":\"metadata\",\"mode\":\"%s\","
+              "\"blocks\":%u,\"episodes_per_cell\":%llu,"
+              "\"warmups_per_arm\":%u,\"streams_per_episode\":4,"
+              "\"application_bytes_per_episode\":2097152,"
+              "\"socket_requested_bytes\":4096,"
+              "\"socket_send_bytes\":[%d,%d],"
+              "\"socket_receive_bytes\":[%d,%d],"
+              "\"clock_min_delta_ns\":%.17g,\"caller_cpu\":%d}\n",
+              self ? "self" : "paired", kBlocks,
+              static_cast<unsigned long long>(kEpisodes), kWarmups,
+              send_capacity[0], send_capacity[1],
+              receive_capacity[0], receive_capacity[1], clock_ns,
+              ::sched_getcpu());
+  std::fflush(stdout);
+
+  struct Cell {
+    bool hyle_arm = false;
+    bool valid = false;
+    double seconds_per_episode = 0;
+    double iterations = 0;
+    long voluntary_switches = 0;
+    long involuntary_switches = 0;
+    long minor_faults = 0;
+    long major_faults = 0;
+    int cpu_before = -1;
+    int cpu_after = -1;
+  };
+  for (unsigned block = 0; block != kBlocks; ++block) {
+    std::array<Cell, 4> cells{};
+    bool block_valid = true;
+    for (unsigned position = 0; position != cells.size(); ++position) {
+      Cell &cell = cells[position];
+      // Alternate ABBA and BAAB, with A = Hyle and B = reference.
+      cell.hyle_arm = ((position == 0 || position == 3) == (block % 2 == 0));
+      cell.valid = true;
+      auto run_hyle = [&] {
+        if (cell.valid && hyle.run(workload) != workload.streams)
+          cell.valid = false;
+      };
+      auto run_reference = [&] {
+        if (cell.valid &&
+            run_task_peer(hyle, workload) != workload.streams)
+          cell.valid = false;
+      };
+      ankerl::nanobench::Bench bench;
+      bench.output(nullptr)
+          .performanceCounters(false)
+          .batch(4)
+          .epochs(1)
+          .epochIterations(kEpisodes);
+      struct rusage before{}, after{};
+      cell.cpu_before = ::sched_getcpu();
+      const bool before_ok = ::getrusage(RUSAGE_SELF, &before) == 0;
+      if (cell.hyle_arm || self)
+        bench.run("hyle", run_hyle);
+      else
+        bench.run("reference", run_reference);
+      const bool after_ok = ::getrusage(RUSAGE_SELF, &after) == 0;
+      cell.cpu_after = ::sched_getcpu();
+      const auto &result = bench.results().back();
+      using Measure = ankerl::nanobench::Result::Measure;
+      cell.seconds_per_episode = result.get(0, Measure::elapsed);
+      cell.iterations = result.get(0, Measure::iterations);
+      cell.valid = cell.valid && before_ok && after_ok &&
+                   result.size() == 1 &&
+                   cell.iterations == static_cast<double>(kEpisodes) &&
+                   cell.seconds_per_episode > 0;
+      cell.voluntary_switches = after.ru_nvcsw - before.ru_nvcsw;
+      cell.involuntary_switches = after.ru_nivcsw - before.ru_nivcsw;
+      cell.minor_faults = after.ru_minflt - before.ru_minflt;
+      cell.major_faults = after.ru_majflt - before.ru_majflt;
+      block_valid = block_valid && cell.valid;
+      if (!cell.valid)
+        break;
+    }
+    // Write only outside the timed cells. Keep every completed block, even if
+    // a later block fails; never silently discard a slow or preempted sample.
+    for (unsigned position = 0; position != cells.size(); ++position) {
+      const Cell &cell = cells[position];
+      if (cell.iterations == 0)
+        break;
+      std::printf("{\"type\":\"cell\",\"block\":%u,\"position\":%u,"
+                  "\"arm\":\"%s\",\"valid\":%s,"
+                  "\"iterations\":%.0f,\"seconds_per_episode\":%.17g,"
+                  "\"voluntary_switches\":%ld,\"involuntary_switches\":%ld,"
+                  "\"minor_faults\":%ld,\"major_faults\":%ld,"
+                  "\"cpu_before\":%d,\"cpu_after\":%d}\n",
+                  block, position, cell.hyle_arm ? "hyle" : "reference",
+                  cell.valid ? "true" : "false", cell.iterations,
+                  cell.seconds_per_episode, cell.voluntary_switches,
+                  cell.involuntary_switches, cell.minor_faults,
+                  cell.major_faults, cell.cpu_before, cell.cpu_after);
+    }
+    std::fflush(stdout);
+    if (!block_valid) {
+      std::fprintf(stderr, "paired block failed block=%u\n", block);
+      return 2;
+    }
+  }
+  return std::ferror(stdout) ? 2 : 0;
+}
+
 void run_workload(const Workload &workload, HyleHarness &hyle,
                   RawHarness &peer, bool peer_first) {
   auto run_hyle = [&] {
@@ -953,8 +1510,16 @@ void run_workload(const Workload &workload, HyleHarness &hyle,
 
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
   std::signal(SIGPIPE, SIG_IGN);
+  if (argc == 2 && std::string_view(argv[1]) == "--paired")
+    return run_paired_comparison(false);
+  if (argc == 2 && std::string_view(argv[1]) == "--paired-self")
+    return run_paired_comparison(true);
+  if (argc != 1) {
+    std::fprintf(stderr, "usage: %s [--paired | --paired-self]\n", argv[0]);
+    return 2;
+  }
   const bool peer_first = std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr;
   const char *run_nonce = std::getenv("HYLE_PERF_RUN_NONCE");
   std::fprintf(stderr,

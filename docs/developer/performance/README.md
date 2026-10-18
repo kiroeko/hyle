@@ -61,6 +61,30 @@ SIMD 特别注意：
 已有 op-parity 输出可用 `python scripts/op-parity-report.py --check-orders` 检查输入与顺序。
 placement harness 的 `stagger/mark` 只调整代码放置，不单独证明校准或公平。
 
+### HTTP/2 配对测量
+
+Linux 的 `hyle_io_http2_p1_bench` 默认保留手工单 loop 参考；`--paired` 让双方共用同一
+Scheduler、单 worker、双 endpoint Task、系统分配器和 DATA 的 NO_COPY→owned wire 路线。
+双方均计入新建 socket/session、完整 payload 校验和销毁；固定 trace 参考仍不承担公共 API 的
+通用借用、取消、期限和 flush 合同，不能将差值叫作纯封装或调度成本。
+
+已有该 benchmark 的 Release 构建后，在 Linux 运行（结果目录须不存在）：
+
+```sh
+python3 bench/io_http2/run_paired.py /absolute/path/hyle_io_http2_p1_bench \
+  --output /local/path/http2-results --cpu 2
+```
+
+脚本只用 Python 标准库与 `taskset`，CPU 须在当前允许的 affinity 中；省略 `--cpu` 时优先选 2，
+否则选最小允许编号。固定执行 A/A→三轮配对→A/A。每进程每臂预热 16 次，随后 12 个
+ABBA/BAAB 区块，每格精确执行 64 个完整的 4×256 KiB 请求/响应 episode。
+日志输出、socket 容量读回和 rusage 观察位于计时格外；所有原始格与失败均保留，不筛慢点。
+
+每区块比较两臂的几何均值，汇总 12 个区块的中位数、几何均值、范围与描述性 IQR。
+本脚本使用 `100×(Hyle耗时/参考耗时−1)`，**正数为 Hyle 较慢**。64 次内层重复不是独立样本；
+IQR、A/A 范围和最小时钟刻度都不是置信区间或校准误差。A/A 用于观察整套方法的波动，
+不能直接从 A/B 中扣除，也不证明双方等价。WSL pin 的是 guest CPU，不能据此声称宿主核心隔离。
+
 ## 环境与解释限制
 
 运行前读取实际 CPU/GPU、内存、OS/kernel、driver、编译器/SDK、ISA、优化与链接配置。

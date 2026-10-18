@@ -1,0 +1,595 @@
+{
+  "scope": "Linux WSL guest CPU2, fixed fresh-session AF_UNIX 4x256KiB request+response trace; full episode retirement.",
+  "method": "Fixed self/paired/paired/paired/self. Each process: 16 warmups per arm; 12 alternating ABBA/BAAB blocks, 64 episodes per cell. Positive percent = Hyle slower. No retries or filtering.",
+  "conclusion": "Three paired block medians +2.143514/+1.525264/+2.735291%; 33/36 blocks positive. Small directional loss in this trace remains unresolved. No isolated wrapper/scheduler cost, calibrated error, confidence interval, equivalence or cross-round subtraction claimed.",
+  "self_limit": "Self median -0.086333/+0.445428%; block ranges overlap paired observations. This is observed comparison variability, not an error bound or a value to subtract.",
+  "timing": {
+    "clock_min_delta_ns_range": [
+      12,
+      13
+    ],
+    "actual_cell_ms_range": [
+      46.358154,
+      52.743848
+    ],
+    "socket_requested_bytes": 4096,
+    "socket_actual_send_receive_bytes": 8192,
+    "rusage_limit": "Process-wide deltas include measurement framework/bookkeeping outside the precise timed interval; not hardware counters."
+  },
+  "validation": {
+    "consumer_compile": "GCC14 Release with -Wall -Wextra -Wpedantic -Werror; clean.",
+    "legacy_smoke": "Hyle and manual peer each completed 64x1KiB and 4x256KiB traces.",
+    "formal": "Five processes completed all warmups and 240 fixed cells; no invalid or missing records.",
+    "independent_check": "Recomputed every block ratio, median/geomean, inclusive quartiles/ranges and counter totals from all five raw JSONL files; exact agreement.",
+    "initial_build_failure": "Benchmark aggregate Event construction and use of private nanobench helper failed compilation. Fixed locally; first attempt logs retained. No failed executable measured."
+  },
+  "build_limit": "Only benchmark consumer and nanobench implementation TUs rebuilt; final accepted dead-counter HTTP2 and other library/dependency caches reused. Not a complete current HEAD rebuild. Binary/source and cache hashes, commands, compiler and ldd retained.",
+  "benchmark_binary": {
+    "path": "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/paired-bench",
+    "bytes": 898520,
+    "sha256": "9e7c16887d498c638345b16eb4654ac7ad2d28f46b99362c0b1cd80cde44c879"
+  },
+  "runs": [
+    {
+      "name": "01-paired-self",
+      "metadata": {
+        "type": "metadata",
+        "mode": "self",
+        "blocks": 12,
+        "episodes_per_cell": 64,
+        "warmups_per_arm": 16,
+        "streams_per_episode": 4,
+        "application_bytes_per_episode": 2097152,
+        "socket_requested_bytes": 4096,
+        "socket_send_bytes": [
+          8192,
+          8192
+        ],
+        "socket_receive_bytes": [
+          8192,
+          8192
+        ],
+        "clock_min_delta_ns": 12,
+        "caller_cpu": 2
+      },
+      "blocks": [
+        {
+          "block": 0,
+          "log_ratio": 0.02272646954490476,
+          "ratio_percent": 2.298668326132489
+        },
+        {
+          "block": 1,
+          "log_ratio": 0.011524062911798083,
+          "ratio_percent": 1.1590720735022262
+        },
+        {
+          "block": 2,
+          "log_ratio": 0.011652379688244174,
+          "ratio_percent": 1.1720533123765275
+        },
+        {
+          "block": 3,
+          "log_ratio": 0.02386888708275059,
+          "ratio_percent": 2.415602900262887
+        },
+        {
+          "block": 4,
+          "log_ratio": -0.00780427366776415,
+          "ratio_percent": -0.7773899391772943
+        },
+        {
+          "block": 5,
+          "log_ratio": -0.015822176097664453,
+          "ratio_percent": -1.5697663023632877
+        },
+        {
+          "block": 6,
+          "log_ratio": -0.0012436126457027186,
+          "ratio_percent": -0.12428396799529738
+        },
+        {
+          "block": 7,
+          "log_ratio": -0.007805010255651723,
+          "ratio_percent": -0.7774630253231213
+        },
+        {
+          "block": 8,
+          "log_ratio": -0.0004839440769561776,
+          "ratio_percent": -0.048382699490918314
+        },
+        {
+          "block": 9,
+          "log_ratio": -0.015489796033367753,
+          "ratio_percent": -1.537044617241474
+        },
+        {
+          "block": 10,
+          "log_ratio": -0.03776542684417272,
+          "ratio_percent": -3.7061206007598138
+        },
+        {
+          "block": 11,
+          "log_ratio": 0.014988608674816106,
+          "ratio_percent": 1.510150119856297
+        }
+      ],
+      "median_ratio_percent": -0.08633333374310785,
+      "geomean_ratio_percent": -0.01378098132523539,
+      "range_percent": [
+        -3.7061206007598138,
+        2.415602900262887
+      ],
+      "quartiles_percent": [
+        -0.9673584233027095,
+        1.25657751424647
+      ],
+      "descriptive_iqr_percent": 2.2239359375491796,
+      "counter_totals_by_arm": {
+        "hyle": {
+          "voluntary_switches": 3073,
+          "involuntary_switches": 3092,
+          "minor_faults": 1,
+          "major_faults": 0
+        },
+        "reference": {
+          "voluntary_switches": 3071,
+          "involuntary_switches": 3094,
+          "minor_faults": 1,
+          "major_faults": 0
+        }
+      }
+    },
+    {
+      "name": "02-paired",
+      "metadata": {
+        "type": "metadata",
+        "mode": "paired",
+        "blocks": 12,
+        "episodes_per_cell": 64,
+        "warmups_per_arm": 16,
+        "streams_per_episode": 4,
+        "application_bytes_per_episode": 2097152,
+        "socket_requested_bytes": 4096,
+        "socket_send_bytes": [
+          8192,
+          8192
+        ],
+        "socket_receive_bytes": [
+          8192,
+          8192
+        ],
+        "clock_min_delta_ns": 13,
+        "caller_cpu": 2
+      },
+      "blocks": [
+        {
+          "block": 0,
+          "log_ratio": 0.0157147745627908,
+          "ratio_percent": 1.5838900986447537
+        },
+        {
+          "block": 1,
+          "log_ratio": 0.0217521351568033,
+          "ratio_percent": 2.1990437574283086
+        },
+        {
+          "block": 2,
+          "log_ratio": 0.04925871511408708,
+          "ratio_percent": 5.049209376838499
+        },
+        {
+          "block": 3,
+          "log_ratio": 0.03269523603226787,
+          "ratio_percent": 3.3235598271882
+        },
+        {
+          "block": 4,
+          "log_ratio": 0.009253201742319916,
+          "ratio_percent": 0.9296144965466031
+        },
+        {
+          "block": 5,
+          "log_ratio": 0.020664845892350847,
+          "ratio_percent": 2.0879842221749443
+        },
+        {
+          "block": 6,
+          "log_ratio": 0.027560852669794578,
+          "ratio_percent": 2.794416635095048
+        },
+        {
+          "block": 7,
+          "log_ratio": 0.02621108910182368,
+          "ratio_percent": 2.655762073019172
+        },
+        {
+          "block": 8,
+          "log_ratio": 0.008565635666834659,
+          "ratio_percent": 0.8602425692318271
+        },
+        {
+          "block": 9,
+          "log_ratio": -0.01387567194515782,
+          "ratio_percent": -1.377984852597514
+        },
+        {
+          "block": 10,
+          "log_ratio": 0.024439993215704447,
+          "ratio_percent": 2.474109784419347
+        },
+        {
+          "block": 11,
+          "log_ratio": 0.005084941968721779,
+          "ratio_percent": 0.5097892227267597
+        }
+      ],
+      "median_ratio_percent": 2.1435139898016264,
+      "geomean_ratio_percent": 1.9124384887511288,
+      "range_percent": [
+        -1.377984852597514,
+        5.049209376838499
+      ],
+      "quartiles_percent": [
+        0.9122715147179091,
+        2.6904257135381413
+      ],
+      "descriptive_iqr_percent": 1.778154198820232,
+      "counter_totals_by_arm": {
+        "hyle": {
+          "voluntary_switches": 3070,
+          "involuntary_switches": 3081,
+          "minor_faults": 2,
+          "major_faults": 0
+        },
+        "reference": {
+          "voluntary_switches": 3072,
+          "involuntary_switches": 3077,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      }
+    },
+    {
+      "name": "03-paired",
+      "metadata": {
+        "type": "metadata",
+        "mode": "paired",
+        "blocks": 12,
+        "episodes_per_cell": 64,
+        "warmups_per_arm": 16,
+        "streams_per_episode": 4,
+        "application_bytes_per_episode": 2097152,
+        "socket_requested_bytes": 4096,
+        "socket_send_bytes": [
+          8192,
+          8192
+        ],
+        "socket_receive_bytes": [
+          8192,
+          8192
+        ],
+        "clock_min_delta_ns": 13,
+        "caller_cpu": 2
+      },
+      "blocks": [
+        {
+          "block": 0,
+          "log_ratio": -0.005174513401295933,
+          "ratio_percent": -0.5161148668758518
+        },
+        {
+          "block": 1,
+          "log_ratio": 0.0014794129302666548,
+          "ratio_percent": 0.14805078014313902
+        },
+        {
+          "block": 2,
+          "log_ratio": 0.03607407313870148,
+          "ratio_percent": 3.67326376872739
+        },
+        {
+          "block": 3,
+          "log_ratio": -0.014870835901701795,
+          "ratio_percent": -1.4760811083691223
+        },
+        {
+          "block": 4,
+          "log_ratio": 0.04247333669989217,
+          "ratio_percent": 4.338823582912514
+        },
+        {
+          "block": 5,
+          "log_ratio": 0.02555151943117906,
+          "ratio_percent": 2.588075770208934
+        },
+        {
+          "block": 6,
+          "log_ratio": 0.0001213473630263806,
+          "ratio_percent": 0.012135472591545671
+        },
+        {
+          "block": 7,
+          "log_ratio": 0.03558130702460627,
+          "ratio_percent": 3.6221896822275523
+        },
+        {
+          "block": 8,
+          "log_ratio": 0.00865442137400585,
+          "ratio_percent": 0.8691979147412533
+        },
+        {
+          "block": 9,
+          "log_ratio": 0.005257593698374308,
+          "ratio_percent": 0.527143909798335
+        },
+        {
+          "block": 10,
+          "log_ratio": 0.023667143432176907,
+          "ratio_percent": 2.3949432867010847
+        },
+        {
+          "block": 11,
+          "log_ratio": 0.021578796121752397,
+          "ratio_percent": 2.1813302090693134
+        }
+      ],
+      "median_ratio_percent": 1.5252640619052833,
+      "geomean_ratio_percent": 1.5146361031954647,
+      "range_percent": [
+        -1.4760811083691223,
+        4.338823582912514
+      ],
+      "quartiles_percent": [
+        0.1140719532552407,
+        2.8466042482135885
+      ],
+      "descriptive_iqr_percent": 2.732532294958348,
+      "counter_totals_by_arm": {
+        "hyle": {
+          "voluntary_switches": 3072,
+          "involuntary_switches": 3075,
+          "minor_faults": 2,
+          "major_faults": 0
+        },
+        "reference": {
+          "voluntary_switches": 3072,
+          "involuntary_switches": 3080,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      }
+    },
+    {
+      "name": "04-paired",
+      "metadata": {
+        "type": "metadata",
+        "mode": "paired",
+        "blocks": 12,
+        "episodes_per_cell": 64,
+        "warmups_per_arm": 16,
+        "streams_per_episode": 4,
+        "application_bytes_per_episode": 2097152,
+        "socket_requested_bytes": 4096,
+        "socket_send_bytes": [
+          8192,
+          8192
+        ],
+        "socket_receive_bytes": [
+          8192,
+          8192
+        ],
+        "clock_min_delta_ns": 13,
+        "caller_cpu": 2
+      },
+      "blocks": [
+        {
+          "block": 0,
+          "log_ratio": 0.03925690055991726,
+          "ratio_percent": 4.003763558386439
+        },
+        {
+          "block": 1,
+          "log_ratio": 0.017761287639944,
+          "ratio_percent": 1.791995730976119
+        },
+        {
+          "block": 2,
+          "log_ratio": 0.029436247931615256,
+          "ratio_percent": 2.9873776795529823
+        },
+        {
+          "block": 3,
+          "log_ratio": 0.01538395484467614,
+          "ratio_percent": 1.550289702900494
+        },
+        {
+          "block": 4,
+          "log_ratio": 0.019849795906822898,
+          "ratio_percent": 2.0048113117561583
+        },
+        {
+          "block": 5,
+          "log_ratio": 0.024528729190715026,
+          "ratio_percent": 2.4832033279206667
+        },
+        {
+          "block": 6,
+          "log_ratio": 0.03147309011774624,
+          "ratio_percent": 3.197360493379723
+        },
+        {
+          "block": 7,
+          "log_ratio": 0.014609604996522307,
+          "ratio_percent": 1.471684689306992
+        },
+        {
+          "block": 8,
+          "log_ratio": 0.03198737553635045,
+          "ratio_percent": 3.2504470407684636
+        },
+        {
+          "block": 9,
+          "log_ratio": 0.018446900725484383,
+          "ratio_percent": 1.8618095851637824
+        },
+        {
+          "block": 10,
+          "log_ratio": 0.053589579579353064,
+          "ratio_percent": 5.50514986040275
+        },
+        {
+          "block": 11,
+          "log_ratio": 0.06096819738587911,
+          "ratio_percent": 6.2865111760683465
+        }
+      ],
+      "median_ratio_percent": 2.7352905037368247,
+      "geomean_ratio_percent": 3.0221992139306564,
+      "range_percent": [
+        1.471684689306992,
+        6.2865111760683465
+      ],
+      "quartiles_percent": [
+        1.8443561216168665,
+        3.4387761701729573
+      ],
+      "descriptive_iqr_percent": 1.5944200485560909,
+      "counter_totals_by_arm": {
+        "hyle": {
+          "voluntary_switches": 3072,
+          "involuntary_switches": 3079,
+          "minor_faults": 1,
+          "major_faults": 0
+        },
+        "reference": {
+          "voluntary_switches": 3072,
+          "involuntary_switches": 3073,
+          "minor_faults": 0,
+          "major_faults": 0
+        }
+      }
+    },
+    {
+      "name": "05-paired-self",
+      "metadata": {
+        "type": "metadata",
+        "mode": "self",
+        "blocks": 12,
+        "episodes_per_cell": 64,
+        "warmups_per_arm": 16,
+        "streams_per_episode": 4,
+        "application_bytes_per_episode": 2097152,
+        "socket_requested_bytes": 4096,
+        "socket_send_bytes": [
+          8192,
+          8192
+        ],
+        "socket_receive_bytes": [
+          8192,
+          8192
+        ],
+        "clock_min_delta_ns": 12,
+        "caller_cpu": 2
+      },
+      "blocks": [
+        {
+          "block": 0,
+          "log_ratio": 0.005930269075452799,
+          "ratio_percent": 0.594788793207478
+        },
+        {
+          "block": 1,
+          "log_ratio": 0.0029563049856449197,
+          "ratio_percent": 0.29606791646359165
+        },
+        {
+          "block": 2,
+          "log_ratio": 0.007834323752518912,
+          "ratio_percent": 0.7865092364786879
+        },
+        {
+          "block": 3,
+          "log_ratio": 0.03107356276192519,
+          "ratio_percent": 3.15613856000744
+        },
+        {
+          "block": 4,
+          "log_ratio": 0.01590041470392034,
+          "ratio_percent": 1.6027498968527916
+        },
+        {
+          "block": 5,
+          "log_ratio": 0.009352650962935805,
+          "ratio_percent": 0.9396523671662784
+        },
+        {
+          "block": 6,
+          "log_ratio": 0.01716803071162243,
+          "ratio_percent": 1.7316248337582063
+        },
+        {
+          "block": 7,
+          "log_ratio": -0.009100855339381653,
+          "ratio_percent": -0.9059567900695836
+        },
+        {
+          "block": 8,
+          "log_ratio": -0.01568971624877591,
+          "ratio_percent": -1.5567273849341832
+        },
+        {
+          "block": 9,
+          "log_ratio": -0.0030085090600087128,
+          "ratio_percent": -0.30039880316147133
+        },
+        {
+          "block": 10,
+          "log_ratio": -0.005041056197825355,
+          "ratio_percent": -0.5028371397911415
+        },
+        {
+          "block": 11,
+          "log_ratio": -0.01315010399132266,
+          "ratio_percent": -1.3064019128607522
+        }
+      ],
+      "median_ratio_percent": 0.44542835483553483,
+      "geomean_ratio_percent": 0.36922426054225604,
+      "range_percent": [
+        -1.5567273849341832,
+        3.15613856000744
+      ],
+      "quartiles_percent": [
+        -0.603617052360752,
+        1.1054267495879067
+      ],
+      "descriptive_iqr_percent": 1.7090438019486587,
+      "counter_totals_by_arm": {
+        "hyle": {
+          "voluntary_switches": 3072,
+          "involuntary_switches": 3080,
+          "minor_faults": 0,
+          "major_faults": 0
+        },
+        "reference": {
+          "voluntary_switches": 3072,
+          "involuntary_switches": 3080,
+          "minor_faults": 1,
+          "major_faults": 0
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "status": "completed",
+    "deleted_files": 2,
+    "deleted_generated_bytes": 1012152,
+    "retained_verified_cache_files": 5,
+    "directories_removed": 0,
+    "script_sha256": "49e26ea38e982e9eec9f3b1151ad3753463279814232cb706809d4d4bd30a59b",
+    "archive": "cleanup.zip",
+    "archive_sha256": "053eca956d45ddc246ab538df9d0e0e4de3976afe74f8b56b5a1561d708adb3b",
+    "note": "Script written before execution; exact resolved paths, sizes, hashes and process state checked. Script is already used and must not be rerun."
+  }
+}

@@ -4,10 +4,10 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-累计31个清单条目：26项已确认性能/复杂度机制已修，另4项纯接线/正确性问题已修；HTTP2一项改列为跨执行模型的待归因对照，不计为已修，也不再称已确认的同执行模型稳定输项。
-此前“27项性能/复杂度、26修1未解”把HTTP2残差也计在内；此次修正归类，没有新增一项修复。这是清单条目数，包含源码已证实的多余时间/空间开销，不是当前peer实测排名或严格去重的算法家族。修复机制不等于所有shape已赢；后文按实验顺序保留当时结论。
+累计31个清单条目：27项性能/复杂度问题中26项已修、HTTP2一项未解，另4项纯接线/正确性问题已修。最新对齐执行、分配器与DATA拷贝的交错对照，三进程配对中位差均为正（+1.53%～+2.74%），33/36区块较慢，支持固定场景中的小幅落后；稳定幅度和具体原因仍未定位，见末尾。
+此前因同两Task的AB/BA中位差变号，曾把HTTP2改列为跨执行模型待归因对照；最新证据恢复为小幅输项，没有新增一项修复。这是清单条目数，包含源码已证实的多余时间/空间开销，不是当前peer实测排名或严格去重的算法家族。修复机制不等于所有shape已赢；后文按实验顺序保留当时结论。
 
-**比较边界仍需保留**：HTTP2相对专用手工单loop的大报文差距尚未被代码消除；同两Task的新对照未复现同等幅度的稳定差距，不能把原差距全部归因于调度，也不能称严格等速。Apple普通attention的已知math分块、原生full mask步长和混合dtype转换机制均已修，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界。
+**比较边界仍需保留**：HTTP2相对专用手工单loop的历史大报文差距尚未被代码消除；同两Task的对照未复现同等幅度的差距，最新交错轮次则提示较小的正开销。不能把原差距全部归因于调度，也不能称严格等速。Apple普通attention的已知math分块、原生full mask步长和混合dtype转换机制均已修，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界。
 HTTP2以NO_COPY减少一次DATA发送拷贝后，相对manual peer仍慢8.22%/11.08%；同轮旧实现为11.69%/15.35%，两序改善幅度不稳定。新增同执行模型对照的中位差为+1.42%/−0.11%，均值差为+1.84%/+0.23%，见末尾。两套程序职责仍有差别，不替换原结果，不跨轮相减归因。
 Apple Sink采用单owner Job内同步Q128数学分块：原长Q固定点extra active peak降78.8%，同工时延未见退步；现扩至Q>128收益域，短Q固定点另降67.57%，该新点未测时延。Direct/Graph共用选择，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
@@ -37,7 +37,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | FlatHash近满rolling churn反复重建 | [grow](../../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 受限域已融合，其余大math域已用原生selector及checked Q128块，覆盖三种浮点dtype、不同Dv、广播mask和全Q causal偏移。原生full mask已接通KV stride、移除完整复制；受理的mixed additive mask已按实际backing紧凑转换，已知问题机制均已修。未称所有shape已跑赢 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的Q>128收益域均用单Job同步Q128块。长Q固定extra peak1344307200→285310976 B（−78.8%），短Q672825344→218202112 B（−67.57%）；新短Q未测时延。其它guard域的scores有KV/输出同阶上界，caller mask仍为Q×KV；不宣称所有shape吞吐或opaque callback自动规划 |
-| HTTP2大body背压holdout | 对专用manual loop的4×256 KiB差距仍为8.22%/11.08%；同两Task新对照中位差+1.42%/−0.11%，均值差+1.84%/+0.23% | 已删除确认的冗余复制/构造/私有帧；原manual差距未消除。改列跨执行模型待归因对照，未证同执行模型稳定输，不称已修、等速或纯调度归因 |
+| HTTP2大body背压holdout | 历史manual对照+8.22%/+11.08%；最新对齐执行/分配/DATA拷贝的三进程配对中位差+2.14%/+1.53%/+2.74% | 已删确认的冗余复制/构造/私有帧，未称残差已修。两轮A/A中位−0.09%/+0.45%，区块仍有数个百分点波动；小幅开销继续待归因，不称等速或纯调度成本 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
@@ -1426,3 +1426,42 @@ v2按mask字节量选择64～512行（32MiB目标），固定点为448＋448＋1
 两轮均先写根test.ps1，精确清理7个可重建产物共6026568逻辑B；保留并核对当前产品、原15项测试、共享consumer及core，源/日志/raw/SDK不删。[首轮](http2/small-headers/cleanup-execution.json)／[最终清理](http2/small-headers/final-cleanup-execution.json)。
 
 Apple两批native结果归档后，先更新根test.ps1再执行一次精确清理：删除16项过时生成物110169024 B，保留并复核14项当前native/Hyle/测试/probe缓存及一份现成test exe，共12472480 B。所有源、raw、日志、map、参考、归档和SDK保留；当前脚本已用不可重跑。[执行记录](apple-native-mask-mixed/artifact-cleanup/summary.json)。
+
+## HTTP2：更公平的交错对照，仍有小幅输项
+
+新增永久 `--paired` / `--paired-self` 模式及标准库 Python runner，复用原目标，无新CMake选项。
+双方共用一个持久单worker Scheduler/IoContext、双endpoint Task、系统allocator桥接、未初始化的
+64 KiB收发buffer、NO_COPY→owned wire的一次DATA发送拷贝。固定4流、每流请求与响应各256 KiB、
+完整2 MiB内容/header/顺序校验及session/容器/wire/socket退休边界一致。raw仍是专用trace，
+没有公共API的通用owner/borrow/cancel/deadline/flush合同，不能将差值称为纯wrapper成本。
+
+固定一次A/A→paired×3→A/A；每臂预热16次，每进程12个交替ABBA/BAAB区块，每格恰好64个episode。
+只以完整区块计算两臂几何均值之比，保留所有240格及失败，不把内层episode视作独立样本。
+结果为 `100×(Hyle耗时/参考耗时−1)`，正数表示Hyle较慢：
+
+| 进程 | 区块中位差 | 几何均值差 | 区块范围 | 描述性IQR（百分点） |
+|---|---:|---:|---:|---:|
+| A/A前 | −0.0863% | −0.0138% | −3.7061%～+2.4156% | 2.2239 |
+| paired 1 | +2.1435% | +1.9124% | −1.3780%～+5.0492% | 1.7782 |
+| paired 2 | +1.5253% | +1.5146% | −1.4761%～+4.3388% | 2.7325 |
+| paired 3 | +2.7353% | +3.0222% | +1.4717%～+6.2865% | 1.5944 |
+| A/A后 | +0.4454% | +0.3692% | −1.5567%～+3.1561% | 1.7090 |
+
+三轮中位同正、33/36区块较慢，支持此固定场景有约1.5%～2.7%的方向性小幅落后，继续保留输项。
+单区块与A/A范围重叠不能抹成纯噪声，也不能据此确定精确幅度或根因。IQR/A/A不是CI或误差界，
+不扣除A/A偏差，不与历史manual/先AB后BA轮次相减归因，不声称等价。
+
+实际每格46.358～52.744 ms，时钟最小非零delta12～13 ns；计时刻度不是当前差额的解释。
+批量增长降低边界计时的相对影响，ABBA/BAAB平衡线性顺序漂移，但没有测得方法改动前后的
+同工A/A方差，不能宣称已校准到某个精度。请求socket4096 B、实际读回两侧收发均8192 B；
+仅在计时外读回。rusage包含框架调用与外围bookkeeping，单列观察，不筛样本或冒充硬件计数。
+
+仅fresh benchmark与nanobench实现两个TU，GCC14/O3/严格warning编译通过，产品和依赖复用现有缓存；
+不是全HEAD重编。legacy两shape smoke及五进程全部内容校验通过。首次编译的Event聚合初始化和
+私有timer helper错误已改正，失败日志保留；没有测量失败产物。独立从全部raw重算统计完全一致。
+WSL guest CPU2不代表物理P核/宿主隔离，未测TCP/TLS、长连接、其他shape或Windows/macOS。
+[复用方法](../../../developer/performance/README.md#http2-配对测量)／
+[摘要](http2/paired-comparison/summary.json)／[源码、命令、身份、全部raw与日志](http2/paired-comparison/source-results.zip)。
+
+归档后先写根test.ps1，再精确删除本轮exe与上一轮过时consumer对象，共1012152 B；保留并复核5份
+当前产品/工具/测试缓存，不删目录、源码、raw、日志、map或SDK。[已执行脚本与日志](http2/paired-comparison/cleanup.zip)。
