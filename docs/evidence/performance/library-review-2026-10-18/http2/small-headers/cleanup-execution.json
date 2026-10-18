@@ -1,0 +1,13 @@
+{
+  "status": "executed once, exit 0",
+  "script_archive": "cleanup-script.zip",
+  "script_member": "test.ps1",
+  "script_sha256": "700b1e88be8668ff07ac6389cf67d8b625b43defb788f93cc064911ec64e1cf4",
+  "archive_sha256": "e91f38359b01472ec5959a577cede2109b3c449bd1516f87218dcc55c8835de0",
+  "deleted_files": 1,
+  "deleted_bytes": 1588368,
+  "retained_current_product_and_test_objects": 2,
+  "retained_bytes": 914800,
+  "directories_removed": 0,
+  "log": "cleanup-executed.log"
+}

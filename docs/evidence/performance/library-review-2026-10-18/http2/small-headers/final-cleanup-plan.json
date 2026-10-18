@@ -1,0 +1,58 @@
+{
+  "root": "/root/hyle-scratch/http2-current-20261018",
+  "files": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/http2-old.o",
+      "bytes": 225520,
+      "sha256": "ea6df19dd3e4c3e470d2547654c23280291dce87666e1d627f3585de8c532cb5"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-old",
+      "bytes": 869192,
+      "sha256": "30e210ca11293901da6385275040111ece1c397c8876ca71b0c162392ebfe7e1"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-new",
+      "bytes": 869192,
+      "sha256": "d998d16ff5a9f93cf93d6ceec8dccf8d19bce67face6701a0b52c95aa4743ee6"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers/http2.o",
+      "bytes": 224840,
+      "sha256": "49ccfa8eacb0a7c81a1ab70a4ccb640b24c176820bce9bc2469ca3e5aa9dbc2a"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers/http2_test.o",
+      "bytes": 689960,
+      "sha256": "d2a7f2d71cebd556ed733f1912942e3dc9c7a2fec9b25aa8aa24aec6da87783a"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/dead-submit-final/tests",
+      "bytes": 1559496,
+      "sha256": "80b9e558b8963e58d08da905006b0bf49041dc951c2c28d986a1613807e425e8"
+    }
+  ],
+  "retain": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/consumer.o",
+      "bytes": 113632,
+      "sha256": "1c6dc5ff898f3f1f0ad79b124ab6e5b1700e15a006964e4d9113a8f1a373e418"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/dead-submit-final/http2.o",
+      "bytes": 224784,
+      "sha256": "90fb3ebf7e71a9ee74789aaec62866c08c931a0b96413994aa532a5cb9d99302"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+      "bytes": 387104,
+      "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2_test.o",
+      "bytes": 654624,
+      "sha256": "debb22bed71cd36bbda594158905dc547ca59655ed62c81f8b4a42c0431f75d3"
+    }
+  ],
+  "delete_bytes": 4438200
+}

@@ -1,0 +1,19 @@
+{
+  "archive": {
+    "path": "source-results.zip",
+    "bytes": 136591,
+    "sha256": "c4c2cfaf0858d7229dfd0ac14421c09a2d607fa27eae62b21883b19c7b749573"
+  },
+  "members": 48,
+  "summary": {
+    "path": "summary.json",
+    "bytes": 28317,
+    "sha256": "ac7047aa4ada2c2047232c8527293eda61275e398bfbe5514776ca2358c8255f"
+  },
+  "cleanup": {
+    "path": "cleanup-candidates.json",
+    "bytes": 1742,
+    "sha256": "046391102b5a4238374498cd9a991f804298b0e74c6f1d3201a85677e201630f"
+  },
+  "contains_executable_object_library_or_sdk": false
+}

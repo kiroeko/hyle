@@ -1,0 +1,3 @@
+{"preflight_files": 3, "delete_files": 1, "delete_bytes": 1588368, "retain_files": 2}
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/small-headers/tests
+{"status": "completed", "deleted_files": 1, "deleted_bytes": 1588368, "retained_cache_files_verified": 2, "directories_removed": 0}

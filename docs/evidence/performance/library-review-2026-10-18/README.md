@@ -1406,4 +1406,23 @@ v2按mask字节量选择64～512行（32MiB目标），固定点为448＋448＋1
 
 证据冻结后先写根test.ps1，再核绝对路径、size、SHA和无运行中的目标进程，精确删除本轮main.o/probe共1035704逻辑B，保留并重核现有HTTP2/core；源、raw、log、map、归档、SDK和目录保留。[范围及执行](http2/matched-execution/cleanup-execution.json)／[日志](http2/matched-execution/cleanup-executed.log)。
 
+## HTTP2：小header栈数组未证提速，保留死计数清理
+
+候选删除无读者的submit_epoch及11处递增，并将总NV字段≤8的临时出站描述符改用栈数组，>8保留原heap回退。锁定nghttp2在submit内复制NONE-flag字段，生命周期正确；源码上原4流路径可少8对临时分配/释放，代价是每次submit的本地数组。只fresh产品与测试两个TU，含新增两侧各9 NV的内容/视图寿命回归，default/epoll各16/16通过；这只证明候选功能，不证明性能。[候选源码及功能结果](http2/small-headers/source-results.zip)。
+
+为核实际收益，旧HTTP2 fresh相同当前headers/flags，新对象复用上述候选，共享同一Hyle-only consumer和原4×256 KiB完整oracle。两边均只建一个持久单worker HyleHarness，不建inactive RawHarness，不测raw peer；不能与旧manual/matched peer轮次相减。固定old→new→new→old，9epoch/进程、min10ms、CPU2，完整创建/销毁边界不变：
+
+| 顺序 | 中位µs/完整4-stream episode | 均值µs/完整episode |
+|---|---:|---:|
+| old | 761.531500 | 759.545426 |
+| new | 768.099923 | 770.292262 |
+| new | 781.552733 | 772.954031 |
+| old | 763.103385 | 780.361314 |
+
+两序配对中位增加0.86%/2.42%，均值增加1.41%/减少0.95%；全部36个epoch、实际迭代及末old高点均保留。没有提速证据，也未证明无回退，因此撤回栈数组和新增测试，不追加采样追数。[固定完整结果](http2/small-headers/timing/source-results.zip)／[独立统计核对](http2/small-headers/timing/independent-review.json)。
+
+最终仅保留13行删除：清除无读者的私有submit_epoch，真正的change/encoded/flushed epoch不变。另fresh这一个产品TU、复用原15项测试对象，default/epoll各15/15通过；最终dead-only版本未测时延，不将组合候选数据归给它。编译快照的CRLF已恢复原仓库LF，逐字节核对仅行尾变化；无额外重编。[最终功能与源码](http2/small-headers/final-dead-counter/source-results.zip)／[取舍](http2/small-headers/disposition.json)。未跑Windows/macOS、TLS专用路线或sanitizer。
+
+两轮均先写根test.ps1，精确清理7个可重建产物共6026568逻辑B；保留并核对当前产品、原15项测试、共享consumer及core，源/日志/raw/SDK不删。[首轮](http2/small-headers/cleanup-execution.json)／[最终清理](http2/small-headers/final-cleanup-execution.json)。
+
 Apple两批native结果归档后，先更新根test.ps1再执行一次精确清理：删除16项过时生成物110169024 B，保留并复核14项当前native/Hyle/测试/probe缓存及一份现成test exe，共12472480 B。所有源、raw、日志、map、参考、归档和SDK保留；当前脚本已用不可重跑。[执行记录](apple-native-mask-mixed/artifact-cleanup/summary.json)。

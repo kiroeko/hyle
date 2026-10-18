@@ -227,7 +227,6 @@ struct Http2SessionState {
   sched::ConditionVariable changed;
   Status fatal_status{};
   std::uint64_t change_epoch = 0;
-  std::uint64_t submit_epoch = 0;
   std::uint64_t next_wire_epoch = 0;
   std::uint64_t encoding_wire_epoch = 0;
   std::uint64_t current_wire_epoch = 0;
@@ -525,7 +524,6 @@ int consume_rejected_data(Http2SessionState &state,
   const int consumed =
       nghttp2_session_consume_connection(state.session, length);
   if (consumed == 0) {
-    ++state.submit_epoch;
     state.notify_owner();
     return 0;
   }
@@ -821,8 +819,6 @@ int on_stream_close(nghttp2_session *, std::int32_t stream_id,
         if (consumed != 0)
           state.fail(status_from_nghttp2(
               consumed, "nghttp2 reset connection consumption"));
-        else
-          ++state.submit_epoch;
       }
       stream->inbound_start = 0;
       stream->inbound.size = 0;
@@ -1009,7 +1005,6 @@ bool Http2SessionState::initialize() noexcept {
     session = nullptr;
     return false;
   }
-  ++submit_epoch;
   return true;
 }
 
@@ -1742,7 +1737,6 @@ submit_request_head(Http2SessionState &state, const Http2RequestHead &head,
     return make_unexpected(
         Status::ResourceExhausted("HTTP/2 stream index allocation"));
   }
-  ++state.submit_epoch;
   state.notify_owner();
   return stream;
 }
@@ -1798,7 +1792,6 @@ submit_response_head(Http2SessionState &state, Http2StreamState &stream,
     return status_from_nghttp2(submitted, "nghttp2_submit_response2");
   stream.output_submitted = true;
   stream.outbound_expected = content_length;
-  ++state.submit_epoch;
   state.notify_owner();
   return Status::Ok();
 }
@@ -1867,7 +1860,6 @@ void Http2SessionAccess::release(Http2BodyReader &reader) noexcept {
         (void)nghttp2_session_consume_stream(state->session, stream->id,
                                              unread);
       (void)nghttp2_session_consume_connection(state->session, unread);
-      ++state->submit_epoch;
     }
     stream->inbound_start = 0;
     stream->inbound.size = 0;
@@ -1876,7 +1868,6 @@ void Http2SessionAccess::release(Http2BodyReader &reader) noexcept {
       stream->reset_code = static_cast<std::uint32_t>(Http2Error::kCancel);
       (void)nghttp2_submit_rst_stream(state->session, NGHTTP2_FLAG_NONE,
                                       stream->id, stream->reset_code);
-      ++state->submit_epoch;
     }
     stream->reader_active = false;
     stream->reader_busy = false;
@@ -1902,7 +1893,6 @@ void Http2SessionAccess::release(Http2BodyWriter &writer) noexcept {
       stream->reset_code = static_cast<std::uint32_t>(Http2Error::kCancel);
       (void)nghttp2_submit_rst_stream(state->session, NGHTTP2_FLAG_NONE,
                                       stream->id, stream->reset_code);
-      ++state->submit_epoch;
     }
     stream->outbound_data = nullptr;
     stream->outbound_size = stream->outbound_offset = 0;
@@ -1933,7 +1923,6 @@ Status acknowledge_body(Http2SessionState &state,
       return status_from_nghttp2(stream_result != 0 ? stream_result
                                                     : connection_result,
                                  "nghttp2 receive consumption");
-    ++state.submit_epoch;
     stream.inbound.size -= consumed;
     stream.inbound_start += consumed;
     if (stream.inbound.size == 0 ||
@@ -1960,7 +1949,6 @@ Status reset_stream(Http2SessionState &state, Http2StreamState &stream,
   stream.reset_code = static_cast<std::uint32_t>(error);
   stream.outbound_data = nullptr;
   stream.outbound_size = stream.outbound_offset = 0;
-  ++state.submit_epoch;
   state.notify_owner();
   return Status::Ok();
 }
@@ -2374,7 +2362,6 @@ sched::Task<Status> session_drain(mem::AllocatorRef allocator,
     if (submitted != 0)
       co_return detail::status_from_nghttp2(submitted, "nghttp2_submit_goaway");
     state->local_draining = true;
-    ++state->submit_epoch;
     state->notify_owner();
   }
   auto complete = [&]() noexcept {

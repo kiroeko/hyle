@@ -1,0 +1,125 @@
+{
+  "status": "related functional regressions passed; no performance timing",
+  "fresh_translation_units": 2,
+  "results": [
+    {
+      "backend": "default-tests",
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "time": "1.686s"
+    },
+    {
+      "backend": "epoll-tests",
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "time": "1.588s"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers/http2.o",
+      "bytes": 224840,
+      "sha256": "49ccfa8eacb0a7c81a1ab70a4ccb640b24c176820bce9bc2469ca3e5aa9dbc2a"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers/http2_test.o",
+      "bytes": 689960,
+      "sha256": "d2a7f2d71cebd556ed733f1912942e3dc9c7a2fec9b25aa8aa24aec6da87783a"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers/tests",
+      "bytes": 1588368,
+      "sha256": "930cfc4c960de4dddb0b51b0f0c9a267d1a4e1d7031bfc10e1e21bff53a5aac7"
+    }
+  ],
+  "retained_cache_inputs": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+      "bytes": 387104,
+      "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/feature_test.o",
+      "bytes": 17128,
+      "sha256": "2128bb53cb8abd68ce00bd2f101822aa3f25fc1c47b053c983dee2e01746064f"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/nghttp2-build/lib/libnghttp2.a",
+      "bytes": 331596,
+      "sha256": "a2c944fbc51f82b5b0e363a30974e8603c247d454edc289065bfaea9be2443d5"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/picohttpparser.o",
+      "bytes": 6696,
+      "sha256": "d342ee686dc28ad3e1360ba73fb8677b152023e06b756ee6edcfab02f455da46"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/src_io_http2_feature.cc.o",
+      "bytes": 1240,
+      "sha256": "819aa9144281efa3cb30054e4b974cefd00e1b97e5d288e1e773674a896a81ad"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/src_io_http_http.cc.o",
+      "bytes": 331432,
+      "sha256": "c75a645dc8155b795d1d7a85e84e55cadcbedc1014bd4b4e86f9cdb45ca38ba2"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+      "bytes": 54360,
+      "sha256": "9d59be32c875559997a5a04895ef15bde8422535d3fd9cab2f84de407ff4b66d"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+      "bytes": 36552,
+      "sha256": "cdedaac26edb678a806b90446576d6b379d7692e77572ae43fe99e4d0e04102b"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+      "bytes": 379256,
+      "sha256": "afa0beddc3441a35446bbacb15765287be8172220bc884f74b0efc317e1a3a9f"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+      "bytes": 175144,
+      "sha256": "d63370c4eb1ab1c51051d502b7016a3d1f2c786a7359969d943a0340894761b2"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+      "bytes": 67144,
+      "sha256": "5f81e87755af1a5c6f5e9d9f6d0014800cfd32ca66d85a1d07f5de42891fc989"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+      "bytes": 33144,
+      "sha256": "fa662e00e47abff5a068a1211e1f9db07d79719ceec6340f1d212c28b5a7ccee"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+      "bytes": 197376,
+      "sha256": "6c74abd4be5fa450a06d404999b4a2b242ff8731c91edeef63d42236c8787d7e"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/lib/libgtest.a",
+      "bytes": 1014484,
+      "sha256": "86389007fe9f3439402438a4984b6250058abd18c0e903af771db7f56f48222d"
+    },
+    {
+      "path": "/root/hyle-scratch/io-watch-v2-dev/lib/libgtest_main.a",
+      "bytes": 2342,
+      "sha256": "a06549eb0ad61bd746d2eee38800a95cf61ac74c46e04337e6af5a23fff11632"
+    },
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+      "bytes": 111351,
+      "sha256": "e841253878db846a668031e505d763385d6d0dc836e335f10890905d4910734b"
+    },
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/tests/io_http2/http2_test.cc",
+      "bytes": 84710,
+      "sha256": "39380296b0e6fdf8798ae8f03c72cbdae8aeea40cad779d9c74f7d19340ff1c0"
+    }
+  ],
+  "scope": "Dead private submit counter removed; small outbound descriptor arrays use local storage with existing heap fallback. No DATA/flush/borrow/cancel contract changes. No throughput, total allocation/RSS, Windows/macOS or sanitizer claim."
+}

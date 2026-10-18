@@ -1,0 +1,8 @@
+{"preflight_files": 10, "delete_files": 6, "delete_bytes": 4438200, "retain_files": 4}
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/small-headers-timing/http2-old.o
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-old
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-new
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/small-headers/http2.o
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/small-headers/http2_test.o
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/dead-submit-final/tests
+{"status": "completed", "deleted_files": 6, "deleted_bytes": 4438200, "retained_cache_files_verified": 4, "directories_removed": 0}

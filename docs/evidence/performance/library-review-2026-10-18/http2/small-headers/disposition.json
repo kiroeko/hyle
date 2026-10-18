@@ -1,0 +1,14 @@
+{
+  "status": "Small-header stack-array candidate rejected and reverted; new large-header test retained only in the experiment archive, not product tests.",
+  "reason": "Fixed ABBA did not establish a latency benefit: paired medians +0.8625%/+2.4177%; paired means +1.4149%/-0.9492%. Preserve all epochs and ranges; neither improvement nor regression-free equivalence was proved.",
+  "final_change": "Only private submit_epoch and 11 unread increment sites removed; all actual change/encoded/flushed epochs preserved.",
+  "functional_final": "One final product TU, shared existing15-test object; default15/15 and epoll15/15 pass.",
+  "final_source": {
+    "compiled_snapshot_sha256": "a4692c7924b2c13b6ba5f90b9f2b1d6560d64b2b75bb288c9b5de323bc9730be",
+    "compiled_snapshot_bytes": 113683,
+    "final_product_sha256": "9d8d3d7e6490d358532b6082c041699b1c2daca6bb0dbeeddd90a2916a320f47",
+    "final_product_bytes": 110845,
+    "only_posttest_difference": "CRLF changed to original repository LF; exact bytes equality after CRLF normalization, same source lines and C++ tokens. No post-normalization rebuild or timing."
+  },
+  "limits": "No timing of the dead-only final code; no Windows/macOS/TLS/sanitizer claim. Original manual-loop reference gap remains separate."
+}

@@ -1,0 +1,20 @@
+{
+  "scope": "Small private HTTP2 follow-up; no current-HEAD whole rebuild or elapsed benchmark",
+  "changes": [
+    "Remove private submit_epoch and its 11 write-only increment sites; change_epoch and all encoded/flushed epochs retain their original meaning.",
+    "Use uninitialized local arrays for at most 8 total outbound NV entries including pseudo-headers and generated content-length; larger heads retain the existing NvArray heap owner and error cleanup."
+  ],
+  "native_contract": {
+    "headers": "Pinned nghttp2.h:4547-4552,4690-4695 describes copying normal NV name/value pairs at submit.",
+    "implementation": "Pinned lib/nghttp2_submit.c:123 invokes nghttp2_nv_array_copy before submit_headers_shared.",
+    "flags": "make_nv retains NGHTTP2_NV_FLAG_NONE. No NO_COPY_NAME/NO_COPY_VALUE or persistent trailer changes."
+  },
+  "mechanical_effect": "The original 4-stream fixed-body episode submits 4 request heads and 4 response heads with 5/2 NV entries: these 8 temporary descriptor allocation/free pairs disappear. This is a source-derived call reduction, not measured total allocations/RSS or a timing speedup.",
+  "tests": "Existing small/multiplexed/trailer/borrow/cancel/OOM/flow-control/GOAWAY cases plus one new large request/response (9 NV each), complete header/body bytes and view-lifetime regression. Default and epoll each 16/16 pass.",
+  "not_measured": [
+    "elapsed performance or restored manual-loop parity",
+    "Windows/macOS/TLS-specific runtime",
+    "sanitizers or forced large-header allocation failure matrix"
+  ],
+  "future_candidate": "active_protocol_streams rescans retained streams during drain/GOAWAY readiness; not changed in this patch and not on the old fixed-body holdout hot path."
+}

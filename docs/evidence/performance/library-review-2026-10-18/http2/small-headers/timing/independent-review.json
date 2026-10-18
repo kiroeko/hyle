@@ -1,0 +1,31 @@
+{
+  "status": "Frozen ZIP byte identity and raw36 epochs independently verified; no runtime rerun",
+  "rows": [
+    {
+      "file": "epochs-0-old.json",
+      "median_ns_per_episode": 761531.5,
+      "mean_ns_per_episode": 759545.4258801384,
+      "iterations": 128
+    },
+    {
+      "file": "epochs-1-new.json",
+      "median_ns_per_episode": 768099.923076923,
+      "mean_ns_per_episode": 770292.2618996744,
+      "iterations": 129
+    },
+    {
+      "file": "epochs-2-new.json",
+      "median_ns_per_episode": 781552.733333333,
+      "mean_ns_per_episode": 772954.0306878306,
+      "iterations": 130
+    },
+    {
+      "file": "epochs-3-old.json",
+      "median_ns_per_episode": 763103.384615385,
+      "mean_ns_per_episode": 780361.3137973137,
+      "iterations": 127
+    }
+  ],
+  "units": "nanobench elapsed is one complete four-stream episode, divide by4 for per-stream units",
+  "scope": "Combined dead-counter + small-header stack-array candidate only; rejected. Final dead-only code has no timing attribution."
+}

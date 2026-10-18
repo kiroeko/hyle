@@ -1,0 +1,7 @@
+{
+  "compiled_snapshot_sha256": "a4692c7924b2c13b6ba5f90b9f2b1d6560d64b2b75bb288c9b5de323bc9730be",
+  "compiled_snapshot_bytes": 113683,
+  "final_product_sha256": "9d8d3d7e6490d358532b6082c041699b1c2daca6bb0dbeeddd90a2916a320f47",
+  "final_product_bytes": 110845,
+  "only_posttest_difference": "CRLF changed to original repository LF; exact bytes equality after CRLF normalization, same source lines and C++ tokens. No post-normalization rebuild or timing."
+}

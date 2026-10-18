@@ -1,0 +1,680 @@
+{
+  "status": "negative NVArray candidate rejected by root; fixed ABBA completed, no added runs, product edits, cleanup or commit by this agent",
+  "comparison": "Hyle-only complete public HTTP2 episode, combined dead-submit-counter removal and temporary outgoing NV-array stack fast path",
+  "external_peer_measured": false,
+  "decision": {
+    "candidate_source_sha256": "e841253878db846a668031e505d763385d6d0dc836e335f10890905d4910734b",
+    "disposition": "Root rejected and restored the NVArray stack path and its new large-header test because there is no supported latency gain and both median comparisons show a regression signal. This agent does not edit product or README after this decision.",
+    "dead_submit_counter": "Root keeps the separately justified write-only counter cleanup without a throughput claim. This combined-candidate timing does not establish dead-only latency behavior.",
+    "accepted_dead_only_final_source_sha256_reported_by_root": "a4692c7924b2c13b6ba5f90b9f2b1d6560d64b2b75bb288c9b5de323bc9730be",
+    "separate_dead_only_validation_reported_by_root": "Fresh final product TU, retained original15-test object: default15/15 and epoll15/15. Not run by this agent, and no timing of that final source is claimed.",
+    "followup": "No further timing or variable isolation authorized or performed by this agent."
+  },
+  "process_order": [
+    "old",
+    "new",
+    "new",
+    "old"
+  ],
+  "plan": {
+    "status": "Authorized fixed ABBA; not yet executed",
+    "source_snapshots": [
+      {
+        "path": ".scratch/perf-review-2026-10-18/http2-small-headers-timing/http2.before.cc",
+        "bytes": 111180,
+        "sha256": "dada1db18f4ae0e8e55adac82f74e0539ab48b53ddb98804d637d53034c83c63"
+      },
+      {
+        "path": ".scratch/perf-review-2026-10-18/http2-small-headers-timing/http2.candidate.cc",
+        "bytes": 111351,
+        "sha256": "e841253878db846a668031e505d763385d6d0dc836e335f10890905d4910734b"
+      },
+      {
+        "path": ".scratch/perf-review-2026-10-18/http2-small-headers-timing/http2_p1_bench.cc",
+        "bytes": 34860,
+        "sha256": "8648ebf90d48ccc4ad4eddc7a9c592c135a9353f9ba713cdd697da40a0613202"
+      },
+      {
+        "path": ".scratch/perf-review-2026-10-18/http2-small-headers-timing/consumer.cc",
+        "bytes": 1374,
+        "sha256": "2d8708266fa74ae2afb6db0061717775ecc523e00f6863c4355ff3ecdc1ef3b3"
+      }
+    ],
+    "live_source_inputs": [
+      {
+        "path": "src/io_http2/http2.cc",
+        "bytes": 111351,
+        "sha256": "e841253878db846a668031e505d763385d6d0dc836e335f10890905d4910734b"
+      },
+      {
+        "path": "include/hyle/io/tcp.h",
+        "bytes": 18345,
+        "sha256": "b1693ec37e0a8e47f717c339910e430f0bb64552511d38f3c5cd94b41655022a"
+      },
+      {
+        "path": "bench/io_http2/http2_p1_bench.cc",
+        "bytes": 34860,
+        "sha256": "8648ebf90d48ccc4ad4eddc7a9c592c135a9353f9ba713cdd697da40a0613202"
+      }
+    ],
+    "expected_retained_inputs": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+        "bytes": 387104,
+        "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/nghttp2-build/lib/libnghttp2.a",
+        "bytes": 331596,
+        "sha256": "a2c944fbc51f82b5b0e363a30974e8603c247d454edc289065bfaea9be2443d5"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/picohttpparser.o",
+        "bytes": 6696,
+        "sha256": "d342ee686dc28ad3e1360ba73fb8677b152023e06b756ee6edcfab02f455da46"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/src_io_http2_feature.cc.o",
+        "bytes": 1240,
+        "sha256": "819aa9144281efa3cb30054e4b974cefd00e1b97e5d288e1e773674a896a81ad"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/src_io_http_http.cc.o",
+        "bytes": 331432,
+        "sha256": "c75a645dc8155b795d1d7a85e84e55cadcbedc1014bd4b4e86f9cdb45ca38ba2"
+      },
+      {
+        "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+        "bytes": 54360,
+        "sha256": "9d59be32c875559997a5a04895ef15bde8422535d3fd9cab2f84de407ff4b66d"
+      },
+      {
+        "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+        "bytes": 36552,
+        "sha256": "cdedaac26edb678a806b90446576d6b379d7692e77572ae43fe99e4d0e04102b"
+      },
+      {
+        "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+        "bytes": 379256,
+        "sha256": "afa0beddc3441a35446bbacb15765287be8172220bc884f74b0efc317e1a3a9f"
+      },
+      {
+        "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+        "bytes": 175144,
+        "sha256": "d63370c4eb1ab1c51051d502b7016a3d1f2c786a7359969d943a0340894761b2"
+      },
+      {
+        "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+        "bytes": 67144,
+        "sha256": "5f81e87755af1a5c6f5e9d9f6d0014800cfd32ca66d85a1d07f5de42891fc989"
+      },
+      {
+        "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+        "bytes": 33144,
+        "sha256": "fa662e00e47abff5a068a1211e1f9db07d79719ceec6340f1d212c28b5a7ccee"
+      },
+      {
+        "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+        "bytes": 197376,
+        "sha256": "6c74abd4be5fa450a06d404999b4a2b242ff8731c91edeef63d42236c8787d7e"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+        "bytes": 111351,
+        "sha256": "e841253878db846a668031e505d763385d6d0dc836e335f10890905d4910734b"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/tests/io_http2/http2_test.cc",
+        "bytes": 84710,
+        "sha256": "39380296b0e6fdf8798ae8f03c72cbdae8aeea40cad779d9c74f7d19340ff1c0"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/small-headers/http2.o",
+        "bytes": 224840,
+        "sha256": "49ccfa8eacb0a7c81a1ab70a4ccb640b24c176820bce9bc2469ca3e5aa9dbc2a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/bench_nanobench_impl.cc.o",
+        "bytes": 283672,
+        "sha256": "43b16d764541dc1460c6aba273360f40403bcc35ee2feb37461f7f4d29984987"
+      }
+    ],
+    "functional_evidence": "docs/evidence/performance/library-review-2026-10-18/http2/small-headers/summary.json",
+    "current_tcp_header": true,
+    "tcp_overlay": false,
+    "fresh_translation_units": [
+      "baseline HTTP2 with same current headers/flags as candidate",
+      "one shared consumer with current canonical HyleHarness::run"
+    ],
+    "candidate_translation_units_rebuilt": 0,
+    "process_order": [
+      "old",
+      "new",
+      "new",
+      "old"
+    ],
+    "epochs_per_process": 9,
+    "total_epochs": 36,
+    "min_epoch_time_ms": 10,
+    "min_epoch_iterations": 5,
+    "performance_counters": false,
+    "cpu_affinity": [
+      2
+    ],
+    "workload": {
+      "streams": 4,
+      "request_bytes": 262144,
+      "response_bytes": 262144,
+      "connection_window": 65535,
+      "stream_window": 65536,
+      "consume_chunk_max": 16384,
+      "request_payload": "Q",
+      "response_payload": "T",
+      "response_pair_order": "reverse"
+    },
+    "timed_boundary": "external caller HyleHarness::run, including socketpair/adopt, normal two endpoint Tasks, owner allocation, all payload/header/order/credit validation, session and socket retirement and both joins; immutable Workload and persistent Scheduler/IoContext outside",
+    "raw_harness": "Not constructed in either executable; no peer runs or ranking",
+    "warmup": "One complete untimed HyleHarness::run per process; exact same oracle also remains in every timed callback",
+    "failure_policy": "Preserve first failure and stop without retry/input/driver changes. No extra smoke/shape/AA/repetition.",
+    "notes": [
+      "Compare only the combined dead-submit-counter and temporary outgoing-NV-array candidate; do not attribute separately.",
+      "Do not subtract or reuse percentages from any manual-loop or matched-peer comparison.",
+      "Current TCP header is used by fresh old TU and existing new TU. The unchanged cached IO core/foundation is shared by both."
+    ]
+  },
+  "functional_results_from_this_timing": {
+    "explicit_untimed_complete_warmups": 4,
+    "warmup_success": "All four report hyle=4 expected=4.",
+    "timed_success": "Every timed callback retains the original HyleHarness::run complete payload, header/status, reverse response ordering, flow-control and stream-count checks. Both endpoint joins and cleanup remain inside the episode. Any failure aborts; all four processes exited zero.",
+    "extra_smoke_aa_shape_or_repeat": 0,
+    "failures": [],
+    "separate_product_tests": "Root previously ran default and epoll each16/16; referenced in functional_evidence in plan, not rerun or counted as this timing work."
+  },
+  "actual_environment": {
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+    "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+    "affinity": [
+      2
+    ],
+    "raw_harness_constructed": false,
+    "tcp_overlay": false,
+    "current_tcp_header_used_for_both_http2_tus": true,
+    "preload": null,
+    "audit": null,
+    "both_executables_loaded_same_library_identities": true
+  },
+  "results": [
+    {
+      "process_index": 0,
+      "variant": "old",
+      "exit_code": 0,
+      "raw_file": "epochs-0-old.json",
+      "epochs": 9,
+      "median_ns_per_complete_episode": 761531.5,
+      "mean_of_epoch_ns_per_complete_episode": 759545.4258801384,
+      "range_ns_per_complete_episode": [
+        732304.692307692,
+        797913.1538461541
+      ],
+      "median_ns_per_stream": 190382.875,
+      "all_ns_per_complete_episode_in_original_order": [
+        797913.1538461541,
+        769130.923076923,
+        770016.066666667,
+        732304.692307692,
+        740790.1875,
+        753778.8,
+        761531.5,
+        747248.8666666669,
+        763194.642857143
+      ],
+      "all_iterations_in_original_order": [
+        13,
+        13,
+        15,
+        13,
+        16,
+        15,
+        14,
+        15,
+        14
+      ],
+      "all_epoch_elapsed_ms_from_normalized_elapsed_times_iterations": [
+        10.372871000000004,
+        9.998702,
+        11.550241000000005,
+        9.519960999999997,
+        11.852643,
+        11.306682,
+        10.661441,
+        11.208733000000004,
+        10.684725000000002
+      ],
+      "clock_resolution_ns": 12.0,
+      "median_absolute_percent_error": 1.1018687835171501
+    },
+    {
+      "process_index": 1,
+      "variant": "new",
+      "exit_code": 0,
+      "raw_file": "epochs-1-new.json",
+      "epochs": 9,
+      "median_ns_per_complete_episode": 768099.923076923,
+      "mean_of_epoch_ns_per_complete_episode": 770292.2618996744,
+      "range_ns_per_complete_episode": [
+        730030.384615385,
+        814923.428571429
+      ],
+      "median_ns_per_stream": 192024.98076923075,
+      "all_ns_per_complete_episode_in_original_order": [
+        768099.923076923,
+        730030.384615385,
+        770328.133333333,
+        797368.5,
+        786848.6875,
+        758392.8,
+        752536.5,
+        754102.0,
+        814923.428571429
+      ],
+      "all_iterations_in_original_order": [
+        13,
+        13,
+        15,
+        14,
+        16,
+        15,
+        14,
+        15,
+        14
+      ],
+      "all_epoch_elapsed_ms_from_normalized_elapsed_times_iterations": [
+        9.985299,
+        9.490395000000003,
+        11.554921999999994,
+        11.163159,
+        12.589579,
+        11.375892,
+        10.535511,
+        11.31153,
+        11.408928000000005
+      ],
+      "clock_resolution_ns": 12.0,
+      "median_absolute_percent_error": 2.06812866577543
+    },
+    {
+      "process_index": 2,
+      "variant": "new",
+      "exit_code": 0,
+      "raw_file": "epochs-2-new.json",
+      "epochs": 9,
+      "median_ns_per_complete_episode": 781552.733333333,
+      "mean_of_epoch_ns_per_complete_episode": 772954.0306878306,
+      "range_ns_per_complete_episode": [
+        738108.0,
+        802313.571428571
+      ],
+      "median_ns_per_stream": 195388.18333333326,
+      "all_ns_per_complete_episode_in_original_order": [
+        738108.0,
+        741190.785714286,
+        781552.733333333,
+        784432.5,
+        779241.0,
+        745398.133333333,
+        783977.285714286,
+        800372.266666667,
+        802313.571428571
+      ],
+      "all_iterations_in_original_order": [
+        13,
+        14,
+        15,
+        14,
+        16,
+        15,
+        14,
+        15,
+        14
+      ],
+      "all_epoch_elapsed_ms_from_normalized_elapsed_times_iterations": [
+        9.595404,
+        10.376671000000004,
+        11.723290999999996,
+        10.982055,
+        12.467856,
+        11.180971999999995,
+        10.975682000000004,
+        12.005584000000004,
+        11.232389999999995
+      ],
+      "clock_resolution_ns": 13.0,
+      "median_absolute_percent_error": 2.35134750629374
+    },
+    {
+      "process_index": 3,
+      "variant": "old",
+      "exit_code": 0,
+      "raw_file": "epochs-3-old.json",
+      "epochs": 9,
+      "median_ns_per_complete_episode": 763103.384615385,
+      "mean_of_epoch_ns_per_complete_episode": 780361.3137973137,
+      "range_ns_per_complete_episode": [
+        754810.933333333,
+        858466.714285714
+      ],
+      "median_ns_per_stream": 190775.84615384624,
+      "all_ns_per_complete_episode_in_original_order": [
+        761008.153846154,
+        858466.714285714,
+        787717.2857142859,
+        763103.384615385,
+        754810.933333333,
+        792480.133333333,
+        791355.285714286,
+        755220.933333333,
+        759089.0
+      ],
+      "all_iterations_in_original_order": [
+        13,
+        14,
+        14,
+        13,
+        15,
+        15,
+        14,
+        15,
+        14
+      ],
+      "all_epoch_elapsed_ms_from_normalized_elapsed_times_iterations": [
+        9.893106000000001,
+        12.018533999999995,
+        11.028042000000005,
+        9.920344000000004,
+        11.322163999999994,
+        11.887201999999995,
+        11.078974000000004,
+        11.328313999999994,
+        10.627246
+      ],
+      "clock_resolution_ns": 12.0,
+      "median_absolute_percent_error": 1.09861303219746
+    }
+  ],
+  "paired_changes": [
+    {
+      "old_process": 0,
+      "new_process": 1,
+      "new_over_old_median_elapsed_change_percent": 0.86252808674665,
+      "new_over_old_mean_elapsed_change_percent": 1.4149036586038166
+    },
+    {
+      "old_process": 3,
+      "new_process": 2,
+      "new_over_old_median_elapsed_change_percent": 2.4176735537933425,
+      "new_over_old_mean_elapsed_change_percent": -0.9492119840537105
+    }
+  ],
+  "old_first_to_last_median_drift_percent": 0.2064109777973666,
+  "measurement_limits": [
+    "Both new process medians are slower (+0.86253% and +2.41767%). Mean changes disagree in the reverse pair (+1.41490% and -0.94921%). Do not report a latency gain or proven no-regression.",
+    "All ranges, including the final old process high epoch, are retained. No outlier filtering, extra A/A or repeated sampling was performed.",
+    "Configured minEpochTime is10ms; actual recorded epoch elapsed products can fall below that target due to nanobench iteration selection and runtime variation. All actual durations and iterations are retained without resampling.",
+    "This tests the two source simplifications together; it does not attribute a timing effect separately to allocation or dead-counter removal.",
+    "The eight temporary NV allocation/free pairs removed from this fixed trace are a source-level mechanism statement, not a measured allocator/peak-memory counter or a claimed speedup.",
+    "Do not combine these Hyle-only values or percentages with prior manual-loop/matched-peer rankings. No external peer runs occur here.",
+    "Current baseline and candidate HTTP2 code use the same current TCP header and flags. Shared IO core/foundation and locked native library are reused unchanged; no full repository or SDK rebuild is claimed."
+  ],
+  "independent_review": "A second agent independently recomputed every median/mean and paired change from all36 measurements, confirmed iterations>=5 and the Hyle-only common consumer with unchanged full run oracle. No extra execution.",
+  "build_identity": {
+    "new_artifacts": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/http2-old.o",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/http2-old.o",
+        "bytes": 225520,
+        "sha256": "ea6df19dd3e4c3e470d2547654c23280291dce87666e1d627f3585de8c532cb5"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/consumer.o",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/consumer.o",
+        "bytes": 113632,
+        "sha256": "1c6dc5ff898f3f1f0ad79b124ab6e5b1700e15a006964e4d9113a8f1a373e418"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-old",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-old",
+        "bytes": 869192,
+        "sha256": "30e210ca11293901da6385275040111ece1c397c8876ca71b0c162392ebfe7e1"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-new",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-new",
+        "bytes": 869192,
+        "sha256": "d998d16ff5a9f93cf93d6ceec8dccf8d19bce67face6701a0b52c95aa4743ee6"
+      }
+    ],
+    "retained_candidate": {
+      "path": "/root/hyle-scratch/http2-current-20261018/small-headers/http2.o",
+      "resolved": "/root/hyle-scratch/http2-current-20261018/small-headers/http2.o",
+      "bytes": 224840,
+      "sha256": "49ccfa8eacb0a7c81a1ab70a4ccb640b24c176820bce9bc2469ca3e5aa9dbc2a"
+    },
+    "loaded_libraries": {
+      "old": [
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+          "resolved": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+          "bytes": 387104,
+          "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+          "bytes": 54360,
+          "sha256": "9d59be32c875559997a5a04895ef15bde8422535d3fd9cab2f84de407ff4b66d"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+          "bytes": 197376,
+          "sha256": "6c74abd4be5fa450a06d404999b4a2b242ff8731c91edeef63d42236c8787d7e"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+          "bytes": 379256,
+          "sha256": "afa0beddc3441a35446bbacb15765287be8172220bc884f74b0efc317e1a3a9f"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+          "bytes": 175144,
+          "sha256": "d63370c4eb1ab1c51051d502b7016a3d1f2c786a7359969d943a0340894761b2"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+          "bytes": 36552,
+          "sha256": "cdedaac26edb678a806b90446576d6b379d7692e77572ae43fe99e4d0e04102b"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libstdc++.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+          "bytes": 2592224,
+          "sha256": "1fd75fe70354a416d75aef22bcae68c47bd25d20e2d0568c30b1a9838cf62f11"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libm.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+          "bytes": 952616,
+          "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+          "bytes": 183024,
+          "sha256": "d93224d2b0dab4247598be683adca02f5cf00586f99c187579cd7e92058fb7cb"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libc.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+          "bytes": 2129424,
+          "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+          "bytes": 67144,
+          "sha256": "5f81e87755af1a5c6f5e9d9f6d0014800cfd32ca66d85a1d07f5de42891fc989"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+          "bytes": 33144,
+          "sha256": "fa662e00e47abff5a068a1211e1f9db07d79719ceec6340f1d212c28b5a7ccee"
+        }
+      ],
+      "new": [
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+          "resolved": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+          "bytes": 387104,
+          "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+          "bytes": 54360,
+          "sha256": "9d59be32c875559997a5a04895ef15bde8422535d3fd9cab2f84de407ff4b66d"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+          "bytes": 197376,
+          "sha256": "6c74abd4be5fa450a06d404999b4a2b242ff8731c91edeef63d42236c8787d7e"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+          "bytes": 379256,
+          "sha256": "afa0beddc3441a35446bbacb15765287be8172220bc884f74b0efc317e1a3a9f"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+          "bytes": 175144,
+          "sha256": "d63370c4eb1ab1c51051d502b7016a3d1f2c786a7359969d943a0340894761b2"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+          "bytes": 36552,
+          "sha256": "cdedaac26edb678a806b90446576d6b379d7692e77572ae43fe99e4d0e04102b"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libstdc++.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+          "bytes": 2592224,
+          "sha256": "1fd75fe70354a416d75aef22bcae68c47bd25d20e2d0568c30b1a9838cf62f11"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libm.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+          "bytes": 952616,
+          "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+          "bytes": 183024,
+          "sha256": "d93224d2b0dab4247598be683adca02f5cf00586f99c187579cd7e92058fb7cb"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libc.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+          "bytes": 2129424,
+          "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+          "bytes": 67144,
+          "sha256": "5f81e87755af1a5c6f5e9d9f6d0014800cfd32ca66d85a1d07f5de42891fc989"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+          "bytes": 33144,
+          "sha256": "fa662e00e47abff5a068a1211e1f9db07d79719ceec6340f1d212c28b5a7ccee"
+        }
+      ]
+    },
+    "current_tcp_header": {
+      "path": "/mnt/c/public/project-hyle/hyle/include/hyle/io/tcp.h",
+      "resolved": "/mnt/c/public/project-hyle/hyle/include/hyle/io/tcp.h",
+      "bytes": 18345,
+      "sha256": "b1693ec37e0a8e47f717c339910e430f0bb64552511d38f3c5cd94b41655022a"
+    },
+    "maps": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-old.map",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-old.map",
+        "bytes": 246989,
+        "sha256": "2e80ceb85d26f06b3a0a6c2585954dd870f86c9d4d00d8eed3de1ce9012e1149"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-new.map",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/small-headers-timing/probe-new.map",
+        "bytes": 246274,
+        "sha256": "b629e88d7f28aa7bd85c047be52bf4be434fce28baecb542f39b148393f26ed2"
+      }
+    ],
+    "ready": true
+  },
+  "raw_identity": [
+    {
+      "path": "epochs-0-old.json",
+      "bytes": 4298,
+      "sha256": "39279f52e2f7499e27e59fb30e437df227245b2e30dab106680ea4ef8f01d59c"
+    },
+    {
+      "path": "epochs-1-new.json",
+      "bytes": 4289,
+      "sha256": "1f4efa36282c37b73d2b90bcafb53eda14849b298d9e90986495bc37ae809ecc"
+    },
+    {
+      "path": "epochs-2-new.json",
+      "bytes": 4301,
+      "sha256": "d0d0a8e75b3dac1ea883ed9da5ae85d9e18e04922c0a1d82ad9019e80d40a599"
+    },
+    {
+      "path": "epochs-3-old.json",
+      "bytes": 4318,
+      "sha256": "18148513ec9d33909bc444bd054ecf9ac89cf06f920add39d62150004c6a11b3"
+    }
+  ],
+  "source_identity": [
+    {
+      "path": "consumer.cc",
+      "bytes": 1374,
+      "sha256": "2d8708266fa74ae2afb6db0061717775ecc523e00f6863c4355ff3ecdc1ef3b3"
+    },
+    {
+      "path": "http2_p1_bench.cc",
+      "bytes": 34860,
+      "sha256": "8648ebf90d48ccc4ad4eddc7a9c592c135a9353f9ba713cdd697da40a0613202"
+    },
+    {
+      "path": "http2.before.cc",
+      "bytes": 111180,
+      "sha256": "dada1db18f4ae0e8e55adac82f74e0539ab48b53ddb98804d637d53034c83c63"
+    },
+    {
+      "path": "http2.candidate.cc",
+      "bytes": 111351,
+      "sha256": "e841253878db846a668031e505d763385d6d0dc836e335f10890905d4910734b"
+    }
+  ],
+  "actual_commands": "commands-actual.json"
+}
