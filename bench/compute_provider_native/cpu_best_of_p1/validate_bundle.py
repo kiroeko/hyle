@@ -14,7 +14,9 @@ def main():
     assert subprocess.check_output(['git','-C',str(peer),'rev-parse','HEAD'],text=True).strip()==sdk['product_candidate']
     for name,expected in sdk['source_files'].items():assert digest(peer/name)==expected,name
     record=json.loads((HERE/'filtered-aa-identity.json').read_text())
-    archive=ROOT/record['archive'];assert digest(archive)==record['archive_sha256']
+    archive_name=record['archive']
+    archive=ROOT/('docs/'+archive_name if archive_name.startswith('evidence/') else archive_name)
+    assert digest(archive)==record['archive_sha256']
     with zipfile.ZipFile(archive) as z:aa=json.loads(z.read('raw/receipt.json'))
     assert digest(build/'hyle_cpu_best_of_sealed.exe')==aa['artifact']['executable_sha256']
     assert digest(HERE/'cpu_best_of_bench.cc')==aa['artifact']['consumer_sha256']

@@ -22,7 +22,7 @@ struct Domain {
 };
 using Rule = Domain;
 // Complete current-candidate choices, not partial pair wins or old 187/17 rules.
-// Evidence: evidence/performance/cpu-final-f4-p1/complete-provider-choices.json.
+// Evidence: docs/evidence/performance/cpu-final-f4-p1/complete-provider-choices.json.
 constexpr std::array kWins{
     Rule{Family::Binary, 0, DataType::kFloat32, DataType::kFloat32, 32, 2048},
     Rule{Family::Binary, 1, DataType::kFloat16, DataType::kFloat32, 32, 2048},

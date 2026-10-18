@@ -34,7 +34,7 @@ def main():
  # Preserve the failed aggregate. Reuse only individually qualified A/A
  # cases, bound to unchanged loaded code, source, SDK and raw observations.
  # No new A/B data has been observed when this subset is frozen.
- retained=ROOT/'evidence/performance/cpu-native-domain-preflight'
+ retained=ROOT/'docs/evidence/performance/cpu-native-domain-preflight'
  receipt=json.loads((retained/'receipt.json').read_text())
  assert hashlib.sha256((retained/receipt['raw_archive']).read_bytes()).hexdigest()==receipt['raw_sha256']
  assert hashlib.sha256((HERE/'sdk-identity.json').read_bytes()).hexdigest()==receipt['artifact']['sdk_identity_sha256']

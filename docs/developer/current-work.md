@@ -18,7 +18,7 @@
    多输出改用既有 span 入口；禁止租约绑定借用临时 writer，并明确各 owner 的 drain 是否永久关闭接纳。
    同步修正独立 runtime 的公开 prepare 入口及初始化后端选择说明。
 5. 狩猎剩余性能输项；只要确认超出仪器分辨率与测量噪声，即使差距小也继续调查。
-   2026-10-18 全模块首轮调研及当前优化见[性能清单](../../evidence/performance/library-review-2026-10-18/README.md)。
+   2026-10-18 全模块首轮调研及当前优化见[性能清单](../evidence/performance/library-review-2026-10-18/README.md)。
    先排除不同工作与过期实现，再处理真实复杂度问题；历史小输与当前待测项分开记录。
 6. 尽快完成独立的 Qwen3.5-2B 纯文本、无 MTP、无多模态、完整 CUDA C++ 推理消费者，
    在同系统、同设备、同源权重与匹配精度/输入条件下对比 llama.cpp 的 prefill/decode tokens/s。
@@ -29,7 +29,7 @@
 ## 已确认范围
 
 - 用户决定 G04/G05 先视为解决；公平实测与边界见
-  [同 FP8 输入报告](../../evidence/performance/g04-g05-bf16-partials-2026-10-17/same-fp8/README.md)。
+  [同 FP8 输入报告](../evidence/performance/g04-g05-bf16-partials-2026-10-17/same-fp8/README.md)。
 - 用户澄清“多机器”指多系统上的**单机器推理**，不是多台机器协同推理。
 - 底座应在受支持系统上覆盖 CPU、CPU＋一张 GPU、单 GPU 三种模式；硬件后端按实际系统支持。
 - 除 MTP、多模态外，底座的稳定性和功能完整性仍是核心要求。不能仅用 Qwen3.5-2B
@@ -62,7 +62,7 @@ GDN、conv、attention 之间是否出现实体转置、dtype 转换或 host 同
 
 模型输入身份见[本地输入清单](../implementation/tasks/compute/qwen35-2b-local-input.json)，
 独立公式与中间结果生成见[文本参考](../../tests/compute_models/qwen35_reference.py)，
-原运行条件见[参考预检数据](../../evidence/correctness/qwen35-cli-preflight/README.md)。
+原运行条件见[参考预检数据](../evidence/correctness/qwen35-cli-preflight/README.md)。
 这些材料不代表 Hyle 已整模型执行；加载、tokenizer、chat template、生成循环属于独立引擎。
 
 接线时保留模型特有的数值边界，而不是仅匹配算子名字：

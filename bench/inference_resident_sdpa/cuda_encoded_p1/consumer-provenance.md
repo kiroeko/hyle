@@ -2,8 +2,8 @@
 
 Comparison boundary correction (2026-10-17): this consumer compares FP8 and
 cold-expanded BF16 cache configurations. Its warm times cannot rank implementations
-under identical FP8 input constraints. See the [correction](../../../evidence/performance/g04-g05-bf16-partials-2026-10-17/comparison-boundary-correction/README.md)
-and the completed [same-resident-FP8 comparison](../../../evidence/performance/g04-g05-bf16-partials-2026-10-17/same-fp8/README.md).
+under identical FP8 input constraints. See the [correction](../../../docs/evidence/performance/g04-g05-bf16-partials-2026-10-17/comparison-boundary-correction/README.md)
+and the completed [same-resident-FP8 comparison](../../../docs/evidence/performance/g04-g05-bf16-partials-2026-10-17/same-fp8/README.md).
 The historical contract and raw samples below remain unchanged.
 
 The consumer is a two-request GQA8/2 page16 attention episode, using BF16 Q/output

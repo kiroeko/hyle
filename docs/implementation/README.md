@@ -13,8 +13,7 @@
   [原验收数据](tasks/compute/llm-moe-d5-acceptance-ledger.json)：部分现有测试读取这些 JSON，
   字段中的阶段名和历史结果不自动代表当前支持范围。
 - `tasks/compute/` 的其余 JSON：原始需求、格式、handoff 与实验索引；不作为新任务或开发门禁。
-- `evidence/` 的 JSON/ZIP：旧实验参数、结果与归档。
-- 根目录 [evidence](../../evidence/README.md)：历史源码、日志、输入、数据与复现资产。
+- [evidence](../evidence/README.md)：历史源码、日志、输入、数据与复现资产；JSON/ZIP 保留旧实验参数、结果与归档。
 
 ## 追溯旧文档
 

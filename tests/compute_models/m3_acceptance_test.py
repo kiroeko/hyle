@@ -9,8 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX = ROOT / "docs/implementation/tasks/compute/llm-moe-coverage-matrix.json"
-EVIDENCE = ROOT / "evidence/correctness/compute-llm-moe-m3/acceptance.json"
-REFERENCE = ROOT / "evidence/correctness/compute-llm-moe-m3/b16-reference-receipt.json"
+EVIDENCE = ROOT / "docs/evidence/correctness/compute-llm-moe-m3/acceptance.json"
+REFERENCE = ROOT / "docs/evidence/correctness/compute-llm-moe-m3/b16-reference-receipt.json"
 SOURCE_ID = "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155"
 FINAL_STATES = {
     "PASS",
@@ -47,7 +47,9 @@ def main() -> None:
             assert coverage.get("reason")
             assert coverage.get("evidence")
             for item in coverage["evidence"]:
-                local = ROOT / item.split("#", 1)[0]
+                name = item.split("#", 1)[0]
+                # The frozen receipt retains its original repository paths.
+                local = ROOT / ("docs/" + name if name.startswith("evidence/") else name)
                 assert local.is_file(), item
             counts[state] += 1
 

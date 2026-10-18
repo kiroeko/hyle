@@ -40,7 +40,7 @@ samples/        C++ 消费者工程
 cmake/          组件、依赖和安装规则
 scripts/        构建、依赖和诊断工具
 docs/           用户、开发、架构和历史记录
-evidence/       原始实验数据
+docs/evidence/  原始实验数据
 third_party/    第三方源码与适配
 ```
 

@@ -11,4 +11,4 @@
 教程解释选择与组合，架构说明设计原因。
 
 工作区约定见 [AGENTS.md](../AGENTS.md)，当前任务见[工作主线](developer/current-work.md)。
-原始实验源码、日志与数据见 [evidence](../evidence/README.md)。
+原始实验源码、日志与数据见 [evidence](evidence/README.md)。

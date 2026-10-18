@@ -14,7 +14,7 @@
 | 稳定但反常的速度差 | 实际工作量、最终指令、地址放置、顺序、完成与采样层次 |
 
 以下故障模式来自项目调查，保留的是定位方法与设计原因，不是当前缺陷清单或历史测试通过证明。
-接口已变动时按当前公开头和实现核对；原始源码、日志和数据仍在 Git 与 [evidence](../../../evidence/README.md)。
+接口已变动时按当前公开头和实现核对；原始源码、日志和数据仍在 Git 与 [evidence](../../evidence/README.md)。
 
 ## 构建、依赖与运行库
 
@@ -108,7 +108,7 @@ G09 旧日志中的错误是某个 attention pipeline 的 `threadgroupMemoryLeng
 这条修正没有改变 D256/dtype，也不意味着自动 CPU 回退或整条设备流程已经验证通过。
 
 原日志保存在
-[ordinary-checkpoint-5.zip](../../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-5.zip)。
+[ordinary-checkpoint-5.zip](../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-5.zip)。
 
 ## SIMD 数值：输入有限不保证中间量安全
 
