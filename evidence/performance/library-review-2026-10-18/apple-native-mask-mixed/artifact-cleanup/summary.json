@@ -1,0 +1,13 @@
+{
+  "status": "executed once successfully; do not rerun test.ps1",
+  "script_sha256": "4855bb3015e42136e3a3a4b6d307df2a32858a07982e4f57bf1ee1b1d9199e6b",
+  "deleted_files": 16,
+  "deleted_bytes": 110169024,
+  "retained_files": 14,
+  "retained_bytes": 12472480,
+  "scope": "Obsolete native stride/mixed control, diagnostic and space executables/objects, superseded test object and old SDK baseline only. Current accepted native/Hyle/test/probe objects and one current ready test executable are retained.",
+  "preflight": "All 30 exact resolved regular files checked for path, size, SHA256, ancestor/leaf symlinks and inode before deletion. Each target rechecked; each retained file verified afterward.",
+  "preserved": "All SDKs, source, raw, logs, maps, references and archives; no directories removed.",
+  "archive_bytes": 7852,
+  "archive_sha256": "fd9319a7fd03a8bb46b33f558b320ca3667ec7b429ce5acbc7411cac16f60760"
+}

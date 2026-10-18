@@ -1388,3 +1388,5 @@ v2按mask字节量选择64～512行（32MiB目标），固定点为448＋448＋1
 只fresh两侧fast.cpp＋新host、一个共享consumer、一个共享test TU，Steel与其余SDK复用。独立Bool/F16/BF16小test在control通过，candidate共9项通过；原8组4198400输出逐位相同，847680处原FP64预算超标仍保留。固定新baca consumer沿用QK0、V交替±1.25及原oracle/计时，只将mask换成BF16、Qstride0/KVstride2；两侧完整524800输出oracle通过。extra MLX active peak从35717120降至2162688 B（−93.94%），active_before及持output的active相同。本点实际少33554432 B，268730400 B只是BHQK F32 mask逻辑尺寸，不能称旧实际分配了该量或完整scores。
 
 唯一同源ABBA中位数12.996708／9.524541／9.534750／10.446542 ms，新实现两顺序均更快；首old组波动保留，不给统一倍率/CI。接纳补丁，已知普通attention项计为已修：当前26／27项性能机制已修，仅HTTP2未完，另4项接线/正确性均已修。NAX、其它shape吞吐、完整cold prepare峰值和模型tokens/s未测。[结论](apple-native-mask-mixed/disposition.json)／[完整结果](apple-native-mask-mixed/summary.json)／[root位值核对](apple-native-mask-mixed/raw-byte-check.json)／[原生差异](apple-native-mask-mixed/native.diff)／[命令、数据和日志](apple-native-mask-mixed/source-results.zip)。
+
+Apple两批native结果归档后，先更新根test.ps1再执行一次精确清理：删除16项过时生成物110169024 B，保留并复核14项当前native/Hyle/测试/probe缓存及一份现成test exe，共12472480 B。所有源、raw、日志、map、参考、归档和SDK保留；当前脚本已用不可重跑。[执行记录](apple-native-mask-mixed/artifact-cleanup/summary.json)。
