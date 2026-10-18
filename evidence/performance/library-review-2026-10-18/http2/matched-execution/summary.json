@@ -1,0 +1,467 @@
+{
+  "status": "completed; no product or canonical benchmark modification; no cleanup or commit",
+  "scope": "One fixed current-accepted-HTTP2 versus raw two-Task same-execution-model total-episode control",
+  "workload": {
+    "streams": 4,
+    "request_bytes_per_stream": 262144,
+    "response_bytes_per_stream": 262144,
+    "application_payload_bytes_per_episode": 2097152,
+    "request_payload": "Q repeated",
+    "response_payload": "T repeated",
+    "connection_initial_window": 65535,
+    "stream_receive_window": 65536,
+    "wire_pending_capacity_per_endpoint": 65536,
+    "socket_read_capacity_per_endpoint": 65536,
+    "body_consume_max_chunk": 16384,
+    "socket_buffer_request": 4096,
+    "pair_order": "submit each complete request body before next request; two open streams; second complete response before first"
+  },
+  "timed_boundary": {
+    "start": "External caller enters HyleHarness::run or run_raw_fibers, including socketpair/adoption, Task construction/spawn and per-episode owner storage allocation.",
+    "finish": "Client then server join have completed and all endpoint sessions, body/header/container storage, wire buffers and sockets have been retired. Remaining stack metadata destruction also precedes callback return.",
+    "outside": "Persistent Scheduler/IoContext and inactive RawHarness construction/destruction; immutable Workload payload creation; one complete oracle warmup per arm in selected order; warmup-only raw close/EBADF observation; JSON rendering.",
+    "same_execution": "Ordinary spawn_task on the same persistent one-worker Scheduler, server spawned before client, client join before server join, final client_consumed Event unchanged; no spawn_task_on, PLT interposition, hot phase tracing or progress counters."
+  },
+  "source_changes": [
+    "Start with the current canonical protocol source; add only scratch harness accessors, stage8 single-attempt retry seam, buffer ownership and byte insertion changes.",
+    "Use stage8 validated two-Task driver unchanged: successful flush reenters the loop before a read; postyield write makes one immediate attempt before the existing async fallback.",
+    "Each raw owner Task allocates two uninitialized 64KiB blocks through its same system AllocatorRef, with explicit null checks and partial-allocation cleanup. Span metadata is zero-initialized, payload is not.",
+    "Pending bytes are read only inside [begin,end) after native encoding copied them; input bytes are read only up to a successful recv/await result length. Allocation never substitutes unread uninitialized bytes for received data.",
+    "raw_data_chunk retains its capacity/error/compaction rules, but inserts the actual received bytes directly instead of resize-value-initializing bytes and overwriting them.",
+    "Reserve original streams capacity on the owner Task before callbacks. On completion/failure delete native session before freeing readable/stream containers and wire blocks; close the socket before Task return and before both external joins finish.",
+    "Keep current canonical RawHarness worker_ declared after every field its new thread can read. Its persistent manual thread remains inactive in both measured arms."
+  ],
+  "matching_tcp_inline": {
+    "overlay": "include/hyle/io/tcp.h",
+    "source": "git show bfea93767^:include/hyle/io/tcp.h",
+    "difference": "Exactly four owner-index proactor selections restored to proactor_for_current; all other current TCP header bytes match after LF normalization.",
+    "include_order": "scratch overlay before repository include",
+    "reason": "Accepted discard-frame HTTP2/core cache predates bfea93767. Fresh raw fallback must not alone gain that header-only TLS-query reduction.",
+    "limit": "This is a matching cached-component control, not an all-current-HEAD foundation/core build. No product header is changed."
+  },
+  "actual_execution": {
+    "fresh_translation_units": 1,
+    "fresh_product_or_sdk_translation_units": 0,
+    "separate_smoke_processes": 0,
+    "formal_processes": 2,
+    "process_order": [
+      "ab",
+      "ba"
+    ],
+    "recorded_epoch_count": 36,
+    "extra_shapes_aa_or_repeats": 0,
+    "failures": [],
+    "warmup_and_timed_validation": "Both complete warmup episodes in each selected order passed; every timed episode checks exact stream completion, complete body bytes and reverse order. Raw warmups also observed both descriptors closed (EBADF). Failure aborts the process; both processes exited zero.",
+    "instrumentation": "No PLT/preload/audit interposition or hot counters/phase probes. nanobench performanceCounters(false).",
+    "affinity": [
+      2
+    ],
+    "inherited_preload": null,
+    "inherited_audit": null,
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+    "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K"
+  },
+  "results": [
+    {
+      "order": "ab",
+      "exit_code": 0,
+      "arms_in_execution_order": [
+        {
+          "arm": "hyle",
+          "name": "Hyle public two-fiber session",
+          "batch_streams": 4,
+          "epochs": 9,
+          "clock_resolution_ns": 12.0,
+          "configured_minimum_epoch_time_ms": 10.0,
+          "configured_minimum_epoch_iterations": 5,
+          "median_ns_per_complete_episode": 747497.733333333,
+          "mean_of_epoch_ns_per_complete_episode": 754687.7120014243,
+          "minimum_ns_per_complete_episode": 736261.153846154,
+          "maximum_ns_per_complete_episode": 785377.071428571,
+          "median_ns_per_stream": 186874.43333333326,
+          "median_absolute_percent_error": 1.13317472739692,
+          "all_ns_per_complete_episode_in_original_order": [
+            736261.153846154,
+            785377.071428571,
+            747497.733333333,
+            743044.3571428569,
+            739122.1875,
+            782523.333333333,
+            762173.0,
+            744687.0,
+            751503.571428571
+          ],
+          "all_iterations_in_original_order": [
+            13,
+            14,
+            15,
+            14,
+            16,
+            15,
+            14,
+            15,
+            14
+          ]
+        },
+        {
+          "arm": "raw",
+          "name": "aligned raw two-fiber session",
+          "batch_streams": 4,
+          "epochs": 9,
+          "clock_resolution_ns": 12.0,
+          "configured_minimum_epoch_time_ms": 10.0,
+          "configured_minimum_epoch_iterations": 5,
+          "median_ns_per_complete_episode": 737051.8,
+          "mean_of_epoch_ns_per_complete_episode": 741068.9306216933,
+          "minimum_ns_per_complete_episode": 716033.285714286,
+          "maximum_ns_per_complete_episode": 768985.75,
+          "median_ns_per_stream": 184262.95,
+          "median_absolute_percent_error": 1.6381951097399101,
+          "all_ns_per_complete_episode_in_original_order": [
+            726948.285714286,
+            716033.285714286,
+            734026.1875,
+            742265.0,
+            761481.5625,
+            757656.4375,
+            725172.066666667,
+            768985.75,
+            737051.8
+          ],
+          "all_iterations_in_original_order": [
+            14,
+            14,
+            16,
+            14,
+            16,
+            16,
+            15,
+            16,
+            15
+          ]
+        }
+      ],
+      "raw_over_hyle_median_elapsed_ratio": 0.9860254648709753,
+      "hyle_over_raw_median_elapsed_change_percent": 1.4172590492734782,
+      "raw_over_hyle_mean_elapsed_ratio": 0.9819544148352248
+    },
+    {
+      "order": "ba",
+      "exit_code": 0,
+      "arms_in_execution_order": [
+        {
+          "arm": "raw",
+          "name": "aligned raw two-fiber session",
+          "batch_streams": 4,
+          "epochs": 9,
+          "clock_resolution_ns": 13.0,
+          "configured_minimum_epoch_time_ms": 10.0,
+          "configured_minimum_epoch_iterations": 5,
+          "median_ns_per_complete_episode": 757954.2,
+          "mean_of_epoch_ns_per_complete_episode": 760484.2626831502,
+          "minimum_ns_per_complete_episode": 739755.928571429,
+          "maximum_ns_per_complete_episode": 789238.666666667,
+          "median_ns_per_stream": 189488.55,
+          "median_absolute_percent_error": 2.0696122988508,
+          "all_ns_per_complete_episode_in_original_order": [
+            789238.666666667,
+            754877.923076923,
+            757954.2,
+            739755.928571429,
+            745123.3125,
+            762215.3333333329,
+            773972.4285714291,
+            778803.0,
+            742417.571428571
+          ],
+          "all_iterations_in_original_order": [
+            12,
+            13,
+            15,
+            14,
+            16,
+            15,
+            14,
+            15,
+            14
+          ]
+        },
+        {
+          "arm": "hyle",
+          "name": "Hyle public two-fiber session",
+          "batch_streams": 4,
+          "epochs": 9,
+          "clock_resolution_ns": 13.0,
+          "configured_minimum_epoch_time_ms": 10.0,
+          "configured_minimum_epoch_iterations": 5,
+          "median_ns_per_complete_episode": 757120.642857143,
+          "mean_of_epoch_ns_per_complete_episode": 762256.0426129424,
+          "minimum_ns_per_complete_episode": 736179.7333333329,
+          "maximum_ns_per_complete_episode": 815962.0,
+          "median_ns_per_stream": 189280.16071428574,
+          "median_absolute_percent_error": 0.637340075599995,
+          "all_ns_per_complete_episode_in_original_order": [
+            752325.769230769,
+            754095.357142857,
+            751531.1333333331,
+            757372.071428571,
+            815962.0,
+            736179.7333333329,
+            776416.1428571431,
+            759301.533333333,
+            757120.642857143
+          ],
+          "all_iterations_in_original_order": [
+            13,
+            14,
+            15,
+            14,
+            16,
+            15,
+            14,
+            15,
+            14
+          ]
+        }
+      ],
+      "raw_over_hyle_median_elapsed_ratio": 1.0011009568299596,
+      "hyle_over_raw_median_elapsed_change_percent": -0.10997460570268958,
+      "raw_over_hyle_mean_elapsed_ratio": 0.997675610515702
+    }
+  ],
+  "ab_to_ba_process_drift": {
+    "hyle": {
+      "ba_minus_ab_median_ns": 9622.90952380991,
+      "ba_over_ab_median_change_percent": 1.2873496593626133
+    },
+    "raw": {
+      "ba_minus_ab_median_ns": 20902.399999999907,
+      "ba_over_ab_median_change_percent": 2.8359472156502363
+    }
+  },
+  "interpretation": [
+    "In AB Hyle median elapsed is about 1.42% above raw; in BA Hyle median is about 0.11% below raw. This fixed control does not show a consistent gap of the formal manual-loop comparison's size.",
+    "Process drift is retained: Hyle median +1.28735%, raw +2.83595% from AB to BA; all epoch ranges and raw measurements remain. Mean and median need not produce the same tiny BA ordering.",
+    "Do not replace or mark solved the distinct formal manual-loop peer residual. Do not attribute this combined execution-model/driver/ownership difference to pure scheduler or fcontext cost, and do not subtract percentages from prior rounds.",
+    "Raw retains default native DATA bounce-copy and its fixed-workload vector representation; accepted Hyle retains owned-wire NO_COPY, generic owner/pin/borrow-ACK/cancel/error/flush epoch responsibilities. These remaining duties differ and are not separately timed.",
+    "Matching old TCP header overlay deliberately excludes the later four-line bfea93767 optimization from fresh inline code to match cached HTTP2/core. This is not an all-current-HEAD foundation rebuild."
+  ],
+  "remaining_different_responsibilities": [
+    "Raw provider retains default nghttp2 DATA bounce-copy; accepted Hyle uses the owned-wire NO_COPY callback. The refreshed peer does not silently adopt or remove either path.",
+    "Hyle preserves recoverable owner/valid/busy/cancel/deadline checks, pins/borrow-ACK reader lifetime, stream-map/header ownership, typed errors and actual-flush epoch accounting; raw uses its fixed-workload state and vectors. This control does not isolate pure scheduler/fcontext cost.",
+    "Raw body vectors are explicitly bounded by the original 64KiB capacity and store every actual DATA byte once before the same verify/consume callbacks; Hyle uses its per-stream receive-ring and public consume API. Container representation/allocation counts need not be identical.",
+    "Both encode one native frame before transport write; no frame batching difference is assumed. Window updates follow the original per-chunk native consume calls; do not inject matching frames or credit.",
+    "Keep existing terminal semantics and final Event/socket closure. Do not append a raw-only caller-side terminal drain/GOAWAY; differing final queued native control bytes are not forced into equality."
+  ],
+  "identities": {
+    "sources": {
+      "status": "source prepared only; not compiled or run",
+      "repository_head_at_preparation": "82ec786ccadb2a97a6910b373dff305d49f0aa25",
+      "inputs": [
+        {
+          "path": "bench/io_http2/http2_p1_bench.cc",
+          "bytes": 34571,
+          "sha256": "349e49e8d64c1f5f3d1c5ff5dd18433973fd3cb8aab025cbcdc63fefff8b6e90"
+        },
+        {
+          "path": "src/io_http2/http2.cc",
+          "bytes": 111180,
+          "sha256": "dada1db18f4ae0e8e55adac82f74e0539ab48b53ddb98804d637d53034c83c63"
+        },
+        {
+          "path": "include/hyle/io/tcp.h",
+          "bytes": 18345,
+          "sha256": "b1693ec37e0a8e47f717c339910e430f0bb64552511d38f3c5cd94b41655022a"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/main.cc",
+          "bytes": 8132,
+          "sha256": "116d02db3761202fc73e9af42ab79c540358b8c6595d8729dc6c8c47dbf86ebc"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/plain_bench.cc",
+          "bytes": 35820,
+          "sha256": "4f298a7cc943073c72018ab2572964cd5c1514d42972ae677b32fef87d4071a6"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2/raw-fiber-plain/split_advance.h",
+          "bytes": 1573,
+          "sha256": "a9a985317f58ded69240f4868067bcb294d4e41ca31fac13533d84f3ffa5f8e0"
+        }
+      ],
+      "outputs": [
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/main.cc",
+          "bytes": 8585,
+          "sha256": "ea2bb3f79df04845c17f1dce8c4df32e737c0d7a2ebac9139d95be4732ec11a1"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/protocol.cc",
+          "bytes": 36267,
+          "sha256": "3f6263384c03e123da640768ca9b86f1fb93c9f985dfd35493787f9196c71fbb"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/split_advance.h",
+          "bytes": 1573,
+          "sha256": "a9a985317f58ded69240f4868067bcb294d4e41ca31fac13533d84f3ffa5f8e0"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/include/hyle/io/tcp.h",
+          "bytes": 18361,
+          "sha256": "2ffe4b1e1f30fd0afd4fb3d7e466883cc826f2cbcf3440fdbfbac64027be3ee3"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/current-canonical-protocol.diff",
+          "bytes": 4459,
+          "sha256": "ee85923dbe1892a7eb613eee49f311368755da3232e1b3a40f4757ac7f027afb"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/stage8-protocol.diff",
+          "bytes": 4708,
+          "sha256": "b8292cb2857913376a1ac156b5e91bb1bb7f0e242de9406213b787c89843a5e7"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/stage8-main.diff",
+          "bytes": 2935,
+          "sha256": "bca8e5ebbade7bc2780b8be09d3db8596329a981432ead21459358a1275c97a5"
+        },
+        {
+          "path": ".scratch/perf-review-2026-10-18/http2-matched-execution/tcp-header-overlay.diff",
+          "bytes": 1838,
+          "sha256": "e56ff3b1ec772cc56181457392cc78776cb7c853e8ff02e68ae73fdba82c3232"
+        }
+      ],
+      "split_advance_unchanged": true,
+      "header_overlay": {
+        "source": "git show bfea93767^:include/hyle/io/tcp.h",
+        "only_difference_from_current": "reverse exactly the four bfea93767 owner-index substitutions",
+        "purpose": "fresh raw async fallback and fresh Hyle wrapper use the same TCP inline version as cached HTTP2/core"
+      }
+    },
+    "build_and_loader": {
+      "objects": [
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/http2-matched-execution/main.o",
+          "resolved": "/root/hyle-scratch/http2-current-20261018/http2-matched-execution/main.o",
+          "bytes": 143608,
+          "sha256": "0fd1578f63b371181f43f0bbd40cb39cc06ddd571fb3b79412700f15ee3a151e"
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/http2-matched-execution/probe",
+          "resolved": "/root/hyle-scratch/http2-current-20261018/http2-matched-execution/probe",
+          "bytes": 892096,
+          "sha256": "7058d3f30a9a2e07ef9c49f4afaae63208a0c47b89bea3a36fe37594cae60191"
+        }
+      ],
+      "link_map": {
+        "path": "/root/hyle-scratch/http2-current-20261018/http2-matched-execution/probe.map",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/http2-matched-execution/probe.map",
+        "bytes": 248610,
+        "sha256": "e1e9852e97c37042cda95fed192883e9ddb56ee3c8f175a00398e2c18cd3e3b1"
+      },
+      "loaded_libraries": [
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+          "resolved": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+          "bytes": 387104,
+          "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0",
+          "bytes": 54360,
+          "sha256": "9d59be32c875559997a5a04895ef15bde8422535d3fd9cab2f84de407ff4b66d"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0",
+          "bytes": 197376,
+          "sha256": "6c74abd4be5fa450a06d404999b4a2b242ff8731c91edeef63d42236c8787d7e"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0",
+          "bytes": 379256,
+          "sha256": "afa0beddc3441a35446bbacb15765287be8172220bc884f74b0efc317e1a3a9f"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0",
+          "bytes": 175144,
+          "sha256": "d63370c4eb1ab1c51051d502b7016a3d1f2c786a7359969d943a0340894761b2"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0",
+          "bytes": 36552,
+          "sha256": "cdedaac26edb678a806b90446576d6b379d7692e77572ae43fe99e4d0e04102b"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libstdc++.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+          "bytes": 2592224,
+          "sha256": "1fd75fe70354a416d75aef22bcae68c47bd25d20e2d0568c30b1a9838cf62f11"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libm.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+          "bytes": 952616,
+          "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+          "bytes": 183024,
+          "sha256": "d93224d2b0dab4247598be683adca02f5cf00586f99c187579cd7e92058fb7cb"
+        },
+        {
+          "path": "/lib/x86_64-linux-gnu/libc.so.6",
+          "resolved": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+          "bytes": 2129424,
+          "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0",
+          "bytes": 67144,
+          "sha256": "5f81e87755af1a5c6f5e9d9f6d0014800cfd32ca66d85a1d07f5de42891fc989"
+        },
+        {
+          "path": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+          "resolved": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0",
+          "bytes": 33144,
+          "sha256": "fa662e00e47abff5a068a1211e1f9db07d79719ceec6340f1d212c28b5a7ccee"
+        }
+      ],
+      "tcp_overlay": {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-matched-execution/include/hyle/io/tcp.h",
+        "resolved": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-matched-execution/include/hyle/io/tcp.h",
+        "bytes": 18361,
+        "sha256": "2ffe4b1e1f30fd0afd4fb3d7e466883cc826f2cbcf3440fdbfbac64027be3ee3"
+      },
+      "accepted_http2_object": {
+        "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+        "resolved": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+        "bytes": 223280,
+        "sha256": "0de3047e82522fddeaf24b57d576f4c7393901d9609217577ec2d5fc566303b6"
+      },
+      "core_verified": true
+    },
+    "preflight": "preflight-identities.json",
+    "actual_commands": "commands-actual.json"
+  },
+  "independent_numeric_review": "A second agent independently recomputed all four nine-epoch medians, ratios, process drift and minimum iterations from the retained JSON; values agreed. Read-only, no additional run.",
+  "retained_files": {
+    "raw": [
+      "epochs-ab.json",
+      "epochs-ba.json"
+    ],
+    "stdout_stderr": [
+      "fixed-ab.stdout.txt",
+      "fixed-ab.stderr.txt",
+      "fixed-ba.stdout.txt",
+      "fixed-ba.stderr.txt"
+    ]
+  }
+}

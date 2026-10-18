@@ -1,0 +1,52 @@
+{
+  "status": "independent local archive/source/raw-statistics review passed; no runtime rerun",
+  "archive_sha256": "d36e92e4c495a8019438be09e057b26a9e8fd80fa5982d57d3eb854b7163fbef",
+  "archive_members": 42,
+  "all_archive_members_equal_frozen_sources": true,
+  "records": [
+    {
+      "order": "ab",
+      "arm": "hyle",
+      "epochs": 9,
+      "iterations": 130,
+      "median_ns_per_episode": 747497.733333333,
+      "median_ns_per_stream": 186874.43333333326
+    },
+    {
+      "order": "ab",
+      "arm": "raw",
+      "epochs": 9,
+      "iterations": 136,
+      "median_ns_per_episode": 737051.8,
+      "median_ns_per_stream": 184262.95
+    },
+    {
+      "order": "ba",
+      "arm": "raw",
+      "epochs": 9,
+      "iterations": 128,
+      "median_ns_per_episode": 757954.2,
+      "median_ns_per_stream": 189488.55
+    },
+    {
+      "order": "ba",
+      "arm": "hyle",
+      "epochs": 9,
+      "iterations": 130,
+      "median_ns_per_episode": 757120.642857143,
+      "median_ns_per_stream": 189280.16071428574
+    }
+  ],
+  "canonical_sources_at_review": [
+    {
+      "path": "bench/io_http2/http2_p1_bench.cc",
+      "sha256": "349e49e8d64c1f5f3d1c5ff5dd18433973fd3cb8aab025cbcdc63fefff8b6e90"
+    },
+    {
+      "path": "src/io_http2/http2.cc",
+      "sha256": "dada1db18f4ae0e8e55adac82f74e0539ab48b53ddb98804d637d53034c83c63"
+    }
+  ],
+  "units": "raw elapsed is per complete four-stream episode; divide by batch 4 only for per-stream reporting",
+  "limits": "No fresh runtime validation; source/cache/loader execution identities remain the recorded experiment evidence."
+}

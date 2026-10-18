@@ -1,0 +1,11 @@
+{
+  "status": "executed once, exit 0",
+  "script": "cleanup-script.ps1",
+  "script_sha256": "d63912516fd067b1168a9ffd2e8fe74ce405b0b61c3d91c42e2b1829d4513ee3",
+  "log": "cleanup-executed.log",
+  "deleted_files": 2,
+  "deleted_bytes": 1035704,
+  "retained_cache_files_verified": 2,
+  "directories_removed": 0,
+  "scope": "Only the completed experiment main.o and probe; preserved source/raw/log/map/archive and existing HTTP2/core/SDK caches."
+}

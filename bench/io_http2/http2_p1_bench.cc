@@ -1,4 +1,4 @@
-// Same-contract HTTP/2 P1 evidence for multiplexed inference streams.
+// HTTP/2 protocol/payload comparison for multiplexed inference streams.
 //
 // Both routes own one fresh nonblocking Unix socket pair and execute client and
 // server HTTP/2 state on one persistent worker. They submit two concurrent
@@ -7,6 +7,10 @@
 // byte, update both flow-control windows, and retire all connection state. The
 // HYLE route uses only public HYLE APIs. The peer uses the pinned public
 // nghttp2 session API directly; it does not replace HPACK or frame machinery.
+// Execution differs: HYLE uses two scheduled endpoint Tasks; the direct peer
+// advances both endpoints in one manual loop. The elapsed ratio includes that
+// strategy difference and generic public-API responsibilities. It does not
+// isolate HTTP/2 wrapper overhead or scheduler cost.
 
 #include <nanobench.h>
 #include <nghttp2/nghttp2.h>

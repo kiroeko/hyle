@@ -1,0 +1,4 @@
+{"preflight_files": 4, "delete_files": 2, "delete_bytes": 1035704, "retain_files": 2}
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/http2-matched-execution/main.o
+Deleted exact generated file: /root/hyle-scratch/http2-current-20261018/http2-matched-execution/probe
+{"status": "completed", "deleted_files": 2, "deleted_bytes": 1035704, "retained_cache_files_verified": 2, "directories_removed": 0}

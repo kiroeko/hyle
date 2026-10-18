@@ -1,0 +1,19 @@
+{
+  "archive": {
+    "path": "source-results.zip",
+    "bytes": 86381,
+    "sha256": "d36e92e4c495a8019438be09e057b26a9e8fd80fa5982d57d3eb854b7163fbef"
+  },
+  "summary": {
+    "path": "summary.json",
+    "bytes": 23011,
+    "sha256": "957e9797e520703abf45a43e2e81e0650951dc1669ee49cf1aaf5bd5429e4218"
+  },
+  "cleanup": {
+    "path": "cleanup-candidates.json",
+    "bytes": 1339,
+    "sha256": "686a47ea15a3a44a2a630463f94357b04c881f5e28edd3c1ec059985b951b4e5"
+  },
+  "members": 42,
+  "contains_binary_cache": false
+}
