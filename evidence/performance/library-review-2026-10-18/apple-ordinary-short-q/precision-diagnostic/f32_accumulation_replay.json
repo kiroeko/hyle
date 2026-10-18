@@ -1,0 +1,14 @@
+{
+  "kind": "CPU explicit-F32 arithmetic replay, no native/GPU execution",
+  "keys": 8193,
+  "probability_f32": 0.00012205541133880615,
+  "probability_mass_f64": 0.9999999850988388,
+  "reference_f32": -0.1248474270105362,
+  "separate_f32_product_sum": -0.12483600527048111,
+  "fma_f32_replay": -0.12483600527048111,
+  "previously_observed_first_gpu_scalar": -0.1248360276222229,
+  "sequential_vs_gpu_abs": 2.2351741790771484e-08,
+  "sequential_vs_reference_abs": 1.1421740055084229e-05,
+  "probability_rounding_only_error_f64": 1.8603716899984037e-09,
+  "interpretation": "Strong PV accumulation hypothesis only. Does not prove the actual selected kernel, internal P, full output parity or accuracy of either route. Original FP64 budget failures are retained."
+}

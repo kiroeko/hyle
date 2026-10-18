@@ -1,0 +1,60 @@
+{
+  "scope": "Read-only source review; no Mac access, compilation, execution, input/tolerance change or product edit.",
+  "observed_failure": {
+    "source": "apple-ordinary-short-q/summary.json",
+    "shape": "B1/Hq8/Hkv2/Q513/KV8193/D256, BHSD, phase0, head0/query0/channel0",
+    "baseline_and_candidate_actual": -0.1248360276222229,
+    "expected_F32_rounded_FP64": -0.1248474270105362,
+    "absolute_error": 0.000011399388313293457,
+    "original_allowed_error": 0.0000027490845620632172,
+    "limitation": "Only the first observed scalar is identical; this neither proves all-output equality nor candidate cross-block correctness. The numerical failure remains a failure."
+  },
+  "source_identity": {
+    "locked_mlx_revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "lock": "cmake/HyleDependencyLock.json:701-704",
+    "local_patched_fast_fallback": ".scratch/perf-review-2026-10-18/apple-sink-compact/fast.baseline.cpp",
+    "local_patched_fast_sha256": "3c871a99874c24bdf5d78784962430f0a5c6be7abf1ea2fdc0d3ff1fb63fa2b7",
+    "local_kernel_header_root": ".scratch/foundation-f3/sdk-air-cpu-apple-static-97858fbc8/relocated/include/mlx/backend/metal/kernels",
+    "softmax_header_sha256": "cb233fe42a7358f5f658c9a1ef52cd2ee9dd3786ddfad01793a976d58f4d4051",
+    "steel_gemm_mma_header_sha256": "9b37709de40c3acaa5411875e52c8d26e6de093261741f671fbdab9c39a852b7",
+    "local_host_source_limit": "No complete local Metal matmul.cpp/softmax.cpp snapshot found in the inspected caches. Read the exact pinned upstream primary sources below; current mlx_cast manifest does not patch these files or the GEMM/softmax headers. This does not identify the runtime pipeline or independently hash its executable code.",
+    "primary_sources": {
+      "matmul": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/matmul.cpp",
+      "softmax": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/softmax.cpp",
+      "original_fallback": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/fast.cpp"
+    }
+  },
+  "facts": [
+    {
+      "at": "local fast.baseline.cpp:852-881,906-932; frozen candidate apple_tensor.cc:350-375",
+      "finding": "F32 input/output promotion, scale in input dtype, QK, finite-min Boolean where, precise softmax, PV stay F32; no explicit narrowing to Half/BF16 is present on this math path. GQA reshapes/broadcasts do not change dtype."
+    },
+    {
+      "at": "pinned softmax.cpp:41-54,66-76; local kernels/softmax.h:100-208",
+      "finding": "KV8193 selects looped float softmax. precise=true does not promote F32 to FP64. Kernel normalizer and stored probabilities are float; source uses fast exponential. For this all-equal row, integer counts through 8193 fit exactly in F32, so ordinary probability rounding is a much smaller candidate than PV accumulation, subject to checking actual probability bits."
+    },
+    {
+      "at": "pinned matmul.cpp:1349-1472,846-858; local steel/gemm/kernels/steel_gemm_fused.h:28-57,100-101,157-183; steel/gemm/mma.h:181-205,451-485,513-537",
+      "finding": "Metal GEMM carries float operands and float accumulator fragments through simdgroup multiply-accumulate; repeated K tiles accumulate into those fragments. NAX requires availability plus TF32 opt-in for F32. Air/no-NAX rules that route out. Exact batch collapsing and the runtime pipeline have not been captured, so this is source evidence for F32 reduction, not an instruction trace or a guarantee of summation order."
+    },
+    {
+      "at": "frozen tensor_test_support.h:182-257; fast.baseline.cpp:906-908",
+      "finding": "The failed query row has an entirely false Boolean mask. Every QK score is replaced by the same finite F32 minimum. Its expected output is therefore the full-KV mean; QK error is not needed to explain this scalar. V alternates +1.25/-1.25 plus head/channel offset; head0/channel0 offset is -0.125, so repeated weighted addition carries a nonzero bias over 8193 terms."
+    }
+  ],
+  "hypothesis_not_proof": {
+    "primary": "Long F32 PV reduction rounding is the strongest current hypothesis, not a new candidate precision regression or demonstrated hidden Half conversion.",
+    "root_CPU_simulation": "Root reported sequential explicit-F32 products/sums at -0.12483600527048111, only 2.235e-8 from GPU. f32(1/8193) alone changes the expected mean by about 1.86e-9. This matches scale of the failure but is not the Metal kernel's observed summation trace.",
+    "not_established": [
+      "Actual probability values and their distribution have not been read from this failing graph.",
+      "Actual PV kernel/pipeline and its summation order have not been captured.",
+      "No full-output or nonzero-QK candidate result has passed the new test.",
+      "The existing expect() fixed budget is a test criterion, not proof of an API-wide all-shape error guarantee. Its failure must remain visible and is not permission to relax it."
+    ]
+  },
+  "minimal_next_isolation_only_if_authorized": [
+    "Keep this exact Q/K/V/mask, original shapes/GQA/layout/scale and unchanged expected budget. In a scratch native math mirror of the existing path, retain the already computed masked scores/P alongside the unchanged PV output and finish through the same checked completion. No alternative input or replacement kernel is needed.",
+    "Inspect the failed row's masked-score equality and all8193 P bits/min/max/F64 sum. Compute a CPU FP64 dot of these actual P values with the actual F32 V payload for every channel of that row. Difference between this dot and the FP64 mathematical oracle separates probability error; difference between the actual PV output and that dot isolates PV reduction error.",
+    "Record selected matmul/softmax pipeline names if an existing diagnostic seam permits it, and note retaining intermediates can change donation/lifetime or compilation. Do not infer a pipeline from the CPU simulation. Stop after this single unchanged shape; do not change V, shorten KV or widen tolerance to obtain a pass."
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "status": "unique baseline source-equivalent replay completed and fully reproduced original output; original goldenFAIL retained",
+  "execution": {
+    "new_source_TUs": 1,
+    "compile_attempts": 2,
+    "links": 1,
+    "actual_replay_processes": 1,
+    "product_test_SDK_rebuild": false,
+    "new_shape_seed_dtype_budget_or_timing": false
+  },
+  "source_role": "Explicit original locked fast.cpp fallback math published PV/maskedScores/P from Context::compile; not opaque mx::fast internal hook. Original F32/GQA/fullQ/KV/mask/scale/actualV and original budget retained.",
+  "fixed_shape": "BHSD phase0 B1/H8/Hkv2/Q513/KV8193/D256, original four frozen helper ports",
+  "reproduction_gate": {
+    "full_PV_elements": 1050624,
+    "full_PV_bytes": 4202496,
+    "full_PV_bit_differences": 0,
+    "max_abs_PV_difference": 0.0,
+    "first_head_query_row_bit_differences": 0,
+    "full_PV_sha256": "f042d01706c9aadc6722ee9d64f07b33a14dc5b9285a113cbbd3f0b618885092",
+    "original_baseline_full_PV_sha256": "f042d01706c9aadc6722ee9d64f07b33a14dc5b9285a113cbbd3f0b618885092",
+    "full_output_reproduced": true
+  },
+  "golden": "50204 fullPV original-expect budget violations; diagnostic_complete/exit0 is not goldenPASS.",
+  "stored_P": {
+    "elements": 8193,
+    "dtype": "F32",
+    "unique_bits": {
+      "956299264": 8193
+    },
+    "actual_probability_min": 0.00012205541133880615,
+    "actual_probability_max": 0.00012205541133880615,
+    "ideal_uniform_probability": 0.00012205541315757354,
+    "maximum_absolute_probability_error": 1.8187673860459858e-12,
+    "sum_actual_P_fp64": 0.9999999850988388,
+    "sum_error": -1.4901161193847656e-08
+  },
+  "first_row_error_boundary": {
+    "channels_checked": 256,
+    "max_abs_output_error_due_to_actual_P_vs_ideal": 1.864918608429633e-09,
+    "max_abs_native_PV_minus_FP64dot_actual_P_actual_V": 1.1401250958442688e-05,
+    "cpp_vs_math_fsum_dot_max_delta": 0.0,
+    "channel0": {
+      "channel": 0,
+      "pv": -0.1248360276222229,
+      "ideal_uniform_fp64": -0.12484743073355303,
+      "fp64_dot_actual_P_actual_V": -0.12484742887318134,
+      "P_contribution": 1.8603716900322809e-09,
+      "PV_reduction_residual": 1.1401250958442688e-05
+    }
+  },
+  "scope_conclusion": "For original head0/query0, source replay matches every PV output bit, not just one scalar. Actual stored F32P contributes at most1.864918608429633e-9 output error relative to ideal uniform; native PV deviates from FP64 dot(actualP,actualV) by up to1.1401250958442688e-5. This supports the downstream PV computation/reduction as the dominant error boundary for this row. It does not establish a specific kernel, transient operand dtype, reduction ordering or causes for every nonzeroQK row.",
+  "masked_scores": "All8193 entries finite, same actual0xff7ffffd native finfo constant. Full score/P row bits,min/max/F64sum are preserved, no score/probability sampling.",
+  "raw": {
+    "path": "replay-raw.zip",
+    "bytes": 680805,
+    "sha256": "8ba88036490bb86296932177aae25a7c61a6480672cd713463f33bc21259ed95",
+    "contents": "Complete1,050,624 PV F32 values; complete8193 maskedScores/P F32 row values; all8193x256 actualF32 V(head0); all256 channel actualP/V FP64 dots; source/plan/map/command/stdout/stderr/identity; original compile failure/source retained."
+  },
+  "failure": "Initial diagnostic helper flatten collided via ADL with mx::flatten. Renamed only helper logical_f32; first compiler stderr and source retained. No product/math/budget change; no process ran before the corrected compile.",
+  "identities": {
+    "source_sha256": "d7cae65775dbc0116a9eec54b5dfaaf1aed3c42458f905faf5c84394a6a5cdf7",
+    "replay_source_matches_plan": true,
+    "baseline_complete_group_present": true,
+    "original_MLX_archive_present": true,
+    "map_sha256": "d529550a3b2f8c15cfa0c36b58834ed9bc5688cc045700a75e79b5f47f872024"
+  },
+  "cleanup": "cleanup-candidates.json lists new replay-probe.o+replay-probe exact paths,size,SHA. Root prechecks/deletes; no deletion performed. SDK,priorcache/source/raw/log/maps kept.",
+  "stop": "One authorized replay only; no more inference, native pipeline capture, shape matrix, space or latency run. Subsequent work was read-only raw collection and offline comparison/packaging."
+}

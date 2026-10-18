@@ -1,0 +1,7 @@
+{"preflight_files": 8, "delete_files": 5, "delete_bytes": 3625768, "retain_files": 3, "retain_bytes": 1265704}
+Deleted exact file: /root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/tests
+Deleted exact file: /root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout-old
+Deleted exact file: /root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout-new
+Deleted exact file: /root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout.o
+Deleted exact file: /root/hyle-scratch/http2-current-20261018/header-lifetime/http2.o
+{"deleted": ["/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/tests", "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout-old", "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout-new", "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout.o", "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2.o"], "retained_files_verified": 3, "deleted_bytes": 3625768}

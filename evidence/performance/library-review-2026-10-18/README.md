@@ -1226,6 +1226,13 @@ baseline原长Q广播mask控制通过；新控制在BHSD/phase0/h0/t0/d0的全fa
 [摘要](apple-ordinary-short-q/summary.json)、[完整两侧源码与失败结果](apple-ordinary-short-q/source-results.zip)、[处理结果](apple-ordinary-short-q/disposition.json)保留后续继续调查所需内容。
 另先写test.ps1并预检全部目标后，精确删除Air4个测试exe共40863904逻辑B；保留6个本批对象937096 B及原9对象、所有源/log/map/raw/包/SDK。[清理结果](apple-ordinary-short-q/cleanup.json)。
 
+后续两步独立诊断保持原输入和预算，未把诊断完成当成数值通过。第一步逐元素比较两布局、两phase及重绑的6对输出，共6303744元素：baseline/candidate分别230508/222436项超预算，old-pass→new-fail为0、绝对误差增加为0；11568个bit差异全部位于query512尾行，旧结果保活及重绑检查通过。
+[完整输出摘要](apple-ordinary-short-q/diagnostic/summary.json)、[逐元素比较](apple-ordinary-short-q/diagnostic/full-output-comparison.json)及[原始包](apple-ordinary-short-q/diagnostic/diagnostic-results.zip)保留全部F32 bits和独立FP64参考；两侧原golden仍FAIL。
+第二步仅对baseline的BHSD/phase0作同源码数学体replay并发布PV、masked scores和P，完整1050624元素PV与原输出逐位一致；这不是opaque native函数内部hook。
+首失败h0/query0行的8193个实际F32概率均为0x38fff800，FP64概率和0.9999999850988388；对全部256通道，概率舍入带来的输出误差最多1.86e−9，而实际PV与FP64 dot(actualP,actualV)的残差最多1.14e−5。
+这将该行的主要误差边界定位到下游PV计算/归约；未确定具体Metal kernel、内部临时dtype或归约次序，也不能外推所有非零QK行。该完整PV仍有50204项违反原预算，没有本轮空间或速度结论。
+[Replay摘要](apple-ordinary-short-q/precision-replay/summary.json)、[完整比较](apple-ordinary-short-q/precision-replay/replay-comparison.json)及[原始包](apple-ordinary-short-q/precision-replay/replay-results.zip)保留实际P/V与FP64点积；此前[源审](source-review/apple-short-q-first-failure.json)和[CPU F32回放](apple-ordinary-short-q/precision-diagnostic/f32_accumulation_replay.json)仅作为调查过程证据，不能代替本次实际输出复现。
+
 ## HTTP2 DATA：少一次payload拷贝，保留owned wire
 
 read_outbound原先复制到nghttp2 bounce，再由mem_send2复制到Hyle wire；现在NO_COPY回调同步将完整frame header/payload/padding一次写入原owned wire并返回PAUSE。
@@ -1243,3 +1250,4 @@ read_outbound原先复制到nghttp2 bounce，再由mem_send2复制到Hyle wire�
 
 候选相对对应inner顺序的旧控制绝对低0.28%/8.29%、peer归一低0.54%/6.17%；前一对小于可见轮内波动，不能称统一稳定提速或残差已消除。
 已应用明确的payload两次→一次复制；未追加AA、补点或变更peer求胜。[摘要](http2/owned-wire-no-copy/summary.json)与[源码、原生合同依据、测试和全部样本](http2/owned-wire-no-copy/source-results.zip)。
+随后root将[清理模板](http2/owned-wire-no-copy/wsl-cleanup-template.ps1)写入test.ps1并实际执行：8个文件先全部核路径/size/SHA，删除5个可重建产物3625768逻辑B，再核验保留的3个当前对象/core共1265704 B；[精确范围](http2/owned-wire-no-copy/wsl-cleanup-plan.json)与[执行日志](http2/owned-wire-no-copy/cleanup-executed.log)保留，源码、原始数据、SDK/cache未删。

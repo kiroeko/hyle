@@ -1,0 +1,59 @@
+{
+  "host": "WSL default distro, user root",
+  "commit": "70d054fba",
+  "root": "/root/hyle-scratch/http2-current-20261018",
+  "source": {
+    "path": ".scratch/perf-review-2026-10-18/http2/owned-wire-no-copy/cleanup-candidates.json",
+    "bytes": 2164,
+    "sha256": "a66632f3ab4e7ad9faef8ad11967e8a49cde109dec6032adf2719d05a6583513"
+  },
+  "targets": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/tests",
+      "bytes": 1559360,
+      "sha256": "b6837ba3c6fcf31158abfc4c8a011d7809e2dbb90349b9bc0250591a37ae3eea"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout-old",
+      "bytes": 864552,
+      "sha256": "52f6aeb4d679a8b2f4ed2295b0f211a55e37f0732e3c49eb5f87793876f5b88c"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout-new",
+      "bytes": 868784,
+      "sha256": "390947e7513d4d33adb4912fe8497ede5a1cc33257f027647918875bd6f578a4"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/holdout.o",
+      "bytes": 110800,
+      "sha256": "604f70345247c6f2b84d206f998cd9b40721c4ebe087cd7c3846dd760183729a"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2.o",
+      "bytes": 222272,
+      "sha256": "9ec083687a2fdb420b1ea177d6158d97ceb6ec77dbf6f138b1f80ac82790754b"
+    }
+  ],
+  "delete_bytes": 3625768,
+  "retain": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/owned-wire-no-copy/http2.o",
+      "bytes": 223976,
+      "sha256": "4f9960ea6a93c0cd2cc7ced5f946c68e3b3cc6fdb8b045eb3201819f99a2c3a9"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+      "bytes": 387104,
+      "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2_test.o",
+      "bytes": 654624,
+      "sha256": "debb22bed71cd36bbda594158905dc547ca59655ed62c81f8b4a42c0431f75d3"
+    }
+  ],
+  "retain_bytes": 1265704,
+  "change": "The superseded header-lifetime/http2.o baseline is now a target; retain only the current NO_COPY product object, current protocol-test object and current core among these eight exact files.",
+  "preservation": "All other SDK/cache files, directories, sources, commands, identities, logs, data and archives are excluded. Frozen experiment cleanup-candidates.json is not rewritten.",
+  "execution": "Template only. No WSL execution or Mac access. Parent reviews and copies to root test.ps1; all eight files preflight before deletion, then each target rechecked and unlinked individually, then all three retained files rechecked."
+}

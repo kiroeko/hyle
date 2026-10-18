@@ -1,0 +1,146 @@
+{
+  "status": "full-output diagnostic completed; both baseline and candidate still fail original golden accuracy",
+  "execution": {
+    "new_probe_TUs_compiled": 1,
+    "new_links": 2,
+    "new_processes": 2,
+    "product_test_SDK_recompiled": false,
+    "shape_seed_precision_changes": false,
+    "PV_isolation_run": false,
+    "space_or_latency_run": false
+  },
+  "scope": "Same original B1/H8/Hkv2/D256/Q513/KV8193 input/helpers, BHSD/BSHD,phase0/phase1 and one phase1rebind per layout. Six physical outputs per arm, four distinct layout/phase cases plus two rebind outputs.",
+  "original_budget": {
+    "absolute": 2e-06,
+    "relative": 6e-06,
+    "target": "independent FP64 oracle rounded to F32 exactly as frozen expect()"
+  },
+  "data_coverage": {
+    "pairs": 6,
+    "elements_per_pair": 1050624,
+    "total_compared_elements": 6303744,
+    "all_elements_checked": true,
+    "oracle_two_phase_bytes_identical": true,
+    "cpp_and_offline_counts_and_extrema_reconciled": true
+  },
+  "totals_over_six_outputs": {
+    "elements": 6303744,
+    "baseline_violations": 230508,
+    "candidate_violations": 222436,
+    "old_pass_new_fail": 0,
+    "old_fail_new_pass": 8072,
+    "both_fail": 222436,
+    "bit_differences": 11568,
+    "candidate_error_greater": 0,
+    "baseline_nonfinite": 0,
+    "candidate_nonfinite": 0,
+    "max_positive_error_growth": 0.0,
+    "max_abs_old_new": 1.1399388313293457e-05,
+    "baseline_max_absolute": 1.4230608940124512e-05,
+    "candidate_max_absolute": 1.4230608940124512e-05,
+    "baseline_max_normalized": 4.707498753324469,
+    "candidate_max_normalized": 4.707498753324469
+  },
+  "per_output": [
+    {
+      "file": "bhsd-phase0.f32",
+      "baseline_violations": 50204,
+      "candidate_violations": 48816,
+      "old_pass_new_fail": 0,
+      "old_fail_new_pass": 1388,
+      "bit_differences": 1928,
+      "max_positive_error_growth": 0.0,
+      "max_abs_old_new": 1.1399388313293457e-05,
+      "bit_difference_query_rows": {
+        "512": 1928
+      }
+    },
+    {
+      "file": "bhsd-phase1.f32",
+      "baseline_violations": 32525,
+      "candidate_violations": 31201,
+      "old_pass_new_fail": 0,
+      "old_fail_new_pass": 1324,
+      "bit_differences": 1928,
+      "max_positive_error_growth": 0.0,
+      "max_abs_old_new": 1.1399388313293457e-05,
+      "bit_difference_query_rows": {
+        "512": 1928
+      }
+    },
+    {
+      "file": "bhsd-phase1-rebind.f32",
+      "baseline_violations": 32525,
+      "candidate_violations": 31201,
+      "old_pass_new_fail": 0,
+      "old_fail_new_pass": 1324,
+      "bit_differences": 1928,
+      "max_positive_error_growth": 0.0,
+      "max_abs_old_new": 1.1399388313293457e-05,
+      "bit_difference_query_rows": {
+        "512": 1928
+      }
+    },
+    {
+      "file": "bshd-phase0.f32",
+      "baseline_violations": 50204,
+      "candidate_violations": 48816,
+      "old_pass_new_fail": 0,
+      "old_fail_new_pass": 1388,
+      "bit_differences": 1928,
+      "max_positive_error_growth": 0.0,
+      "max_abs_old_new": 1.1399388313293457e-05,
+      "bit_difference_query_rows": {
+        "512": 1928
+      }
+    },
+    {
+      "file": "bshd-phase1.f32",
+      "baseline_violations": 32525,
+      "candidate_violations": 31201,
+      "old_pass_new_fail": 0,
+      "old_fail_new_pass": 1324,
+      "bit_differences": 1928,
+      "max_positive_error_growth": 0.0,
+      "max_abs_old_new": 1.1399388313293457e-05,
+      "bit_difference_query_rows": {
+        "512": 1928
+      }
+    },
+    {
+      "file": "bshd-phase1-rebind.f32",
+      "baseline_violations": 32525,
+      "candidate_violations": 31201,
+      "old_pass_new_fail": 0,
+      "old_fail_new_pass": 1324,
+      "bit_differences": 1928,
+      "max_positive_error_growth": 0.0,
+      "max_abs_old_new": 1.1399388313293457e-05,
+      "bit_difference_query_rows": {
+        "512": 1928
+      }
+    }
+  ],
+  "retained_payload": {
+    "baseline_bit_changes": 0,
+    "candidate_bit_changes": 0,
+    "all_phase1_rebind_outputs_byte_identical_to_phase1": true
+  },
+  "accuracy_conclusion": "For these6 fixed outputs under the original expect() reference convention, no baseline-passing element becomes candidate-failing and no candidate absolute error increases. Candidate improves8072 classified elements, but222436 still violate the unchanged budget. Neither arm passes; exit0 only means all diagnostic data were collected.",
+  "observed_differences": "All11568 bit differences lie at global query row512, the1-row tail;1928 changed elements in every file. This coordinate observation does not independently identify a native kernel or prove an accumulation cause.",
+  "unrounded_reference": "Probe also preserved separately labeled unrounded FP64 statistics; original-golden result uses FP64->F32 target exactly like frozen expect(). No tolerance, scale, V offset or mask was changed.",
+  "raw_data": {
+    "path": "full-output-raw.zip",
+    "bytes": 4507469,
+    "sha256": "10db30f9fbe4338f3f179845845a434138afd1a8c7e98a5ff27b7f55970ce498",
+    "compression": "ZIP_DEFLATED, no sampling/quantization/disagreeing-element removal",
+    "operator_arrays_per_arm": 6,
+    "raw_operator_bytes_per_arm": 25214976,
+    "compact_exact_FP64_oracle_bytes_per_arm": 1116288,
+    "Mac_raw_files": "retained unchanged in diagnostic/raw-baseline and diagnostic/raw-candidate; not deleted"
+  },
+  "identities": "raw ZIP contains all compile/link/run argv+stdout+stderr, probe source/plan, actual host object/executable identities and2linkmaps. link-map-check.json confirms correct complete4-object group plus this probe and original libmlx for each exe.",
+  "original_failed_candidate_evidence": "Parent source-results.zip/summary and18frozen source snapshots are unchanged; this new diagnostic is independent and does not redeem prior goldenFAIL.",
+  "cleanup": "cleanup-candidates.json lists only this probe.o+2exes exact paths/sizes/SHA; all raw,source,log,map/SDK/priorcache objects retained. No deletion or commit performed.",
+  "stop": "No more experiment or inference run after these2processes; only local exhaustive data analysis and lossless packaging."
+}
