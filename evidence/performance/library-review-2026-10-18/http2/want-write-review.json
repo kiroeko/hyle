@@ -1,0 +1,62 @@
+{
+  "status": "not applied",
+  "scope": "Read-only review of skipping flush_once before its busy claim when the owned wire is empty and nghttp2_session_want_write returns zero.",
+  "native": {
+    "version": "nghttp2 1.70 locked cache",
+    "source_root": "/root/.cache/hyle/dependencies/v1/sources/nghttp2-85e300c79fb6-ca7aa79a25b3/lib",
+    "related_existing_evidence": "terminal-drain/source-results.zip",
+    "files": [
+      {
+        "path": "nghttp2_session.c",
+        "bytes": 249040,
+        "sha256": "9328dfe880e1b35cc837c144612a5fe37f97ef407051de2bc21853869449a30d"
+      },
+      {
+        "path": "nghttp2_outbound_item.h",
+        "bytes": 6686,
+        "sha256": "c995e55784cd499a747c5cca9d69a924604f8908fefbc507b847059990e1d672"
+      },
+      {
+        "path": "nghttp2_pq.c",
+        "bytes": 4351,
+        "sha256": "6357ed46d856e64e53f3e08f8912dcf1ec5c6c2be72116913271e9c75267403f"
+      },
+      {
+        "path": "includes/nghttp2/nghttp2.h",
+        "bytes": 242356,
+        "sha256": "0bd0ee37b1b08fa38f9b773de201fe431846fda2bd0bed44f642c6c332e2e342"
+      }
+    ]
+  },
+  "terminal_counterexample": {
+    "kind": "Source-level reachable state; not reproduced by a runtime experiment.",
+    "want_write": "nghttp2_session.c:7152-7169 returns zero unconditionally after GOAWAY_TERM_SENT, even if active or queued outbound items remain.",
+    "mem_send": "mem_send_internal:2826-3122 has no equivalent terminal early return. It can finish active-item cleanup and process queued frames. A rejected queued request HEADERS can cause stream closure and its callback through preparation failure handling at2884-2906.",
+    "example": "A terminating GOAWAY takes priority over an already queued outgoing request. GOAWAY completion at2655-2673 closes selected incoming streams; it does not establish that every queued outgoing request has been retired.",
+    "hyle_boundary": "Native termination at216-249 can return success while queuing GOAWAY. Hyle on_frame_send records the GOAWAY wire epoch without automatically setting fatal_status, so current Hyle cannot exclude this state before the proposed guard.",
+    "interpretation": "Native documentation says a terminal connection should be dropped. That does not prove that skipping the current mem_send call preserves its cleanup, callback and error-discovery behavior. This review does not claim a newly reproduced Hyle failure."
+  },
+  "preface": {
+    "native_boundary": "Client initialization at635-638 can have SEND_CLIENT_MAGIC with no active item; want_write can be zero although mem_send still returns the24-byte preface at3101-3118.",
+    "current_hyle_exclusion": "Successful Hyle session initialization always queues initial SETTINGS before exposing the session (http2.cc:997-1010), so this generic native counterexample is excluded by current initialization."
+  },
+  "checked_states": [
+    "Outside termination and initial client magic, an idle POP_ITEM state with want_write zero matches the no-item conditions of pop_next_ob_item at2328-2359.",
+    "NO_COPY PAUSE executes after_frame_sent1 and after_frame_sent2 before returning zero at3084-3096. An already populated Hyle owned wire must still flush regardless of native want_write.",
+    "User-deferred DATA is removed from the scheduler at915-935 and resumed through7649-7664. A connection-window block prevents native DATA selection too.",
+    "A first stream-window-blocked DATA item remains visible until native preparation establishes deferral at1996-2023; want_write is nonzero, so the proposed check would not skip that preparation.",
+    "Queued invalid urgent/regular frames keep want_write nonzero outside its terminal override. Concurrent-stream-limited request HEADERS are skipped by both want_write and native item selection."
+  ],
+  "complexity": {
+    "want_write": "Three constant-time queue-head checks, an active-item check, fixed settings/counter comparisons and at most eight urgency-queue empty checks. No traversal proportional to stream count.",
+    "source": "session_sched_empty at957-966; outbound_queue_top is the head macro atnghttp2_outbound_item.h:192; pq_empty checks length atnghttp2_pq.c:150.",
+    "limit": "An ordinary empty mem_send already performs bounded queue selection. A precheck could avoid some constant bookkeeping but also repeats checks on productive calls. No call-frequency, instruction, allocation or timing evidence establishes a material bottleneck."
+  },
+  "decision": "Reject the bare want_write fastpath: zero does not universally prove absence of native side effects, and no algorithmic scan is removed.",
+  "validation": {
+    "source_only": true,
+    "compiled_or_measured": false,
+    "runtime_counterexample_reproduced": false,
+    "product_or_readme_changed": false
+  }
+}

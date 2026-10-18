@@ -1302,6 +1302,8 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 
 归档后root先写test.ps1，WSL对全部8文件核绝对路径/size/SHA，再逐个删除5个负候选生成物3631968逻辑B，重核保留accepted discard产品对象、test对象及core共1265008 B；源、日志、raw、归档和SDK未删。[范围](http2/lazy-header-idle-flush/wsl-cleanup-plan.json)/[执行记录](http2/lazy-header-idle-flush/cleanup-execution.json)/[日志](http2/lazy-header-idle-flush/cleanup-executed.log)。
 
+另源审拒绝`wire空 && want_write()==0`直接跳过mem_send2：终止GOAWAY后want_write为0，后者仍可能清理待发项、关闭stream及触发回调；这是尚未运行复现的源级反例。普通空队列检查最多8个固定优先级，不存在已证实的按stream扫描瓶颈，未据此修改产品或开新测量。[源证与边界](http2/want-write-review.json)。
+
 ## Apple普通math：共享原生选择并扩展checked分块
 
 原typed checked路径仅受理F32/D256/rank2 Bool短Q；现在直接复用锁定原生`use_fallback`及既有force规则，覆盖F32/F16/BF16、不同Dv、无mask/广播Boolean或additive mask、Q大于KV的因果条件。仍保留64MiB实际dtype scores阈值和`(Q−128)·KV>2·Q·Dv`收益式；不改变数值类型、softmax、全遮蔽行及native错误受理。全Q的bottom-right偏移在owner中生成，逐块同步checked drain，保留原whole-Job输入及结果寿命。
