@@ -1,0 +1,24 @@
+{
+  "plan": {
+    "file": "wsl-cleanup-plan.json",
+    "bytes": 2243,
+    "sha256": "d302130d5e5e2b25174f16e903abb364a59b0258f3e08c5c12b0d9279e38ed6a"
+  },
+  "template": {
+    "file": "wsl-cleanup-template.ps1",
+    "bytes": 7926,
+    "sha256": "ec8b657aef097057d15608f0a2faa60942aac1183030173c8e52b3420694ec95"
+  },
+  "read_only_preflight": {
+    "exit": 0,
+    "files_verified": 8,
+    "all_expected_size_sha_match": true,
+    "logs": [
+      "wsl-cleanup-preflight.stdout.txt",
+      "wsl-cleanup-preflight.stderr.txt"
+    ]
+  },
+  "deletion_executed": false,
+  "root_test_ps1_modified": false,
+  "no_directory_scan_or_recursive_operation": true
+}

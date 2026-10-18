@@ -1300,6 +1300,8 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 
 已有共同terminal drain只能对齐退出责任，不能消除推进顺序导致的WINDOW_UPDATE数量差；1 Task/2 Task对照也同时改变readiness和推进策略。没有将这些组合差额归因为纯协程成本，亦未强制添加协议帧求同。
 
+归档后root先写test.ps1，WSL对全部8文件核绝对路径/size/SHA，再逐个删除5个负候选生成物3631968逻辑B，重核保留accepted discard产品对象、test对象及core共1265008 B；源、日志、raw、归档和SDK未删。[范围](http2/lazy-header-idle-flush/wsl-cleanup-plan.json)/[执行记录](http2/lazy-header-idle-flush/cleanup-execution.json)/[日志](http2/lazy-header-idle-flush/cleanup-executed.log)。
+
 ## Apple普通math：共享原生选择并扩展checked分块
 
 原typed checked路径仅受理F32/D256/rank2 Bool短Q；现在直接复用锁定原生`use_fallback`及既有force规则，覆盖F32/F16/BF16、不同Dv、无mask/广播Boolean或additive mask、Q大于KV的因果条件。仍保留64MiB实际dtype scores阈值和`(Q−128)·KV>2·Q·Dv`收益式；不改变数值类型、softmax、全遮蔽行及native错误受理。全Q的bottom-right偏移在owner中生成，逐块同步checked drain，保留原whole-Job输入及结果寿命。

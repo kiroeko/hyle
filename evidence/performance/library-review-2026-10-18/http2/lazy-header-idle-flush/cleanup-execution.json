@@ -1,0 +1,24 @@
+{
+  "executor_script": "test.ps1",
+  "executor_script_sha256": "6df8a06245a00b5c2e5bf98902530abc9354ab92cca4cf1d67387b98fead4121",
+  "exit_code": 0,
+  "executed": true,
+  "preserved": "sources, logs, raw data, maps, archives, native SDK and reusable object cache",
+  "combined_deleted_files": 10,
+  "combined_deleted_logical_bytes": 43659536,
+  "this_batch": "http2/lazy-header-idle-flush",
+  "this_batch_result": {
+    "phase": "complete",
+    "deleted": [
+      "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/tests",
+      "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout.o",
+      "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout-old",
+      "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout-new",
+      "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/http2.o"
+    ],
+    "deleted_logical_bytes": 3631968,
+    "retained_files_verified": 3,
+    "retained_logical_bytes": 1265008
+  },
+  "log_sha256": "69db2fcf8d9c110b9d6294617eacb74310a90722844f4794cb3d553c908e0c11"
+}
