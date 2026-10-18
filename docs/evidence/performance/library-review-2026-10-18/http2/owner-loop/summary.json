@@ -1,0 +1,1970 @@
+{
+  "conclusion": "Retain three local reductions of confirmed redundant work; no stable overall speedup, equivalence, isolated layout causality or full residual root cause established. Hyle remains slower in this fixed trace.",
+  "changes": [
+    "Cache fixed transport owner only inside private session validation; all27400 runtime owner/lifecycle/cancellation/deadline checks retained. Public owner_worker getters unchanged, including zero after shutdown.",
+    "Count whole owner-side predicate waits; notify_owner still advances change_epoch but calls CV only if owner_waiters nonzero. Foreign cancellation still locks monitor and unconditionally notifies; counter not read by foreign thread.",
+    "Empty flush with no encoded or owned wire data releases unobservable temporary write claim without artificial change publication. Registered close/error callbacks publish their own changes; real frames retain normal release notifications."
+  ],
+  "diagnostic_20_complete_episodes": {
+    "before": {
+      "episodes": 20,
+      "all_oracles_passed": true,
+      "notify_owner": 24100,
+      "owner_notify_all": 24100,
+      "validate_owner": 27400,
+      "check_operation": 27400,
+      "wait_for_change": 0,
+      "wait_locked": 0,
+      "empty_flush": 5200,
+      "received_calls": 6480,
+      "received_bytes": 42003020,
+      "transport_owner_getter": 27400
+    },
+    "after": {
+      "episodes": 20,
+      "all_oracles_passed": true,
+      "notify_owner": 18900,
+      "owner_notify_all": 0,
+      "validate_owner": 27400,
+      "check_operation": 27400,
+      "wait_for_change": 0,
+      "wait_locked": 0,
+      "empty_flush": 5200,
+      "received_calls": 6480,
+      "received_bytes": 42003020,
+      "transport_owner_getter": 40
+    },
+    "limit": "Diagnostic counters/wrapped getter are untimed. This trace has no changed-CV waiters; notification savings in it do not establish wake behavior under contention."
+  },
+  "validation": {
+    "default": "17/17 passed",
+    "forced_epoll": "17/17 passed",
+    "multi_waiter": "A holds native read; B/C contend on changed CV. C times out, then B must complete via normal owner notification before server replies to A.",
+    "negative_control": "Scratch mutant resets count to0 instead of decrementing: new public regression fails normally after its budgets expire, proving it detects a remaining waiter hidden by timeout.",
+    "review": "Independent source review of owner/cache lifetime, shutdown boundary, whole-wait counter, foreign cancel publication, native callbacks and empty encode. Independent recomputation of all144 blocks across both layouts matched summary.",
+    "scope": "Only affected product/test TUs rebuilt; existing shared pure benchmark consumer and library/dependency caches reused. Not a full currentHEAD rebuild. No Windows/macOS/TLS-specific/sanitizer or other shape measurements."
+  },
+  "natural_layout": {
+    "scope": "Shared unmodified paired consumer, complete fixed4stream AF_UNIX trace, full oracle and retirement. Only owner cache, owner-waiter notification gate and empty-flush publication differ.",
+    "limit": "Fixed six processes; no result-driven repeat/filtering. Per-process complete blocks are the descriptive unit; no CI or equivalence.",
+    "machine": {
+      "uname": {
+        "system": "Linux",
+        "node": "kiro-workstation",
+        "release": "6.18.54.1-microsoft-standard-WSL2",
+        "version": "#1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026",
+        "machine": "x86_64",
+        "processor": "x86_64"
+      },
+      "allowed_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "cpu": 2,
+      "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+      "selected_cpu_topology": {
+        "core_id": "1",
+        "physical_package_id": "0",
+        "thread_siblings_list": "2-3",
+        "core_siblings_list": "0-31",
+        "core_type": null
+      },
+      "environment": {},
+      "topology_limit": "Guest CPU numbering/topology does not prove a physical P-core or host isolation."
+    },
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    },
+    "runs": [
+      {
+        "name": "self-before",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/candidate",
+          "--paired-self"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.0074332984921055,
+              "ratio_percent": 0.7460994035894124
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.01848489295847955,
+              "ratio_percent": 1.8656796162819476
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.0027006924492720685,
+              "ratio_percent": 0.27043426043672786
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.005665906713652191,
+              "ratio_percent": 0.5681988321045898
+            },
+            {
+              "block": 4,
+              "log_ratio": -0.019903705622207113,
+              "ratio_percent": -1.97069345272407
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.11120853048903623,
+              "ratio_percent": -10.52478536291031
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.019410130489374566,
+              "ratio_percent": 1.9599731814189718
+            },
+            {
+              "block": 7,
+              "log_ratio": -0.05087260978869068,
+              "ratio_percent": -4.960026555591628
+            },
+            {
+              "block": 8,
+              "log_ratio": -0.008792029917433553,
+              "ratio_percent": -0.8753493044211595
+            },
+            {
+              "block": 9,
+              "log_ratio": -0.003326778279032716,
+              "ratio_percent": -0.3321250683567605
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.011698825098241272,
+              "ratio_percent": 1.1767523989975266
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.025379069076036487,
+              "ratio_percent": 2.5703859454610885
+            }
+          ],
+          "median_ratio_percent": 0.41931654627065884,
+          "geomean_ratio_percent": -0.8573935592038034,
+          "range_percent": [
+            -10.52478536291031,
+            2.5703859454610885
+          ],
+          "quartiles_percent": [
+            -1.1491853414968873,
+            1.348984203318632
+          ],
+          "descriptive_iqr_percent": 2.4981695448155192,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3073,
+              "involuntary_switches": 3088,
+              "minor_faults": 2,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3087,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "old-1",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.03002826236192746,
+              "ratio_percent": 3.048365744405262
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.0006726117699304979,
+              "ratio_percent": -0.0672385617341113
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.025502615258290895,
+              "ratio_percent": 2.5830589078889545
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.017121591462149865,
+              "ratio_percent": 1.726900603149013
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.010385773740843263,
+              "ratio_percent": 1.0439893083758567
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.018212045997770154,
+              "ratio_percent": 1.8378896665721096
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.039240032426953064,
+              "ratio_percent": 4.002009223870175
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.013286378543828192,
+              "ratio_percent": 1.3375034675761626
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.0451916042908751,
+              "ratio_percent": 4.6228302537270975
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.018808985862003524,
+              "ratio_percent": 1.8986989105286856
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.023998619454049575,
+              "ratio_percent": 2.428890381174721
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.01988405718383568,
+              "ratio_percent": 2.0083061867222445
+            }
+          ],
+          "median_ratio_percent": 1.953502548625465,
+          "geomean_ratio_percent": 2.1987178531259817,
+          "range_percent": [
+            -0.0672385617341113,
+            4.6228302537270975
+          ],
+          "quartiles_percent": [
+            1.6295513192558004,
+            2.6993856170180313
+          ],
+          "descriptive_iqr_percent": 1.0698342977622308,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3081,
+              "minor_faults": 1,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3082,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "new-1",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.04063773188914066,
+              "ratio_percent": 4.147474410854322
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.051270391554213646,
+              "ratio_percent": 5.26074709778221
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.034938374028540053,
+              "ratio_percent": 3.555588969548276
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.026406857063719258,
+              "ratio_percent": 2.6758607496113305
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.026550403916658638,
+              "ratio_percent": 2.6906006041993384
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.007993955482030302,
+              "ratio_percent": -0.796208879008105
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.0023367781059917547,
+              "ratio_percent": 0.23395104998682872
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.00332169101976465,
+              "ratio_percent": 0.3327213948841586
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.01004737327708849,
+              "ratio_percent": 1.009801760401563
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.018316883494398084,
+              "ratio_percent": 1.8485666556512483
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.056607479110958536,
+              "ratio_percent": 5.824034741989729
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.022417431909363295,
+              "ratio_percent": 2.2670590720300834
+            }
+          ],
+          "median_ratio_percent": 2.471459910820707,
+          "geomean_ratio_percent": 2.4022111853028436,
+          "range_percent": [
+            -0.796208879008105,
+            5.824034741989729
+          ],
+          "quartiles_percent": [
+            0.8405316690222119,
+            3.7035603298747874
+          ],
+          "descriptive_iqr_percent": 2.8630286608525757,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3082,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3081,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "new-2",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 11,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.005442945977417679,
+              "ratio_percent": 0.5457785719629376
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.020620475610721556,
+              "ratio_percent": 2.0834546500539783
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.01659676975808111,
+              "ratio_percent": 1.6735261250922118
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.038326056321361435,
+              "ratio_percent": 3.9069972984348693
+            },
+            {
+              "block": 4,
+              "log_ratio": -0.04247244588832366,
+              "ratio_percent": -4.158312651731428
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.007900181283277519,
+              "ratio_percent": 0.7931470056819274
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.0035504570764794963,
+              "ratio_percent": 0.3556767415190887
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.018867893548482506,
+              "ratio_percent": 1.9047017039403233
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.017717667652178193,
+              "ratio_percent": 1.7875556622062532
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.008037211584318804,
+              "ratio_percent": 0.8069596673139917
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.027276635076109557,
+              "ratio_percent": 2.7652048048094646
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.014879384858101474,
+              "ratio_percent": 1.4990633993029199
+            }
+          ],
+          "median_ratio_percent": 1.5862947621975658,
+          "geomean_ratio_percent": 1.1460442808158762,
+          "range_percent": [
+            -4.158312651731428,
+            3.9069972984348693
+          ],
+          "quartiles_percent": [
+            0.7313048972521801,
+            1.9493899404687371
+          ],
+          "descriptive_iqr_percent": 1.218085043216557,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3070,
+              "involuntary_switches": 3106,
+              "minor_faults": 1,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3104,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "old-2",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 11,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.04532465587549517,
+              "ratio_percent": 4.636751413175419
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.07060320795664854,
+              "ratio_percent": 7.3155321883285565
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.02900342881172424,
+              "ratio_percent": 2.942812418430093
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.02688424104592535,
+              "ratio_percent": 2.724888262435978
+            },
+            {
+              "block": 4,
+              "log_ratio": -0.021034901547499985,
+              "ratio_percent": -2.0815211091350023
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.009359776355404748,
+              "ratio_percent": 0.9403716043674938
+            },
+            {
+              "block": 6,
+              "log_ratio": -0.038877455078532464,
+              "ratio_percent": -3.813142596678544
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.017851073800943418,
+              "ratio_percent": 1.8011356538064234
+            },
+            {
+              "block": 8,
+              "log_ratio": -0.006617499944147731,
+              "ratio_percent": -0.6595652509754996
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.007270954553679765,
+              "ratio_percent": 0.7297452125690117
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.02548408591684659,
+              "ratio_percent": 2.581158128974194
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.020430680167839554,
+              "ratio_percent": 2.064081514092362
+            }
+          ],
+          "median_ratio_percent": 1.9326085839493925,
+          "geomean_ratio_percent": 1.5593855446782618,
+          "range_percent": [
+            -3.813142596678544,
+            7.3155321883285565
+          ],
+          "quartiles_percent": [
+            0.3824175966828839,
+            2.7793693014345062
+          ],
+          "descriptive_iqr_percent": 2.3969517047516224,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3078,
+              "minor_faults": 1,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3081,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "self-after",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/candidate",
+          "--paired-self"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 11,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.012871818345418617,
+              "ratio_percent": 1.2955016787688
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.01719136385062381,
+              "ratio_percent": -1.704443552602531
+            },
+            {
+              "block": 2,
+              "log_ratio": -0.00878717190753342,
+              "ratio_percent": -0.8748677547170476
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.01927363288456263,
+              "ratio_percent": 1.9460568390883237
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.005583259351282344,
+              "ratio_percent": 0.5598874791932589
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.011608317356063935,
+              "ratio_percent": -1.1541200794624795
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.0035764695746216546,
+              "ratio_percent": 0.3582872773270142
+            },
+            {
+              "block": 7,
+              "log_ratio": -0.018077748709220742,
+              "ratio_percent": -1.7915326425775135
+            },
+            {
+              "block": 8,
+              "log_ratio": -0.015345470482852619,
+              "ratio_percent": -1.522832871466163
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.010568206903078803,
+              "ratio_percent": 1.0624247644384206
+            },
+            {
+              "block": 10,
+              "log_ratio": -0.04873422747237832,
+              "ratio_percent": -4.756577308424773
+            },
+            {
+              "block": 11,
+              "log_ratio": -0.015229831236078795,
+              "ratio_percent": -1.5114443875698405
+            }
+          ],
+          "median_ratio_percent": -1.0144939170897636,
+          "geomean_ratio_percent": -0.6901139009066183,
+          "range_percent": [
+            -4.756577308424773,
+            1.9460568390883237
+          ],
+          "quartiles_percent": [
+            -1.5682355417502551,
+            0.6855218005045494
+          ],
+          "descriptive_iqr_percent": 2.2537573422548043,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3075,
+              "minor_faults": 2,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3078,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      }
+    ],
+    "identities": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "bytes": 897640,
+        "sha256": "99feb9f6429b7a5e5631091b0800ad2ccac8bdb19e8a3e6126c36e0e61c99c2b"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/candidate",
+        "bytes": 897640,
+        "sha256": "0dc95da28c6709642761fec762c2a8f7f1f679ac8d6d0d03dc3305117cce2424"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+        "bytes": 111471,
+        "sha256": "30b57207730af05b29e3037d22427b67d35df6f5c4b69a1f99846c9630e6482f"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+        "bytes": 57560,
+        "sha256": "96c1659810ca5d9e11610f937d619d122615f17cd4e3f3519ced9c0f255f6d63"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-owner-loop/before.cc",
+        "bytes": 111091,
+        "sha256": "c69c0200c6f950d292f51c5c8345f86a697ce75d3316d7281e5bacda39930a34"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/tests/io_http2/http2_test.cc",
+        "bytes": 92427,
+        "sha256": "3fc252f5e90df9bc10760c5f272faef401ff8cbc94cb2e13f36fb087564e3b02"
+      }
+    ],
+    "status": "completed"
+  },
+  "common_layout": {
+    "scope": "Shared unmodified paired consumer, complete fixed4stream AF_UNIX trace, full oracle and retirement. Only owner cache, owner-waiter notification gate and empty-flush publication differ.",
+    "common_layout": true,
+    "limit": "Fixed six processes; no result-driven repeat/filtering. Per-process complete blocks are the descriptive unit; no CI or equivalence.",
+    "machine": {
+      "uname": {
+        "system": "Linux",
+        "node": "kiro-workstation",
+        "release": "6.18.54.1-microsoft-standard-WSL2",
+        "version": "#1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026",
+        "machine": "x86_64",
+        "processor": "x86_64"
+      },
+      "allowed_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "cpu": 2,
+      "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+      "selected_cpu_topology": {
+        "core_id": "1",
+        "physical_package_id": "0",
+        "thread_siblings_list": "2-3",
+        "core_siblings_list": "0-31",
+        "core_type": null
+      },
+      "environment": {},
+      "topology_limit": "Guest CPU numbering/topology does not prove a physical P-core or host isolation."
+    },
+    "environment": {
+      "LD_LIBRARY_PATH": "/root/hyle-scratch/http2-current-20261018/current-holdout:/root/hyle-scratch/io-watch-v2-dev/bin"
+    },
+    "runs": [
+      {
+        "name": "self-before",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+          "--paired-self"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": -0.02563721055530177,
+              "ratio_percent": -2.5311367778255054
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.003230789210410201,
+              "ratio_percent": -0.3225575826908138
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.007681077725613328,
+              "ratio_percent": 0.7710652877646288
+            },
+            {
+              "block": 3,
+              "log_ratio": -0.00041592540218626795,
+              "ratio_percent": -0.04158389172070249
+            },
+            {
+              "block": 4,
+              "log_ratio": -0.011288380502944229,
+              "ratio_percent": -1.1224905802454301
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.06217001863824301,
+              "ratio_percent": -6.027689723391513
+            },
+            {
+              "block": 6,
+              "log_ratio": -0.029209356172849255,
+              "ratio_percent": -2.878688627952894
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.031043421487152223,
+              "ratio_percent": 3.1530293493486066
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.010880339935109617,
+              "ratio_percent": 1.093974609122721
+            },
+            {
+              "block": 9,
+              "log_ratio": -0.01430541671514085,
+              "ratio_percent": -1.4203580423318343
+            },
+            {
+              "block": 10,
+              "log_ratio": -0.005271614875940855,
+              "ratio_percent": -0.5257744298391904
+            },
+            {
+              "block": 11,
+              "log_ratio": -0.023163822122615585,
+              "ratio_percent": -2.289760032815057
+            }
+          ],
+          "median_ratio_percent": -0.8241325050423103,
+          "geomean_ratio_percent": -1.0369833250157283,
+          "range_percent": [
+            -6.027689723391513,
+            3.1530293493486066
+          ],
+          "quartiles_percent": [
+            -2.3501042190676693,
+            0.16157840315063032
+          ],
+          "descriptive_iqr_percent": 2.5116826222182995,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3092,
+              "minor_faults": 2,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3093,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "old-1",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-old",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 11,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.028548246707204683,
+              "ratio_percent": 2.89596535520958
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.02176279719223828,
+              "ratio_percent": 2.2001334130632344
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.02588202584686794,
+              "ratio_percent": 2.6219873911196103
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.03054668924406556,
+              "ratio_percent": 3.101802637731723
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.029113239531723067,
+              "ratio_percent": 2.9541172634656916
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.005362033654578546,
+              "ratio_percent": 0.5376435085848863
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.24370856226382553,
+              "ratio_percent": 27.597240978569417
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.01621584996334402,
+              "ratio_percent": 1.6348040418626575
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.030423682549409747,
+              "ratio_percent": 3.0891212057427055
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.028686905405225005,
+              "ratio_percent": 2.9102337649939787
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.0053265482804967235,
+              "ratio_percent": 0.5340759559940228
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.013247469650917054,
+              "ratio_percent": 1.3335606142123877
+            }
+          ],
+          "median_ratio_percent": 2.758976373164595,
+          "geomean_ratio_percent": 4.07087840957555,
+          "range_percent": [
+            0.5340759559940228,
+            27.597240978569417
+          ],
+          "quartiles_percent": [
+            1.5594931849500901,
+            2.987868249034945
+          ],
+          "descriptive_iqr_percent": 1.4283750640848547,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3079,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3077,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "new-1",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.030904669909895155,
+              "ratio_percent": 3.138717696732687
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.014871098497749813,
+              "ratio_percent": 1.4982223449728815
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.013422715113835082,
+              "ratio_percent": 1.351320417068342
+            },
+            {
+              "block": 3,
+              "log_ratio": -0.01638508847932929,
+              "ratio_percent": -1.625158307756337
+            },
+            {
+              "block": 4,
+              "log_ratio": -0.000855841624101572,
+              "ratio_percent": -0.08554754961154386
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.011864838081267592,
+              "ratio_percent": 1.1935504477847139
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.035994413252459445,
+              "ratio_percent": 3.6650054972600836
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.02524900802624952,
+              "ratio_percent": 2.5570464008843574
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.031815758585878484,
+              "ratio_percent": 3.2327290343110646
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.007230926379225622,
+              "ratio_percent": 0.7257132654512013
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.01941508339081377,
+              "ratio_percent": 1.960478180367487
+            },
+            {
+              "block": 11,
+              "log_ratio": -0.0017596861148119203,
+              "ratio_percent": -0.17581387749444927
+            }
+          ],
+          "median_ratio_percent": 1.4247713810206117,
+          "geomean_ratio_percent": 1.4416926978327018,
+          "range_percent": [
+            -1.625158307756337,
+            3.6650054972600836
+          ],
+          "quartiles_percent": [
+            0.522898061685515,
+            2.7024642248464397
+          ],
+          "descriptive_iqr_percent": 2.1795661631609247,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3081,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3076,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "new-2",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 11,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": -0.006627229438304738,
+              "ratio_percent": -0.6605317784530255
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.031047368298940725,
+              "ratio_percent": 3.1534364757442876
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.017422198144759093,
+              "ratio_percent": 1.7574849859760635
+            },
+            {
+              "block": 3,
+              "log_ratio": -0.052307570232195566,
+              "ratio_percent": -5.096307355872523
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.02138204655528053,
+              "ratio_percent": 2.161228054259129
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.032067944336851006,
+              "ratio_percent": 3.2587661405631305
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.01484873495420036,
+              "ratio_percent": 1.4959525104381441
+            },
+            {
+              "block": 7,
+              "log_ratio": -0.0008929334617651108,
+              "ratio_percent": -0.0892534915315521
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.0194990517106568,
+              "ratio_percent": 1.9690399898660331
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.016120417878591198,
+              "ratio_percent": 1.6251052834232271
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.028763883762445985,
+              "ratio_percent": 2.9181559306441716
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.0007850793468007211,
+              "ratio_percent": 0.07853876022541598
+            }
+          ],
+          "median_ratio_percent": 1.6912951346996454,
+          "geomean_ratio_percent": 1.0227698315607447,
+          "range_percent": [
+            -5.096307355872523,
+            3.2587661405631305
+          ],
+          "quartiles_percent": [
+            0.03659069728617396,
+            2.3504600233553896
+          ],
+          "descriptive_iqr_percent": 2.3138693260692156,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3086,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3088,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "old-2",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-old",
+          "--paired"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.020419188734631888,
+              "ratio_percent": 2.062908658255651
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.06230513699119378,
+              "ratio_percent": 6.428704853369921
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.05317711472586417,
+              "ratio_percent": 5.46164166764026
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.06264131162565523,
+              "ratio_percent": 6.464489498928266
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.012660954292535997,
+              "ratio_percent": 1.2741443505715633
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.008934358843329271,
+              "ratio_percent": 0.8974389354136927
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.038555346415835245,
+              "ratio_percent": 3.930824875271197
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.0013146885042125689,
+              "ratio_percent": 0.13155530859878503
+            },
+            {
+              "block": 8,
+              "log_ratio": -0.037322493339620344,
+              "ratio_percent": -3.66345936794336
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.01812674673356529,
+              "ratio_percent": 1.8292033399892746
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.051226141440328554,
+              "ratio_percent": 5.256089400788075
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.015604567451917184,
+              "ratio_percent": 1.5726954484820355
+            }
+          ],
+          "median_ratio_percent": 1.9460559991224629,
+          "geomean_ratio_percent": 2.596837416025593,
+          "range_percent": [
+            -3.66345936794336,
+            6.464489498928266
+          ],
+          "quartiles_percent": [
+            1.1799679967820955,
+            5.307477467501121
+          ],
+          "descriptive_iqr_percent": 4.127509470719025,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3081,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3077,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "self-after",
+        "command": [
+          "taskset",
+          "-c",
+          "2",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+          "--paired-self"
+        ],
+        "returncode": 0,
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 11,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.040861040085027334,
+              "ratio_percent": 4.170733992402103
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.03871809372441337,
+              "ratio_percent": -3.7978129073867115
+            },
+            {
+              "block": 2,
+              "log_ratio": -0.004051794893493721,
+              "ratio_percent": -0.40435974477577696
+            },
+            {
+              "block": 3,
+              "log_ratio": -0.005524063153852232,
+              "ratio_percent": -0.5508833572948475
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.01096408893613443,
+              "ratio_percent": 1.1024414830470304
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.012657475912064342,
+              "ratio_percent": 1.2737920811782346
+            },
+            {
+              "block": 6,
+              "log_ratio": -0.011948038482998413,
+              "ratio_percent": -1.1876944099043252
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.005886516501789174,
+              "ratio_percent": 0.5903876085829058
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.005859951126641505,
+              "ratio_percent": 0.5877154226938017
+            },
+            {
+              "block": 9,
+              "log_ratio": -0.04685400432766418,
+              "ratio_percent": -4.577329960999501
+            },
+            {
+              "block": 10,
+              "log_ratio": -0.005086757243386586,
+              "ratio_percent": -0.507384160261643
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.012292924383320525,
+              "ratio_percent": 1.2368792941686273
+            }
+          ],
+          "median_ratio_percent": 0.09167783895901238,
+          "geomean_ratio_percent": -0.19697869916056993,
+          "range_percent": [
+            -4.577329960999501,
+            4.170733992402103
+          ],
+          "quartiles_percent": [
+            -0.7100861204472169,
+            1.1360509358274296
+          ],
+          "descriptive_iqr_percent": 1.8461370562746464,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3082,
+              "minor_faults": 2,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3079,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      }
+    ],
+    "identities": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-old",
+        "bytes": 898496,
+        "sha256": "dac2e76ffe5306b89043015564bbf3994c71023af712af9ba120b4aef1277236"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "bytes": 898496,
+        "sha256": "3123e43a9c4e015241242673b9dc90d7c6d4ca26f72408ef53b5690cd29e4870"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+        "bytes": 111471,
+        "sha256": "30b57207730af05b29e3037d22427b67d35df6f5c4b69a1f99846c9630e6482f"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+        "bytes": 57560,
+        "sha256": "96c1659810ca5d9e11610f937d619d122615f17cd4e3f3519ced9c0f255f6d63"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-owner-loop/before.cc",
+        "bytes": 111091,
+        "sha256": "c69c0200c6f950d292f51c5c8345f86a697ce75d3316d7281e5bacda39930a34"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/tests/io_http2/http2_test.cc",
+        "bytes": 92427,
+        "sha256": "3fc252f5e90df9bc10760c5f272faef401ff8cbc94cb2e13f36fb087564e3b02"
+      }
+    ],
+    "status": "completed"
+  },
+  "layout_identity": {
+    "reason": "Default input order let a product-only TU change move common consumer/native hot text by0x500. Put common inputs first and whole native archive before varying product; assert selected common symbol addresses match. No source recompilation.",
+    "commands": [
+      {
+        "argv": [
+          "g++-14",
+          "-pthread",
+          "-o",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-old",
+          "-Wl,-Map,/root/hyle-scratch/http2-current-20261018/owner-loop/layout-old.map",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-product/consumer.o",
+          "/root/hyle-scratch/http2-current-20261018/src_io_http_http.cc.o",
+          "/root/hyle-scratch/http2-current-20261018/src_io_http2_feature.cc.o",
+          "/root/hyle-scratch/http2-current-20261018/picohttpparser.o",
+          "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/nanobench.o",
+          "-Wl,--whole-archive",
+          "/root/hyle-scratch/http2-current-20261018/nghttp2-build/lib/libnghttp2.a",
+          "-Wl,--no-whole-archive",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-notify/http2.o",
+          "-L/root/hyle-scratch/io-watch-v2-dev/bin",
+          "-Wl,-rpath,/root/hyle-scratch/io-watch-v2-dev/bin",
+          "-lhyle_io_core",
+          "-lhyle_container_text",
+          "-lhyle_container",
+          "-lhyle_sched",
+          "-lhyle_platform_thread",
+          "-lhyle_mem_vm",
+          "-lhyle_mem",
+          "-lhyle_platform_fs",
+          "-lhyle_time",
+          "-lhyle_platform",
+          "-lhyle_error"
+        ],
+        "returncode": 0
+      },
+      {
+        "argv": [
+          "g++-14",
+          "-pthread",
+          "-o",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+          "-Wl,-Map,/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new.map",
+          "/root/hyle-scratch/http2-current-20261018/root-cause-product/consumer.o",
+          "/root/hyle-scratch/http2-current-20261018/src_io_http_http.cc.o",
+          "/root/hyle-scratch/http2-current-20261018/src_io_http2_feature.cc.o",
+          "/root/hyle-scratch/http2-current-20261018/picohttpparser.o",
+          "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/nanobench.o",
+          "-Wl,--whole-archive",
+          "/root/hyle-scratch/http2-current-20261018/nghttp2-build/lib/libnghttp2.a",
+          "-Wl,--no-whole-archive",
+          "/root/hyle-scratch/http2-current-20261018/owner-loop/http2.o",
+          "-L/root/hyle-scratch/io-watch-v2-dev/bin",
+          "-Wl,-rpath,/root/hyle-scratch/io-watch-v2-dev/bin",
+          "-lhyle_io_core",
+          "-lhyle_container_text",
+          "-lhyle_container",
+          "-lhyle_sched",
+          "-lhyle_platform_thread",
+          "-lhyle_mem_vm",
+          "-lhyle_mem",
+          "-lhyle_platform_fs",
+          "-lhyle_time",
+          "-lhyle_platform",
+          "-lhyle_error"
+        ],
+        "returncode": 0
+      }
+    ],
+    "old": {
+      "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-old",
+      "bytes": 898496,
+      "sha256": "dac2e76ffe5306b89043015564bbf3994c71023af712af9ba120b4aef1277236",
+      "symbols": {
+        "nghttp2_session_mem_recv2": [
+          "0000000000062830 T nghttp2_session_mem_recv2"
+        ],
+        "nghttp2_session_mem_send2": [
+          "0000000000061be0 T nghttp2_session_mem_send2"
+        ],
+        "raw_task_endpoint": [
+          "000000000000a32c t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011670 t (anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)",
+          "0000000000015b70 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor]",
+          "0000000000017670 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .destroy]"
+        ],
+        "raw_data_chunk": [
+          "0000000000009b47 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*) [clone .cold]",
+          "0000000000012140 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)"
+        ],
+        "hyle_server": [
+          "0000000000009f99 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c90 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014240 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000014ee0 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "hyle_client": [
+          "000000000000a166 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c00 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014ef0 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000015b60 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "HyleHarness::run": [
+          "000000000000a97a t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&) [clone .cold]",
+          "0000000000017fd0 t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&)"
+        ]
+      }
+    },
+    "new": {
+      "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+      "bytes": 898496,
+      "sha256": "3123e43a9c4e015241242673b9dc90d7c6d4ca26f72408ef53b5690cd29e4870",
+      "symbols": {
+        "nghttp2_session_mem_recv2": [
+          "0000000000062830 T nghttp2_session_mem_recv2"
+        ],
+        "nghttp2_session_mem_send2": [
+          "0000000000061be0 T nghttp2_session_mem_send2"
+        ],
+        "raw_task_endpoint": [
+          "000000000000a32c t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011670 t (anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)",
+          "0000000000015b70 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor]",
+          "0000000000017670 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .destroy]"
+        ],
+        "raw_data_chunk": [
+          "0000000000009b47 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*) [clone .cold]",
+          "0000000000012140 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)"
+        ],
+        "hyle_server": [
+          "0000000000009f99 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c90 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014240 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000014ee0 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "hyle_client": [
+          "000000000000a166 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c00 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014ef0 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000015b60 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "HyleHarness::run": [
+          "000000000000a97a t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&) [clone .cold]",
+          "0000000000017fd0 t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&)"
+        ]
+      }
+    },
+    "same_common_addresses": true
+  },
+  "interpretation": {
+    "natural": "Old/new block medians +1.953503/+2.471460% and +1.932609/+1.586295%: one order worse, the other better; retained in full. No stable improvement.",
+    "common": "After an actual0x500 shift of common hot symbols was found, predeclared one additional fixed six-process sequence with unchanged consumer/native symbols at matching addresses. Old/new medians +2.758976/+1.424771% and +1.946056/+1.691295%. Limited directional support, not proof that layout caused earlier behavior.",
+    "tails": "Natural AA includes-10.524785% block; common old1 includes+27.597241%. No removal or tail-based mean claim. AA/IQR/ranges are descriptive, not CIs or corrections to subtract.",
+    "remaining": "Common new has18/24 slower blocks, medians+1.424771/+1.691295%; natural new medians+2.471460/+1.586295%. Residual remains unresolved across both layouts."
+  },
+  "sources": [
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+      "bytes": 111471,
+      "sha256": "30b57207730af05b29e3037d22427b67d35df6f5c4b69a1f99846c9630e6482f"
+    },
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/tests/io_http2/http2_test.cc",
+      "bytes": 92427,
+      "sha256": "3fc252f5e90df9bc10760c5f272faef401ff8cbc94cb2e13f36fb087564e3b02"
+    },
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+      "bytes": 57560,
+      "sha256": "96c1659810ca5d9e11610f937d619d122615f17cd4e3f3519ced9c0f255f6d63"
+    }
+  ],
+  "artifacts": {
+    "delete": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/after-diag",
+        "bytes": 896680,
+        "sha256": "e15de43a2ab34b04a8da788dc0a142c2a43b7729ea78a8b1f792c33c4120192b"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/after-diag.o",
+        "bytes": 224360,
+        "sha256": "80b4344bb2e49fc3cd9fbd4f2162134db76c85e8cea360ce7499ae7a16e158ce"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/before-diag",
+        "bytes": 896680,
+        "sha256": "e135251b5874d3b669b4798d4ae1674980e4e53efb220e50f040f48b0cd873d0"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/before-diag.o",
+        "bytes": 223544,
+        "sha256": "78a5ebb142f450bd5da4cd1c3637ce389a8de59376f3e3b181c907ccad39e1d4"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/candidate",
+        "bytes": 897640,
+        "sha256": "0dc95da28c6709642761fec762c2a8f7f1f679ac8d6d0d03dc3305117cce2424"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/consumer.o",
+        "bytes": 152888,
+        "sha256": "8b58ce4956815f345773205f29af9924477acf1d320ad4b61bc7c6e855cec8d2"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-old",
+        "bytes": 898496,
+        "sha256": "dac2e76ffe5306b89043015564bbf3994c71023af712af9ba120b4aef1277236"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/mutant.o",
+        "bytes": 225704,
+        "sha256": "89846f871cb836d89b125f08d5a68c426045d06657a691485942be509b64dd13"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/tests-mutant",
+        "bytes": 1618568,
+        "sha256": "9ee1d52d2a839a82ebb3d10c334db18e3d00b8629f72109fc4ecedcbb359b4c3"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/http2.o",
+        "bytes": 224576,
+        "sha256": "91086705edabe231dc952bf2c6cb40fc9d1a13e2ca5eb5128f8ffaed405b5e62"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/candidate",
+        "bytes": 897640,
+        "sha256": "99feb9f6429b7a5e5631091b0800ad2ccac8bdb19e8a3e6126c36e0e61c99c2b"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-notify/tests",
+        "bytes": 1588880,
+        "sha256": "3f50e4b0ec733f62ef8c4b5f50b88f0b0b69180e2d4d2957a79aec5ab4e7d464"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/http2_test.o",
+        "bytes": 697832,
+        "sha256": "e0aac0c23d5c6666a7d23c9b57521f4844bada7b6717dec4a57d29d821badab1"
+      }
+    ],
+    "retain": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+        "bytes": 387104,
+        "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/http2.o",
+        "bytes": 225824,
+        "sha256": "7c214427285e21da16dab647d0b5793b8b209554bf5f8d3ef20d4435653aa82e"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/http2_test.o",
+        "bytes": 739800,
+        "sha256": "7ffb3dac38465532c8980032a5f3dbee401ac7feec915f51c26eeb2ddd879f5c"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "bytes": 898496,
+        "sha256": "3123e43a9c4e015241242673b9dc90d7c6d4ca26f72408ef53b5690cd29e4870"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/tests-candidate",
+        "bytes": 1618552,
+        "sha256": "97a8e618a6db7c621e770e37f349313f0ffeda99b7b66334016a96c3db52991a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/nanobench.o",
+        "bytes": 283672,
+        "sha256": "43b16d764541dc1460c6aba273360f40403bcc35ee2feb37461f7f4d29984987"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/consumer.o",
+        "bytes": 151104,
+        "sha256": "62a132158e443d6fae3df9c9ea8b4ccba19e71a21aeac9ffef6042d03df5b2b2"
+      }
+    ]
+  },
+  "cleanup": {
+    "status": "completed",
+    "deleted_generated_files": 13,
+    "deleted_bytes": 9443488,
+    "retained_verified_current_cache_files": 7,
+    "directories_removed": 0,
+    "script_sha256": "667e2866b4fd481a2505a2fb000fb23c3dc6a3f254c4d3aad54eae4c14c8de59",
+    "archive": "cleanup.zip",
+    "archive_sha256": "c16b5cbb7d1ae0b143158c3b9666c0bdff97ab1492385c295811c41d4d2c26a6",
+    "note": "Exact paths, regular non-symlink file identities, sizes, SHA and process state checked. Script written before execution; already used, must not rerun."
+  }
+}

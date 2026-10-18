@@ -4,7 +4,7 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-累计31个清单条目：27项性能/复杂度问题中26项已修、HTTP2一项未解，另4项纯接线/正确性问题已修。最新去掉基准包装Task、延迟trailer分配、移除无效resume和重复read通知后，配对中位差仍为+1.78%/+2.58%，21/24区块较慢。已定位并删除这些具体冗余，残差的稳定幅度和完整原因仍未定位，见末尾。
+累计31个清单条目：27项性能/复杂度问题中26项已修、HTTP2一项未解，另4项纯接线/正确性问题已修。最新继续删除固定owner查询、空通知和空flush发布：普通布局候选中位差+2.47%/+1.59%，固定公共热代码地址后+1.42%/+1.69%。冗余调用减少明确，稳定提速和完整残差原因仍未证实，见末尾；不把某一布局或A/A波动当作等速结论。
 此前因同两Task的AB/BA中位差变号，曾把HTTP2改列为跨执行模型待归因对照；最新证据恢复为小幅输项，没有新增一项修复。这是清单条目数，包含源码已证实的多余时间/空间开销，不是当前peer实测排名或严格去重的算法家族。修复机制不等于所有shape已赢；后文按实验顺序保留当时结论。
 
 **比较边界仍需保留**：HTTP2相对专用手工单loop的历史大报文差距尚未被代码消除；同两Task的对照未复现同等幅度的差距，最新交错轮次则提示较小的正开销。不能把原差距全部归因于调度，也不能称严格等速。Apple普通attention的已知math分块、原生full mask步长和混合dtype转换机制均已修，见末尾。任意opaque compile callback不属于typed算子的自动规划，单列接口边界。
@@ -37,7 +37,7 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | FlatHash近满rolling churn反复重建 | [grow](../../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 受限域已融合，其余大math域已用原生selector及checked Q128块，覆盖三种浮点dtype、不同Dv、广播mask和全Q causal偏移。原生full mask已接通KV stride、移除完整复制；受理的mixed additive mask已按实际backing紧凑转换，已知问题机制均已修。未称所有shape已跑赢 |
 | Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的Q>128收益域均用单Job同步Q128块。长Q固定extra peak1344307200→285310976 B（−78.8%），短Q672825344→218202112 B（−67.57%）；新短Q未测时延。其它guard域的scores有KV/输出同阶上界，caller mask仍为Q×KV；不宣称所有shape吞吐或opaque callback自动规划 |
-| HTTP2大body背压holdout | 历史manual对照+8.22%/+11.08%；最新完整episode配对中位差+1.78%/+2.58% | 已删确认的冗余复制/构造/私有帧及额外通知/分配/resume；残差未解。最终两轮A/A中位+0.74%/−0.71%，不能称等速或纯调度成本，见末尾 |
+| HTTP2大body背压holdout | 历史manual对照+8.22%/+11.08%；最新普通布局+2.47%/+1.59%，固定公共地址+1.42%/+1.69% | 已删确认的冗余复制/构造/私有帧及额外通知/分配/resume/owner查询；残差未解。两布局完整分布和A/A均保留，不称稳定提速、等速或纯调度成本 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
@@ -1489,3 +1489,31 @@ read_body、flush_once、owner检查与条件通知等用户态路径，不能�
 
 先写根test.ps1再精确清理22份诊断/对照及已替代对象，共13466728 B；复核并保留7份当前可复用缓存，
 包括最终产品/消费者/测试对象及两份当前exe。源码、raw、采样、日志、map、SDK与目录保留。[执行记录](http2/root-cause/cleanup.zip)。
+
+## HTTP2：固定owner缓存与无等待者通知
+
+20轮同trace的validate_owner/check_operation均27400次，校验数量不变；仅缓存session存活期间不变的transport owner，
+getter调用27400→40。公开owner_worker getter保留原样，包括shutdown清空transport后的0值。未跨yield提升校验。
+owner私有计数覆盖完整predicate wait，notify_owner保留epoch更新、仅有等待者时调用CV；跨线程取消仍持monitor无条件通知。
+empty flush前无挂起，其临时write_busy不可被另一owner fiber观察，真实close/error回调自行发布，故双零分支不制造epoch变化。
+notify_owner总数24100→18900，实际CV notify24100→0；此trace无CV waiter，读取6480次/42003020 B均不变。
+
+default/epoll各17/17通过。新增public回归让A占native read、B/C争用CV、C先超时、B仍靠正常owner通知完成后A才完成。
+scratch坏变体将递减改清零，回归正常断言失败；证明它能捕获遗漏仍存活的waiter。无新公共接口或构建选项。
+
+唯一普通布局六进程顺序A/A→old→new→new→old→A/A中，old/new为+1.9535%/+2.4715%与+1.9326%/+1.5863%，一快一慢。
+核ELF发现产品对象增长把参考驱动与公共原生热符号一起移了0x500；只重链公共输入在前、产品在后，并核所列热符号地址一致，
+再执行一次预先固定的同样六进程序列，未调参数或筛样本：
+
+| 固定公共布局 | old中位差 | new中位差 |
+|---|---:|---:|
+| 第一组 | +2.7590% | +1.4248% |
+| 反序组 | +1.9461% | +1.6913% |
+
+这为局部改动提供有限方向性支持，保留实现；不能说已证明稳定提速或代码布局是根因。新实现仍有18/24区块较慢，HTTP2继续未解。
+普通A/A的−10.5248%区块、固定布局old1的+27.5972%尾块均保留，不用均值夸大收益，不以A/A扣偏或作为CI。
+两布局合144区块独立重算一致。只编相关产品/测试TU、复用同一消费者与依赖缓存；未测全HEAD、其它shape、Windows/macOS/TLS专用路线。
+[摘要与两套完整结果](http2/owner-loop/summary.json)／[源码、原始计数、测试、全部计时与地址核查](http2/owner-loop/source-results.zip)。
+
+归档后先写根test.ps1，再精确删除13份诊断/坏变体/过时产物共9443488 B，保留并复核7份当前缓存，
+含当前产品、公共消费者、17项测试对象、最终测试与固定公共布局benchmark；不删源码/raw/log/map/SDK或目录。[执行记录](http2/owner-loop/cleanup.zip)。

@@ -1465,6 +1465,155 @@ TEST(IoHttp2, ExternalCancelWakesOwnerLocalDirectionContender) {
   EXPECT_TRUE(result->first_reader_released.load(std::memory_order_acquire));
 }
 
+struct MultiWaiterResult {
+  std::atomic<bool> peer_ready{false}, short_timed_out{false}, server_ok{false};
+  std::atomic<bool> completed[2]{};
+  Event requests_ready, release_server, client_finished, started[2];
+  Event done[2]{Event{hyle::sched::EventResetMode::kManual},
+                Event{hyle::sched::EventResetMode::kManual}};
+};
+
+Task<int> multi_waiter_read(AllocatorRef, Http2ClientSession *session,
+                            Http2StreamId id, unsigned index,
+                            MultiWaiterResult *result) noexcept {
+  SignalOnReturn done{&result->done[index]};
+  result->started[index].signal();
+  auto response = co_await session->read_response(id, budget());
+  if (!response.has_value() || response->stream_id != id ||
+      response->head.status() != 204)
+    co_return 0;
+  Status discarded = co_await response->body.discard(budget());
+  result->completed[index].store(discarded.ok(), std::memory_order_release);
+  co_return 0;
+}
+
+Task<int> multi_waiter_server(AllocatorRef allocator, TcpListener *listener,
+                              MultiWaiterResult *result) noexcept {
+  SignalOnReturn ready{&result->requests_ready};
+  auto accepted = co_await listener->accept(kOwner, budget());
+  if (!accepted.has_value())
+    co_return 0;
+  auto made = Http2ServerSession::create(allocator, std::move(*accepted));
+  if (!made.has_value())
+    co_return 0;
+  Http2ServerSession session = std::move(*made);
+  std::array<Http2StreamId, 3> ids;
+  for (auto &id : ids) {
+    auto incoming = co_await session.accept(budget());
+    if (!incoming.has_value() || !incoming->has_value())
+      co_return 0;
+    auto request = std::move(**incoming);
+    id = request.stream_id;
+    if (!(co_await request.body.discard(budget())).ok())
+      co_return 0;
+  }
+  result->peer_ready.store(true, std::memory_order_release);
+  result->requests_ready.signal();
+  ready.event = nullptr;
+  if (!result->release_server.wait_for(hyle::time::Duration(5'000'000'000)))
+    co_return 0;
+  // B must finish through an owner notification before A receives its head.
+  Status sent = co_await session.send_response(
+      ids[1], Http2ResponseHead{.status = 204}, std::span<const std::byte>{}, budget());
+  if (!sent.ok() ||
+      !result->done[1].wait_for(hyle::time::Duration(2'000'000'000)) ||
+      !result->completed[1].load(std::memory_order_acquire))
+    co_return 0;
+  sent = co_await session.send_response(
+      ids[0], Http2ResponseHead{.status = 204}, std::span<const std::byte>{}, budget());
+  if (!sent.ok())
+    co_return 0;
+  result->server_ok.store(true, std::memory_order_release);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
+  co_return 0;
+}
+
+Task<int> multi_waiter_client(AllocatorRef allocator, Scheduler *scheduler,
+                              IoContext *io, std::uint16_t port,
+                              MultiWaiterResult *result) noexcept {
+  SignalOnReturn finished{&result->client_finished};
+  SignalOnReturn release_peer{&result->release_server};
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value())
+    co_return 0;
+  TcpStream transport = std::move(*opened);
+  if (!(co_await transport.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget())).ok())
+    co_return 0;
+  auto made = Http2ClientSession::create(allocator, std::move(transport));
+  if (!made.has_value())
+    co_return 0;
+  Http2ClientSession session = std::move(*made);
+  std::array<Http2StreamId, 3> ids;
+  for (auto &id : ids) {
+    auto sent = co_await session.send_request(
+        Http2RequestHead{.method = "GET", .scheme = "http",
+                         .authority = "localhost", .path = "/multi-waiter"},
+        std::span<const std::byte>{}, budget());
+    if (!sent.has_value())
+      co_return 0;
+    id = *sent;
+  }
+  if (!result->requests_ready.wait_for(hyle::time::Duration(5'000'000'000)) ||
+      !result->peer_ready.load(std::memory_order_acquire))
+    co_return 0;
+  Drive first{multi_waiter_read(allocator, &session, ids[0], 0, result)};
+  Drive second{multi_waiter_read(allocator, &session, ids[1], 1, result)};
+  Fiber first_fiber(kDefaultStackSize, drive, &first);
+  Fiber second_fiber(kDefaultStackSize, drive, &second);
+  if (!scheduler->spawn_on(kOwner, &first_fiber))
+    co_return 0;
+  result->started[0].wait();
+  // Give A a real timer turn to claim the native read before starting B.
+  hyle::sched::sleep_for(hyle::time::Duration(5'000'000));
+  if (!scheduler->spawn_on(kOwner, &second_fiber)) {
+    result->release_server.signal();
+    release_peer.event = nullptr;
+    result->done[0].wait();
+    co_return 0;
+  }
+  result->started[1].wait();
+  hyle::sched::sleep_for(hyle::time::Duration(5'000'000));
+  // C joins B on changed while A owns native IO. C times out without notifying
+  // the session; decrementing its waiter count must leave B observable.
+  auto timed = co_await session.read_response(
+      ids[2], OperationOptions{.deadline = hyle::time::deadline_after(
+                                            hyle::time::Duration(20'000'000))});
+  result->short_timed_out.store(!timed.has_value() &&
+                                   timed.error().IsDeadlineExceeded(),
+                               std::memory_order_release);
+  result->release_server.signal();
+  release_peer.event = nullptr;
+  result->done[1].wait();
+  result->done[0].wait();
+  co_return 0;
+}
+
+TEST(IoHttp2, TimedOutContenderDoesNotHideAnotherOwnerWaiter) {
+  Scheduler scheduler(2, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto listener_result = bind_test_listener(io);
+  ASSERT_TRUE(listener_result.has_value());
+  TestListener listener = std::move(*listener_result);
+  auto result = std::make_unique<MultiWaiterResult>();
+  Drive server{multi_waiter_server(system_allocator(), &listener.listener,
+                                   result.get())};
+  Drive client{multi_waiter_client(system_allocator(), &scheduler, &io,
+                                   listener.port, result.get())};
+  Fiber server_fiber(kDefaultStackSize, drive, &server);
+  Fiber client_fiber(kDefaultStackSize, drive, &client);
+  const bool server_started = scheduler.spawn_on(kOwner, &server_fiber);
+  EXPECT_TRUE(server_started);
+  EXPECT_TRUE(server_started && scheduler.spawn_on(kOwner, &client_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+  EXPECT_TRUE(result->short_timed_out.load(std::memory_order_acquire));
+  EXPECT_TRUE(result->completed[1].load(std::memory_order_acquire));
+  EXPECT_TRUE(result->completed[0].load(std::memory_order_acquire));
+  EXPECT_TRUE(result->server_ok.load(std::memory_order_acquire));
+}
+
 struct GoawayResult {
   std::atomic<bool> server_drained{false};
   std::atomic<bool> client_saw_goaway{false};

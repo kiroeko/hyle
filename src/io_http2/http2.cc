@@ -201,12 +201,14 @@ struct Http2SessionState {
   Http2SessionState(mem::AllocatorRef a, HttpTransport byte_transport,
                     Http2Limits configured_limits, bool server_side) noexcept
       : allocator(a), transport(std::move(byte_transport)),
-        limits(configured_limits), streams(a), input(a), wire(a),
+        limits(configured_limits), transport_owner(transport.owner_worker()),
+        streams(a), input(a), wire(a),
         goaway_debug(a), server(server_side) {}
 
   mem::AllocatorRef allocator;
   HttpTransport transport;
   Http2Limits limits;
+  const unsigned transport_owner;
   container::FlatHashMap<std::int32_t, Http2StreamState *,
                          container::Hash<std::int32_t>, std::equal_to<>,
                          mem::AllocatorRef>
@@ -221,6 +223,7 @@ struct Http2SessionState {
   Http2StreamState *encoded_head = nullptr;
   Http2StreamState *garbage_head = nullptr;
   std::atomic<std::size_t> references{1};
+  std::size_t owner_waiters = 0;
   util::SpinLock monitor;
   sched::ConditionVariable changed;
   Status fatal_status{};
@@ -247,12 +250,13 @@ struct Http2SessionState {
   void retain() noexcept { references.fetch_add(1, std::memory_order_relaxed); }
   void release() noexcept;
   // Protocol state is owner-worker affine. A sibling owner fiber cannot run
-  // until the current fiber suspends, by which point ConditionVariable has
-  // already published its waiter node. Its own no-waiter fast path therefore
-  // supplies all the synchronization needed here.
+  // until the current fiber suspends, by which point its waiter count and CV
+  // node are published. Count whole wait calls: a woken fiber may not have
+  // resumed yet, so this may overestimate parked waiters but never miss one.
   void notify_owner() noexcept {
     ++change_epoch;
-    changed.notify_all();
+    if (owner_waiters != 0)
+      changed.notify_all();
   }
   // Cancellation may originate on any thread. Taking the predicate monitor
   // closes the cancel-vs-wait-publication window without charging every normal
@@ -1157,7 +1161,7 @@ Status validate_owner(const Http2SessionState &state) noexcept {
   if (!state.owner_alive || state.closed || state.session == nullptr)
     return Status::FailedPrecondition("HTTP/2 session is closed");
   if (sched::current_worker_index() !=
-      static_cast<int>(state.transport.owner_worker()))
+      static_cast<int>(state.transport_owner))
     return Status::FailedPrecondition(
         "HTTP/2 operation must run on transport owner worker");
   return Status::Ok();
@@ -1193,10 +1197,12 @@ Status wait_for_change(Http2SessionState &state, OperationOptions options,
              state.peer_closed ||
              (options.cancel != nullptr && options.cancel->is_cancelled());
     };
+    ++state.owner_waiters;
     if (options.deadline.has_value())
       (void)state.changed.wait_until(lock, *options.deadline, changed);
     else
       state.changed.wait(lock, changed);
+    --state.owner_waiters;
   };
 
   if (options.cancel != nullptr) {
@@ -1338,7 +1344,9 @@ ProgressResult flush_once(mem::AllocatorRef allocator, Http2SessionState &state,
       return {failure, false};
     }
     if (encoded == 0 && state.wire.size == 0) {
-      release_direction(state, state.write_busy);
+      // No suspension exposed this temporary claim. Close/error callbacks
+      // publish their own changes; an empty encode adds no flush completion.
+      release_direction(state, state.write_busy, false);
       return {};
     }
     state.next_wire_epoch = candidate_epoch;
