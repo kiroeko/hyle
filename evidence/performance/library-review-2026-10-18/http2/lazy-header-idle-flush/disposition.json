@@ -1,0 +1,30 @@
+{
+  "status": "negative candidate retained; not applied",
+  "reason": "Source removes eight unused trailer slot allocation/free pairs in this trace, but no actual peak-space measurement was made. Hyle medians rose 1.33% and 2.03% in the fixed two-order trial; normalized ratios also worsened. No followup isolation or retest.",
+  "canonical_source_restored_sha256": "dada1db18f4ae0e8e55adac82f74e0539ab48b53ddb98804d637d53034c83c63",
+  "original_summary_is_frozen_measurement_record": true,
+  "published_files": [
+    {
+      "file": "summary.json",
+      "bytes": 40153,
+      "sha256": "e022f28403ac5587c34064cc17e2a866870f3493fd6dbe6069bdcc095c3f0b3c"
+    },
+    {
+      "file": "source-results.zip",
+      "bytes": 109042,
+      "sha256": "be605ab889ee644d6f4d118069ee926799239dfff9ea9097daed31a4536baf09"
+    },
+    {
+      "file": "cleanup-candidates.json",
+      "bytes": 1874,
+      "sha256": "d45dcf1745ccf77da21a67942e5941bf22b22fac226665de865e3b1a718e31d6"
+    }
+  ],
+  "candidate_object_now_deletable": {
+    "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/http2.o",
+    "bytes": 223480,
+    "sha256": "6fe0e7ccfe1828f5dd496372c09f905942be8e950da6ead4aa62ac0b16ab0d9c"
+  },
+  "baseline_discard_object_remains_retained": true,
+  "cleanup_executed": false
+}

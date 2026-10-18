@@ -1,0 +1,1135 @@
+{
+  "status": "Implemented two private HTTP2 changes; all targeted functional checks pass; holdout has no speedup. Not committed or cleaned.",
+  "head_at_packaging": "74e28bba248da54ad7d805eeabeb8fb667038b28",
+  "source_before": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\lazy-header-idle-flush\\http2.before.cc",
+    "bytes": 111180,
+    "sha256": "dada1db18f4ae0e8e55adac82f74e0539ab48b53ddb98804d637d53034c83c63"
+  },
+  "source_after": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\lazy-header-idle-flush\\http2.candidate.cc",
+    "bytes": 111427,
+    "sha256": "f96cb81e22e586a2e347b2453f1fc806bb88453ee5944ead559db67ad9f4833a"
+  },
+  "changes": [
+    "Lazy original fixed header/trailer slot allocation on first regular header, no capacity or field changes.",
+    "Empty native flush releases unobservable temporary writebusy without extra owner notification; all other releases/callback publications retained."
+  ],
+  "source_review": "source-review.json",
+  "functional": {
+    "results": [
+      {
+        "backend": "default",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "time": "1.558s"
+      },
+      {
+        "backend": "epoll",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "time": "1.551s"
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/http2.o",
+        "bytes": 223480,
+        "sha256": "6fe0e7ccfe1828f5dd496372c09f905942be8e950da6ead4aa62ac0b16ab0d9c"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/tests",
+        "bytes": 1559608,
+        "sha256": "b2441db6f04a67a93a4e270bfbbc38063b4a8a7fb6d76b5909e70b24393a8df2"
+      }
+    ],
+    "fresh_product_TUs": 1,
+    "test_TUs_or_sdk_rebuilt": 0,
+    "lazy_slot_malloc_oom_specifically_injected": false
+  },
+  "full_smoke": {
+    "old": "hyle=4 peer=4, exit0",
+    "new": "hyle=4 peer=4, exit0"
+  },
+  "method": {
+    "trace": "Original canonical 4x256KiB request+response trace, original flow control/reverse pair/header/body/credit/borrow/complete cleanup responsibilities.",
+    "order": [
+      "old",
+      "new",
+      "new",
+      "old"
+    ],
+    "inner_order": [
+      "Hyle first",
+      "Hyle first",
+      "peer first",
+      "peer first"
+    ],
+    "epochs_per_arm": 9,
+    "arms_per_process": 2,
+    "all_epochs_retained": 72,
+    "fixture": "Original run_workload has one full checked episode per arm before Bench; original nanobench minEpochIterations5, epochs9, default minEpochTime1ms, warmup0, batch4 unchanged.",
+    "timer": "Raw measurement.elapsed is already per iteration. Divide it only by batch4 for ns/stream; epoch_total_ns additionally multiplies by recorded iterations. Hardware perf counters unavailable; warning/zero fields retained and not interpreted as measured counters.",
+    "resources": "taskset CPU2 each formal/smoke process; caller plus existing Scheduler/RawHarness lifecycle unchanged. Actual machine/affinity/nice/clock and GCC14.2 are recorded in machine/compiler stdout. No new live TID census.",
+    "no_AA_retry_extra_shape_or_warm_peer_change": true,
+    "build": "Two fresh TUs total: product and unchanged holdout wrapper. Cached current core/native/foundation/GTest/test objects verified by exact SHA. No CMake/SDK/full-HEAD rebuild/copy."
+  },
+  "processes": [
+    {
+      "index": 0,
+      "variant": "old",
+      "inner_order": "Hyle then peer",
+      "arms": [
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_ns_per_stream": 194500.45,
+          "min_ns_per_stream": 181609.5,
+          "max_ns_per_stream": 240174.75,
+          "mean_ns_per_stream": 198241.83055555556,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.0170800269354824,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0007930958,
+              "pagefaults": 0.2,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 198273.95,
+              "epoch_total_ns": 3965479.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007717744,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 192943.59999999998,
+              "epoch_total_ns": 3858871.9999999995
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000726438,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 181609.5,
+              "epoch_total_ns": 3632190.0000000005
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000960699,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 240174.75,
+              "epoch_total_ns": 5764194.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007850164,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 196254.09999999998,
+              "epoch_total_ns": 3925082.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.0007732595,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 193314.875,
+              "epoch_total_ns": 4639557.000000001
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000791521,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 197880.25,
+              "epoch_total_ns": 4749126.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007780018,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 194500.45,
+              "epoch_total_ns": 3890009.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.0007569,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 189225.0,
+              "epoch_total_ns": 4541400.0
+            }
+          ]
+        },
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_ns_per_stream": 179246.20833333326,
+          "min_ns_per_stream": 164961.625,
+          "max_ns_per_stream": 189073.1,
+          "mean_ns_per_stream": 178848.6537037037,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.030267563894944,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0007297782,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 182444.55,
+              "epoch_total_ns": 3648891.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007091158,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 177278.95,
+              "epoch_total_ns": 3545579.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0006872662,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 171816.55000000002,
+              "epoch_total_ns": 3436331.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000755351,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 188837.75,
+              "epoch_total_ns": 4532106.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007562924,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 189073.1,
+              "epoch_total_ns": 3781462.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.0006598465,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 164961.625,
+              "epoch_total_ns": 3959079.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000716984833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 179246.20833333326,
+              "epoch_total_ns": 4301908.999999998
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007279956,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 181998.90000000002,
+              "epoch_total_ns": 3639978.0000000005
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000695921,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 173980.25,
+              "epoch_total_ns": 4175525.9999999995
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.0851021720822087
+    },
+    {
+      "index": 1,
+      "variant": "new",
+      "inner_order": "Hyle then peer",
+      "arms": [
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_ns_per_stream": 197086.85,
+          "min_ns_per_stream": 186179.0,
+          "max_ns_per_stream": 210974.7,
+          "mean_ns_per_stream": 197311.1925925926,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.0282438255036454,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0007988076,
+              "pagefaults": 0.2,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 199701.9,
+              "epoch_total_ns": 3994038.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000744716,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 186179.0,
+              "epoch_total_ns": 3723580.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0008438988,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 210974.7,
+              "epoch_total_ns": 4219494.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000772806666666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 193201.66666666674,
+              "epoch_total_ns": 4636840.000000002
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007883474,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 197086.85,
+              "epoch_total_ns": 3941737.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000754997333333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 188749.33333333326,
+              "epoch_total_ns": 4529983.999999998
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.0008112605,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 202815.125,
+              "epoch_total_ns": 4867563.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0008179688,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 204492.2,
+              "epoch_total_ns": 4089844.0000000005
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000770399833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 192599.95833333323,
+              "epoch_total_ns": 4622398.999999997
+            }
+          ]
+        },
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_ns_per_stream": 171648.45833333326,
+          "min_ns_per_stream": 167824.875,
+          "max_ns_per_stream": 184906.19999999998,
+          "mean_ns_per_stream": 173536.64444444445,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.0197140042377076,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0007356592,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 183914.80000000002,
+              "epoch_total_ns": 3678296.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.00067332,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 168330.0,
+              "epoch_total_ns": 3366600.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007396248,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 184906.19999999998,
+              "epoch_total_ns": 3698123.9999999995
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000689112,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 172278.0,
+              "epoch_total_ns": 4134672.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0006832502,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 170812.55,
+              "epoch_total_ns": 3416251.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000672534666666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 168133.66666666674,
+              "epoch_total_ns": 4035208.000000002
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.0006712995,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 167824.875,
+              "epoch_total_ns": 4027797.0000000005
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000695925,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 173981.25,
+              "epoch_total_ns": 3479625.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000686593833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 171648.45833333326,
+              "epoch_total_ns": 4119562.999999998
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.1482005251527898
+    },
+    {
+      "index": 2,
+      "variant": "new",
+      "inner_order": "peer then Hyle",
+      "arms": [
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_ns_per_stream": 172821.04166666674,
+          "min_ns_per_stream": 166497.45833333326,
+          "max_ns_per_stream": 184201.9,
+          "mean_ns_per_stream": 174309.7962962963,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.0335094676997844,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0007368076,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 184201.9,
+              "epoch_total_ns": 3684038.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000702663,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 175665.75,
+              "epoch_total_ns": 3513315.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007251278,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 181281.95,
+              "epoch_total_ns": 3625639.0000000005
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000691284166666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 172821.04166666674,
+              "epoch_total_ns": 4147705.0000000023
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000728858,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 182214.5,
+              "epoch_total_ns": 3644289.9999999995
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000665989833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 166497.45833333326,
+              "epoch_total_ns": 3995938.9999999977
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000668870666666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 167217.66666666674,
+              "epoch_total_ns": 4013224.000000002
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0006747286,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 168682.15,
+              "epoch_total_ns": 3373643.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000680823,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 170205.75,
+              "epoch_total_ns": 4084937.9999999995
+            }
+          ]
+        },
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_ns_per_stream": 195613.75,
+          "min_ns_per_stream": 190248.45,
+          "max_ns_per_stream": 219899.6,
+          "mean_ns_per_stream": 198896.5990740741,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.0233085883677789,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0008795984,
+              "pagefaults": 0.2,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 219899.6,
+              "epoch_total_ns": 4397992.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000765019,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 191254.75,
+              "epoch_total_ns": 3825095.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000782455,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 195613.75,
+              "epoch_total_ns": 3912275.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000801128166666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 200282.04166666674,
+              "epoch_total_ns": 4806769.000000003
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0008087942,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 202198.55,
+              "epoch_total_ns": 4043971.0000000005
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000807187,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 201796.75,
+              "epoch_total_ns": 4843122.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000782441666666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 195610.41666666674,
+              "epoch_total_ns": 4694650.000000002
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007609938,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 190248.45,
+              "epoch_total_ns": 3804969.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000772660333333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 193165.08333333326,
+              "epoch_total_ns": 4635961.999999999
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.1318861876628155
+    },
+    {
+      "index": 3,
+      "variant": "old",
+      "inner_order": "peer then Hyle",
+      "arms": [
+        {
+          "name": "nghttp2 direct HTTP/2 session",
+          "median_ns_per_stream": 176101.54166666674,
+          "min_ns_per_stream": 169098.20833333323,
+          "max_ns_per_stream": 184748.30000000002,
+          "mean_ns_per_stream": 176500.35648148146,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.0320876265404269,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0006947206,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 173680.15,
+              "epoch_total_ns": 3473603.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0006771202,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 169280.05,
+              "epoch_total_ns": 3385601.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007277582,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 181939.55,
+              "epoch_total_ns": 3638790.9999999995
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000728985833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 182246.45833333326,
+              "epoch_total_ns": 4373914.999999998
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007155968,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 178899.2,
+              "epoch_total_ns": 3577984.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000676392833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 169098.20833333323,
+              "epoch_total_ns": 4058356.9999999977
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000690039,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 172509.75,
+              "epoch_total_ns": 4140234.0000000005
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007389932,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 184748.30000000002,
+              "epoch_total_ns": 3694966.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000704406166666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 176101.54166666674,
+              "epoch_total_ns": 4226437.000000002
+            }
+          ]
+        },
+        {
+          "name": "HYLE HTTP/2 public session",
+          "median_ns_per_stream": 191725.79166666674,
+          "min_ns_per_stream": 184607.70833333326,
+          "max_ns_per_stream": 214226.19999999998,
+          "mean_ns_per_stream": 193732.58796296295,
+          "clock_resolution_ns": 12.0,
+          "median_absolute_percent_error": 0.0294474815711899,
+          "samples": [
+            {
+              "iterations": 5,
+              "elapsed": 0.0008569048,
+              "pagefaults": 0.2,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 214226.19999999998,
+              "epoch_total_ns": 4284524.0
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0008367554,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 209188.85,
+              "epoch_total_ns": 4183777.0000000005
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000773506,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 193376.5,
+              "epoch_total_ns": 3867530.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000745946333333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 186486.58333333326,
+              "epoch_total_ns": 4475677.999999998
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.0007449658,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 186241.45,
+              "epoch_total_ns": 3724829.0000000005
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000766903166666667,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 191725.79166666674,
+              "epoch_total_ns": 4601419.000000003
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000770436833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 192609.20833333326,
+              "epoch_total_ns": 4622620.999999998
+            },
+            {
+              "iterations": 5,
+              "elapsed": 0.000740524,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 185131.0,
+              "epoch_total_ns": 3702620.0
+            },
+            {
+              "iterations": 6,
+              "elapsed": 0.000738430833333333,
+              "pagefaults": 0,
+              "cpucycles": 0,
+              "contextswitches": 0,
+              "instructions": 0,
+              "branchinstructions": 0,
+              "branchmisses": 0,
+              "ns_per_stream": 184607.70833333326,
+              "epoch_total_ns": 4430584.999999998
+            }
+          ]
+        }
+      ],
+      "hyle_over_peer_ratio": 1.088722959788588
+    }
+  ],
+  "same_inner_order_pairs": [
+    {
+      "old_process": 0,
+      "new_process": 1,
+      "hyle_median_change_percent": 1.3297655609537218,
+      "normalized_ratio_change_percent": 5.814968829110478
+    },
+    {
+      "old_process": 3,
+      "new_process": 2,
+      "hyle_median_change_percent": 2.0278744448179564,
+      "normalized_ratio_change_percent": 3.964574043943103
+    }
+  ],
+  "conclusion": "No speedup in this fixed trial. Candidate Hyle medians and normalized Hyle/peer ratios are higher in both same-inner-order pairs; public API remains slower than direct manual peer. Retain the negative result. Source mechanism removes unused allocations/idle notifications but does not establish a timing benefit or resolve the residual.",
+  "interpretation_limits": "Combined changes are not a causal per-change timing experiment. Single fixed trace and finite epochs cannot prove a general regression. No followup AA, isolated variants, instruction counters, total-memory or notification runtime counters were added.",
+  "failures": [],
+  "baseline_object_preserved": {
+    "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+    "bytes": 223280,
+    "sha256": "0de3047e82522fddeaf24b57d576f4c7393901d9609217577ec2d5fc566303b6"
+  },
+  "cleanup": {
+    "host": "WSL Ubuntu-24.04 root",
+    "roots": [
+      "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush",
+      "/root/hyle-scratch/http2-current-20261018/discard-frame"
+    ],
+    "files": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/tests",
+        "bytes": 1559608,
+        "sha256": "b2441db6f04a67a93a4e270bfbbc38063b4a8a7fb6d76b5909e70b24393a8df2"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout.o",
+        "bytes": 110800,
+        "sha256": "604f70345247c6f2b84d206f998cd9b40721c4ebe087cd7c3846dd760183729a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout-old",
+        "bytes": 869040,
+        "sha256": "5c7637ec02398f91865bd537945578bb8a4702a968bd6be42110b95e06339e69"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout-new",
+        "bytes": 869040,
+        "sha256": "70bb782345bb71cc93477c0225cbfe8a6d6ddd36e3346c55bab27a4aa38fb681"
+      }
+    ],
+    "delete_count": 4,
+    "delete_logical_bytes": 3408488,
+    "retain": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/http2.o",
+        "bytes": 223480,
+        "sha256": "6fe0e7ccfe1828f5dd496372c09f905942be8e950da6ead4aa62ac0b16ab0d9c"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+        "bytes": 223280,
+        "sha256": "0de3047e82522fddeaf24b57d576f4c7393901d9609217577ec2d5fc566303b6"
+      }
+    ],
+    "retain_count": 2,
+    "retain_logical_bytes": 446760,
+    "duplicate_or_overlap_count": 0,
+    "disposition": "Plan only. Keep current product object for next reuse and preserve immutable discard baseline. No deletion/commit. All source/log/raw/ZIP/native/foundation/test cache inputs remain."
+  },
+  "product_scope": "Only src/io_http2/http2.cc edited by this task. README, test.ps1, Apple files and peer unchanged."
+}

@@ -1282,3 +1282,20 @@ discard原先逐chunk调用只co_return私有read_body的公开Task；现与cons
 这关闭typed Sink已确认的无界内部scores二次项：Q≤128时至多128行；收益式不满足时`Q·KV≤128·KV+2·Q·512`，scores受KV/输出的线性组合约束；其它域采用checked Q128块。caller显式mask本身仍为Q×KV，输出frontier仍存活，不保证单块物理硬cap，也不识别任意opaque callback。[摘要](apple-sink-short-q/summary.json)/[源码、命令和全部结果](apple-sink-short-q/source-results.zip)。
 
 随后先写根test.ps1并核对全部7项，精确删除4个exe与space.o共39990808逻辑B，保留并再核当前operations/test两个对象330968 B；源、日志、数据、maps、归档及SDK未删。[范围](apple-sink-short-q/cleanup-plan.json)/[执行日志](apple-sink-short-q/cleanup-executed.log)。
+
+## HTTP2：拒绝无收益的延迟header分配与空flush候选
+
+候选将原固定header/trailer槽延迟到第一条regular字段才分配，并去掉未发布writebusy状态的空flush通知；不改容量、协议推进或计时边界。实际holdout含自动生成的content-length，只能确认省去8个未用trailer块，未测实际空间峰值。default/epoll各15项及old/new原smoke均通过。
+
+原唯一4×256 KiB holdout固定ABBA、每臂9epochs，共72epochs全部保留：
+
+| 顺序 | Hyle µs/stream | 同进程peer µs/stream | Hyle差值 |
+|---|---:|---:|---:|
+| old | 194.50045 | 179.24621 | +8.510% |
+| new | 197.08685 | 171.64846 | +14.820% |
+| new | 195.61375 | 172.82104 | +13.189% |
+| old | 191.72579 | 176.10154 | +8.872% |
+
+候选Hyle绝对中位时延增加1.33%/2.03%，未证明提速；两项改动均撤回，未追加拆分实验或重测。当前产品源SHA恢复为`dada1db18f…`，本轮候选13–15%不是当前已应用实现的排名；前述NO_COPY有效对照8.22%/11.08%仍保留。[处理结论](http2/lazy-header-idle-flush/disposition.json)、[固定摘要](http2/lazy-header-idle-flush/summary.json)及[源码、命令、测试和全部样本](http2/lazy-header-idle-flush/source-results.zip)。
+
+已有共同terminal drain只能对齐退出责任，不能消除推进顺序导致的WINDOW_UPDATE数量差；1 Task/2 Task对照也同时改变readiness和推进策略。没有将这些组合差额归因为纯协程成本，亦未强制添加协议帧求同。

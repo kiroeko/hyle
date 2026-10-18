@@ -1,0 +1,47 @@
+{
+  "host": "WSL Ubuntu-24.04 root",
+  "roots": [
+    "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush",
+    "/root/hyle-scratch/http2-current-20261018/discard-frame"
+  ],
+  "files": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/tests",
+      "bytes": 1559608,
+      "sha256": "b2441db6f04a67a93a4e270bfbbc38063b4a8a7fb6d76b5909e70b24393a8df2"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout.o",
+      "bytes": 110800,
+      "sha256": "604f70345247c6f2b84d206f998cd9b40721c4ebe087cd7c3846dd760183729a"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout-old",
+      "bytes": 869040,
+      "sha256": "5c7637ec02398f91865bd537945578bb8a4702a968bd6be42110b95e06339e69"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/holdout-new",
+      "bytes": 869040,
+      "sha256": "70bb782345bb71cc93477c0225cbfe8a6d6ddd36e3346c55bab27a4aa38fb681"
+    }
+  ],
+  "delete_count": 4,
+  "delete_logical_bytes": 3408488,
+  "retain": [
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/lazy-header-idle-flush/http2.o",
+      "bytes": 223480,
+      "sha256": "6fe0e7ccfe1828f5dd496372c09f905942be8e950da6ead4aa62ac0b16ab0d9c"
+    },
+    {
+      "path": "/root/hyle-scratch/http2-current-20261018/discard-frame/http2.o",
+      "bytes": 223280,
+      "sha256": "0de3047e82522fddeaf24b57d576f4c7393901d9609217577ec2d5fc566303b6"
+    }
+  ],
+  "retain_count": 2,
+  "retain_logical_bytes": 446760,
+  "duplicate_or_overlap_count": 0,
+  "disposition": "Plan only. Keep current product object for next reuse and preserve immutable discard baseline. No deletion/commit. All source/log/raw/ZIP/native/foundation/test cache inputs remain."
+}
