@@ -1,0 +1,3277 @@
+{
+  "conclusion": "No product change or resolution. In this diagnostic run the small worker-CPU gap mostly remains outside synchronous owner initialization and final cleanup. Removing just the dynamic worker-identity guard did not consistently collapse the gap; no single-function root cause established.",
+  "phase_method": "One persistent Scheduler/IoContext, same complete4stream2MiB trace. Worker exposes pthread CPU clock ID through a joined Task; caller samples worker and caller CPU clocks once/cell. Two endpoint LifecycleProbes measure only synchronous initialization and final cleanup; no inclusive timing across yield/co_await/Event. Off/on toggles the eight internal clock reads per episode in one binary. Fixed off1/phases1/self/phases2/off2;12 alternating ABBA/BAAB blocks with64 episodes/cell; all full oracles passed.",
+  "phase_mean_additive_differences_us_per_episode": [
+    {
+      "worker_cpu_ns": 13.290890625,
+      "initialize_ns": 0.552197265625,
+      "destroy_ns": -0.4426061197916667,
+      "worker_remainder_ns": 13.181299479166666
+    },
+    {
+      "worker_cpu_ns": 7.511829427083333,
+      "initialize_ns": 0.459560546875,
+      "destroy_ns": -0.5394010416666666,
+      "worker_remainder_ns": 7.591669921875
+    }
+  ],
+  "phase_limitations": [
+    "Components of each block and their arithmetic means add exactly; independent component medians need not add. No cross-process subtraction as timer correction or decomposition of earlier formal wall results.",
+    "Remainder includes native protocol, copies, oracle, runtime owner/lifecycle validation, ACK/flowcontrol, I/O syscalls, scheduling, mid-episode stream/reader retirement and instrumentation. It is not pure codec, transport-wall or isolated wrapper cost.",
+    "Final cleanup covers session/native/container/socket cleanup preceding endpoint completion. Runtime Task/frame/driver/stack retirement can occur after join publication and cross a cell edge; no new barrier/drain changes the trace.",
+    "Back-to-back worker thread-clock medians120/121ns describe overhead scale, not accuracy. Reported1ns resolution is not an accuracy bound. Same-binary off/on controls only some perturbation/drift.",
+    "Caller CPU is separate. No subtraction of two endpoint lifetimes; no summing overlapping wall intervals. No hardware PMU available. WSL guest CPU2 does not establish physical-core or host isolation."
+  ],
+  "ablation": "Scratch-only mutant removes only sched::current_worker_index identity comparison inside validate_owner; alive/closed/native, cancellation, deadline, fatal checks retained. This deliberately breaks required owner semantics and is never a product candidate. Pure canonical paired consumer reused, selected consumer/native hot symbol addresses matched. Fixed self/baseline/disabled/disabled/baseline/self; full normal-trace oracles passed.",
+  "ablation_result": "Baseline/disabled block medians +0.974518/+1.421958% and +1.748384/+1.058040%: one order worsens and one improves. AA+0.460092/+1.417915%. Does not establish that removing the query consistently collapses the gap. Does not establish zero query cost, TLS causality or fully exclude it. No new syscall/yield/wait counters were recorded; timing/layout effects cannot be isolated.",
+  "scope": "Only diagnostic consumer TU and one deliberately invalid scratch product TU rebuilt with GCC14/O3/strict warnings; existing product, consumer, libraries, dependencies and final17test artifacts retained unchanged. No new product/benchmark/test source edits, no claim of new test passes, fullHEAD, Windows/macOS or TLS validation.",
+  "phases": {
+    "schedule": [
+      [
+        "off-1",
+        "off"
+      ],
+      [
+        "phases-1",
+        "phases"
+      ],
+      [
+        "self",
+        "self"
+      ],
+      [
+        "phases-2",
+        "phases"
+      ],
+      [
+        "off-2",
+        "off"
+      ]
+    ],
+    "boundary": "64 complete fresh-session episodes/cell, 12 alternating ABBA/BAAB blocks/process. Same binary; phase clocks on/off switch. Full byte/header/order oracle.",
+    "limit": "Diagnostic CPU attribution, not production elapsed ranking. Worker remainder includes scheduling, native protocol, copies, validation, syscalls and timer overhead; it is not pure protocol time.",
+    "runs": [
+      {
+        "name": "off-1",
+        "mode": "off",
+        "metadata": {
+          "type": "metadata",
+          "mode": "off",
+          "blocks": 12,
+          "episodes_per_cell": 64,
+          "thread_clock_back_to_back_ns": {
+            "min": 117,
+            "median": 120,
+            "p99": 135
+          },
+          "clock_reported_resolution_ns": 1
+        },
+        "blocks": [
+          {
+            "block": 0,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 758240.453125,
+                "caller_cpu_ns": 6853.3125,
+                "worker_cpu_ns": 751327.2578125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 751327.2578125
+              },
+              "reference": {
+                "wall_ns": 759220.671875,
+                "caller_cpu_ns": 7974.8828125,
+                "worker_cpu_ns": 751044.5078125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 751044.5078125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -980.21875,
+              "caller_cpu_ns": -1121.5703125,
+              "worker_cpu_ns": 282.75,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 282.75
+            },
+            "ratio_percent": {
+              "wall_ns": -0.10657516111500383,
+              "worker_cpu_ns": 0.06259261239338434
+            }
+          },
+          {
+            "block": 1,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 749407.15625,
+                "caller_cpu_ns": 6890.3671875,
+                "worker_cpu_ns": 742513.1015625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 742513.1015625
+              },
+              "reference": {
+                "wall_ns": 735624.78125,
+                "caller_cpu_ns": 7254.6015625,
+                "worker_cpu_ns": 728275.5390625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 728275.5390625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 13782.375,
+              "caller_cpu_ns": -364.234375,
+              "worker_cpu_ns": 14237.5625,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 14237.5625
+            },
+            "ratio_percent": {
+              "wall_ns": 1.8869860485741814,
+              "worker_cpu_ns": 1.967662312328485
+            }
+          },
+          {
+            "block": 2,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 749027.5625,
+                "caller_cpu_ns": 6625.4375,
+                "worker_cpu_ns": 742397.375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 742397.375
+              },
+              "reference": {
+                "wall_ns": 728173.75,
+                "caller_cpu_ns": 6715.4296875,
+                "worker_cpu_ns": 721454.8828125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 721454.8828125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 20853.8125,
+              "caller_cpu_ns": -89.9921875,
+              "worker_cpu_ns": 20942.4921875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 20942.4921875
+            },
+            "ratio_percent": {
+              "wall_ns": 2.8490448243937525,
+              "worker_cpu_ns": 2.8888364976867735
+            }
+          },
+          {
+            "block": 3,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 769148.5703125,
+                "caller_cpu_ns": 7972.4140625,
+                "worker_cpu_ns": 760927.1015625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 760927.1015625
+              },
+              "reference": {
+                "wall_ns": 752728.234375,
+                "caller_cpu_ns": 7575.875,
+                "worker_cpu_ns": 745051.734375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 745051.734375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 16420.3359375,
+              "caller_cpu_ns": 396.5390625,
+              "worker_cpu_ns": 15875.3671875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 15875.3671875
+            },
+            "ratio_percent": {
+              "wall_ns": 2.181459376733718,
+              "worker_cpu_ns": 2.1307502173816535
+            }
+          },
+          {
+            "block": 4,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 749428.265625,
+                "caller_cpu_ns": 7718.6640625,
+                "worker_cpu_ns": 741614.5,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 741614.5
+              },
+              "reference": {
+                "wall_ns": 730048.7734375,
+                "caller_cpu_ns": 7451.171875,
+                "worker_cpu_ns": 722374.296875,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 722374.296875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 19379.4921875,
+              "caller_cpu_ns": 267.4921875,
+              "worker_cpu_ns": 19240.203125,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 19240.203125
+            },
+            "ratio_percent": {
+              "wall_ns": 2.6473601510846887,
+              "worker_cpu_ns": 2.657159456779632
+            }
+          },
+          {
+            "block": 5,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 746801.4765625,
+                "caller_cpu_ns": 8210.03125,
+                "worker_cpu_ns": 738419.4375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 738419.4375
+              },
+              "reference": {
+                "wall_ns": 730798.734375,
+                "caller_cpu_ns": 7585.734375,
+                "worker_cpu_ns": 723097.8828125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 723097.8828125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 16002.7421875,
+              "caller_cpu_ns": 624.296875,
+              "worker_cpu_ns": 15321.5546875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 15321.5546875
+            },
+            "ratio_percent": {
+              "wall_ns": 2.1865364340601676,
+              "worker_cpu_ns": 2.1160280831637293
+            }
+          },
+          {
+            "block": 6,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 742070.359375,
+                "caller_cpu_ns": 7842.1484375,
+                "worker_cpu_ns": 734223.609375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 734223.609375
+              },
+              "reference": {
+                "wall_ns": 721806.453125,
+                "caller_cpu_ns": 7182.0546875,
+                "worker_cpu_ns": 714412.7890625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 714412.7890625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 20263.90625,
+              "caller_cpu_ns": 660.09375,
+              "worker_cpu_ns": 19810.8203125,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 19810.8203125
+            },
+            "ratio_percent": {
+              "wall_ns": 2.8191613974586818,
+              "worker_cpu_ns": 2.7828306430100964
+            }
+          },
+          {
+            "block": 7,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 738829.3203125,
+                "caller_cpu_ns": 6275.5859375,
+                "worker_cpu_ns": 732550.1171875,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 732550.1171875
+              },
+              "reference": {
+                "wall_ns": 748961.484375,
+                "caller_cpu_ns": 6896.4140625,
+                "worker_cpu_ns": 742061.0703125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 742061.0703125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -10132.1640625,
+              "caller_cpu_ns": -620.828125,
+              "worker_cpu_ns": -9510.953125,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": -9510.953125
+            },
+            "ratio_percent": {
+              "wall_ns": -1.3150800235879514,
+              "worker_cpu_ns": -1.2437962050113247
+            }
+          },
+          {
+            "block": 8,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 746837.34375,
+                "caller_cpu_ns": 6643.96875,
+                "worker_cpu_ns": 740088.890625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 740088.890625
+              },
+              "reference": {
+                "wall_ns": 733998.0390625,
+                "caller_cpu_ns": 6738.3046875,
+                "worker_cpu_ns": 727159.4375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 727159.4375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 12839.3046875,
+              "caller_cpu_ns": -94.3359375,
+              "worker_cpu_ns": 12929.453125,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 12929.453125
+            },
+            "ratio_percent": {
+              "wall_ns": 1.7450831392688346,
+              "worker_cpu_ns": 1.7733764385702682
+            }
+          },
+          {
+            "block": 9,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 754538.953125,
+                "caller_cpu_ns": 7160.5859375,
+                "worker_cpu_ns": 747375.109375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 747375.109375
+              },
+              "reference": {
+                "wall_ns": 740884.7734375,
+                "caller_cpu_ns": 7222.2421875,
+                "worker_cpu_ns": 733596.4375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 733596.4375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 13654.1796875,
+              "caller_cpu_ns": -61.65625,
+              "worker_cpu_ns": 13778.671875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 13778.671875
+            },
+            "ratio_percent": {
+              "wall_ns": 1.8443454561267094,
+              "worker_cpu_ns": 1.8800694028921947
+            }
+          },
+          {
+            "block": 10,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 756337.9140625,
+                "caller_cpu_ns": 6998.0625,
+                "worker_cpu_ns": 749310.65625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 749310.65625
+              },
+              "reference": {
+                "wall_ns": 760460.84375,
+                "caller_cpu_ns": 7565.9140625,
+                "worker_cpu_ns": 752811.5,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 752811.5
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -4122.9296875,
+              "caller_cpu_ns": -567.8515625,
+              "worker_cpu_ns": -3500.84375,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": -3500.84375
+            },
+            "ratio_percent": {
+              "wall_ns": -0.5205985870017349,
+              "worker_cpu_ns": -0.44501750072503665
+            }
+          },
+          {
+            "block": 11,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 740822.6328125,
+                "caller_cpu_ns": 6724.2109375,
+                "worker_cpu_ns": 734092.9765625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 734092.9765625
+              },
+              "reference": {
+                "wall_ns": 739407.6953125,
+                "caller_cpu_ns": 6898.5078125,
+                "worker_cpu_ns": 732505.1015625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 732505.1015625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 1414.9375,
+              "caller_cpu_ns": -174.296875,
+              "worker_cpu_ns": 1587.875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 1587.875
+            },
+            "ratio_percent": {
+              "wall_ns": 0.18790522313231023,
+              "worker_cpu_ns": 0.21360629479597248
+            }
+          }
+        ],
+        "median_difference_ns_per_episode": {
+          "wall_ns": 13718.27734375,
+          "caller_cpu_ns": -92.1640625,
+          "worker_cpu_ns": 14008.1171875,
+          "initialize_ns": 0.0,
+          "destroy_ns": 0.0,
+          "worker_remainder_ns": 14008.1171875
+        },
+        "mean_difference_ns_per_episode": {
+          "wall_ns": 9947.981119791666,
+          "caller_cpu_ns": -95.52864583333333,
+          "worker_cpu_ns": 10082.912760416666,
+          "initialize_ns": 0.0,
+          "destroy_ns": 0.0,
+          "worker_remainder_ns": 10082.912760416666
+        },
+        "median_arm_ns_per_episode": {
+          "hyle": {
+            "wall_ns": 749217.359375,
+            "caller_cpu_ns": 6944.21484375,
+            "worker_cpu_ns": 742005.9375,
+            "initialize_ns": 0.0,
+            "destroy_ns": 0.0,
+            "worker_remainder_ns": 742005.9375
+          },
+          "reference": {
+            "wall_ns": 737516.23828125,
+            "caller_cpu_ns": 7238.421875,
+            "worker_cpu_ns": 730390.3203125,
+            "initialize_ns": 0.0,
+            "destroy_ns": 0.0,
+            "worker_remainder_ns": 730390.3203125
+          }
+        },
+        "median_ratio_percent": {
+          "wall_ns": 1.8656657523504454,
+          "worker_cpu_ns": 1.9238658576103398
+        }
+      },
+      {
+        "name": "phases-1",
+        "mode": "phases",
+        "metadata": {
+          "type": "metadata",
+          "mode": "phases",
+          "blocks": 12,
+          "episodes_per_cell": 64,
+          "thread_clock_back_to_back_ns": {
+            "min": 117,
+            "median": 120,
+            "p99": 136
+          },
+          "clock_reported_resolution_ns": 1
+        },
+        "blocks": [
+          {
+            "block": 0,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 738784.8671875,
+                "caller_cpu_ns": 6521.8359375,
+                "worker_cpu_ns": 732232.015625,
+                "initialize_ns": 1889.140625,
+                "destroy_ns": 3002.90625,
+                "worker_remainder_ns": 727339.96875
+              },
+              "reference": {
+                "wall_ns": 741803.609375,
+                "caller_cpu_ns": 6778.3359375,
+                "worker_cpu_ns": 735022.78125,
+                "initialize_ns": 1497.3515625,
+                "destroy_ns": 3751.453125,
+                "worker_remainder_ns": 729773.9765625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -3018.7421875,
+              "caller_cpu_ns": -256.5,
+              "worker_cpu_ns": -2790.765625,
+              "initialize_ns": 391.7890625,
+              "destroy_ns": -748.546875,
+              "worker_remainder_ns": -2434.0078125
+            },
+            "ratio_percent": {
+              "wall_ns": -0.4054919164292856,
+              "worker_cpu_ns": -0.3785517682247582
+            }
+          },
+          {
+            "block": 1,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 759493.9921875,
+                "caller_cpu_ns": 7258.1328125,
+                "worker_cpu_ns": 752204.0703125,
+                "initialize_ns": 2181.859375,
+                "destroy_ns": 3652.1953125,
+                "worker_remainder_ns": 746370.015625
+              },
+              "reference": {
+                "wall_ns": 754106.7578125,
+                "caller_cpu_ns": 6898.8671875,
+                "worker_cpu_ns": 747116.421875,
+                "initialize_ns": 1549.5625,
+                "destroy_ns": 4970.453125,
+                "worker_remainder_ns": 740596.40625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 5387.234375,
+              "caller_cpu_ns": 359.265625,
+              "worker_cpu_ns": 5087.6484375,
+              "initialize_ns": 632.296875,
+              "destroy_ns": -1318.2578125,
+              "worker_remainder_ns": 5773.609375
+            },
+            "ratio_percent": {
+              "wall_ns": 0.765808716354993,
+              "worker_cpu_ns": 0.7313137330747217
+            }
+          },
+          {
+            "block": 2,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 761095.3828125,
+                "caller_cpu_ns": 7259.15625,
+                "worker_cpu_ns": 753833.5234375,
+                "initialize_ns": 2063.4140625,
+                "destroy_ns": 3637.171875,
+                "worker_remainder_ns": 748132.9375
+              },
+              "reference": {
+                "wall_ns": 754917.1484375,
+                "caller_cpu_ns": 6549.5234375,
+                "worker_cpu_ns": 748126.765625,
+                "initialize_ns": 1454.3203125,
+                "destroy_ns": 3793.6953125,
+                "worker_remainder_ns": 742878.75
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 6178.234375,
+              "caller_cpu_ns": 709.6328125,
+              "worker_cpu_ns": 5706.7578125,
+              "initialize_ns": 609.09375,
+              "destroy_ns": -156.5234375,
+              "worker_remainder_ns": 5254.1875
+            },
+            "ratio_percent": {
+              "wall_ns": 0.8214249308989973,
+              "worker_cpu_ns": 0.7662869200429162
+            }
+          },
+          {
+            "block": 3,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 758534.0078125,
+                "caller_cpu_ns": 6573.203125,
+                "worker_cpu_ns": 751958.1328125,
+                "initialize_ns": 1958.0625,
+                "destroy_ns": 3356.0703125,
+                "worker_remainder_ns": 746644.0
+              },
+              "reference": {
+                "wall_ns": 735444.890625,
+                "caller_cpu_ns": 6476.59375,
+                "worker_cpu_ns": 728884.5,
+                "initialize_ns": 1388.5625,
+                "destroy_ns": 3508.7890625,
+                "worker_remainder_ns": 723987.1484375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 23089.1171875,
+              "caller_cpu_ns": 96.609375,
+              "worker_cpu_ns": 23073.6328125,
+              "initialize_ns": 569.5,
+              "destroy_ns": -152.71875,
+              "worker_remainder_ns": 22656.8515625
+            },
+            "ratio_percent": {
+              "wall_ns": 3.134365432456655,
+              "worker_cpu_ns": 3.161040769019448
+            }
+          },
+          {
+            "block": 4,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 765920.8046875,
+                "caller_cpu_ns": 6645.7109375,
+                "worker_cpu_ns": 759268.6484375,
+                "initialize_ns": 1998.453125,
+                "destroy_ns": 3496.2421875,
+                "worker_remainder_ns": 753773.953125
+              },
+              "reference": {
+                "wall_ns": 740951.1328125,
+                "caller_cpu_ns": 6902.0703125,
+                "worker_cpu_ns": 733886.28125,
+                "initialize_ns": 1415.53125,
+                "destroy_ns": 3664.609375,
+                "worker_remainder_ns": 728806.140625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 24969.671875,
+              "caller_cpu_ns": -256.359375,
+              "worker_cpu_ns": 25382.3671875,
+              "initialize_ns": 582.921875,
+              "destroy_ns": -168.3671875,
+              "worker_remainder_ns": 24967.8125
+            },
+            "ratio_percent": {
+              "wall_ns": 3.358435845319674,
+              "worker_cpu_ns": 3.4483474331604027
+            }
+          },
+          {
+            "block": 5,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 743841.1875,
+                "caller_cpu_ns": 6024.1796875,
+                "worker_cpu_ns": 737814.4375,
+                "initialize_ns": 1775.4140625,
+                "destroy_ns": 2980.65625,
+                "worker_remainder_ns": 733058.3671875
+              },
+              "reference": {
+                "wall_ns": 736747.15625,
+                "caller_cpu_ns": 6610.203125,
+                "worker_cpu_ns": 730134.2578125,
+                "initialize_ns": 1770.7109375,
+                "destroy_ns": 3822.65625,
+                "worker_remainder_ns": 724540.890625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 7094.03125,
+              "caller_cpu_ns": -586.0234375,
+              "worker_cpu_ns": 7680.1796875,
+              "initialize_ns": 4.703125,
+              "destroy_ns": -842.0,
+              "worker_remainder_ns": 8517.4765625
+            },
+            "ratio_percent": {
+              "wall_ns": 0.9629668996678341,
+              "worker_cpu_ns": 1.0521976181038288
+            }
+          },
+          {
+            "block": 6,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 748804.671875,
+                "caller_cpu_ns": 7261.9609375,
+                "worker_cpu_ns": 741457.078125,
+                "initialize_ns": 2260.546875,
+                "destroy_ns": 3486.0,
+                "worker_remainder_ns": 735710.53125
+              },
+              "reference": {
+                "wall_ns": 729009.5390625,
+                "caller_cpu_ns": 6527.6875,
+                "worker_cpu_ns": 722385.6328125,
+                "initialize_ns": 1431.609375,
+                "destroy_ns": 3517.9921875,
+                "worker_remainder_ns": 717436.03125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 19795.1328125,
+              "caller_cpu_ns": 734.2734375,
+              "worker_cpu_ns": 19071.4453125,
+              "initialize_ns": 828.9375,
+              "destroy_ns": -31.9921875,
+              "worker_remainder_ns": 18274.5
+            },
+            "ratio_percent": {
+              "wall_ns": 2.7179046591630893,
+              "worker_cpu_ns": 2.6422942533710545
+            }
+          },
+          {
+            "block": 7,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 743006.65625,
+                "caller_cpu_ns": 7044.4609375,
+                "worker_cpu_ns": 735959.5625,
+                "initialize_ns": 2002.125,
+                "destroy_ns": 3315.1328125,
+                "worker_remainder_ns": 730642.3046875
+              },
+              "reference": {
+                "wall_ns": 739518.7734375,
+                "caller_cpu_ns": 7841.8359375,
+                "worker_cpu_ns": 731559.421875,
+                "initialize_ns": 1751.46875,
+                "destroy_ns": 4302.640625,
+                "worker_remainder_ns": 725505.3125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 3487.8828125,
+              "caller_cpu_ns": -797.375,
+              "worker_cpu_ns": 4400.140625,
+              "initialize_ns": 250.65625,
+              "destroy_ns": -987.5078125,
+              "worker_remainder_ns": 5136.9921875
+            },
+            "ratio_percent": {
+              "wall_ns": 0.4469346445989169,
+              "worker_cpu_ns": 0.5799624658157496
+            }
+          },
+          {
+            "block": 8,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 759718.2109375,
+                "caller_cpu_ns": 7778.5390625,
+                "worker_cpu_ns": 751887.2109375,
+                "initialize_ns": 2262.4375,
+                "destroy_ns": 3693.71875,
+                "worker_remainder_ns": 745931.0546875
+              },
+              "reference": {
+                "wall_ns": 736814.7734375,
+                "caller_cpu_ns": 7019.546875,
+                "worker_cpu_ns": 729792.6640625,
+                "initialize_ns": 1523.75,
+                "destroy_ns": 4272.9921875,
+                "worker_remainder_ns": 723995.921875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 22903.4375,
+              "caller_cpu_ns": 758.9921875,
+              "worker_cpu_ns": 22094.546875,
+              "initialize_ns": 738.6875,
+              "destroy_ns": -579.2734375,
+              "worker_remainder_ns": 21935.1328125
+            },
+            "ratio_percent": {
+              "wall_ns": 3.116118751299778,
+              "worker_cpu_ns": 3.0343319734458847
+            }
+          },
+          {
+            "block": 9,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 747209.25,
+                "caller_cpu_ns": 7310.234375,
+                "worker_cpu_ns": 739870.921875,
+                "initialize_ns": 2245.65625,
+                "destroy_ns": 3604.359375,
+                "worker_remainder_ns": 734020.90625
+              },
+              "reference": {
+                "wall_ns": 729571.5,
+                "caller_cpu_ns": 6678.3359375,
+                "worker_cpu_ns": 722770.90625,
+                "initialize_ns": 1497.4453125,
+                "destroy_ns": 3597.671875,
+                "worker_remainder_ns": 717675.7890625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 17637.75,
+              "caller_cpu_ns": 631.8984375,
+              "worker_cpu_ns": 17100.015625,
+              "initialize_ns": 748.2109375,
+              "destroy_ns": 6.6875,
+              "worker_remainder_ns": 16345.1171875
+            },
+            "ratio_percent": {
+              "wall_ns": 2.40676253776535,
+              "worker_cpu_ns": 2.3555982751582145
+            }
+          },
+          {
+            "block": 10,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 766109.8515625,
+                "caller_cpu_ns": 6953.796875,
+                "worker_cpu_ns": 758909.3828125,
+                "initialize_ns": 2284.96875,
+                "destroy_ns": 3948.703125,
+                "worker_remainder_ns": 752675.7109375
+              },
+              "reference": {
+                "wall_ns": 749052.9375,
+                "caller_cpu_ns": 7085.203125,
+                "worker_cpu_ns": 741965.203125,
+                "initialize_ns": 1529.0,
+                "destroy_ns": 3979.0859375,
+                "worker_remainder_ns": 736457.1171875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 17056.9140625,
+              "caller_cpu_ns": -131.40625,
+              "worker_cpu_ns": 16944.1796875,
+              "initialize_ns": 755.96875,
+              "destroy_ns": -30.3828125,
+              "worker_remainder_ns": 16218.59375
+            },
+            "ratio_percent": {
+              "wall_ns": 2.194631537760897,
+              "worker_cpu_ns": 2.204254897355062
+            }
+          },
+          {
+            "block": 11,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 741437.3984375,
+                "caller_cpu_ns": 6829.1953125,
+                "worker_cpu_ns": 734462.4296875,
+                "initialize_ns": 1890.7421875,
+                "destroy_ns": 3274.296875,
+                "worker_remainder_ns": 729297.390625
+              },
+              "reference": {
+                "wall_ns": 725088.640625,
+                "caller_cpu_ns": 6364.296875,
+                "worker_cpu_ns": 718721.890625,
+                "initialize_ns": 1377.140625,
+                "destroy_ns": 3576.6875,
+                "worker_remainder_ns": 713768.0625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 16348.7578125,
+              "caller_cpu_ns": 464.8984375,
+              "worker_cpu_ns": 15740.5390625,
+              "initialize_ns": 513.6015625,
+              "destroy_ns": -302.390625,
+              "worker_remainder_ns": 15529.328125
+            },
+            "ratio_percent": {
+              "wall_ns": 2.2512423500682166,
+              "worker_cpu_ns": 2.1870585818756596
+            }
+          }
+        ],
+        "median_difference_ns_per_episode": {
+          "wall_ns": 16702.8359375,
+          "caller_cpu_ns": 227.9375,
+          "worker_cpu_ns": 16342.359375,
+          "initialize_ns": 596.0078125,
+          "destroy_ns": -235.37890625,
+          "worker_remainder_ns": 15873.9609375
+        },
+        "mean_difference_ns_per_episode": {
+          "wall_ns": 13410.78515625,
+          "caller_cpu_ns": 143.9921875,
+          "worker_cpu_ns": 13290.890625,
+          "initialize_ns": 552.197265625,
+          "destroy_ns": -442.6061197916667,
+          "worker_remainder_ns": 13181.299479166666
+        },
+        "median_arm_ns_per_episode": {
+          "hyle": {
+            "wall_ns": 753669.33984375,
+            "caller_cpu_ns": 6999.12890625,
+            "worker_cpu_ns": 746672.14453125,
+            "initialize_ns": 2032.76953125,
+            "destroy_ns": 3491.12109375,
+            "worker_remainder_ns": 740820.79296875
+          },
+          "reference": {
+            "wall_ns": 738166.7734375,
+            "caller_cpu_ns": 6728.3359375,
+            "worker_cpu_ns": 730846.83984375,
+            "initialize_ns": 1497.3984375,
+            "destroy_ns": 3772.57421875,
+            "worker_remainder_ns": 725023.1015625
+          }
+        },
+        "median_ratio_percent": {
+          "wall_ns": 2.222936943914557,
+          "worker_cpu_ns": 2.1956567396153606
+        }
+      },
+      {
+        "name": "self",
+        "mode": "self",
+        "metadata": {
+          "type": "metadata",
+          "mode": "self",
+          "blocks": 12,
+          "episodes_per_cell": 64,
+          "thread_clock_back_to_back_ns": {
+            "min": 118,
+            "median": 121,
+            "p99": 136
+          },
+          "clock_reported_resolution_ns": 1
+        },
+        "blocks": [
+          {
+            "block": 0,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 758055.6875,
+                "caller_cpu_ns": 6710.1640625,
+                "worker_cpu_ns": 751127.71875,
+                "initialize_ns": 2213.2421875,
+                "destroy_ns": 3463.6328125,
+                "worker_remainder_ns": 745450.84375
+              },
+              "reference": {
+                "wall_ns": 754580.328125,
+                "caller_cpu_ns": 6729.203125,
+                "worker_cpu_ns": 747675.921875,
+                "initialize_ns": 1978.8515625,
+                "destroy_ns": 3379.59375,
+                "worker_remainder_ns": 742317.4765625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 3475.359375,
+              "caller_cpu_ns": -19.0390625,
+              "worker_cpu_ns": 3451.796875,
+              "initialize_ns": 234.390625,
+              "destroy_ns": 84.0390625,
+              "worker_remainder_ns": 3133.3671875
+            },
+            "ratio_percent": {
+              "wall_ns": 0.4595607252926263,
+              "worker_cpu_ns": 0.46088096680158114
+            }
+          },
+          {
+            "block": 1,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 772171.78125,
+                "caller_cpu_ns": 6871.0625,
+                "worker_cpu_ns": 765298.0,
+                "initialize_ns": 2049.1484375,
+                "destroy_ns": 3875.671875,
+                "worker_remainder_ns": 759373.1796875
+              },
+              "reference": {
+                "wall_ns": 754156.46875,
+                "caller_cpu_ns": 6432.8203125,
+                "worker_cpu_ns": 747613.8359375,
+                "initialize_ns": 1894.84375,
+                "destroy_ns": 3502.1328125,
+                "worker_remainder_ns": 742216.859375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 18015.3125,
+              "caller_cpu_ns": 438.2421875,
+              "worker_cpu_ns": 17684.1640625,
+              "initialize_ns": 154.3046875,
+              "destroy_ns": 373.5390625,
+              "worker_remainder_ns": 17156.3203125
+            },
+            "ratio_percent": {
+              "wall_ns": 2.3994519236348655,
+              "worker_cpu_ns": 2.375451040448271
+            }
+          },
+          {
+            "block": 2,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 759709.5078125,
+                "caller_cpu_ns": 6955.53125,
+                "worker_cpu_ns": 752390.7265625,
+                "initialize_ns": 1991.46875,
+                "destroy_ns": 3377.1015625,
+                "worker_remainder_ns": 747022.15625
+              },
+              "reference": {
+                "wall_ns": 753039.4140625,
+                "caller_cpu_ns": 6554.1640625,
+                "worker_cpu_ns": 746403.3984375,
+                "initialize_ns": 1865.96875,
+                "destroy_ns": 3629.3125,
+                "worker_remainder_ns": 740908.1171875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 6670.09375,
+              "caller_cpu_ns": 401.3671875,
+              "worker_cpu_ns": 5987.328125,
+              "initialize_ns": 125.5,
+              "destroy_ns": -252.2109375,
+              "worker_remainder_ns": 6114.0390625
+            },
+            "ratio_percent": {
+              "wall_ns": 0.8859011167758575,
+              "worker_cpu_ns": 0.8022491304232524
+            }
+          },
+          {
+            "block": 3,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 783654.875,
+                "caller_cpu_ns": 8072.765625,
+                "worker_cpu_ns": 775501.7890625,
+                "initialize_ns": 2094.40625,
+                "destroy_ns": 4617.9609375,
+                "worker_remainder_ns": 768789.421875
+              },
+              "reference": {
+                "wall_ns": 757100.40625,
+                "caller_cpu_ns": 7146.65625,
+                "worker_cpu_ns": 749791.7265625,
+                "initialize_ns": 2166.6953125,
+                "destroy_ns": 3758.1796875,
+                "worker_remainder_ns": 743866.8515625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 26554.46875,
+              "caller_cpu_ns": 926.109375,
+              "worker_cpu_ns": 25710.0625,
+              "initialize_ns": -72.2890625,
+              "destroy_ns": 859.78125,
+              "worker_remainder_ns": 24922.5703125
+            },
+            "ratio_percent": {
+              "wall_ns": 3.5103212759695896,
+              "worker_cpu_ns": 3.43239036932165
+            }
+          },
+          {
+            "block": 4,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 759637.796875,
+                "caller_cpu_ns": 7877.2734375,
+                "worker_cpu_ns": 751485.8671875,
+                "initialize_ns": 2014.8984375,
+                "destroy_ns": 3650.7734375,
+                "worker_remainder_ns": 745820.1953125
+              },
+              "reference": {
+                "wall_ns": 732398.6171875,
+                "caller_cpu_ns": 6163.484375,
+                "worker_cpu_ns": 726077.3828125,
+                "initialize_ns": 1841.4296875,
+                "destroy_ns": 3150.625,
+                "worker_remainder_ns": 721085.328125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 27239.1796875,
+              "caller_cpu_ns": 1713.7890625,
+              "worker_cpu_ns": 25408.484375,
+              "initialize_ns": 173.46875,
+              "destroy_ns": 500.1484375,
+              "worker_remainder_ns": 24734.8671875
+            },
+            "ratio_percent": {
+              "wall_ns": 3.7212001630014093,
+              "worker_cpu_ns": 3.5014157897419897
+            }
+          },
+          {
+            "block": 5,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 760033.6484375,
+                "caller_cpu_ns": 9218.1953125,
+                "worker_cpu_ns": 750420.515625,
+                "initialize_ns": 2209.828125,
+                "destroy_ns": 3988.5234375,
+                "worker_remainder_ns": 744222.1640625
+              },
+              "reference": {
+                "wall_ns": 778634.09375,
+                "caller_cpu_ns": 8338.9921875,
+                "worker_cpu_ns": 770143.5859375,
+                "initialize_ns": 2384.4453125,
+                "destroy_ns": 4275.3046875,
+                "worker_remainder_ns": 763483.8359375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -18600.4453125,
+              "caller_cpu_ns": 879.203125,
+              "worker_cpu_ns": -19723.0703125,
+              "initialize_ns": -174.6171875,
+              "destroy_ns": -286.78125,
+              "worker_remainder_ns": -19261.671875
+            },
+            "ratio_percent": {
+              "wall_ns": -2.388073288669645,
+              "worker_cpu_ns": -2.560437988263787
+            }
+          },
+          {
+            "block": 6,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 767703.1796875,
+                "caller_cpu_ns": 7951.359375,
+                "worker_cpu_ns": 759592.109375,
+                "initialize_ns": 2200.3671875,
+                "destroy_ns": 5544.625,
+                "worker_remainder_ns": 751847.1171875
+              },
+              "reference": {
+                "wall_ns": 744029.3515625,
+                "caller_cpu_ns": 6838.1328125,
+                "worker_cpu_ns": 737029.65625,
+                "initialize_ns": 1981.8203125,
+                "destroy_ns": 3506.015625,
+                "worker_remainder_ns": 731541.8203125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 23673.828125,
+              "caller_cpu_ns": 1113.2265625,
+              "worker_cpu_ns": 22562.453125,
+              "initialize_ns": 218.546875,
+              "destroy_ns": 2038.609375,
+              "worker_remainder_ns": 20305.296875
+            },
+            "ratio_percent": {
+              "wall_ns": 3.1817342022997552,
+              "worker_cpu_ns": 3.0612705797424193
+            }
+          },
+          {
+            "block": 7,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 761800.8125,
+                "caller_cpu_ns": 7535.875,
+                "worker_cpu_ns": 754070.15625,
+                "initialize_ns": 2014.7109375,
+                "destroy_ns": 3536.0546875,
+                "worker_remainder_ns": 748519.390625
+              },
+              "reference": {
+                "wall_ns": 766859.890625,
+                "caller_cpu_ns": 6917.59375,
+                "worker_cpu_ns": 759528.2734375,
+                "initialize_ns": 2349.640625,
+                "destroy_ns": 3300.8125,
+                "worker_remainder_ns": 753877.8203125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -5059.078125,
+              "caller_cpu_ns": 618.28125,
+              "worker_cpu_ns": -5458.1171875,
+              "initialize_ns": -334.9296875,
+              "destroy_ns": 235.2421875,
+              "worker_remainder_ns": -5358.4296875
+            },
+            "ratio_percent": {
+              "wall_ns": -0.6548268182184934,
+              "worker_cpu_ns": -0.7138486804703928
+            }
+          },
+          {
+            "block": 8,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 741420.6484375,
+                "caller_cpu_ns": 6220.5625,
+                "worker_cpu_ns": 735152.25,
+                "initialize_ns": 2025.3125,
+                "destroy_ns": 3363.2265625,
+                "worker_remainder_ns": 729763.7109375
+              },
+              "reference": {
+                "wall_ns": 750331.078125,
+                "caller_cpu_ns": 6486.7890625,
+                "worker_cpu_ns": 743750.5390625,
+                "initialize_ns": 1957.3828125,
+                "destroy_ns": 3344.3671875,
+                "worker_remainder_ns": 738448.7890625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -8910.4296875,
+              "caller_cpu_ns": -266.2265625,
+              "worker_cpu_ns": -8598.2890625,
+              "initialize_ns": 67.9296875,
+              "destroy_ns": 18.859375,
+              "worker_remainder_ns": -8685.078125
+            },
+            "ratio_percent": {
+              "wall_ns": -1.1646876550066008,
+              "worker_cpu_ns": -1.134124668861019
+            }
+          },
+          {
+            "block": 9,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 750909.625,
+                "caller_cpu_ns": 6331.03125,
+                "worker_cpu_ns": 744457.375,
+                "initialize_ns": 1795.7890625,
+                "destroy_ns": 3203.8828125,
+                "worker_remainder_ns": 739457.703125
+              },
+              "reference": {
+                "wall_ns": 751115.8984375,
+                "caller_cpu_ns": 7249.640625,
+                "worker_cpu_ns": 743645.8359375,
+                "initialize_ns": 2038.375,
+                "destroy_ns": 3699.75,
+                "worker_remainder_ns": 737907.7109375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -206.2734375,
+              "caller_cpu_ns": -918.609375,
+              "worker_cpu_ns": 811.5390625,
+              "initialize_ns": -242.5859375,
+              "destroy_ns": -495.8671875,
+              "worker_remainder_ns": 1549.9921875
+            },
+            "ratio_percent": {
+              "wall_ns": -0.028693411462188075,
+              "worker_cpu_ns": 0.1074790659644189
+            }
+          },
+          {
+            "block": 10,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 768944.671875,
+                "caller_cpu_ns": 7326.6484375,
+                "worker_cpu_ns": 761098.6796875,
+                "initialize_ns": 1961.421875,
+                "destroy_ns": 3381.1015625,
+                "worker_remainder_ns": 755756.15625
+              },
+              "reference": {
+                "wall_ns": 756886.7578125,
+                "caller_cpu_ns": 7061.2421875,
+                "worker_cpu_ns": 749536.0859375,
+                "initialize_ns": 1925.6484375,
+                "destroy_ns": 3402.71875,
+                "worker_remainder_ns": 744207.71875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 12057.9140625,
+              "caller_cpu_ns": 265.40625,
+              "worker_cpu_ns": 11562.59375,
+              "initialize_ns": 35.7734375,
+              "destroy_ns": -21.6171875,
+              "worker_remainder_ns": 11548.4375
+            },
+            "ratio_percent": {
+              "wall_ns": 1.5969124907437529,
+              "worker_cpu_ns": 1.5477052219221916
+            }
+          },
+          {
+            "block": 11,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 753384.4765625,
+                "caller_cpu_ns": 6555.828125,
+                "worker_cpu_ns": 746805.9765625,
+                "initialize_ns": 1959.15625,
+                "destroy_ns": 3455.6328125,
+                "worker_remainder_ns": 741391.1875
+              },
+              "reference": {
+                "wall_ns": 779354.4921875,
+                "caller_cpu_ns": 6990.0546875,
+                "worker_cpu_ns": 772185.0,
+                "initialize_ns": 2013.125,
+                "destroy_ns": 3633.9921875,
+                "worker_remainder_ns": 766537.8828125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -25970.015625,
+              "caller_cpu_ns": -434.2265625,
+              "worker_cpu_ns": -25379.0234375,
+              "initialize_ns": -53.96875,
+              "destroy_ns": -178.359375,
+              "worker_remainder_ns": -25146.6953125
+            },
+            "ratio_percent": {
+              "wall_ns": -3.319173061093498,
+              "worker_cpu_ns": -3.2740532131610802
+            }
+          }
+        ],
+        "median_difference_ns_per_episode": {
+          "wall_ns": 5072.7265625,
+          "caller_cpu_ns": 419.8046875,
+          "worker_cpu_ns": 4719.5625,
+          "initialize_ns": 51.8515625,
+          "destroy_ns": 51.44921875,
+          "worker_remainder_ns": 4623.703125
+        },
+        "mean_difference_ns_per_episode": {
+          "wall_ns": 4911.659505208333,
+          "caller_cpu_ns": 393.126953125,
+          "worker_cpu_ns": 4501.66015625,
+          "initialize_ns": 10.960286458333334,
+          "destroy_ns": 239.615234375,
+          "worker_remainder_ns": 4251.084635416667
+        },
+        "median_arm_ns_per_episode": {
+          "hyle": {
+            "wall_ns": 759871.578125,
+            "caller_cpu_ns": 7141.08984375,
+            "worker_cpu_ns": 751938.296875,
+            "initialize_ns": 2020.10546875,
+            "destroy_ns": 3499.84375,
+            "worker_remainder_ns": 746421.17578125
+          },
+          "reference": {
+            "wall_ns": 754368.3984375,
+            "caller_cpu_ns": 6877.86328125,
+            "worker_cpu_ns": 747644.87890625,
+            "initialize_ns": 1980.3359375,
+            "destroy_ns": 3504.07421875,
+            "worker_remainder_ns": 742267.16796875
+          }
+        },
+        "median_ratio_percent": {
+          "wall_ns": 0.6727309210342419,
+          "worker_cpu_ns": 0.6315650486124168
+        }
+      },
+      {
+        "name": "phases-2",
+        "mode": "phases",
+        "metadata": {
+          "type": "metadata",
+          "mode": "phases",
+          "blocks": 12,
+          "episodes_per_cell": 64,
+          "thread_clock_back_to_back_ns": {
+            "min": 117,
+            "median": 120,
+            "p99": 136
+          },
+          "clock_reported_resolution_ns": 1
+        },
+        "blocks": [
+          {
+            "block": 0,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 766025.4453125,
+                "caller_cpu_ns": 7244.5234375,
+                "worker_cpu_ns": 758537.9375,
+                "initialize_ns": 2088.546875,
+                "destroy_ns": 3514.1015625,
+                "worker_remainder_ns": 752935.2890625
+              },
+              "reference": {
+                "wall_ns": 743138.609375,
+                "caller_cpu_ns": 7182.140625,
+                "worker_cpu_ns": 735729.9375,
+                "initialize_ns": 1588.9921875,
+                "destroy_ns": 4064.0234375,
+                "worker_remainder_ns": 730076.921875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 22886.8359375,
+              "caller_cpu_ns": 62.3828125,
+              "worker_cpu_ns": 22808.0,
+              "initialize_ns": 499.5546875,
+              "destroy_ns": -549.921875,
+              "worker_remainder_ns": 22858.3671875
+            },
+            "ratio_percent": {
+              "wall_ns": 3.0799456819487094,
+              "worker_cpu_ns": 3.1002009899622927
+            }
+          },
+          {
+            "block": 1,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 774824.5078125,
+                "caller_cpu_ns": 7520.484375,
+                "worker_cpu_ns": 767235.4921875,
+                "initialize_ns": 2077.703125,
+                "destroy_ns": 3691.125,
+                "worker_remainder_ns": 761466.6640625
+              },
+              "reference": {
+                "wall_ns": 747452.359375,
+                "caller_cpu_ns": 6681.671875,
+                "worker_cpu_ns": 740420.5078125,
+                "initialize_ns": 1762.09375,
+                "destroy_ns": 3512.1171875,
+                "worker_remainder_ns": 735146.296875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 27372.1484375,
+              "caller_cpu_ns": 838.8125,
+              "worker_cpu_ns": 26814.984375,
+              "initialize_ns": 315.609375,
+              "destroy_ns": 179.0078125,
+              "worker_remainder_ns": 26320.3671875
+            },
+            "ratio_percent": {
+              "wall_ns": 3.6646888994960776,
+              "worker_cpu_ns": 3.623284532873297
+            }
+          },
+          {
+            "block": 2,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 776449.875,
+                "caller_cpu_ns": 8698.8828125,
+                "worker_cpu_ns": 767669.859375,
+                "initialize_ns": 2102.1640625,
+                "destroy_ns": 3646.53125,
+                "worker_remainder_ns": 761921.1640625
+              },
+              "reference": {
+                "wall_ns": 772217.9765625,
+                "caller_cpu_ns": 7367.4609375,
+                "worker_cpu_ns": 764614.5703125,
+                "initialize_ns": 1544.015625,
+                "destroy_ns": 4029.015625,
+                "worker_remainder_ns": 759041.5390625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 4231.8984375,
+              "caller_cpu_ns": 1331.421875,
+              "worker_cpu_ns": 3055.2890625,
+              "initialize_ns": 558.1484375,
+              "destroy_ns": -382.484375,
+              "worker_remainder_ns": 2879.625
+            },
+            "ratio_percent": {
+              "wall_ns": 0.548784199911596,
+              "worker_cpu_ns": 0.40006587062616955
+            }
+          },
+          {
+            "block": 3,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 774312.6953125,
+                "caller_cpu_ns": 7598.1796875,
+                "worker_cpu_ns": 766584.875,
+                "initialize_ns": 2018.796875,
+                "destroy_ns": 3438.8828125,
+                "worker_remainder_ns": 761127.1953125
+              },
+              "reference": {
+                "wall_ns": 748827.1015625,
+                "caller_cpu_ns": 7446.28125,
+                "worker_cpu_ns": 741293.5234375,
+                "initialize_ns": 1465.2734375,
+                "destroy_ns": 3573.703125,
+                "worker_remainder_ns": 736254.546875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 25485.59375,
+              "caller_cpu_ns": 151.8984375,
+              "worker_cpu_ns": 25291.3515625,
+              "initialize_ns": 553.5234375,
+              "destroy_ns": -134.8203125,
+              "worker_remainder_ns": 24872.6484375
+            },
+            "ratio_percent": {
+              "wall_ns": 3.4228295616535163,
+              "worker_cpu_ns": 3.4306219175654227
+            }
+          },
+          {
+            "block": 4,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 780681.3671875,
+                "caller_cpu_ns": 7682.09375,
+                "worker_cpu_ns": 772692.796875,
+                "initialize_ns": 2170.4609375,
+                "destroy_ns": 3727.3671875,
+                "worker_remainder_ns": 766794.96875
+              },
+              "reference": {
+                "wall_ns": 765962.6171875,
+                "caller_cpu_ns": 7174.0390625,
+                "worker_cpu_ns": 758488.53125,
+                "initialize_ns": 1434.890625,
+                "destroy_ns": 3524.7421875,
+                "worker_remainder_ns": 753528.8984375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 14718.75,
+              "caller_cpu_ns": 508.0546875,
+              "worker_cpu_ns": 14204.265625,
+              "initialize_ns": 735.5703125,
+              "destroy_ns": 202.625,
+              "worker_remainder_ns": 13266.0703125
+            },
+            "ratio_percent": {
+              "wall_ns": 1.9169885198689114,
+              "worker_cpu_ns": 1.8692517773205946
+            }
+          },
+          {
+            "block": 5,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 763732.1015625,
+                "caller_cpu_ns": 8191.015625,
+                "worker_cpu_ns": 755307.71875,
+                "initialize_ns": 2314.84375,
+                "destroy_ns": 3522.34375,
+                "worker_remainder_ns": 749470.53125
+              },
+              "reference": {
+                "wall_ns": 745057.296875,
+                "caller_cpu_ns": 8082.109375,
+                "worker_cpu_ns": 736689.2890625,
+                "initialize_ns": 1509.3046875,
+                "destroy_ns": 3548.09375,
+                "worker_remainder_ns": 731631.890625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 18674.8046875,
+              "caller_cpu_ns": 108.90625,
+              "worker_cpu_ns": 18618.4296875,
+              "initialize_ns": 805.5390625,
+              "destroy_ns": -25.75,
+              "worker_remainder_ns": 17838.640625
+            },
+            "ratio_percent": {
+              "wall_ns": 2.5162448103057993,
+              "worker_cpu_ns": 2.532265751103197
+            }
+          },
+          {
+            "block": 6,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 767935.8671875,
+                "caller_cpu_ns": 7755.7421875,
+                "worker_cpu_ns": 760043.8203125,
+                "initialize_ns": 2306.609375,
+                "destroy_ns": 3706.6953125,
+                "worker_remainder_ns": 754030.515625
+              },
+              "reference": {
+                "wall_ns": 789856.5703125,
+                "caller_cpu_ns": 9679.96875,
+                "worker_cpu_ns": 780026.2421875,
+                "initialize_ns": 1957.328125,
+                "destroy_ns": 5317.171875,
+                "worker_remainder_ns": 772751.7421875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -21920.703125,
+              "caller_cpu_ns": -1924.2265625,
+              "worker_cpu_ns": -19982.421875,
+              "initialize_ns": 349.28125,
+              "destroy_ns": -1610.4765625,
+              "worker_remainder_ns": -18721.2265625
+            },
+            "ratio_percent": {
+              "wall_ns": -2.7798255362957667,
+              "worker_cpu_ns": -2.564686001276464
+            }
+          },
+          {
+            "block": 7,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 749448.203125,
+                "caller_cpu_ns": 7308.5546875,
+                "worker_cpu_ns": 742017.671875,
+                "initialize_ns": 2008.6015625,
+                "destroy_ns": 3432.5078125,
+                "worker_remainder_ns": 736576.5625
+              },
+              "reference": {
+                "wall_ns": 740766.5078125,
+                "caller_cpu_ns": 7499.265625,
+                "worker_cpu_ns": 733172.5390625,
+                "initialize_ns": 1603.578125,
+                "destroy_ns": 3911.1328125,
+                "worker_remainder_ns": 727657.828125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 8681.6953125,
+              "caller_cpu_ns": -190.7109375,
+              "worker_cpu_ns": 8845.1328125,
+              "initialize_ns": 405.0234375,
+              "destroy_ns": -478.625,
+              "worker_remainder_ns": 8918.734375
+            },
+            "ratio_percent": {
+              "wall_ns": 1.170173170088664,
+              "worker_cpu_ns": 1.2047268856270643
+            }
+          },
+          {
+            "block": 8,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 741544.0390625,
+                "caller_cpu_ns": 7151.671875,
+                "worker_cpu_ns": 734217.0234375,
+                "initialize_ns": 2176.4609375,
+                "destroy_ns": 3478.25,
+                "worker_remainder_ns": 728562.3125
+              },
+              "reference": {
+                "wall_ns": 742159.0546875,
+                "caller_cpu_ns": 7449.140625,
+                "worker_cpu_ns": 734207.3125,
+                "initialize_ns": 1502.84375,
+                "destroy_ns": 3941.7421875,
+                "worker_remainder_ns": 728762.7265625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -615.015625,
+              "caller_cpu_ns": -297.46875,
+              "worker_cpu_ns": 9.7109375,
+              "initialize_ns": 673.6171875,
+              "destroy_ns": -463.4921875,
+              "worker_remainder_ns": -200.4140625
+            },
+            "ratio_percent": {
+              "wall_ns": -0.08287560777397131,
+              "worker_cpu_ns": 0.0013345214463756899
+            }
+          },
+          {
+            "block": 9,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 736944.0625,
+                "caller_cpu_ns": 6526.7265625,
+                "worker_cpu_ns": 730154.1484375,
+                "initialize_ns": 1854.6796875,
+                "destroy_ns": 3116.890625,
+                "worker_remainder_ns": 725182.578125
+              },
+              "reference": {
+                "wall_ns": 745329.875,
+                "caller_cpu_ns": 8421.328125,
+                "worker_cpu_ns": 736751.515625,
+                "initialize_ns": 1969.2265625,
+                "destroy_ns": 4219.3125,
+                "worker_remainder_ns": 730562.9765625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -8385.8125,
+              "caller_cpu_ns": -1894.6015625,
+              "worker_cpu_ns": -6597.3671875,
+              "initialize_ns": -114.546875,
+              "destroy_ns": -1102.421875,
+              "worker_remainder_ns": -5380.3984375
+            },
+            "ratio_percent": {
+              "wall_ns": -1.0956173005446082,
+              "worker_cpu_ns": -0.8721627318446563
+            }
+          },
+          {
+            "block": 10,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 759008.421875,
+                "caller_cpu_ns": 6813.390625,
+                "worker_cpu_ns": 751962.4765625,
+                "initialize_ns": 1928.734375,
+                "destroy_ns": 3110.4609375,
+                "worker_remainder_ns": 746923.28125
+              },
+              "reference": {
+                "wall_ns": 759319.3203125,
+                "caller_cpu_ns": 6979.6015625,
+                "worker_cpu_ns": 752117.8828125,
+                "initialize_ns": 1642.90625,
+                "destroy_ns": 4756.4140625,
+                "worker_remainder_ns": 745718.5625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -310.8984375,
+              "caller_cpu_ns": -166.2109375,
+              "worker_cpu_ns": -155.40625,
+              "initialize_ns": 285.828125,
+              "destroy_ns": -1645.953125,
+              "worker_remainder_ns": 1204.71875
+            },
+            "ratio_percent": {
+              "wall_ns": -0.04736593101108721,
+              "worker_cpu_ns": -0.026761043308757587
+            }
+          },
+          {
+            "block": 11,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 760493.6953125,
+                "caller_cpu_ns": 7578.9765625,
+                "worker_cpu_ns": 752723.9296875,
+                "initialize_ns": 2090.703125,
+                "destroy_ns": 3981.234375,
+                "worker_remainder_ns": 746651.9921875
+              },
+              "reference": {
+                "wall_ns": 763536.3671875,
+                "caller_cpu_ns": 7901.609375,
+                "worker_cpu_ns": 755493.9453125,
+                "initialize_ns": 1643.125,
+                "destroy_ns": 4441.734375,
+                "worker_remainder_ns": 749409.0859375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -3042.671875,
+              "caller_cpu_ns": -322.6328125,
+              "worker_cpu_ns": -2770.015625,
+              "initialize_ns": 447.578125,
+              "destroy_ns": -460.5,
+              "worker_remainder_ns": -2757.09375
+            },
+            "ratio_percent": {
+              "wall_ns": -0.39461350579102555,
+              "worker_cpu_ns": -0.3618279914531251
+            }
+          }
+        ],
+        "median_difference_ns_per_episode": {
+          "wall_ns": 6456.796875,
+          "caller_cpu_ns": -51.9140625,
+          "worker_cpu_ns": 5950.2109375,
+          "initialize_ns": 473.56640625,
+          "destroy_ns": -461.99609375,
+          "worker_remainder_ns": 5899.1796875
+        },
+        "mean_difference_ns_per_episode": {
+          "wall_ns": 7314.71875,
+          "caller_cpu_ns": -149.53125,
+          "worker_cpu_ns": 7511.829427083333,
+          "initialize_ns": 459.560546875,
+          "destroy_ns": -539.4010416666666,
+          "worker_remainder_ns": 7591.669921875
+        },
+        "median_arm_ns_per_episode": {
+          "hyle": {
+            "wall_ns": 764878.7734375,
+            "caller_cpu_ns": 7549.73046875,
+            "worker_cpu_ns": 756922.828125,
+            "initialize_ns": 2089.625,
+            "destroy_ns": 3518.22265625,
+            "worker_remainder_ns": 751202.91015625
+          },
+          "reference": {
+            "wall_ns": 748139.73046875,
+            "caller_cpu_ns": 7447.7109375,
+            "worker_cpu_ns": 740857.015625,
+            "initialize_ns": 1596.28515625,
+            "destroy_ns": 3985.37890625,
+            "worker_remainder_ns": 735700.421875
+          }
+        },
+        "median_ratio_percent": {
+          "wall_ns": 0.8594786850001299,
+          "worker_cpu_ns": 0.8023963781266169
+        }
+      },
+      {
+        "name": "off-2",
+        "mode": "off",
+        "metadata": {
+          "type": "metadata",
+          "mode": "off",
+          "blocks": 12,
+          "episodes_per_cell": 64,
+          "thread_clock_back_to_back_ns": {
+            "min": 117,
+            "median": 120,
+            "p99": 134
+          },
+          "clock_reported_resolution_ns": 1
+        },
+        "blocks": [
+          {
+            "block": 0,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 750532.53125,
+                "caller_cpu_ns": 7251.625,
+                "worker_cpu_ns": 743173.84375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 743173.84375
+              },
+              "reference": {
+                "wall_ns": 759281.703125,
+                "caller_cpu_ns": 7944.5390625,
+                "worker_cpu_ns": 751312.359375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 751312.359375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -8749.171875,
+              "caller_cpu_ns": -692.9140625,
+              "worker_cpu_ns": -8138.515625,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": -8138.515625
+            },
+            "ratio_percent": {
+              "wall_ns": -1.1507201764125095,
+              "worker_cpu_ns": -1.082237989985713
+            }
+          },
+          {
+            "block": 1,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 757776.0859375,
+                "caller_cpu_ns": 7203.5546875,
+                "worker_cpu_ns": 750505.9453125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 750505.9453125
+              },
+              "reference": {
+                "wall_ns": 726552.609375,
+                "caller_cpu_ns": 6408.0234375,
+                "worker_cpu_ns": 720141.609375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 720141.609375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 31223.4765625,
+              "caller_cpu_ns": 795.53125,
+              "worker_cpu_ns": 30364.3359375,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 30364.3359375
+            },
+            "ratio_percent": {
+              "wall_ns": 4.292778956069132,
+              "worker_cpu_ns": 4.21154474999381
+            }
+          },
+          {
+            "block": 2,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 756950.9921875,
+                "caller_cpu_ns": 7964.7265625,
+                "worker_cpu_ns": 748757.1484375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 748757.1484375
+              },
+              "reference": {
+                "wall_ns": 742090.3671875,
+                "caller_cpu_ns": 8461.1640625,
+                "worker_cpu_ns": 733127.1015625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 733127.1015625
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 14860.625,
+              "caller_cpu_ns": -496.4375,
+              "worker_cpu_ns": 15630.046875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 15630.046875
+            },
+            "ratio_percent": {
+              "wall_ns": 1.9672239059623453,
+              "worker_cpu_ns": 2.10064799302936
+            }
+          },
+          {
+            "block": 3,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 749763.3359375,
+                "caller_cpu_ns": 8192.1484375,
+                "worker_cpu_ns": 741567.859375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 741567.859375
+              },
+              "reference": {
+                "wall_ns": 730299.46875,
+                "caller_cpu_ns": 7457.375,
+                "worker_cpu_ns": 722558.0,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 722558.0
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 19463.8671875,
+              "caller_cpu_ns": 734.7734375,
+              "worker_cpu_ns": 19009.859375,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 19009.859375
+            },
+            "ratio_percent": {
+              "wall_ns": 2.699284518427261,
+              "worker_cpu_ns": 2.6628964323955184
+            }
+          },
+          {
+            "block": 4,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 746575.2109375,
+                "caller_cpu_ns": 8200.609375,
+                "worker_cpu_ns": 738371.0703125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 738371.0703125
+              },
+              "reference": {
+                "wall_ns": 772770.03125,
+                "caller_cpu_ns": 7565.7109375,
+                "worker_cpu_ns": 765200.7578125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 765200.7578125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": -26194.8203125,
+              "caller_cpu_ns": 634.8984375,
+              "worker_cpu_ns": -26829.6875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": -26829.6875
+            },
+            "ratio_percent": {
+              "wall_ns": -3.300142522857908,
+              "worker_cpu_ns": -3.412859143264339
+            }
+          },
+          {
+            "block": 5,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 757012.6953125,
+                "caller_cpu_ns": 8193.9453125,
+                "worker_cpu_ns": 748702.640625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 748702.640625
+              },
+              "reference": {
+                "wall_ns": 740950.8515625,
+                "caller_cpu_ns": 7610.59375,
+                "worker_cpu_ns": 733169.0234375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 733169.0234375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 16061.84375,
+              "caller_cpu_ns": 583.3515625,
+              "worker_cpu_ns": 15533.6171875,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 15533.6171875
+            },
+            "ratio_percent": {
+              "wall_ns": 2.192885471045147,
+              "worker_cpu_ns": 2.1427038825467912
+            }
+          },
+          {
+            "block": 6,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 750248.90625,
+                "caller_cpu_ns": 7737.484375,
+                "worker_cpu_ns": 742464.1484375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 742464.1484375
+              },
+              "reference": {
+                "wall_ns": 742239.6328125,
+                "caller_cpu_ns": 7970.8125,
+                "worker_cpu_ns": 734033.1171875,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 734033.1171875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 8009.2734375,
+              "caller_cpu_ns": -233.328125,
+              "worker_cpu_ns": 8431.03125,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 8431.03125
+            },
+            "ratio_percent": {
+              "wall_ns": 1.0859209301252033,
+              "worker_cpu_ns": 1.154593089739982
+            }
+          },
+          {
+            "block": 7,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 746662.59375,
+                "caller_cpu_ns": 7606.265625,
+                "worker_cpu_ns": 739005.609375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 739005.609375
+              },
+              "reference": {
+                "wall_ns": 735959.796875,
+                "caller_cpu_ns": 6558.8984375,
+                "worker_cpu_ns": 729307.6953125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 729307.6953125
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 10702.796875,
+              "caller_cpu_ns": 1047.3671875,
+              "worker_cpu_ns": 9697.9140625,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 9697.9140625
+            },
+            "ratio_percent": {
+              "wall_ns": 1.4652288727546074,
+              "worker_cpu_ns": 1.3398918440489027
+            }
+          },
+          {
+            "block": 8,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 762188.53125,
+                "caller_cpu_ns": 8046.4453125,
+                "worker_cpu_ns": 753948.4609375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 753948.4609375
+              },
+              "reference": {
+                "wall_ns": 747406.8359375,
+                "caller_cpu_ns": 7183.046875,
+                "worker_cpu_ns": 740031.4609375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 740031.4609375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 14781.6953125,
+              "caller_cpu_ns": 863.3984375,
+              "worker_cpu_ns": 13917.0,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 13917.0
+            },
+            "ratio_percent": {
+              "wall_ns": 1.9782757451107598,
+              "worker_cpu_ns": 1.8808623276108727
+            }
+          },
+          {
+            "block": 9,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 747649.2578125,
+                "caller_cpu_ns": 7290.1015625,
+                "worker_cpu_ns": 740247.109375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 740247.109375
+              },
+              "reference": {
+                "wall_ns": 744720.6484375,
+                "caller_cpu_ns": 8820.4375,
+                "worker_cpu_ns": 735897.3984375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 735897.3984375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 2928.609375,
+              "caller_cpu_ns": -1530.3359375,
+              "worker_cpu_ns": 4349.7109375,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 4349.7109375
+            },
+            "ratio_percent": {
+              "wall_ns": 0.3950754875984582,
+              "worker_cpu_ns": 0.59556810368803
+            }
+          },
+          {
+            "block": 10,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 762267.03125,
+                "caller_cpu_ns": 6996.703125,
+                "worker_cpu_ns": 755267.2578125,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 755267.2578125
+              },
+              "reference": {
+                "wall_ns": 751237.71875,
+                "caller_cpu_ns": 7673.1796875,
+                "worker_cpu_ns": 743332.96875,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 743332.96875
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 11029.3125,
+              "caller_cpu_ns": -676.4765625,
+              "worker_cpu_ns": 11934.2890625,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 11934.2890625
+            },
+            "ratio_percent": {
+              "wall_ns": 1.474188478124362,
+              "worker_cpu_ns": 1.6098108885770204
+            }
+          },
+          {
+            "block": 11,
+            "means_ns_per_episode": {
+              "hyle": {
+                "wall_ns": 765493.4609375,
+                "caller_cpu_ns": 7547.2109375,
+                "worker_cpu_ns": 757943.4765625,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 757943.4765625
+              },
+              "reference": {
+                "wall_ns": 759833.7265625,
+                "caller_cpu_ns": 8555.234375,
+                "worker_cpu_ns": 751134.09375,
+                "initialize_ns": 0.0,
+                "destroy_ns": 0.0,
+                "worker_remainder_ns": 751134.09375
+              }
+            },
+            "difference_ns_per_episode": {
+              "wall_ns": 5659.734375,
+              "caller_cpu_ns": -1008.0234375,
+              "worker_cpu_ns": 6809.3828125,
+              "initialize_ns": 0.0,
+              "destroy_ns": 0.0,
+              "worker_remainder_ns": 6809.3828125
+            },
+            "ratio_percent": {
+              "wall_ns": 0.7384600993042015,
+              "worker_cpu_ns": 0.898598743439708
+            }
+          }
+        ],
+        "median_difference_ns_per_episode": {
+          "wall_ns": 10866.0546875,
+          "caller_cpu_ns": 175.01171875,
+          "worker_cpu_ns": 10816.1015625,
+          "initialize_ns": 0.0,
+          "destroy_ns": 0.0,
+          "worker_remainder_ns": 10816.1015625
+        },
+        "mean_difference_ns_per_episode": {
+          "wall_ns": 8314.770182291666,
+          "caller_cpu_ns": 1.8170572916666667,
+          "worker_cpu_ns": 8392.415364583334,
+          "initialize_ns": 0.0,
+          "destroy_ns": 0.0,
+          "worker_remainder_ns": 8392.415364583334
+        },
+        "median_arm_ns_per_episode": {
+          "hyle": {
+            "wall_ns": 753741.76171875,
+            "caller_cpu_ns": 7671.875,
+            "worker_cpu_ns": 745938.2421875,
+            "initialize_ns": 0.0,
+            "destroy_ns": 0.0,
+            "worker_remainder_ns": 745938.2421875
+          },
+          "reference": {
+            "wall_ns": 743480.140625,
+            "caller_cpu_ns": 7641.88671875,
+            "worker_cpu_ns": 734965.2578125,
+            "initialize_ns": 0.0,
+            "destroy_ns": 0.0,
+            "worker_remainder_ns": 734965.2578125
+          }
+        },
+        "median_ratio_percent": {
+          "wall_ns": 1.4697086754394846,
+          "worker_cpu_ns": 1.4748513663129614
+        }
+      }
+    ],
+    "status": "completed"
+  },
+  "owner_ablation": {
+    "hypothesis": "If dynamic worker-identity validation explains most of the residual, removing just that guard should consistently collapse the Hyle/reference gap in this normal owner trace.",
+    "limit": "Intentionally invalid owner semantics; full normal-trace oracle is necessary but does not validate the mutant as a product. Guard query/branch removal can alter product-internal layout. Shared benchmark/native hot symbol addresses matched. No elapsed subtraction across different rounds.",
+    "machine": {
+      "uname": {
+        "system": "Linux",
+        "node": "kiro-workstation",
+        "release": "6.18.54.1-microsoft-standard-WSL2",
+        "version": "#1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026",
+        "machine": "x86_64",
+        "processor": "x86_64"
+      },
+      "allowed_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "cpu": 2,
+      "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+      "selected_cpu_topology": {
+        "core_id": "1",
+        "physical_package_id": "0",
+        "thread_siblings_list": "2-3",
+        "core_siblings_list": "0-31",
+        "core_type": null
+      },
+      "environment": {},
+      "topology_limit": "Guest CPU numbering/topology does not prove a physical P-core or host isolation."
+    },
+    "schedule": [
+      [
+        "self-before",
+        "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "paired-self"
+      ],
+      [
+        "baseline-1",
+        "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "paired"
+      ],
+      [
+        "disabled-1",
+        "/root/hyle-scratch/http2-current-20261018/phase-costs/owner-check-disabled",
+        "paired"
+      ],
+      [
+        "disabled-2",
+        "/root/hyle-scratch/http2-current-20261018/phase-costs/owner-check-disabled",
+        "paired"
+      ],
+      [
+        "baseline-2",
+        "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "paired"
+      ],
+      [
+        "self-after",
+        "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "paired-self"
+      ]
+    ],
+    "runs": [
+      {
+        "name": "self-before",
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": -0.00866445888016898,
+              "ratio_percent": -0.8627030632835372
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.03215943293323864,
+              "ratio_percent": 3.268213572301595
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.010308712649764296,
+              "ratio_percent": 1.0362030483254823
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.010679792124213883,
+              "ratio_percent": 1.073702466654954
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.005357588154904391,
+              "ratio_percent": 0.537196569516863
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.013705927745747637,
+              "ratio_percent": -1.3612429167090463
+            },
+            {
+              "block": 6,
+              "log_ratio": -0.013791632046429747,
+              "ratio_percent": -1.3696963201533325
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.01030415720913691,
+              "ratio_percent": 1.0357427849496312
+            },
+            {
+              "block": 8,
+              "log_ratio": -0.04155864248118668,
+              "ratio_percent": -4.0706921634336455
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.003822564555094665,
+              "ratio_percent": 0.38298798731054146
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.026898756433105575,
+              "ratio_percent": 2.72637936478409
+            },
+            {
+              "block": 11,
+              "log_ratio": -0.02017202339790458,
+              "ratio_percent": -1.9969929297436282
+            }
+          ],
+          "median_ratio_percent": 0.46009227841370226,
+          "geomean_ratio_percent": 0.013653594585229911,
+          "range_percent": [
+            -4.0706921634336455,
+            3.268213572301595
+          ],
+          "quartiles_percent": [
+            -1.3633562675701179,
+            1.0455779029078502
+          ],
+          "descriptive_iqr_percent": 2.408934170477968,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3073,
+              "involuntary_switches": 3085,
+              "minor_faults": 2,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3082,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "baseline-1",
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.033779531556981546,
+              "ratio_percent": 3.435653861253665
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.02780519294495498,
+              "ratio_percent": 2.8195365199154288
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.043540683724748064,
+              "ratio_percent": 4.45024876993339
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.00031054830256493915,
+              "ratio_percent": 0.03105965276809989
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.012875325675176796,
+              "ratio_percent": 1.2958569561192448
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.0005499576609180323,
+              "ratio_percent": 0.0550108915359009
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.006060204855669049,
+              "ratio_percent": 0.6078605047981434
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.02063670962229658,
+              "ratio_percent": 2.085111887490155
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.0038467382916778092,
+              "ratio_percent": 0.3854146485501922
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.0581143168479743,
+              "ratio_percent": 5.983614591297096
+            },
+            {
+              "block": 10,
+              "log_ratio": -0.0043610206738495805,
+              "ratio_percent": -0.43515252314791086
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.006510544750449654,
+              "ratio_percent": 0.6531784415835218
+            }
+          ],
+          "median_ratio_percent": 0.9745176988513833,
+          "geomean_ratio_percent": 1.7625929653058265,
+          "range_percent": [
+            -0.43515252314791086,
+            5.983614591297096
+          ],
+          "quartiles_percent": [
+            0.3028137092966194,
+            2.973565855249988
+          ],
+          "descriptive_iqr_percent": 2.6707521459533687,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3093,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3090,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "disabled-1",
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.005608221229999266,
+              "ratio_percent": 0.5623976742377637
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.013502950634124211,
+              "ratio_percent": 1.3594527192393808
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.0051588683537104885,
+              "ratio_percent": 0.5172198227552882
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.0010341130498847662,
+              "ratio_percent": 0.10346479291440547
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.019711174693439304,
+              "ratio_percent": 1.9906722610499816
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.03194343278397049,
+              "ratio_percent": 3.245910031626096
+            },
+            {
+              "block": 6,
+              "log_ratio": -0.01736235467995151,
+              "ratio_percent": -1.7212497544245575
+            },
+            {
+              "block": 7,
+              "log_ratio": -0.002072081300934059,
+              "ratio_percent": -0.2069936022461508
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.030058964450375925,
+              "ratio_percent": 3.051529593012948
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.017393009736835552,
+              "ratio_percent": 1.7545148903414114
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.01662088522916072,
+              "ratio_percent": 1.6759780596357028
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.014735536588110776,
+              "ratio_percent": 1.484463984702695
+            }
+          ],
+          "median_ratio_percent": 1.421958351971038,
+          "geomean_ratio_percent": 1.1425842005013862,
+          "range_percent": [
+            -1.7212497544245575,
+            3.245910031626096
+          ],
+          "quartiles_percent": [
+            0.41378106529506753,
+            1.813554233018554
+          ],
+          "descriptive_iqr_percent": 1.3997731677234864,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3084,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3081,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "disabled-2",
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 12,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": -0.018676852320257176,
+              "ratio_percent": -1.8503520687810662
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.009639872043391229,
+              "ratio_percent": -0.9593557418712109
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.009937044431458375,
+              "ratio_percent": 0.9986580803219945
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.017346380879494028,
+              "ratio_percent": 1.7497703042009083
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.04426462229525008,
+              "ratio_percent": 4.525891710834104
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.009216158930165363,
+              "ratio_percent": -0.9173820303786901
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.0053372340404562735,
+              "ratio_percent": 0.5351502447372292
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.05235113356927901,
+              "ratio_percent": 5.374568304309374
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.023288852920270386,
+              "ratio_percent": 2.3562155768129585
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.009140328765022687,
+              "ratio_percent": 0.918222913373965
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.02570629543528291,
+              "ratio_percent": 2.6039551714887885
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.011112258010680165,
+              "ratio_percent": 1.1174228480959767
+            }
+          ],
+          "median_ratio_percent": 1.0580404642089856,
+          "geomean_ratio_percent": 1.3502958084332015,
+          "range_percent": [
+            -1.8503520687810662,
+            5.374568304309374
+          ],
+          "quartiles_percent": [
+            0.17201717595824934,
+            2.418150475481916
+          ],
+          "descriptive_iqr_percent": 2.2461332995236667,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3096,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3093,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "baseline-2",
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "paired",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.019707501184725196,
+              "ratio_percent": 1.990297598114837
+            },
+            {
+              "block": 1,
+              "log_ratio": 0.006885454154379467,
+              "ratio_percent": 0.6909213393582647
+            },
+            {
+              "block": 2,
+              "log_ratio": 0.00607143618841377,
+              "ratio_percent": 0.6089904715017114
+            },
+            {
+              "block": 3,
+              "log_ratio": -0.0041929917273879624,
+              "ratio_percent": -0.4184213410996827
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.02162722933107908,
+              "ratio_percent": 2.186279298673787
+            },
+            {
+              "block": 5,
+              "log_ratio": -0.05019727504158933,
+              "ratio_percent": -4.895821081507448
+            },
+            {
+              "block": 6,
+              "log_ratio": 0.04612975231278327,
+              "ratio_percent": 4.721028009789205
+            },
+            {
+              "block": 7,
+              "log_ratio": -0.0009989057849413285,
+              "ratio_percent": -0.09984070446364152
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.03513639449252004,
+              "ratio_percent": 3.576097125774038
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.019040019002418695,
+              "ratio_percent": 1.9222436066400186
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.015622571254128026,
+              "ratio_percent": 1.5745241596627397
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.0424092778144054,
+              "ratio_percent": 4.332139968235531
+            }
+          ],
+          "median_ratio_percent": 1.7483838831513792,
+          "geomean_ratio_percent": 1.3189597312544792,
+          "range_percent": [
+            -4.895821081507448,
+            4.721028009789205
+          ],
+          "quartiles_percent": [
+            0.43178267751037314,
+            2.53373375544885
+          ],
+          "descriptive_iqr_percent": 2.1019510779384767,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3071,
+              "involuntary_switches": 3078,
+              "minor_faults": 0,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3082,
+              "minor_faults": 1,
+              "major_faults": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "self-after",
+        "result": {
+          "metadata": {
+            "type": "metadata",
+            "mode": "self",
+            "blocks": 12,
+            "episodes_per_cell": 64,
+            "warmups_per_arm": 16,
+            "streams_per_episode": 4,
+            "application_bytes_per_episode": 2097152,
+            "socket_requested_bytes": 4096,
+            "socket_send_bytes": [
+              8192,
+              8192
+            ],
+            "socket_receive_bytes": [
+              8192,
+              8192
+            ],
+            "clock_min_delta_ns": 13,
+            "caller_cpu": 2
+          },
+          "blocks": [
+            {
+              "block": 0,
+              "log_ratio": 0.006381308756262527,
+              "ratio_percent": 0.6401712685151049
+            },
+            {
+              "block": 1,
+              "log_ratio": -0.03723113225339425,
+              "ratio_percent": -3.654657554882472
+            },
+            {
+              "block": 2,
+              "log_ratio": -0.01707786696870084,
+              "ratio_percent": -1.6932866803157365
+            },
+            {
+              "block": 3,
+              "log_ratio": 0.02795574063806061,
+              "ratio_percent": 2.835016929185406
+            },
+            {
+              "block": 4,
+              "log_ratio": 0.0377602623980291,
+              "ratio_percent": 3.848223979133053
+            },
+            {
+              "block": 5,
+              "log_ratio": 0.012641127410235597,
+              "ratio_percent": 1.2721364199370189
+            },
+            {
+              "block": 6,
+              "log_ratio": -0.02406029286399569,
+              "ratio_percent": -2.377315152913444
+            },
+            {
+              "block": 7,
+              "log_ratio": 0.025919216719746174,
+              "ratio_percent": 2.625804063379432
+            },
+            {
+              "block": 8,
+              "log_ratio": 0.006050356850913374,
+              "ratio_percent": 0.6068697229880538
+            },
+            {
+              "block": 9,
+              "log_ratio": 0.015515937084484399,
+              "ratio_percent": 1.563693422095644
+            },
+            {
+              "block": 10,
+              "log_ratio": 0.02110140147354933,
+              "ratio_percent": 2.132561030879797
+            },
+            {
+              "block": 11,
+              "log_ratio": 0.03682499199175027,
+              "ratio_percent": 3.751143213960724
+            }
+          ],
+          "median_ratio_percent": 1.4179149210163313,
+          "geomean_ratio_percent": 0.9358608058928639,
+          "range_percent": [
+            -3.654657554882472,
+            3.848223979133053
+          ],
+          "quartiles_percent": [
+            0.03183062216210619,
+            2.6781072798309253
+          ],
+          "descriptive_iqr_percent": 2.6462766576688193,
+          "counter_totals_by_arm": {
+            "hyle": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3075,
+              "minor_faults": 3,
+              "major_faults": 0
+            },
+            "reference": {
+              "voluntary_switches": 3072,
+              "involuntary_switches": 3079,
+              "minor_faults": 0,
+              "major_faults": 0
+            }
+          }
+        }
+      }
+    ],
+    "status": "completed"
+  },
+  "ablation_identity": {
+    "warning": "Intentionally removes required runtime owner validation. Diagnostic only, not a correct product or optimization candidate.",
+    "removed": "  if (sched::current_worker_index() !=\n      static_cast<int>(state.transport_owner))\n    return Status::FailedPrecondition(\n        \"HTTP/2 operation must run on transport owner worker\");\n",
+    "inputs": [
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+        "bytes": 111471,
+        "sha256": "30b57207730af05b29e3037d22427b67d35df6f5c4b69a1f99846c9630e6482f"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/http2-phase-costs/owner-check-disabled.cc",
+        "bytes": 111343,
+        "sha256": "40cc788a88de06ead1ea0ee7c2ffab622f76e772f751ea85a60acc9277a7de55"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "bytes": 898496,
+        "sha256": "3123e43a9c4e015241242673b9dc90d7c6d4ca26f72408ef53b5690cd29e4870"
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/phase-costs/owner-check-disabled.o",
+        "bytes": 224824,
+        "sha256": "ab2aea7c358c5ced3ac82ddb83166cd04278bf8788636449a0c0223c98f80338"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/phase-costs/owner-check-disabled",
+        "bytes": 898512,
+        "sha256": "b10f4926157f3d50073cf28bf3b1504fcff6c4d8035962f6df71e14cf0f794dd"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/phase-costs/owner-check-disabled.map",
+        "bytes": 256686,
+        "sha256": "a2809a7eb44d40b704aeacbfdaa7034f1ca1508fabe2bb51fbbaf2ec5199f93c"
+      }
+    ],
+    "common_symbols": {
+      "baseline": {
+        "nghttp2_session_mem_recv2": [
+          "0000000000062830 T nghttp2_session_mem_recv2"
+        ],
+        "nghttp2_session_mem_send2": [
+          "0000000000061be0 T nghttp2_session_mem_send2"
+        ],
+        "raw_task_endpoint": [
+          "000000000000a32c t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011670 t (anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)",
+          "0000000000015b70 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor]",
+          "0000000000017670 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .destroy]"
+        ],
+        "raw_data_chunk": [
+          "0000000000009b47 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*) [clone .cold]",
+          "0000000000012140 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)"
+        ],
+        "hyle_server": [
+          "0000000000009f99 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c90 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014240 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000014ee0 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "hyle_client": [
+          "000000000000a166 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c00 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014ef0 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000015b60 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "HyleHarness::run": [
+          "000000000000a97a t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&) [clone .cold]",
+          "0000000000017fd0 t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&)"
+        ]
+      },
+      "ablation": {
+        "nghttp2_session_mem_recv2": [
+          "0000000000062830 T nghttp2_session_mem_recv2"
+        ],
+        "nghttp2_session_mem_send2": [
+          "0000000000061be0 T nghttp2_session_mem_send2"
+        ],
+        "raw_task_endpoint": [
+          "000000000000a32c t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011670 t (anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)",
+          "0000000000015b70 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .actor]",
+          "0000000000017670 t (anonymous namespace)::raw_task_endpoint((anonymous namespace)::raw_task_endpoint(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::RawTaskEpisode*, unsigned int)::_ZN12_GLOBAL__N_117raw_task_endpointEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_14RawTaskEpisodeEj.Frame*) [clone .destroy]"
+        ],
+        "raw_data_chunk": [
+          "0000000000009b47 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*) [clone .cold]",
+          "0000000000012140 t (anonymous namespace)::raw_data_chunk(nghttp2_session*, unsigned char, int, unsigned char const*, unsigned long, void*)"
+        ],
+        "hyle_server": [
+          "0000000000009f99 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c90 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014240 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000014ee0 t (anonymous namespace)::hyle_server((anonymous namespace)::hyle_server(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_serverEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "hyle_client": [
+          "000000000000a166 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor] [clone .cold]",
+          "0000000000011c00 t hyle::io::Http2BodyReader::consume<(anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}>((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::{lambda(hyle::io::HttpBodyChunkView const&)#1}&, unsigned long, hyle::io::OperationOptions)::{lambda(void*, hyle::io::HttpBodyChunkView const&)#1}::_FUN(void*, hyle::io::HttpBodyChunkView const&)",
+          "0000000000014ef0 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .actor]",
+          "0000000000015b60 t (anonymous namespace)::hyle_client((anonymous namespace)::hyle_client(hyle::mem::AllocatorRef, hyle::io::TcpStream, (anonymous namespace)::HyleRunState*)::_ZN12_GLOBAL__N_111hyle_clientEN4hyle3mem12AllocatorRefENS0_2io9TcpStreamEPNS_12HyleRunStateE.Frame*) [clone .destroy]"
+        ],
+        "HyleHarness::run": [
+          "000000000000a97a t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&) [clone .cold]",
+          "0000000000017fd0 t (anonymous namespace)::HyleHarness::run((anonymous namespace)::Workload const&)"
+        ]
+      }
+    },
+    "same_common_addresses": true
+  },
+  "source_identity": [
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/src/io_http2/http2.cc",
+      "bytes": 111471,
+      "sha256": "30b57207730af05b29e3037d22427b67d35df6f5c4b69a1f99846c9630e6482f"
+    },
+    {
+      "path": "/mnt/c/public/project-hyle/hyle/bench/io_http2/http2_p1_bench.cc",
+      "bytes": 57560,
+      "sha256": "96c1659810ca5d9e11610f937d619d122615f17cd4e3f3519ced9c0f255f6d63"
+    }
+  ],
+  "artifacts": {
+    "delete": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/phase-costs/consumer.o",
+        "bytes": 168360,
+        "sha256": "70d86b7998b1ff82741443784e7a96501c4175d864c312f883665317363a8c8d"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/phase-costs/probe",
+        "bytes": 915904,
+        "sha256": "1322c68b21d6a69d9b4f623b57f99d5d39ff7abf2e6b568167ce1340b9400c7a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/phase-costs/owner-check-disabled.o",
+        "bytes": 224824,
+        "sha256": "ab2aea7c358c5ced3ac82ddb83166cd04278bf8788636449a0c0223c98f80338"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/phase-costs/owner-check-disabled",
+        "bytes": 898512,
+        "sha256": "b10f4926157f3d50073cf28bf3b1504fcff6c4d8035962f6df71e14cf0f794dd"
+      }
+    ],
+    "retain": [
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+        "bytes": 387104,
+        "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/http2.o",
+        "bytes": 225824,
+        "sha256": "7c214427285e21da16dab647d0b5793b8b209554bf5f8d3ef20d4435653aa82e"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/http2_test.o",
+        "bytes": 739800,
+        "sha256": "7ffb3dac38465532c8980032a5f3dbee401ac7feec915f51c26eeb2ddd879f5c"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/layout-new",
+        "bytes": 898496,
+        "sha256": "3123e43a9c4e015241242673b9dc90d7c6d4ca26f72408ef53b5690cd29e4870"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/owner-loop/tests-candidate",
+        "bytes": 1618552,
+        "sha256": "97a8e618a6db7c621e770e37f349313f0ffeda99b7b66334016a96c3db52991a"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/paired-comparison-v2/nanobench.o",
+        "bytes": 283672,
+        "sha256": "43b16d764541dc1460c6aba273360f40403bcc35ee2feb37461f7f4d29984987"
+      },
+      {
+        "path": "/root/hyle-scratch/http2-current-20261018/root-cause-product/consumer.o",
+        "bytes": 151104,
+        "sha256": "62a132158e443d6fae3df9c9ea8b4ccba19e71a21aeac9ffef6042d03df5b2b2"
+      }
+    ]
+  },
+  "independent_recalculation": "Separate read-only agent recomputed all60 phase blocks and72 ablation blocks from raw cells: exact sums, arithmetic differences, medians, arm medians and paired log-ratio/GM/range/IQR/counters matched. No new measurements or code changes.",
+  "cleanup_execution": {
+    "status": "completed",
+    "deleted_files": 4,
+    "deleted_bytes": 2207600,
+    "retained_files_verified": 7,
+    "directories_removed": 0
+  },
+  "cleanup_archive": {
+    "bytes": 6071,
+    "sha256": "bad7123d3bdd3ee875f48dc96a42590630599a820bffd246752182cdb1d43d83"
+  }
+}

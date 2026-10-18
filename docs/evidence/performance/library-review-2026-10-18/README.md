@@ -1517,3 +1517,33 @@ scratch坏变体将递减改清零，回归正常断言失败；证明它能捕�
 
 归档后先写根test.ps1，再精确删除13份诊断/坏变体/过时产物共9443488 B，保留并复核7份当前缓存，
 含当前产品、公共消费者、17项测试对象、最终测试与固定公共布局benchmark；不删源码/raw/log/map/SDK或目录。[执行记录](http2/owner-loop/cleanup.zip)。
+
+## HTTP2：阶段归因与worker查询消融，未改产品
+
+本轮改用诊断驱动分解CPU时间：caller读取同一个worker的pthread CPU clock，仅在两端Task内不会挂起的
+创建和最终销毁区间计时，不相加跨co_await/yield/Event的生命周期。固定同binary计时off→on→A/A→on→off，
+每进程12个交替ABBA/BAAB区块、每格64个完整4流/2 MiB episode，全部内容/header/顺序oracle通过。
+
+| 两组on诊断的每episode均值差（Hyle−参考，µs） | 第一组 | 第二组 |
+|---|---:|---:|
+| worker总CPU | +13.291 | +7.512 |
+| 初始创建 | +0.552 | +0.460 |
+| 最终销毁 | −0.443 | −0.539 |
+| worker其余CPU | +13.181 | +7.592 |
+
+各区块及其均值可相加，分项中位数不可拼成总差。其余CPU含收发、native协议、拷贝、内容校验、流控、
+中途reader/stream退休、运行时检查和调度，不能叫纯协议成本。Task/frame等运行时退休可能晚于join发布，
+不新增barrier改变trace；没有把本轮CPU分项当作此前正式墙钟差距的精确解释。
+内部8次clock读取的空对中位120/121 ns只说明成本尺度；off/on跨进程不能精确扣除仪器扰动。
+
+进一步仅在scratch副本删掉validate_owner中的动态worker身份查询及比较，其余寿命/取消/超时/错误检查保留。
+此副本故意破坏owner契约，只作假设检验；复用纯消费者，核公共消费者/native热符号地址一致，
+固定A/A→当前→删查询→删查询→当前→A/A，完整正常路径oracle通过。
+当前/删查询的区块中位差为+0.9745%/+1.4220%及+1.7484%/+1.0580%，一组变大、一组变小；
+前后同Hyle A/A为+0.4601%/+1.4179%。没有稳定收窄的证据，也不能说查询零成本或已完全排除此方向；
+未新采I/O/yield/wait计数，不能孤立归因TLS。产品检查完整保留，HTTP2仍未解决。
+
+仅重编诊断consumer及scratch消融TU，未改产品、永久benchmark或测试；沿用已有缓存，不作新平台/全HEAD测试声明。
+[完整阶段数据与消融结果](http2/phase-costs/summary.json)／[源码、全部raw、命令及地址身份](http2/phase-costs/source-results.zip)。
+独立从raw重算60个阶段区块及72个消融区块，与汇总一致。先写根test.ps1再精确删除4份诊断生成物共2207600 B，
+保留并复核7份当前缓存；源码、结果、map和共享依赖保留。[已执行脚本与日志](http2/phase-costs/cleanup.zip)。
