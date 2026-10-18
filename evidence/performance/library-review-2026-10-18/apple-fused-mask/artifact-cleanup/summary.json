@@ -1,0 +1,12 @@
+{
+  "status": "executed once successfully; do not rerun test.ps1",
+  "script_sha256": "07f682cb734c4368b509b087e8488a7c8ccee5a447700dd1371b984db575fd9e",
+  "deleted_files": 16,
+  "deleted_bytes": 101470744,
+  "retained_files": 10,
+  "retained_bytes": 11031280,
+  "scope": "Rejected v1/v2 executables/product objects and superseded original FP64-test objects only. Sources, raw/log/reference data, SDK and accepted products/tests/probe objects plus baseline-space are preserved.",
+  "preflight": "All 26 exact resolved regular files checked for path, size, SHA256 and symlinks before deletion; each target rechecked, each retained file verified afterward.",
+  "archive_bytes": 7235,
+  "archive_sha256": "3cbec68598d7e52b6335ab770e1ead08291dc91433c3c126acc84f6afd5e9362"
+}

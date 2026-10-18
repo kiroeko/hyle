@@ -1370,3 +1370,5 @@ v2按mask字节量选择64～512行（32MiB目标），固定点为448＋448＋1
 ### TCP异步fallback：复用刚验证的owner选择proactor
 
 四个scalar read_some/write_some入口在当前worker等于owner_的原断言后，直接用owner_选择同一现成proactor，去掉二次TLS查询；保留valid、worker和ring范围检查，不跨挂起缓存。HTTP2可恢复owner检查和TCP immediate断言均不删。单个fresh TCP测试TU与既有core重链，指定echo及peer-close两项通过；只有peer-close普通scalar-write确实运行新inline代码，其余三定义此次为编译核查，echo内部预算helper仍为缓存core。没有测性能或把旧profile外推当前残差，HTTP2仍未解决。[验证与范围](http2/tcp-owner-query/summary.json)／[源码、命令与日志](http2/tcp-owner-query/source-results.zip)。
+
+融合mask两版负候选归档后，先写根test.ps1再执行一次精确清理：删除16个可重建生成物101470744 B，10个仍用于后续对照的产品/测试/probe及baseline exe保留并复核。所有源码、原始数值、日志、归档与SDK保留；旧脚本已用不可重跑。[执行记录](apple-fused-mask/artifact-cleanup/summary.json)。
