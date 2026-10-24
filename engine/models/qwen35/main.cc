@@ -51,6 +51,9 @@
 #include "prepared_roles.h"
 #include "projection_binding.h"
 #include "fp8_weight_import.h"
+#include "precision_profile.h"
+#include "nf4_weight_import.h"
+#include "hyle/simd/dtype.h"
 #include "hyle/container/small_vector.h"
 
 #include "../../inference/backend.h"
@@ -326,6 +329,17 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
       detail::fail(name, "channel/token FP8 requires dense E4 [N,K] and original BF16 [N,1] scales");
     return ChannelTokenFp8Projection{&stored->tensor, &scales};
   }
+  if (stored->codec == Codec::kNf4DoubleQuant) {
+    // Only the common cold importer may replace an authenticated raw group
+    // with this F16 fallback. The original source codec remains explicit.
+    detail::auxiliaries(bank, base, {}, name);
+    detail::fixed_group(*stored, 64, name);
+    const auto &decoded = stored->tensor.description;
+    if (!decoded.is_plain() || !decoded.is_dense() || decoded.rank() != 2 ||
+        decoded.data_type() != Type::kFloat16)
+      detail::fail(name, "NF4 principal requires completed cold F16 import");
+    return StoredProjection{&stored->tensor};
+  }
   if (stored->codec != Codec::kDense && stored->codec != Codec::kUnspecified)
     detail::fail(name, "stored principal has an incompatible source codec");
   detail::auxiliaries(bank, base, {}, name);
@@ -371,12 +385,13 @@ ProjectionBindings prepare_projection_bindings(std::map<std::string, LoadedWeigh
   return bindings;
 }
 
-std::string_view score_policy(const ProjectionBinding &binding) noexcept {
+std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile precision) noexcept {
   if (const auto *stored = std::get_if<StoredProjection>(&binding)) {
     if (!stored->weight) return "invalid_projection_binding";
     const auto &description = stored->weight->description;
     if (hyle::compute::gguf_quantized_type(description.storage_format()))
       return "gguf_encoded_weight_projection_f32_logits";
+    if (precision.is_f16()) return "f16_inputs_f16_projection_f32_logits";
     if (description.data_type() == hyle::compute::DataType::kFloat16) return "f16_weight_f32_inputs_f32_output";
     if (description.data_type() == hyle::compute::DataType::kFloat32) return "f32_weight_f32_inputs_f32_output";
     return "bf16_inputs_f32_output";
@@ -394,14 +409,14 @@ std::string_view score_policy(const ProjectionBinding &binding) noexcept {
 struct StateSchema final {
   c::TensorDesc history, recurrent;
 };
-std::vector<StateSchema> state_schema_for(const ModelGeometry &geometry, std::size_t capacity) {
+std::vector<StateSchema> state_schema_for(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision = {}) {
   geometry.validate();
   if (capacity == 0 || capacity > static_cast<std::size_t>(geometry.context_limit)) throw std::runtime_error("capacity outside model context limit");
   std::vector<StateSchema> result(geometry.layers.size());
   for (std::size_t i = 0; i < result.size(); ++i) {
     auto &layer = result[i];
     if (geometry.is_gdn(i)) {
-      layer.history = dense(Type::kBFloat16, {1, geometry.conv_kernel - 1, geometry.gdn_qkv_width()});
+      layer.history = dense(precision.activation_type(), {1, geometry.conv_kernel - 1, geometry.gdn_qkv_width()});
       layer.recurrent = dense(Type::kFloat32, {1, geometry.gdn_value_heads, geometry.gdn_key_depth, geometry.gdn_value_depth});
     }
   }
@@ -508,8 +523,8 @@ struct GraphAssembly final {
   std::vector<g::NodePlacement> node_placements;
   std::vector<g::ExternalResourceContract> external_resources;
 
-  explicit GraphAssembly(const Backend &environment)
-      : backend_(environment), mixed_(environment.has_cpu_endpoint()),
+  explicit GraphAssembly(const Backend &environment, PrecisionProfile precision = {})
+      : backend_(environment), precision_(precision), mixed_(environment.has_cpu_endpoint()),
         predicate_type_(environment.native_generated_storage() ? Type::kFloat32 : Type::kBool) {}
   GraphAssembly(const GraphAssembly &) = delete;
   GraphAssembly &operator=(const GraphAssembly &) = delete;
@@ -524,6 +539,7 @@ struct GraphAssembly final {
   }
   Tensor &literal(c::TensorDesc description) { return literal_at(location_, description); }
   Type predicate_type() const { return predicate_type_; }
+  Type activation_type() const noexcept { return precision_.activation_type(); }
   void node(g::NodeId node) {
     if (mixed_) node_placements.push_back({node, location_.target, g::PlacementStrength::kRequired});
   }
@@ -552,6 +568,7 @@ struct GraphAssembly final {
 
 private:
   const Backend &backend_;
+  const PrecisionProfile precision_;
   const bool mixed_;
   const Type predicate_type_;
   Location location_ = primary();
@@ -590,6 +607,7 @@ struct Recipe final {
   static g::TensorSpec dense_spec(Type type, std::initializer_list<D> dimensions) {
     return dense_spec(type, std::span(dimensions.begin(), dimensions.size()));
   }
+  Type activation_type() const noexcept { return assembly.activation_type(); }
   const g::TensorSpec &spec(V value) const { return specs.at(value.ordinal()); }
   V remember(V value, g::TensorSpec description) {
     if (specs.size() <= value.ordinal()) specs.resize(value.ordinal() + 1);
@@ -637,17 +655,20 @@ struct Recipe final {
     const auto bounds = c::gguf_quantized_type(stored.storage_format())
         ? c::IndexBoundsPolicy::kChecked : c::IndexBoundsPolicy::kUnchecked;
     return cast(one(c::Gather{.bounds = bounds}, {original, tokens},
-        dense_spec(stored.data_type(), {ids.dimensions()[0], stored.dimensions()[1]})), Type::kBFloat16);
+        dense_spec(stored.data_type(), {ids.dimensions()[0], stored.dimensions()[1]})), activation_type());
   }
   V scalar(float value, Type type = Type::kFloat32) {
     auto &literal = assembly.literal(dense(type, {1}));
     if (type == Type::kFloat32) literal.write<float>(std::span(&value, 1));
-    else {
+    else if (type == Type::kFloat16) {
+      const auto f16 = hyle::simd::f32_to_f16(value);
+      literal.write<hyle::simd::float16_t>(std::span(&f16, 1));
+    } else if (type == Type::kBFloat16) {
       auto bits = std::bit_cast<std::uint32_t>(value);
       bits += 0x7fffU + ((bits >> 16) & 1U);
       const auto bf16 = static_cast<std::uint16_t>(bits >> 16);
       literal.write<std::uint16_t>(std::span(&bf16, 1));
-    }
+    } else throw std::runtime_error("floating scalar requires F32/F16/BF16");
     return constant(literal);
   }
   std::vector<V> op(c::Operation operation, std::initializer_list<V> arguments,
@@ -761,8 +782,8 @@ struct Recipe final {
     return found->second;
   }
   V emit_projection(V x, const ProjectionBinding &binding, bool scores) {
-    if (spec(x).rank() != 2 || spec(x).data_type() != Type::kBFloat16)
-      throw std::runtime_error("model projection requires BF16 [rows,K] activation rows");
+    if (spec(x).rank() != 2 || spec(x).data_type() != activation_type())
+      throw std::runtime_error("model projection differs from source activation [rows,K] precision");
     auto dimensions = std::vector<D>(spec(x).dimensions().begin(), spec(x).dimensions().end());
     const auto result = std::visit([&](const auto &projection) -> V {
       using P = std::decay_t<decltype(projection)>;
@@ -772,6 +793,13 @@ struct Recipe final {
         if (stored.rank() != 2 || spec(x).dimensions()[1] != stored.dimensions()[1])
           throw std::runtime_error("original stored projection type/shape differs");
         dimensions.back() = stored.dimensions()[0];
+        if (activation_type() == Type::kFloat16) {
+          if (stored.data_type() != Type::kFloat16 || !projection.weight->description.is_plain())
+            throw std::runtime_error("F16 source projection requires a dense F16 operand");
+          constexpr std::array<std::int32_t, 2> axes{1, 0};
+          return one(c::MatMul{.accumulation_type = Type::kFloat32},
+              {x, one(take(c::View::permute(axes)), {original})}, dense_spec(Type::kFloat16, dimensions));
+        }
         if (c::gguf_quantized_type(stored.storage_format())) {
           constexpr std::array<std::int32_t, 2> axes{1, 0};
           const auto rhs = one(take(c::View::permute(axes)), {original});
@@ -790,6 +818,7 @@ struct Recipe final {
         const auto rhs = one(take(c::View::permute(axes)), {original});
         return one(c::MatMul{}, {x, rhs}, dense_spec(Type::kBFloat16, dimensions));
       } else if constexpr (std::is_same_v<P, GptqProjection>) {
+        if (activation_type() != Type::kBFloat16) throw std::runtime_error("GPTQ source equation requires BF16 activation");
         const auto codes = operand(*projection.codes), zeros = operand(*projection.zeros);
         const auto scales = operand(*projection.scales), groups = operand(*projection.groups);
         // Preserve F16 decode, BF16 operand and the same four-node fusion region.
@@ -804,6 +833,7 @@ struct Recipe final {
         packed_projection_nodes.push_back(nodes);
         return output;
       } else if constexpr (std::is_same_v<P, CtPackedProjection>) {
+        if (activation_type() != Type::kBFloat16) throw std::runtime_error("CT packed source equation requires BF16 activation");
         PackedProjectionNodes nodes; nodes.count = 3;
         const auto decoded = projection.zeros ? one(c::Operation::custom(projection.decode),
             {operand(*projection.codes), operand(*projection.zeros), operand(*projection.scales)}, &nodes.chain[0]) :
@@ -888,7 +918,7 @@ struct Recipe final {
     auto sum = one(c::Reduce{.kind = c::ReductionKind::kSum,
         .axes = take(c::Axes::from(axes)), .keep_dimensions = true,
         .accumulation_type = Type::kFloat32}, {square}, dense_spec(spec(square).data_type(), dimensions));
-    sum = binary(c::BinaryKind::kAdd, sum, scalar(1.e-6F, Type::kBFloat16));
+    sum = binary(c::BinaryKind::kAdd, sum, scalar(1.e-6F, spec(x).data_type()));
     return binary(c::BinaryKind::kMultiply, x, unary(c::UnaryKind::kRsqrt, sum));
   }
   V ffn(V x, const std::string &prefix, std::span<V> probes = {}) {
@@ -1159,11 +1189,15 @@ struct Phase final : FamilyPorts {
 struct InputPreparationScratch final {
   std::vector<std::int32_t> packed_ids, positions, draft_positions, catchups;
   std::vector<std::uint32_t> sampling_identities;
+  // BatchSchema::version synchronously copies this integer source range.
+  // Keep page readers, immutable layout versions and NodeLayouts outside scratch.
+  std::vector<std::int32_t> target_page_ids;
   void prepare(const Phase &phase) {
     const auto reserve = [](auto &values, const Tensor &tensor) {
       using Element = typename std::decay_t<decltype(values)>::value_type;
       values.reserve(take(tensor.description.required_bytes()) / sizeof(Element));
     };
+    target_page_ids.reserve(phase.attention_schema.capacity().max_page_refs);
     if (phase.family->requests > 1) reserve(packed_ids, phase.tokens);
     reserve(positions, phase.positions);
     if (phase.sampling_identities.buffer) reserve(sampling_identities, phase.sampling_identities);
@@ -1326,6 +1360,7 @@ struct WeightLoadReport final {
   std::size_t canonical_bytes = 0, fp8_groups = 0, import_peak_bytes = 0;
   bool float8_policy = false;
   std::size_t ct_channel_groups = 0, ct_local_groups = 0, omitted_cache_roles = 0;
+  std::size_t nf4_groups = 0, nf4_original_bytes = 0, nf4_input_copy_bytes = 0, nf4_known_group_peak_bytes = 0;
 };
 enum class WeightSelection { kText, kTextAndMtp };
 ModelGeometry read_weight_geometry(const std::filesystem::path &manifest) {
@@ -1339,6 +1374,15 @@ ModelGeometry read_weight_geometry(const std::filesystem::path &manifest) {
 }
 prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool include_mtp) {
   return prepared::read_roles(manifest, include_mtp);
+}
+struct PreparedWeightSource {
+  prepared::Roles roles;
+  double metadata_prepare_seconds = 0;
+};
+PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp) {
+  const auto start = Clock::now();
+  auto roles = read_weight_roles(manifest, include_mtp);
+  return {std::move(roles), std::chrono::duration<double>(Clock::now() - start).count()};
 }
 Type role_type(std::string_view dtype) {
   if (dtype == "BF16") return Type::kBFloat16;
@@ -1374,21 +1418,23 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     std::vector<c::LeasePool> &weight_pools, std::size_t cpu_ffn_layers = 0) {
   roles.geometry.validate();
   validate_cpu_ffn_layers(cpu_ffn_layers, roles.geometry.layers.size());
-  if (roles.nf4_policy.enabled || std::ranges::any_of(roles.selected, [](const auto &role) {
-        return role.projection_codec == prepared::ProjectionCodec::kNf4DoubleQuant;
-      }))
-    throw std::runtime_error("NF4 metadata is supported; F16 weight import and activation execution are not implemented");
+  (void)PrecisionProfile::from_roles(roles);
   if (roles.selected.empty() || roles.selected.size() > UINT32_MAX)
     throw std::runtime_error("invalid prepared physical role count");
   // Source groups borrow existing checkpoint/cache/run files. No stitched
-  // checkpoint, duplicate cache bank or decoded whole-model weight is created.
+  // checkpoint or duplicate packed bank is created. NF4 is an explicit F16
+  // functional fallback below; its canonical bank is larger than source NF4.
   std::map<std::pair<std::filesystem::path, bool>, std::vector<std::size_t>> sources;
   std::array<std::size_t, 2> largest{}, largest_group{}, source_counts{}, domain_bytes{};
-  std::set<std::string> fp8_roles;
+  std::set<std::string> fp8_roles, nf4_roles;
   for (const auto &role : roles.selected) if (role.projection_codec == prepared::ProjectionCodec::kFloat8Block128) {
     fp8_roles.insert(role.name);
     fp8_roles.insert(role.name.substr(0, role.name.size() - 7) + ".weight_scale_inv");
   }
+  constexpr std::array<std::string_view, 6> nf4_suffixes{
+      "", ".absmax", ".nested_absmax", ".nested_quant_map", ".quant_map", prepared::nf4_state_suffix};
+  for (const auto &role : roles.selected) if (role.projection_codec == prepared::ProjectionCodec::kNf4DoubleQuant)
+    for (const auto suffix : nf4_suffixes) nf4_roles.insert(role.name + std::string(suffix));
   std::size_t physical_mtp_roles = 0;
   for (std::size_t i = 0; i < roles.selected.size(); ++i) {
     const auto &role = roles.selected[i];
@@ -1397,7 +1443,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     physical_mtp_roles += role.name.starts_with("mtp.");
     // FP8 pairs enter one bounded cold import at a time below. Do not first
     // allocate their original codes/scales across the complete model bank.
-    if (fp8_roles.contains(role.name)) continue;
+    if (fp8_roles.contains(role.name) || nf4_roles.contains(role.name)) continue;
     sources[{role.source, host}].push_back(i); largest[host] = (std::max)(largest[host], role.bytes);
   }
   for (const auto &[key, indices] : sources) {
@@ -1535,7 +1581,52 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     loaded = cache::add(loaded, cache::add(role.bytes, scale->bytes));
     ++fp8_groups;
   }
-  if (loaded != roles.bytes || weights.size() + fp8_groups != roles.selected.size())
+  std::size_t nf4_groups = 0, nf4_original_bytes = 0, nf4_input_copy_bytes = 0, nf4_known_group_peak_bytes = 0;
+  for (const auto &role : roles.selected) if (role.projection_codec == prepared::ProjectionCodec::kNf4DoubleQuant) {
+    const bool host = cpu_ffn_weight(role.name, cpu_ffn_layers);
+    const auto resource = weight_resource(backend, host);
+    const auto domain = g::StorageDomainId{host ? 1u : 0u};
+    std::array<mem::FileMapping, 6> original;
+    std::array<std::span<const std::byte>, 6> raw;
+    std::array<c::TensorDesc, 6> physical;
+    std::size_t group_bytes = 0, copied_bytes = 0;
+    for (std::size_t i = 0; i < nf4_suffixes.size(); ++i) {
+      const auto name = role.name + std::string(nf4_suffixes[i]);
+      const auto found = std::ranges::find(roles.selected, name, &prepared::Role::name);
+      if (found == roles.selected.end()) throw std::runtime_error("NF4 cold import is missing original role: " + name);
+      physical[i] = role_description(*found);
+      original[i] = take(mem::FileMapping::open(found->source.string().c_str(), mem::MappingAccess::kReadOnly,
+          found->offset, found->bytes));
+      raw[i] = take(original[i].bytes());
+      group_bytes = cache::add(group_bytes, found->bytes);
+    }
+    const auto n = role.nf4_state.logical_shape[0], k = role.nf4_state.logical_shape[1];
+    if (k % 2) throw std::runtime_error("NF4 cold import requires complete original packed rows");
+    Nf4DecodeInputs inputs;
+    inputs.original_json = raw[5];
+    inputs.descriptions = {dense(Type::kUInt8, {n, k / 2}), physical[1], physical[2], physical[3],
+        dense(Type::kFloat32, {}), physical[4]};
+    const auto offset = std::bit_cast<float>(role.nf4_state.offset_f32_bits);
+    const std::array<std::span<const std::byte>, 6> payloads{
+        raw[0], raw[1], raw[2], raw[3], std::as_bytes(std::span(&offset, 1)), raw[4]};
+    for (std::size_t i = 0; i < payloads.size(); ++i) {
+      auto buffer = take(mem::Buffer::create(resource, payloads[i].size(), 256));
+      check(backend.write(buffer.view(), payloads[i]));
+      inputs.ready[i] = take(backend.adopt_buffer(std::move(buffer)));
+      copied_bytes = cache::add(copied_bytes, payloads[i].size());
+    }
+    auto imported = take(import_nf4_weight(backend, role.nf4_state, inputs, domain));
+    Tensor tensor; tensor.description = imported.description; tensor.ready = std::move(imported.ready);
+    if (!weights.emplace(role.name, LoadedWeight{std::move(tensor), role.projection_codec, 64}).second)
+      throw std::runtime_error("duplicate selected NF4 projection: " + role.name);
+    loaded = cache::add(loaded, group_bytes);
+    nf4_original_bytes = cache::add(nf4_original_bytes, group_bytes);
+    nf4_input_copy_bytes = cache::add(nf4_input_copy_bytes, copied_bytes);
+    nf4_known_group_peak_bytes = (std::max)(nf4_known_group_peak_bytes,
+        cache::add(cache::add(group_bytes, copied_bytes), cache::add(imported.canonical_bytes, imported.graph_workspace_bytes)));
+    ++nf4_groups;
+  } // Each original packed group and its decode inputs retire before the next.
+  if (loaded != roles.bytes || weights.size() + fp8_groups + 5 * nf4_groups != roles.selected.size())
     throw std::runtime_error("selected model weight inventory differs");
   for (const auto &role : roles.selected) if (role.name.ends_with(".weight_shape")) {
     const auto principal_name = role.name.substr(0, role.name.rfind('.')) + ".weight_packed";
@@ -1572,7 +1663,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
       canonical_bytes, fp8_groups, import_peak_bytes, roles.float8_policy.enabled,
       static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtFloat8ChannelToken, &prepared::Role::projection_codec)),
       static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtLocalNvfp4, &prepared::Role::projection_codec)),
-      roles.omitted_cache_calibration.size()};
+      roles.omitted_cache_calibration.size(), nf4_groups, nf4_original_bytes, nf4_input_copy_bytes, nf4_known_group_peak_bytes};
 }
 
 WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
@@ -1747,8 +1838,8 @@ struct ColdResources final {
   std::map<std::size_t, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
   std::unique_ptr<SamplingFrontier> sampling_frontier;
 
-  explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity)
-      : state_schema(state_schema_for(geometry, capacity)), state_pools(geometry.layers.size()) {}
+  explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision)
+      : state_schema(state_schema_for(geometry, capacity, precision)), state_pools(geometry.layers.size()) {}
 
   bool pending() const noexcept {
     for (const auto *cache : {&phases, &probe_phases})
@@ -1825,6 +1916,7 @@ public:
   std::size_t fp8_weight_groups = 0, fp8_import_peak_bytes = 0;
   bool float8_weight_policy = false;
   std::array<std::size_t, 3> known_workspace_peak{}, known_workspace_limits{};
+  const PrecisionProfile precision;
   const ModelGeometry geometry;
   const std::int64_t hidden, intermediate, vocabulary;
   const std::size_t target_kv_layers, draft_bank;
@@ -1885,7 +1977,16 @@ public:
                   Sampling sampling_configuration = {false, {}, 0},
                   std::size_t cpu_ffn_layer_count = 0,
                   BackendSelection backend_selection = {})
+       : Model(prepare_weight_source(manifest, selected_cache.draft_cache), model_geometry, selected_capacity,
+           selected_cache, std::move(probe), progress, replay, max_cache_bytes,
+           sampling_configuration, cpu_ffn_layer_count, backend_selection) {}
+
+  Model(PreparedWeightSource source, const ModelGeometry &model_geometry, std::size_t selected_capacity,
+      cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
+      std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
+      BackendSelection backend_selection)
        : sampler(sampling_configuration), cpu_ffn_layers(cpu_ffn_layer_count),
+         precision(PrecisionProfile::from_roles(source.roles)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
          target_kv_layers(geometry.attention_layers()), draft_bank(target_kv_layers * 2),
          attention_layer_ids([&] {
@@ -1894,7 +1995,7 @@ public:
            return indices;
          }()),
          execution(create_execution(geometry, selected_cache, cpu_ffn_layer_count, backend_selection)),
-         resources_(std::make_shared<ColdResources>(geometry, selected_capacity)),
+         resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision)),
          weight_pools(resources_->weight_pools), weights(resources_->weights), projections(resources_->projections),
          weight_meanings(resources_->weight_meanings), source_identity(resources_->source_identity),
          state_schema(resources_->state_schema), cache_budget(resources_->cache_budget), execution_budget(resources_->execution_budget),
@@ -1907,6 +2008,8 @@ public:
          draft_programs(resources_->draft_programs), prefix_sampling_programs(resources_->prefix_sampling_programs),
          sampling_frontier(resources_->sampling_frontier), capacity(selected_capacity),
          replay_policy(replay), layer0_probe(std::move(probe)) {
+    const auto &source_roles = source.roles;
+    if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
@@ -1947,8 +2050,7 @@ public:
       check(status);
     }
     const auto weight_load_start = Clock::now();
-    auto loading = load_weight_bank(manifest, execution, weights, weight_pools, geometry,
-        cache_plan.draft_cache ? WeightSelection::kTextAndMtp : WeightSelection::kText, cpu_ffn_layers);
+    auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, cpu_ffn_layers);
     source_identity = loading.identity;
     weight_meanings = std::move(loading.meanings);
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
@@ -1958,12 +2060,18 @@ public:
     fp8_import_peak_bytes = loading.import_peak_bytes; float8_weight_policy = loading.float8_policy;
     ct_channel_groups = loading.ct_channel_groups; ct_local_groups = loading.ct_local_groups;
     omitted_cache_roles = loading.omitted_cache_roles;
-    const auto weight_load_seconds = std::chrono::duration<double>(Clock::now() - weight_load_start).count();
+    const auto weight_load_seconds = source.metadata_prepare_seconds +
+        std::chrono::duration<double>(Clock::now() - weight_load_start).count();
     std::cerr << "resident text weights: " << weights.size() << " tensors, " << loading.bytes << " bytes\n";
     if (float8_weight_policy) std::cerr << "fp8_weight_import original_physical_roles="
         << physical_text_roles + physical_mtp_roles << " original_bytes=" << loading.bytes
         << " canonical_tensors=" << weights.size() << " canonical_bytes=" << canonical_weight_bytes
         << " groups=" << fp8_weight_groups << " temporary_group_peak_bytes=" << fp8_import_peak_bytes << '\n';
+    if (loading.nf4_groups) std::cerr << "nf4_cold_import groups=" << loading.nf4_groups
+        << " original_group_bytes=" << loading.nf4_original_bytes << " canonical_bank_bytes=" << canonical_weight_bytes
+        << " input_copy_bytes=" << loading.nf4_input_copy_bytes
+        << " known_group_peak_bytes=" << loading.nf4_known_group_peak_bytes
+        << " decoder_private_storage_unknown=true packed_resident=false functional_F16_fallback=true\n";
     std::cerr << "weights_load_seconds=" << weight_load_seconds << '\n';
     if (cpu_ffn_layers) std::cerr << "weight_placement cpu_ffn_layers=" << cpu_ffn_layers
         << " original_host_weight_bytes=" << host_weight_bytes
@@ -2021,7 +2129,7 @@ public:
   }
 
   std::string_view score_precision_policy() const {
-    return score_policy(projections.at(std::string(geometry.head_role())));
+    return score_policy(projections.at(std::string(geometry.head_role())), precision);
   }
   std::string weight_inventory_report() const {
     auto result = ",\"weight_count_scope\":\"selected_physical_roles\",\"text_tensors\":" +
@@ -2172,10 +2280,10 @@ public:
     if (attention_schema.valid()) {
       return;
     }
-    const auto storage = take(c::CacheStorage::plain(Type::kBFloat16));
+    const auto storage = take(c::CacheStorage::plain(precision.activation_type()));
     attention_schema = take(c::BatchSchema::create({
-        .storage = c::BatchStorage::kPaged, .query_type = Type::kBFloat16,
-        .output_type = Type::kBFloat16, .key_storage = storage, .value_storage = storage,
+        .storage = c::BatchStorage::kPaged, .query_type = precision.activation_type(),
+        .output_type = precision.activation_type(), .key_storage = storage, .value_storage = storage,
         .max_requests = cache_plan.max_requests, .max_query_rows = cache_plan.max_query_rows,
         .max_kv_rows = cache_plan.max_kv_rows, .max_pages = cache_plan.max_pages,
         .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads), .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
@@ -2304,7 +2412,7 @@ public:
     }
     const auto start = Clock::now();
     const auto max_query_rows = *std::max_element(definition.chunks.begin(), definition.chunks.end());
-    GraphAssembly assembly(execution);
+    GraphAssembly assembly(execution, precision);
     Recipe r(weights, projections, assembly, geometry, max_query_rows, requests, &weight_meanings);
     const auto t = r.token_rows, packed = r.packed_rows;
     const auto batch = f(static_cast<std::int64_t>(requests));
@@ -2342,14 +2450,14 @@ public:
       std::vector<V> carries, priors;
       definition.draft_hidden_inputs.resize(requests);
       for (auto &inputs : definition.draft_hidden_inputs) {
-        inputs[0] = r.input(dense(Type::kBFloat16, {1, hidden}));
+        inputs[0] = r.input(dense(precision.activation_type(), {1, hidden}));
         definition.state_resource_ports.push_back(inputs[0]); carries.push_back(inputs[0]);
         if (draft_lag(role)) {
-          inputs[1] = r.input(dense(Type::kBFloat16, {1, hidden}));
+          inputs[1] = r.input(dense(precision.activation_type(), {1, hidden}));
           definition.state_resource_ports.push_back(inputs[1]); priors.push_back(inputs[1]);
         }
       }
-      definition.carry_input_port = r.concat(carries, 0, r.dense_spec(Type::kBFloat16, {batch, f(hidden)}));
+      definition.carry_input_port = r.concat(carries, 0, r.dense_spec(precision.activation_type(), {batch, f(hidden)}));
       const auto draft_rows = is_mtp_prefill(role)
           ? (draft_lag(role) ? D(take(r.builder.dimension_sum(t, f(1)))) : t)
           : f(static_cast<std::int64_t>(draft_lag(role) + 1));
@@ -2360,7 +2468,7 @@ public:
       definition.draft_position_port = r.input(requests == 1 ? r.dense_spec(Type::kInt32, {draft_rows})
           : r.dense_spec(Type::kInt32, {batch, draft_rows}));
       if (draft_lag(role)) {
-        definition.prior_input_port = r.concat(priors, 0, r.dense_spec(Type::kBFloat16, {batch, f(hidden)}));
+        definition.prior_input_port = r.concat(priors, 0, r.dense_spec(precision.activation_type(), {batch, f(hidden)}));
         definition.catchup_token_port = r.input(r.dense_spec(Type::kInt32, {batch}));
       }
       if (drafts_token(role) || !is_mtp_prefill(role)) {
@@ -2368,14 +2476,14 @@ public:
         if (draft_lag(role)) {
           if (requests == 1) {
             ids = r.one(c::Concat{.axis = 0}, {definition.catchup_token_port, ids}, r.dense_spec(Type::kInt32, {f(2)}));
-            hidden_rows = r.one(c::Concat{.axis = 0}, {definition.prior_input_port, hidden_rows}, r.dense_spec(Type::kBFloat16, {f(2), f(hidden)}));
+            hidden_rows = r.one(c::Concat{.axis = 0}, {definition.prior_input_port, hidden_rows}, r.dense_spec(precision.activation_type(), {f(2), f(hidden)}));
           } else {
             ids = r.reshape(r.one(c::Concat{.axis = 1},
                 {r.reshape(definition.catchup_token_port, {batch, f(1)}), r.reshape(ids, {batch, f(1)})},
                 r.dense_spec(Type::kInt32, {batch, f(2)})), {packed_draft_rows});
             hidden_rows = r.reshape(r.one(c::Concat{.axis = 1},
                 {r.reshape(definition.prior_input_port, {batch, f(1), f(hidden)}), r.reshape(hidden_rows, {batch, f(1), f(hidden)})},
-                r.dense_spec(Type::kBFloat16, {batch, f(2), f(hidden)})), {packed_draft_rows, f(hidden)});
+                r.dense_spec(precision.activation_type(), {batch, f(2), f(hidden)})), {packed_draft_rows, f(hidden)});
           }
         }
         const auto projection = mtp::input_projection(r, ids, hidden_rows);
@@ -2433,12 +2541,12 @@ public:
           recurrent_inputs.push_back(sequence.recurrent);
         }
         const auto history = r.concat(history_inputs, 0,
-            r.dense_spec(Type::kBFloat16, {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
+            r.dense_spec(precision.activation_type(), {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
         const auto state = r.concat(recurrent_inputs, 0,
             r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)}));
         auto qkv = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight"), {batch, t, f(geometry.gdn_qkv_width())});
         auto samples = r.one(c::Concat{.axis = 1}, {history, qkv},
-            r.dense_spec(Type::kBFloat16, {batch, r.sample_rows, f(geometry.gdn_qkv_width())}));
+            r.dense_spec(precision.activation_type(), {batch, r.sample_rows, f(geometry.gdn_qkv_width())}));
         // Every published state has independent per-session material storage.
         // R1 preserves its original Copy and direct GDN state result.
         const auto next_history = r.slice(samples, 1, t, f(geometry.conv_kernel - 1));
@@ -2457,7 +2565,7 @@ public:
         auto convolution = r.one(c::model_ops::causal_conv1d(), {r.cast(samples, Type::kFloat32),
             r.cast(r.reshape(r.weight(prefix + "linear_attn.conv1d.weight"), {f(geometry.gdn_qkv_width()), f(geometry.conv_kernel)}), Type::kFloat32)},
             r.dense_spec(Type::kFloat32, {batch, t, f(geometry.gdn_qkv_width())}));
-        auto activated = r.unary(c::UnaryKind::kSilu, r.cast(convolution, Type::kBFloat16));
+        auto activated = r.unary(c::UnaryKind::kSilu, r.cast(convolution, precision.activation_type()));
         auto q = r.reshape(r.slice(activated, 2, f(0), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
         auto k = r.reshape(r.slice(activated, 2, f(geometry.gdn_key_width()), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
         auto v = r.reshape(r.slice(activated, 2, f(2 * geometry.gdn_key_width()), f(geometry.gdn_value_width())), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
@@ -2484,17 +2592,17 @@ public:
           } else ports.sequences[request].recurrent_prefix[0] = requests == 1 ? recurrent[1] :
               r.copy(r.slice(recurrent[1], 0, f(static_cast<std::int64_t>(request)), f(1)));
         }
-        auto y = r.cast(recurrent[0], Type::kBFloat16);
+        auto y = r.cast(recurrent[0], precision.activation_type());
         if (i == 0) definition.probe_ports[0] = y;
         const auto y_f32 = r.cast(y, Type::kFloat32);
-        y = r.cast(r.same(c::RmsNorm{.epsilon = geometry.epsilon}, {y_f32}, y_f32), Type::kBFloat16);
+        y = r.cast(r.same(c::RmsNorm{.epsilon = geometry.epsilon}, {y_f32}, y_f32), precision.activation_type());
         // Original storage is F32 in the official checkpoint and BF16 in
         // these quantized artifacts. Preserve its actual product rounding.
         const auto norm_scale = r.weight(prefix + "linear_attn.norm.weight");
         y = r.binary(c::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
         auto z = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_z.weight"), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
         y = r.cast(r.binary(c::BinaryKind::kMultiply, r.cast(y, Type::kFloat32),
-            r.unary(c::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), Type::kBFloat16);
+            r.unary(c::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), precision.activation_type());
         auto projection_input = r.reshape(y, {packed, f(geometry.gdn_value_width())});
         if (i == 0) definition.probe_ports[1] = y; // Same BF16 payload before its metadata-only out_proj reshape.
         mixed = r.linear(projection_input, prefix + "linear_attn.out_proj.weight");
@@ -2536,7 +2644,7 @@ public:
         auto attention = r.one(c::Operation::custom(c::PagedAttention{
             .capacity = definition.attention_schema.capacity(), .scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true}),
             {r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), ports.key, ports.value, definition.metadata_port},
-            r.dense_spec(Type::kBFloat16, {packed, f(geometry.query_heads), f(geometry.value_depth)}), &definition.attention_nodes[layer]);
+            r.dense_spec(precision.activation_type(), {packed, f(geometry.query_heads), f(geometry.value_depth)}), &definition.attention_nodes[layer]);
         check(r.builder.depends_on(definition.attention_nodes[layer], key_append));
         check(r.builder.depends_on(definition.attention_nodes[layer], value_append));
         auto gated = r.binary(c::BinaryKind::kMultiply, r.reshape(attention, {packed, f(geometry.attention_width())}), r.unary(c::UnaryKind::kSigmoid, gate));
@@ -2552,7 +2660,7 @@ public:
     if (diagnostic) for (std::size_t i = 0; i < definition.probe_ports.size(); ++i) {
       r.publish(definition.probe_ports[i]);
       auto description = r.spec(definition.probe_ports[i]);
-      if (description.data_type() != Type::kBFloat16) throw std::runtime_error("layer0 diagnostic boundary is not BF16");
+      if (description.data_type() != precision.activation_type()) throw std::runtime_error("layer0 diagnostic differs from source activation precision");
     }
     // The selected child decides caller-written versus generated result storage.
     const auto normalized_last = r.norm(x, "norm.weight");
@@ -2568,7 +2676,7 @@ public:
     auto last = verifies_prefix(role) ? r.copy(normalized_last) :
         (requests == 1 ? r.copy(r.slice(normalized_last, 0, D(r.last_row), f(1))) :
         r.one(c::Gather{}, {normalized_last, definition.last_ids_port},
-            r.dense_spec(Type::kBFloat16, {batch, f(hidden)})));
+            r.dense_spec(precision.activation_type(), {batch, f(hidden)})));
     if (verifies_prefix(role) || has_mtp(role) || sampler.enabled) for (std::size_t request = 0; request < requests; ++request)
       for (std::size_t row = 0; row < prefix_rows; ++row) {
         const auto carry = r.copy(r.slice(normalized_last, 0,
@@ -2679,7 +2787,7 @@ public:
       for (const auto &ports : definition.carry_ports) for (const auto value : ports) {
         if (!value.valid()) continue;
         const auto &output = child->output(value);
-        validate_state_output(output, dense(Type::kBFloat16, {1, hidden}));
+        validate_state_output(output, dense(precision.activation_type(), {1, hidden}));
         hidden_writers = hidden_writers || output.caller_owned();
         generated_state_outputs = generated_state_outputs || !output.caller_owned();
       }
@@ -2755,16 +2863,16 @@ public:
     prepare_cache();
     auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
     program.rows = rows; program.head = head;
-    GraphAssembly assembly(execution);
+    GraphAssembly assembly(execution, precision);
     Recipe r(weights, projections, assembly, geometry, rows, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(rows));
     program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.positions = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     for (std::size_t row = 0; row < rows; ++row) {
-      program.hidden_inputs.push_back(r.input(dense(Type::kBFloat16, {1, hidden})));
+      program.hidden_inputs.push_back(r.input(dense(precision.activation_type(), {1, hidden})));
       program.resource_ports.push_back(program.hidden_inputs.back());
     }
-    const auto shifted = r.concat(program.hidden_inputs, 0, r.dense_spec(Type::kBFloat16, {count, f(hidden)}));
+    const auto shifted = r.concat(program.hidden_inputs, 0, r.dense_spec(precision.activation_type(), {count, f(hidden)}));
     std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
     for (std::size_t i = 0; i < frequency.size(); ++i) frequency[i] = 1.F / std::pow(geometry.rope_theta, float(i) / static_cast<float>(frequency.size()));
     auto &frequency_literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
@@ -2816,7 +2924,7 @@ public:
     program.position_values = Tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     if (head) {
       program.hidden_output = take(inference::prepare_output(program.compiled, program.hidden));
-      validate_state_output(program.hidden_output, dense(Type::kBFloat16, {1, hidden}));
+      validate_state_output(program.hidden_output, dense(precision.activation_type(), {1, hidden}));
       if (sampler.enabled) program.probabilities_output =
           take(inference::prepare_output(program.compiled, program.log_probabilities));
     }
@@ -2924,7 +3032,7 @@ public:
       }
       program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
       for (std::size_t row = 0; row < ids.size(); ++row)
-        check(run.bind(program.hidden_inputs[row], dense(Type::kBFloat16, {1, hidden}), shifted[row]));
+        check(run.bind(program.hidden_inputs[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
       if (program.hidden_output.value && program.hidden_output.caller_owned())
         check(run.bind(program.hidden_output.value, program.hidden_output.description,
             take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment))));
@@ -2993,7 +3101,7 @@ public:
     if (prefix_sampling_programs.contains(proposals)) return;
     auto prepared = std::make_unique<PrefixSamplingProgram>(); auto &program = *prepared;
     program.proposals = proposals;
-    GraphAssembly assembly(execution);
+    GraphAssembly assembly(execution, precision);
     Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(proposals + 1));
     program.logits = r.input(r.dense_spec(Type::kFloat32, {count, f(vocabulary)}));
@@ -3135,10 +3243,10 @@ public:
     if (!sampler.enabled) return;
     if (!sampling_frontier) {
       auto prepared = std::make_unique<SamplingFrontier>();
-      GraphAssembly assembly(execution);
+      GraphAssembly assembly(execution, precision);
       Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
       prepared->last_row = r.last_row;
-      prepared->hidden_port = r.input(dense(Type::kBFloat16, {1, hidden}));
+      prepared->hidden_port = r.input(dense(precision.activation_type(), {1, hidden}));
       prepared->identity_port = r.input(dense(Type::kUInt32, {1, 4}));
       const auto probabilities = sampling::distribution(r,
           r.scores(prepared->hidden_port, std::string(geometry.head_role())), sampler.policy);
@@ -3176,7 +3284,7 @@ public:
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
     if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
     const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity);
-    check(run.bind(frontier.hidden_port, dense(Type::kBFloat16, {1, hidden}), base->carry_hidden));
+    check(run.bind(frontier.hidden_port, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
     check(run.bind(frontier.identity_port, frontier.identity.read()));
     check(frontier.id.bind(run)); check(frontier.valid.bind(run));
     const auto queues = inference::queue_span(frontier.queues);
@@ -3563,11 +3671,14 @@ public:
     auto &phase = *step.phase; auto &run = *step.run;
     const auto width = step.members.size();
     const auto rows = is_mtp_prefill(role) ? cache::add(step.input_tokens, draft_lag(role)) : draft_lag(role) + 1;
-    std::vector<std::int32_t> query{0}, old_ptr{0}, next_ptr{0}, old_last, next_last;
+    hyle::container::SmallVector<std::int32_t, 2> query{0}, old_ptr{0}, next_ptr{0}, old_last, next_last;
     std::vector<std::int32_t> old_ids, next_ids;
     auto &positions = input_scratch.draft_positions, &catchups = input_scratch.catchups;
     positions.clear(); catchups.clear();
-    for (auto *table : {&query, &old_ptr, &next_ptr, &old_last, &next_last}) table->reserve(width + 1);
+    for (auto *table : {&query, &old_ptr, &next_ptr})
+      if (!table->try_reserve(width + 1)) throw std::bad_alloc{};
+    for (auto *table : {&old_last, &next_last})
+      if (!table->try_reserve(width)) throw std::bad_alloc{};
     std::size_t old_count = 0, next_count = 0;
     for (const auto &member : step.members) {
       old_count = cache::add(old_count, member.base->draft->pages.size());
@@ -3622,15 +3733,15 @@ public:
       member.draft_layout = take(attention_schema.version({one_query, one_kv, std::span(next_ids).subspan(begin, count), std::span(&next_last.back(), 1)}));
       for (std::size_t i = 0; i < rows; ++i) positions.push_back(static_cast<std::int32_t>(old.frontier + i));
       const auto &ports = phase.draft_hidden_inputs[j];
-      check(run.bind(ports[0], dense(Type::kBFloat16, {1, hidden}), member.base->carry_hidden));
+      check(run.bind(ports[0], dense(precision.activation_type(), {1, hidden}), member.base->carry_hidden));
       if (draft_lag(role)) {
         catchups.push_back(old.catchup_token);
-        check(run.bind(ports[1], dense(Type::kBFloat16, {1, hidden}), member.base->prior_hidden));
+        check(run.bind(ports[1], dense(precision.activation_type(), {1, hidden}), member.base->prior_hidden));
       }
     }
     const auto layout = width == 1 ? step.members[0].draft_layout : take(attention_schema.version({query, next_ptr, next_ids, next_last}));
     step.draft_layout = layout;
-    std::vector<std::int32_t> old_query(width + 1, 0);
+    std::vector<std::int32_t> old_query(width == 1 ? 0 : width + 1, 0);
     const auto old_layout = width == 1 ? c::BatchLayoutVersion{} : take(attention_schema.version({old_query, old_ptr, old_ids, old_last}));
     std::vector<c::PagedArenaRead> sources(width);
     for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
@@ -3731,14 +3842,17 @@ public:
       hyle::container::SmallVector<std::int32_t, 2> query_indptr{0}, old_indptr{0}, new_indptr{0}, old_last, new_last;
       for (auto *table : {&query_indptr, &old_indptr, &new_indptr, &old_last, &new_last})
         if (!table->try_reserve(width + 1)) throw std::bad_alloc{};
-      std::vector<std::int32_t> old_ids, new_ids;
+      std::vector<std::int32_t> old_ids;
+      auto &new_ids = input_scratch.target_page_ids;
+      new_ids.clear();
       std::size_t old_refs = 0, new_refs = 0;
       for (const auto &member : step.members) {
         old_refs = cache::add(old_refs, member.base->pages.size());
         new_refs = cache::add(new_refs, (member.base->length + tokens + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
       }
       if (width != 1) old_ids.reserve(old_refs);
-      new_ids.reserve(new_refs);
+      if (new_refs > new_ids.capacity())
+        throw std::runtime_error("target page-index scratch exceeds prepared schema capacity");
       for (auto &bank : step.tails) if (!bank.try_reserve(width)) throw std::bad_alloc{};
       for (std::size_t j = 0; j < width; ++j) {
         auto &member = step.members[j]; auto &session = *member.session;
@@ -4454,11 +4568,11 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
       dump_bytes(take(tensor.storage().subview(completed.member_index * bytes, bytes)), directory / file);
     };
     if (completed.logits.valid()) dump_row(completed.logits, "logits.f32");
-    dump_row(completed.hidden, "hidden.bf16");
+    dump_row(completed.hidden, model.precision.is_f16() ? "hidden.f16" : "hidden.bf16");
     if (io.trace_states) {
       for (std::size_t i = 0; i < model.state_schema.size(); ++i) if (model.geometry.is_gdn(i)) {
         const auto prefix = "layer" + std::to_string(i);
-        dump_bytes(take(completed.head.state[i].history.view()), directory / (prefix + ".conv.bf16"));
+        dump_bytes(take(completed.head.state[i].history.view()), directory / (prefix + (model.precision.is_f16() ? ".conv.f16" : ".conv.bf16")));
         dump_bytes(take(completed.head.state[i].recurrent.view()), directory / (prefix + ".gdn.f32"));
       }
       std::ofstream layout_trace(directory / "kv-layout.json");
@@ -4476,7 +4590,7 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
       if ((completed.requests != 1 && !view.description().is_dense()) || bytes % completed.requests)
         throw std::runtime_error("published batch diagnostic is not request-major dense");
       dump_bytes(take(view.storage().subview(completed.member_index * (bytes / completed.requests), bytes / completed.requests)),
-          directory / (std::string(layer0_probe_names[i]) + ".bf16"));
+          directory / (std::string(layer0_probe_names[i]) + (model.precision.is_f16() ? ".f16" : ".bf16")));
     }
   }
 }

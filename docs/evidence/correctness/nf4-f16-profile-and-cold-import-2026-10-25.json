@@ -1,0 +1,567 @@
+{
+  "status": "PASS_TYPED_F16_COLD_IMPORT_AND_FINITE_ORDINARY_TARGET",
+  "scope": "One selected original NF4 source profile, all original QuantStates, complete original k_proj cold importer and finite untrained GA ordinary CPU/CUDA state/lifecycle checks. Not a complete original 27B model execution, quality claim, MTP extension or packed-residency completion.",
+  "source": {
+    "repository": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "revision": "8aa5f05d26b7205477066e1449e0af13f762a299",
+    "source": {
+      "file": "model.safetensors",
+      "size": 22344833801,
+      "lfs_sha256": "d5ced71fee428687bca87ed1b62a1518e936e8698b180fbba35431ebd31e1a25",
+      "api_xet_hash": "88fa9db8893864a95b1499026c93b2784fa63c98e878688f05069524e2d42752",
+      "etag": "\"88fa9db8893864a95b1499026c93b2784fa63c98e878688f05069524e2d42752\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+    },
+    "plan_sha256": "30dcb33ca12e92e66c9d68e86d163f63e3b1caf238a53d14a6be0c8847d13bae",
+    "full_source_LFS_verified": false,
+    "scope": "Exact authenticated ranges; no full-file hash or full model claim."
+  },
+  "source_ranges": {
+    "successful_new_ranges": 354,
+    "successful_new_bytes": 2757098,
+    "cached_original_bytes_reused": 9183,
+    "actual_HTTP_attempts": 356,
+    "reserved_requested_bytes": 2757440,
+    "failed_attempts": [
+      {
+        "id": 14435,
+        "requested_bytes": 170,
+        "status": 206,
+        "body_bytes_unknown": true
+      },
+      {
+        "id": 14448,
+        "requested_bytes": 172,
+        "status": null,
+        "body_bytes_unknown": true
+      }
+    ],
+    "automatic_retries": 0,
+    "explicit_resume_reused_successes": 63,
+    "all_successful_initial_and_final_HTTPS_host": "hf-mirror.net",
+    "PAUSED_restored": true,
+    "full_LFS_hash_verified": false
+  },
+  "original_states": {
+    "actual_groups": 352,
+    "original_JSON_bytes": 60553,
+    "decode": "F16",
+    "compute": "F16",
+    "group": 64,
+    "nested_group": 256,
+    "nested_dtype": "F32",
+    "all_source_shapes_offsets_SHA_authenticated": true,
+    "audit": {
+      "path": ".scratch/nf4-typed-profile-20261025/states-audit.json",
+      "bytes": 143200,
+      "sha256": "5db8baef4d618cbe1e380412068e858beca69d1b094f82663cb5fd128e2d8e6b"
+    },
+    "canonical_Cpp_actual_checks": 1424
+  },
+  "independent_oracle": {
+    "status": "PASS_INDEPENDENT_FIXED_BNB_READER",
+    "source": {
+      "path": ".scratch/validation/cpu-quant-mtp-c1/non-gguf/bnb-default-ops.py",
+      "bytes": 19802,
+      "sha256": "e39afd16dca6e6f34a14305ade0ba4acbb49dc2c7a9baf937341d7e33b682819"
+    },
+    "extracted": {
+      "path": ".scratch/nf4-typed-profile-20261025/oracle/original-reader-functions.py",
+      "bytes": 1537,
+      "sha256": "a2e9d62fbdeeec7035a58ed478c367d0a32699ee6054ef1a6179c5ec1a5af796"
+    },
+    "shape": [
+      1024,
+      5120
+    ],
+    "decode_dtype": "F16",
+    "decoded_values": 5242880,
+    "wrong_bf16_decoded_values": 4160003,
+    "projection_values": 2048,
+    "wrong_bf16_projection_values": 1726,
+    "F32_F64_final_F16_equal": true,
+    "outputs": [
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/oracle/expected-f16.bin",
+        "bytes": 10485760,
+        "sha256": "297da15cee9ba93c2a9d50b154a82c07b18677f8f940e9c6a239f5c4803e5d93"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/oracle/activation-f16.bin",
+        "bytes": 20480,
+        "sha256": "bdf17bc0f53a4e44fe2f79241cfb2bf15c1e75206de4a4a750efe64298455c0e"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/oracle/projection-f16.bin",
+        "bytes": 4096,
+        "sha256": "9c219f6a7ce214419e941eda38f16015cbced17366d489a6119c63115745a482"
+      }
+    ],
+    "input_receipts": [
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/payload/kproj-tails-ready.json",
+        "bytes": 3317,
+        "sha256": "41361a1bbb1d05947a85412e29c8ab30c01da651672098b85e714242339896d9"
+      },
+      {
+        "path": ".scratch/inference-system-review-20261025/nf4-component-values/complete.json",
+        "bytes": 7624,
+        "sha256": "c858bcb09a976f35eee8e84064960c5b2750bb1e537b0a2e48cb7b602ca5714b"
+      },
+      {
+        "path": ".scratch/inference-system-review-20261025/nf4-quant-state/quant-state.bin",
+        "bytes": 171,
+        "sha256": "9210c25c0ca8632c7166cc3a92dc0cc43ffe528a45a11e3b8dde08941ed9d6c1"
+      }
+    ],
+    "new_HTTP": 0
+  },
+  "actual_component": {
+    "status": "PASS",
+    "actual_decoder_calls": 1,
+    "decoded_values": 5242880,
+    "decoded_bytes": 10485760,
+    "ordinary_projection_rows": [
+      1,
+      2
+    ],
+    "projection_values": 3072,
+    "providers": [
+      "ggml-cpu",
+      "ggml-cpu"
+    ],
+    "projection_workspace": [
+      0,
+      0
+    ],
+    "import_graph_workspace": 0,
+    "bad_JSON_SHA_rejected": true,
+    "bad_F32_offset_rejected": true,
+    "component_as_whole_shape_rejected": true,
+    "full_model": false,
+    "GPU_runs": 0
+  },
+  "ordinary_CPU": {
+    "status": "PASS",
+    "backend": "CPU",
+    "source": "untrained_tiny_GA_with_one_NF4_group",
+    "fixture_bytes": 186383,
+    "activation": "F16",
+    "GDN_history": "F16",
+    "GDN_recurrent": "F32",
+    "ordinary_ids": [
+      2,
+      45
+    ],
+    "actual_decode_replay_same_request": true,
+    "fresh_prefix_own_stream": true,
+    "old_snapshot_unchanged": true,
+    "sampling_draw": 2,
+    "cache_peak": 164917,
+    "full_original_model": false,
+    "GPU_runs": 0
+  },
+  "ordinary_CUDA": {
+    "status": "PASS",
+    "backend": "CUDA",
+    "source": "untrained_tiny_GA_with_one_NF4_group",
+    "fixture_bytes": 211731,
+    "activation": "F16",
+    "GDN_history": "F16",
+    "GDN_recurrent": "F32",
+    "ordinary_ids": [
+      36,
+      8
+    ],
+    "actual_decode_replay_same_request": true,
+    "fresh_prefix_own_stream": true,
+    "old_snapshot_unchanged": true,
+    "sampling_draw": 2,
+    "cache_peak": 228741,
+    "full_original_model": false,
+    "GPU_runs": 1
+  },
+  "precision": {
+    "activation_history_KV_hidden": "F16",
+    "recurrent_gates_convolution": "F32",
+    "scores": "F16 projection rounding then F32 logits",
+    "BF16_GPTQ_CT_NVFP4_FP8_source_equations_preserved": true,
+    "F16_weight_only_does_not_select_F16_profile": true,
+    "whole_NF4_source_profile_from_authenticated_state": true
+  },
+  "lifecycle": {
+    "real_Completion_workspace_and_retirement": true,
+    "input_ReadLease_and_output_owned_WriteLease": true,
+    "graph_domain_StorageOwner_retains_resources_on_accepted_failed_or_unknown_work": true,
+    "drain_guard_preserves_original_error_not_proof_of_known_retirement": true,
+    "same_request_prefix_pending_RNG_restore_actual": true,
+    "new_request_prefix_own_stream_actual": true,
+    "old_snapshot_byte_unchanged_actual": true
+  },
+  "original_import_memory": {
+    "whole_group_source_bytes": 2705899,
+    "canonical_F16_group_bytes": 10485760,
+    "known_importer_graph_workspace_bytes": 0,
+    "decoder_private_storage_unknown": true,
+    "full_source_canonical_dense_bytes": 53791996928,
+    "full_source_canonical_GiB": 50.09770107269287,
+    "packed_resident": false,
+    "full_model_loaded": false
+  },
+  "remaining": {
+    "NF4_six_port_Decode_to_F16_MatMul_packed_contraction": "OPEN_REQUIRED_NEXT_SLICE",
+    "description": "Existing CT/GPTQ packed region/reader does not yet carry six NF4 operands plus activation. Cold F16 functional fallback expands storage; it does not complete NF4 quantized resident memory optimization.",
+    "full_original_target_execution": "NOT_RUN_SOURCE_BODY_NOT_ACQUIRED"
+  },
+  "actual_attempts": {
+    "successful_reference_Python_processes": 1,
+    "host_test_runs": 2,
+    "component_CPU_runs": 1,
+    "ordinary_CPU_runs": 1,
+    "CUDA_runs": 2,
+    "CUDA_passes": 1,
+    "CUDA_geometry_declines": 1,
+    "SDK_builds": 0,
+    "new_model_full_downloads": 0,
+    "process_records": [
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component1/compile/process.json",
+        "exit": 2,
+        "seconds": 1.8280000000086147,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/compile/process.json",
+        "exit": 0,
+        "seconds": 3.7030000000086147,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/link/process.json",
+        "exit": 0,
+        "seconds": 1.672000000020489,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/run/process.json",
+        "exit": 0,
+        "seconds": 0.875,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/compile/process.json",
+        "exit": 0,
+        "seconds": 17.171999999991385,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/link/process.json",
+        "exit": 0,
+        "seconds": 1.672000000020489,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/run/process.json",
+        "exit": 1,
+        "seconds": 1.062000000005355,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/compile/process.json",
+        "exit": 0,
+        "seconds": 17.14000000001397,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/link/process.json",
+        "exit": 0,
+        "seconds": 1.687999999994645,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/run/process.json",
+        "exit": 0,
+        "seconds": 1.25,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga1/compile/process.json",
+        "exit": 2,
+        "seconds": 4.89100000000326,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/compile/process.json",
+        "exit": 0,
+        "seconds": 17.39000000001397,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/link/process.json",
+        "exit": 0,
+        "seconds": 1.687000000005355,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/run/process.json",
+        "exit": 0,
+        "seconds": 0.860000000015134,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host1/compile/process.json",
+        "exit": 0,
+        "seconds": 1.4530000000086147,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host1/run/process.json",
+        "exit": 0,
+        "seconds": 0.030999999988125637,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host2/compile/process.json",
+        "exit": 0,
+        "seconds": 1.6089999999967404,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host2/run/process.json",
+        "exit": 0,
+        "seconds": 0.0629999999946449,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/main-syntax1/process.json",
+        "exit": 0,
+        "seconds": 7.014999999984866,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/timing-fix/strict-syntax/process.json",
+        "exit": 0,
+        "seconds": 7.062000000005355,
+        "timeout": false
+      }
+    ]
+  },
+  "preserved_failures": [
+    {
+      "path": "component1/compile",
+      "kind": "product const Backend importer drain signature mismatch",
+      "corrected": "Backend&; component2 passed"
+    },
+    {
+      "path": "ga1/compile",
+      "kind": "private fixture C++ multi-declarator CTAD mismatch",
+      "corrected": "split declarations; ga2 passed"
+    },
+    {
+      "path": "ga-cuda1/run",
+      "kind": "real cold native SSM_CONV geometry decline C192 before prefill",
+      "corrected": "separate legal C256 private fixture; ga-cuda2 passed; no product/SDK changes"
+    },
+    {
+      "path": ".scratch/inference-combined-interface-20261025",
+      "kind": "root runner output mkdir precondition before compiler launch",
+      "corrected": "strict-syntax2 passed"
+    },
+    {
+      "path": "payload/failed.json",
+      "kind": "actual HTTP TimeoutError plus concurrent timeout ledger",
+      "corrected": "explicit resume reuses63 successes; no implicit retry"
+    }
+  ],
+  "source_versions": {
+    "actual_target_main_sha256": "6b63d90f04de104c83d92793cc42cb5560c8dc1eebc6d5c4466460f65967a545",
+    "final_timing_only_main_sha256": "7d09fc7bd268a1f1003c2348c8db1750ff7edb56d54acf5d6566c873c3e21f5a",
+    "timing_delta": "prepare_weight_source returns Roles+metadata elapsed in one ordered helper. weights_load_seconds preserves role parsing plus original IO-body elapsed. No hot/math/GPU change.",
+    "final_combined_interface_strict": {
+      "path": ".scratch/nf4-typed-profile-20261025/timing-fix/summary.json",
+      "bytes": 475,
+      "sha256": "584303c96a8d2efd22af1d069074c08236bc0796fe424729320f1d6e4d608e8f"
+    },
+    "root_original_combined_interface_strict": {
+      "path": ".scratch/inference-combined-interface-20261025/summary.json",
+      "bytes": 536,
+      "sha256": "ae917c7bee8c1cca57412be34f133a6b8a0bb77125b81d401bec560304601408"
+    }
+  },
+  "verification_limits": [
+    "No original full-model inference/quality/correctness claim.",
+    "CPU C192 and CUDA C256 are different tiny untrained fixtures, not cross-backend numerics.",
+    "Full original k_proj CPU values are bit-exact with fixed extracted independent BNB reader; CUDA original N3 component is separate earlier evidence.",
+    "No performance claim. Existing load timing field restored source-only after actual target images.",
+    "No provider-private transient-memory measurement; Graph/workspace/known operand storage are separately stated."
+  ],
+  "related_evidence": [
+    "docs/evidence/correctness/nf4-original-f16-component-2026-10-25.json",
+    "docs/evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json"
+  ],
+  "cleanup": {
+    "performed": false,
+    "logical_bytes": 613750357,
+    "files": [
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/compile/component.obj",
+        "bytes": 1299132,
+        "sha256": "b32a3e54e91ab6a549fc489398a85a6d7b8c20cc695c7463d0bd4550ed697453"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/link/component.exe",
+        "bytes": 139950592,
+        "sha256": "298ed3be71374777320b9c0b0917fe68598c4a351eb528ae401cdc3b21de31fe"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/link/component.exp",
+        "bytes": 24989,
+        "sha256": "117b0001ed4b55c8e2bfbd9d278529431bd64f4d46e1f8d3d0e311e5fbb2b59f"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/component2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/compile/component.obj",
+        "bytes": 14506583,
+        "sha256": "6786bed71de54f79536deae5482a85f97fb7f648b9877e75725542dab89314b0"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/link/component.exe",
+        "bytes": 141050368,
+        "sha256": "b6919fd9814041954426b3f5fc0a79f51f4f6721a02b2a67fcefd702d3b7f0b4"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/link/component.exp",
+        "bytes": 24987,
+        "sha256": "2e6906601ead0029395e79fe77c173f2bc34c3fde9367c7b65edafa56f14ddf0"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda1/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/compile/component.obj",
+        "bytes": 14506582,
+        "sha256": "26749dda630234f3354958e9eaa9d40de231389294ef9f7a76beefad11376ca2"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/link/component.exe",
+        "bytes": 141050368,
+        "sha256": "1448cdfa73e5f4fe79ddcc7e0f9b3f89b4f592177ffc8e83650525cd9835b1e9"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/link/component.exp",
+        "bytes": 24987,
+        "sha256": "4d6ba599cbda98f4f52b157f2cd60fa6708bdd9c4cf3c27978d04e1214419b64"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga-cuda2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/compile/component.obj",
+        "bytes": 14506578,
+        "sha256": "09a7c4922daf3c6b423013dbcc5c8a8783282c84b2ca65beba474e4db9fc0660"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/link/component.exe",
+        "bytes": 141050368,
+        "sha256": "70848e42073cac848ed5a55f9a963056f087f8839220ff50c7f7c52aef0d82af"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/link/component.exp",
+        "bytes": 24982,
+        "sha256": "270cdcaf0c07e00baa2ede4c6b4a65ece86d27b063c9be4e539d3a733debfdfd"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/ga2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host1/checks.exe",
+        "bytes": 31744,
+        "sha256": "f88b81c2b58fc067c4d6ce18e6fbd631213d7c39347dc60611108e6bf1d2b212"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host1/checks.obj",
+        "bytes": 220470,
+        "sha256": "5805e74ed4812051f73fc283672bb827c559d835c3a1743a9c9c1e2c547c680b"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host2/checks.exe",
+        "bytes": 65536,
+        "sha256": "30c2490d6dd6e227bd0c3d09f807340783c73d58ad04876f402d40eb61e58627"
+      },
+      {
+        "path": ".scratch/nf4-typed-profile-20261025/host2/checks.obj",
+        "bytes": 417651,
+        "sha256": "0421add81dc944f9323890ee7105f527afc845441c8236f4bae29fdee7c38d86"
+      }
+    ],
+    "scope": "Only this batch private reproducible binaries. DLL entries are private hardlinks; original canonical DLL/SDK/clean baseline images are excluded.",
+    "receipt": null
+  },
+  "product_final_pins": {
+    "path": ".scratch/nf4-typed-profile-20261025/product-final/pins.json",
+    "bytes": 2003,
+    "sha256": "729127de0528156c884ed8a97c51ca19d937902db837e5b850b18308a15fe4d3"
+  },
+  "closure": {
+    "retained_baseline_image": {
+      "path": ".scratch/mtp-performance-convergence-20261025/baseline/link/hyle.exe",
+      "bytes": 141401600,
+      "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+    },
+    "retained_runtime": {
+      "path": ".scratch/mtp-performance-convergence-20261025/baseline/runtime.json",
+      "bytes": 7243,
+      "sha256": "3bbee028c2e179232f4fe1404b76bee51de857836b5be289c614d5f506095a51"
+    },
+    "reused_link_template": {
+      "path": ".scratch/inference-system-review-20261025/text-r2-suffix/link/command.json",
+      "bytes": 32459,
+      "sha256": "5a8273f05c0f4f43464ce82cedf1967f17cf849dbb51cfaa4998877e8c819e54"
+    },
+    "delta": "Each component/GA image replaces only the original app object in the retained exact link closure. Native/runtime/SDK/Graph objects are reused; importer executes the existing decoder through the ordinary Backend/Graph path. All per-attempt exact compiler/link argv and frozen source hashes are archived.",
+    "direct_runtime_native_DLL": {
+      "path": ".scratch/mtp-performance-convergence-20261025/baseline/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    }
+  },
+  "archive_contract": "All source/command/result/receipt paths in this private batch map to archived payloads via payload-manifest.json. Large original numeric ranges, generated full weight banks, expected full decoder output and binaries are intentionally omitted with exact pins; they are not implicitly supplied or full-LFS verified. Source paths outside the batch are explicitly cached identities/related evidence.",
+  "archive": {
+    "path": "docs/evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.zip",
+    "bytes": 2064159,
+    "sha256": "a000f80c35b0185bc67ab69331e3129a6afdc4fb9f38bf46c723b6ab7b93b913",
+    "CRC_verified": true,
+    "payloads": 1649,
+    "source_and_path_mapping": ".scratch/nf4-typed-profile-20261025/payload-manifest.json"
+  }
+}

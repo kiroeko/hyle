@@ -160,7 +160,8 @@ class OriginalHfRolesTest(unittest.TestCase):
         self.assertEqual((receipt['metadata_tensor_count'],receipt['physical_roles']),(345,325))
         self.assertEqual(len(seen),345) # Each state is checked once, including unselected MTP.
         self.assertEqual(receipt['nf4_double_quant_policy']['compute_dtype'],'F16')
-        self.assertIn('not yet implemented',receipt['nf4_execution_scope'])
+        self.assertIn('metadata preparation only',receipt['nf4_execution_scope'])
+        self.assertIn('full artifact execution is not verified',receipt['nf4_execution_scope'])
         ordinary=deepcopy(original);ordinary['roles']=[r for r in ordinary['roles']if not r['name'].startswith('mtp.')]
         _,plain=roles._prepare_role_records(ordinary,False,config,authenticate)
         self.assertEqual((plain['geometry']['mtp_layers'],plain['metadata_tensor_count'],plain['physical_roles']),(1,325,325))

@@ -1,0 +1,195 @@
+{
+  "status": "PASS_INTEGER_SCRATCH_BEHAVIOR_AND_CANONICAL_SOURCE_INTEGRATION",
+  "diagnostic": {
+    "path": ".scratch\\inference-prepare-scratch-20261025\\diagnostic-summary.json",
+    "bytes": 53131,
+    "sha256": "8b56a011de7fe18a270f5f63fa0644855dc6628fca103b59ef4050cd56ae7adf"
+  },
+  "source_frozen_main": "28875a2240b4e9ea701c8977a14a382166dfd1404d300eb2b7055436b9c3bea5",
+  "GPU_processes": 2,
+  "GPU_released": true,
+  "work_equal": true,
+  "summary": {
+    "target": {
+      "calls": 68,
+      "widths": [
+        1
+      ],
+      "rows": [
+        2,
+        154,
+        155
+      ],
+      "roles": {
+        "2": 1,
+        "3": 8,
+        "4": 58,
+        "7": 1
+      },
+      "totals": {
+        "init_allocs": 0,
+        "init_bytes": 0,
+        "reserve_growths": 68,
+        "reserve_bytes": 5072,
+        "old_query_bytes": 0,
+        "init_ns": 0,
+        "reserve_ns": 33400,
+        "old_query_ns": 0
+      },
+      "timed_ns_median": {
+        "init_ns": 0.0,
+        "reserve_ns": 500.0,
+        "old_query_ns": 0.0
+      },
+      "new_refs_range": [
+        10,
+        28
+      ]
+    },
+    "draft": {
+      "calls": 68,
+      "widths": [
+        1
+      ],
+      "rows": [
+        1,
+        2,
+        154,
+        156
+      ],
+      "roles": {
+        "2": 1,
+        "3": 8,
+        "4": 58,
+        "7": 1
+      },
+      "totals": {
+        "init_allocs": 204,
+        "init_bytes": 816,
+        "reserve_growths": 475,
+        "reserve_bytes": 12712,
+        "old_query_bytes": 544,
+        "init_ns": 29100,
+        "reserve_ns": 36200,
+        "old_query_ns": 8400
+      },
+      "timed_ns_median": {
+        "init_ns": 400.0,
+        "reserve_ns": 500.0,
+        "old_query_ns": 100.0
+      },
+      "new_refs_range": [
+        10,
+        28
+      ]
+    }
+  },
+  "candidate": {
+    "patch": {
+      "path": ".scratch\\inference-prepare-scratch-20261025\\candidate\\source.patch",
+      "bytes": 4014,
+      "sha256": "b2cb9a29374ab85b6bb2c7ef863a9d8e42e1503dd7ccac96bce7d9a5206775c8"
+    },
+    "main": {
+      "path": ".scratch\\inference-prepare-scratch-20261025\\candidate\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 443624,
+      "sha256": "625f1a3120c23765baf61e2b1af641558c507d06a34387bf13746e7b9efbc24d"
+    },
+    "compile": {
+      "exit": 0,
+      "seconds": 16.98499999998603,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.7339999999967404,
+      "timeout": false
+    },
+    "actual_runtime": {
+      "exit": 0,
+      "seconds": 3.8440000000118744,
+      "timeout": false
+    },
+    "comparison": {
+      "status": "PASS",
+      "process": {
+        "exit": 0,
+        "seconds": 3.8440000000118744,
+        "timeout": false
+      },
+      "comparisons": {
+        "original_prior": {
+          "equal": true,
+          "removed": [],
+          "added": [],
+          "changed": {},
+          "scope": "All report fields recursively excluding seconds/tokens_per_second named timing fields. Includes complete IDs/ledger/session/dispatch/work."
+        },
+        "same_frozen_diagnostic": {
+          "equal": true,
+          "removed": [],
+          "added": [],
+          "changed": {},
+          "scope": "All report fields recursively excluding seconds/tokens_per_second named timing fields. Includes complete IDs/ledger/session/dispatch/work."
+        }
+      },
+      "cold_page_id_capacity_executed": true,
+      "hot_page_id_reserve_or_resize_calls": 0,
+      "page_id_count_source": "new_refs sum actual page counts before filling; unchanged per-member loop pushes exactly those counts; prior bound rejects capacity overflow before mutation of these ranges.",
+      "no_TPS_claim": true
+    },
+    "cold_capacity": "phase.attention_schema.capacity().max_page_refs integers, at original input_scratch.prepare cold boundary",
+    "serialization": "same Model serial carrier: active_step/carrier_borrowed reject reentry",
+    "lifetime": "BatchSchema::version synchronously owns copied integer arrays; no NodeLayout, PagedArenaRead, page leases or published version moved into scratch",
+    "R1_observed_events_eliminated_by_source": 680,
+    "remaining_draft_old_and_new_page_id_reserve_growth_events": 135
+  },
+  "conclusion": "Source-point timings total0.1071ms over128 output tokens/two turns, including clock calls and excluding destruction. This subset provides no support for explaining approximately10% whole-engine gap. No interleaved performance window opened. Candidate one original two-turn behavioral verification passed with all non-time report fields exactly equal to original prior and same-frozen diagnostic; no TPS benefit claimed.",
+  "canonical_main_modified_at_private_run": false,
+  "private_run_scope_limits": [
+    "SingleR1 K1 greedy workload; no allocation intercept/heap-size/peak-memory measurement",
+    "Original recorded IDs, ledger, dispatch, batches and all recursive non-time report fields compare equal to prior saved same-work command and same-frozen diagnostic",
+    "No speed conclusion from instrumented or behavioral process duration",
+    "No new SDK, models, HTTP, canonical source changes or global-owner changes"
+  ],
+  "canonical_integration": {
+    "source_main": {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 451490,
+      "sha256": "2da022c6a43b3d37f4ad85524a47933d386cfc89b77683a89aa2de399a99ef43"
+    },
+    "base_evidence": "docs/evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.json",
+    "base_main": "7d09fc7bd268a1f1003c2348c8db1750ff7edb56d54acf5d6566c873c3e21f5a",
+    "patch": "integration/against-final-nf4.patch",
+    "strict_combined_syntax": "PASS /W4 /WX /Zs 7.062s",
+    "GPU_rerun_of_combined_NF4_and_scratch": false,
+    "scope": "Only the four integer scratch hunks were integrated over final NF4 and timing source. The actual behavioral run used the independently frozen BF16 candidate; no speed, physical heap bytes or full artifact claim."
+  },
+  "archive": {
+    "path": "docs/evidence/performance/inference-integer-scratch-reuse-2026-10-25.zip",
+    "bytes": 670231,
+    "sha256": "ddf736195a54113d9449d452cb123c9e66f51c5531f212991e791240ce54a21b",
+    "members": 178
+  },
+  "endpoint_fairness_followup": {
+    "scope": "Read-only original consumer source, existing reports and traces; no fresh GPU, build or TPS window.",
+    "conclusion": "No evidence of peer excluding warmup: actual eager/capture calls are inside generation endpoints. Different real target work and unmatched trace windows prevent assigning the whole wall-time gap to first decode or adding private/profiler and formal-process timings.",
+    "records": [
+      {
+        "entry": "endpoint-fairness/review.md",
+        "bytes": 4567,
+        "sha256": "e162d05361e88618085003b7b8ebe764758da60deb94cf78ac15124185cd870f"
+      },
+      {
+        "entry": "endpoint-fairness/result.json",
+        "bytes": 62719,
+        "sha256": "14d452937fa63feedf16b3e130ca69c39454079a9644c6ee8098fa40797ec16a"
+      },
+      {
+        "entry": "endpoint-fairness/analyze.py",
+        "bytes": 9540,
+        "sha256": "66afd3dbaa06df35504296fbaf2240d7eec0af3ad913a5fbb0c779f40dde3a46"
+      }
+    ]
+  }
+}

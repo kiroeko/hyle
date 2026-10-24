@@ -7,6 +7,7 @@
 #include <variant>
 
 #include "model_geometry.h"
+#include "precision_profile.h"
 #include "hyle/compute/model_ops.h"
 
 namespace qwen35 {
@@ -53,5 +54,5 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
                                      std::string_view logical_name);
 ProjectionBindings prepare_projection_bindings(std::map<std::string, LoadedWeight> &bank,
                                                 bool mtp, const ModelGeometry &geometry);
-std::string_view score_policy(const ProjectionBinding &binding) noexcept;
+std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile precision) noexcept;
 } // namespace qwen35

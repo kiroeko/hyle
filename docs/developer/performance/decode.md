@@ -57,6 +57,8 @@ Hyle 早期两次 target 间隔含真实 draft，约 12.02／9.57ms 没有 GPU �
 
 metadata 候选已关闭：当前 CUDA 路线实际共享 source，5 个 follower 的冷期多余预留在完整 MTP 四个阶段合计仅 22,560B；不是每 token 上传或分配，保留原有准备和失败边界，不为此引入懒分配机制。
 
+[整数暂存复用](../../evidence/performance/inference-integer-scratch-reuse-2026-10-25.json)已接原 `InputPreparationScratch`／`SmallVector`，未复用不可变版本或页读者。原 R1／K1 两轮的相关构造／扩容计时累计约 0.1071ms，含计时开销、不含析构，不能解释约 10% 余差；候选的完整输出、ledger、dispatch 及全部非时间字段保持一致。合并新精度后的入口仅做严格语法检查，没有开新的前后测速窗，不报告 TPS 收益。
+
 [绑定诊断](../../evidence/performance/mtp-capture-binding-diagnostics-2026-10-25.json)进一步分开两种重录：132 次范围决策中录制 32、复用 100；58 个已记录的首不等端口全部只改变同 backing 的 offset，hidden 出现至少三种地址组合，两份变体遇到淘汰后回访。另有两次 prepare 之间明确失效后重新录制，不能据相同指纹删除该边界。首次诊断溢出及一次修正均保留，修正版零溢出、全部非时间工作与基线一致；只细记各 Invocation 前 20 次准备，不把首不等端口当作全部差异，也未观测 native GraphExecUpdate 结果。
 
 [本批候选筛选](../../evidence/performance/mtp-state-and-draft-candidate-screen-2026-10-25.json)已关闭倒序 hidden 分配：仅编译一个私有 app TU，原两轮的一次诊断结果和工作完全一致、零溢出，但重录 32→39，复用 100→93；不做 TPS 重复或合入。配对 hidden 父块现有别名 API 足以表达，但涉及独立请求的持有粒度、prefill／单行初始化及碎片、多 K 预算和诊断寿命，当前没有收益依据支持扩大改动，也不留下挂起的布局任务。原权限、预算、显式失效及两变体政策保持不变。

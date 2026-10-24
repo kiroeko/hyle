@@ -911,5 +911,13 @@
     "bytes": 602177,
     "sha256": "3394471fd12e1d25e1c7bce805802486e5d92d8b87b739edf97cab21bfee340e",
     "members": 194
+  },
+  "canonical_interface_followup": {
+    "status": "STRICT_SYNTAX_PASS",
+    "flags": "/W4 /WX /Zs",
+    "seconds": 7.062,
+    "source_main": "2da022c6a43b3d37f4ad85524a47933d386cfc89b77683a89aa2de399a99ef43",
+    "evidence": "docs/evidence/performance/inference-integer-scratch-reuse-2026-10-25.json",
+    "scope": "Canonical combined lifecycle/chunked/dual/retirement entry with final NF4 profile, corrected load timing and integer scratch. This is syntax-only, not new object/link or GPU execution. Original actual CUDA source and archive are unchanged."
   }
 }

@@ -105,16 +105,16 @@ void coordinates(R &r, const Geometry &shape, Value positions, Value frequencies
     throw std::runtime_error("MTP positions/frequencies differ from the original text geometry");
 }
 
-inline void paged_schema(const compute::BatchSchema &schema, const ModelGeometry &geometry) {
+inline void paged_schema(const compute::BatchSchema &schema, const ModelGeometry &geometry, Type activation_type) {
   if (!schema.valid()) throw std::runtime_error("MTP requires its real paged schema");
   const auto capacity = schema.capacity();
-  const auto plain = require(compute::CacheStorage::plain(Type::kBFloat16));
+  const auto plain = require(compute::CacheStorage::plain(activation_type));
   if (capacity.storage != compute::BatchStorage::kPaged ||
-      capacity.query_type != Type::kBFloat16 || capacity.output_type != Type::kBFloat16 ||
+      capacity.query_type != activation_type || capacity.output_type != activation_type ||
       capacity.key_storage != plain || capacity.value_storage != plain ||
       capacity.query_heads != geometry.query_heads || capacity.kv_heads != geometry.kv_heads ||
       capacity.qk_head_dim != geometry.key_depth || capacity.value_head_dim != geometry.value_depth)
-    throw std::runtime_error("MTP paged schema differs from the original BF16 attention geometry");
+    throw std::runtime_error("MTP paged schema differs from the original source attention precision/geometry");
 }
 } // namespace detail
 
@@ -125,7 +125,7 @@ template<class R>
 Projection input_projection(R &r, Value tokens, Value hidden) {
   const auto ids = r.spec(tokens), state = r.spec(hidden);
   if (ids.data_type() != Type::kInt32 || ids.rank() != 1 ||
-      state.data_type() != Type::kBFloat16 || state.rank() != 2 ||
+      state.data_type() != r.activation_type() || state.rank() != 2 ||
       ids.dimensions()[0] != state.dimensions()[0] || state.dimensions()[1] != fixed(r.geometry.hidden))
     throw std::runtime_error("MTP requires packed I32 tokens and matching BF16 target hidden rows");
   const auto rows = ids.dimensions()[0];
@@ -134,7 +134,7 @@ Projection input_projection(R &r, Value tokens, Value hidden) {
   const auto hidden_norm = detail::norm_absolute(r, hidden, "mtp.pre_fc_norm_hidden.weight");
   // The trained projection's first half is embedding, second half is hidden.
   const auto concatenated = r.one(compute::Concat{.axis = 1}, {embedding_norm, hidden_norm},
-      r.dense_spec(Type::kBFloat16, {rows, fixed(2 * r.geometry.hidden)}));
+      r.dense_spec(r.activation_type(), {rows, fixed(2 * r.geometry.hidden)}));
   const auto fused = detail::linear_absolute(r, concatenated, "mtp.fc.weight");
   return {rows, fused, detail::norm_absolute(r, fused, "mtp.layers.0.input_layernorm.weight")};
 }
@@ -181,9 +181,9 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
   if (ids.data_type() != Type::kInt32 || ids.rank() != 1 ||
       target_shape.requests != draft_shape.requests || target_shape.sequence_rows != r.token_rows ||
       target_shape.packed_rows != r.packed_rows || ids.dimensions()[0] != target_shape.packed_rows ||
-      target.data_type() != Type::kBFloat16 || target.rank() != 2 ||
+      target.data_type() != r.activation_type() || target.rank() != 2 ||
       target.dimensions()[0] != ids.dimensions()[0] || target.dimensions()[1] != fixed(r.geometry.hidden) ||
-      old_carry.data_type() != Type::kBFloat16 || old_carry.rank() != 2 ||
+      old_carry.data_type() != r.activation_type() || old_carry.rank() != 2 ||
       old_carry.dimensions()[0] != batch || old_carry.dimensions()[1] != fixed(r.geometry.hidden) ||
       (!catchup && (draft_shape.sequence_rows != target_shape.sequence_rows ||
                     draft_shape.packed_rows != target_shape.packed_rows)) ||
@@ -191,7 +191,7 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
     throw std::runtime_error("MTP prefill requires matching T>=2 target rows and one old carry row");
   if (catchup) {
     const auto old_prior = r.spec(prior), token = r.spec(catchup_token);
-    if (old_prior.data_type() != Type::kBFloat16 || old_prior.rank() != 2 ||
+    if (old_prior.data_type() != r.activation_type() || old_prior.rank() != 2 ||
         old_prior.dimensions()[0] != batch || old_prior.dimensions()[1] != fixed(r.geometry.hidden) ||
         token.data_type() != Type::kInt32 || token.rank() != 1 || token.dimensions()[0] != batch)
       throw std::runtime_error("MTP catch-up prefill requires one prior hidden row and token");
@@ -201,9 +201,9 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
     const auto previous = r.slice(normalized_target_rows, 0, fixed(0), Dimension(r.last_row));
     shifted = catchup
         ? r.one(compute::Concat{.axis = 0}, {prior, carry, previous},
-            r.dense_spec(Type::kBFloat16, {draft_shape.packed_rows, fixed(r.geometry.hidden)}))
+            r.dense_spec(r.activation_type(), {draft_shape.packed_rows, fixed(r.geometry.hidden)}))
         : r.one(compute::Concat{.axis = 0}, {carry, previous},
-            r.dense_spec(Type::kBFloat16, {draft_shape.packed_rows, fixed(r.geometry.hidden)}));
+            r.dense_spec(r.activation_type(), {draft_shape.packed_rows, fixed(r.geometry.hidden)}));
     if (catchup) tokens = r.one(compute::Concat{.axis = 0}, {catchup_token, target_ids},
         r.dense_spec(Type::kInt32, {draft_shape.packed_rows}));
   } else {
@@ -213,9 +213,9 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
     auto grouped = catchup
         ? r.one(compute::Concat{.axis = 1},
             {r.reshape(prior, {batch, fixed(1), fixed(r.geometry.hidden)}), old, previous},
-            r.dense_spec(Type::kBFloat16, {batch, draft_shape.sequence_rows, fixed(r.geometry.hidden)}))
+            r.dense_spec(r.activation_type(), {batch, draft_shape.sequence_rows, fixed(r.geometry.hidden)}))
         : r.one(compute::Concat{.axis = 1}, {old, previous},
-            r.dense_spec(Type::kBFloat16, {batch, draft_shape.sequence_rows, fixed(r.geometry.hidden)}));
+            r.dense_spec(r.activation_type(), {batch, draft_shape.sequence_rows, fixed(r.geometry.hidden)}));
     shifted = r.reshape(grouped, {draft_shape.packed_rows, fixed(r.geometry.hidden)});
     if (catchup) {
       const auto ids_by_request = r.reshape(target_ids, {batch, target_shape.sequence_rows});
@@ -232,7 +232,7 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
 // frames and dirty pages through batch::prepare/bind_append, then take/ready.
 template<class R>
 AppendNodes append_kv(R &r, const compute::BatchSchema &schema, const KeyValue &kv) {
-  detail::paged_schema(schema, r.geometry);
+  detail::paged_schema(schema, r.geometry, r.activation_type());
   AppendNodes nodes;
   r.op(compute::Operation::custom(detail::require(graph::batch::paged_append(
       schema, compute::BatchCacheRole::kKey))), {kv.key_rows}, {}, &nodes.key);
@@ -271,7 +271,7 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
       .capacity = paged.schema.capacity(), .scale = 1.F / std::sqrt(static_cast<float>(r.geometry.key_depth)), .causal = true}),
       {r.reshape(query, {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth)}),
        paged.key, paged.value, paged.metadata},
-      r.dense_spec(Type::kBFloat16, {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)}), &attention_node);
+      r.dense_spec(r.activation_type(), {projection.rows, fixed(r.geometry.query_heads), fixed(r.geometry.value_depth)}), &attention_node);
   detail::require(r.builder.depends_on(attention_node, nodes.key));
   detail::require(r.builder.depends_on(attention_node, nodes.value));
   const auto gated = r.binary(compute::BinaryKind::kMultiply,

@@ -398,7 +398,7 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         receipt['nf4_states'] = nf4_groups
         receipt['nf4_double_quant_groups'] = sum(mtp or not name.startswith('mtp.') for name in nf4_groups)
         receipt['metadata_nf4_double_quant_groups'] = len(nf4_groups)
-        receipt['nf4_execution_scope'] = 'cold metadata only; full F16 activation/compute engine path not yet implemented'
+        receipt['nf4_execution_scope'] = 'metadata preparation only; consumer provides cold F16 import and F16 activation fallback, expanding resident weights; full artifact execution is not verified'
     if has_mixed:
         receipt['ct_mixed_policy'] = dict(CT_MIXED_POLICY)
         receipt['ct_channel_token_groups'] = len(mixed['channel'])

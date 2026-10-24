@@ -242,6 +242,18 @@ add_test(NAME hyle_qwen_prepared_roles_test
 set_tests_properties(hyle_qwen_prepared_roles_test PROPERTIES
   LABELS "tooling;mtp;parser;quantization" TIMEOUT 30)
 
+add_executable(hyle_qwen_precision_profile_test tools/qwen_precision_profile_test.cc)
+target_link_libraries(hyle_qwen_precision_profile_test PRIVATE hyle_build_contract)
+target_compile_features(hyle_qwen_precision_profile_test PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_qwen_precision_profile_test)
+hyle_apply_sanitizer(hyle_qwen_precision_profile_test)
+set_target_properties(hyle_qwen_precision_profile_test PROPERTIES
+  FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+add_dependencies(hyle_tests hyle_qwen_precision_profile_test)
+add_test(NAME hyle_qwen_precision_profile_test COMMAND hyle_qwen_precision_profile_test)
+set_tests_properties(hyle_qwen_precision_profile_test PROPERTIES
+  LABELS "tooling;generation;parser;quantization" TIMEOUT 30)
+
 add_test(NAME hyle_qwen_gguf_roles_test
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/qwen_gguf_roles_test.py")
 set_tests_properties(hyle_qwen_gguf_roles_test PROPERTIES

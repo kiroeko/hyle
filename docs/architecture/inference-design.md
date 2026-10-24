@@ -99,6 +99,12 @@ Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；真实生�
 CUDA 实际共享 primary context；这个合同依赖各自原资源与 Completion，不能把销毁一个 Model 实现为设备 reset。
 这不提供跨 Model 的物理显存总额上限或公平调度；现有 `ResourceBudget` 仍按真实 resource 计量。
 
+源精度在准备状态／图之前确定：从同一份已校验角色得到不可变 `PrecisionProfile`，
+由 Recipe、缓存 schema、hidden 与读回共同使用。存储为 F16 本身不能推定计算精度；原 GPTQ 的 BF16 计算保持原合同。
+NF4 的原 F16 配置沿此路径执行，GDN 递归状态及规定的累加仍为 F32。
+当前 NF4 冷导入逐组保留原六输入、退休解码并留下 F16 常量，增加常驻空间；
+原压缩六输入到投影的冷图融合仍待接，不把可执行回退称为量化驻留完成。
+
 ## 从输入到一次完整提交
 
 ```text

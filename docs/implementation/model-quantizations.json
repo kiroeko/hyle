@@ -2390,11 +2390,11 @@
       "config_url": "https://huggingface.co/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/blob/8aa5f05d26b7205477066e1449e0af13f762a299/config.json",
       "notes": "do not equate NF4 to INT4/E2M1; ignored module list is part of artifact",
       "provider_coverage": {
-        "review": "original_header_one_group_metadata_and_F16_component_review",
+        "review": "all_original_states_typed_F16_import_and_finite_ordinary_target",
         "artifact_execution_verified": false,
-        "review_scope": "2026-10-25: full original header schema and one original QuantState read; metadata host checks passed. A separately recorded original N3xK5120 component matches all15360 F16 decoded values and CPU/CUDA ordinary M1/M2 projections against the independent fixed reader. No whole model, Graph generation or full F16 activation/import is established.",
-        "mapping_status": "Typed six-role cold metadata is implemented; explicit F16 weight import, full F16 activation execution and packed NF4 GEMM remain unimplemented in the model consumer",
-        "required_format_domain": "Original first QuantState declares group64, nested256, F16 decode and nested F32; configured compute is independently F16. Other 351 original QuantStates remain unread.",
+        "review_scope": "2026-10-25: all352 original QuantStates audited; complete original k_proj importer matches5242880 independent F16 values and ordinary M1/M2 projections. The common typed F16 target/loader passes finite untrained CPU/CUDA state, restore and retirement checks; these use different valid fixtures, not a cross-backend numeric comparison. No complete original27B execution or quality claim.",
+        "mapping_status": "Common cold importer and source-selected F16 activation/state execution are available as an expanded F16 functional fallback. NF4 packed resident contraction remains open.",
+        "required_format_domain": "All352 original QuantStates independently declare group64, nested256, F16 decode and nested F32; configured compute is independently F16. Each original shape/offset/JSON SHA is retained, not inferred from one group.",
         "ordinary_metadata_followup": {
           "evidence": "../evidence/correctness/nf4-original-cold-metadata-2026-10-25.json",
           "status": "METADATA_ONLY",
@@ -2419,6 +2419,21 @@
           "projection_providers": ["ggml-cpu", "cublasLt13.6.0"],
           "A_W_Y_dtype": "F16",
           "accumulation_dtype": "F32",
+          "whole_model_execution": false
+        },
+        "typed_import_followup": {
+          "evidence": "../evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.json",
+          "status": "PASS_TYPED_F16_COLD_IMPORT_AND_FINITE_ORDINARY_TARGET",
+          "original_quant_states_read": 352,
+          "original_state_JSON_bytes": 60553,
+          "original_kproj_decoded_values_compared": 5242880,
+          "original_kproj_shape": [1024, 5120],
+          "ordinary_untrained_state_consumers": ["CPU_C192", "CUDA_C256"],
+          "A_W_Y_dtype": "F16",
+          "recurrent_and_accumulation_dtype": "F32",
+          "full_source_expanded_bank_estimate_GiB": 50.09770107269287,
+          "packed_resident": false,
+          "decoder_private_storage_unknown": true,
           "whole_model_execution": false
         },
         "reachable_entry_points": [
@@ -2452,7 +2467,7 @@
           }
         ],
         "artifact_unaligned_or_unverified": [
-          "First original QuantState and N3/fullK component arithmetic passed; read each additional QuantState when binding those roles, rather than certifying all 352 groups from one state",
+          "All352 original QuantStates and one complete original projection are verified; other numeric weight payloads and the full original model have not been executed",
           "The nested scale block is exactly 256 in the existing operator; main group size must come from the artifact",
           "Unknown output_type defaults NF4 decode to BF16; do not select this default or infer quant_state output dtype solely from configured compute_dtype=float16",
           "Dense dequantization followed by MatMul is a distinct execution choice; FP16 compute metadata does not prove its accumulation/rounding matches bitsandbytes",
