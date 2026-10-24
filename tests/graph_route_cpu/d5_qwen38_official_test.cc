@@ -1308,7 +1308,7 @@ TEST(CpuGraphQwen38_24T,
   const auto router_activation = builder.input(router_activation_desc).value();
   const std::array router_ports{router_activation, router_weight};
   const auto router_node =
-      builder.add_node(c::model_ops::bfloat_linear_f32(), router_ports).value();
+      builder.add_node(c::model_ops::dense_linear_f32(), router_ports).value();
   const auto token_fp32 =
       builder.add(c::Cast{c::DataType::kFloat32}, router_activation).value();
   const auto shared_activation =
@@ -1419,7 +1419,7 @@ TEST(CpuGraphQwen38_24T,
   const std::array shared_gate_input_ports{router_activation,
                                            shared_gate_input_weight};
   const auto shared_gate_score =
-      builder.result(builder.add_node(c::model_ops::bfloat_linear_f32(),
+      builder.result(builder.add_node(c::model_ops::dense_linear_f32(),
                                       shared_gate_input_ports)
                          .value())
           .value();
@@ -1678,7 +1678,7 @@ TEST(CpuGraphQwen38_24T,
   const auto weight = builder.constant(weight_desc).value();
   const std::array router_ports{activation, weight};
   const auto router_node =
-      builder.add_node(c::model_ops::bfloat_linear_f32(), router_ports).value();
+      builder.add_node(c::model_ops::dense_linear_f32(), router_ports).value();
   const auto fp32 = builder.result(router_node).value();
   const auto probabilities = builder.add(c::Softmax{}, fp32).value();
   const std::array topk_inputs{probabilities};

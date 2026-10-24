@@ -1,0 +1,267 @@
+{
+  "state": "passed",
+  "date": "2026-10-25",
+  "scope": "Global inference architecture: real model-independent turn input/output progress shared by ordinary/MTP Qwen and finite original GLM StateHead requests.",
+  "changes": [
+    "One host observation cursor; repeated commits are no-ops and gaps/quota/capacity fail before host mutation.",
+    "Real output maximum is independent of reserved vector capacity. Quota/stop/prefill/output append/turn advancement are shared.",
+    "Borrow the original prepared input buffer; validate pending/extent/suffix before filling one later-turn slot. Original token owners and model pending/RNG stay authoritative.",
+    "Full cache-hit output uses the same host rules without manufacturing another Graph commit; imported history is not delivered again.",
+    "Qwen ordinary/MTP/legacy/full-hit paths and the original GLM two-request/two-turn component consume the same real algorithm.",
+    "Existing prefix/cache checks enter the normal project test aggregate only when compute_batch already exists; new progress checks are standard-only."
+  ],
+  "sources": [
+    {
+      "path": "engine/inference/request_progress.h",
+      "bytes": 8465,
+      "sha256": "a06699ce15e6db0a8847bd26f7a322d01e97389bbfeab3d87a8b748793e537e3"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 429902,
+      "sha256": "9b73fe9afe325d139072a94632e26d739e2b3cb48b411320c0c5bed320e9b9e9"
+    },
+    {
+      "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 190851,
+      "sha256": "6cc66e8424f82c035546f1896f5c29bce6758099b5a5de3ed4261644ace7fdde"
+    },
+    {
+      "path": "tests/tools/inference_request_progress_test.cc",
+      "bytes": 9654,
+      "sha256": "26842e55adc8497a86c8a544f55e989c1f5b92d10bfd3ea91c8b56b8ba0d84ef"
+    },
+    {
+      "path": "tests/tools/qwen_generation_schedule_test.cc",
+      "bytes": 12541,
+      "sha256": "95a3b4e59b7cde2826e089fbd6e4420a20c262d727e357a9bc5cf84cb2695e6c"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 15217,
+      "sha256": "d84c1e351ed195b9c173f0fe5fbe5a174505e01aa66ee2bf287769cbb6074ba9"
+    }
+  ],
+  "source_checks": {
+    "kind": "source assertions only; no compilation/execution",
+    "checks": {
+      "main_before_exact": true,
+      "one_host_observed_cursor_no_legacy_field": true,
+      "shared_output_append_only": true,
+      "shared_prefill_done_rules_only": true,
+      "shared_turn_transition": true,
+      "existing_warm_input_owners_kept": true,
+      "no_new_token_owner_in_progress": true,
+      "real_maximum_distinct_from_vector_capacity": true,
+      "fullhit_keeps_initial_history_adoption": true,
+      "all_lines_lf": true
+    }
+  },
+  "source_bridge": {
+    "original_model_math_commit_and_completion_prefix_byte_equal": true,
+    "bytes": 278170,
+    "scope": "The previous 8dfff cold quant/fusion audit remains applicable: this batch changes only the subsequent request host code and shared progress header."
+  },
+  "root_independent_review": {
+    "path": ".scratch/inference-request-progress-20261025/root-review.md",
+    "bytes": 2839,
+    "sha256": "a43646310b1829ecce5dcce83cca5e2cbc6c4608baad9c2d382429a755d7d70d"
+  },
+  "extension_review": [
+    {
+      "path": ".scratch/inference-extension-check-20261025/quant-and-fusion.md",
+      "bytes": 5878,
+      "sha256": "9c460a8d1e74671d7c63cacd68de67b0af25efa46bda8aead2b2148c83296d22"
+    },
+    {
+      "path": ".scratch/inference-extension-check-20261025/quant-and-fusion.json",
+      "bytes": 6800,
+      "sha256": "e07f4ee19205442eb3952308f6136703a12615a58a914b1d1de121048ce20475"
+    },
+    {
+      "path": ".scratch/inference-extension-check-20261025/cross-model-review.md",
+      "bytes": 5505,
+      "sha256": "0961f08521e40941c08b82a75b009fdf94000d99fb9c817702782d7a31e18db5"
+    },
+    {
+      "path": ".scratch/inference-extension-check-20261025/cross-model-review.json",
+      "bytes": 7023,
+      "sha256": "383eaa641cda1fe19b02ebe7a90466a520c48d5543b42624228d898d98ac8474"
+    }
+  ],
+  "host": {
+    "state": "passed",
+    "actual_TUs": 2,
+    "groups": [
+      "Scalar/batched delivery, quota/stop and pending-only continuation",
+      "Gap/duplicate/invalid begin/quota failure atomicity",
+      "History adoption without fake model commit",
+      "Mixed two-user FIFO turns and zero hot allocations",
+      "Existing generation/schedule/parser regression"
+    ],
+    "compile_and_run": [
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_progress_test.cc",
+          "bytes": 9654,
+          "sha256": "26842e55adc8497a86c8a544f55e989c1f5b92d10bfd3ea91c8b56b8ba0d84ef"
+        },
+        "compile": {
+          "exit": 0,
+          "seconds": 0.5929999999934807,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 0.03200000000651926,
+          "timeout": false
+        },
+        "stdout": "PASS ordinary/batched outputs, quota/stop and pending-only turn continuation\nPASS gap/duplicate/quota/begin failures and side-effect-free retry\nPASS imported history, no-Graph output and authoritative commit counts\nPASS mixed two-user FIFO turns and allocation-free prepared transitions\n"
+      },
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_schedule_test.cc",
+          "bytes": 12541,
+          "sha256": "95a3b4e59b7cde2826e089fbd6e4420a20c262d727e357a9bc5cf84cb2695e6c"
+        },
+        "compile": {
+          "exit": 0,
+          "seconds": 1.3910000000032596,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 0.14100000000325963,
+          "timeout": false
+        },
+        "stdout": "PASS host progress/capacity/turn ownership, generation quotas/context/pending, size/I32 limits, full grammar/session preflight, neutral prompts, fixed tape separation\n"
+      }
+    ]
+  },
+  "actual_regression": {
+    "state": "passed",
+    "scope": "One current existing eight-report Qwen tiny plus one original GLM Pro random verifier/directory case; shared RequestProgress host contract only, no new model/backend/publisher matrix.",
+    "Qwen": {
+      "report_count": 8,
+      "all_non_time_reports_formatter_groups_ledgers_RNG_equal": true,
+      "late_IO": {
+        "expected_late_diagnostic_failure": 1,
+        "expected_fullhit_late_diagnostic_failure": 1
+      },
+      "private_interface_adaptation": {
+        "changes": "Two existing exact once observation assertions read new RequestProgress.observed_commits() instead of removed Qwen-local ledger_observed. No case/math/assertion-value change.",
+        "sha256": "b0b48635b4eede756ace95dc18c25fef50eceb618484511dbce9fd2676f41760"
+      },
+      "reporting_compile": {
+        "exit": 0,
+        "seconds": 1.5310000000172295,
+        "timeout": false
+      },
+      "compile": {
+        "exit": 0,
+        "seconds": 17.09399999998277,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.375,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 9.062999999994645,
+        "timeout": false
+      }
+    },
+    "GLM": {
+      "case": "GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+      "tests": 1,
+      "skips": 0,
+      "comparison": {
+        "common_properties": 33,
+        "all_common_properties_equal": true,
+        "added_progress_properties": {
+          "request_progress_committed_observations": "2,1",
+          "request_progress_scope": "Shared RequestProgress on the existing real one-emission natural K1 branch and new-request cache fork, then the two original ordinary continuations. Each finite turn has quota1; actual model selector/EOS facts are preserved. A later empty new-user suffix consumes only its actual historical pending. No extra graph, model publication, RNG address, complete GLM prompt prefill or request server is introduced.",
+          "request_progress_duplicate_commit_noops": "3",
+          "request_progress_pending_only_turn_inputs": "2",
+          "request_progress_full_hit_outputs": "1",
+          "request_progress_output_counts": "2,2"
+        },
+        "removed": {},
+        "r0_key_lines_exactly_equal": [
+          "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=0 consumed=1 draw=1 second_submissions=0",
+          "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=1 consumed=1 draw=1 second_submissions=0",
+          "GLM PRO RANDOM BOUNDARY name=quota1 accept=0 emitted=1 consumed=1 pending=16495 stopped=0 draw=3",
+          "GLM PRO RANDOM BOUNDARY name=residual_EOS accept=0 emitted=1 consumed=1 pending=16495 stopped=1 draw=3",
+          "GLM Pro K1 stochastic=1 scenario=0 proposal=42456 target0=62398 target1=39202 accepted=0 frontier=2054 pending=16495 continued_pending=28122"
+        ],
+        "unexpected_differences": 0,
+        "scope": "Same original natural single K1 + typed-directory two requests/two turns. Added host RequestProgress only; original IDs/pending/RNG, calls/state/pools/budget and numerical oracle remain unchanged."
+      },
+      "compile": {
+        "exit": 0,
+        "seconds": 17.953000000008615,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.7969999999913853,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 87.76500000001397,
+        "timeout": false
+      },
+      "actual_dependency_review": {
+        "new_unpinned": 0,
+        "changed": 0,
+        "private_source_leaks": 0
+      }
+    },
+    "old_runs": 0,
+    "trace_runs": 0,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "first_failures": [],
+    "source_mode": "Canonical actual engine/test inputs with pre/post actual dependency pins. Recorded source copies are evidence only.",
+    "quality_claim": false,
+    "performance_claim": false
+  },
+  "verification_archive": {
+    "path": ".scratch/inference-request-progress-20261025/verification/proof.zip",
+    "bytes": 589901,
+    "sha256": "8fbb6c6b7baba79557f3b36912e75e56cc34f0f6a09446aaf135fc24b4e4f64b"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-request-progress-2026-10-25.zip",
+    "bytes": 992624,
+    "sha256": "5e816bfc7d181661973daccaad46c4d701ae11801d1575727576cdd069b2cfec"
+  },
+  "limits": [
+    "Finite original GLM component only: its existing single-emission K1 branch, new-request fork and two original ordinary continuations; no arbitrary GLM prompt/server claim.",
+    "Original model resource/publisher/repair/phase/epoch/RNG mechanisms remain family-specific. Host progress does not publish state or prove native retirement.",
+    "CMake registration was source-reviewed; the two actual host TUs ran directly. No new parent CMake configure or full SDK build was run in this batch.",
+    "Same-family codec and fusion checks reuse previous actual evidence plus current source mapping; no new full quant model runs.",
+    "No throughput result or speedup is claimed. Performance work starts separately with the current CUDA application closure."
+  ],
+  "HTTP": 0,
+  "SDK_builds": 0,
+  "performance_claim": false,
+  "cleanup": {
+    "performed": true,
+    "count": 15,
+    "logical_bytes": 265747579,
+    "plan": {
+      "path": ".scratch/inference-request-progress-20261025/cleanup-plan.json",
+      "bytes": 3707,
+      "sha256": "59a1bf3afee76a56b53b0d2ecff6fd555ff7e17a336644196159e3006371c5a7"
+    },
+    "receipt": {
+      "path": ".scratch/inference-request-progress-20261025/binary-cleanup-removed.json",
+      "bytes": 4295,
+      "sha256": "92af2dce7bc4e4019ad18f8a2e69efb11670afbfcaf76f5d3e0de5dcfdcfa125"
+    }
+  }
+}

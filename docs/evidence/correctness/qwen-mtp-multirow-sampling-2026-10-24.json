@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite real Graph multi-row speculative probability/conditional assembly and host selected-prefix conformance, not full-model statistical quality or performance.",
+  "product_change": "Pure extraction of original prepare_prefix_sampling cold row assembly into sampling::speculative_prefix shared by engine and toy tests. Original q input creation order, target temperature->topK->topP policy, accepted/final/valid published ports and order, existing Graph executor, categorical RNG and Snapshot publication contract retained.",
+  "engine_call": {
+    "path": ".scratch/mtp-correctness-20261024/sampling-check/engine-cold-call.txt",
+    "bytes": 521,
+    "sha256": "493b84b47611e48a6fc68ed36499dc6378fc0d1b62f624c0212c1fe7533b5b1f"
+  },
+  "validation": {
+    "backends": [
+      {
+        "backend": "cpu",
+        "tests": 3,
+        "failures": 0,
+        "minimum_actual_conditional_witness_replays": 9,
+        "actual_later_invalid_and_recovery_replays": 3,
+        "source_identity": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\qwen_sampling_graph_test.cc",
+            "bytes": 31416,
+            "sha256": "d5cfc4780dbfad4432d09a91c7057ebc5fb6ffc06e0268d1010b809a2e8f2e72"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+            "bytes": 16674,
+            "sha256": "1311908d963ec8a28949284fd8a284a4edb72379c18938734ac7e0a4f37c9763"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_acceptance.h",
+            "bytes": 4516,
+            "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+            "bytes": 13643,
+            "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+          }
+        ],
+        "test_result": {
+          "path": ".scratch/mtp-correctness-20261024/sampling-check/cpu/tests.json",
+          "bytes": 1642,
+          "sha256": "786847c49a227ab3cb1c5b90e730bc2effc161f2033a6202e5ad65296f0e6da4"
+        },
+        "process": {
+          "path": ".scratch/mtp-correctness-20261024/sampling-check/cpu/run/process.json",
+          "bytes": 53,
+          "sha256": "2b91836972ffd3424b0b26c1d8631469629642869ab0551f37ddd50d24d5948c"
+        }
+      },
+      {
+        "backend": "cuda",
+        "tests": 3,
+        "failures": 0,
+        "minimum_actual_conditional_witness_replays": 9,
+        "actual_later_invalid_and_recovery_replays": 3,
+        "source_identity": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\qwen_sampling_graph_test.cc",
+            "bytes": 31416,
+            "sha256": "d5cfc4780dbfad4432d09a91c7057ebc5fb6ffc06e0268d1010b809a2e8f2e72"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+            "bytes": 16674,
+            "sha256": "1311908d963ec8a28949284fd8a284a4edb72379c18938734ac7e0a4f37c9763"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_acceptance.h",
+            "bytes": 4516,
+            "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+            "bytes": 13643,
+            "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+          }
+        ],
+        "test_result": {
+          "path": ".scratch/mtp-correctness-20261024/sampling-check/cuda/tests.json",
+          "bytes": 1641,
+          "sha256": "ff9d47f7df95ac2945e696be2ad8906186e92d1bcf985a1146c5219b563c25f4"
+        },
+        "process": {
+          "path": ".scratch/mtp-correctness-20261024/sampling-check/cuda/run/process.json",
+          "bytes": 53,
+          "sha256": "750059091ecc0bd3b0130d43aed6fa8e53c0ee66e2ff6a1088e686ab0f093faf"
+        }
+      }
+    ],
+    "tests": 6,
+    "failures": 0,
+    "fresh_consumer_TUs": 2,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "checks": [
+    "Actual tinyV3 Graph m0/K2/K4 uses one distinct p_i and q_i per conditional, proposal_i, independent acceptance identity_i, and one final identity for mutually exclusive residual_i / all-accepted p_m bonus.",
+    "A finite deterministic Philox-address search picks one witness for each first/middle rejection position and all accepted:1+3+5 actual replay witnesses per backend; every row decision and final ID matches the independent F64 route-draw oracle. This is conformance, not measured sample-frequency confidence.",
+    "Real host select_sampled_prefix agrees with an independent scalar prefix walk for quota1/2/m+1 and optional EOS, leaving the final output pending. Actual allocated draw range is2m+1 including m0.",
+    "Bad unselected column in later q and last target row cannot be ignored merely because an earlier position rejected; invalid results are unusable, and valid same-invocation retry recovers.",
+    "Malformed key-row/proposal-row cold ports are refused before execution."
+  ],
+  "reused_evidence": [
+    "docs/evidence/correctness/qwen-mtp-random-integration-2026-10-24.json",
+    "docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json",
+    "docs/evidence/correctness/qwen35-mtp-prefix-state-values-2026-10-24.json"
+  ],
+  "limits": [
+    "The exact acceptance/residual proof targets the supplied normalized verifier conditional distributions. Different actual target row widths can have legal floating differences; no exact equality to ordinary T1 distribution or same-seed generated IDs is asserted.",
+    "The toy uses actual supplied proposal IDs and already-policy-normalized q_i, as its explicit component input; original real engine proposal generation, threshold decisions, cancellation and cache restoration use their separately recorded integration evidence.",
+    "No new large statistical benchmark, new task-intelligence threshold, whole-codec/model/platform Cartesian matrix or source weight acquisition."
+  ],
+  "log_bundle": {
+    "path": "docs/evidence/correctness/qwen-mtp-multirow-sampling-2026-10-24-logs.zip",
+    "bytes": 41519,
+    "sha256": "45567d588da220888e1e528eb19d476f5de7bf55e900f67653143a2a8d2370bf"
+  }
+}

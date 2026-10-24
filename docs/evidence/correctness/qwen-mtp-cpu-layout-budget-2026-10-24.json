@@ -1,0 +1,323 @@
+{
+  "status": "PASS_FINITE_CPU_ENGINE_AND_METADATA_ACCOUNTING",
+  "date": "2026-10-24",
+  "problem": "CPU payload and host layout snapshots share system_resource. Layout ReadLease bytes were classified as External and made correct cache inventory assertions fail by276/460 bytes.",
+  "fix": "The two BatchLayout readonly backing imports are typed Metadata in the original budget. Shared backing promotion retains that category and the same lifetime/finite limit. Ordinary imports remain External; no public options/layout/old signature changes.",
+  "previous": {
+    "ordinary_payload": 42418500,
+    "ordinary_known": 42418224,
+    "ordinary_metadata": 232696,
+    "mtp_payload": 62530047,
+    "mtp_known": 62529587,
+    "mtp_metadata": 267084
+  },
+  "current": [
+    {
+      "mode": "ordinary-text",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\engine-link\\hyle-cpu.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+          "--steps",
+          "4",
+          "--capacity",
+          "256",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--mtp",
+          "off"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792811696.9775598,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 45468,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792811713.8797538,
+        "process_wall_seconds": 16.90185929997824
+      },
+      "loaded_tensors": 320,
+      "loaded_bytes": 3763655360,
+      "payload_bytes": 42418224,
+      "known_pool_bytes": 42418224,
+      "metadata_bytes": 232972,
+      "actual_total_requested_bytes": 42651196,
+      "reported_limit": null,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draft_rounds": 0,
+      "accepted_drafts": 0,
+      "parsed": {
+        "path": ".scratch/engine-product-20261024/cpu-budget-fix1/ordinary-text/parsed.json",
+        "bytes": 2061,
+        "sha256": "d1b21803aa7ac82f9842cdad5f77b4c792b4842450318ae03d54e56dab96843e"
+      }
+    },
+    {
+      "mode": "ordinary-mtp-manifest",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\engine-link\\hyle-cpu.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+          "--steps",
+          "4",
+          "--capacity",
+          "256",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--mtp",
+          "off"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792811713.894335,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 46956,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792811730.3245301,
+        "process_wall_seconds": 16.42960150001454
+      },
+      "loaded_tensors": 320,
+      "loaded_bytes": 3763655360,
+      "payload_bytes": 42418224,
+      "known_pool_bytes": 42418224,
+      "metadata_bytes": 232972,
+      "actual_total_requested_bytes": 42651196,
+      "reported_limit": null,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draft_rounds": 0,
+      "accepted_drafts": 0,
+      "parsed": {
+        "path": ".scratch/engine-product-20261024/cpu-budget-fix1/ordinary-mtp-manifest/parsed.json",
+        "bytes": 2073,
+        "sha256": "c858453f5122855e820ad9590927f1aa60797daea00ef5968fa63cf4e6524404"
+      }
+    },
+    {
+      "mode": "mtp",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\engine-link\\hyle-cpu.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+          "--steps",
+          "4",
+          "--capacity",
+          "256",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792811730.3410325,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 44056,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792811747.2278879,
+        "process_wall_seconds": 16.88658670001314
+      },
+      "loaded_tensors": 335,
+      "loaded_bytes": 3885311680,
+      "payload_bytes": 62529587,
+      "known_pool_bytes": 62529587,
+      "metadata_bytes": 267544,
+      "actual_total_requested_bytes": 62797131,
+      "reported_limit": null,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draft_rounds": 1,
+      "accepted_drafts": 1,
+      "parsed": {
+        "path": ".scratch/engine-product-20261024/cpu-budget-fix1/mtp/parsed.json",
+        "bytes": 2296,
+        "sha256": "11cd74b115b4ce00599eef488e11135a1599d660d52362627c19c38f8026e756"
+      }
+    }
+  ],
+  "changed_sources": [
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "bytes": 7336,
+      "sha256": "e3e411efed89cf4db4d974ed8922ee00caf5a21a8c9d45f15fa06a619d1802ee"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 41889,
+      "sha256": "8907cbd2b29054a6331d4196295976dc6286e05d2a92c24745b802d23ee8af17"
+    },
+    {
+      "path": "src/compute/resource_budget.cc",
+      "bytes": 17829,
+      "sha256": "f9552b9f7cc6ac50dad0f8d8b111e8c3b21f1e7213937c013fb9719511e587c9"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "bytes": 26475,
+      "sha256": "28e7e4d3b6b0d1ebd67eab620e02784f6376233066ce0338a307cc3c8e64c8ad"
+    },
+    {
+      "path": "tests/compute_batch/batch_layout_test.cc",
+      "bytes": 28900,
+      "sha256": "b9748fd94605f6f647da50d8d8917408ca565de893ddb6f5619c6bea84968e0b"
+    }
+  ],
+  "model_source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 288069,
+    "sha256": "9b0fcb4fa55e5c2674bb8b85ed87f83949388d421c028aa78fe22b7c8f304c87"
+  },
+  "unit_tests": {
+    "suite": "BatchLayout",
+    "tests": 30,
+    "passed": 30,
+    "added": "MetadataBackingKeepsItsCategoryQuotaAndActualReaderLifetime",
+    "finite_budget_bytes": 1048576,
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\tests-link\\checks.exe",
+        "--gtest_filter=BatchLayout.*"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792811696.4542468,
+      "timeout_seconds": 120,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 47824,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792811696.8762968,
+      "process_wall_seconds": 0.42158649998600595
+    }
+  },
+  "negative_tests": [
+    {
+      "name": "quota-one",
+      "passed": true,
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\engine-link\\hyle-cpu.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+          "--steps",
+          "4",
+          "--capacity",
+          "256",
+          "--cache-bytes",
+          "1"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792811747.244457,
+        "timeout_seconds": 30,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 760,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792811747.6957543,
+        "process_wall_seconds": 0.451468199986266
+      },
+      "weights_loaded": false
+    },
+    {
+      "name": "mtp-without-weights",
+      "passed": true,
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\engine-link\\hyle-cpu.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+          "--steps",
+          "4",
+          "--capacity",
+          "256",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792811747.70327,
+        "timeout_seconds": 30,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 13836,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792811748.1165543,
+        "process_wall_seconds": 0.4127716000075452
+      },
+      "weights_loaded": false
+    }
+  ],
+  "visibility_check": "python -X utf8 scripts/generate-visibility.py --check:57 API macros checked",
+  "native_closure": {
+    "base_link": {
+      "path": ".scratch/engine-product-20261024/cpu-build5/link-plan.json",
+      "bytes": 96063,
+      "sha256": "615f610da72aa13c4ca38aa35256a4a76a3a3cddbfd0a54b524ecd3bbd6dbde2"
+    },
+    "fresh_TUs": 5,
+    "fresh_product_TUs": 3,
+    "fresh_test_TUs": 1,
+    "fresh_model_TUs": 1,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "downloads": 0,
+    "reused_assembly": "Existing mixed native object closure; actual engine selected CPU only. Not a full CMake build or independent no-CUDA deployment."
+  },
+  "limits": [
+    "P154/4 finite original BF16 check; not task quality, other models/backends or throughput evidence.",
+    "Host auto limit is reported null; finite quota/escaped-reader/promotion behavior is separately tested, and CLI1 byte rejects before weight loading.",
+    "No arithmetic/precision changes; the common source_id literal is historical, actual compiled source and dependency hashes identify this check."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.logs.zip",
+    "bytes": 219336,
+    "sha256": "f90aa695c276f4af6625aa06266480d55eb3f6107445ae55b41f3eccf6882632"
+  }
+}

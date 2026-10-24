@@ -1,0 +1,1724 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite mixed stochastic component",
+  "result_not_inferred_from_single_domain": true,
+  "implementation": [
+    "Derive each full-output domain from existing resident split full_outputs{phase,port} and the actual native child output_on_host. No model-name/domain guessing or new provider routing.",
+    "Prepare q input contract from actual draft logits; p/q decision contract from actual target logits and actual q/proposal outputs. Keys remain original GPU allocations; original Graph inserts transfers.",
+    "Ordinary next-target head borrows the same authenticated CPU head and derives its input domain from the actual target tap. A separate static sampler is prepared only if its real input domain differs from q, never selected by hot provider lookup.",
+    "The old greedy and new stochastic mixed cases share the same existing B05 setup/owners/suppliers. Same complete twelve-resource state plus optional shared Cursor metadata uses the existing expected-base Head."
+  ],
+  "observed_domain_contracts": {
+    "backend": "ordinary mixed CPU vocabulary + CUDA body Graph",
+    "artifact_repository": "Qwen/Qwen3.8-2.4T-A95B",
+    "artifact_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+    "artifact_variant": "official-bf16",
+    "original_role_count": "33",
+    "original_static_role_count": "33",
+    "original_role_bytes": "10301376512",
+    "original_bfloat_manifest_sha256": "abc95f30f8c549e0e7f6bbc47e94aa1c42bc3cf221d98703efbf9ff3ee365f09",
+    "mixed_host_vocabulary_bytes": "8136949760",
+    "mixed_device_static_bytes": "2164426752",
+    "mixed_expert_slot_bytes": "1006635008",
+    "mixed_full_vocabulary_device_instances": "0",
+    "sampling_q_input_host": "1",
+    "sampling_target_logits_input_host": "1",
+    "sampling_q_log_output_host": "0",
+    "sampling_pending_output_host": "0",
+    "sampling_next_target_logits_host": "1",
+    "random_actual_proposal": "331",
+    "random_accepted": "0",
+    "random_rejected": "1",
+    "random_committed_draws": "4",
+    "whole_state_publications": "2",
+    "cancelled_unpublished_drafts": "2",
+    "rejected_stale_publishes": "2",
+    "accepted_target_conditioned_repairs": "0",
+    "target_verifier_full_vocabulary": "248320",
+    "state_budget_bytes": "57989888",
+    "peak_state_backing_bytes": "33964108",
+    "stochastic_policy": "actual NextN q categorical proposal0 -> actual target row1; real full-V target p0/q/p1 common accept1/final2 -> direct I32 result lease; full original target/NextN resources plus Cursor metadata in same expected-base Head. Cancel/stale/failure advances0, K1 success advances3, actual residual/bonus target-only continuation advances1.",
+    "scope": "One natural finite original-role target/NextN stochastic K1 and actual pending continuation on the existing common Qwen component controller. Previous-layer input/history remain explicit fixtures; no full-model quality, natural acceptance-rate, all identities/backends, or performance claim.",
+    "selected_expert_source_attachments": "60",
+    "selected_expert_plane_files": "180",
+    "explicit_expert_frontier_requests": "0",
+    "mixed_scope": "Only original BF16 vocabulary Gather/fullV head/TopK are CPU-required; body/expert computation and all state/pending are CUDA-required. Ordinary Graph inserts actual crossing copies; no complete-model quality, all-CUDA, TPS or measured-VRAM claim."
+  },
+  "runs": [
+    {
+      "folder": ".scratch\\qwen-original-stochastic-20261024\\mixed-run1",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.MixedQ24OriginalBFloatTargetAndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\mixed-run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792828355.3062398,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 49348,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792828445.7839887,
+        "process_wall_seconds": 90.47689920000266
+      },
+      "result": {
+        "tests": "1",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "89.981",
+        "timestamp": "2026-10-24T15:52:35.608",
+        "name": "AllTests"
+      },
+      "properties": {
+        "backend": "ordinary mixed CPU vocabulary + CUDA body Graph",
+        "artifact_repository": "Qwen/Qwen3.8-2.4T-A95B",
+        "artifact_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+        "artifact_variant": "official-bf16",
+        "original_role_count": "33",
+        "original_static_role_count": "33",
+        "original_role_bytes": "10301376512",
+        "original_bfloat_manifest_sha256": "abc95f30f8c549e0e7f6bbc47e94aa1c42bc3cf221d98703efbf9ff3ee365f09",
+        "mixed_host_vocabulary_bytes": "8136949760",
+        "mixed_device_static_bytes": "2164426752",
+        "mixed_expert_slot_bytes": "1006635008",
+        "mixed_full_vocabulary_device_instances": "0",
+        "sampling_q_input_host": "1",
+        "sampling_target_logits_input_host": "1",
+        "sampling_q_log_output_host": "0",
+        "sampling_pending_output_host": "0",
+        "sampling_next_target_logits_host": "1"
+      },
+      "failure": [
+        {
+          "message": "unknown file\nC++ exception with description \"actual original original expert planes are absent; explicit frontier supply is required\" thrown in the test body.\n",
+          "type": ""
+        }
+      ],
+      "actual_transitions": [
+        "Qwen original actual expert frontier section=target91 stage=0 missing=6; missing acquisition fails"
+      ]
+    },
+    {
+      "folder": ".scratch\\qwen-original-stochastic-20261024\\mixed-run2",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.MixedQ24OriginalBFloatTargetAndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\mixed-run2\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792829198.2692652,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 48196,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792829259.4057567,
+        "process_wall_seconds": 61.135745100007625
+      },
+      "result": {
+        "tests": "1",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "60.633",
+        "timestamp": "2026-10-24T16:06:38.582",
+        "name": "AllTests"
+      },
+      "properties": {
+        "backend": "ordinary mixed CPU vocabulary + CUDA body Graph",
+        "artifact_repository": "Qwen/Qwen3.8-2.4T-A95B",
+        "artifact_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+        "artifact_variant": "official-bf16",
+        "original_role_count": "33",
+        "original_static_role_count": "33",
+        "original_role_bytes": "10301376512",
+        "original_bfloat_manifest_sha256": "abc95f30f8c549e0e7f6bbc47e94aa1c42bc3cf221d98703efbf9ff3ee365f09",
+        "mixed_host_vocabulary_bytes": "8136949760",
+        "mixed_device_static_bytes": "2164426752",
+        "mixed_expert_slot_bytes": "1006635008",
+        "mixed_full_vocabulary_device_instances": "0",
+        "sampling_q_input_host": "1",
+        "sampling_target_logits_input_host": "1",
+        "sampling_q_log_output_host": "0",
+        "sampling_pending_output_host": "0",
+        "sampling_next_target_logits_host": "1"
+      },
+      "failure": [
+        {
+          "message": "unknown file\nC++ exception with description \"actual original original expert planes are absent; explicit frontier supply is required\" thrown in the test body.\n",
+          "type": ""
+        }
+      ],
+      "actual_transitions": [
+        "Qwen original actual expert frontier section=nextn stage=0 missing=4; missing acquisition fails"
+      ]
+    },
+    {
+      "folder": ".scratch\\qwen-original-stochastic-20261024\\mixed-run3",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.MixedQ24OriginalBFloatTargetAndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\mixed-run3\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792830669.158852,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 36416,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792830753.9512517,
+        "process_wall_seconds": 84.79269129998283
+      },
+      "result": {
+        "tests": "1",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "83.903",
+        "timestamp": "2026-10-24T16:31:09.851",
+        "name": "AllTests"
+      },
+      "properties": {
+        "backend": "ordinary mixed CPU vocabulary + CUDA body Graph",
+        "artifact_repository": "Qwen/Qwen3.8-2.4T-A95B",
+        "artifact_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+        "artifact_variant": "official-bf16",
+        "original_role_count": "33",
+        "original_static_role_count": "33",
+        "original_role_bytes": "10301376512",
+        "original_bfloat_manifest_sha256": "abc95f30f8c549e0e7f6bbc47e94aa1c42bc3cf221d98703efbf9ff3ee365f09",
+        "mixed_host_vocabulary_bytes": "8136949760",
+        "mixed_device_static_bytes": "2164426752",
+        "mixed_expert_slot_bytes": "1006635008",
+        "mixed_full_vocabulary_device_instances": "0",
+        "sampling_q_input_host": "1",
+        "sampling_target_logits_input_host": "1",
+        "sampling_q_log_output_host": "0",
+        "sampling_pending_output_host": "0",
+        "sampling_next_target_logits_host": "1"
+      },
+      "failure": [
+        {
+          "message": "unknown file\nC++ exception with description \"actual original original expert planes are absent; explicit frontier supply is required\" thrown in the test body.\n",
+          "type": ""
+        }
+      ],
+      "actual_transitions": [
+        "Qwen original actual expert frontier section=nextn stage=0 missing=1; missing acquisition fails"
+      ]
+    },
+    {
+      "folder": ".scratch\\qwen-original-stochastic-20261024\\mixed-run4",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.MixedQ24OriginalBFloatTargetAndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\mixed-run4\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792832004.5740216,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 45060,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792832089.2222097,
+        "process_wall_seconds": 84.64748770001461
+      },
+      "result": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "84.084",
+        "timestamp": "2026-10-24T16:53:24.929",
+        "name": "AllTests"
+      },
+      "properties": {
+        "backend": "ordinary mixed CPU vocabulary + CUDA body Graph",
+        "artifact_repository": "Qwen/Qwen3.8-2.4T-A95B",
+        "artifact_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+        "artifact_variant": "official-bf16",
+        "original_role_count": "33",
+        "original_static_role_count": "33",
+        "original_role_bytes": "10301376512",
+        "original_bfloat_manifest_sha256": "abc95f30f8c549e0e7f6bbc47e94aa1c42bc3cf221d98703efbf9ff3ee365f09",
+        "mixed_host_vocabulary_bytes": "8136949760",
+        "mixed_device_static_bytes": "2164426752",
+        "mixed_expert_slot_bytes": "1006635008",
+        "mixed_full_vocabulary_device_instances": "0",
+        "sampling_q_input_host": "1",
+        "sampling_target_logits_input_host": "1",
+        "sampling_q_log_output_host": "0",
+        "sampling_pending_output_host": "0",
+        "sampling_next_target_logits_host": "1",
+        "random_actual_proposal": "331",
+        "random_accepted": "0",
+        "random_rejected": "1",
+        "random_committed_draws": "4",
+        "whole_state_publications": "2",
+        "cancelled_unpublished_drafts": "2",
+        "rejected_stale_publishes": "2",
+        "accepted_target_conditioned_repairs": "0",
+        "target_verifier_full_vocabulary": "248320",
+        "state_budget_bytes": "57989888",
+        "peak_state_backing_bytes": "33964108",
+        "stochastic_policy": "actual NextN q categorical proposal0 -> actual target row1; real full-V target p0/q/p1 common accept1/final2 -> direct I32 result lease; full original target/NextN resources plus Cursor metadata in same expected-base Head. Cancel/stale/failure advances0, K1 success advances3, actual residual/bonus target-only continuation advances1.",
+        "scope": "One natural finite original-role target/NextN stochastic K1 and actual pending continuation on the existing common Qwen component controller. Previous-layer input/history remain explicit fixtures; no full-model quality, natural acceptance-rate, all identities/backends, or performance claim.",
+        "selected_expert_source_attachments": "60",
+        "selected_expert_plane_files": "180",
+        "explicit_expert_frontier_requests": "0",
+        "mixed_scope": "Only original BF16 vocabulary Gather/fullV head/TopK are CPU-required; body/expert computation and all state/pending are CUDA-required. Ordinary Graph inserts actual crossing copies; no complete-model quality, all-CUDA, TPS or measured-VRAM claim."
+      },
+      "failure": [],
+      "actual_transitions": [
+        "QWEN RANDOM K1 moe=1 proposal=331 accepted=0 pending=23 continued_pending=279 cursor=4"
+      ]
+    }
+  ],
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\checks.exe",
+    "bytes": 141530624,
+    "sha256": "d58e7707b6aa64fc6cb56c0288860aadc54e7cd2b35f54b23b942699245debb3"
+  },
+  "last_explicit_missing_frontier_before_completion": {
+    "section": "nextn",
+    "stage": 0,
+    "global_ids": [
+      62,
+      138,
+      181,
+      227,
+      243,
+      307,
+      317,
+      339,
+      390,
+      401
+    ],
+    "missing_ids": [
+      307
+    ]
+  },
+  "required_source_frontier_satisfied": true,
+  "initial_missing_source_plan": {
+    "repository": "Qwen/Qwen3.8-2.4T-A95B",
+    "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+    "frontier": {
+      "section": "target91",
+      "stage": 0,
+      "global_ids": [
+        77,
+        87,
+        118,
+        124,
+        125,
+        193,
+        220,
+        228,
+        272,
+        357
+      ],
+      "missing_ids": [
+        77,
+        124,
+        193,
+        228,
+        272,
+        357
+      ]
+    },
+    "network_requests": 0,
+    "requested_bytes": 603979776,
+    "ranges": [
+      {
+        "global_id": 77,
+        "leg": "gate",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          5167382688,
+          5200937119
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\expert-077-gate.bf16"
+      },
+      {
+        "global_id": 77,
+        "leg": "up",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          5200937120,
+          5234491551
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\expert-077-up.bf16"
+      },
+      {
+        "global_id": 77,
+        "leg": "down",
+        "bytes": 33554432,
+        "file": "model-00210-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+        "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+        "absolute_inclusive": [
+          2583691416,
+          2617245847
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\expert-077-down.bf16"
+      },
+      {
+        "global_id": 124,
+        "leg": "gate",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          8321499296,
+          8355053727
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert124\\expert-124-gate.bf16"
+      },
+      {
+        "global_id": 124,
+        "leg": "up",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          8355053728,
+          8388608159
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert124\\expert-124-up.bf16"
+      },
+      {
+        "global_id": 124,
+        "leg": "down",
+        "bytes": 33554432,
+        "file": "model-00210-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+        "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+        "absolute_inclusive": [
+          4160749720,
+          4194304151
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert124\\expert-124-down.bf16"
+      },
+      {
+        "global_id": 193,
+        "leg": "gate",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          12952010912,
+          12985565343
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert193\\expert-193-gate.bf16"
+      },
+      {
+        "global_id": 193,
+        "leg": "up",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          12985565344,
+          13019119775
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert193\\expert-193-up.bf16"
+      },
+      {
+        "global_id": 193,
+        "leg": "down",
+        "bytes": 33554432,
+        "file": "model-00210-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+        "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+        "absolute_inclusive": [
+          6476005528,
+          6509559959
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert193\\expert-193-down.bf16"
+      },
+      {
+        "global_id": 228,
+        "leg": "gate",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          15300821152,
+          15334375583
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert228\\expert-228-gate.bf16"
+      },
+      {
+        "global_id": 228,
+        "leg": "up",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          15334375584,
+          15367930015
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert228\\expert-228-up.bf16"
+      },
+      {
+        "global_id": 228,
+        "leg": "down",
+        "bytes": 33554432,
+        "file": "model-00210-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+        "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+        "absolute_inclusive": [
+          7650410648,
+          7683965079
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert228\\expert-228-down.bf16"
+      },
+      {
+        "global_id": 272,
+        "leg": "gate",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          18253611168,
+          18287165599
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert272\\expert-272-gate.bf16"
+      },
+      {
+        "global_id": 272,
+        "leg": "up",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          18287165600,
+          18320720031
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert272\\expert-272-up.bf16"
+      },
+      {
+        "global_id": 272,
+        "leg": "down",
+        "bytes": 33554432,
+        "file": "model-00210-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+        "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+        "absolute_inclusive": [
+          9126805656,
+          9160360087
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert272\\expert-272-down.bf16"
+      },
+      {
+        "global_id": 357,
+        "leg": "gate",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          23957864608,
+          23991419039
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert357\\expert-357-gate.bf16"
+      },
+      {
+        "global_id": 357,
+        "leg": "up",
+        "bytes": 33554432,
+        "file": "model-00209-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+        "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+        "absolute_inclusive": [
+          23991419040,
+          24024973471
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert357\\expert-357-up.bf16"
+      },
+      {
+        "global_id": 357,
+        "leg": "down",
+        "bytes": 33554432,
+        "file": "model-00210-of-00213.safetensors",
+        "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+        "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+        "absolute_inclusive": [
+          11978932376,
+          12012486807
+        ],
+        "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert357\\expert-357-down.bf16"
+      }
+    ],
+    "command": [
+      "python",
+      ".scratch/mtp-download-budget-20261023/budget.py",
+      "run",
+      ".scratch/qwen-bfloat-selected-20261023/B05/fetch_experts.py",
+      "--frontier-file",
+      ".scratch/qwen-original-stochastic-20261024/mixed-frontier.json"
+    ],
+    "activation": "Only root after exclusive network batch release; current PAUSED/budget ledger untouched by this offline plan",
+    "native_retry": [
+      "python",
+      ".scratch/qwen-original-stochastic-20261024/build.py",
+      "run",
+      "--attempt",
+      "2",
+      "--mixed"
+    ]
+  },
+  "necessary_source_plans": [
+    {
+      "repository": "Qwen/Qwen3.8-2.4T-A95B",
+      "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+      "frontier": {
+        "section": "target91",
+        "stage": 0,
+        "global_ids": [
+          77,
+          87,
+          118,
+          124,
+          125,
+          193,
+          220,
+          228,
+          272,
+          357
+        ],
+        "missing_ids": [
+          77,
+          124,
+          193,
+          228,
+          272,
+          357
+        ]
+      },
+      "network_requests": 0,
+      "requested_bytes": 603979776,
+      "ranges": [
+        {
+          "global_id": 77,
+          "leg": "gate",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            5167382688,
+            5200937119
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\expert-077-gate.bf16"
+        },
+        {
+          "global_id": 77,
+          "leg": "up",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            5200937120,
+            5234491551
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\expert-077-up.bf16"
+        },
+        {
+          "global_id": 77,
+          "leg": "down",
+          "bytes": 33554432,
+          "file": "model-00210-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+          "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+          "absolute_inclusive": [
+            2583691416,
+            2617245847
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\expert-077-down.bf16"
+        },
+        {
+          "global_id": 124,
+          "leg": "gate",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            8321499296,
+            8355053727
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert124\\expert-124-gate.bf16"
+        },
+        {
+          "global_id": 124,
+          "leg": "up",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            8355053728,
+            8388608159
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert124\\expert-124-up.bf16"
+        },
+        {
+          "global_id": 124,
+          "leg": "down",
+          "bytes": 33554432,
+          "file": "model-00210-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+          "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+          "absolute_inclusive": [
+            4160749720,
+            4194304151
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert124\\expert-124-down.bf16"
+        },
+        {
+          "global_id": 193,
+          "leg": "gate",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            12952010912,
+            12985565343
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert193\\expert-193-gate.bf16"
+        },
+        {
+          "global_id": 193,
+          "leg": "up",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            12985565344,
+            13019119775
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert193\\expert-193-up.bf16"
+        },
+        {
+          "global_id": 193,
+          "leg": "down",
+          "bytes": 33554432,
+          "file": "model-00210-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+          "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+          "absolute_inclusive": [
+            6476005528,
+            6509559959
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert193\\expert-193-down.bf16"
+        },
+        {
+          "global_id": 228,
+          "leg": "gate",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            15300821152,
+            15334375583
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert228\\expert-228-gate.bf16"
+        },
+        {
+          "global_id": 228,
+          "leg": "up",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            15334375584,
+            15367930015
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert228\\expert-228-up.bf16"
+        },
+        {
+          "global_id": 228,
+          "leg": "down",
+          "bytes": 33554432,
+          "file": "model-00210-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+          "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+          "absolute_inclusive": [
+            7650410648,
+            7683965079
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert228\\expert-228-down.bf16"
+        },
+        {
+          "global_id": 272,
+          "leg": "gate",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            18253611168,
+            18287165599
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert272\\expert-272-gate.bf16"
+        },
+        {
+          "global_id": 272,
+          "leg": "up",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            18287165600,
+            18320720031
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert272\\expert-272-up.bf16"
+        },
+        {
+          "global_id": 272,
+          "leg": "down",
+          "bytes": 33554432,
+          "file": "model-00210-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+          "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+          "absolute_inclusive": [
+            9126805656,
+            9160360087
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert272\\expert-272-down.bf16"
+        },
+        {
+          "global_id": 357,
+          "leg": "gate",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            23957864608,
+            23991419039
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert357\\expert-357-gate.bf16"
+        },
+        {
+          "global_id": 357,
+          "leg": "up",
+          "bytes": 33554432,
+          "file": "model-00209-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00209-of-00213.safetensors",
+          "etag": "\"6b6eb28264e0fb77fbf36dc1489b6b094c150ad97f87a4987024914365b27209\"",
+          "absolute_inclusive": [
+            23991419040,
+            24024973471
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert357\\expert-357-up.bf16"
+        },
+        {
+          "global_id": 357,
+          "leg": "down",
+          "bytes": 33554432,
+          "file": "model-00210-of-00213.safetensors",
+          "uri": "https://hf-mirror.net/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00210-of-00213.safetensors",
+          "etag": "\"290416cb84c9c8fc3e2ac2d9a2882a890f0e5c3603170a70835fbef52e3ba616\"",
+          "absolute_inclusive": [
+            11978932376,
+            12012486807
+          ],
+          "output": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert357\\expert-357-down.bf16"
+        }
+      ],
+      "command": [
+        "python",
+        ".scratch/mtp-download-budget-20261023/budget.py",
+        "run",
+        ".scratch/qwen-bfloat-selected-20261023/B05/fetch_experts.py",
+        "--frontier-file",
+        ".scratch/qwen-original-stochastic-20261024/mixed-frontier.json"
+      ],
+      "activation": "Only root after exclusive network batch release; current PAUSED/budget ledger untouched by this offline plan",
+      "native_retry": [
+        "python",
+        ".scratch/qwen-original-stochastic-20261024/build.py",
+        "run",
+        "--attempt",
+        "2",
+        "--mixed"
+      ]
+    },
+    {
+      "event": "expert_plan",
+      "complete": true,
+      "section": "nextn",
+      "stage": 0,
+      "globals": [
+        90,
+        139,
+        230,
+        296
+      ],
+      "source_plan": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/expert-source-plan.json",
+        "bytes": 18876,
+        "sha256": "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51"
+      },
+      "plane_bytes": 33554432,
+      "expert_payload_bytes": 100663296,
+      "requested_payload_bytes": 402653184,
+      "expert_workers": 3,
+      "maximum_live_stream_bytes": 3145728,
+      "range_bytes": 134217728,
+      "maximum_role_attempts": 3,
+      "per_id_plans": [
+        {
+          "repository": "Qwen/Qwen3.8-2.4T-A95B",
+          "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+          "section": "nextn",
+          "stage": 0,
+          "globals": [
+            90
+          ],
+          "source_plan_sha256": "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51",
+          "original_roles": 3,
+          "source_bytes": 100663296,
+          "full_bank_download_allowed": false,
+          "whole_shards_downloaded": false,
+          "roles": [
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 0,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert090/gate",
+              "section": "nextn",
+              "global_id": 90,
+              "leg": "gate",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-090-gate.bf16",
+              "data_relative_half_open": [
+                6039797760,
+                6073352192
+              ],
+              "absolute_inclusive": [
+                6039797912,
+                6073352343
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 33554432,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert090/up",
+              "section": "nextn",
+              "global_id": 90,
+              "leg": "up",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-090-up.bf16",
+              "data_relative_half_open": [
+                6073352192,
+                6106906624
+              ],
+              "absolute_inclusive": [
+                6073352344,
+                6106906775
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.down_proj",
+              "source_file": "model-00186-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00186-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "f4c39caf05af089dd8172eb7b3c3583ff97e6f2fd6c654037ffa4e6995ba332a"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00186-of-00213.safetensors",
+              "etag": "\"dc21dc75eeb37d58b52aa5f1737ddb44aff52dba6394702eead444c9e0a9fc81\"",
+              "whole_file_bytes": 17179869336,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 33554432,
+              "leg_offset": 0,
+              "shape": [
+                8192,
+                2048
+              ],
+              "name": "mtp.layers.0.mlp.experts.down_proj#expert090/down",
+              "section": "nextn",
+              "global_id": 90,
+              "leg": "down",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-090-down.bf16",
+              "data_relative_half_open": [
+                3019898880,
+                3053453312
+              ],
+              "absolute_inclusive": [
+                3019899032,
+                3053453463
+              ]
+            }
+          ]
+        },
+        {
+          "repository": "Qwen/Qwen3.8-2.4T-A95B",
+          "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+          "section": "nextn",
+          "stage": 0,
+          "globals": [
+            139
+          ],
+          "source_plan_sha256": "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51",
+          "original_roles": 3,
+          "source_bytes": 100663296,
+          "full_bank_download_allowed": false,
+          "whole_shards_downloaded": false,
+          "roles": [
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 0,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert139/gate",
+              "section": "nextn",
+              "global_id": 139,
+              "leg": "gate",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-139-gate.bf16",
+              "data_relative_half_open": [
+                9328132096,
+                9361686528
+              ],
+              "absolute_inclusive": [
+                9328132248,
+                9361686679
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 33554432,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert139/up",
+              "section": "nextn",
+              "global_id": 139,
+              "leg": "up",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-139-up.bf16",
+              "data_relative_half_open": [
+                9361686528,
+                9395240960
+              ],
+              "absolute_inclusive": [
+                9361686680,
+                9395241111
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.down_proj",
+              "source_file": "model-00186-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00186-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "f4c39caf05af089dd8172eb7b3c3583ff97e6f2fd6c654037ffa4e6995ba332a"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00186-of-00213.safetensors",
+              "etag": "\"dc21dc75eeb37d58b52aa5f1737ddb44aff52dba6394702eead444c9e0a9fc81\"",
+              "whole_file_bytes": 17179869336,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 33554432,
+              "leg_offset": 0,
+              "shape": [
+                8192,
+                2048
+              ],
+              "name": "mtp.layers.0.mlp.experts.down_proj#expert139/down",
+              "section": "nextn",
+              "global_id": 139,
+              "leg": "down",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-139-down.bf16",
+              "data_relative_half_open": [
+                4664066048,
+                4697620480
+              ],
+              "absolute_inclusive": [
+                4664066200,
+                4697620631
+              ]
+            }
+          ]
+        },
+        {
+          "repository": "Qwen/Qwen3.8-2.4T-A95B",
+          "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+          "section": "nextn",
+          "stage": 0,
+          "globals": [
+            230
+          ],
+          "source_plan_sha256": "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51",
+          "original_roles": 3,
+          "source_bytes": 100663296,
+          "full_bank_download_allowed": false,
+          "whole_shards_downloaded": false,
+          "roles": [
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 0,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert230/gate",
+              "section": "nextn",
+              "global_id": 230,
+              "leg": "gate",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-230-gate.bf16",
+              "data_relative_half_open": [
+                15435038720,
+                15468593152
+              ],
+              "absolute_inclusive": [
+                15435038872,
+                15468593303
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 33554432,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert230/up",
+              "section": "nextn",
+              "global_id": 230,
+              "leg": "up",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-230-up.bf16",
+              "data_relative_half_open": [
+                15468593152,
+                15502147584
+              ],
+              "absolute_inclusive": [
+                15468593304,
+                15502147735
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.down_proj",
+              "source_file": "model-00186-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00186-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "f4c39caf05af089dd8172eb7b3c3583ff97e6f2fd6c654037ffa4e6995ba332a"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00186-of-00213.safetensors",
+              "etag": "\"dc21dc75eeb37d58b52aa5f1737ddb44aff52dba6394702eead444c9e0a9fc81\"",
+              "whole_file_bytes": 17179869336,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 33554432,
+              "leg_offset": 0,
+              "shape": [
+                8192,
+                2048
+              ],
+              "name": "mtp.layers.0.mlp.experts.down_proj#expert230/down",
+              "section": "nextn",
+              "global_id": 230,
+              "leg": "down",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-230-down.bf16",
+              "data_relative_half_open": [
+                7717519360,
+                7751073792
+              ],
+              "absolute_inclusive": [
+                7717519512,
+                7751073943
+              ]
+            }
+          ]
+        },
+        {
+          "repository": "Qwen/Qwen3.8-2.4T-A95B",
+          "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+          "section": "nextn",
+          "stage": 0,
+          "globals": [
+            296
+          ],
+          "source_plan_sha256": "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51",
+          "original_roles": 3,
+          "source_bytes": 100663296,
+          "full_bank_download_allowed": false,
+          "whole_shards_downloaded": false,
+          "roles": [
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 0,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert296/gate",
+              "section": "nextn",
+              "global_id": 296,
+              "leg": "gate",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-296-gate.bf16",
+              "data_relative_half_open": [
+                19864223744,
+                19897778176
+              ],
+              "absolute_inclusive": [
+                19864223896,
+                19897778327
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 33554432,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert296/up",
+              "section": "nextn",
+              "global_id": 296,
+              "leg": "up",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-296-up.bf16",
+              "data_relative_half_open": [
+                19897778176,
+                19931332608
+              ],
+              "absolute_inclusive": [
+                19897778328,
+                19931332759
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.down_proj",
+              "source_file": "model-00186-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00186-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "f4c39caf05af089dd8172eb7b3c3583ff97e6f2fd6c654037ffa4e6995ba332a"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00186-of-00213.safetensors",
+              "etag": "\"dc21dc75eeb37d58b52aa5f1737ddb44aff52dba6394702eead444c9e0a9fc81\"",
+              "whole_file_bytes": 17179869336,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 33554432,
+              "leg_offset": 0,
+              "shape": [
+                8192,
+                2048
+              ],
+              "name": "mtp.layers.0.mlp.experts.down_proj#expert296/down",
+              "section": "nextn",
+              "global_id": 296,
+              "leg": "down",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-296-down.bf16",
+              "data_relative_half_open": [
+                9932111872,
+                9965666304
+              ],
+              "absolute_inclusive": [
+                9932112024,
+                9965666455
+              ]
+            }
+          ]
+        }
+      ],
+      "network_requests": 0
+    },
+    {
+      "event": "expert_plan",
+      "complete": true,
+      "section": "nextn",
+      "stage": 0,
+      "globals": [
+        307
+      ],
+      "source_plan": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/expert-source-plan.json",
+        "bytes": 18876,
+        "sha256": "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51"
+      },
+      "plane_bytes": 33554432,
+      "expert_payload_bytes": 100663296,
+      "requested_payload_bytes": 100663296,
+      "expert_workers": 3,
+      "maximum_live_stream_bytes": 3145728,
+      "range_bytes": 134217728,
+      "maximum_role_attempts": 3,
+      "per_id_plans": [
+        {
+          "repository": "Qwen/Qwen3.8-2.4T-A95B",
+          "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+          "section": "nextn",
+          "stage": 0,
+          "globals": [
+            307
+          ],
+          "source_plan_sha256": "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51",
+          "original_roles": 3,
+          "source_bytes": 100663296,
+          "full_bank_download_allowed": false,
+          "whole_shards_downloaded": false,
+          "roles": [
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 0,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert307/gate",
+              "section": "nextn",
+              "global_id": 307,
+              "leg": "gate",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-307-gate.bf16",
+              "data_relative_half_open": [
+                20602421248,
+                20635975680
+              ],
+              "absolute_inclusive": [
+                20602421400,
+                20635975831
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.gate_up_proj",
+              "source_file": "model-00185-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00185-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "35dd906725d26b938eca11b58b355de22f3695286237dd771147d218879276f3"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00185-of-00213.safetensors",
+              "etag": "\"4553ef84a3a38c9129761392211ab773136b550f28e64ec8663a60935990af8f\"",
+              "whole_file_bytes": 34359738520,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 67108864,
+              "leg_offset": 33554432,
+              "shape": [
+                2048,
+                8192
+              ],
+              "name": "mtp.layers.0.mlp.experts.gate_up_proj#expert307/up",
+              "section": "nextn",
+              "global_id": 307,
+              "leg": "up",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-307-up.bf16",
+              "data_relative_half_open": [
+                20635975680,
+                20669530112
+              ],
+              "absolute_inclusive": [
+                20635975832,
+                20669530263
+              ]
+            },
+            {
+              "source_name": "mtp.layers.0.mlp.experts.down_proj",
+              "source_file": "model-00186-of-00213.safetensors",
+              "source_header": {
+                "path": ".scratch/qwen-bfloat-selected-20261023/B05/model-00186-of-00213/header.json",
+                "bytes": 144,
+                "sha256": "f4c39caf05af089dd8172eb7b3c3583ff97e6f2fd6c654037ffa4e6995ba332a"
+              },
+              "url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/model-00186-of-00213.safetensors",
+              "etag": "\"dc21dc75eeb37d58b52aa5f1737ddb44aff52dba6394702eead444c9e0a9fc81\"",
+              "whole_file_bytes": 17179869336,
+              "tensor_relative_first": 0,
+              "tensor_absolute_first": 152,
+              "expert_stride": 33554432,
+              "leg_offset": 0,
+              "shape": [
+                8192,
+                2048
+              ],
+              "name": "mtp.layers.0.mlp.experts.down_proj#expert307/down",
+              "section": "nextn",
+              "global_id": 307,
+              "leg": "down",
+              "dtype": "BF16",
+              "bytes": 33554432,
+              "filename": "expert-307-down.bf16",
+              "data_relative_half_open": [
+                10301210624,
+                10334765056
+              ],
+              "absolute_inclusive": [
+                10301210776,
+                10334765207
+              ]
+            }
+          ]
+        }
+      ],
+      "network_requests": 0
+    }
+  ],
+  "receipt_portability": {
+    "status": "PASS",
+    "actual_FileMapping": true,
+    "product_extraction": true,
+    "body_bytes": 0,
+    "new_SDK_TUs": 0,
+    "checks_per_cwd": 4,
+    "records": [
+      {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\receipt-cwd-check\\check.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077",
+          "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51",
+          "2457f213b2f7c29c47b46559958c9bce161819e2038eb66e9dfd6453130e835c",
+          "77"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "exit_code": 0,
+        "elapsed_seconds": 0.00926828384399414,
+        "actual_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\ready.json",
+          "bytes": 645,
+          "sha256": "4b6d379163b166b08ff4bd3102042d785e9eddc9b66e38c853d2fb535218afa2"
+        },
+        "stdout": "{\"catalog_sha256\":\"2457f213b2f7c29c47b46559958c9bce161819e2038eb66e9dfd6453130e835c\",\"negative_checks\":3,\"historical_directory_resolves_here\":true}\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\receipt-cwd-check\\check.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077",
+          "7fea129068439f515d38f44f93c944ccf8b526ee8a91f88d297954a43b7f8c51",
+          "2457f213b2f7c29c47b46559958c9bce161819e2038eb66e9dfd6453130e835c",
+          "77"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\receipt-cwd-check\\build",
+        "exit_code": 0,
+        "elapsed_seconds": 0.011266708374023438,
+        "actual_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\original-experts\\target91\\expert077\\ready.json",
+          "bytes": 645,
+          "sha256": "4b6d379163b166b08ff4bd3102042d785e9eddc9b66e38c853d2fb535218afa2"
+        },
+        "stdout": "{\"catalog_sha256\":\"2457f213b2f7c29c47b46559958c9bce161819e2038eb66e9dfd6453130e835c\",\"negative_checks\":3,\"historical_directory_resolves_here\":false}\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "verification": {
+    "CUDA_consumer_compile": {
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+        "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "/nologo",
+        "/c",
+        "/std:c++latest",
+        "/EHsc",
+        "/Zc:preprocessor",
+        "/Zc:__cplusplus",
+        "/utf-8",
+        "/O2",
+        "/Ob2",
+        "/MD",
+        "/DNDEBUG",
+        "/permissive-",
+        "/bigobj",
+        "/W4",
+        "/WX",
+        "/wd4324",
+        "/wd4702",
+        "/DHYLE_STATIC",
+        "/DNOMINMAX",
+        "/DGGML_USE_CUDA",
+        "/DHYLE_COMPUTE_CUDA=1",
+        "/DHYLE_COMPUTE_GGML_CUDA=1",
+        "/IC:\\public\\project-hyle\\hyle\\include",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+        "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+        "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+        "/external:W0",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+        "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+        "/DHYLE_TEST_QWEN_STATE_CPU=1",
+        "/DHYLE_TEST_QWEN_STATE_CUDA=1",
+        "/DHYLE_GGML_CPU_IQ1_EXTENSIONS=1",
+        "/DHYLE_GGML_CUDA_IQ1_EXTENSIONS=1",
+        "/sourceDependencies",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\compile2\\deps.json",
+        "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+        "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-20261024\\compile2\\consumer.obj"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792828266.8441246,
+      "timeout_seconds": 240,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 2268,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792828280.232714,
+      "process_wall_seconds": 13.387089099996956
+    },
+    "CPU_only_strict_syntax": {
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "/external:W0",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\src",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include",
+        "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "/nologo",
+        "/c",
+        "/std:c++latest",
+        "/EHsc",
+        "/Zc:preprocessor",
+        "/Zc:__cplusplus",
+        "/utf-8",
+        "/O2",
+        "/Ob2",
+        "/MD",
+        "/DNDEBUG",
+        "/permissive-",
+        "/bigobj",
+        "/W4",
+        "/WX",
+        "/wd4324",
+        "/wd4702",
+        "/DHYLE_STATIC",
+        "/DNOMINMAX",
+        "/external:W0",
+        "/DHYLE_COMPUTE_CPU=1",
+        "/IC:\\public\\project-hyle\\hyle\\include",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/IC:\\public\\project-hyle\\hyle\\engine",
+        "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+        "/Zs",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/IC:\\public\\project-hyle\\hyle\\engine\\models\\qwen35",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/DHYLE_TEST_QWEN_STATE_CPU=1",
+        "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+        "/DHYLE_GGML_CPU_IQ1_EXTENSIONS=1"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792828555.7899876,
+      "timeout_seconds": 120,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 43300,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792828563.77332,
+      "process_wall_seconds": 7.9827621000004
+    },
+    "consumer_HTTP_requests": 0,
+    "consumer_HTTP_bytes": 0,
+    "new_SDK_or_provider_TUs": 0,
+    "source_acquisition": "External root-controlled exact range batches; the target91 six-ID batch is recorded by its actual ready receipt, not counted as zero downloaded source."
+  },
+  "limitations": [
+    "The first actual mixed attempt completed the cold domain contracts and real q sampling, then reached six unavailable original target91 experts while processing its sampled proposal. WAIT0 failed explicitly. This is not a successful acceptance/RNG/continuation result.",
+    "The second attempt used all six newly supplied target91 experts, then reached four unavailable original NextN experts [90,139,230,296] during actual continuation. It failed explicitly, without a complete second Head result. The exact12-plane plan is402,653,184 bytes.",
+    "The third attempt used the four newly supplied NextN experts and progressed through target episode3, then reported exactly one more unavailable NextN expert307. Its exact3-plane plan is100,663,296 bytes. Actual p/q acceptance and complete continuation are not inferred from expert episode counts.",
+    "The fourth attempt used the exact one-ID NextN307 source addition and completed the actual mixed stochastic publication and pending continuation: sampled proposal331 rejected to residual23, then actual target/NextN consumption of23 produced279, with cursor4. Earlier WAIT0 frontiers remain historical failures; no full expert bank was fetched.",
+    "The image2 source is frozen. The later receipt-only patch removes historical-directory path equivalence from source identity; actual FileMapping repo/build cwd checks plus three identity negatives per cwd passed, but that pure metadata patch is not part of image2.",
+    "Previous-layer inputs/history are explicit fixtures. No complete-model quality, all-backend/identity coverage, throughput, measured VRAM or physical-total-memory claim."
+  ],
+  "inherited_evidence": [
+    "docs/evidence/correctness/mtp-qwen24-original-stochastic-state-2026-10-24.json",
+    "docs/evidence/correctness/mtp-qwen24-bfloat-target-verifier-2026-10-23.json"
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-qwen24-mixed-stochastic-state-2026-10-24.zip",
+    "bytes": 739621,
+    "sha256": "c23842117cffadc54c191b695cdb464ff0fc2061bbfd9a99bd93a174e4de3891"
+  },
+  "archive_records": 289
+}

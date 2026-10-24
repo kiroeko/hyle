@@ -1,8 +1,8 @@
 # HYLE 使用指南
 
-HYLE 是供 C++23 程序使用的基础库。普通集成只需要选择产品、计算后端并链接
-`hyle::<product>`；内部实现和第三方库由 CMake 自动带入。它提供推理计算与资源管理能力，
-模型格式解析、tokenizer、请求循环和 CPU/GPU 放置策略仍由推理引擎负责。
+本页介绍 HYLE 基础模块的 C++23 集成；运行项目内的推理引擎见[引擎指南](inference.md)。
+普通集成只需要选择产品、计算后端并链接 `hyle::<product>`，内部实现和第三方库由 CMake 自动带入。
+模型格式解析、tokenizer、请求循环和放置策略归引擎层，Compute／Graph 不解释模型文件。
 
 ## 第一次构建并使用
 
@@ -83,7 +83,8 @@ target_link_libraries(my_app PRIVATE hyle::mem hyle::container)
 hyle_stage_runtime(my_app)
 ```
 
-父工程必须显式设置 `HYLE_COMPONENTS`，以免依赖意外构建整库；顶层独立构建省略时为 `all`。
+父工程必须显式设置 `HYLE_COMPONENTS`，以免依赖意外构建整库；顶层新配置省略时为 `engine`。
+`util` 只选择既有工具模块及其依赖，`all` 选择全部产品；它们不互为别名。
 只链接应用直接使用的产品，头路径、C++23 要求和传递依赖会自动传播。不要手工追加第三方库或
 链接内部 `_factor_*` target。
 

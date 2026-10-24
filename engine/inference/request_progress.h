@@ -1,0 +1,174 @@
+#pragma once
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "sampling_cursor.h"
+
+namespace hyle::inference {
+
+struct GenerationTurn final {
+  std::vector<std::int32_t> prompt;
+  std::size_t max_outputs = 0;
+};
+
+struct GenerationSessionSchedule final {
+  std::string id;
+  std::vector<GenerationTurn> turns;
+};
+
+// Host progress only. The schedule owner outlives this borrowed turn span.
+// The model's committed head/ledger remains authoritative for its next cursor;
+// initial_sampling identifies a new request, not a second mutable RNG state.
+struct RequestProgress final {
+  std::vector<std::int32_t> generated;
+  std::size_t turn_index = 0, turn_output_begin = 0;
+  SamplingCursor initial_sampling{};
+  bool prefilled = false, turn_done = false;
+
+  explicit RequestProgress(std::size_t maximum_outputs) : maximum_outputs_(maximum_outputs) {
+    if (!maximum_outputs) throw std::invalid_argument("request output limit must be positive");
+    generated.reserve(maximum_outputs);
+  }
+  RequestProgress(const RequestProgress &) = delete;
+  RequestProgress &operator=(const RequestProgress &) = delete;
+  RequestProgress(RequestProgress &&) noexcept = default;
+  RequestProgress &operator=(RequestProgress &&) noexcept = default;
+
+  // The schedule is borrowed once, before admission. Empty user suffixes are
+  // valid: a later turn can consist solely of its historical pending token.
+  void bind_turns(std::span<const GenerationTurn> turns) {
+    if (turns_bound_ || started_ || observed_commits_ || !generated.empty() || turns.empty())
+      throw std::logic_error("request turns must be bound once before progress starts");
+    std::size_t outputs = 0;
+    for (const auto &turn : turns) {
+      if (!turn.max_outputs || turn.max_outputs > maximum_outputs_ - outputs)
+        throw std::out_of_range("request turn quotas exceed the prepared output limit");
+      outputs += turn.max_outputs;
+    }
+    turns_ = turns; turns_bound_ = true;
+  }
+
+  std::span<const GenerationTurn> turns() const noexcept { return turns_; }
+  std::size_t maximum_outputs() const noexcept { return maximum_outputs_; }
+  bool turn_started() const noexcept { return started_; }
+
+  // This borrows caller-owned, cold-prepared storage; it never creates token
+  // ownership. Validate the full extent/suffix/pending before writing slot 0.
+  // A no-schedule request is one turn with its constructor's actual limit.
+  std::span<const std::int32_t> begin_turn(std::span<std::int32_t> prepared_input = {},
+                                         std::optional<std::int32_t> actual_pending = {}) {
+    if (started_ || turn_index >= (turns_.empty() ? 1 : turns_.size()))
+      throw std::logic_error("request turn has already begun or is outside its schedule");
+    const auto pending_slots = turn_index ? std::size_t{1} : 0;
+    if (pending_slots && (!actual_pending || generated.empty() || *actual_pending != generated.back()))
+      throw std::logic_error("later request turn requires its actual last emitted pending token");
+    if (!pending_slots && actual_pending)
+      throw std::logic_error("initial request turn cannot prepend a pending token");
+    if (generated.size() > maximum_outputs_)
+      throw std::out_of_range("request outputs exceed its prepared output limit");
+    if (!turns_.empty()) {
+      const auto &turn = turns_[turn_index];
+      if (turn.prompt.size() > (std::numeric_limits<std::size_t>::max)() - pending_slots ||
+          prepared_input.size() != turn.prompt.size() + pending_slots ||
+          !std::equal(turn.prompt.begin(), turn.prompt.end(), prepared_input.begin() + pending_slots))
+        throw std::invalid_argument("prepared turn input differs from its user suffix and pending extent");
+      if (turn.max_outputs > maximum_outputs_ - generated.size())
+        throw std::out_of_range("request turn exceeds its prepared output limit");
+    }
+    if (pending_slots) prepared_input[0] = *actual_pending;
+    prefilled = false;
+    turn_done = false;
+    turn_output_begin = generated.size();
+    started_ = true;
+    return prepared_input;
+  }
+
+  std::size_t output_limit() const {
+    if (turns_.empty()) return maximum_outputs_;
+    if (turn_index >= turns_.size() || turn_output_begin > maximum_outputs_ ||
+        turns_[turn_index].max_outputs > maximum_outputs_ - turn_output_begin)
+      throw std::out_of_range("request output boundary is outside its prepared limit");
+    return turn_output_begin + turns_[turn_index].max_outputs;
+  }
+
+  std::size_t remaining_outputs() const {
+    const auto limit = output_limit();
+    if (generated.size() > limit) throw std::out_of_range("request outputs exceed this turn's quota");
+    return turn_done ? 0 : limit - generated.size();
+  }
+
+  bool more_turns() const noexcept { return !turns_.empty() && turn_index + 1 < turns_.size(); }
+  void advance_turn() {
+    if (!started_ || !turn_done || !more_turns())
+      throw std::logic_error("request can advance only an observed complete turn with a successor");
+    ++turn_index; started_ = false;
+  }
+
+  std::size_t observed_commits() const noexcept { return observed_commits_; }
+
+  // Adopt only initial, already committed input history. Its old outputs do
+  // not belong to the new request; a full hit applies its new pending below.
+  void adopt_committed_history(std::size_t count) {
+    if (history_adopted_ || observed_commits_ || !generated.empty() || turn_index || prefilled || turn_done)
+      throw std::logic_error("request can adopt committed history only before its first output");
+    observed_commits_ = count; history_adopted_ = true;
+  }
+
+  void preflight_outputs(std::span<const std::int32_t> emitted, bool user_output,
+                         bool prefill_complete, bool stopped) const {
+    (void)prefill_complete; (void)stopped;
+    if (!started_) throw std::logic_error("request output observation requires an admitted turn");
+    const auto count = user_output ? emitted.size() : 0;
+    const auto limit = output_limit();
+    if (generated.size() > maximum_outputs_ || generated.size() > generated.capacity() ||
+        count > maximum_outputs_ - generated.size() || count > generated.capacity() - generated.size() ||
+        generated.size() > limit || count > limit - generated.size())
+      throw std::out_of_range("observed request outputs exceed the reserved storage or turn quota");
+    if (user_output && (turn_done || emitted.empty()))
+      throw std::logic_error("request cannot emit an empty result or append after a stopped turn");
+  }
+
+  // Both full-hit/non-ledger output and committed-ledger output use these
+  // exact host rules. stopped is the model's actual selector/EOS fact.
+  void apply_outputs(std::span<const std::int32_t> emitted, bool user_output,
+                     bool prefill_complete, bool stopped) {
+    preflight_outputs(emitted, user_output, prefill_complete, stopped);
+    if (user_output) generated.insert(generated.end(), emitted.begin(), emitted.end());
+    prefilled = prefilled || prefill_complete;
+    if (user_output) turn_done = generated.size() == output_limit() || stopped;
+  }
+
+  // A duplicate is a no-op, including its payload. Gaps and bounds fail before
+  // any host mutation. The model's authoritative commit/RNG is never advanced.
+  bool preflight_commit(std::size_t ordinal, std::span<const std::int32_t> emitted,
+                        bool user_output, bool prefill_complete, bool stopped) const {
+    if (ordinal < observed_commits_) return false;
+    if (ordinal != observed_commits_ || observed_commits_ == (std::numeric_limits<std::size_t>::max)())
+      throw std::out_of_range("request commit observations must be contiguous and bounded");
+    preflight_outputs(emitted, user_output, prefill_complete, stopped);
+    return true;
+  }
+
+  bool observe_commit(std::size_t ordinal, std::span<const std::int32_t> emitted,
+                      bool user_output, bool prefill_complete, bool stopped) {
+    if (!preflight_commit(ordinal, emitted, user_output, prefill_complete, stopped)) return false;
+    apply_outputs(emitted, user_output, prefill_complete, stopped);
+    ++observed_commits_;
+    return true;
+  }
+
+private:
+  std::span<const GenerationTurn> turns_{};
+  std::size_t maximum_outputs_ = 0, observed_commits_ = 0;
+  bool started_ = false, turns_bound_ = false, history_adopted_ = false;
+};
+
+} // namespace hyle::inference

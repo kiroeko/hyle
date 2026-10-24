@@ -1,0 +1,145 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite original complete-model CPU paths",
+  "scope": "Original Qwen3.5-2B Unsloth MTP GGUF Q4 CPU ordinary/K1/K4 random; not task quality or performance comparison.",
+  "source": {
+    "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+    "size": 1384902048,
+    "lfs_sha256": "9f7b15d04cf2d5878c8122a7c181dbc09f050cd66080ce3374576e734ccb0910",
+    "api_xet_hash": "f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb",
+    "etag": "\"f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb\"",
+    "etag_basis": "API xetHash",
+    "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q4_K_XL.gguf",
+    "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+    "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe",
+    "header_sha256": "49b590f2fcfb258db2917af72c3cfebfcebaed4b7e86321eb040c0afe7feecb4",
+    "header_bytes": 10963104,
+    "full_file_sha256_verified": true
+  },
+  "source_id": "39daef4a62aeef1437121f3ea2556a0a451255a5a78caa0a743c2df5fb6c5a40",
+  "original_roles": 335,
+  "original_payload_bytes": 1373938944,
+  "prompt_tokens": 154,
+  "capacity": 256,
+  "representation": "Borrow original encoded role ranges without whole-bank floating dequantization or copied weights.",
+  "discovered_gap": {
+    "before_exit": 1,
+    "diagnostic": "graph node 0: gather: no available operation or region implementation covers this node",
+    "cause": "Recipe::embedding requested unchecked IDs while original GGUF encoded row providers require checked IDs.",
+    "fix": "Select checked Gather for encoded GGUF storage; preserve the existing unchecked dense path.",
+    "comparison_limit": "Before and after use different retained consumer snapshots; this is functional route evidence, not an isolated timing comparison."
+  },
+  "cases": [
+    {
+      "name": "cpu-ordinary",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "generated_tokens": 4,
+      "mtp": false,
+      "sampling": "greedy",
+      "original_host_weight_bytes": 1331977472,
+      "original_device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 42754632,
+      "cache_requested_byte_limit": 268435456,
+      "workspace_domains": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 25551296,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "proposals": [],
+      "consumed_drafts": 0,
+      "sampling_draw_cursor": 0
+    },
+    {
+      "name": "cpu-k1",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "generated_tokens": 4,
+      "mtp": true,
+      "sampling": "greedy",
+      "original_host_weight_bytes": 1373938944,
+      "original_device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 62915043,
+      "cache_requested_byte_limit": 268435456,
+      "workspace_domains": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 25551296,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "proposals": [
+        1,
+        0
+      ],
+      "consumed_drafts": 1,
+      "sampling_draw_cursor": 0
+    },
+    {
+      "name": "cpu-k4-random",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        1445,
+        18904,
+        1120
+      ],
+      "generated_tokens": 6,
+      "mtp": true,
+      "sampling": "random",
+      "original_host_weight_bytes": 1373938944,
+      "original_device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 121566567,
+      "cache_requested_byte_limit": 268435456,
+      "workspace_domains": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 25551304,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "proposals": [
+        4
+      ],
+      "consumed_drafts": 4,
+      "sampling_draw_cursor": 10
+    }
+  ],
+  "consumer": {
+    "path": ".scratch/qwen-multi-draft-20261024/geometry-cpu-check3/recursive-probe.exe",
+    "bytes": 141237760,
+    "sha256": "394b2926345ed48d90ca645910131ac72147a7bc3f7aa0cd251fa307b10e579a"
+  },
+  "fresh_consumer_TUs": 1,
+  "SDK_builds": 0,
+  "execution_HTTP": 0,
+  "weight_copies": 0,
+  "limits": [
+    "CPU endpoint of the retained mixed CPU/CUDA SDK; these processes use no CUDA execution.",
+    "Finite generated token and state journeys do not establish full model task quality.",
+    "Native-private execution allocations remain unknown; reported known workspace is not physical peak RAM.",
+    "Frozen report predates the separate GGUF score-policy label correction; logits math already uses F32 activation values and encoded MatMul/F32 output.",
+    "No CUDA, Apple or Vulkan complete-model GGUF claim from these CPU runs.",
+    "Latest in-progress native lifetime changes are not certified by this frozen consumer."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-original-gguf-q4-cpu-2026-10-24-logs.zip",
+    "bytes": 281843,
+    "sha256": "f425772b9055bb7a15155d46ade06f26b7eb0d5cec6900f8649c59b6c44b4026"
+  },
+  "archive_members": 59
+}

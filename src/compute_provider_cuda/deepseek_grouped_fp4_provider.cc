@@ -2,6 +2,7 @@
 
 #include <array>
 #include <climits>
+#include <cstddef>
 #include <new>
 
 #include "deepseek_quantization_sm89.h"
@@ -28,7 +29,7 @@ struct Prepared final {
   Shape shape;
   CUmodule quant_module = nullptr;
   CUfunction quant = nullptr;
-  native::Program gemm;
+  native::Program gemm{};
 };
 Result<Shape> select(const detail::ProviderOperationRequest &request) noexcept {
   const auto op = request.operation.custom_as<model_ops::GroupedFloat4Linear>();
@@ -40,13 +41,26 @@ Result<Shape> select(const detail::ProviderOperationRequest &request) noexcept {
     return std::unexpected(Status::InvalidArgument("DeepSeek FP4 output differs from inference"));
   const auto w = request.inputs[0].dimensions(), a = request.inputs[1].dimensions();
   const auto ids = request.inputs[2].dimensions();
-  const bool supported = (w[1] == 3072 && w[2] == 7168) ||
-      (w[1] == 7168 && w[2] == 3072) ||
-      (w[1] == 2048 && w[2] == 4096) ||
-      (w[1] == 4096 && w[2] == 2048);
-  if (!supported || w[0] > INT32_MAX || ids[1] > 65535 || a[0] > 65535 / ids[1] ||
-      a[0] * a[1] > INT32_MAX / w[2])
+  // The ordinary kernel masks both load and store for its final N64 tile;
+  // no model-specific N/K geometry is required. Its pointer products use
+  // unsigned64 indices, while arguments and the original A128 quantizer
+  // use signedI32. Keep the latter's complete flattened activation extent
+  // in I32, and the launch's token-slot dimension in CUDA's z-grid range.
+  // Divide first so malformed large shapes cannot overflow an intermediate.
+  if (w[0] > INT32_MAX || w[1] > INT32_MAX || w[2] > INT32_MAX ||
+      ids[1] > 65535 || a[0] > 65535 / ids[1] ||
+      a[0] > INT32_MAX / w[2] / a[1])
     return std::unexpected(Status::Unimplemented("DeepSeek FP4 native shape or grid capacity is unqualified"));
+  for (const auto &input : request.inputs) {
+    HYLE_ASSIGN_OR_RETURN(const auto bytes, input.required_bytes());
+    if (bytes > std::size_t(PTRDIFF_MAX))
+      return std::unexpected(Status::Unimplemented("DeepSeek FP4 input address capacity is unqualified"));
+  }
+  for (const auto &output : request.outputs) {
+    HYLE_ASSIGN_OR_RETURN(const auto bytes, output.required_bytes());
+    if (bytes > std::size_t(PTRDIFF_MAX))
+      return std::unexpected(Status::Unimplemented("DeepSeek FP4 output address capacity is unqualified"));
+  }
   return Shape{static_cast<int>(w[0]), static_cast<int>(w[1]), static_cast<int>(w[2]),
       static_cast<int>(ids[1]), static_cast<int>(a[1]), static_cast<int>(a[0] * ids[1]),
       static_cast<int>(a[0] * a[1])};

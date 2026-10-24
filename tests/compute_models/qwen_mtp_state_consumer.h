@@ -543,7 +543,7 @@ inline Recipe build_bfloat(const Model &model,std::shared_ptr<const bfloat::Boun
   r.ffn_input=expose(r,ports->ffn_input);r.ffn_output=expose(r,ffn_output);r.post_ffn=expose(r,post_ffn);
   r.state_ports[kKey]=expose(r,new_key);r.state_ports[kValue]=expose(r,new_value);r.state_ports[kHidden]=expose(r,normalized);
   const auto head_parameter=names.embedding==names.head?embedding_parameter:external(r,head_role);
-  const auto logits=f.one(c::model_ops::bfloat_linear_f32(),{normalized,head_parameter});
+  const auto logits=f.one(c::model_ops::dense_linear_f32(),{normalized,head_parameter});
   r.logits=expose(r,logits);
   const auto winner=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{logits},2);
   r.head_score=expose(r,winner[0]);r.state_ports[kPending]=expose(r,core::reshape(f,winner[1],{1}));

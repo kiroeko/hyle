@@ -527,12 +527,13 @@ Status lower_tensor(ProgramState &program, const PlanStep &step) {
         program.values[step.inputs[0]].description.data_type());
     const auto ordinary = [](std::uint32_t type) { return type <= 2 || type == 5; };
     const bool numeric = input_type && ordinary(*input_type) && ordinary(*output_type);
+    const bool signed_to_float = input_type && *input_type == 3 && *output_type == 0;
     const bool fp8 = input_type &&
         ((*input_type == 8 && (*output_type <= 2 || *output_type == 8)) ||
          (*output_type == 8 && *input_type <= 2));
-    if (!numeric && !fp8)
+    if (!numeric && !fp8 && !signed_to_float)
       return Status::Unimplemented(
-          "Vulkan Cast requires F32/F16/BF16/Bool or a floating E4M3 bridge");
+          "Vulkan Cast requires F32/F16/BF16/Bool, I32 to F32, or a floating E4M3 bridge");
   }
   if ((operation >= 3 && operation <= 4) || operation >= 6) {
     if (*output_type > 2)

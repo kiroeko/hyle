@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-24",
+  "problem": "The early geometry reader preserved CR on the source identity under Linux; the full prepared reader already accepted CRLF but could not be reached.",
+  "fix": "Strip the identity line terminal CR before validating its hash, matching the full role reader.",
+  "method": "Compile and execute the exact product function body, extracted without edits, with the real prepared headers under WSL GCC. This is a metadata-only focused check, not a whole-engine build or inference.",
+  "before": {
+    "scope": "Exact source read_weight_geometry function body isolated with its real standard-library-only prepared headers; no copied implementation or model execution.",
+    "product_sha256": "b766774fec0414d34ee97396c572da56fc22c9e95b97d2a1c81b1e71bae20d1e",
+    "extracted_function_sha256": "a51d7a8e28be52d643be4db6e298ee8537c8d43acef2927a737233fb78dc63bf",
+    "records": [
+      {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-24.04",
+          "--",
+          "g++",
+          "-std=c++23",
+          "-O0",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-before/exact-function.cc",
+          "-o",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-before/check"
+        ],
+        "exit": 0,
+        "seconds": 2.981464385986328
+      },
+      {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-24.04",
+          "--",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-before/check",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-before"
+        ],
+        "exit": 1,
+        "seconds": 0.1122140884399414
+      }
+    ],
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "model_body_reads": 0
+  },
+  "after": {
+    "scope": "Exact source read_weight_geometry function body isolated with its real standard-library-only prepared headers; no copied implementation or model execution.",
+    "product_sha256": "2d866750f14e90b862620eec8d9f305ef2f283efe9cd426d21a85f184d9e4c44",
+    "extracted_function_sha256": "53497278eb860350923122338b779b54d2d0a98b7034c528a1e49a83d204da62",
+    "records": [
+      {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-24.04",
+          "--",
+          "g++",
+          "-std=c++23",
+          "-O0",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-after/exact-function.cc",
+          "-o",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-after/check"
+        ],
+        "exit": 0,
+        "seconds": 1.095289945602417
+      },
+      {
+        "command": [
+          "wsl",
+          "-d",
+          "Ubuntu-24.04",
+          "--",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-after/check",
+          "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/source-geometry-newlines-after"
+        ],
+        "exit": 0,
+        "seconds": 0.10716795921325684
+      }
+    ],
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "model_body_reads": 0
+  },
+  "cases": [
+    "HF LF",
+    "HF CRLF",
+    "GGUF LF",
+    "GGUF CRLF"
+  ],
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "weight_body_reads": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-source-geometry-newlines-2026-10-24-logs.zip",
+    "bytes": 11146,
+    "sha256": "8ee24d73b91f27bfa8887af80eb0de5c14e960a68a0919ddfeb2f4691c34b778"
+  }
+}

@@ -137,7 +137,7 @@ inline Routing routing(Fragment &f, const Case &model, ValueId input,
   if (model.router_bf16) {
     auto x = f.one(c::Operation(c::Cast{c::DataType::kBFloat16}), {input});
     auto weight = f.constant(desc, std::move(storage));
-    logits = f.one(c::model_ops::bfloat_linear_f32(), {x, weight});
+    logits = f.one(c::model_ops::dense_linear_f32(), {x, weight});
   } else {
     auto weight = f.constant(desc.transposed().value(), std::move(storage));
     logits = f.one(c::Operation(c::MatMul{}), {input, weight});

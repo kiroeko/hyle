@@ -1,0 +1,262 @@
+{
+  "status": "PASS_BOUNDED_ACTUAL_BF16_AND_Q8_SIDECAR_STOCHASTIC_PREFIX_AND_PENDING_CONTINUATION",
+  "date": "2026-10-24",
+  "actual": {
+    "S03_original_BF16_sidecar": {
+      "test": "DSparkBfloatSidecarState.CpuRandomBfloatMarkovPrefixAndPendingContinue",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "backend": "CPU",
+      "policy": {
+        "temperature": 1,
+        "top_k": 0,
+        "top_p": 1
+      },
+      "seed": 123,
+      "stream": 7,
+      "sampled_sequence_including_current": [
+        3,
+        20742,
+        343
+      ],
+      "commits": [
+        {
+          "m": 2,
+          "accepted": 0,
+          "consumed": 1,
+          "pending": 26719,
+          "draw": 5
+        },
+        {
+          "m": 0,
+          "accepted": 0,
+          "consumed": 1,
+          "pending": 92132,
+          "draw": 6
+        }
+      ],
+      "consumed_pending_next": 26719,
+      "state_members": 31,
+      "random_publications": 2,
+      "actual_pending_continuations": 1,
+      "sampled_markov_rows": 2,
+      "graph_submissions": 35,
+      "state_backing_peak_bytes": 65611976,
+      "state_backing_budget_bytes": 362939904,
+      "head_storage": "F32 hidden/Markov visible -> BF16 projection input; original BF16 W",
+      "process": {
+        "exit": 0,
+        "seconds": 97.92199999999139
+      },
+      "xml_total_seconds": 97.243,
+      "xml_case_seconds": 53.536,
+      "sources": [
+        {
+          "path": "tests/compute_models/dspark_original_state_consumer_test.cc",
+          "bytes": 192491,
+          "sha256": "c8c406f25d6af9833e94fb24c8c1344cc7e0fa4182ead01476d69ae93b4a7093"
+        },
+        {
+          "path": "tests/compute_models/dspark_original_state_consumer.h",
+          "bytes": 26902,
+          "sha256": "2a315a6af669e15247f987a78d5ada7b60c1b94845365cc53724b07b47c3b7f6"
+        },
+        {
+          "path": "tests/compute_models/dspark_stochastic_head.h",
+          "bytes": 6814,
+          "sha256": "b86cfc2407d3fdff14e969f5311a59b59c9b8165be0bd8f0418e3d31724b73c5"
+        },
+        {
+          "path": "tests/compute_models/model_sampling_fragment.h",
+          "bytes": 5115,
+          "sha256": "6dd0275790e0dc6a30683c63ddbb5cb8b1e5c43f32743f19bbac2856b6dca8f2"
+        },
+        {
+          "path": "engine/inference/sampling_graph.h",
+          "bytes": 17641,
+          "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+        },
+        {
+          "path": "engine/inference/sampling_cursor.h",
+          "bytes": 1200,
+          "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+        }
+      ],
+      "image_identity_boundary": "The one image was reused for the subsequent Q8 TU. Its pre-overwrite binary SHA was not captured; exact run XML/log, run-start changed-source snapshots and matching build/link recipe are retained. No later image SHA is attributed to this run."
+    },
+    "original_Q8_sidecar": {
+      "test": "DSparkOriginalState.CpuRandomQ8MarkovPrefixAndPendingContinue",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "backend": "CPU",
+      "policy": {
+        "temperature": 1,
+        "top_k": 0,
+        "top_p": 1
+      },
+      "seed": 123,
+      "stream": 7,
+      "sampled_sequence_including_current": [
+        3,
+        22363,
+        29
+      ],
+      "commits": [
+        {
+          "m": 2,
+          "accepted": 0,
+          "consumed": 1,
+          "pending": 26608,
+          "draw": 5
+        },
+        {
+          "m": 0,
+          "accepted": 0,
+          "consumed": 1,
+          "pending": 93208,
+          "draw": 6
+        }
+      ],
+      "consumed_pending_next": 26608,
+      "state_members": 31,
+      "random_publications": 2,
+      "actual_pending_continuations": 1,
+      "sampled_markov_rows": 2,
+      "graph_submissions": 35,
+      "state_backing_peak_bytes": 65562824,
+      "state_backing_budget_bytes": 363058688,
+      "head_storage": "F32 hidden/Markov projection; original BF16 W, F32 product/accum",
+      "process": {
+        "exit": 0,
+        "seconds": 156.5
+      },
+      "xml_total_seconds": 155.655,
+      "xml_case_seconds": 148.46,
+      "sources": [
+        {
+          "path": "tests/compute_models/dspark_original_state_consumer_test.cc",
+          "bytes": 193198,
+          "sha256": "31a67303cb69f5eb988b539b7a62760b796024075087f2b4fd89385159cef83f"
+        },
+        {
+          "path": "tests/compute_models/dspark_original_state_consumer.h",
+          "bytes": 27056,
+          "sha256": "c59f8d35cad2a435806e82fc07f433c19b2969e9ed76930b5591db9eec52f748"
+        },
+        {
+          "path": "tests/compute_models/dspark_stochastic_head.h",
+          "bytes": 6814,
+          "sha256": "b86cfc2407d3fdff14e969f5311a59b59c9b8165be0bd8f0418e3d31724b73c5"
+        },
+        {
+          "path": "tests/compute_models/model_sampling_fragment.h",
+          "bytes": 5115,
+          "sha256": "6dd0275790e0dc6a30683c63ddbb5cb8b1e5c43f32743f19bbac2856b6dca8f2"
+        },
+        {
+          "path": "engine/inference/sampling_graph.h",
+          "bytes": 17641,
+          "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+        },
+        {
+          "path": "engine/inference/sampling_cursor.h",
+          "bytes": 1200,
+          "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+        }
+      ],
+      "image": {
+        "path": ".scratch\\dspark-sidecar-random-20261024\\checks.exe",
+        "bytes": 141927936,
+        "sha256": "7ea97402506067abcc0189e69d6f81462732f6fb0218cebff01837f1b6143c3e"
+      }
+    }
+  },
+  "source_identities": {
+    "S03": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "original_roles": 72,
+      "bundle": {
+        "file": "roles.bin",
+        "bytes": 1041922972,
+        "sha256": "fde8f545189f4abd7b077ca20a9c965a50a9b8ff63e7964dabc14a4c257b5c94"
+      }
+    },
+    "Q8": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "whole_file_bytes": 10896057440,
+      "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+      "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f"
+    },
+    "shared_vocabulary": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "variant": "UD-Q4_K_XL",
+      "original_roles": 2,
+      "source_bytes": 1125253120,
+      "complete": true
+    },
+    "target_tail": {
+      "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "original_roles": 4725,
+      "bundle": {
+        "file": "roles.bin",
+        "bytes": 10748569116,
+        "sha256": "05f9bdc3ab78be7040fc484d19ce7b5010c9b3dc037d2715060d3de5606adc52"
+      }
+    }
+  },
+  "implementation": [
+    "Same dspark_stochastic_head uses source-declared hidden/projection input types, actual readonly BF16 Markov/confidence banks and the common inference sampling math. No separate sampler/executor or source-label/provider route is introduced.",
+    "S03: actual F32 hidden and widened BF16 Markov stay visible, then original stored-projection BF16 input boundary precedes F32-product/accum DenseLinearF32.",
+    "Legacy Q8: preserve actual F32 hidden/Markov activation and original BF16 weights with F32 product/accum; the new head does not widen the whole weight bank or narrow F32 A. The reused old diagnostic head still has its original implementation.",
+    "Each q_i uses Gather at the actual sampled preceding ID; original BF16 Markov row bytes are checked. The actual sampled sequence drives original target40/41/42, full-V head p_i and the common speculative-prefix decision.",
+    "First rejection chooses the actual residual-sample output lease and only 1+accepted target rows/history/captures. Complete model/cache/history/carry, pending and SamplingCursor publish together under expected-base StateHead. Target-only then consumes the actual committed pending exactly once.",
+    "Stale Head publication is refused, old cursor/version remains unchanged, all StateStore versions/drafts retire at the end. Raw captured-prefix select rejects sampled State so it cannot advance model while forgetting RNG."
+  ],
+  "build": {
+    "fresh_consumer_TUs": 1,
+    "SDK_builds": 0,
+    "native_rebuilds": 0,
+    "HTTP_bytes": 0,
+    "missing_expert_requests": 0,
+    "current_final_compile": "Only this consumer TU was incrementally rebuilt. The recorded final /W4 /WX compile and Q8 image include the raw-select guard and added Q8 test. The earlier S03 run snapshot precedes these two additions; its exercised verified-prefix math is unchanged.",
+    "native_cpu_worker": {
+      "path": ".scratch/mtp-full-quant-20261024/f32-paged-check/attempt3/native-link/hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "runtime_scope": "Actual CPU execution using an existing CPU+CUDA library closure, not a claim of CPU-only packaging."
+  },
+  "initial_failure": {
+    "status": "FAILED_SETUP_NOT_A_FUNCTIONAL_PASS",
+    "reason": "The first private recipe omitted the already existing generated authenticated S03 pins include directory. SetUpTestSuite explicitly threw and the test skipped; adding the actual generated header include and rebuilding corrected this private preparation mistake. No fake pins, body acquisition or fallback were used."
+  },
+  "reused_evidence": [
+    "docs/evidence/correctness/deepseek-mtp-source-stochastic-flash-2026-10-24.json",
+    "docs/evidence/correctness/deepseek-mtp-source-stochastic-pro-2026-10-24.json",
+    "docs/evidence/correctness/mtp-dspark-bfloat-sidecar-target-verifier-2026-10-23.json"
+  ],
+  "boundaries": [
+    "Both new natural sidecar fixtures reject the first proposal. They do not claim natural or forced sidecar acceptance/bonus; the same generic conditional decision math and state-commit contract already have actual controlled legal acceptance/bonus and failure/cancel/retry evidence in formal Flash.",
+    "Source precision contracts differ deliberately. This does not certify numerical equivalence between BF16, Q8, FP8 or FP4 variants.",
+    "Initial target history/cache and upstream layer39 four-stream activation are explicit finite fixtures. This is real source-component inference, not whole43-layer prompt-to-output, task quality, natural acceptance-rate or TPS evidence.",
+    "The BF16-vocabulary combination of the same Q8 sidecar is not another new runtime run here. Actual source adapter uses the same raw-F32 logits/hidden/pending interface; existing BF16-head and packed-head contracts remain separately evidenced, without publisher/backend Cartesian testing.",
+    "StateStore backing accounting is not physical RSS/VRAM or a total model-memory cap.",
+    "One final executable is kept for replay; ZIP contains no binaries, SDK, model/expert weights or copied full source tree."
+  ],
+  "seams_for_later_architecture": [
+    "The original sidecar stem still executes its previous greedy diagnostic head before the new policy head; source-derived head ports should be cold-selected once later.",
+    "Formal and GGUF consumers have separate source loading, State-schema and actual-target driver adapters. They now share cursor/math/head, but common stage/publication adapters can remove repeated code while preserving explicit store/codec and trained-bank boundaries."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/deepseek-mtp-source-stochastic-sidecars-2026-10-24.logs.zip",
+    "bytes": 168510,
+    "sha256": "6372ff6f6bfba59a9e1684d217c7195b25079af4f69329d99840372d2125c8ed"
+  }
+}

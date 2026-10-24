@@ -1,0 +1,456 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Qwen classic K1/m0 and GLM original-role K1 consumers directly share existing AcceptedPrefix/selectors; original model state and atomic publication remain model-owned.",
+  "changes": [
+    "Qwen manual K1 boundary policy replaced with existing shared greedy/sampled selection; no graph, dtype or RNG-address change.",
+    "GLM duplicate Checkpoint/K1Decision/decide_k1 removed; real pending leases and complete StateHead candidate/repair/publication preserved.",
+    "GLM model verifier header is graph construction only; policy dependencies belong directly to consumers, with cold emitted scratch reuse."
+  ],
+  "actual_qwen_old_current": {
+    "state": "passed",
+    "scope": "Same classic K1/m0 actual finite A consumer. Greedy, existing topK8/p.9 and standard unfiltered policies only; seed123 fixed, no search or modified p/q/logits. EOS/quota forks only consumer finish limits, not context-admission evidence.",
+    "all_result_ledger_RNG_fields_equal": true,
+    "differences": [],
+    "coverage": {
+      "greedy": {
+        "actual_K1_rounds": 2,
+        "accepted": 0,
+        "rejected": 2,
+        "m0_rounds": 1,
+        "quota1_boundary": true,
+        "EOS_boundary": true,
+        "actual_natural_consumed": [
+          1,
+          1,
+          1
+        ],
+        "actual_natural_RNG": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "quota1_agreed": false,
+        "EOS_selected": [
+          5
+        ]
+      },
+      "random-filtered": {
+        "actual_K1_rounds": 2,
+        "accepted": 0,
+        "rejected": 2,
+        "m0_rounds": 1,
+        "quota1_boundary": true,
+        "EOS_boundary": true,
+        "actual_natural_consumed": [
+          1,
+          1,
+          1
+        ],
+        "actual_natural_RNG": [
+          1,
+          4,
+          7,
+          8
+        ],
+        "quota1_agreed": false,
+        "EOS_selected": [
+          39
+        ]
+      },
+      "random-full": {
+        "actual_K1_rounds": 2,
+        "accepted": 1,
+        "rejected": 1,
+        "m0_rounds": 1,
+        "quota1_boundary": true,
+        "EOS_boundary": false,
+        "actual_natural_consumed": [
+          1,
+          2,
+          1
+        ],
+        "actual_natural_RNG": [
+          1,
+          4,
+          7,
+          8
+        ],
+        "quota1_agreed": false,
+        "EOS_selected": []
+      }
+    },
+    "reporting_compile": {
+      "exit": 0,
+      "seconds": 1.4059999999881256,
+      "timeout": false
+    },
+    "old": {
+      "compile": {
+        "exit": 0,
+        "seconds": 16.59399999998277,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 1.6560000000172295,
+        "timeout": false
+      }
+    },
+    "current": {
+      "compile": {
+        "exit": 0,
+        "seconds": 16.530999999988126,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 1.6559999999881256,
+        "timeout": false
+      }
+    },
+    "consumer_TUs": 2,
+    "reporting_TUs": 1,
+    "actual_processes": 2,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "full_models": 0,
+    "quality_claim": false,
+    "performance_claim": false,
+    "fixture": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+        "bytes": 206336,
+        "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\weights.tsv",
+        "bytes": 5308,
+        "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+      }
+    ],
+    "source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\qwen\\old\\source-pins.json",
+        "bytes": 8572,
+        "sha256": "fb437d25db31ff9bd087dab2b0ea79a38e989641a010ae405615fbaa04676ec8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\qwen\\current\\source-pins.json",
+        "bytes": 7985,
+        "sha256": "c3a30a1d1673c827e6491dc3bab49d9b27ab1d1c9a932388433ed9487cb783c2"
+      }
+    ],
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\qwen\\summary.json",
+      "bytes": 101607,
+      "sha256": "05e8ca73c27372d30cc77245abb8290018ca0469b61f43d3c2df75fdfd62eb33"
+    },
+    "state_records": 103,
+    "state_binary_arrays": 86,
+    "state_metadata_files": 17,
+    "all_state_bytes_equal": true,
+    "excluded_fields": "None in actual result/ledger/RNG/state comparison; timing resides only in separate process metadata.",
+    "boundary": "Untrained A-only one-GPU fixture. Natural accept/reject reported only when actually observed; EOS/quota forks reuse immutable true state/seed and only alter host finish limits, not p/q/logits or context admission. No GDN coverage claim.",
+    "meaningful_actual_witness": {
+      "natural_accepts": 1,
+      "natural_rejects": 5,
+      "accepted_proposal": 9,
+      "accepted_bonus": 29,
+      "natural_lag1_followed_by_real_catchup_m0": true,
+      "nonempty_prior_hidden_compared": [
+        "random-full/K1-1/prior.bf16"
+      ],
+      "unexercised": [
+        "No actual accepted-proposal quota1 clipping or accepted-proposal EOS clipping in these finish controls; existing purehost selector boundary evidence is separate.",
+        "random-full EOS control not run: first natural output equals original pending.",
+        "No GDN/context-admission boundary/quality/performance claim."
+      ]
+    }
+  },
+  "actual_GLM_components": {
+    "status": "complete",
+    "scope": "GLM K1 direct shared AcceptedPrefix consumer migration",
+    "new_consumer_tus": 2,
+    "new_sdk_tus": 0,
+    "new_downloads": 0,
+    "whole_model_generation_or_quality": false,
+    "throughput_evidence": false,
+    "source_checks": {
+      "scope": "source-only; not compilation or runtime",
+      "wrappers_removed": true,
+      "greedy_contract": "real base pending+actual proposal, quota2 and empty EOS preserve original fixture",
+      "sampled_pending": "original q or decision output lease; no upload of selected scalar",
+      "observed_integer_types": "K1 0/1 explicit uint32 where original printf %u or natural_accepted uint32 required",
+      "new_shared_types": 0,
+      "new_state_tables": 0,
+      "new_product_math": 0,
+      "new_downloads": 0,
+      "compiled_or_run": false,
+      "Flash_entire_math_and_stochastic_prefix_unchanged": true,
+      "Flash_post_greedy_workflow_tail_unchanged": true,
+      "Pro_math_cold_graphs_unchanged": true,
+      "Pro_post_K1_scenarios_tail_unchanged": true,
+      "verifier_append_unchanged": true,
+      "gguf_all_code_unchanged": true,
+      "emission_scratch": "selector-required plain token output scratch reserved once, no new wrapper/container type/state table; Pro moved original vector outside scenario loop",
+      "new_warnings_suppressed": 0
+    },
+    "cases": [
+      {
+        "kind": "flash",
+        "case": "GlmMtpStateConsumer.CudaOriginalTarget43And44AndNextNFullVocabularyVerifier",
+        "process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\glm\\flash\\attempt1\\run1\\process.json",
+          "bytes": 688,
+          "sha256": "9493e7b99b9a17a49167a9e6df394d5a056972a8daf7b455defb070efca278cc"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\glm\\flash\\attempt1\\checks.exe",
+          "bytes": 142445056,
+          "sha256": "820b9dc375adcdf74671e0fb32a4b8c7030c15a2414214b7b1f39455aa44a8ea"
+        },
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "baseline": {
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-original-target43-20261023\\checks1\\results.xml",
+            "bytes": 19552,
+            "sha256": "4171b864d1e296b229e584dd194a8ee75c8a34ef762ffef03e98e82cd865e992"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-original-target43-20261023\\checks1\\stdout.log",
+            "bytes": 689652,
+            "sha256": "ac8c02b5b3d3e5acf864d9c9104265d732caa3d822bc4249c628d0557888be6b"
+          },
+          "case": "GlmMtpStateConsumer.CudaOriginalTarget43And44AndNextNFullVocabularyVerifier"
+        },
+        "non_time_properties": {
+          "common_count": 48,
+          "differences": {},
+          "added": {
+            "original_attention_provider_query_a": "sglang-cuda"
+          },
+          "removed": {}
+        },
+        "actual_decision_lines": [
+          "GLM full-V verifier scenario=0 proposal=106806 target0=154849 target1=4807 accepted_drafts=0 retained_cursor=2055 next_pending=154849; mandatory current already consumed",
+          "GLM full-V verifier scenario=1 proposal=154849 target0=154849 target1=3505 accepted_drafts=1 retained_cursor=2056 next_pending=3505; mandatory current already consumed",
+          "GLM full-V verifier scenario=2 proposal=154850 target0=154849 target1=135725 accepted_drafts=0 retained_cursor=2055 next_pending=154849; mandatory current already consumed"
+        ],
+        "baseline_decision_lines": [
+          "GLM full-V verifier scenario=0 proposal=106806 target0=154849 target1=4807 accepted_drafts=0 retained_cursor=2055 next_pending=154849; mandatory current already consumed",
+          "GLM full-V verifier scenario=1 proposal=154849 target0=154849 target1=3505 accepted_drafts=1 retained_cursor=2056 next_pending=3505; mandatory current already consumed",
+          "GLM full-V verifier scenario=2 proposal=154850 target0=154849 target1=135725 accepted_drafts=0 retained_cursor=2055 next_pending=154849; mandatory current already consumed"
+        ],
+        "decisions_identical": true,
+        "actual_coverage": "actual original target43/44 + NextN, natural K1 and separately labelled match/reject fixtures, actual row pending leases, full state repair/catchup, cancellation/stale publish and continued Head",
+        "not_run": "other publishers, CPU, K2 filters and whole models; K2 registrations compiled into this TU do not count as executed coverage"
+      },
+      {
+        "kind": "pro",
+        "case": "GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+        "process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\glm\\pro\\attempt1\\run1\\process.json",
+          "bytes": 692,
+          "sha256": "9d98a91e50c4c08f883753461707031c9c7e96be2983d5e79f73b3a84631799e"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\glm\\pro\\attempt1\\checks.exe",
+          "bytes": 141413376,
+          "sha256": "41320ec77dec580e29e56999f470272ee52f72ad76b564455ae7108d8f8da5c6"
+        },
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "baseline": {
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\run1\\results.xml",
+            "bytes": 2672,
+            "sha256": "d5ec3f4bee9805caa2b138aefa2a89a6425c4a57ae5740ea4e39f2c241022189"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\run1\\stdout.log",
+            "bytes": 44231,
+            "sha256": "15b0ec014bd2fbe6c0625922278036673f80aae9539c15abc7271ec362288a85"
+          },
+          "case": "GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically"
+        },
+        "non_time_properties": {
+          "common_count": 19,
+          "differences": {},
+          "added": {},
+          "removed": {}
+        },
+        "actual_decision_lines": [
+          "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=0 consumed=1 draw=1 second_submissions=0",
+          "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=1 consumed=1 draw=1 second_submissions=0",
+          "GLM PRO RANDOM BOUNDARY name=quota1 accept=0 emitted=1 consumed=1 pending=16495 stopped=0 draw=3",
+          "GLM PRO RANDOM BOUNDARY name=residual_EOS accept=0 emitted=1 consumed=1 pending=16495 stopped=1 draw=3",
+          "GLM Pro K1 stochastic=1 scenario=0 proposal=42456 target0=62398 target1=39202 accepted=0 frontier=2054 pending=16495 continued_pending=28122"
+        ],
+        "baseline_decision_lines": [
+          "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=0 consumed=1 draw=1 second_submissions=0",
+          "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=1 consumed=1 draw=1 second_submissions=0",
+          "GLM PRO RANDOM BOUNDARY name=quota1 accept=0 emitted=1 consumed=1 pending=16495 stopped=0 draw=3",
+          "GLM PRO RANDOM BOUNDARY name=residual_EOS accept=0 emitted=1 consumed=1 pending=16495 stopped=1 draw=3",
+          "GLM Pro K1 stochastic=1 scenario=0 proposal=42456 target0=62398 target1=39202 accepted=0 frontier=2054 pending=16495 continued_pending=28122"
+        ],
+        "decisions_identical": true,
+        "actual_coverage": "actual original target77 + NextN stochastic K1 with original q/residual lease, complete selected state plus cursor, one-row quota/context and EOS controls, failure/cancellation/stale publication, pending consumption and target continuation",
+        "not_run": "other publishers, CPU, K2 filters and whole models; K2 registrations compiled into this TU do not count as executed coverage"
+      }
+    ],
+    "tests": 2,
+    "skips": 0,
+    "failures": 0,
+    "errors": 0,
+    "actual_baseline_decisions_all_identical": true,
+    "canonical_after_pins": [
+      {
+        "path": "tests/compute_models/glm_target_verifier_fragment.h",
+        "bytes": 3423,
+        "sha256": "08f38846f3f6eb1619b7684383660755a2b0cde94277d4d0a8a0fd569c9721af",
+        "CRLF": 70
+      },
+      {
+        "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+        "bytes": 417393,
+        "sha256": "d11bbfd8d29d506c234ca007ccff5986d09dc11cb2bb5c06442976874fa758b1",
+        "CRLF": 5406
+      },
+      {
+        "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+        "bytes": 169250,
+        "sha256": "0ce7d5cdd15ed9da0bba28cde094e903965e25b00a9f6ccee5429e58d27419b2",
+        "CRLF": 2378
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_compute_fragment.h",
+        "bytes": 7807,
+        "sha256": "21bc409dbdc1d2496e3959110b345a47353ce53f70034a6aa7df85dbb67b9541",
+        "CRLF": 0
+      }
+    ],
+    "source_boundary": "shared selector-required two-ID emission scratch is cold-reserved; no new wrapper, alias, state table, Graph, sampler or executable controller; original leases and Head transaction retained",
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\glm\\proof.zip",
+      "bytes": 776754,
+      "sha256": "70bbc440cd83a61f7c4ed89d0c1d81eeb3f0022808b45bd8aa8dc9572c2fe0b8"
+    },
+    "cleanup_candidates": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\glm\\cleanup-candidates.json",
+      "bytes": 3599,
+      "sha256": "b9d9165849fda54c6c45500455fc4708d6f760984795e6dc729aa55b52435194"
+    }
+  },
+  "source_review": {
+    "qwen": {
+      "scope": "source-only bounded policy migration; no build, model, download or runtime validation",
+      "checks": {
+        "only_K1_m0_policy_block_changed": true,
+        "existing_emitted_reserve_2_preserved": true,
+        "processed_draft_formula_preserved": true,
+        "proposal_and_verified_row_report_formulas_preserved": true,
+        "acceptance_from_consumed_drafts": true,
+        "both_public_selectors_used": true,
+        "m0_uses_empty_flags_and_one_final": true
+      },
+      "preserved": "All source outside the m0/K1 acceptance callback block is byte-identical. Graph, dtype, draw reservation, candidate construction, expected-base batch publication, ledger fields and observer/IO code are unchanged. New local arrays are stack-only; the existing result.emitted reserve(2) covers both selectors."
+    },
+    "glm": {
+      "scope": "source-only; not compilation or runtime",
+      "wrappers_removed": true,
+      "greedy_contract": "real base pending+actual proposal, quota2 and empty EOS preserve original fixture",
+      "sampled_pending": "original q or decision output lease; no upload of selected scalar",
+      "observed_integer_types": "K1 0/1 explicit uint32 where original printf %u or natural_accepted uint32 required",
+      "new_shared_types": 0,
+      "new_state_tables": 0,
+      "new_product_math": 0,
+      "new_downloads": 0,
+      "compiled_or_run": false,
+      "Flash_entire_math_and_stochastic_prefix_unchanged": true,
+      "Flash_post_greedy_workflow_tail_unchanged": true,
+      "Pro_math_cold_graphs_unchanged": true,
+      "Pro_post_K1_scenarios_tail_unchanged": true,
+      "verifier_append_unchanged": true,
+      "gguf_all_code_unchanged": true,
+      "emission_scratch": "selector-required plain token output scratch reserved once, no new wrapper/container type/state table; Pro moved original vector outside scenario loop",
+      "new_warnings_suppressed": 0
+    },
+    "independent_GLM": {
+      "kind": "independent source-only review; no build, runtime or download",
+      "reviewed_pins": [
+        {
+          "path": "tests/compute_models/glm_target_verifier_fragment.h",
+          "bytes": 3423,
+          "sha256": "08f38846f3f6eb1619b7684383660755a2b0cde94277d4d0a8a0fd569c9721af",
+          "CRLF": 70
+        },
+        {
+          "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+          "bytes": 417393,
+          "sha256": "d11bbfd8d29d506c234ca007ccff5986d09dc11cb2bb5c06442976874fa758b1",
+          "CRLF": 5406
+        },
+        {
+          "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+          "bytes": 169250,
+          "sha256": "0ce7d5cdd15ed9da0bba28cde094e903965e25b00a9f6ccee5429e58d27419b2",
+          "CRLF": 2378
+        },
+        {
+          "path": "tests/compute_models/glm_gguf_compute_fragment.h",
+          "bytes": 7807,
+          "sha256": "21bc409dbdc1d2496e3959110b345a47353ce53f70034a6aa7df85dbb67b9541",
+          "CRLF": 0
+        }
+      ],
+      "must_fix_findings": [],
+      "confirmed": [
+        "K1 consumed includes mandatory current; consumed_drafts is only 0/1 nonterminal consumed proposals. Both complete checkpoint and repair/catchup branch use consumed_drafts, never first_agrees.",
+        "Pro sampled accepted EOS/quota1 keeps original random_draft[1] q result lease when consumed==1; rejection/bonus retain original decision output. Greedy retains original target row lease.",
+        "Complete resource candidate, pending replacement, RNG metadata advanced(3), finalize and original expected-base Head publication/cancellation/stale checks remain in original order.",
+        "Flash and Pro greedy keep original quota2/empty EOS finite component contract; no claim that the migration adds independent greedy EOS/quota coverage.",
+        "New greedy selector emitted scratch reserves2 once outside scenario loops; two-input selectors cannot exceed2. Pro reuses this scratch for sampling. Existing policy fixture scratch is unchanged.",
+        "Original printf %u and natural_accepted uint32 sites explicitly narrow consumed_drafts 0/1 back to the original uint32 type. Array indices remain size_t.",
+        "Legacy K1Decision, Checkpoint labels, decide_k1 and replacement aliases are absent from GLM source."
+      ],
+      "limits": [
+        "This review does not independently re-run the reported Flash/Pro actual checks.",
+        "Model-specific complete state/repair/journal semantics remain as previously validated; no new generic publisher or state mapping was introduced."
+      ]
+    },
+    "integration": {
+      "path": ".scratch/inference-k1-acceptance-20261024/integration-review.md",
+      "bytes": 2083,
+      "sha256": "b195b2701dc0d7cd3f55115515a08ba8208a001da2edef0e2aa62b38f6b48cfc"
+    }
+  },
+  "limitations": [
+    "Qwen fixture is untrained A-only; GLM tests are original-role component journeys with their existing upstream/history boundaries.",
+    "Qwen actual accepted-proposal quota/EOS clipping was not reached; current host selector boundary evidence is separate.",
+    "No full-model quality, all-platform, performance, new state-container or whole-architecture completion claim."
+  ],
+  "HTTP_requests": 0,
+  "downloads_bytes": 0,
+  "SDK_builds": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-k1-acceptance-2026-10-24.zip",
+    "bytes": 1603175,
+    "sha256": "e797cd75c0cdf4c516a41110a2d4cca9c6ec69e0465eaae261bfa77862fb2cbb"
+  },
+  "cleanup": {
+    "state": "completed",
+    "files": 21,
+    "logical_bytes": 507297614,
+    "private_DLL_hardlinks_removed": 4,
+    "physical_freed_bytes_measured": false,
+    "record": ".scratch/inference-k1-acceptance-20261024/binary-cleanup-removed.json",
+    "preserved": "Source, commands, results, original role caches and corrected production closures."
+  }
+}

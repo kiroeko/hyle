@@ -1050,6 +1050,23 @@ Status qualify(void *context, const RegionCompileRequest &request) noexcept {
     if (!*supported)
       return Status::Unimplemented(
           "ggml CUDA region contains an unsupported node");
+    const auto operation = request.graph->operation(node).value();
+    const auto *gather = operation.get_if<compute::Gather>();
+    const auto elements = operation.custom_as<compute::model_ops::GatherElements>();
+    const bool grouped =
+        operation.custom_as<compute::model_ops::GroupedMatMul>().has_value();
+    if (grouped ||
+        (gather && gather->bounds == compute::IndexBoundsPolicy::kChecked) ||
+        (elements && elements->bounds == compute::IndexBoundsPolicy::kChecked)) {
+      const auto indices = request.graph->node_input(node, grouped ? 2 : 1).value();
+      // Native validation runs before this recipe and therefore needs a real
+      // input boundary. An internally generated index cannot be checked there.
+      // Decline this fusion before physical placement; the ordinary indexed
+      // operation retains its checked input and remains a legal fallback.
+      if (std::ranges::find(request.inputs, indices) == request.inputs.end())
+        return Status::Unimplemented(
+            "ggml CUDA checked indices require a region input boundary");
+    }
   }
   return Status::Ok();
 }

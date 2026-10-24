@@ -30,7 +30,9 @@
 #include "hyle/compute/resource_leases.h"
 #include "hyle/compute/state_versions.h"
 #include "hyle/graph/batch.h"
+#if defined(HYLE_TEST_QWEN_STATE_CPU) && defined(HYLE_TEST_QWEN_STATE_CUDA)
 #include "hyle/graph/cpu_cuda.h"
+#endif
 #if defined(HYLE_TEST_QWEN_STATE_CUDA)
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/providers/ggml_cuda.h"
@@ -47,6 +49,9 @@
 #include "hyle/graph/cpu.h"
 #endif
 #include "qwen_mtp_state_consumer.h"
+#include "model_sampling_fragment.h"
+#include "../../engine/inference/sampling_cursor.h"
+#include "../../engine/inference/mtp_acceptance.h"
 #include "qwen27_original_nextn_reference.h"
 #include "gguf_nvfp4_fixture.h"
 #include "qwen24_original_nextn_reference.h"
@@ -183,10 +188,12 @@ template<class Contract> std::optional<std::string> original_ready_pin(const std
   if(complete.starts_with("false")&&complete.size()>=6&&std::string_view(" ,}\r\n\t").find(complete[5])!=std::string_view::npos)return std::nullopt;
   if(!complete.starts_with("true")||complete.size()<5||std::string_view(" ,}\r\n\t").find(complete[4])==std::string_view::npos)
     throw std::runtime_error("original expert ready receipt has an invalid completion field");
+  // The receipt's directory records acquisition history, not source identity.
+  // Read the actual selected path; the source plan, requested global ID and
+  // immutable catalogue/plane hashes authenticate a relocated cache as well.
   if(bfloat_receipt_string(text,"section")!=section||
-      bfloat_receipt_string(text,"source_plan_sha256")!=contract.source_plan_sha256||
-      !std::filesystem::equivalent(std::filesystem::path(bfloat_receipt_string(text,"directory")),path))
-    throw std::runtime_error("original expert ready receipt belongs to a different source/section/directory");
+      bfloat_receipt_string(text,"source_plan_sha256")!=contract.source_plan_sha256)
+    throw std::runtime_error("original expert ready receipt belongs to a different source/section");
   const auto globals=bfloat_receipt_field(text,"globals");const auto end=globals.find(']');
   if(globals.front()!='['||end==std::string_view::npos)throw std::runtime_error("original expert ready globals are absent");
   const auto first=globals.find_first_not_of(" \r\n\t",1),last=globals.find_last_not_of(" \r\n\t",end-1);
@@ -263,8 +270,10 @@ struct State final {
   c::StateStore store;
   std::array<c::StateEntryId,kResources> entries;
   std::vector<c::StateEntryId> extra_entries;
+  std::optional<c::StateEntryId> sampling_entry;
+  std::size_t backing_bound=0;
   static State create(const Model &model,const c::StorageOwner &owner,std::size_t output_root_bytes,
-                      std::span<const c::TensorDesc> extra_descriptions={}) {
+                      std::span<const c::TensorDesc> extra_descriptions={},bool with_sampling=false) {
     std::vector<c::StateEntrySpec> specs(kResources+extra_descriptions.size());
     const auto desc=descriptions(model);std::size_t bytes=0;
     for(std::size_t i=0;i<specs.size();++i) {
@@ -276,14 +285,23 @@ struct State final {
       bytes+=(extent+255u)/256u*256u;
     }
     if(output_root_bytes>std::numeric_limits<std::size_t>::max()-bytes)throw std::runtime_error("complete state output backing bound overflow");
-    State s;s.schema=take(c::StateSchema::create(specs),"complete NextN state schema");
+    const auto sampling_slot=specs.size();
+    if(with_sampling)specs.push_back({.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(hyle::inference::SamplingCursor)});
+    // One bounded metadata block per retained version; retained output roots
+    // remain charged once rather than by each logical resource member.
+    const std::size_t metadata_bound=with_sampling?96u*64u:0;
+    if(output_root_bytes+bytes>std::numeric_limits<std::size_t>::max()-metadata_bound)
+      throw std::runtime_error("complete state metadata backing bound overflow");
+    State s;s.backing_bound=output_root_bytes+bytes+metadata_bound;
+    s.schema=take(c::StateSchema::create(specs),"complete NextN state schema");
     // A state member retains the WHOLE output-pool root, including diagnostic
     // generations. Count it once, plus the six separate initial roots; logical
     // member extents do not measure retained physical backing.
     s.store=take(c::StateStore::create(s.schema,{.max_versions=16,.max_drafts=2,
-        .max_retained_blocks=96,.max_backing_bytes=output_root_bytes+bytes}),"bounded ordinary state store");
+        .max_retained_blocks=96,.max_backing_bytes=s.backing_bound}),"bounded ordinary state store");
     for(std::size_t i=0;i<s.entries.size();++i)s.entries[i]=take(s.schema.entry(i),"actual complete state member");
     for(std::size_t i=0;i<extra_descriptions.size();++i)s.extra_entries.push_back(take(s.schema.entry(kResources+i),"actual additional target state member"));
+    if(with_sampling)s.sampling_entry=take(s.schema.entry(sampling_slot),"same whole-state random cursor metadata");
     return s;
   }
   c::ReadLease member(const c::StateVersion &version,std::size_t entry) const {
@@ -293,11 +311,14 @@ struct State final {
     std::array<c::ReadLease,kResources> values;
     for(std::size_t i=0;i<values.size();++i)values[i]=member(version,i);return values;
   }
-  c::StateVersion import(std::span<const c::ReadLease> values,std::span<const c::ReadLease> extra={}) {
+  c::StateVersion import(std::span<const c::ReadLease> values,std::span<const c::ReadLease> extra={},
+      std::optional<hyle::inference::SamplingCursor> cursor={}) {
     if(values.size()!=kResources||extra.size()!=extra_entries.size())throw std::runtime_error("complete imported NextN/target member count");
-    std::vector<c::StateMember> members(kResources+extra.size());
+    if(sampling_entry.has_value()!=cursor.has_value())throw std::runtime_error("complete imported random cursor schema mismatch");
+    std::vector<c::StateMember> members(kResources+extra.size()+std::size_t(cursor.has_value()));
     for(std::size_t i=0;i<values.size();++i)members[i]={entries[i],values[i]};
     for(std::size_t i=0;i<extra.size();++i)members[kResources+i]={extra_entries[i],extra[i]};
+    if(cursor)members.back()={*sampling_entry,{},std::as_bytes(std::span(&*cursor,1))};
     return take(store.import(members),"explicit complete initial boundary");
   }
   c::StateVersion candidate(const c::StateVersion &from,const Recipe &recipe,std::span<const c::ReadLease> result,
@@ -508,7 +529,7 @@ struct Program final {
           const bool view=node.operation.get_if<c::View>()!=nullptr;
           const bool copy=node.operation.get_if<c::Copy>()!=nullptr;
           const bool host_reader=(node.operation.get_if<c::Gather>()&&host_value[node.inputs.at(0).ordinal()])||
-              (node.operation.custom_as<c::model_ops::BFloatLinearF32>()&&host_value[node.inputs.at(1).ordinal()]);
+              (node.operation.custom_as<c::model_ops::DenseLinearF32>()&&host_value[node.inputs.at(1).ordinal()]);
           // Only transparent vocabulary-result metadata/TopK continues on
           // CPU. Published I32 Copies deliberately return to device state.
           const bool follow=(view||copy||node.operation.get_if<c::TopK>())&&!node.inputs.empty()&&host_value[node.inputs[0].ordinal()];
@@ -644,7 +665,7 @@ struct Program final {
     const auto full_head=take(p.logical.graph.producer(full_logits),"actual full head MatMul");
     const auto full_weight=take(p.logical.graph.node_input(full_head,1),"actual complete packed head");
     const auto head_operation=take(p.logical.graph.operation(full_head),"full head actual operation");
-    const bool bfloat_head=head_operation.custom_as<c::model_ops::BFloatLinearF32>().has_value();
+    const bool bfloat_head=head_operation.custom_as<c::model_ops::DenseLinearF32>().has_value();
     const auto wanted_weight=bfloat_head?
         sem::dense({p.recipe.model.vocabulary,p.recipe.model.hidden},c::DataType::kBFloat16):
         take(c::gguf_weight_description(p.recipe.model.head.quant,c::DataType::kFloat32,
@@ -707,6 +728,14 @@ struct Program final {
   std::size_t active_output_uses() const {
     if(!resident)return (outputs.valid()?outputs.stats().active_uses:0)+(host_outputs.valid()?host_outputs.stats().active_uses:0);
     std::size_t count=0;for(const auto &program:resident->programs)count+=program->active_output_uses();return count;
+  }
+  bool output_is_host(std::size_t port) const {
+    if(!mixed)return false;
+    if(resident) {
+      const auto location=resident->plan.full_outputs.at(port);
+      return resident->programs.at(location.phase)->output_is_host(location.port);
+    }
+    return output_on_host.at(port);
   }
   std::vector<c::ReadLease> execute_resident(c::Queue &queue,std::span<const c::ReadLease> inputs) {
     if(!resident||!recipe.moe||!supply||recipe.fragment.inputs.size()!=inputs.size()+4)
@@ -853,6 +882,7 @@ struct Program final {
   }
   void report_mixed_vocabulary() const {
     if(!mixed)return;
+#if defined(HYLE_TEST_QWEN_STATE_CPU) && defined(HYLE_TEST_QWEN_STATE_CUDA)
     using namespace g::cpu_cuda;
     std::size_t vocabulary_constants=0,device_vocabulary_instances=0;
     for(const auto &entry:recipe.external) {
@@ -887,6 +917,9 @@ struct Program final {
         std::size_t(std::count(input_on_host.begin(),input_on_host.end(),true)),compiled.report.target_count(),compiled.report.copy_bytes());
     if(device_vocabulary_instances)throw std::runtime_error("mixed vocabulary acquired a device instance");
     ::testing::Test::RecordProperty("mixed_full_vocabulary_device_instances",int(device_vocabulary_instances));
+#else
+    throw std::runtime_error("mixed vocabulary report requires both actual CPU and CUDA sources");
+#endif
   }
   void report_bfloat_roles(const c::StorageOwner &owner) const {
     if(!recipe.original_bfloat)return;
@@ -1083,7 +1116,7 @@ struct Program final {
       const auto operation=take(logical.graph.operation(node),"original Q27 typed projection operation");
       const bool bfloat=attention::bfloat_weight(projection.role->description);
       if(bfloat) {
-        if(!operation.custom_as<c::model_ops::BFloatLinearF32>())throw std::runtime_error("original BF16 bank needs its declared F32-accumulating projection");
+        if(!operation.custom_as<c::model_ops::DenseLinearF32>())throw std::runtime_error("original BF16 bank needs its declared F32-accumulating projection");
         const auto cast=take(logical.graph.producer(input),"original BF16 actual activation Cast");
         const auto cast_operation=take(logical.graph.operation(cast),"original BF16 activation Cast operation");
         const auto *conversion=cast_operation.get_if<c::Cast>();
@@ -1583,7 +1616,7 @@ void observe(Program &program,const State &state,const c::StateVersion &from,
 struct VocabularyHead final {
   Program program;
   std::size_t logits,scores;
-  std::array<std::size_t,2> pending;
+  std::vector<std::size_t> pending;
   std::optional<std::size_t> alternate;
   std::size_t matmuls;
   std::string provider;
@@ -1591,7 +1624,8 @@ struct VocabularyHead final {
 };
 VocabularyHead prepare_vocabulary_head(const Model &model,const orig::ReadonlyRole &head,
     c::Context &context,const c::StorageOwner &owner,bool cuda,bool with_alternate=false,
-    std::shared_ptr<MixedPlacement> mixed={}) {
+    std::shared_ptr<MixedPlacement> mixed={},std::size_t rows=2) {
+  if(rows<2||rows>3)throw std::runtime_error("finite vocabulary verifier supports two or three actual rows");
   Recipe recipe{.model=model,.fragment={.profile=model.profile,.region=0x5157454e484d3201ULL}};
   auto &fragment=recipe.fragment;
   const bool bfloat_head=head.description.is_plain()&&head.description.data_type()==c::DataType::kBFloat16;
@@ -1600,15 +1634,19 @@ VocabularyHead prepare_vocabulary_head(const Model &model,const orig::ReadonlyRo
     throw std::runtime_error("full vocabulary head storage differs from its actual hidden rows");
   const auto first=fragment.input(sem::dense({1,model.hidden},model.storage));
   const auto second=fragment.input(sem::dense({1,model.hidden},model.storage));
-  const auto joined=fragment.one(c::Operation(c::Concat{.axis=0}),{first,second});
+  auto joined=fragment.one(c::Operation(c::Concat{.axis=0}),{first,second});
+  if(rows==3) {
+    const auto third=fragment.input(sem::dense({1,model.hidden},model.storage));
+    joined=fragment.one(c::Operation(c::Concat{.axis=0}),{joined,third});
+  }
   const auto head_value=external(recipe,head);
   const auto head_input=bfloat_head?attention::cast(fragment,joined,c::DataType::kBFloat16):joined;
-  const auto logits=fragment.one(bfloat_head?c::model_ops::bfloat_linear_f32():
+  const auto logits=fragment.one(bfloat_head?c::model_ops::dense_linear_f32():
       c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}),{head_input,head_value});
   const auto logits_port=expose(recipe,logits);
   const auto winner=fragment.append(c::Operation(c::TopK{.count=1,.stable=true}),{logits},2);
   const auto scores_port=expose(recipe,winner[0]);
-  std::array<std::size_t,2> pending_ports;
+  std::vector<std::size_t> pending_ports(rows);
   for(std::size_t row=0;row<pending_ports.size();++row) {
     const auto sliced=fragment.one(c::Operation(take(c::View::slice(0,std::int64_t(row),1),"M2 pending row slice")),{winner[1]});
     pending_ports[row]=expose(recipe,core::reshape(fragment,sliced,{1}));
@@ -1641,20 +1679,28 @@ VocabularyHead prepare_vocabulary_head(const Model &model,const orig::ReadonlyRo
   std::size_t matmuls=0;
   for(std::size_t node_index=0;node_index<graph.node_count();++node_index) {
     const auto node_operation=take(graph.operation(take(graph.node_id(node_index),"M2 logical node")),"M2 logical node operation");
-    matmuls+=node_operation.get_if<c::MatMul>()!=nullptr||node_operation.custom_as<c::model_ops::BFloatLinearF32>().has_value();
+    matmuls+=node_operation.get_if<c::MatMul>()!=nullptr||node_operation.custom_as<c::model_ops::DenseLinearF32>().has_value();
   }
   const auto operation=take(graph.operation(projection),"M2 actual projection operation");
   const auto *matmul=operation.get_if<c::MatMul>();
-  if(matmuls!=1||(bfloat_head?!operation.custom_as<c::model_ops::BFloatLinearF32>():
+  if(matmuls!=1||(bfloat_head?!operation.custom_as<c::model_ops::DenseLinearF32>():
           (!matmul||matmul->accumulation_type!=c::DataType::kFloat32))||
-      take(graph.value_description(full_logits),"M2 logits description")!=sem::dense({2,model.vocabulary})||
-      take(graph.value_description(projection_input),"M2 activation description")!=sem::dense({2,model.hidden},bfloat_head?c::DataType::kBFloat16:model.storage)||
+      take(graph.value_description(full_logits),"M2 logits description")!=sem::dense({std::int64_t(rows),model.vocabulary})||
+      take(graph.value_description(projection_input),"M2 activation description")!=sem::dense({std::int64_t(rows),model.hidden},bfloat_head?c::DataType::kBFloat16:model.storage)||
       take(graph.node_input(projection,1),"M2 exact original head operand")!=batched.logical.constants.at(0)||
       take(graph.constant_description(0),"M2 original head description")!=head.description||
       take(graph.operation_kind(concatenate),"M2 concatenate operation")!=c::OperationKind::kConcat||
-      take(graph.node_input(concatenate,0),"M2 actual first tap")!=batched.logical.inputs.at(0)||
-      take(graph.node_input(concatenate,1),"M2 actual second tap")!=batched.logical.inputs.at(1))
+      (rows==2&&take(graph.node_input(concatenate,0),"M2 actual first tap")!=batched.logical.inputs.at(0))||
+      take(graph.node_input(concatenate,1),"finite verifier final actual tap")!=batched.logical.inputs.at(rows-1))
     throw std::runtime_error("M2 head must be one complete original-bank projection on two actual hidden rows");
+  if(rows==3) {
+    const auto left=take(graph.node_input(concatenate,0),"M3 first two actual taps");
+    const auto pair=take(graph.producer(left),"M3 first pair concatenation");
+    if(take(graph.operation_kind(pair),"M3 first pair kind")!=c::OperationKind::kConcat||
+        take(graph.node_input(pair,0),"M3 actual first tap")!=batched.logical.inputs.at(0)||
+        take(graph.node_input(pair,1),"M3 actual second tap")!=batched.logical.inputs.at(1))
+      throw std::runtime_error("M3 head must preserve the three actual ordered target taps");
+  }
   const auto &bound_head=batched.recipe.external.at(0).role;
   const auto original_view=take(head.lease.view(),"M2 once-bound original head view");
   const auto bound_view=take(bound_head.lease.view(),"M2 actual bound head view");
@@ -2201,7 +2247,7 @@ TargetPlan prepare_target(std::shared_ptr<const target_roles::Bound> parameters,
     const auto &bank=plan.named_parameters?plan.named_parameters->at(target_roles::spec(expected.role).name):plan.parameters->at(expected.role);
     const bool bfloat=attention::bfloat_weight(bank.description);
     if(bfloat) {
-      if(!operation.custom_as<c::model_ops::BFloatLinearF32>())throw std::runtime_error("target BF16-W needs its declared F32 accumulation");
+      if(!operation.custom_as<c::model_ops::DenseLinearF32>())throw std::runtime_error("target BF16-W needs its declared F32 accumulation");
       const auto conversion=take(graph.producer(input_value),"target actual BF16 activation store");
       const auto converted=take(graph.operation(conversion),"target BF16 activation operation");const auto *store=converted.get_if<c::Cast>();
       if(!store||store->output_type!=c::DataType::kBFloat16)throw std::runtime_error("target BF16-W/F32-state requires actual activation Cast");
@@ -2453,7 +2499,9 @@ void same_state_storage(const c::ReadLease &actual,const c::ReadLease &expected)
 }
 std::vector<Bytes> whole_image(const State &state,const c::StateVersion &version) {
   std::vector<Bytes> result;for(std::size_t entry=0;entry<kResources;++entry)result.push_back(read(state.member(version,entry)));
-  for(const auto entry:state.extra_entries)result.push_back(read(take(version.member(entry),"whole target state member")));return result;
+  for(const auto entry:state.extra_entries)result.push_back(read(take(version.member(entry),"whole target state member")));
+  if(state.sampling_entry)result.push_back(read(take(version.member(*state.sampling_entry),"same whole-prefix random cursor")));
+  return result;
 }
 std::vector<float> upstream_fixture(const Model &model,std::int32_t token,std::int32_t position) {
   // This remains an external input from the preceding layer (62 or90).
@@ -2468,8 +2516,12 @@ std::vector<float> target_history(const Model &model,std::size_t valid,std::size
   return values;
 }
 void run_original_target_verifier(Program draft,TargetPlan target,
-    c::Context &context,const c::StorageOwner &owner,bool cuda) {
+    c::Context &context,const c::StorageOwner &owner,bool cuda,bool stochastic=false,
+    hyle::inference::mtp::SamplingLimits limits={},std::size_t max_drafts=1) {
   const auto &model=draft.recipe.model;
+  if(!max_drafts||max_drafts>2||(!stochastic&&max_drafts!=1))throw std::runtime_error("finite original Qwen component supports stochastic K1/K2");
+  const auto planned_drafts=stochastic&&max_drafts==2&&limits.quota>2&&limits.remaining_context>2?2u:1u;
+  if(stochastic)limits.validate(model.vocabulary);
   const auto &target_model=target.program.recipe.model;
   if(model.hidden!=target_model.hidden||model.vocabulary!=target_model.vocabulary||model.storage!=target_model.storage||
       model.kv_heads!=target_model.kv_heads||model.depth!=target_model.depth)
@@ -2478,7 +2530,68 @@ void run_original_target_verifier(Program draft,TargetPlan target,
   const auto packed_head=target.vocabulary.bytes;
   if(!target.vocabulary.source||!head_role.identity||packed_head.empty())
     throw std::runtime_error("target verifier vocabulary is explicit, never inferred from draft identity");
-  auto verifier=prepare_vocabulary_head(target.program.recipe.model,head_role,context,owner,cuda,true,draft.mixed);
+  auto verifier=prepare_vocabulary_head(target.program.recipe.model,head_role,context,owner,cuda,true,draft.mixed,planned_drafts+1);
+  std::optional<Program> random_q,random_decision,next_target_logits,next_target_sampler,short_decision;
+  std::optional<VocabularyHead> short_verifier;
+  if(planned_drafts==2&&!limits.eos.empty())short_verifier=prepare_vocabulary_head(target.program.recipe.model,head_role,context,owner,cuda,false,draft.mixed,2);
+  if(stochastic) {
+    const auto prepare_sampler=[&](bool input_host,std::uint64_t region) {
+      Recipe qr{.model=model,.fragment={.profile=model.profile,.region=region}};
+      auto &qf=qr.fragment;
+      const auto q=qf.input(sem::dense({1,model.vocabulary})),key=qf.input(sem::dense({1,4},c::DataType::kUInt32));
+      const auto proposal=model_sampling_fragment::append_proposal(qf,q,key);
+      qf.outputs={proposal.log_probabilities,proposal.proposal,proposal.valid};
+      const auto domains=draft.mixed?std::vector<bool>{input_host,false}:std::vector<bool>{};
+      return Program::create(std::move(qr),context,owner,cuda,true,{},draft.mixed,domains);
+    };
+    const bool q_input_host=draft.output_is_host(draft.recipe.logits);
+    random_q=prepare_sampler(q_input_host,0x51574d545051524eULL);
+    const auto prepare_decision=[&](std::size_t count) {
+    Recipe pr{.model=model,.fragment={.profile=model.profile,.region=0x51574d545044524eULL}};
+    auto &pf=pr.fragment;
+    std::vector<bool> decision_domains;
+    if(count==1) {
+      const auto p=pf.input(sem::dense({2,model.vocabulary})),logq=pf.input(sem::dense({1,model.vocabulary}));
+      const auto proposed=pf.input(sem::dense({1},c::DataType::kInt32));
+      const auto accept=pf.input(sem::dense({1,4},c::DataType::kUInt32)),final=pf.input(sem::dense({1,4},c::DataType::kUInt32));
+      const auto decision=model_sampling_fragment::append_decision(pf,p,logq,proposed,accept,final);
+      pf.outputs={decision.accepted,decision.pending,decision.valid};
+      if(draft.mixed)decision_domains={verifier.program.output_is_host(verifier.logits),random_q->output_is_host(0),random_q->output_is_host(1),false,false};
+    } else {
+      const auto p=pf.input(sem::dense({3,model.vocabulary}));
+      const auto identities=pf.input(sem::dense({3,4},c::DataType::kUInt32));
+      const auto first=pf.input(sem::dense({1},c::DataType::kInt32)),second=pf.input(sem::dense({1},c::DataType::kInt32));
+      const auto proposed=pf.one(c::Operation(c::Concat{.axis=0}),{first,second});
+      model_sampling_fragment::Builder r(pf);
+      const auto decision=hyle::inference::sampling::speculative_prefix(r,p,identities,proposed);
+      for(const auto value:decision.accepted)pf.outputs.push_back(r.copy(value));
+      for(const auto value:decision.final_ids)pf.outputs.push_back(r.copy(value));
+      for(const auto value:decision.valid)pf.outputs.push_back(r.copy(value));
+      if(draft.mixed)decision_domains={verifier.program.output_is_host(verifier.logits),false,
+          random_q->output_is_host(1),random_q->output_is_host(1),random_q->output_is_host(0),random_q->output_is_host(0)};
+    }
+    return Program::create(std::move(pr),context,owner,cuda,true,{},draft.mixed,decision_domains);
+    };
+    random_decision=prepare_decision(planned_drafts);
+    if(short_verifier)short_decision=prepare_decision(1);
+    // Ordinary one-row target continuation borrows the SAME authenticated
+    // target head. It does not reinterpret NextN q as target probability.
+    Recipe nr{.model=target_model,.fragment={.profile=target_model.profile,.region=0x51574d54504e5854ULL}};
+    auto &nf=nr.fragment;const auto tap=nf.input(sem::dense({1,model.hidden},model.storage));
+    const bool bf16=head_role.description.is_plain()&&head_role.description.data_type()==c::DataType::kBFloat16;
+    const auto matrix=external(nr,head_role),input=bf16?attention::cast(nf,tap,c::DataType::kBFloat16):tap;
+    const auto logits=nf.one(bf16?c::model_ops::dense_linear_f32():c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}),{input,matrix});
+    (void)expose(nr,logits);
+    const auto target_domains=draft.mixed?std::vector<bool>{target.program.output_is_host(target.members[kTargetTap])}:std::vector<bool>{};
+    next_target_logits=Program::create(std::move(nr),context,owner,cuda,true,{},draft.mixed,target_domains);
+    const bool next_logits_host=next_target_logits->output_is_host(0);
+    if(next_logits_host!=q_input_host)next_target_sampler=prepare_sampler(next_logits_host,0x51574d545051524fULL);
+    ::testing::Test::RecordProperty("sampling_q_input_host",int(q_input_host));
+    ::testing::Test::RecordProperty("sampling_target_logits_input_host",int(verifier.program.output_is_host(verifier.logits)));
+    ::testing::Test::RecordProperty("sampling_q_log_output_host",int(random_q->output_is_host(0)));
+    ::testing::Test::RecordProperty("sampling_pending_output_host",int(random_decision->output_is_host(planned_drafts==2?2:1)));
+    ::testing::Test::RecordProperty("sampling_next_target_logits_host",int(next_logits_host));
+  }
   auto queue=take(context.create_queue(),"one target/NextN whole-state queue");
   std::array<c::ReadLease,5> warm_input{upload(owner,storage_bytes(model,upstream_fixture(model,2,36))),upload(owner,storage_bytes(model,target_history(model,1,2))),
       upload(owner,storage_bytes(model,target_history(model,1,3))),upload(owner,sem::bytes(std::vector<std::int32_t>{1})),
@@ -2493,17 +2606,52 @@ void run_original_target_verifier(Program draft,TargetPlan target,
     if(pool_bound>std::numeric_limits<std::size_t>::max()-program->output_root_bytes)throw std::runtime_error("joint target output bound overflow");
     pool_bound+=program->output_root_bytes;
   }
+  if(stochastic)for(const auto *program:{&*random_q,&*random_decision,&*next_target_logits}) {
+    if(pool_bound>std::numeric_limits<std::size_t>::max()-program->output_root_bytes)throw std::runtime_error("joint random target output bound overflow");
+    pool_bound+=program->output_root_bytes;
+  }
+  for(const auto *program:{short_verifier?&short_verifier->program:nullptr,short_decision?&*short_decision:nullptr})if(program) {
+    if(pool_bound>std::numeric_limits<std::size_t>::max()-program->output_root_bytes)throw std::runtime_error("short verifier output bound overflow");
+    pool_bound+=program->output_root_bytes;
+  }
+  if(next_target_sampler) {
+    if(pool_bound>std::numeric_limits<std::size_t>::max()-next_target_sampler->output_root_bytes)throw std::runtime_error("separate target sampler output bound overflow");
+    pool_bound+=next_target_sampler->output_root_bytes;
+  }
   const auto codec=cuda?original_reference::ActivationCodec::kCudaMmvqQ8_1:original_reference::ActivationCodec::kCpuAvx2;
   std::size_t repairs=0,feedbacks=0,full_verifier_values=0,peak_backing=0,declared_budget=0;
   std::size_t repair_submissions=0;
-  std::size_t publications=0,cancellations=0,stale_rejections=0,reseed_checks=0;
+  std::size_t publications=0,cancellations=0,stale_rejections=0,reseed_checks=0,bounded_tails=0;
   std::array<std::size_t,2> accepted_counts{};
-  bool full_verifier_checked=false;
+  bool full_verifier_checked=false,multi_executed=false;
+  std::size_t multi_accepted=0,multi_repaired_prefixes=0,multi_actual_drafts=0;
   std::array<c::ReadLease,2> controlled_proposals;
   std::int32_t natural_proposal=-1;std::uint32_t natural_accepted=0;
-  for(const int scenario:{0,1,2}) {
+  for(int scenario=0;scenario<(stochastic?1:3);++scenario) {
     SCOPED_TRACE(scenario); // natural, independently controlled match/reject.
-    auto state=State::create(model,owner,pool_bound,target_descriptions);
+    auto state=State::create(model,owner,pool_bound,target_descriptions,stochastic);
+    using SamplingCursor=hyle::inference::SamplingCursor;
+    const SamplingCursor initial_cursor{0x5157454e32344dULL,19,0};
+    const auto cursor=[&](const c::StateVersion &from) {
+      if(!state.sampling_entry)throw std::runtime_error("Qwen stochastic state needs its declared cursor");
+      const auto data=read(take(from.member(*state.sampling_entry),"actual Qwen random cursor"));SamplingCursor result;
+      if(data.size()!=sizeof(result))throw std::runtime_error("Qwen cursor metadata extent");
+      std::memcpy(&result,data.data(),sizeof(result));return result;
+    };
+    const auto identity=[&](SamplingCursor at,std::uint64_t offset) {
+      const auto words=at.identity(offset);return upload(owner,std::as_bytes(std::span(words)));
+    };
+    const auto flag=[&](const c::ReadLease &lease) {
+      const auto values=typed<std::uint8_t>(lease);
+      if(values.size()!=1||values[0]>1)throw std::runtime_error("Qwen stochastic flag must be Bool[1]");return values[0]!=0;
+    };
+    const auto sample=[&](Program &sampler,const c::ReadLease &logits,SamplingCursor at) {
+      const std::array inputs{logits,identity(at,0)};auto result=sampler.execute_inputs(queue,inputs);
+      if(!flag(result[2]))throw std::runtime_error("actual Qwen distribution is invalid");
+      const auto id=typed<std::int32_t>(result[1]);
+      if(id.size()!=1||id[0]<0||id[0]>=model.vocabulary)throw std::runtime_error("actual Qwen sampled ID is outside vocabulary");
+      return result;
+    };
     const auto target_member=[&](const c::StateVersion &version,TargetEntry entry) {
       return take(version.member(state.extra_entries.at(std::size_t(entry))),"actual target checkpoint member");
     };
@@ -2516,14 +2664,23 @@ void run_original_target_verifier(Program draft,TargetPlan target,
       const std::array<c::ReadLease,kResources> initial_values{upload(owner,storage_bytes(model,target_history(model,2,0))),
           upload(owner,storage_bytes(model,target_history(model,2,1))),warm_state[kTargetTap],upload(owner,sem::bytes(std::vector<std::int32_t>{3})),
           warm_state[kTargetCursor],warm_state[kTargetPosition]};
-      const auto base=state.import(initial_values,warm_state);const auto base_image=whole_image(state,base);
+      const auto base=state.import(initial_values,warm_state,stochastic?std::optional{initial_cursor}:std::nullopt);const auto base_image=whole_image(state,base);
+      auto bounded=limits;
+      const auto current_id=typed<std::int32_t>(state.member(base,kPending)).at(0);
+      if(stochastic) {
+        const auto occupied=typed<std::int32_t>(state.member(base,kCursor)).at(0);
+        if(occupied<0||occupied>=kCapacity)throw std::runtime_error("Qwen original target has no remaining context row");
+        bounded.remaining_context=(std::min)(bounded.remaining_context,std::size_t(kCapacity-occupied));
+        if(std::ranges::find(bounded.eos,current_id)!=bounded.eos.end())
+          throw std::runtime_error("Qwen cannot consume an EOS pending token");
+      }
       auto head=take(c::StateHead::create(state.store,base),"one12-member target/NextN accepted Head");
       const auto reseed=[&](const c::StateVersion &from) {
         auto pending=take(state.store.begin(from),"fresh actual target-tap seed");
         check(pending.replace(state.entries[kHidden],target_member(from,kTargetTap)),"bind previous-position normalized target tap");
         ++reseed_checks;return take(pending.finalize(),"unpublished complete target-tap seed");
       };
-      const auto combined=[&](const c::StateVersion &from) {
+      const auto combined=[&](const c::StateVersion &from,c::ReadLease *retained_logits=nullptr) {
         const auto cursor=typed<std::int32_t>(state.member(from,kCursor)).at(0),position=typed<std::int32_t>(state.member(from,kPosition)).at(0);
         const auto token=typed<std::int32_t>(state.member(from,kPending)).at(0);
         if(cursor!=typed<std::int32_t>(target_member(from,kTargetCursor)).at(0)||position!=typed<std::int32_t>(target_member(from,kTargetPosition)).at(0))
@@ -2535,6 +2692,7 @@ void run_original_target_verifier(Program draft,TargetPlan target,
         if(::testing::Test::HasFailure())throw std::runtime_error("original target numerical gate failed before staging");
         const auto draft_output=draft.execute(queue,state,from);observe(draft,state,from,draft_output);
         if(::testing::Test::HasFailure())throw std::runtime_error("original NextN numerical gate failed before staging");
+        if(retained_logits)*retained_logits=draft_output[draft.recipe.logits];
         const auto next=state.candidate(from,draft.recipe,draft_output,target.state(target_output));
         for(std::size_t entry=0;entry<kTargetResources;++entry)same_state_storage(target_member(next,static_cast<TargetEntry>(entry)),target_output[target.members[entry]]);
         EXPECT_EQ(whole_image(state,from),before);++feedbacks;
@@ -2542,8 +2700,215 @@ void run_original_target_verifier(Program draft,TargetPlan target,
         return next;
       };
       const auto seeded=reseed(base);same_state_storage(state.member(seeded,kHidden),target_member(base,kTargetTap));
-      const auto first=combined(seeded);const auto first_image=whole_image(state,first);
+      c::ReadLease draft_logits;
+      const auto first=combined(seeded,stochastic?&draft_logits:nullptr);const auto first_image=whole_image(state,first);
+      const auto single=[&](hyle::inference::mtp::SamplingLimits boundary,bool terminal_control) {
+        boundary.validate(model.vocabulary);
+        const auto before_target=target.program.native_submissions(),before_draft=draft.native_submissions();
+        const std::array input{target_member(first,kTargetTap)};
+        const auto logits=next_target_logits->execute_inputs(queue,input);
+        auto &sampler=next_target_sampler?*next_target_sampler:*random_q;
+        const auto sampled=sample(sampler,logits[0],initial_cursor);
+        const auto id=typed<std::int32_t>(sampled[1]).at(0);const std::array terminal{id};
+        if(terminal_control)boundary.eos=terminal;
+        const std::array inputs{current_id},finals{id};std::vector<std::int32_t> emitted;
+        const auto choice=hyle::inference::mtp::select_sampled_prefix(inputs,{},finals,boundary.quota,boundary.eos,
+            std::int32_t(model.vocabulary),emitted);
+        auto branch=take(c::StateHead::create(state.store,base),"Qwen single-row bounded Head");
+        auto publication=take(state.store.begin(first),"complete mandatory-current Qwen state");
+        check(publication.replace(state.entries[kPending],sampled[1]),"actual single target categorical pending lease");
+        const auto rng=initial_cursor.advanced(1);
+        check(publication.replace_metadata(*state.sampling_entry,std::as_bytes(std::span(&rng,1))),"one target draw commits with whole Qwen state");
+        const auto selected=take(publication.finalize(),"Qwen single-row complete publication");
+        EXPECT_FALSE(branch.publish(first.identity(),selected).ok());EXPECT_EQ(cursor(take(branch.current(),"single stale Head retains RNG")),initial_cursor);
+        check(branch.publish(base.identity(),selected),"one target row publishes same-prefix state and RNG");
+        EXPECT_EQ(choice.consumed,1u);EXPECT_EQ(choice.consumed_drafts,0u);EXPECT_EQ(cursor(selected),rng);
+        same_state_storage(state.member(selected,kPending),sampled[1]);
+        for(std::size_t entry=0;entry<kResources;++entry)if(entry!=kPending)same_state_storage(state.member(selected,entry),state.member(first,entry));
+        for(std::size_t entry=0;entry<kTargetResources;++entry)same_state_storage(target_member(selected,static_cast<TargetEntry>(entry)),target_member(first,static_cast<TargetEntry>(entry)));
+        EXPECT_EQ(whole_image(state,base),base_image);EXPECT_EQ(whole_image(state,first),first_image);
+        EXPECT_EQ(target.program.native_submissions(),before_target);EXPECT_EQ(draft.native_submissions(),before_draft);
+        EXPECT_EQ(typed<std::int32_t>(state.member(selected,kCursor)).at(0),3);
+        EXPECT_EQ(typed<std::int32_t>(target_member(selected,kTargetCursor)).at(0),3);
+        std::printf("QWEN RANDOM TAIL context=%zu quota=%zu pending=%d consumed=1 draw=1 no_second=1\n",boundary.remaining_context,boundary.quota,id);++bounded_tails;
+      };
+      if(stochastic&&planned_drafts==2&&!bounded.single_row()) {
+        // This reuses the same real NextN and selected-MoE target programs.
+        // The target body advances true rows; only its original full-V head
+        // is evaluated as M3. No claim of a parallel T3 MoE body is made.
+        std::array<c::StateVersion,3> prefixes{first,{},{}},repaired{first,{},{}};
+        std::array<std::vector<c::ReadLease>,2> sampled;
+        std::array<std::int32_t,3> inputs{current_id,-1,-1};
+        sampled[0]=sample(*random_q,draft_logits,initial_cursor);
+        inputs[1]=typed<std::int32_t>(sampled[0][1]).at(0);
+        const auto terminal=[&](auto id){return std::ranges::find(bounded.eos,id)!=bounded.eos.end();};
+        const std::size_t count=terminal(inputs[1])?1u:2u;
+        multi_actual_drafts=count;
+        c::ReadLease next_logits;
+        for(std::size_t row=1;row<=count;++row) {
+          auto source=take(state.store.begin(prefixes[row-1]),"actual recursive Qwen sampled proposal");
+          check(source.replace(state.entries[kPending],sampled[row-1][1]),"actual original q ID drives target and NextN");
+          const auto proposed=take(source.finalize(),"unpublished complete recursive proposal");
+          prefixes[row]=combined(proposed,row<count?&next_logits:nullptr);
+          if(row<count) {
+            sampled[row]=sample(*random_q,next_logits,initial_cursor.advanced(row));
+            inputs[row+1]=typed<std::int32_t>(sampled[row][1]).at(0);
+          }
+        }
+        auto &head_program=count==2?verifier:*short_verifier;
+        auto &decision_program=count==2?*random_decision:*short_decision;
+        std::vector<c::ReadLease> taps;
+        for(std::size_t row=0;row<=count;++row)taps.push_back(target_member(prefixes[row],kTargetTap));
+        const auto verified=head_program.program.execute_inputs(queue,taps);
+        const auto logits=typed<float>(verified[head_program.logits]);
+        ASSERT_EQ(logits.size(),(count+1)*std::size_t(model.vocabulary));
+        for(std::size_t row=0;row<=count;++row) {
+          const auto values=std::span(logits).subspan(row*std::size_t(model.vocabulary),std::size_t(model.vocabulary));
+          const auto id=typed<std::int32_t>(verified[head_program.pending[row]]).at(0);
+          const auto scores=typed<float>(verified[head_program.scores]);
+          ASSERT_TRUE(original_reference::expect_greedy(values,scores[row],id));
+          const std::array<std::size_t,1> selected{std::size_t(id)};
+          if(head_role.description.is_plain()&&head_role.description.data_type()==c::DataType::kBFloat16) {
+            auto hidden=typed<std::uint16_t>(taps[row]);
+            if(model.storage==c::DataType::kFloat32) {
+              if(!head_program.stored_input)throw std::runtime_error("finite BF16 head lost its activation rounding");
+              const auto stored=typed<std::uint16_t>(verified[*head_program.stored_input]);
+              hidden.assign(stored.begin()+std::ptrdiff_t(row*std::size_t(model.hidden)),stored.begin()+std::ptrdiff_t((row+1)*std::size_t(model.hidden)));
+            }
+            const std::array<std::int32_t,1> predicted{id};
+            ASSERT_TRUE(bfloat_reference::expect_projection(values,hidden,packed_head,std::size_t(model.vocabulary),std::size_t(model.hidden),"actual finite Qwen BF16 full-V verifier",false,predicted));
+          } else if(model.moe)ASSERT_TRUE(original24_reference::expect_projection(values,packed_head,std::size_t(kVocabulary),std::size_t(model.hidden),target.vocabulary.native,typed<float>(taps[row]),codec,"actual M3 target full-V head",false,selected));
+          else ASSERT_TRUE(original_reference::expect_projection(values,packed_head,std::size_t(kVocabulary),std::size_t(model.hidden),target.vocabulary.native,typed<float>(taps[row]),codec,"actual finite target full-V head",false,selected));
+        }
+        std::vector<c::ReadLease> decision_input;
+        if(count==2) {
+          std::vector<std::uint32_t> keys;
+          for(std::size_t draw=count;draw<=2*count;++draw) {
+            const auto key=initial_cursor.identity(draw);keys.insert(keys.end(),key.begin(),key.end());
+          }
+          decision_input={verified[head_program.logits],upload(owner,std::as_bytes(std::span(keys))),sampled[0][1],sampled[1][1],sampled[0][0],sampled[1][0]};
+        } else decision_input={verified[head_program.logits],sampled[0][0],sampled[0][1],identity(initial_cursor,1),identity(initial_cursor,2)};
+        const auto decision=decision_program.execute_inputs(queue,decision_input);
+        std::vector<std::uint8_t> flags;std::vector<std::int32_t> finals;
+        for(std::size_t row=0;row<count;++row) {
+          if(!flag(decision[count==2?4+row:2]))throw std::runtime_error("actual finite Qwen p/q prefix distribution invalid");
+          flags.push_back(std::uint8_t(flag(decision[row])));
+          finals.push_back(typed<std::int32_t>(decision[count==2?2+row:1]).at(0));
+        }
+        std::vector<std::int32_t> emitted;
+        const auto selected=hyle::inference::mtp::select_sampled_prefix(std::span(inputs).first(count+1),flags,finals,bounded.quota,bounded.eos,std::int32_t(model.vocabulary),emitted);
+        const auto draws=2*count+1;
+        const auto committed_cursor=initial_cursor.advanced(draws);
+        // Repair all possible accepted prefixes once, in true target-tap
+        // order. These controls test state selection, never claim additional
+        // natural stochastic acceptance trials or choose new random addresses.
+        for(std::size_t row=1;row<=count;++row) {
+          auto seed=take(state.store.begin(repaired[row-1]),"teacher-forced complete accepted NextN prefix");
+          check(seed.replace(state.entries[kPending],sampled[row-1][1]),"original accepted proposal ID retained");
+          check(seed.replace(state.entries[kHidden],target_member(prefixes[row-1],kTargetTap)),"true target tap replaces recursive hidden before repair");
+          const auto actual=take(seed.finalize(),"unpublished true-target repair seed");
+          const auto output=draft.execute(queue,state,actual);observe(draft,state,actual,output);ASSERT_FALSE(::testing::Test::HasFailure());
+          repaired[row]=state.candidate(prefixes[row],draft.recipe,output);
+          for(std::size_t member=0;member<kResources;++member)same_state_storage(state.member(repaired[row],member),output[draft.recipe.state_ports[member]]);
+          for(std::size_t member=0;member<kTargetResources;++member)same_state_storage(target_member(repaired[row],static_cast<TargetEntry>(member)),target_member(prefixes[row],static_cast<TargetEntry>(member)));
+          ++multi_repaired_prefixes;
+        }
+        const auto publication=[&](std::size_t prefix,const c::ReadLease &pending) {
+          auto candidate=take(state.store.begin(repaired.at(prefix)),"selected complete finite Qwen prefix");
+          check(candidate.replace(state.entries[kPending],pending),"actual selected pending ID lease");
+          check(candidate.replace_metadata(*state.sampling_entry,std::as_bytes(std::span(&committed_cursor,1))),"whole selected prefix and actual reserved draws publish together");
+          return take(candidate.finalize(),"atomic finite Qwen state/pending/RNG candidate");
+        };
+        for(std::size_t prefix=0;prefix<=count;++prefix) {
+          // A request may retain an emitted EOS as pending, but cannot commit
+          // a controlled state prefix that already consumed that EOS.
+          if(std::ranges::any_of(std::span(inputs).subspan(1,prefix),terminal))continue;
+          // Actual target Top1 is an explicitly controlled pending token for
+          // this state-only branch, distinct from the natural p/q decision.
+          const auto pending=verified[head_program.pending[prefix]];
+          const auto candidate=publication(prefix,pending);
+          auto branch=take(c::StateHead::create(state.store,base),"independent legal accepted-prefix state control");
+          EXPECT_FALSE(branch.publish(prefixes[count].identity(),candidate).ok());
+          EXPECT_EQ(cursor(take(branch.current(),"stale prefix control retains original RNG")),initial_cursor);
+          check(branch.publish(base.identity(),candidate),"whole0/1/2 repaired prefix publication");
+          EXPECT_EQ(cursor(candidate),committed_cursor);
+          EXPECT_EQ(typed<std::int32_t>(state.member(candidate,kCursor)).at(0),3+int(prefix));
+          EXPECT_EQ(typed<std::int32_t>(target_member(candidate,kTargetCursor)).at(0),3+int(prefix));
+          for(std::size_t member=0;member<kResources;++member)if(member!=kPending)same_state_storage(state.member(candidate,member),state.member(repaired[prefix],member));
+          for(std::size_t member=0;member<kTargetResources;++member)same_state_storage(target_member(candidate,static_cast<TargetEntry>(member)),target_member(prefixes[prefix],static_cast<TargetEntry>(member)));
+          same_state_storage(state.member(candidate,kPending),pending);
+          std::printf("QWEN MULTI PREFIX prefix=%zu committed_cursor=%d actual_draws=%zu controlled_state_only=1\n",prefix,3+int(prefix),draws);
+        }
+        const auto pending_for=[&](const hyle::inference::mtp::AcceptedPrefix &choice) {
+          if(choice.consumed<=count&&flags[choice.consumed-1]&&choice.next_id==inputs[choice.consumed])return sampled[choice.consumed-1][1];
+          return decision[count==2?2+std::min(choice.consumed_drafts,count-1):1];
+        };
+        const auto pending=pending_for(selected);
+        EXPECT_EQ(typed<std::int32_t>(pending).at(0),selected.next_id);
+        const auto accepted_version=publication(selected.consumed_drafts,pending);
+        auto failed=take(state.store.begin(accepted_version),"cancel wrong typed multi-prefix splice");
+        EXPECT_FALSE(failed.replace(state.entries[kPending],target_member(first,kTargetTap)).ok());check(failed.cancel(),"cancel cannot publish state/RNG");
+        EXPECT_EQ(cursor(take(head.current(),"cancelled K2 retains initial cursor")),initial_cursor);
+        EXPECT_FALSE(head.publish(prefixes[count].identity(),accepted_version).ok());
+        check(head.publish(base.identity(),accepted_version),"natural finite accepted prefix with pending and RNG");
+        EXPECT_EQ(cursor(take(head.current(),"successful K2 committed cursor")),committed_cursor);
+        EXPECT_EQ(typed<std::int32_t>(state.member(accepted_version,kCursor)).at(0),2+int(selected.consumed));
+        EXPECT_EQ(typed<std::int32_t>(target_member(accepted_version,kTargetCursor)).at(0),2+int(selected.consumed));
+        const auto boundary=[&](std::size_t quota,std::span<const std::int32_t> eos,const char *name) {
+          std::vector<std::int32_t> tokens;const auto limited=hyle::inference::mtp::select_sampled_prefix(std::span(inputs).first(count+1),flags,finals,quota,eos,std::int32_t(model.vocabulary),tokens);
+          const auto candidate=publication(limited.consumed_drafts,pending_for(limited));
+          auto branch=take(c::StateHead::create(state.store,base),"bounded K2 whole-state Head");
+          check(branch.publish(base.identity(),candidate),"bounded K2 prefix publishes atomically");
+          EXPECT_EQ(typed<std::int32_t>(state.member(candidate,kCursor)).at(0),2+int(limited.consumed));
+          EXPECT_EQ(typed<std::int32_t>(target_member(candidate,kTargetCursor)).at(0),2+int(limited.consumed));
+          EXPECT_EQ(typed<std::int32_t>(state.member(candidate,kPending)).at(0),limited.next_id);EXPECT_EQ(cursor(candidate),committed_cursor);
+          for(std::size_t member=0;member<kResources;++member)if(member!=kPending)same_state_storage(state.member(candidate,member),state.member(repaired[limited.consumed_drafts],member));
+          for(std::size_t member=0;member<kTargetResources;++member)same_state_storage(target_member(candidate,static_cast<TargetEntry>(member)),target_member(prefixes[limited.consumed_drafts],static_cast<TargetEntry>(member)));
+          std::printf("QWEN MULTI BOUNDARY name=%s emitted=%zu consumed=%zu pending=%d stopped=%d actual_draws=%zu\n",name,tokens.size(),limited.consumed,limited.next_id,int(limited.stopped),draws);
+        };
+        for(std::size_t quota=1;quota<=count+1;++quota)boundary(quota,bounded.eos,"quota");
+        for(std::size_t row=0;row<count;++row)if(inputs[row+1]!=current_id) {
+          const std::array eos{inputs[row+1]};boundary(count+1,eos,"proposal_EOS");
+        }
+        if(selected.next_id!=current_id) {const std::array eos{selected.next_id};boundary(count+1,eos,"final_EOS");}
+        const auto accepted_image=whole_image(state,accepted_version);
+        if(!selected.stopped&&emitted.size()<bounded.quota&&selected.consumed<bounded.remaining_context) {
+          const auto seed=reseed(take(head.current(),"actual K2 accepted state for pending continuation"));
+          auto continued=combined(seed);
+          const std::array input{target_member(continued,kTargetTap)};const auto logits1=next_target_logits->execute_inputs(queue,input);
+          auto &sampler=next_target_sampler?*next_target_sampler:*random_q;
+          const auto sampled_next=sample(sampler,logits1[0],committed_cursor);
+          auto next=take(state.store.begin(continued),"actual K2 residual/bonus target-only continuation");
+          check(next.replace(state.entries[kPending],sampled_next[1]),"real next target sampled pending lease");
+          const auto advanced=committed_cursor.advanced(1);
+          check(next.replace_metadata(*state.sampling_entry,std::as_bytes(std::span(&advanced,1))),"one actual continuation draw");
+          continued=take(next.finalize(),"complete actual post-K2 continuation");
+          check(head.publish(accepted_version.identity(),continued),"next pending consumption publishes with target/draft state");
+          EXPECT_EQ(cursor(continued),advanced);
+          EXPECT_EQ(typed<std::int32_t>(state.member(continued,kCursor)).at(0),3+int(selected.consumed));
+          std::printf("QWEN RANDOM MULTI K=%zu q1=%d q2=%d accepted=%zu pending=%d continued=%d draw=%llu head_rows=%zu target_body=sequential_true_rows\n",count,inputs[1],inputs[2],selected.consumed_drafts,selected.next_id,typed<std::int32_t>(state.member(continued,kPending)).at(0),static_cast<unsigned long long>(advanced.draw),count+1);
+        }
+        EXPECT_EQ(whole_image(state,base),base_image);EXPECT_EQ(whole_image(state,first),first_image);EXPECT_EQ(whole_image(state,accepted_version),accepted_image);
+        multi_accepted=selected.consumed_drafts;multi_executed=true;
+      } else {
+      if(stochastic&&bounded.single_row()) {
+        single(bounded,false);
+        ::testing::Test::RecordProperty("random_tail_target_rows",1);::testing::Test::RecordProperty("random_tail_draws",1);
+      } else {
+      if(stochastic) {
+        // Both request-tail shapes reuse the retired mandatory-current state,
+        // before sampling q or submitting a proposed second target/NextN row.
+        single({std::numeric_limits<std::size_t>::max(),1,{}},false);check(state.store.collect(),"retire context-one Qwen Head");
+        single({1,std::numeric_limits<std::size_t>::max(),{}},false);check(state.store.collect(),"retire quota-one Qwen Head");
+      }
       c::StateVersion proposal_source=first;
+      std::vector<c::ReadLease> actual_q;
+      if(stochastic) {
+        actual_q=sample(*random_q,draft_logits,initial_cursor);
+        auto selected=take(state.store.begin(first),"actual Qwen q categorical proposal");
+        check(selected.replace(state.entries[kPending],actual_q[1]),"actual sampled I32 proposal feeds target row1");
+        proposal_source=take(selected.finalize(),"same complete Qwen proposal checkpoint");
+      }
       if(scenario!=0) {
         ASSERT_TRUE(controlled_proposals[std::size_t(scenario-1)]);
         auto policy=take(state.store.begin(first),"controlled actual Top1/Top2 proposal");
@@ -2588,12 +2953,27 @@ void run_original_target_verifier(Program draft,TargetPlan target,
         else if(logits[index]>logits[top2[1]])top2[1]=index;
       }
       EXPECT_EQ(alternate,std::int32_t(top2[1]));EXPECT_NE(alternate,target_ids[0]);
-      const std::uint32_t accepted=proposal==target_ids[0]?1u:0u;++accepted_counts[accepted];
+      std::vector<c::ReadLease> random_result;
+      if(stochastic) {
+        const std::array input{verified[verifier.logits],actual_q[0],actual_q[1],identity(initial_cursor,1),identity(initial_cursor,2)};
+        random_result=random_decision->execute_inputs(queue,input);
+        if(!flag(random_result[2]))throw std::runtime_error("actual Qwen p/q/bonus decision is invalid");
+      }
+      const bool sampled_accept=stochastic&&flag(random_result[0]);
+      hyle::inference::mtp::AcceptedPrefix sampled_choice;std::vector<std::int32_t> emitted;
+      if(stochastic) {
+        const std::array inputs{current_id,proposal};const std::array finals{typed<std::int32_t>(random_result[1]).at(0)};
+        const std::array flags{std::uint8_t(sampled_accept)};
+        sampled_choice=hyle::inference::mtp::select_sampled_prefix(inputs,flags,finals,bounded.quota,bounded.eos,
+            std::int32_t(model.vocabulary),emitted);
+      }
+      const std::uint32_t accepted=stochastic?std::uint32_t(sampled_choice.consumed_drafts):std::uint32_t(proposal==target_ids[0]);++accepted_counts[accepted];
       if(scenario==0) {
         controlled_proposals={verified[verifier.pending[0]],verified[*verifier.alternate]};
         natural_proposal=proposal;natural_accepted=accepted;
       } else EXPECT_EQ(accepted,scenario==1?1u:0u);
-      const auto pending=verified[verifier.pending[accepted]];
+      const auto pending=stochastic?(sampled_accept&&sampled_choice.consumed==1?actual_q[1]:random_result[1]):verified[verifier.pending[accepted]];
+      if(stochastic)EXPECT_EQ(typed<std::int32_t>(pending).at(0),sampled_choice.next_id);
       c::StateVersion accepted_version;
       if(accepted) {
         // Recursive second used draft hidden to speculate. Rebuild its row
@@ -2617,14 +2997,55 @@ void run_original_target_verifier(Program draft,TargetPlan target,
         for(std::size_t entry=0;entry<kResources;++entry)if(entry!=kPending)same_state_storage(state.member(accepted_version,entry),state.member(first,entry));
         EXPECT_NE(accepted_version.identity(),base.identity());
       }
+      if(stochastic) {
+        auto publication=take(state.store.begin(accepted_version),"same whole-prefix Qwen stochastic publication");
+        const auto next=initial_cursor.advanced(3);
+        check(publication.replace_metadata(*state.sampling_entry,std::as_bytes(std::span(&next,1))),"pending/state and RNG commit together");
+        accepted_version=take(publication.finalize(),"complete Qwen stochastic accepted checkpoint");
+        auto failure=take(state.store.begin(accepted_version),"cancel incomplete Qwen stochastic publication");
+        EXPECT_FALSE(failure.replace(state.entries[kPending],target_member(first,kTargetTap)).ok());
+        check(failure.cancel(),"wrong typed result cannot publish state or RNG");++cancellations;
+        EXPECT_EQ(cursor(take(head.current(),"cancelled Qwen decision retains original cursor")),initial_cursor);
+        EXPECT_FALSE(head.publish(second.identity(),accepted_version).ok());++stale_rejections;
+        EXPECT_EQ(cursor(take(head.current(),"stale Qwen publish retains original cursor")),initial_cursor);
+      }
       same_state_storage(state.member(accepted_version,kPending),pending);
       EXPECT_EQ(typed<std::int32_t>(state.member(accepted_version,kCursor)).at(0),3+int(accepted));
       EXPECT_TRUE(take(head.current(),"unpublished repaired checkpoint").identity()==base.identity());
       check(head.publish(base.identity(),accepted_version),"atomic target and repaired NextN same-prefix publication");
+      if(stochastic)EXPECT_EQ(cursor(take(head.current(),"successful Qwen K1 cursor")),initial_cursor.advanced(3));
       ++publications;
       EXPECT_TRUE(head.publish(base.identity(),second).IsUnavailable());
       ++stale_rejections;
       const auto accepted_image=whole_image(state,accepted_version);
+      if(stochastic&&limits.quota==std::numeric_limits<std::size_t>::max()&&
+          limits.remaining_context==std::numeric_limits<std::size_t>::max()&&limits.eos.empty()) {
+        const std::array inputs{current_id,proposal};const std::array finals{typed<std::int32_t>(random_result[1]).at(0)};
+        const std::array flags{std::uint8_t(sampled_accept)};
+        const auto boundary=[&](std::size_t quota,std::span<const std::int32_t> eos,const char *name) {
+          std::vector<std::int32_t> tokens;
+          const auto selected=hyle::inference::mtp::select_sampled_prefix(inputs,flags,finals,quota,eos,
+              std::int32_t(model.vocabulary),tokens);
+          const auto lease=sampled_accept&&selected.consumed==1?actual_q[1]:random_result[1];
+          const auto from=selected.consumed_drafts?accepted_version:first;
+          auto branch=take(c::StateHead::create(state.store,base),"Qwen independent bounded policy Head");
+          auto publication=take(state.store.begin(from),"Qwen same complete selected prefix");
+          check(publication.replace(state.entries[kPending],lease),"bounded actual Qwen pending lease");
+          const auto rng=initial_cursor.advanced(3);
+          check(publication.replace_metadata(*state.sampling_entry,std::as_bytes(std::span(&rng,1))),"bounded Qwen reserved random addresses");
+          const auto version=take(publication.finalize(),"complete bounded Qwen state and RNG");
+          check(branch.publish(base.identity(),version),"one bounded Qwen publication");
+          EXPECT_EQ(typed<std::int32_t>(state.member(version,kPending)).at(0),selected.next_id);same_state_storage(state.member(version,kPending),lease);
+          EXPECT_EQ(cursor(version),rng);EXPECT_EQ(typed<std::int32_t>(state.member(version,kCursor)).at(0),2+int(selected.consumed));
+          EXPECT_EQ(typed<std::int32_t>(target_member(version,kTargetCursor)).at(0),2+int(selected.consumed));
+          for(std::size_t entry=0;entry<kResources;++entry)if(entry!=kPending)same_state_storage(state.member(version,entry),state.member(from,entry));
+          for(std::size_t entry=0;entry<kTargetResources;++entry)same_state_storage(target_member(version,static_cast<TargetEntry>(entry)),target_member(from,static_cast<TargetEntry>(entry)));
+          std::printf("QWEN RANDOM BOUNDARY name=%s accepted=%d emitted=%zu consumed=%zu pending=%d stopped=%d draw=3\n",name,int(sampled_accept),tokens.size(),selected.consumed,selected.next_id,int(selected.stopped));++bounded_tails;
+        };
+        boundary(1,{},"quota1");check(state.store.collect(),"retire independent Qwen quota Head");
+        if(sampled_accept&&proposal!=current_id){const std::array eos{proposal};boundary(2,eos,"accepted_proposal_EOS");check(state.store.collect(),"retire independent Qwen accepted EOS Head");}
+        if(finals[0]!=current_id&&(!sampled_accept||finals[0]!=proposal)){const std::array eos{finals[0]};boundary(2,eos,sampled_accept?"bonus_EOS":"residual_EOS");check(state.store.collect(),"retire independent Qwen final EOS Head");}
+      }
       {
         auto cancelled=take(state.store.begin(accepted_version),"failed target-only splice");
         check(cancelled.replace(state.extra_entries[kTargetTap],target_member(second,kTargetTap)),"stage target-only producer");
@@ -2633,10 +3054,29 @@ void run_original_target_verifier(Program draft,TargetPlan target,
         ++cancellations;
       }
       EXPECT_EQ(whole_image(state,take(head.current(),"unchanged head after failed splice")),accepted_image);
+      // Explicit limits describe one component episode, not a request loop.
+      if(!stochastic||(limits.quota==std::numeric_limits<std::size_t>::max()&&
+          limits.remaining_context==std::numeric_limits<std::size_t>::max()&&limits.eos.empty())) {
       const auto continuing_seed=reseed(take(head.current(),"accepted whole prefix for continuation"));
       same_state_storage(state.member(continuing_seed,kHidden),target_member(accepted_version,kTargetTap));
-      const auto continued=combined(continuing_seed);
+      auto continued=combined(continuing_seed);
+      if(stochastic) {
+        const std::array input{target_member(continued,kTargetTap)};
+        const auto target_logits=next_target_logits->execute_inputs(queue,input);
+        auto &sampler=next_target_sampler?*next_target_sampler:*random_q;
+        const auto target_sample=sample(sampler,target_logits[0],initial_cursor.advanced(3));
+        auto next=take(state.store.begin(continued),"ordinary Qwen target consumes actual residual/bonus");
+        check(next.replace(state.entries[kPending],target_sample[1]),"next target categorical pending result lease");
+        const auto rng=initial_cursor.advanced(4);
+        check(next.replace_metadata(*state.sampling_entry,std::as_bytes(std::span(&rng,1))),"one target-only draw commits with full prefix");
+        continued=take(next.finalize(),"real Qwen target continuation and cursor");
+      }
       check(head.publish(accepted_version.identity(),continued),"publish actual target/draft continuation");
+      if(stochastic) {
+        EXPECT_EQ(cursor(take(head.current(),"continued Qwen target cursor")),initial_cursor.advanced(4));
+        std::printf("QWEN RANDOM K1 moe=%d proposal=%d accepted=%u pending=%d continued_pending=%d cursor=%llu\n",int(model.moe),proposal,accepted,
+            typed<std::int32_t>(pending).at(0),typed<std::int32_t>(state.member(continued,kPending)).at(0),static_cast<unsigned long long>(cursor(continued).draw));
+      }
       ++publications;
       EXPECT_EQ(typed<std::int32_t>(state.member(continued,kPending)).size(),1u);
       EXPECT_EQ(whole_image(state,base),base_image);EXPECT_EQ(whole_image(state,first),first_image);EXPECT_EQ(whole_image(state,second),second_image);
@@ -2645,11 +3085,18 @@ void run_original_target_verifier(Program draft,TargetPlan target,
         for(std::size_t entry=0;entry<kResources;++entry){auto reader=state.member(version,entry);EXPECT_FALSE(reader.try_write());}
         for(const auto entry:state.extra_entries){auto reader=take(version.member(entry),"retained target reader");EXPECT_FALSE(reader.try_write());}
       }
+      } else {
+        ::testing::Test::RecordProperty("random_finite_emitted",int(emitted.size()));
+        ::testing::Test::RecordProperty("random_finite_consumed",int(sampled_choice.consumed));
+        ::testing::Test::RecordProperty("random_finite_stopped",int(sampled_choice.stopped));
+      }
+      }
+      } // existing bounded K1 / target-only path
       peak_backing=std::max(peak_backing,state.store.stats().backing_bytes);
       std::size_t initial_bound=0;
       for(const auto &desc:descriptions(model))initial_bound+=(take(desc.required_bytes(),"joint draft initial bound")+255u)/256u*256u;
       for(const auto &desc:target_descriptions)initial_bound+=(take(desc.required_bytes(),"joint target initial bound")+255u)/256u*256u;
-      declared_budget=pool_bound+initial_bound;EXPECT_LE(state.store.stats().backing_bytes,declared_budget);
+      declared_budget=pool_bound+initial_bound+(stochastic?96u*64u:0);EXPECT_EQ(declared_budget,state.backing_bound);EXPECT_LE(state.store.stats().backing_bytes,declared_budget);
     }
     check(state.store.collect(),"retire complete12-member verifier checkpoints");
     EXPECT_EQ(state.store.stats().versions,0u);EXPECT_EQ(state.store.stats().drafts,0u);
@@ -2666,7 +3113,46 @@ void run_original_target_verifier(Program draft,TargetPlan target,
 #endif
     }
   }
-  EXPECT_GT(repairs,0u);EXPECT_EQ(repairs,accepted_counts[1]);EXPECT_GT(accepted_counts[0],0u);EXPECT_GT(accepted_counts[1],0u);
+  if(stochastic)for(const auto *program:{&*random_q,&*random_decision,&*next_target_logits}) {
+    EXPECT_EQ(program->live_output_blocks(),0u);EXPECT_EQ(program->active_output_uses(),0u);
+  }
+  if(next_target_sampler){EXPECT_EQ(next_target_sampler->live_output_blocks(),0u);EXPECT_EQ(next_target_sampler->active_output_uses(),0u);}
+  if(short_verifier){EXPECT_EQ(short_verifier->program.live_output_blocks(),0u);EXPECT_EQ(short_verifier->program.active_output_uses(),0u);}
+  if(short_decision){EXPECT_EQ(short_decision->live_output_blocks(),0u);EXPECT_EQ(short_decision->active_output_uses(),0u);}
+  if(multi_executed) {
+    ::testing::Test::RecordProperty("random_max_drafts",int(max_drafts));
+    ::testing::Test::RecordProperty("random_actual_drafts",int(multi_actual_drafts));
+    ::testing::Test::RecordProperty("random_accepted_prefix",int(multi_accepted));
+    ::testing::Test::RecordProperty("repaired_prefixes",int(multi_repaired_prefixes));
+    ::testing::Test::RecordProperty("target_head_rows",int(multi_actual_drafts+1));
+    ::testing::Test::RecordProperty("actual_episode_draws",int(2*multi_actual_drafts+1));
+    ::testing::Test::RecordProperty("state_budget_bytes",std::to_string(declared_budget));
+    ::testing::Test::RecordProperty("peak_state_backing_bytes",std::to_string(peak_backing));
+    ::testing::Test::RecordProperty("scope","Natural recursive original MoE NextN proposals and true per-row target MoE states; one M3 original vocabulary head, common p/q prefix decisions, complete0/1/2 target-conditioned repair and atomic pending/RNG; upstream layer fixture remains external, target body is sequential, no full-model quality/TPS/parallel-target claim.");
+    return;
+  }
+  EXPECT_EQ(repairs,accepted_counts[1]);
+  if(!stochastic){EXPECT_GT(repairs,0u);EXPECT_GT(accepted_counts[0],0u);EXPECT_GT(accepted_counts[1],0u);}
+  if(stochastic) {
+    EXPECT_EQ(accepted_counts[0]+accepted_counts[1],limits.single_row()?0u:1u);
+    ::testing::Test::RecordProperty("random_actual_proposal",natural_proposal);
+    ::testing::Test::RecordProperty("random_accepted",int(accepted_counts[1]));
+    ::testing::Test::RecordProperty("random_rejected",int(accepted_counts[0]));
+    const bool request_limited=limits.quota!=std::numeric_limits<std::size_t>::max()||
+        limits.remaining_context!=std::numeric_limits<std::size_t>::max()||!limits.eos.empty();
+    ::testing::Test::RecordProperty("random_committed_draws",limits.single_row()?1:request_limited?3:4);
+    ::testing::Test::RecordProperty("bounded_tail_heads",int(bounded_tails));
+    ::testing::Test::RecordProperty("whole_state_publications",int(publications));
+    ::testing::Test::RecordProperty("cancelled_unpublished_drafts",int(cancellations));
+    ::testing::Test::RecordProperty("rejected_stale_publishes",int(stale_rejections));
+    ::testing::Test::RecordProperty("accepted_target_conditioned_repairs",int(repairs));
+    ::testing::Test::RecordProperty("target_verifier_full_vocabulary",int(model.vocabulary));
+    ::testing::Test::RecordProperty("state_budget_bytes",std::to_string(declared_budget));
+    ::testing::Test::RecordProperty("peak_state_backing_bytes",std::to_string(peak_backing));
+    ::testing::Test::RecordProperty("stochastic_policy","actual NextN q categorical proposal0 -> actual target row1; real full-V target p0/q/p1 common accept1/final2 -> direct I32 result lease; full original target/NextN resources plus Cursor metadata in same expected-base Head. Cancel/stale/failure advances0, K1 success advances3, actual residual/bonus target-only continuation advances1.");
+    ::testing::Test::RecordProperty("scope","One natural finite original-role target/NextN stochastic K1 and actual pending continuation on the existing common Qwen component controller. Previous-layer input/history remain explicit fixtures; no full-model quality, natural acceptance-rate, all identities/backends, or performance claim.");
+    return;
+  }
   ::testing::Test::RecordProperty("actual_submissions",int(draft.native_submissions()+target.program.native_submissions()+verifier.program.native_submissions()));
   ::testing::Test::RecordProperty("target_submissions",int(target.program.native_submissions()));
   ::testing::Test::RecordProperty("nextn_submissions",int(draft.native_submissions()));
@@ -2720,7 +3206,7 @@ void run_original_target_verifier(Program draft,TargetPlan target,
 // unused MAIN NextN banks are uploaded for this pairing.
 [[maybe_unused]] void run_packed_q27_target_verifier(const c::ModelArtifactProfileDescription &draft_profile,
     std::shared_ptr<const full::Data> draft_source,std::shared_ptr<const full::Data> target_vocabulary_source,
-    std::shared_ptr<const target_roles::Data> target_source,c::Context &context,const c::StorageOwner &owner,bool cuda) {
+    std::shared_ptr<const target_roles::Data> target_source,c::Context &context,const c::StorageOwner &owner,bool cuda,bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={}) {
   if(!draft_source||!target_vocabulary_source||!target_source)
     throw std::runtime_error("packed Q27 K1 requires explicit original draft,target and vocabulary sources");
   const auto model=packed_q27_model(draft_profile,*draft_source);
@@ -2755,13 +3241,13 @@ void run_original_target_verifier(Program draft,TargetPlan target,
   }
   auto draft=Program::create(build(model,owner,prefix,nullptr,nullptr,{},complete),context,owner,cuda);
   auto plan=prepare_target(target,std::move(vocabulary),context,owner,cuda);
-  run_original_target_verifier(std::move(draft),std::move(plan),context,owner,cuda);
+  run_original_target_verifier(std::move(draft),std::move(plan),context,owner,cuda,stochastic,limits);
 }
 
 // Same-artifact GGUF target/draft/vocabulary adapter. The Data has exactly
 // the29 authenticated original names; no primary/sidecar pin substitution.
 [[maybe_unused]] void run_named_q27_target_verifier(const c::ModelArtifactProfileDescription &profile,
-    std::shared_ptr<const full::Data> source,c::Context &context,const c::StorageOwner &owner,bool cuda) {
+    std::shared_ptr<const full::Data> source,c::Context &context,const c::StorageOwner &owner,bool cuda,bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={}) {
   if(!source||source->size()!=29)throw std::runtime_error("named Q27 full verifier requires its29 actual original roles");
   std::size_t source_bytes=0,target_bytes=0;bool has_bfloat=false;
   for(std::size_t slot=0;slot<source->size();++slot) {
@@ -2790,20 +3276,20 @@ void run_original_target_verifier(Program draft,TargetPlan target,
   ::testing::Test::RecordProperty("projection_precision",has_bfloat?
       "F32 state; actual BF16-W uses actual A_RNE_BF16/F32-accumulation/F32-return; packed original AQ unchanged":
       "F32 state; original per-role GGUF codec and native activation quantization retained; no dense weight shadow");
-  run_original_target_verifier(std::move(draft),std::move(target),context,owner,cuda);
+  run_original_target_verifier(std::move(draft),std::move(target),context,owner,cuda,stochastic,limits);
 }
 
-// One callable source entry into the existing K1 runner. Artifact metadata and
+// One callable source entry into the bounded prefix runner. Artifact metadata and
 // ready roles vary; the state, verifier and accepted-prefix repair stay shared.
 #if defined(HYLE_TEST_QWEN_B07_ARTIFACTS_HEADER)
-// Same Program/StateHead/K1 verifier as B04/Q14 and primary Q24. Only cold
+// Same Program/StateHead prefix verifier as B04/Q14 and primary Q24. Only cold
 // source/descriptor bindings differ; absent expert IDs go to the owned driver.
 void run_named_q24_target_verifier(std::shared_ptr<const full::Data> source,c::Context &context,
-    const c::StorageOwner &owner,bool cuda
+    const c::StorageOwner &owner,bool cuda,bool stochastic=false
 #if defined(HYLE_TEST_QWEN_STATE_CUDA)
     ,const c::cuda::MemoryResource *device=nullptr
 #endif
-    ) {
+    ,hyle::inference::mtp::SamplingLimits limits={},std::size_t max_drafts=1) {
   namespace artifact=qwen_gguf_q24_artifacts::b07;
   const auto expert_root=directory("HYLE_QWEN_GGUF_24_EXPERT_DIR");
   if(expert_root.empty())throw std::runtime_error("set HYLE_QWEN_GGUF_24_EXPERT_DIR to authenticated selected Q8_0 expert planes");
@@ -2839,7 +3325,7 @@ void run_named_q24_target_verifier(std::shared_ptr<const full::Data> source,c::C
   ::testing::Test::RecordProperty("original_manifest_sha256",std::string(artifact::kManifestSha256));
   ::testing::Test::RecordProperty("original_acquisition_sha256",std::string(artifact::kReceiptSha256));
   ::testing::Test::RecordProperty("projection_precision","F32 state; actual per-role Q8_0/F32 bytes; no complete expert banks or dense weight shadow");
-  run_original_target_verifier(std::move(draft),std::move(plan),context,owner,cuda);
+  run_original_target_verifier(std::move(draft),std::move(plan),context,owner,cuda,stochastic,limits,max_drafts);
 }
 #endif
 void run_bfloat_target_verifier(const Model &model,std::shared_ptr<const bfloat::Bound> source,
@@ -2847,7 +3333,7 @@ void run_bfloat_target_verifier(const Model &model,std::shared_ptr<const bfloat:
     bfloat::VocabularyNames vocabulary,c::Context &context,const c::StorageOwner &owner,bool cuda,
     std::span<const qwen_nvfp4_target_fragment::ProjectionNames> target_projections={},
     std::span<const qwen_gptq_projection_fragment::Names> target_gptq={},
-    std::span<const qwen_ct_asymmetric_projection_fragment::Names> target_ct={}) {
+    std::span<const qwen_ct_asymmetric_projection_fragment::Names> target_ct={},bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={}) {
   if(!source||!source->source||!model.profile||model.moe||model.storage!=c::DataType::kBFloat16||
       model.profile->artifact_repository!=source->source->identity().repository||
       model.profile->artifact_revision!=source->source->identity().revision)
@@ -2867,16 +3353,16 @@ void run_bfloat_target_verifier(const Model &model,std::shared_ptr<const bfloat:
   auto target_head=target_vocabulary(source,source->at(vocabulary.head),
       source->source->bytes(vocabulary.head),GGML_TYPE_BF16);
   auto target=prepare_bfloat_target(model,std::move(source),rules,target_layer,target_norm,std::move(target_head),context,owner,cuda,target_projections,target_gptq,target_ct);
-  run_original_target_verifier(std::move(draft),std::move(target),context,owner,cuda);
+  run_original_target_verifier(std::move(draft),std::move(target),context,owner,cuda,stochastic,limits);
 }
 
 // Actual B05 caller supplies authenticated static roles and separate target /
-// NextN selected sources. This only delegates to the existing K1 controller.
+// NextN selected sources. Both use the same bounded-prefix controller.
 [[maybe_unused]] void run_bfloat_moe_target_verifier(const Model &model,std::shared_ptr<const bfloat::Bound> source,
     const bfloat::DenseNormConventions &rules,const bfloat_moe_target::Names &target_names,
     std::shared_ptr<ExpertSupply> nextn_supply,std::shared_ptr<ExpertSupply> target_supply,
     bfloat::VocabularyNames vocabulary,c::Context &context,const c::StorageOwner &owner,bool cuda,
-    std::shared_ptr<MixedPlacement> mixed={}) {
+    std::shared_ptr<MixedPlacement> mixed={},bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={},std::size_t max_drafts=1) {
   if(!source||!source->source||!model.profile||!model.moe||model.storage!=c::DataType::kBFloat16||
       !nextn_supply||!target_supply||!nextn_supply->source.owner||!target_supply->source.owner||
       model.profile->artifact_repository!=source->source->identity().repository||
@@ -2886,7 +3372,7 @@ void run_bfloat_target_verifier(const Model &model,std::shared_ptr<const bfloat:
   auto draft=Program::create(build_bfloat(model,source,rules,resident,vocabulary),context,owner,cuda,false,std::move(nextn_supply),mixed);
   auto target_head=target_vocabulary(source,source->at(vocabulary.head),source->source->bytes(vocabulary.head),GGML_TYPE_BF16);
   auto target=prepare_bfloat_moe_target(model,std::move(source),rules,target_names,std::move(target_head),std::move(target_supply),context,owner,cuda,std::move(mixed));
-  run_original_target_verifier(std::move(draft),std::move(target),context,owner,cuda);
+  run_original_target_verifier(std::move(draft),std::move(target),context,owner,cuda,stochastic,limits,max_drafts);
 }
 
 TEST(OriginalRoleInput, Nvfp4SubgroupsDecodeIndependentlyOfTheWriter) {
@@ -3263,6 +3749,24 @@ TEST_F(QwenMtpStateConsumer,CpuQ24OriginalTargetAndNextNFullVocabularyVerifierPu
   auto target_plan=prepare_target24(target,std::move(target_head),target_supply,context,owner,false);
   run_original_target_verifier(std::move(draft),std::move(target_plan),context,owner,false);
 }
+TEST_F(QwenMtpStateConsumer,CpuQ24OriginalTargetAndNextNRandomVerifierContinuesAtomically) {
+  if(!data24||!prepare_original24_data()||!prepare_original24_target())GTEST_SKIP()<<"Set original Q24 NextN directories and HYLE_QWEN24_ORIGINAL_TARGET_DIR to authenticated target91 roles";
+  auto context=take(g::cpu::create_context(),"ordinary CPU Q24 target verifier context");
+  const auto owner=take(c::StorageOwner::adopt(context,SystemResource{}),"ordinary CPU Q24 target verifier owner");
+  const auto roles=orig::q24::bind(*data24,owner);
+  const auto complete=packed_moe::adapt(std::make_shared<const full24::Roles>(full24::bind(data24_full,owner)));
+  const auto target=packed_moe::adapt(std::make_shared<const target24_roles::Bound>(target24_roles::bind(data24_target,owner)));
+  auto nextn_supply=std::make_shared<ExpertSupply>();nextn_supply->roles=complete;
+  nextn_supply->source=expert_source(complete->source,std::array{full24::Role::kExpertGate,full24::Role::kExpertUp,full24::Role::kExpertDown});
+  nextn_supply->cpu=std::make_shared<resident24::CpuSupply>(take(resident24::CpuSupply::create(owner,nextn_supply->source.descriptions),"bounded original Q24 NextN CPU supply"));
+  auto target_supply=std::make_shared<ExpertSupply>();
+  target_supply->source=expert_source(target->source,std::array{target24_roles::Role::kExpertGate,target24_roles::Role::kExpertUp,target24_roles::Role::kExpertDown});
+  target_supply->cpu=std::make_shared<resident24::CpuSupply>(take(resident24::CpuSupply::create(owner,target_supply->source.descriptions),"bounded original Q24 target CPU supply"));
+  auto draft=Program::create(build(q24,owner,roles,nullptr,data24.get(),{},{},complete),context,owner,false,false,nextn_supply);
+  auto target_head=target_vocabulary(complete,complete->at(full24::Role::kHead),complete->source->bytes(full24::Role::kHead),complete->source->spec(full24::Role::kHead).native);
+  auto target_plan=prepare_target24(target,std::move(target_head),target_supply,context,owner,false);
+  run_original_target_verifier(std::move(draft),std::move(target_plan),context,owner,false,true);
+}
 TEST_F(QwenMtpStateConsumer,CpuQ24OriginalBFloatTargetAndNextNFullVocabularyVerifierPublishesRepairedPrefix) {
   if(!prepare_original24_bfloat())GTEST_SKIP()<<"Set HYLE_QWEN_BFLOAT_24_DIR to authenticated official B05 BF16 static33 roles";
   const auto expert_root=directory("HYLE_QWEN_BFLOAT_24_EXPERT_DIR");
@@ -3455,8 +3959,7 @@ struct SharedCudaResource final {
   m::MemoryResourceRef ref() noexcept{return storage->ref();}
 };
 #if defined(HYLE_TEST_QWEN_STATE_CPU)
-TEST_F(QwenMtpStateConsumer,MixedQ24OriginalBFloatTargetAndNextNFullVocabularyVerifierPublishesRepairedPrefix) {
-  if(!prepare_original24_bfloat())GTEST_SKIP()<<"Set HYLE_QWEN_BFLOAT_24_DIR to authenticated official B05 static33 roles";
+void run_mixed_q24_bfloat(std::shared_ptr<const bfloat::Data> data24_bfloat,bool stochastic,hyle::inference::mtp::SamplingLimits limits={},std::size_t max_drafts=1) {
   const auto expert_root=directory("HYLE_QWEN_BFLOAT_24_EXPERT_DIR");
   if(expert_root.empty())GTEST_SKIP()<<"Set HYLE_QWEN_BFLOAT_24_EXPERT_DIR to authenticated original selected BF16 planes";
   const auto request=directory("HYLE_QWEN_BFLOAT_FRONTIER_FILE");
@@ -3499,12 +4002,22 @@ TEST_F(QwenMtpStateConsumer,MixedQ24OriginalBFloatTargetAndNextNFullVocabularyVe
   ::testing::Test::RecordProperty("mixed_device_static_bytes",std::to_string(bfloat24::kOriginalBytes-embedding.lease.size()-head.lease.size()));
   ::testing::Test::RecordProperty("mixed_expert_slot_bytes",std::to_string(nextn.first->layout().slot_bytes()));
   run_bfloat_moe_target_verifier(model,parameters,bfloat24::kNormConventions,bfloat24::kTargetNames,
-      nextn.first,target.first,bfloat24::kVocabularyNames,context,owner,true,placement);
+      nextn.first,target.first,bfloat24::kVocabularyNames,context,owner,true,placement,stochastic,limits,max_drafts);
   const auto attachments=nextn.second->attachments+target.second->attachments;
   ::testing::Test::RecordProperty("selected_expert_source_attachments",std::to_string(attachments));
   ::testing::Test::RecordProperty("selected_expert_plane_files",std::to_string(attachments*3));
   ::testing::Test::RecordProperty("explicit_expert_frontier_requests",std::to_string(nextn.second->requests+target.second->requests));
   ::testing::Test::RecordProperty("mixed_scope","Only original BF16 vocabulary Gather/fullV head/TopK are CPU-required; body/expert computation and all state/pending are CUDA-required. Ordinary Graph inserts actual crossing copies; no complete-model quality, all-CUDA, TPS or measured-VRAM claim.");
+}
+
+TEST_F(QwenMtpStateConsumer,MixedQ24OriginalBFloatTargetAndNextNFullVocabularyVerifierPublishesRepairedPrefix) {
+  if(!prepare_original24_bfloat())GTEST_SKIP()<<"Set HYLE_QWEN_BFLOAT_24_DIR to authenticated official B05 static33 roles";
+  run_mixed_q24_bfloat(data24_bfloat,false);
+}
+
+TEST_F(QwenMtpStateConsumer,MixedQ24OriginalBFloatTargetAndNextNRandomVerifierContinuesAtomically) {
+  if(!prepare_original24_bfloat())GTEST_SKIP()<<"Set HYLE_QWEN_BFLOAT_24_DIR to authenticated official B05 static33 roles";
+  run_mixed_q24_bfloat(data24_bfloat,true);
 }
 #endif
 #if defined(HYLE_TEST_QWEN_B07_ARTIFACTS_HEADER)
@@ -3513,7 +4026,7 @@ TEST_F(QwenMtpStateConsumer,CudaQ24FidelityOriginalTargetAndNextNFullVocabularyV
   auto context=take(g::cuda::create_context(),"ordinary B07 CUDA target verifier context");
   const auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"actual B07 CUDA memory"));
   const auto owner=take(c::StorageOwner::adopt(context,SharedCudaResource{device}),"actual B07 CUDA storage owner");
-  run_named_q24_target_verifier(data24_fidelity,context,owner,true,device.get());
+  run_named_q24_target_verifier(data24_fidelity,context,owner,true,false,device.get());
 }
 #endif
 TEST_F(QwenMtpStateConsumer,CudaQ24OriginalNextNAndVocabularyPublishesAndContinues) {
@@ -3546,6 +4059,34 @@ TEST_F(QwenMtpStateConsumer,CudaQ24OriginalTargetAndNextNFullVocabularyVerifierP
   auto target_head=target_vocabulary(complete,complete->at(full24::Role::kHead),complete->source->bytes(full24::Role::kHead),complete->source->spec(full24::Role::kHead).native);
   auto target_plan=prepare_target24(target,std::move(target_head),target_supply,context,owner,true);
   run_original_target_verifier(std::move(draft),std::move(target_plan),context,owner,true);
+}
+void run_cuda_original_q24_random(const orig::q24::Data &kv,
+    std::shared_ptr<const full24::Data> nextn_data,std::shared_ptr<const target24_roles::Data> target_data,
+    std::size_t max_drafts) {
+  auto context=take(g::cuda::create_context(),"ordinary CUDA Q24 target verifier context");
+  const auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"actual shared CUDA target memory"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaResource{device}),"ordinary shared CUDA Q24 target owner");
+  const auto roles=orig::q24::bind(kv,owner);
+  const auto complete=packed_moe::adapt(std::make_shared<const full24::Roles>(full24::bind(nextn_data,owner)));
+  const auto target=packed_moe::adapt(std::make_shared<const target24_roles::Bound>(target24_roles::bind(target_data,owner)));
+  auto nextn_supply=std::make_shared<ExpertSupply>();nextn_supply->roles=complete;
+  nextn_supply->source=expert_source(complete->source,std::array{full24::Role::kExpertGate,full24::Role::kExpertUp,full24::Role::kExpertDown});
+  nextn_supply->cuda=std::make_shared<resident24::CudaSupply>(take(resident24::CudaSupply::create(context,owner,*device,nextn_supply->source.descriptions),"bounded original Q24 NextN CUDA supply"));
+  auto target_supply=std::make_shared<ExpertSupply>();
+  target_supply->source=expert_source(target->source,std::array{target24_roles::Role::kExpertGate,target24_roles::Role::kExpertUp,target24_roles::Role::kExpertDown});
+  target_supply->cuda=std::make_shared<resident24::CudaSupply>(take(resident24::CudaSupply::create(context,owner,*device,target_supply->source.descriptions),"bounded original Q24 target CUDA supply"));
+  auto draft=Program::create(build(q24,owner,roles,nullptr,&kv,{},{},complete),context,owner,true,false,nextn_supply);
+  auto target_head=target_vocabulary(complete,complete->at(full24::Role::kHead),complete->source->bytes(full24::Role::kHead),complete->source->spec(full24::Role::kHead).native);
+  auto target_plan=prepare_target24(target,std::move(target_head),target_supply,context,owner,true);
+  run_original_target_verifier(std::move(draft),std::move(target_plan),context,owner,true,true,{},max_drafts);
+}
+TEST_F(QwenMtpStateConsumer,CudaQ24OriginalTargetAndNextNRandomVerifierContinuesAtomically) {
+  if(!data24||!prepare_original24_data()||!prepare_original24_target())GTEST_SKIP()<<"Set original Q24 NextN and target91 directories";
+  run_cuda_original_q24_random(*data24,data24_full,data24_target,1);
+}
+TEST_F(QwenMtpStateConsumer,CudaQ24OriginalTargetAndNextNK2RandomVerifierContinuesAtomically) {
+  if(!data24||!prepare_original24_data()||!prepare_original24_target())GTEST_SKIP()<<"Set original Q24 NextN and target91 directories";
+  run_cuda_original_q24_random(*data24,data24_full,data24_target,2);
 }
 
 #endif

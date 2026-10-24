@@ -1,0 +1,706 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Cold graph assembly versus model equations within the global ordinary/MTP, multi-session and multi-request architecture.",
+  "changes": [
+    "Recipe borrows concrete GraphAssembly instead of Backend and no longer owns allocation resources, CPU region state, constant leases or placement/options vectors.",
+    "Assembly retains original Borrow/StorageOwner/ReadLease rules and literal lifetimes for all four preparation entries.",
+    "CPU FFN scope is selected outside model equations; the attention residual Add stays before that scope.",
+    "Two external projection probe callers migrated directly without compatibility aliases."
+  ],
+  "source_review": {
+    "assertions": 16,
+    "evidence": {
+      "path": ".scratch/inference-graph-assembly-20261024/source-checks.json",
+      "bytes": 1496,
+      "sha256": "f07e10d1cb83584d16d233912d8c43aa16b60c55635dd59238b535cfc897f02a"
+    },
+    "integration": {
+      "path": ".scratch/inference-graph-assembly-20261024/integration-review.md",
+      "bytes": 2192,
+      "sha256": "5217d651acec088adc56571c55607ac76a7030fe10b385d201a3a92986b18109"
+    }
+  },
+  "actual_consumer_regression": {
+    "state": "passed",
+    "scope": "Old b064 only new CPUFFN1+Vulkan finite ordinary P2/T1/T1 and stochastic MTP P2/K2/K2; current same mixed plus previous actual natural Text4x2/greedy recovery+lateIO/MTP K2R2/fixed replay.",
+    "source_identity": {
+      "old_main_sha256": "b06483f165e4ce51680187c20082e1ef687a30999591412d02d27c592923aa62",
+      "current_main_sha256": "f5da4b87bbf51ebc8382db0424d85b07b247237add248470e63360a2972a7117",
+      "private_instrumentation": "Only four cold compile calls wrapped; original graph/options/constants/packed range passed unchanged. All engine source/header dependencies frozen; no canonical/private foreign header leaks."
+    },
+    "math_and_request_equivalence": {
+      "mixed_complete_ledgers_RNG_resource_facts_equal": true,
+      "previous_actual_natural_Text_MTP_greedy_fixed_non_timing_reports_equal": true,
+      "differences": [],
+      "added_report_fields": [],
+      "excluded_fields": "Only keys seconds, *_seconds and *tokens_per_second*. No process identity field actually needed exclusion."
+    },
+    "state_equivalence": {
+      "binary_arrays": 24,
+      "boundary_metadata_files": 6,
+      "all_bytes_equal": true,
+      "all_binary_arrays_nonzero": true,
+      "witnesses": [
+        {
+          "mode": "ordinary",
+          "state": "target.key.bf16",
+          "stage": "round0",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        },
+        {
+          "mode": "ordinary",
+          "state": "target.key.bf16",
+          "stage": "round1",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        },
+        {
+          "mode": "ordinary",
+          "state": "target.value.bf16",
+          "stage": "round0",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        },
+        {
+          "mode": "ordinary",
+          "state": "target.value.bf16",
+          "stage": "round1",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        },
+        {
+          "mode": "mtp",
+          "state": "target.key.bf16",
+          "stage": "round0",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        },
+        {
+          "mode": "mtp",
+          "state": "target.key.bf16",
+          "stage": "round1",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        },
+        {
+          "mode": "mtp",
+          "state": "target.value.bf16",
+          "stage": "round0",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        },
+        {
+          "mode": "mtp",
+          "state": "target.value.bf16",
+          "stage": "round1",
+          "original_prefix_preserved": true,
+          "total_bytes_changed": true
+        }
+      ],
+      "scope": "Every complete logical target KV row, ordinary/MTP carry, available prior hidden, complete draft KV/frontier/lag/catchup and sampling metadata after prefill and both continuation rounds. Old Snapshot is retained and re-read unchanged in each actual process."
+    },
+    "cold_equivalence": {
+      "actual_graphs": 12,
+      "entries": {
+        "family": 3,
+        "frontier": 2,
+        "draft": 5,
+        "prefix": 2
+      },
+      "record_counts": {
+        "graph": 12,
+        "dimension": 36,
+        "shape": 12,
+        "exact_variant": 13,
+        "input": 59,
+        "constant_spec": 227,
+        "node": 1313,
+        "output": 37,
+        "constant_binding": 227,
+        "placement": 1313,
+        "external": 323,
+        "end_graph": 12
+      },
+      "serialized_lines": 3584,
+      "all_rows_exact_equal": true,
+      "all_file_bytes_equal": true,
+      "graph_sha256": "e4624aa5ae3ed405a47e5946c2e386a33b1bcf4820f6d04a3ead6f23bdace797",
+      "facts": "Every public node/op/explicit typed parameters/input/output/spec/edge/dependency/resource; dimension bounds and exact variants; original constant payload bytes+FNV/resource/domain/allocation alias/offset/extent/owner; Required node placements/external contracts/packed chains. Dynamic graph generation and pointer identities normalized to ordinals.",
+      "boundary": "Not a serializer for inaccessible internal symbolic-expression formulas; source refactor review remains separate. Only these actual four small preparation entries, no all-model/backend matrix."
+    },
+    "mixed_actual": [
+      {
+        "private_facts": "mixed-ordinary",
+        "cpu_ffn_layers": 1,
+        "original_host_weight_bytes": 49280,
+        "original_device_weight_bytes": 49664,
+        "canonical_weight_bytes": 98944,
+        "duplicated_original_weight_bytes": 0,
+        "draft_graph_calls": 0,
+        "prefix_graph_calls": 0,
+        "old_snapshots_unchanged": true,
+        "ledger": [
+          {
+            "role": 0,
+            "generation": 0,
+            "committed": 1,
+            "user_output": 1,
+            "imported": 0,
+            "pending_input": -1,
+            "quota": 0,
+            "turn": 0,
+            "accepted": 2,
+            "draft_rows": 0,
+            "draft_limit": 0,
+            "verified_rows": 2,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 0,
+            "draft": -1,
+            "target_first": 36,
+            "target_second": -1,
+            "agreed": 0,
+            "accepted_draft": 0,
+            "stopped": 0,
+            "requests": 1,
+            "member_index": 0,
+            "emitted_count": 1,
+            "before": [
+              0,
+              0,
+              0,
+              -1,
+              -1,
+              123,
+              0,
+              0
+            ],
+            "after": [
+              2,
+              0,
+              0,
+              36,
+              -1,
+              123,
+              0,
+              1
+            ],
+            "committed_ids": [
+              1,
+              2
+            ],
+            "emitted": [
+              36,
+              -1
+            ],
+            "accepted_inputs": [
+              1,
+              -1
+            ],
+            "verification_inputs": []
+          },
+          {
+            "role": 0,
+            "generation": 1,
+            "committed": 1,
+            "user_output": 1,
+            "imported": 0,
+            "pending_input": 36,
+            "quota": 1,
+            "turn": 0,
+            "accepted": 1,
+            "draft_rows": 0,
+            "draft_limit": 0,
+            "verified_rows": 1,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 0,
+            "draft": -1,
+            "target_first": 8,
+            "target_second": -1,
+            "agreed": 0,
+            "accepted_draft": 0,
+            "stopped": 0,
+            "requests": 1,
+            "member_index": 0,
+            "emitted_count": 1,
+            "before": [
+              2,
+              0,
+              0,
+              36,
+              -1,
+              123,
+              0,
+              1
+            ],
+            "after": [
+              3,
+              0,
+              0,
+              8,
+              -1,
+              123,
+              0,
+              2
+            ],
+            "committed_ids": [
+              36
+            ],
+            "emitted": [
+              8,
+              -1
+            ],
+            "accepted_inputs": [
+              36,
+              -1
+            ],
+            "verification_inputs": [
+              36
+            ]
+          },
+          {
+            "role": 0,
+            "generation": 1,
+            "committed": 1,
+            "user_output": 1,
+            "imported": 0,
+            "pending_input": 8,
+            "quota": 1,
+            "turn": 0,
+            "accepted": 1,
+            "draft_rows": 0,
+            "draft_limit": 0,
+            "verified_rows": 1,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 0,
+            "draft": -1,
+            "target_first": 39,
+            "target_second": -1,
+            "agreed": 0,
+            "accepted_draft": 0,
+            "stopped": 0,
+            "requests": 1,
+            "member_index": 0,
+            "emitted_count": 1,
+            "before": [
+              3,
+              0,
+              0,
+              8,
+              -1,
+              123,
+              0,
+              2
+            ],
+            "after": [
+              4,
+              0,
+              0,
+              39,
+              -1,
+              123,
+              0,
+              3
+            ],
+            "committed_ids": [
+              8
+            ],
+            "emitted": [
+              39,
+              -1
+            ],
+            "accepted_inputs": [
+              8,
+              -1
+            ],
+            "verification_inputs": [
+              8
+            ]
+          }
+        ]
+      },
+      {
+        "private_facts": "mixed-MTP",
+        "cpu_ffn_layers": 1,
+        "original_host_weight_bytes": 49280,
+        "original_device_weight_bytes": 157056,
+        "canonical_weight_bytes": 206336,
+        "duplicated_original_weight_bytes": 0,
+        "draft_graph_calls": 6,
+        "prefix_graph_calls": 2,
+        "old_snapshots_unchanged": true,
+        "ledger": [
+          {
+            "role": 2,
+            "generation": 0,
+            "committed": 1,
+            "user_output": 1,
+            "imported": 0,
+            "pending_input": -1,
+            "quota": 0,
+            "turn": 0,
+            "accepted": 2,
+            "draft_rows": 2,
+            "draft_limit": 0,
+            "verified_rows": 2,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 0,
+            "draft": -1,
+            "target_first": 36,
+            "target_second": -1,
+            "agreed": 0,
+            "accepted_draft": 0,
+            "stopped": 0,
+            "requests": 1,
+            "member_index": 0,
+            "emitted_count": 1,
+            "before": [
+              0,
+              0,
+              0,
+              -1,
+              -1,
+              123,
+              0,
+              0
+            ],
+            "after": [
+              2,
+              2,
+              0,
+              36,
+              -1,
+              123,
+              0,
+              1
+            ],
+            "committed_ids": [
+              1,
+              2
+            ],
+            "emitted": [
+              36,
+              -1
+            ],
+            "accepted_inputs": [
+              1,
+              -1
+            ],
+            "verification_inputs": []
+          },
+          {
+            "role": 1,
+            "generation": 1,
+            "committed": 1,
+            "user_output": 1,
+            "imported": 0,
+            "pending_input": 36,
+            "quota": 3,
+            "turn": 0,
+            "accepted": 1,
+            "draft_rows": 3,
+            "draft_limit": 2,
+            "verified_rows": 3,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 4,
+            "draft": 31,
+            "target_first": 42,
+            "target_second": -1,
+            "agreed": 0,
+            "accepted_draft": 0,
+            "stopped": 0,
+            "requests": 1,
+            "member_index": 0,
+            "emitted_count": 1,
+            "before": [
+              2,
+              2,
+              0,
+              36,
+              -1,
+              123,
+              0,
+              1
+            ],
+            "after": [
+              3,
+              3,
+              0,
+              42,
+              -1,
+              123,
+              0,
+              6
+            ],
+            "committed_ids": [
+              36
+            ],
+            "emitted": [
+              42
+            ],
+            "accepted_inputs": [
+              36
+            ],
+            "verification_inputs": [
+              36,
+              31,
+              39
+            ]
+          },
+          {
+            "role": 1,
+            "generation": 1,
+            "committed": 1,
+            "user_output": 1,
+            "imported": 0,
+            "pending_input": 42,
+            "quota": 3,
+            "turn": 0,
+            "accepted": 1,
+            "draft_rows": 3,
+            "draft_limit": 2,
+            "verified_rows": 3,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 4,
+            "draft": 25,
+            "target_first": 11,
+            "target_second": -1,
+            "agreed": 0,
+            "accepted_draft": 0,
+            "stopped": 0,
+            "requests": 1,
+            "member_index": 0,
+            "emitted_count": 1,
+            "before": [
+              3,
+              3,
+              0,
+              42,
+              -1,
+              123,
+              0,
+              6
+            ],
+            "after": [
+              4,
+              4,
+              0,
+              11,
+              -1,
+              123,
+              0,
+              11
+            ],
+            "committed_ids": [
+              42
+            ],
+            "emitted": [
+              11
+            ],
+            "accepted_inputs": [
+              42
+            ],
+            "verification_inputs": [
+              42,
+              25,
+              2
+            ]
+          }
+        ]
+      }
+    ],
+    "previous_actual_reports": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\reference\\reports.json",
+      "bytes": 100048,
+      "sha256": "1a4e1c43b3852bb93745a1d60cbad03e1852d47e1a6ffdd78e3234d7eecd16c7"
+    },
+    "fixture": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+        "bytes": 206336,
+        "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\weights.tsv",
+        "bytes": 5308,
+        "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+      }
+    ],
+    "closure": {
+      "route": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-program-fixed\\archive\\route.lib",
+        "bytes": 28072348,
+        "sha256": "349091d9fca48d66730ce6316d80a85458f4c7b983ab3e21460b88bfdfc2cb0c"
+      },
+      "native_region": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-region-fixed2\\compile\\unit.obj",
+        "bytes": 2654635,
+        "sha256": "2fc293d76f54d7b4f7e4e3ac84f758d89acb2366acceb3e843d7ec50934ffcfb"
+      }
+    },
+    "compilation": {
+      "old": {
+        "exit": 2,
+        "seconds": 5.032000000006519,
+        "timeout": false
+      },
+      "old2": {
+        "exit": 0,
+        "seconds": 17.046999999991385,
+        "timeout": false
+      },
+      "old3": {
+        "exit": 0,
+        "seconds": 16.921999999991385,
+        "timeout": false
+      },
+      "current3": {
+        "exit": 0,
+        "seconds": 16.875,
+        "timeout": false
+      }
+    },
+    "actual_runs": {
+      "old2": {
+        "exit": 1,
+        "seconds": 0.48399999999674037,
+        "timeout": false
+      },
+      "old3": {
+        "exit": 0,
+        "seconds": 1.0940000000118744,
+        "timeout": false
+      },
+      "current3": {
+        "exit": 0,
+        "seconds": 2.5789999999979045,
+        "timeout": false
+      }
+    },
+    "first_failures": [
+      {
+        "path": "old/compile",
+        "kind": "Private instrumentation/fixture compile",
+        "cause": "Descriptor used !Status, and two std::array extents declared in one deduction statement. Minimal private corrections only, frozen failed source retained."
+      },
+      {
+        "path": "old2/run",
+        "kind": "Private replay plan",
+        "cause": "plan_replay_uses(tokens,requests,count) was called as tokens/count/requests for two-use shapes; actual R2 family was correctly rejected before inference. Only arguments fixed to intended R1/count2; N4/R1/C16/cache16MiB/backend/math unchanged."
+      },
+      {
+        "path": "audit-first-timing-fields.json",
+        "kind": "Offline comparison",
+        "cause": "Fixed reports additionally use seconds, beyond *_seconds. Saved all16 explicit time-only mismatches; added exact seconds exclusion without rerunning."
+      },
+      {
+        "path": "old2/compile/additional-state-witness-headers.json",
+        "kind": "Link precheck",
+        "cause": "Prior natural probe lacked four public detail headers for complete-state page reads; their exact SHAs matched the earlier actual GA state proof. No existing public header changed; compilation reused, no SDK/core rebuild."
+      }
+    ],
+    "boundaries": {
+      "MTP_acceptance": "These two tiny mixed K2 rounds actually rejected both proposals and consumed one target token each; no claim to new accepted-prefix/lag1 coverage from this case.",
+      "quality_claim": false,
+      "performance_claim": false,
+      "full_models": 0,
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "final_successful_comparison_consumers": 2,
+      "actual_compile_attempts": 4,
+      "actual_processes": 3,
+      "successful_processes": 2,
+      "fixture_layers": "A only",
+      "GDN": false,
+      "nonempty_carry_hidden_arrays_actually_compared": 6,
+      "nonempty_prior_hidden": false,
+      "lag1_prefix_exercised": false,
+      "frozen_not_compiled_or_run": [
+        "current/source: pre-private-fix source",
+        "current2/source: before replay-use parameter correction"
+      ]
+    },
+    "source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\old\\source-pins.json",
+        "bytes": 24010,
+        "sha256": "76412594fea34b575d514fd5429eb35fb22a8ff8900a6c657b943743c26ac3ce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\current\\source-pins.json",
+        "bytes": 22433,
+        "sha256": "76a4cecd1db4d403e32876e72a73aae9afba40127db2f6f9f0d5c97a6e49720e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\old2\\source-pins.json",
+        "bytes": 9754,
+        "sha256": "c7a0e401e0366f843a67856dd09108ea1d88bebddca4eace625dcc29f81f36b9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\current2\\source-pins.json",
+        "bytes": 9870,
+        "sha256": "a050c0de7ea929cbfc26354a8e6c67df22f02f6cc61db43ecb534f482429d387"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\old3\\source-pins.json",
+        "bytes": 9315,
+        "sha256": "5b04983fcf75014a8ce9cb89b1b4d46d1e16407a23a34ecdfafae4db9279a4ee"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\current3\\source-pins.json",
+        "bytes": 9431,
+        "sha256": "f05d9fefa8f639191cc2853df29b4055f015d61bc79c71ca28c0f3eaccbb902a"
+      }
+    ],
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-assembly-20261024\\regression\\summary.json",
+      "bytes": 156965,
+      "sha256": "69b15e050280e3a61b53ca23984285a11e72f2d7c62559c27b26cd177f3f425c"
+    }
+  },
+  "external_probe_syntax": {
+    "state": "passed",
+    "compiler_flags": "/O2 /W4 /WX /Zs",
+    "process": {
+      "exit": 0,
+      "seconds": 6.875,
+      "timeout": false
+    }
+  },
+  "canonical_sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 427344,
+      "sha256": "f5da4b87bbf51ebc8382db0424d85b07b247237add248470e63360a2972a7117"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_projection_width_probe.cc",
+      "bytes": 11827,
+      "sha256": "3ab4de20f19da05b763980690cc4df062314724440fcfa9df7ca6bd4a939be88"
+    }
+  ],
+  "limitations": [
+    "Finite Windows CPU/Vulkan fixture and existing request regression only; no full trained-model, task-quality, all-platform or throughput claim.",
+    "Cold graph observation is private instrumentation and is absent from product source.",
+    "Cross-family generation/state adapters, reporting separation and worklist convergence remain unfinished.",
+    "Architecture documentation specifies serialized Model/Session control; current finite FIFO schedules do not provide online queue backpressure or latency guarantees."
+  ],
+  "SDK_builds": 0,
+  "downloads_bytes": 0,
+  "HTTP_requests": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-graph-assembly-2026-10-24.zip",
+    "bytes": 1582876,
+    "sha256": "85bd9ef0bb15051ac1eb67e809de96e093b2026f3e60472918cfa1a0b915f7f9"
+  },
+  "cleanup": {
+    "state": "completed",
+    "files": 15,
+    "logical_bytes": 251357690,
+    "private_DLL_hardlinks_removed": 3,
+    "physical_freed_bytes_measured": false,
+    "record": ".scratch/inference-graph-assembly-20261024/regression/binary-cleanup-removed.json",
+    "preserved": "Source, commands, first instrument failures, actual results, cached original fixture and corrected production closure."
+  }
+}

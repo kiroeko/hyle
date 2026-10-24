@@ -1,6 +1,11 @@
 hyle_add_header_self_contained_test(graph_route_vulkan
   HEADER_DIR graph HEADERS vulkan.h)
 if(_HYLE_COMPUTE_HAVE_VULKAN)
+  hyle_add_test(graph_route_vulkan NAME retirement SOURCES retirement_test.cc
+    DEPS hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
+  target_include_directories(hyle_graph_route_vulkan_retirement_test SYSTEM PRIVATE
+    "${HYLE_GGML_SOURCE_DIR}/src")
+  hyle_stage_runtime(hyle_graph_route_vulkan_retirement_test)
   hyle_add_test(graph_route_vulkan NAME float8_quantize_output
     SOURCES ../compute_models/float8_quantize_output_test.cc
     DEFINES HYLE_TEST_FP8_QUANT_VULKAN=1)

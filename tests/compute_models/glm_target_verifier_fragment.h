@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -9,8 +10,9 @@
 
 #include "d5_qwen38_24t_semantic_fragments.h"
 #include "hyle/compute/model_ops.h"
+#include "model_sampling_fragment.h"
 
-// Pure model-local construction and greedy K1 consumer policy. There is no
+// Pure model-local target-head construction. There is no
 // loader, invocation, provider choice, or target model execution in this file.
 namespace glm_target_verifier_fragment {
 namespace c = hyle::compute;
@@ -50,7 +52,7 @@ inline Ports append(sem::Fragment &fragment, Value final_normalized_taps,
   // shared_head.norm, normalize again, or narrow a caller's F32 tap implicitly.
   // Constant ownership/authentication belongs to the caller's ordinary Graph.
   Ports result;
-  result.logits = fragment.one(c::model_ops::bfloat_linear_f32(),
+  result.logits = fragment.one(c::model_ops::dense_linear_f32(),
       {final_normalized_taps, original_shared_head});
   const auto top = fragment.append(c::Operation(c::TopK{.count = 1, .stable = true}),
       {result.logits}, 2);
@@ -65,30 +67,4 @@ inline Ports append(sem::Fragment &fragment, Value final_normalized_taps,
   return result;
 }
 
-// Mandatory current token t0 has already been consumed by BOTH checkpoints.
-// These labels deliberately exclude the pre-t0 base version: accepting zero
-// draft tokens retains first, not base; accepting proposal1 retains second.
-enum class Checkpoint : std::uint8_t { kAfterCurrent, kAfterProposal };
-struct K1Decision final {
-  std::uint32_t accepted_drafts;
-  Checkpoint checkpoint;
-  std::size_t next_pending_row;
-  std::int32_t next_pending; // Diagnostic policy value, not a new uploaded token.
-};
-inline K1Decision decide_k1(std::int32_t actual_proposal,
-                            std::span<const std::int32_t> actual_target_ids,
-                            std::int64_t vocabulary = kVocabulary) {
-  if (vocabulary <= 0 || vocabulary > std::numeric_limits<std::int32_t>::max() ||
-      actual_target_ids.size() != std::size_t(kRows) || actual_proposal < 0 ||
-      actual_proposal >= vocabulary)
-    throw std::runtime_error("GLM greedy K1 policy needs one proposal and two actual target IDs");
-  for (const auto id : actual_target_ids)
-    if (id < 0 || id >= vocabulary)
-      throw std::runtime_error("GLM greedy K1 target ID is outside the complete vocabulary");
-  const std::uint32_t accepted = actual_proposal == actual_target_ids[0] ? 1U : 0U;
-  // The consumer binds Ports.row_ids[next_pending_row]'s real result lease.
-  // next_pending is only for observations; this helper submits no computation.
-  return {accepted, accepted ? Checkpoint::kAfterProposal : Checkpoint::kAfterCurrent,
-      std::size_t(accepted), actual_target_ids[accepted]};
-}
 } // namespace glm_target_verifier_fragment

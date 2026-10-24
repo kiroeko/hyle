@@ -80,7 +80,7 @@ inline Value project(sem::Fragment &fragment,Value input,Value weight,const Geom
         a.dimensions()[1]!=w.dimensions()[1])
       throw std::runtime_error("original Qwen projection needs original BF16 [N,K] and dense actual rows");
     const auto actual=cast(fragment,input,c::DataType::kBFloat16);
-    const auto raw=fragment.one(c::model_ops::bfloat_linear_f32(),{actual,weight});
+    const auto raw=fragment.one(c::model_ops::dense_linear_f32(),{actual,weight});
     // File W encoding does not change the caller's activation/state storage.
     const auto stored=geometry.storage==c::DataType::kBFloat16?cast(fragment,raw,c::DataType::kBFloat16):raw;
     if(trace)trace->projections.push_back({actual,weight,raw,stored,actual.ordinal()==input.ordinal()?std::nullopt:std::optional<Value>{input}});

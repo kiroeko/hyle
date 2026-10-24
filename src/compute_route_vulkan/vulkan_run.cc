@@ -79,12 +79,15 @@ create_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef allocator)
 }
 
 namespace {
+thread_local const Runtime *retirement_callback_runtime = nullptr;
 
-void deliver(cd::CompletionLifetime lifetime, const Status &terminal,
+void deliver(const Runtime &runtime, cd::CompletionLifetime lifetime, const Status &terminal,
              const Status &hint) noexcept {
   if (lifetime.valid()) {
+    const auto *previous = std::exchange(retirement_callback_runtime, &runtime);
     lifetime.terminal(lifetime.state, terminal.ok() ? hint : terminal);
     lifetime.release(lifetime.state);
+    retirement_callback_runtime = previous;
   }
 }
 
@@ -418,7 +421,7 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
   hint = std::move(run->hint);
   if (abandoned.valid()) {
     lock.unlock();
-    deliver(abandoned, terminal, hint);
+    deliver(runtime, abandoned, terminal, hint);
     lock.lock();
   }
   // No packet takes this exact same locked publication path. Once published,
@@ -461,7 +464,7 @@ const cd::CompletionVTable completion_vtable{
             owner = std::move(run.completion_owner);
           }
           if (!pending) {
-            deliver(lifetime, terminal, hint);
+            deliver(*run.runtime, lifetime, terminal, hint);
             std::lock_guard lock(run.runtime->mutex);
             run.retiring = false;
             run.runtime->retirement_changed.notify_all();
@@ -683,6 +686,8 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
 
 Status collect(const std::shared_ptr<Runtime> &runtime, bool drain) noexcept {
   if (drain) {
+    if (retirement_callback_runtime == runtime.get())
+      return Status::FailedPrecondition("Vulkan Context cannot block in its own retirement callback");
     Status first_error;
     for (;;) {
       std::shared_ptr<Run> run;

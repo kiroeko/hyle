@@ -1,0 +1,152 @@
+{
+  "status": "PASS_BOUNDED_ORIGINAL_PRO_CPU_NATURAL_STOCHASTIC_PREFIX_AND_CONTINUATION",
+  "date": "2026-10-24",
+  "source_identity": {
+    "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+    "dense_bundle": {
+      "file": "roles.bin",
+      "bytes": 6504119672,
+      "sha256": "b68c6d1ada35211514200c63806689bd958b2422f861c007bb79c852048b78a4"
+    },
+    "role_count": 216,
+    "markov_roles": [
+      {
+        "name": "mtp.2.confidence_head.proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          1,
+          7680
+        ],
+        "bytes": 15360
+      },
+      {
+        "name": "mtp.2.markov_head.markov_w1.weight",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          512
+        ],
+        "bytes": 132382720
+      },
+      {
+        "name": "mtp.2.markov_head.markov_w2.weight",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          512
+        ],
+        "bytes": 132382720
+      }
+    ]
+  },
+  "actual": {
+    "test": "DSparkProOriginalState.CpuNaturalRandomMarkovPrefixAndPendingContinue",
+    "tests": 1,
+    "failures": 0,
+    "skips": 0,
+    "backend": "CPU",
+    "policy": {
+      "temperature": 1,
+      "top_k": 0,
+      "top_p": 1
+    },
+    "seed": 123,
+    "stream": 7,
+    "proposal": [
+      3011,
+      14
+    ],
+    "accepted_drafts": 0,
+    "residual_pending": 296,
+    "consumed_rows": 1,
+    "draw": 5,
+    "next_target_only": {
+      "consumed_pending": 296,
+      "next_pending": 67130,
+      "draw": 6
+    },
+    "state_members": 31,
+    "graph_submissions": 35,
+    "publications": 2,
+    "markov_rows": 2,
+    "target_rows": 4,
+    "missing_expert_frontiers": 0,
+    "state_backing_peak_bytes": 116312000,
+    "state_backing_budget_bytes": 606838272
+  },
+  "implementation": [
+    "Exactly the Flash stochastic head, common distribution/speculative_prefix and shared SamplingCursor; source-derived H7168/rank512 rather than Flash H4096/rank256.",
+    "Every Markov Gather is checked against original BF16 bytes at the actual sampled preceding ID.",
+    "Actual sampled proposal sequence drives original target58/59/60 finite component and full-vocabulary verifier. First rejection selects the actual shared residual-sampling output lease.",
+    "Model/history/captures/target-state/pending and seed/stream/draw publish under one expected-base StateHead; next ordinary step consumes residual296 exactly once.",
+    "Natural-only fixture disables the controlled bonus policy and seed search. No second head, sampler algorithm or executor is introduced."
+  ],
+  "build": {
+    "fresh_consumer_TUs": 1,
+    "strict_MSVCCXX": "C++latest /W4 /WX",
+    "native_rebuilds": 0,
+    "SDK_builds": 0,
+    "HTTP_bytes": 0,
+    "current_sources": [
+      {
+        "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+        "bytes": 77526,
+        "sha256": "5e45cd42ca9b0e9bb77794fcf57fd9a3344ed4dce8429464aadad52404c1cf21"
+      },
+      {
+        "path": "tests/compute_models/dspark_stochastic_head.h",
+        "bytes": 5417,
+        "sha256": "1a0f2e08c6b5bfc77099f78f6189964cf977550f2296b7a9ef5e09e67527396b"
+      },
+      {
+        "path": "tests/compute_models/model_sampling_fragment.h",
+        "bytes": 3286,
+        "sha256": "672f149c2e1e85ffc6ee4c2b4240a787f1765dd879ab612a23fcb8139538f669"
+      },
+      {
+        "path": "engine/inference/sampling_graph.h",
+        "bytes": 17641,
+        "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+      },
+      {
+        "path": "engine/inference/sampling_cursor.h",
+        "bytes": 1200,
+        "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+      }
+    ],
+    "image": {
+      "path": ".scratch/dspark-random-mtp-20261024/checks.exe",
+      "bytes": 141069824,
+      "sha256": "668012350e728059f9ce111cf85a812bc9df3360012d8f4db2fa8d96b54998d2"
+    },
+    "process": {
+      "exit": 0,
+      "seconds": 109.89000000001397
+    },
+    "xml_total_seconds": 108.837,
+    "xml_case_seconds": 85.677,
+    "build_context": "Existing CPU+CUDA library closure; actual routeCPU. No claim of a pure CPU-only distributable."
+  },
+  "boundaries": [
+    "This actual natural fixture rejects; no claim that Pro naturally accepts. Flash separately covers controlled legal acceptance/bonus with actual Graph sampling.",
+    "Layer57 upstream four-stream input and initial valid cache history remain explicit finite fixtures. Not complete61-layer prompt-to-output inference, task quality, acceptance-rate or TPS evidence.",
+    "Explicit StateStore backing is not physical RSS/VRAM or a total-memory cap.",
+    "GGUF/BF16 sidecar external chains are still separate pending adapters; this formal Pro run cannot certify them.",
+    "No publisher/backend Cartesian matrix, whole expert bank acquisition or new model material."
+  ],
+  "reuse": {
+    "flash": "docs/evidence/correctness/deepseek-mtp-source-stochastic-flash-2026-10-24.json",
+    "prior_original": "docs/evidence/correctness/mtp-dspark-pro-target-verifier-2026-10-23.json"
+  },
+  "seams_for_later_architecture": [
+    "Formal Pro/Flash share all new sampling/state logic; only source roles/geometry/profile and finite upstream fixture differ.",
+    "Sidecar chains still expose separate head-source callbacks and State/publication drivers; input storage type and actual projection precision need explicit adaptation, not another algorithm.",
+    "The reused stem still executes its old greedy diagnostic head; later convergence should cold-select one head policy and avoid redundant work without changing conditional distributions."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/deepseek-mtp-source-stochastic-pro-2026-10-24.logs.zip",
+    "bytes": 49112,
+    "sha256": "74f7b7ba97ac3e5b811878c1200532a707a71ee09998101b89609ad003083ecb"
+  }
+}

@@ -1,0 +1,229 @@
+{
+  "status": "finite_native_mixed_functional_pass",
+  "date": "2026-10-24",
+  "scope": "MTP and its necessary shared inference paths only; not ordinary-engine functional exhaustion, model-task quality or performance comparison.",
+  "changes": [
+    "Expose original CPU endpoint and host loader for CPU+Apple and CPU+Vulkan, using the same cold Graph assembly and finite storage domains as CPU+CUDA.",
+    "Vulkan native copy binding release now validates actual Run/Completion retirement before clearing retained VkBuffer owners and cached binding state; no skipped unbind or raised limits.",
+    "The same permanent Graph regression uses two different staging backings, retires and unbinds twice; only replacing the copy object with its preserved old version reproduces the original failure."
+  ],
+  "product_sources": [
+    {
+      "path": "engine/models/qwen35/backend.h",
+      "bytes": 20163,
+      "sha256": "67424eb918398b02165900131dcf1f46d9d3a924b1ff7e5a1c405d46e92c8b93"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 425459,
+      "sha256": "65c1622bd7b826d13c7aaaba984d688c13477a2748c96a7cfcf131d01ab4515e"
+    },
+    {
+      "path": "src/graph_route_vulkan/execution_source.cc",
+      "bytes": 17493,
+      "sha256": "c275aa1d19c6e25cb1a767998bc6841632343143d36fdf1095045bf8185a2e49"
+    },
+    {
+      "path": "src/graph_route_apple/execution_source.cc",
+      "bytes": 15717,
+      "sha256": "fe514aae6f7a22594c2931f353a3f27cd3d0cd673aa4b6372659b3b470f2e462"
+    },
+    {
+      "path": "tests/graph_route_vulkan/execution_source_test.cc",
+      "bytes": 9187,
+      "sha256": "209a1f5bc9b48196344de42c5715ac9b2588377209d42bb91ece21f7e113af98"
+    },
+    {
+      "path": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+      "bytes": 14257,
+      "sha256": "d54575aaf4e020bc9d2ab695605b5bf878af2d94419eb9a22f52d5bbb57964cb"
+    }
+  ],
+  "source_id": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+  "original_roles": 335,
+  "original_text_and_mtp_bytes": 3885311680,
+  "windows_cpu_vulkan": {
+    "summary": {
+      "path": ".scratch/qwen-cpu-vulkan-20261024/summary.json",
+      "bytes": 11298,
+      "sha256": "1efcbbea26f7d211c762d51aad9034e50c5d0fa31b43ed587805b3ccbd8aef03"
+    },
+    "image": {
+      "path": ".scratch/qwen-cpu-vulkan-20261024/engine-attempt1/hyle-cpu-vulkan.exe",
+      "bytes": 69453312,
+      "sha256": "e1fc015579a2def9832bced7efc33aa98185a4f459e27e25539b10e9d7711e67"
+    },
+    "exit": 0,
+    "prompt_rows": 8,
+    "capacity": 32,
+    "max_drafts": 1,
+    "sampling": "random",
+    "cpu_ffn_layers": 1,
+    "generated_ids": [
+      364,
+      264,
+      2972,
+      673
+    ],
+    "accepted_drafts": 1,
+    "target_frontier": 11,
+    "draft_frontier": 11,
+    "RNG_cursor": 5,
+    "host_weight_bytes": 75501568,
+    "device_weight_bytes": 3809810112,
+    "duplicated_original_weight_bytes": 0,
+    "tiny": [
+      {
+        "requested_type": 6,
+        "actual_generated_type": 6,
+        "values": 4,
+        "episode": 0,
+        "cpu_gpu_cpu": true
+      },
+      {
+        "requested_type": 6,
+        "actual_generated_type": 6,
+        "values": 4,
+        "episode": 1,
+        "cpu_gpu_cpu": true
+      },
+      {
+        "requested_type": 5,
+        "actual_generated_type": 5,
+        "values": 18,
+        "episode": 0,
+        "cpu_gpu_cpu": true
+      },
+      {
+        "requested_type": 5,
+        "actual_generated_type": 5,
+        "values": 18,
+        "episode": 1,
+        "cpu_gpu_cpu": true
+      },
+      {
+        "backend": "cpu+vulkan",
+        "host_loaded_bytes": 16,
+        "targets": 2,
+        "storage_domains": 3,
+        "F32_values": 4,
+        "BF16_values": 17,
+        "BF16_extra_canary": 13.5,
+        "episodes_each": 2,
+        "retired_unbind_rebind": true,
+        "status": "PASS"
+      }
+    ]
+  },
+  "macos_cpu_apple": {
+    "summary": {
+      "path": ".scratch/qwen-cpu-apple-functional-20261024/summary.json",
+      "bytes": 27353,
+      "sha256": "e9b1943a33582dd8530010c9e4c5c134fc5b14cbd07e68c94b2c70c76249b672"
+    },
+    "hardware": {
+      "model": "Mac16,12",
+      "chip": "Apple M4",
+      "RAM_bytes": 17179869184,
+      "OS": "macOS 27.0.1 26A434",
+      "clang": "Apple clang 21.0.0 clang-2100.3.34.2"
+    },
+    "exit": 0,
+    "prompt_rows": 15,
+    "capacity": 32,
+    "max_drafts": 1,
+    "sampling": "random",
+    "cpu_ffn_layers": 2,
+    "generated_ids": [
+      3269,
+      3584,
+      28,
+      38449
+    ],
+    "accepted_drafts": 1,
+    "rejected_rounds": 1,
+    "target_frontier": 18,
+    "draft_frontier": 17,
+    "RNG_cursor": 7,
+    "draft_lag": "Valid lag1 retains final pending token for NextN catchup.",
+    "host_weight_bytes": 151003136,
+    "device_weight_bytes": 3734308544,
+    "duplicated_original_weight_bytes": 0,
+    "cache_peak_requested_bytes": 62476339,
+    "cache_requested_byte_limit": 268435456,
+    "tiny": {
+      "process": {
+        "exit": 0,
+        "seconds": 0.889299458
+      },
+      "result": "PASS CPU->Apple->CPU BF16 elements17 copies2 lane1 replays2 exact_bits ownership_guard1",
+      "actual_dtype": "BF16",
+      "elements": 17,
+      "placements": [
+        "cpu:1",
+        "apple:0",
+        "cpu:1"
+      ],
+      "copy_count": 2,
+      "commands_executions": 2,
+      "held_output_rebind_rejected": true
+    }
+  },
+  "regressions": {
+    "copy_release": {
+      "results": [
+        {
+          "label": "fixed",
+          "exit": 0,
+          "expected_exit": 0,
+          "matched_expectation": true,
+          "seconds": 0.4474306106567383
+        },
+        {
+          "label": "old-copy-negative",
+          "exit": 1,
+          "expected_exit": 1,
+          "matched_expectation": true,
+          "seconds": 0.45420098304748535
+        }
+      ],
+      "new_tests_run": 1,
+      "SDK_builds": 0,
+      "HTTP": 0,
+      "models_started": 0,
+      "build_summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-copy-release-regression-20261024\\build-summary.json",
+        "bytes": 2102,
+        "sha256": "723593f7b4b0dc24ee766417491a21f03c10c986453da9068d44877b742dfc32"
+      },
+      "interpretation": "The same new semantic regression passes with the current copy release contract; fails with the preserved original native copy object and the identical remaining object closure."
+    },
+    "cuda_backend_tests": 4,
+    "cuda_failures": 0,
+    "cpu_main_strict_syntax": "PASS",
+    "backend_header_configurations": [
+      "cpu",
+      "cuda",
+      "cpu+cuda",
+      "vulkan",
+      "cpu+vulkan"
+    ]
+  },
+  "HTTP_for_validation": 0,
+  "model_download_bytes_for_validation": 0,
+  "SDK_builds": 0,
+  "qualifications": [
+    "Vulkan replay DMA requires four-byte transfer granularity. BF16[17] (34B) was rejected before arithmetic. The passing case is BF16[18] (36B), containing17 exact values and one explicit13.5 canary; selected model ports are aligned.",
+    "Apple tiny uses17 BF16 elements and checks exact bits, two executions and held-output overwrite rejection.",
+    "Finite random K1 complete-model journeys and selected current closure only; no full dtype/backend/model matrix, all-platform SDK rebuild, task-quality or throughput claim.",
+    "Cache and workspace limits cover reported requested allocations; native private allocation sizes remain unknown, and no physical RAM/VRAM cap is asserted.",
+    "Cached Hyle source/header changes and actual native ABI differences were reviewed and relevant leaves refreshed. Unrecorded inherited support/vendor objects are not claimed exact-current source; see archived closure summaries.",
+    "Initial private setup failures, original missing-release failure, BF16 alignment rejection and old-object negative control are retained in selected logs."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-cpu-native-placement-2026-10-24.zip",
+    "bytes": 926972,
+    "sha256": "9cea23dcb21800d0e5e27f158d7823ee3ecdb7c708274a4c57b26e9241bd523e"
+  },
+  "archive_entries": 272
+}

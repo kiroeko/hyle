@@ -205,7 +205,7 @@ bool mature_model_operation(Operation operation) noexcept {
          operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
          operation.custom_as<model_ops::Clamp>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
-         operation.custom_as<model_ops::BFloatLinearF32>() ||
+         operation.custom_as<model_ops::DenseLinearF32>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
          operation.custom_as<model_ops::HyperConnectionPre>() ||
          operation.custom_as<model_ops::HyperConnectionPost>() ||
@@ -286,28 +286,26 @@ Status NativeProgram::validate(Operation operation,
       return Status::Unimplemented(
           "ggml Metal GatedDeltaNet requires grouped heads, equal D32/64/128 and T<=32767");
   }
-  if (operation.custom_as<model_ops::BFloatLinearF32>() && inputs[0].rank()==3 &&
-      inputs[0].data_type()!=DataType::kFloat32)
-    return Status::Unimplemented("ggml Metal batched BFloatLinearF32 requires F32 activation");
-  if (operation.custom_as<model_ops::BFloatLinearF32>() &&
-      inputs[0].data_type() == DataType::kFloat32) {
+  if (operation.custom_as<model_ops::DenseLinearF32>() &&
+      !(inputs[0].rank()==2 && inputs[0].data_type()==DataType::kBFloat16 &&
+        inputs[1].data_type()==DataType::kBFloat16)) {
     const auto rank=inputs[0].rank();
     // The native K>=32 matvec reads two weight rows before clipping output.
     // Its last pair must stay inside the actual unpadded readonly bank.
     if (inputs[1].dimensions()[rank-1] >= 32 && inputs[1].dimensions()[rank-2] % 2 != 0)
       return Status::Unimplemented(
-          "ggml Metal F32/BF16 paired matvec requires even output rows for K>=32");
+          "ggml Metal dense F32 paired matvec requires even output rows for K>=32");
     // The native Metal matvec encoder stores the batch broadcast ratio r2
     // in int16_t, and its matrix dimensions/rounded loop indices in int32_t.
     // Retain explicit room for native loop/dispatch rounding on this new path.
     if (inputs[0].dimensions()[rank-2] > INT16_MAX)
-      return Status::Unimplemented("ggml Metal F32/BF16 batch broadcast exceeds I16");
+      return Status::Unimplemented("ggml Metal dense F32 batch broadcast exceeds I16");
     const auto indexable = [](const TensorDesc &description) {
       return description.element_count().value() <= std::size_t{INT32_MAX - 1024};
     };
     if (!std::ranges::all_of(inputs, indexable) ||
         !std::ranges::all_of(outputs, indexable))
-      return Status::OutOfRange("ggml Metal F32/BF16 matvec indexing exceeds I32");
+      return Status::OutOfRange("ggml Metal dense F32 matvec indexing exceeds I32");
   }
   const bool matmul = operation.get_if<MatMul>() != nullptr;
   const auto *gather = operation.get_if<Gather>();
@@ -383,18 +381,19 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
     state->backend = ggml_backend_metal_init();
     if (state->backend == nullptr)
       return std::unexpected(Status::Unavailable("ggml Metal backend unavailable"));
+    const bool dense_matvec=operation.custom_as<model_ops::DenseLinearF32>() &&
+        !(inputs[0].rank()==2 && inputs[0].data_type()==DataType::kBFloat16 &&
+          inputs[1].data_type()==DataType::kBFloat16);
     for (std::size_t i = 0; i < inputs.size(); ++i) {
-      if (i == 0 && operation.custom_as<model_ops::BFloatLinearF32>() &&
-          inputs[i].data_type() == DataType::kFloat32) {
+      if (i == 0 && dense_matvec) {
         // Same contiguous storage, one vector per native batch. This keeps
         // every M on the F32-A matvec kernel; the matrix kernel narrows A.
         const auto shape=inputs[i].dimensions();const auto rank=inputs[i].rank();
-        state->tensors[i]=ggml_new_tensor_4d(state->arena.get(),GGML_TYPE_F32,
+        state->tensors[i]=ggml_new_tensor_4d(state->arena.get(),native_type(inputs[i].data_type()),
             shape[rank-1],1,shape[rank-2],rank==3?shape[0]:1);
-      } else if(i==1 && operation.custom_as<model_ops::BFloatLinearF32>() &&
-          inputs[0].data_type()==DataType::kFloat32 && inputs[i].rank()==3) {
+      } else if(i==1 && dense_matvec && inputs[i].rank()==3) {
         const auto shape=inputs[i].dimensions();
-        state->tensors[i]=ggml_new_tensor_4d(state->arena.get(),GGML_TYPE_BF16,
+        state->tensors[i]=ggml_new_tensor_4d(state->arena.get(),native_type(inputs[i].data_type()),
             shape[2],shape[1],1,shape[0]);
       } else {
         state->tensors[i] = native_tensor(state->arena.get(), inputs[i],
@@ -430,9 +429,10 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
     ggml_tensor *result = nullptr;
     ggml_tensor *native_gdn = nullptr;
     if (operation.get_if<MatMul>() ||
-        operation.custom_as<model_ops::BFloatLinearF32>()) {
+        operation.custom_as<model_ops::DenseLinearF32>()) {
       auto *activation = t[0];
-      if (activation->type == GGML_TYPE_BF16) {
+      if (activation->type == GGML_TYPE_BF16 ||
+          (dense_matvec && activation->type == GGML_TYPE_F16)) {
         // The pinned Metal backend provides BF16 weights with F32 activation.
         // Widen the already-rounded activation exactly; keep weights packed.
         activation = ggml_cast(state->arena.get(), activation, GGML_TYPE_F32);

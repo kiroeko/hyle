@@ -172,6 +172,11 @@ struct Buffer final {
   BufferBudget *budget = nullptr;
   ~Buffer();
 };
+// A MemoryResource's original typed allocation keeps its exact controller
+// through native Tensor/view ownership, without changing Buffer's ABI/layout.
+// Consumes owner only on success; metadata is cold and shares BufferBudget.
+Status retain_buffer_controller(Buffer &, void *owner,
+    void (*release)(void *) noexcept, mem::AllocatorRef) noexcept;
 
 struct Run;
 // Residual shaders: up to five caller inputs plus their private status word.

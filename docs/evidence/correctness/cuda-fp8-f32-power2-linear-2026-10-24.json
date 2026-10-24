@@ -1,0 +1,134 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS bounded CPU/CUDA F32 PowerOfTwo dynamic linear",
+  "problem": "The public Float8BlockLinear contract admitted F32 A with PowerOfTwo dynamic group128 quantization, but the CUDA route declined it because its embedded pow2 Triton quantizer only accepted BF16.",
+  "implementation": {
+    "source": {
+      "path": ".scratch/fp8-f32-power2-20261024/provider/fp8_provider.cc",
+      "bytes": 21070,
+      "sha256": "8e0d56d962effb0a98c4c78bc55686493fed114e1593c4b16583ac7c17e3f4c4"
+    },
+    "public_ABI_changed": false,
+    "native_kernel_ABI_changed": false,
+    "new_path": "Existing native F32 PowerOfTwo quantizer writes E4 codes and row-major F32[M,K/128] scales into the existing caller-owned encoded activation workspace, then the existing F32-output encoded GEMM runs on the original shared CUDA queue.",
+    "unchanged_path": "The original BF16 pow2 Triton entry remains explicitly BF16-only and retains column-major activation scales. Divide and MultiplyReciprocal routes and their original modules remain unchanged.",
+    "layout": "The GEMM launch chooses scale strides from the actual selected quantizer carrier. New native F32 uses row-major group strides; existing BF16 pow2 uses the old col-major ABI.",
+    "failure": "The new native quantizer uses the original sequence device status. A real status-reset prefix is retained across later launch errors; NaN/+Inf fails the original Completion and publishes no successful Graph result. No CPU readback/executor is introduced.",
+    "ownership": "Existing immutable provider plan, invocation workspace, original runtime retirement and Graph caller/result leases. Native kernel loading finishes during prepare, before replay/capture.",
+    "native_quantizer_object_reused": {
+      "path": ".scratch/fp8-quant-output-20261023/compile1/quant-kernel/quant-kernel.obj",
+      "bytes": 64928,
+      "sha256": "fd7cfd34c9bdb47106a4b9f82bcf59ee911668182ca634f12a2c4fba5175f137"
+    },
+    "native_quantizer_prior_evidence": "docs/evidence/correctness/fp8-quantize-output-2026-10-23.json"
+  },
+  "validation": {
+    "tests": 2,
+    "failures": 0,
+    "cases": [
+      {
+        "name": "CpuF32Power2Linear",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+        "line": 476,
+        "status": "RUN",
+        "result": "COMPLETED",
+        "timestamp": "2026-10-24T15:09:57Z",
+        "time": "0.024s",
+        "classname": "Float8QuantizeOutput",
+        "successful_submissions": "6",
+        "nonfinite_failed_Completions": "6",
+        "checked_F32_values": "2732",
+        "wrong_BF16_operand_witnesses": "2732",
+        "paired_graph_steps": "2"
+      },
+      {
+        "name": "CudaF32Power2Linear",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+        "line": 496,
+        "status": "RUN",
+        "result": "COMPLETED",
+        "timestamp": "2026-10-24T15:09:57Z",
+        "time": "0.092s",
+        "classname": "Float8QuantizeOutput",
+        "successful_submissions": "6",
+        "nonfinite_failed_Completions": "6",
+        "checked_F32_values": "2732",
+        "wrong_BF16_operand_witnesses": "2732",
+        "paired_graph_steps": "1"
+      }
+    ],
+    "successful_graph_submissions": 12,
+    "intentional_nonfinite_failed_Completions": 12,
+    "exact_checked_F32_output_values": 5464,
+    "shapes": [
+      {
+        "M": 3,
+        "N": 3,
+        "K": 128
+      },
+      {
+        "M": 3,
+        "N": 129,
+        "K": 384
+      },
+      {
+        "M": 5,
+        "N": [
+          65,
+          129
+        ],
+        "K": 256,
+        "shared_A": true
+      }
+    ],
+    "inputs": "Nonunit/nonpower2 group maxima, non-BF16-representable F32 values adjacent to E4 RNE boundaries, distinct row/group scales, nonpower2 original F32 weight scales and partial N tiles.",
+    "oracle": "Independent scalar code table, RNE enumeration, frexp power2 scale and explicit F32 boundaries; sparse code-domain dots isolate layout/operand/output arithmetic without a vendor reduction-tree claim.",
+    "exact_F32_output_witness": {
+      "first_case_phase0_row0_column0": 0.0044116973876953125,
+      "incorrect_final_BF16": 0.004425048828125
+    },
+    "wrong_BF16_input_witnesses_per_backend": 2732,
+    "paired_graph": "CPU executes2steps; CUDA executes1selected shared-prologue pair step, so the two-output shared native quantization path actually runs.",
+    "lifetime": "Old readonly results remain exact across independent NaN/+Inf failures, later successful generation and compiled-plan release.",
+    "fixture_correction": {
+      "cause": "Focused test used owned bindings before calling Invocation::prepare_resources; both backends rejected before any new dynamic linear submission. Added normal prepare_resources; no product graph/provider/math/guard relaxation."
+    },
+    "fixture_limit": "The initial focused test forgot Invocation::prepare_resources before owned bindings; both backends rejected before executing the new dynamic linear. The normal binding API fixed this test error; no product resource guard was relaxed."
+  },
+  "source_binding": {
+    "affected_catalogs": [
+      6,
+      15
+    ],
+    "statement": "This closes a genuine generic CUDA combination gap. It does not assert that the two pinned Qwen FP8 sources require F32 activation or this PowerOfTwo reader policy; source configs only establish dynamic block128 FP8 and Q24 bfloat16.",
+    "original_source_evidence": "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json",
+    "historical_note": "The older frozen source-tile proof correctly records that F32 dynamic PowerOfTwo was then unavailable; its F32 profile explicitly used already encoded A MatMul. That archive was not rewritten."
+  },
+  "tooling": {
+    "HTTP": 0,
+    "SDK_rebuilds": 0,
+    "native_kernel_rebuilds": 0,
+    "scope": "Only the provider TU and existing quantize-output test TU were incrementally compiled, reusing native kernels, cubins and existing CPU/CUDA SDK closure.",
+    "normal_CTest": [
+      "hyle_graph_route_cpu_float8_quantize_output_test",
+      "hyle_graph_route_cuda_float8_quantize_output_test"
+    ],
+    "commands": [
+      "python .scratch/fp8-f32-power2-20261024/check.py build",
+      "python .scratch/fp8-f32-power2-20261024/check.py run"
+    ]
+  },
+  "limitations": [
+    "No model weights were acquired or new complete model executed for this generic function fix.",
+    "No throughput, physical-memory peak or BF16 performance comparison was run.",
+    "CUDA still uses the existing SM89 AOT GEMM qualification; no claim is made for another GPU architecture.",
+    "Commands replay was measured for correctness. No new capture-specific claim is signed by these two tests.",
+    "No SDK, object, executable, cubin body or model tensor is embedded in this archive."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/cuda-fp8-f32-power2-linear-2026-10-24-logs.zip",
+    "bytes": 55554,
+    "sha256": "4a0f4a529280bbb4f604796eb984ab1daf844c607b8287089c897c6a02f813cb"
+  },
+  "archived_files": 36
+}

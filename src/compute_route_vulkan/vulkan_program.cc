@@ -916,8 +916,18 @@ Status detail::CompositionAccess::prepare_bindings(Invocation &invocation) noexc
   if (run.pending || run.observers || run.retiring || run.completion_owner)
     return Status::Unavailable("Vulkan cold composition slot is still in use");
   HYLE_RETURN_IF_ERROR(detail::cd::can_detach_retired(state.slot));
-  for (const auto output : program.outputs) {
-    if (program.values[program.aliases[output].root].constant) continue;
+  for (std::size_t i = 0; i < program.outputs.size(); ++i) {
+    const auto output = program.outputs[i];
+    const auto root = program.aliases[output].root;
+    if (program.values[root].constant) continue;
+    if (std::ranges::find(program.inputs, root) != program.inputs.end()) {
+      // A true input alias has no output writer to rearm. Keep its original
+      // exact-owner gate before allowing the stable view to bind a new input.
+      if (state.composition_sealed &&
+          run.retained_buffers[output].use_count() != state.output_owner_counts[i])
+        return Status::Unavailable("Vulkan input-alias output retained");
+      continue;
+    }
     HYLE_ASSIGN_OR_RETURN(auto block, detail::owned_output_block(program, run, output));
     (void)block;
   }
@@ -978,6 +988,12 @@ Status detail::CompositionAccess::prepare_outputs(Invocation &invocation,
         if (count == state.output_owner_counts[i]) continue;
       } else if (program.values[program.aliases[output].root].constant) {
         continue; // Immutable constants are never a new output writer.
+      } else if (std::ranges::find(program.inputs, program.aliases[output].root) != program.inputs.end()) {
+        // Rearm only owned writers. An input-alias view keeps the original
+        // exact sealed-owner rule and is rebound by Invocation::bind below.
+        if (run.retained_buffers[output].use_count() != state.output_owner_counts[i])
+          return Status::Unavailable("Vulkan input-alias output retained");
+        continue;
       }
       HYLE_ASSIGN_OR_RETURN(auto block, detail::owned_output_block(program, run, output));
       rotate[block] = true;

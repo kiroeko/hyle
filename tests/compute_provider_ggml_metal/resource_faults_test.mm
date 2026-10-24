@@ -124,7 +124,7 @@ TEST(GgmlMetalFaults, BfloatActivationWorkspaceAllocationsRollBack) {
   const auto weight = c::TensorDesc::dense(
       c::DataType::kBFloat16, std::array<std::int64_t, 2>{32, 128}).value();
   const std::array inputs{activation, weight};
-  check_cold_allocations(c::model_ops::bfloat_linear_f32(), inputs);
+  check_cold_allocations(c::model_ops::dense_linear_f32(), inputs);
 }
 
 TEST(GgmlMetalFaults, PipelineCacheFailureUnlocksAndReleasesNativeOwner) {

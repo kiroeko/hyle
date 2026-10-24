@@ -75,7 +75,7 @@ TEST(NativePagedMetadata, InputDescriptionsUseActiveQueriesWithoutAllocatingOrSh
   }
 }
 TEST(NativePagedMetadata, CompactOwnedPageOrderAndTailGenerationAreIndependentOfQueryHeads) {
-  for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+  for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16, c::DataType::kFloat32}) {
     auto selected = schema(type);
     auto recipe = c::NativePagedBatchProgram::prepare(selected,
         {.max_host_metadata_bytes = 32, .scale = .125F, .causal = false}).value();
@@ -145,6 +145,31 @@ TEST(NativePagedMetadata, ExportedSnapshotRetainsOwnersAndEmptyVersionHasNoPageR
   EXPECT_EQ(actual, (std::array<std::int32_t, 8>{}));
   EXPECT_EQ(empty_version.layout().facts().query_rows, 0u);
   EXPECT_FALSE(c::NativePagedBatchVersion{}.indices());
+}
+TEST(NativePagedMetadata, Float32PageIndicesRemainMetadataThroughTheirExportedLease){
+  const auto resource=hyle::mem::system_resource();
+  const std::array limits{c::ResourceBudgetLimit{resource,1u<<20}};
+  auto budget=c::ResourceBudget::create({.limits=limits}).value();
+  const auto base=budget.usage(resource)->live_bytes;
+  const auto metadata=static_cast<std::size_t>(c::ResourceBudgetCategory::kMetadata);
+  const auto external=static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal);
+  c::ReadLease escaped;
+  {
+    auto selected=c::BatchSchema::create(schema(c::DataType::kFloat32).capacity(),{.resource_budget=budget}).value();
+    auto recipe=c::NativePagedBatchProgram::prepare(selected,
+        {.max_host_metadata_bytes=32,.resource_budget=budget}).value();
+    auto version=recipe.version(layout(selected)).value();
+    escaped=version.indices().value();
+    ASSERT_TRUE(c::detail::LeaseAccess::retain_budget(escaped,resource,budget).ok());
+    const auto usage=budget.usage(resource).value();
+    EXPECT_EQ(usage.live_by_category[external],0u);
+    EXPECT_EQ(usage.live_by_category[metadata],usage.live_bytes);
+  }
+  EXPECT_GT(budget.usage(resource)->live_bytes,base);
+  std::array<std::int32_t,8> actual;
+  ASSERT_TRUE(escaped.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual,(std::array<std::int32_t,8>{3,1,1,0,0,0,0,0}));
+  escaped.reset();EXPECT_EQ(budget.usage(resource)->live_bytes,base);
 }
 TEST(NativePagedMetadata, ForeignSchemaBudgetAndNonfiniteScaleRejectBeforePublishing) {
   auto selected = schema(), foreign = schema();

@@ -1,0 +1,337 @@
+{
+  "date": "2026-10-24",
+  "review_kind": "Read-only finite completion review of shared MTP mechanisms; no new model run, SDK build or download.",
+  "completion_meaning": "Implemented shared mechanism plus finite positive, negative and state evidence. Not percentage test coverage, arbitrary backend/codec Cartesian qualification or model quality certification.",
+  "component_multidraft_followup": {
+    "date": "2026-10-24",
+    "finding": "Independent finite review identified model-component consumers that still stop at K1; shared Qwen35 K2/K4 and pure prefix-selector proofs do not complete their wiring.",
+    "pending": [
+      {"model": "GLM Flash", "path": "tests/compute_models/glm_mtp_state_consumer_test.cc", "entry": "run_original_target", "missing": "real recursive second proposal, three-row target and complete legal-prefix state/pending/RNG publication"},
+      {"model": "GLM Pro", "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc", "entry": "run_original_target", "missing": "subsequent same-epoch skip already executes unverified; connect second proposal to target verification and full accepted-prefix repair/publication"},
+      {"model": "Qwen24 MoE", "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc", "entry": "original MoE/NextN controller", "missing": "real second proposal, wide target verification and complete state publication beyond K1"}
+    ],
+    "boundary": "Check fixed reader recursion contract and implement locally executable K2 components with shared prefix/acceptance rules. Not a request for whole huge-model weights or a backend/publisher test matrix.",
+    "request_input_boundary": "Plain multiuser prompt/decode versus MTP natural prompt/generate remains explicitly scheduled in this goal's architecture/request-orchestration convergence; do not claim equivalent natural-multiuser inputs today.",
+    "HTTP": 0,
+    "new_builds": 0,
+    "new_model_runs": 0
+  },
+  "subsequent_scope_correction": {
+    "recorded_at": "2026-10-24T17:54:00+08:00",
+    "supersedes": "The no-additional-blocker conclusion of independent_followup_after_platform_runs is incomplete; retain that review as historical shared-mechanism evidence.",
+    "newly_confirmed_gaps": [
+      "cat06 Qwen27 FP8 text/MTP approximately27.9GiB fits current64GiB host. prepared_roles and main lack complete FP8 codec/import/dynamic projection binding; explicit reader arithmetic is a current functionality requirement, not a future generic-loader exemption.",
+      "cat08 target group0 channel/token FP8 differs from cat06 block128 and requires projection/head binding composed with group1 NVFP4. Its BF16 MTP sidecar introduces no new state protocol."
+    ],
+    "scope": "Reuse existing primitives, original component evidence and common MTP state. Establish original header-derived exact acquisition ranges and fixed reader contract before fetching body. No complete-source execution or new download is claimed by this correction.",
+    "HTTP": 0
+  },
+  "independent_followup_after_platform_runs": {
+    "date": "2026-10-24",
+    "status": "No additional locally implementable MTP blocker identified beyond the pending Q8 and Qwen27 complete-original journeys.",
+    "source_locations": [
+      {"path": "engine/inference/sampling_graph.h", "lines": [58, 126, 240], "scope": "filtered p/q, acceptance, rejection residual and bonus"},
+      {"path": "engine/inference/mtp_acceptance.h", "lines": [44, 84], "scope": "legal consumed prefix, EOS, quota and pending"},
+      {"path": "engine/inference/sampling_cursor.h", "lines": [11], "scope": "session draw identity and committed cursor"},
+      {"path": "engine/models/qwen35/main.cc", "lines": [2677, 3733, 3867, 3942, 4094, 4473, 4545, 4718, 5048], "scope": "atomic publication, full target/draft repair, retirement, complete cache restoration and bounded generation"},
+      {"path": "engine/models/qwen35/prefix_cache.h", "lines": [329, 351], "scope": "complete prefix/checkpoint retention and eviction"},
+      {"path": "src/compute_state/state_versions.cc", "lines": [477, 503, 537], "scope": "original component StateStore/StateHead publication"}
+    ],
+    "new_actual_platform_evidence": [
+      "docs/evidence/correctness/mtp-qwen35-macos-pure-cpu-complete-input-2026-10-24.json",
+      "docs/evidence/correctness/mtp-qwen35-wsl-cuda-mixed-complete-input-2026-10-24.json"
+    ],
+    "pending": [
+      "Q8 complete authenticated original body, preparation and actual ordinary/MTP consumers",
+      "Qwen27 complete authenticated original body, actual compressed CPU/explicit mixed execution and continuation"
+    ],
+    "boundary": "Common mathematical/state evidence does not certify every publisher's full trained bank. Original codec/scale/rounding, state ports, target tap and producer domains remain explicit per-source/model contracts. Future general loaders and unavailable-hardware whole-model runs do not expand this functional completion task.",
+    "new_model_runs": 0,
+    "new_builds": 0,
+    "HTTP": 0
+  },
+  "nodes": [
+    {
+      "task": "草稿长度／置信阈值／禁用回退",
+      "recommended_progress": 100,
+      "status": "shared_functionality_complete",
+      "source": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 1468,
+          "sha256": "4ea0dc061afabd3c584d1a1e20dec2118c788578acd2528dc716a43dcc4803c2",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n\n"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 2351,
+          "sha256": "9cd7cac6e0470e4d794abe5931d952a32c64052232dab5b0fc57866692bf2257",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n  void initialize_draft_program"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 3824,
+          "sha256": "9c5886cddcc0341437efbe05f14352c3fdcb4ee297cda2395726289d841908ae",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n  void repair_recursive_draft"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json",
+          "sha256": "763a938fa6d092fa39c60808cd68160f14f1e09158c9534ab1cbcdf95fb0875b"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen35-cpu-ffn-cuda-placement-2026-10-24.json",
+          "sha256": "c9cc00aa805ec44cea596b9f4503cc59e22f7f4bbbf9c183a7efa60e95bf7c02"
+        },
+        {
+          "path": "docs/evidence/correctness/mtp-qwen35-native-multik-random-complete-input-2026-10-24.json",
+          "sha256": "47ee35fb8ad05cdb6f6f249284b052a58666812863aca08afff2be209d062424"
+        }
+      ],
+      "covers": [
+        "Nonnegative arbitrary bounded K, no K1/K2/K4 whitelist.",
+        "Actual CPU/CUDA K0/1/2/4; K0 target-only emits valid pending and draw cursor.",
+        "Threshold0 adds no confidence softmax; threshold1 disables proposals when actual max normalized q is below1; partial threshold0.5 clips actual proposal length.",
+        "Independence from sampled ID, actual m row q retention and2m+1 transactional RNG; unchanged head/RNG on invalid-q and valid retry.",
+        "Hybrid actual K4/random and Apple/Vulkan actual K4/random are representative execution-domain integration."
+      ]
+    },
+    {
+      "task": "EOS／输出额度／上下文尾部",
+      "recommended_progress": 100,
+      "status": "shared_functionality_complete",
+      "source": [
+        {
+          "path": "engine/models/qwen35/mtp_acceptance.h",
+          "line": 27,
+          "sha256": "a29218d781e3009d1cbe1c9b28fa9b2b1a1f11989ecc9e45a937428392e12228",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n} // namespace detail"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 4463,
+          "sha256": "14c1f797ca603bf3e4077fd4ca2a250de767b121a3c840c75f425d0cdc29de4e",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\nbool make_mtp_batch_room"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json",
+          "sha256": "763a938fa6d092fa39c60808cd68160f14f1e09158c9534ab1cbcdf95fb0875b"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen-mtp-multirow-sampling-2026-10-24.json",
+          "sha256": "df8242bfc5a7751e96cd275ab4494ed5ec73896249b3caf11c01dfb9b31ccada"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen-mtp-sessions-2026-10-22.json",
+          "sha256": "fda27b38bbdc91455a3229846b140e1e94a6ced56fc77a18b6c75b34bbb5040c"
+        },
+        {
+          "path": "docs/evidence/correctness/mtp-qwen35-native-multik-random-complete-input-2026-10-24.json",
+          "sha256": "47ee35fb8ad05cdb6f6f249284b052a58666812863aca08afff2be209d062424"
+        }
+      ],
+      "covers": [
+        "Production host selector directly covers first/middle rejection, all-accepted bonus, accepted EOS and bonus EOS.",
+        "Final emitted EOS/quota output remains pending; only consumed input rows select KV/GDN/conv prefix.",
+        "15 shared policy groups K1..6; actual tiny Graph m0/K2/K4 witness and independent F64 conditional oracle with quota1/2/m+1 and EOS.",
+        "Actual context1 ordinary-target MTP path greedy/random; per-call width min(K,quota-1,remaining-1).",
+        "Actual stopped EOS session leaves peer runnable; native actual batches retire without live committed versions."
+      ]
+    },
+    {
+      "task": "多轮／多会话／真实批次",
+      "recommended_progress": 100,
+      "status": "shared_functionality_complete",
+      "source": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 4463,
+          "sha256": "14c1f797ca603bf3e4077fd4ca2a250de767b121a3c840c75f425d0cdc29de4e",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\nbool make_mtp_batch_room"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 4625,
+          "sha256": "924f59d597abb2cd3215c6d09b3db07df607d3298c7d6a1a6335da3fc3bb93fe",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\nvoid publish_mtp_prompt"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json",
+          "sha256": "763a938fa6d092fa39c60808cd68160f14f1e09158c9534ab1cbcdf95fb0875b"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen35-cpu-ffn-cuda-placement-2026-10-24.json",
+          "sha256": "c9cc00aa805ec44cea596b9f4503cc59e22f7f4bbbf9c183a7efa60e95bf7c02"
+        },
+        {
+          "path": "docs/evidence/correctness/mtp-qwen35-native-multik-random-complete-input-2026-10-24.json",
+          "sha256": "47ee35fb8ad05cdb6f6f249284b052a58666812863aca08afff2be209d062424"
+        },
+        {
+          "path": "docs/evidence/correctness/mtp-qwen-natural-multiturn-2026-10-24.json",
+          "sha256": "408a3520f4ff4e1a0376d12c2681a9a202dd3f0c8315c47b5f3218b77fa6ef8d"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen-mtp-random-integration-2026-10-24.json",
+          "sha256": "1b6ece07fbfa65c9eb35ac619b945ec1de7d327c235a70653cf390e6cb920a6e"
+        }
+      ],
+      "covers": [
+        "Actual CPU/CUDA greedy/random N2R2, hybrid three requests/two turns with finite N2R2 and idle evictions.",
+        "Actual Apple and Vulkan N2R2 use batch2, not merely configured upper bounds; stream0/1 independent.",
+        "Natural retained two-turn ordinary/K1 engines consume previous pending exactly once without clearing/replaying full history."
+      ]
+    },
+    {
+      "task": "初始前缀复用／淘汰／恢复",
+      "recommended_progress": 100,
+      "status": "shared_functionality_complete",
+      "source": [
+        {
+          "path": "engine/models/qwen35/prefix_cache.h",
+          "line": 318,
+          "sha256": "ca625436ca1039bae1a01199aa9a51281078f2517abc3fb7880167dac1258fb9",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n  bool publish("
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 2722,
+          "sha256": "ee0b077023da550163d49f508417acc76a5a368710ca7e7a8e729565793c2c31",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n  void prepare_sampling_frontier"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 2771,
+          "sha256": "2dad5c2bc565ccf75814f84ad2b9e017029aa40ade96552f08976b582fac86f8",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n  const void *math_identity"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json",
+          "sha256": "763a938fa6d092fa39c60808cd68160f14f1e09158c9534ab1cbcdf95fb0875b"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen35-mtp-prefix-state-values-2026-10-24.json",
+          "sha256": "7ba34381b7055749a0b63a4fd7b654eff8aebc7af1d487a2663b63924858c8cb"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen-mtp-random-integration-2026-10-24.json",
+          "sha256": "1b6ece07fbfa65c9eb35ac619b945ec1de7d327c235a70653cf390e6cb920a6e"
+        }
+      ],
+      "covers": [
+        "Finite LRU/radix directory pins; only actual completed snapshot boundaries are reusable.",
+        "Canonical state identity and one evaluated version across sampler wrappers; independent request RNG metadata.",
+        "Initial complete hit uses no target input rows and samples new request cursor once; partial hit executes actual suffix.",
+        "Known finite admission and exact-family churn/retirement before eviction; no full-context KV copy to manufacture states."
+      ]
+    },
+    {
+      "task": "生成后／多轮完整检查点复用",
+      "recommended_progress": 100,
+      "status": "shared_functionality_complete",
+      "source": [
+        {
+          "path": "engine/models/qwen35/prefix_cache.h",
+          "line": 88,
+          "sha256": "ecb180cf5f02f92dff02c2bc0a186159847607d30132c262d76cbd9623048f73",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\n// Externally serialized"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 4708,
+          "sha256": "13dc1b6a007e16461041c26423e7f884ca3b5cbaf64c08cbdeea3d495dc86ab6",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\nvoid advance_mtp_request"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 4302,
+          "sha256": "fa5eb5f682d34d14bf14d1b3e782d21a9bbe1a0194f9c5e22a0b0d3f59ccf96a",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\nstd::shared_ptr<Session> rebuild_mtp_session"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 4369,
+          "sha256": "5b8cb0c497f786c99d90ef4ebc3f0fc376903e5e63d4dc4a04dfefb305db0df9",
+          "hash_scope": "UTF-8 function/block text after universal newline decoding",
+          "end_marker": "\nstruct PreparedMtpCall"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json",
+          "sha256": "763a938fa6d092fa39c60808cd68160f14f1e09158c9534ab1cbcdf95fb0875b"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen35-mtp-prefix-state-values-2026-10-24.json",
+          "sha256": "7ba34381b7055749a0b63a4fd7b654eff8aebc7af1d487a2663b63924858c8cb"
+        },
+        {
+          "path": "docs/evidence/correctness/qwen-mtp-random-integration-2026-10-24.json",
+          "sha256": "1b6ece07fbfa65c9eb35ac619b945ec1de7d327c235a70653cf390e6cb920a6e"
+        }
+      ],
+      "covers": [
+        "Checkpoint key contains all and only consumed token chunks, excluding unconsumed pending.",
+        "Complete retained KV/GDN/conv/carry/prior/draft KV/lag plus request pending/cursor.",
+        "Generated full/partial hits and churn greedy/random; exact same-request pending/RNG resume separated from new-request sampling.",
+        "Strict original episode replay includes rejected candidate suffix and accepted geometry; committed-input rebuild explicitly not bit-identical strict replay.",
+        "17 actual selected-prefix state cases/endpoint plus7 same-width rejected suffix pairs;138608640 exact bytes checked per CPU/CUDA; old head unchanged and final versions0."
+      ]
+    }
+  ],
+  "remaining": [
+    {
+      "task": "未知退休／Model与Session析构后的完整资源寿命",
+      "paths": [
+        "engine/models/qwen35/main.cc:ColdResources / submit_retained / Model::~Model / Session::drain",
+        "src/compute_route_vulkan/vulkan_memory.cc",
+        "src/compute_route_apple/apple_memory.mm"
+      ],
+      "reason": "Current finite native retirement/ColdScope integration has its own live work and evidence; do not hide it as unfinished draft control or cache feature."
+    },
+    {
+      "task": "当前未完成制品正文与完整消费者",
+      "paths": [
+        "engine/models/qwen35/prepared_roles.h",
+        "engine/models/qwen35/prepared_gguf_roles.h",
+        "docs/implementation/mtp-local-scope.json"
+      ],
+      "reason": "Q8, CT and Q27 source acquisition/complete execution are explicit remaining artifact rows. BF16 control proof does not claim those complete runs."
+    },
+    {
+      "task": "普通／MTP数值与任务正确性结论、当前版性能对照和完工独立复审",
+      "paths": [
+        "docs/developer/mtp-progress.md",
+        "tests/tools/qwen_mtp_prefix_value_probe.cc",
+        "tests/graph_route_cpu/qwen_sampling_graph_test.cc"
+      ],
+      "reason": "State and algorithm conformance cannot alone certify task quality or throughput; these remain separately named work, not undefined more-configurations debt."
+    }
+  ],
+  "bounds": [
+    "MTP consumers remain prepared token inputs; no server/tokenizer/application API completion implied.",
+    "CPU/CUDA shared-state tests and representative hybrid/native integrations compose; every model/codec/platform cross-product is not a new functional requirement.",
+    "Each referenced historical run keeps its exact source SHA and stated limits; this review does not rewrite historical evidence or sign later unrelated changes.",
+    "No newly identified missing draft/EOS/cache algorithm behavior in the reviewed finite scope."
+  ]
+}

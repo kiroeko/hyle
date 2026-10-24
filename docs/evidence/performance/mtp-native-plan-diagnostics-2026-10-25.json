@@ -1,0 +1,293 @@
+{
+  "status": "one_actual_process_completed_no_product_changes",
+  "scope": "Single original clean-c343 two-turn CUDA MTP journey; private FlashInfer provider host TU observer only. Not TPS, quality or candidate optimization evidence.",
+  "attempts": {
+    "prepare_first": "pin_rejected_before_compile_or_model; preserved prepare-dependency-firstfailure.json",
+    "correction": "Complete original cached versions of three headers via private include overlay; 52 repository dependency pins match.",
+    "provider_compiles": 1,
+    "links": 1,
+    "model_processes": 1
+  },
+  "process": {
+    "exit": 0,
+    "seconds": 3.8429999999934807,
+    "timeout": false
+  },
+  "compile": {
+    "exit": 0,
+    "seconds": 2.172000000020489,
+    "timeout": false
+  },
+  "link": {
+    "exit": 0,
+    "seconds": 1.687999999994645,
+    "timeout": false
+  },
+  "instrumentation": {
+    "type": "meta",
+    "slots": 26,
+    "events": 1014,
+    "slot_overflow": 0,
+    "event_overflow": 0,
+    "array_truncations": 0,
+    "inconsistent_reasons": 0,
+    "concurrent_skips": 0
+  },
+  "aggregate": {
+    "queries": 474,
+    "kinds": {
+      "query": 474,
+      "predicate": 875,
+      "query_reuse": 427,
+      "native_query": 47,
+      "plan_begin": 47,
+      "plan_commit": 47,
+      "update_commit": 427
+    },
+    "query_predicate_reasons": {
+      "reuse": 427,
+      "forced_fresh": 0,
+      "no_generation": 0,
+      "foreign_schema": 0,
+      "query_shape": 0,
+      "MLA_KV_tail": 0,
+      "chunk_invalid": 0,
+      "chunk_count": 21,
+      "unknown": 0
+    },
+    "update_predicate_reasons": {
+      "reuse": 427,
+      "forced_fresh": 0,
+      "no_generation": 0,
+      "foreign_schema": 0,
+      "query_shape": 0,
+      "MLA_KV_tail": 0,
+      "chunk_invalid": 0,
+      "chunk_count": 0,
+      "unknown": 0
+    },
+    "forced_fresh_queries": 26
+  },
+  "slot_groups": [
+    {
+      "queries": 1,
+      "native_query_rows": 154,
+      "slots": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "queries": 1,
+      "native_query_rows": 155,
+      "slots": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ]
+    },
+    {
+      "queries": 8,
+      "native_query_rows": 1,
+      "slots": [
+        6
+      ]
+    },
+    {
+      "queries": 8,
+      "native_query_rows": 2,
+      "slots": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "queries": 58,
+      "native_query_rows": 2,
+      "slots": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    }
+  ],
+  "non_time_report_equal": true,
+  "comparison": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\non-time-comparison.json",
+    "bytes": 2046,
+    "sha256": "df8d1e9612a98ccb3db992390d860623e8b160b6aec7565d117848de8f14f923"
+  },
+  "actual_work": {
+    "generated_tokens": 128,
+    "prefill_target_rows": 309,
+    "prefill_draft_rows": 310,
+    "verified_target_rows": 132,
+    "actual_target_rows": 441,
+    "actual_draft_rows": 434,
+    "draft_rounds": 66,
+    "consumed_drafts": 60,
+    "actual_graph_calls": 68
+  },
+  "definite_findings": [
+    "Each of seven 8-query native slots rejected reuse at query7/global call37 (turn2 first decode) because chunk_count changed, not query shape, schema or lost generation.",
+    "KV page indptr [0,13] -> [0,24]; chunk128 rows / page16 rows = 8 pages; ceil(13/8)=2 -> ceil(24/8)=3. Native plan commit padded2 ->3, float263168 ->394752B, int82 ->83B; CTA16/chunk128/split=true unchanged.",
+    "Each of seven 58-query slots had exactly two chunk_count query rejections, both after its first20 detailed queries; exact query ordinals/layouts of these14 late rejections were not captured.",
+    "All 427 reuse query decisions and corresponding427 update decisions succeeded; every observed non-initial query predicate rejection in whole-run counts was chunk_count (21 total)."
+  ],
+  "ignored_fields": [
+    "Default reason/result/allow_update values outside their relevant event kinds are ignored, not classified as successful reuse.",
+    "QueryReuse facts only supply existing workspace byte counts; their zero CTA/chunk fields are ignored.",
+    "PlanCommit old/old_* fields are post-commit current slot state; Query/PlanBegin supply genuine pre-plan facts.",
+    "Raw numeric addresses/native_plan IDs are per-process identity only; no across-process address or clock subtraction."
+  ],
+  "limitations": [
+    "First20 detailed queries per slot only; full query/update/plan/reason counters continue through all58. No exact late rejection ordinals or layouts inferred.",
+    "Native slots are correlated with roles3/4 by exact8/58 occurrence counts. Slot6 row1 is the role3 draft, followed by six target row2 slots7..12. Role4 slot13 row2 precedes six target row2 slots14..19, consistent with Recipe emission order; exact target layer IDs are not directly instrumented.",
+    "No direct Graph invalidation stack/step IDs recorded in this process. The call37 association joins identical non-time reports with previous separate-process capture evidence; it does not prove the exact higher-level caller address.",
+    "Generation/indptr/tails and existing native-plan facts are observed; page-ID contents, native kernel topology and GraphExecUpdate outcomes are unknown.",
+    "No native timers/profile or causal latency measurement; replan semantics do not establish recoverable speedup or justify bypassing split/chunk guards."
+  ],
+  "source_equivalence": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\equivalence.json",
+    "bytes": 17808,
+    "sha256": "51834cd9674695d05f00a6a4bd5715a957b3dd8d6666f2856dcdd4a49e4333ba"
+  },
+  "header_overlay": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\header-overlay.json",
+    "bytes": 2121,
+    "sha256": "26f6a5b402cbc93afe05f6605095ad08f69d78ce59118a4f788b515911ae5819"
+  },
+  "ready": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\link\\hyle.exe",
+      "bytes": 141409280,
+      "sha256": "8dd40b6943fd844c8736f11aa81b68aeeb21ca7d5f7763f7c247037991e86471"
+    },
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+      "bytes": 141401600,
+      "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+    },
+    "overlay": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\overlay\\flashinfer_provider.cc",
+      "bytes": 48607,
+      "sha256": "62c6b6a53c1a37e28a71db4ec4f4925664efc1dec7b3448d971cecca2910cd89"
+    },
+    "helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\native_plan_probe.h",
+      "bytes": 11331,
+      "sha256": "43a2831569f1ed207f6b73dcbbfdf69a273ee24a313c8785561b5f699dc6fc72"
+    },
+    "replaced_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_flashinfer--flashinfer_provider.obj",
+      "bytes": 818249,
+      "sha256": "4d69d0689714294b5c21dee97d1e9ca91ba6455bf0782b1ba26341a264d1660a"
+    },
+    "new_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\compile\\provider.obj",
+      "bytes": 861120,
+      "sha256": "5cdedea79fa7a51edefc678089e79ad835abe988bf1c7751f68ea2cf090abc0b"
+    },
+    "link": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\link\\command.json",
+      "bytes": 32284,
+      "sha256": "473593ebd0470d4408467debc22dbfb8b8e8c499621d5be35a6ed7ded6830bca"
+    },
+    "canonical_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 429902,
+      "sha256": "9b73fe9afe325d139072a94632e26d739e2b3cb48b411320c0c5bed320e9b9e9"
+    },
+    "Graph_TUs_rebuilt": 0,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "clean_baseline_unchanged": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+    "bytes": 141401600,
+    "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+  },
+  "source_sequence": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-plan-diagnostics-20261025\\native-slot-sequences.json",
+    "bytes": 370060,
+    "sha256": "b29340a53794610b290c3382b8feefdb5e3260396871af8ea08697ffb596dc25"
+  },
+  "cleanup": {
+    "performed": true,
+    "files": [
+      {
+        "path": ".scratch/mtp-native-plan-diagnostics-20261025/compile/provider.obj",
+        "bytes": 861120,
+        "sha256": "5cdedea79fa7a51edefc678089e79ad835abe988bf1c7751f68ea2cf090abc0b"
+      },
+      {
+        "path": ".scratch/mtp-native-plan-diagnostics-20261025/link/hyle.exe",
+        "bytes": 141409280,
+        "sha256": "8dd40b6943fd844c8736f11aa81b68aeeb21ca7d5f7763f7c247037991e86471"
+      },
+      {
+        "path": ".scratch/mtp-native-plan-diagnostics-20261025/link/hyle.exp",
+        "bytes": 24979,
+        "sha256": "b8f66c108ac44411506071f9eb5bab3ba773712a14389f6d2dd3d81c618b3df3"
+      },
+      {
+        "path": ".scratch/mtp-native-plan-diagnostics-20261025/link/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "path": ".scratch/mtp-native-plan-diagnostics-20261025/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "logical_bytes": 143543547,
+    "note": "link/hyle_ggml_cpu_gdn_scale_v3.dll is a hardlink to preserved baseline DLL; logical bytes are not distinct physical blocks.",
+    "receipt": {
+      "path": ".scratch/mtp-native-plan-diagnostics-20261025/cleanup-removed.json",
+      "bytes": 1166,
+      "sha256": "88e0ffae1e7ab0905b352b82bbaf2f601b36e974d2cef573755df8f8a716e8e5"
+    },
+    "physical_bytes_freed": "unknown; logical bytes do not account for hardlinks or shared blocks"
+  },
+  "HTTP": 0,
+  "SDK_builds": 0,
+  "Graph_TUs_rebuilt": 0,
+  "canonical_product_edits": 0,
+  "archive": {
+    "path": "docs/evidence/performance/mtp-native-plan-diagnostics-2026-10-25.zip",
+    "bytes": 143331,
+    "sha256": "debd8eb42f031d0a80ed7e4d66817b81365dac7ffd6b0f1e420e51f30ae74ce8"
+  },
+  "original_private_archive": {
+    "path": ".scratch/mtp-native-plan-diagnostics-20261025/proof.zip",
+    "bytes": 133568,
+    "sha256": "e86d2694e20f4d72c8ea1a4251a44796c6532fc1e353b42e4418804c83d2bfcc"
+  },
+  "related": {
+    "original_baseline": "docs/evidence/performance/mtp-current-single-and-multiturn-2026-10-25.json",
+    "prior_capture": "docs/evidence/performance/mtp-capture-binding-diagnostics-2026-10-25.json",
+    "earlier_api_and_body": "docs/evidence/performance/mtp-body-route-attribution-2026-10-25.json",
+    "offline_logical_join": {
+      "path": ".scratch/mtp-performance-convergence-20261025/early-record-join/result.json",
+      "bytes": 39286,
+      "sha256": "6517b9d4df935b787166c28bf0ea40138847d6d39cb01076967d7ee5f29186e5"
+    }
+  },
+  "decision": "Retain original chunk-count and resource invalidation gates. This evidence supports checking existing fixed-split scheduling as a separate private candidate; no throughput gain or product change is claimed."
+}

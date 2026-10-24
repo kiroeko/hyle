@@ -1,0 +1,291 @@
+{
+  "scope": "Bounded Q03 same-A original L0 norm/projection/causal-conv investigation, not complete model numerical certification",
+  "identity": {
+    "id": "Q03",
+    "repository": "AxionML/Qwen3.5-2B-NVFP4",
+    "revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25"
+  },
+  "prompt_rows": 15,
+  "prompt_ids": [
+    248045,
+    846,
+    198,
+    7734,
+    264,
+    4434,
+    12654,
+    4536,
+    24141,
+    14733,
+    20250,
+    17885,
+    23573,
+    11,
+    11439
+  ],
+  "tests": 2,
+  "failures": 0,
+  "downloads": 0,
+  "observations": {
+    "same_stored_BF16_A": [
+      {
+        "name": "in_proj_a",
+        "rows": 1,
+        "reference": "all outputs",
+        "elements": 16,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "name": "in_proj_b",
+        "rows": 1,
+        "reference": "all outputs",
+        "elements": 16,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "name": "in_proj_qkv",
+        "rows": 1,
+        "reference": "existing independent candidate-output interval",
+        "elements": 6144,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "name": "in_proj_z",
+        "rows": 1,
+        "reference": "existing independent candidate-output interval",
+        "elements": 2048,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "name": "in_proj_a",
+        "rows": 15,
+        "reference": "all outputs",
+        "elements": 240,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "name": "in_proj_b",
+        "rows": 15,
+        "reference": "all outputs",
+        "elements": 240,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "name": "in_proj_qkv",
+        "rows": 15,
+        "reference": "existing independent candidate-output interval",
+        "elements": 92160,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "name": "in_proj_z",
+        "rows": 15,
+        "reference": "existing independent candidate-output interval",
+        "elements": 30720,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      }
+    ],
+    "actual_public_RMS_then_own_projections": [
+      {
+        "boundary": "delta RMS F32 -> BF16",
+        "rows": 1,
+        "elements": 2048,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_a",
+        "rows": 1,
+        "reference": "all outputs",
+        "elements": 16,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_b",
+        "rows": 1,
+        "reference": "all outputs",
+        "elements": 16,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_qkv",
+        "rows": 1,
+        "reference": "existing independent candidate-output interval",
+        "elements": 6144,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_z",
+        "rows": 1,
+        "reference": "existing independent candidate-output interval",
+        "elements": 2048,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "delta RMS F32 -> BF16",
+        "rows": 15,
+        "elements": 30720,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_a",
+        "rows": 15,
+        "reference": "all outputs",
+        "elements": 240,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_b",
+        "rows": 15,
+        "reference": "all outputs",
+        "elements": 240,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_qkv",
+        "rows": 15,
+        "reference": "existing independent candidate-output interval",
+        "elements": 92160,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "in_proj_z",
+        "rows": 15,
+        "reference": "existing independent candidate-output interval",
+        "elements": 30720,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      }
+    ],
+    "actual_public_causal_conv_then_SiLU": [
+      {
+        "boundary": "conv.f32",
+        "elements": 92160,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "conv.bf16",
+        "elements": 92160,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      },
+      {
+        "boundary": "silu.bf16",
+        "elements": 92160,
+        "different": 0,
+        "finite": true,
+        "max_absolute": 0.0,
+        "rms": 0.0
+      }
+    ],
+    "independent_conv_oracle": [
+      {
+        "backend": "cpu",
+        "elements": 92160,
+        "all_within_independent_F64_4product_F32_interval": true,
+        "max_absolute_from_F64": 2.384185791015625e-07,
+        "max_F32_interval": 3.1947718866743176e-06
+      },
+      {
+        "backend": "cuda",
+        "elements": 92160,
+        "all_within_independent_F64_4product_F32_interval": true,
+        "max_absolute_from_F64": 2.384185791015625e-07,
+        "max_F32_interval": 3.1947718866743176e-06
+      }
+    ]
+  },
+  "conclusions": [
+    "CPU/CUDA same-A L0 a/b/qkv/z results bitwise equal for M1 and M15.",
+    "Actual public original delta RMS F32 -> BF16 agrees bitwise for all30720 P15 activation values; own-normalized original projections also agree.",
+    "Actual public F32 CausalConv1d, BF16 cast and BF16 SiLU each agree bitwise for all92160 values.",
+    "All N16 a/b original-weight outputs pass existing independent ModelOpt QDQ/BF16/F64 interval; large qkv/z use candidate intervals.",
+    "No first divergence or root cause established after this boundary; no inference that whole-model difference is harmless or solely quantization amplification."
+  ],
+  "boundaries": [
+    "The fixed same-A fixture independently derives actual source embedding rows and delta norm; exact backend RMS was checked separately.",
+    "The causal-conv small graph uses identical actual qkv payload and zero3-row initial history; it is not an entire linear-attention layer.",
+    "GDN, out_proj, FFN, later layers and final logits are outside this certificate.",
+    "M1 slices last normalized P15 row; it is a matmul geometry check, not a complete cached one-token model continuation.",
+    "No complete model, task quality, MTP acceptance-rate or performance claim."
+  ],
+  "tools": {
+    "compile": {
+      "path": ".scratch/mtp-full-quant-20261024/q03-local/compile-command.json",
+      "bytes": 1744,
+      "sha256": "3debf5a826b4affb1f43decd435003219cd1b3b7811e64d9374bcccf63b3c676"
+    },
+    "link": {
+      "path": ".scratch/mtp-full-quant-20261024/q03-local/link-plan.json",
+      "bytes": 32945,
+      "sha256": "79c14ddfa4ead20629c21a97e8c7e37a5a4154ed46c4a4cd5d6392b18e136de4"
+    },
+    "image": {
+      "path": ".scratch/mtp-full-quant-20261024/q03-local/checks.exe",
+      "bytes": 140187648,
+      "sha256": "c820d591580d163ba494e9b0c4ded3643f9e6de53dc103c03cb1a1e4dd6d2cc4"
+    }
+  },
+  "evidence_archive": {
+    "path": "docs/evidence/correctness/qwen35-nvfp4-l0-same-a-2026-10-24.logs.zip",
+    "bytes": 32666,
+    "sha256": "c8726971d9eaba043f793c022cec734882f6de6acd8b91ad100b443405f0cf8a"
+  }
+}

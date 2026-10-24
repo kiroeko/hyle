@@ -124,7 +124,7 @@ struct Harness {
       return input;
     },telemetry_spec));
     program=mlx?native_mlx(context,shape,data):take(context.prepare(shape.grouped?
-        c::model_ops::grouped_matmul():c::model_ops::bfloat_linear_f32(),data.specs));
+        c::model_ops::grouped_matmul():c::model_ops::dense_linear_f32(),data.specs));
     for(auto &slot:slots) slot=take(program.create_invocation());
   }
   void run() {

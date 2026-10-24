@@ -14,6 +14,7 @@ API与用法见[用户文档](../user/README.md)，操作与性能方法见[开�
 | [Compute](compute-design.md) | 数值/资源合同、Provider选择、异步保活、状态发布与分页准备 |
 | [原生路线](compute-routes.md) | CPU、CUDA、MLX/Metal、Vulkan及CPU＋GPU哪些条件不能互换 |
 | [Graph](graph-design.md) | DAG、region、shape/effects、并发内存与固定执行计划如何衔接 |
+| [推理系统整体架构](inference-design.md) | 普通／MTP、多会话／多请求、缓存、模型状态、冷装配与执行如何分工 |
 | [构建与交付](build-system.md) | 用户意图如何变成target、依赖、宏和可迁移SDK |
 | [许可](licensing.md) | 原创、移植和第三方材料的授权与分发边界 |
 | [参考实现](references.md) | 相关问题该参考谁，哪些机制不能直接照搬 |

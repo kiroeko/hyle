@@ -1,0 +1,287 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS two finite complete-original-input ARM CPU-only Hyle journeys",
+  "scope": "Mac16,12 complete original BF16 Qwen3.5-2B source-derived geometry, ordinary greedy and MTP K1 random, P15/+4/C32/N1/R1. Independent CPU endpoint and pure original ffa4 native CPU implementation; no Apple Hyle provider/queue or MLX/Metal kernel.",
+  "hardware": [
+    {
+      "command": [
+        "uname",
+        "-a"
+      ],
+      "exit": 0,
+      "stdout": "Darwin Kiros-MacBook-Air.local 27.0.0 Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132 arm64\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "exit": 0,
+      "stdout": "Mac16,12\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "exit": 0,
+      "stdout": "17179869184\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/bin/clang++",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "df",
+        "-k",
+        "/Users/kiro/hyle-scratch/compute-unified"
+      ],
+      "exit": 0,
+      "stdout": "Filesystem   1024-blocks      Used Available Capacity iused     ifree %iused  Mounted on\n/dev/disk3s5   239362496 175603828  36013456    83% 2267203 360134560    1%   /System/Volumes/Data\n",
+      "stderr": ""
+    }
+  ],
+  "deployment": "Compiled/linked arm64 macOS14.4; actual runtime macOS27.0.1, not an actual14.4 operating-system execution.",
+  "input": {
+    "original": "/Users/kiro/hyle-scratch/compute-unified/models/qwen35-2b/model.safetensors",
+    "original_bytes": 4548221488,
+    "original_prior_SHA256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "prior_whole_file_identity_not_rehashed_by_audit": true,
+    "prepared": {
+      "manifest": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/inputs/weights.tsv",
+        "bytes": 55395,
+        "sha256": "7e58c56023f98d9c36cc2075c8a93b03d53e6384a7fbaed09d980bd78d250acb"
+      },
+      "prompt": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/inputs/prompt.ids",
+        "bytes": 79,
+        "sha256": "6f57205846fbfd5f008c7507b166f0d370a930b686ea5e42fe649ae90e152ccc"
+      },
+      "prompt_tokens": 15,
+      "original_manifest": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-multik-functional-20261024/attempt1/inputs/weights.tsv",
+        "bytes": 55395,
+        "sha256": "7e58c56023f98d9c36cc2075c8a93b03d53e6384a7fbaed09d980bd78d250acb"
+      },
+      "weight_copies": 0,
+      "HTTP": 0
+    },
+    "selected_original_roles": 335,
+    "original_weight_copies": 0,
+    "new_model_downloads": 0
+  },
+  "image": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/hyle-cpu",
+    "bytes": 7627096,
+    "sha256": "8f9bf0a40de7ecc1dd44734682fe28150ac0e58edd443bb31c9456815391c003"
+  },
+  "cases": [
+    {
+      "name": "ordinary",
+      "process": {
+        "exit": 0,
+        "seconds": 17.287242833
+      },
+      "generated_ids": [
+        1328,
+        5675,
+        11,
+        9637
+      ],
+      "committed_target_rows": 18,
+      "sampling_draw_cursor": 0,
+      "draft_frontier": null,
+      "draft_lag": null,
+      "host_weight_bytes": 3763655360,
+      "device_weight_bytes": 0,
+      "cache_limit_bytes": 268435456,
+      "cache_peak_bytes": 39871920,
+      "known_workspace": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 2406400,
+          "limit_bytes": 332836864
+        }
+      ],
+      "shared_execution_limit": null,
+      "native_private_unknown": true,
+      "OS_process_memory": {
+        "maximum_resident_set_size_bytes": 4123148288,
+        "peak_memory_footprint_bytes": 4146106400
+      }
+    },
+    {
+      "name": "mtp-k1-random",
+      "process": {
+        "exit": 0,
+        "seconds": 18.596901749999997
+      },
+      "generated_ids": [
+        1328,
+        5675,
+        8,
+        248046
+      ],
+      "committed_target_rows": 18,
+      "sampling_draw_cursor": 7,
+      "draft_frontier": 17,
+      "draft_lag": 1,
+      "host_weight_bytes": 3885311680,
+      "device_weight_bytes": 0,
+      "cache_limit_bytes": 268435456,
+      "cache_peak_bytes": 59553875,
+      "known_workspace": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 14544492,
+          "limit_bytes": 332836864
+        }
+      ],
+      "shared_execution_limit": null,
+      "native_private_unknown": true,
+      "OS_process_memory": {
+        "maximum_resident_set_size_bytes": 4323786752,
+        "peak_memory_footprint_bytes": 4485959856
+      }
+    }
+  ],
+  "closure": {
+    "fresh_CPU_Hyle_TUs": 32,
+    "fresh_model_TUs": 1,
+    "fresh_native_TUs": 2,
+    "reused_pure_ARM_GGML_objects": 25,
+    "reused_neutral_public_and_CPU_SIMD_inputs": 33,
+    "native_overlays": [
+      {
+        "original": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/source-build/hyle/src/compute_ggml_runtime/source-e74fc9bb8964d04f/src/ggml-cpu/ops.cpp",
+          "bytes": 428624,
+          "sha256": "18c32123603a0d461851757463cd4274bc6f7c4a7cd5d5b4e9ad675e00802c03"
+        },
+        "overlay": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/source/native/src/ggml-cpu/ops.cpp",
+          "bytes": 432257,
+          "sha256": "de388e5e9742b6833ac2e6100232a8446f8af72fb001c4af772d7886f548be0d"
+        }
+      },
+      {
+        "original": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/source-build/hyle/src/compute_ggml_runtime/source-e74fc9bb8964d04f/src/ggml-alloc.c",
+          "bytes": 45068,
+          "sha256": "9664bda3e9c4223f5c94ebfeb3c0381f0065a5091ddae707c09a800f7e419a39"
+        },
+        "overlay": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/source/native/src/ggml-alloc.c",
+          "bytes": 47024,
+          "sha256": "524417bab28d8afcfa91428a927aaa2fb3e14dd8608ec0c389a3443cf9f5eb25"
+        }
+      }
+    ],
+    "native_core": "Actual pure CPU ffa4e8b80930029a35991f94e7c8a93cd67730ab cached headers/objects, plus exactly the current canonical ops.cpp/allocator differences. No mixed456 GGML or GGMLMetal program.",
+    "shared_public": "Current Compute/Graph/Batch/IO neutral owners from already exercised Apple SDK closures; remove Apple/MLX/Metal/provider/queue/native owners. The CPU source defaults/provider/native/stream/GraphRoute objects are rebuilt current, so the model actually executes CPU operations.",
+    "CPU_SIMD_leaf": "Reuse the existing ARM CPU SIMD static math leaf, whose pointer/scalar symbols resolve directly. It has no Hyle GPU route/runtime dependency. This is retained implementation, not a fresh SIMD rebuild.",
+    "stale_CPU_cache": "Ninja dependency identities showed138/142 old CPU compile records affected by real Hyle source/header changes. Its95 identical source files were not treated as ABI proof. The old deleted graph/leased_invocation.cc and compute_route_cpu/file_stream.cc objects were not admitted.",
+    "source_package": {
+      "path": ".scratch/mtp-platform-readonly-20261024/mac-cpu-source.tar.gz",
+      "bytes": 1221188,
+      "sha256": "01524c78d6156fdaa5608d676865b4833a8219c0dc4f8af37923fa1ce680c069"
+    },
+    "dependency_diagnostics": [
+      {
+        "command": [
+          "otool",
+          "-L",
+          "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/hyle-cpu"
+        ],
+        "exit": 0,
+        "stdout": "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/hyle-cpu:\n\t@rpath/libtorch.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libtorch_cpu.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t@rpath/libc10.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate (compatibility version 1.0.0, current version 4.0.0)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5027.0.69)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "nm",
+          "-g",
+          "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/hyle-cpu"
+        ],
+        "exit": 0,
+        "forbidden_Hyle_GPU_symbols": [],
+        "stderr": ""
+      }
+    ],
+    "final_compile_tags": [
+      "src/compute_backend_cpu/cpu_backend.cc",
+      "src/compute_ggml_runtime/cpu_execution.cc",
+      "src/compute_ggml_runtime/metadata_arena.cc",
+      "src/compute_ggml_runtime/cpu_program.cc",
+      "src/compute_route_cpu/cpu_context.cc",
+      "src/compute_route_cpu/default_policy.cc",
+      "src/graph_route_cpu/cpu_context.cc",
+      "src/graph_route_cpu/compile.cc",
+      "src/compute_stream_cpu/file_stream.cc",
+      "src/compute_provider_native/blockwise_w4a8.cc",
+      "src/compute_provider_native/cast.cc",
+      "src/compute_provider_native/default_rules.cc",
+      "src/compute_provider_native/ds4_quantization.cc",
+      "src/compute_provider_native/elementwise.cc",
+      "src/compute_provider_native/indexing.cc",
+      "src/compute_provider_native/normalization.cc",
+      "src/compute_provider_native/nvfp4.cc",
+      "src/compute_provider_native/reduction.cc",
+      "src/compute_provider_native/row_cache.cc",
+      "src/compute_provider_native/sampling.cc",
+      "src/compute_provider_native/transform.cc",
+      "src/compute_provider_native/transformer.cc",
+      "native/src/ggml-alloc.c",
+      "src/compute_provider_native/torch_cpu_program.cc",
+      "engine/probe.cc",
+      "src/compute_provider_ggml/native_batch.cc",
+      "src/compute_provider_ggml/standard_index.cc",
+      "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "src/graph_route_cpu/ct_packed_linear_region.cc",
+      "src/graph_route_cpu/ggml_region.cc",
+      "src/compute_provider_native/ct_packed.cc",
+      "src/compute_provider_native/static_fp8.cc",
+      "src/compute_provider_native/aten_cpu_provider.cc",
+      "src/compute_provider_native/native_provider.cc",
+      "native/src/ggml-cpu/ops.cpp"
+    ],
+    "SDK_rebuilds": 0,
+    "third_party_tree_copies": 0,
+    "HTTP": 0
+  },
+  "retained_failures": [
+    "Initial scratch Windows Path formatting produced backslashes in remote compiler input names. The compiler rejected the nonexistent paths before parsing product code; original command/error records remain.",
+    "Initial source overlay omitted four private shared headers and the native include directory; only those affected TUs and three provider version flags were corrected. No product mathematics changed.",
+    "First link omitted the CPU SIMD leaf from the Apple-only neutral closure. Adding the existing CPU math leaf resolved the exact CPU function references; no GPU library was added.",
+    "First K1 command used the wrong --max-draft spelling and exited1 before Model creation/loading. The explicit corrected --mtp-max-drafts1 command then ran the actual MTP case; successful ordinary was not repeated."
+  ],
+  "limits": [
+    "Two short functional journeys only; no all-platform/model/format/placement matrix or complete generation-quality result.",
+    "No throughput comparison. External process seconds include source loading/preparation and must not be presented as decode speed.",
+    "Known per-invocation CPU Graph workspace limits are finite; shared execution allocation tracking is not a physical total-memory cap, and native provider-private size remains unknown.",
+    "otool lists the image direct imports (TorchCPU/c10/Accelerate/Foundation/system C++); this does not claim that every optional implementation inside the vendor Torch distribution was rebuilt or removed.",
+    "The frozen source and selected retained object closure are documented; this is not a new top-level installed SDK build or actual macOS14.4 runtime proof."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-macos-pure-cpu-complete-input-2026-10-24.zip",
+    "bytes": 1904130,
+    "sha256": "cc5d9573f395fa983912dcbb5b5788b3f83e524c8164c14ddfb67597a38ae8d6"
+  },
+  "archive_records": 24,
+  "prior_evidence": [
+    "docs/evidence/correctness/mtp-qwen35-apple-k1-complete-input-2026-10-24.json",
+    "docs/evidence/correctness/mtp-qwen-source-geometry-v2-preparation-2026-10-24.json"
+  ]
+}

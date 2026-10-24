@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -20,6 +21,7 @@
 #include "ggml.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
+#include "../compute_provider_native/half_test_support.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -286,7 +288,7 @@ TEST(GgmlVulkanRegion, DenseBfloatGroupedExpertsRequireF32Activations) {
 }
 
 TEST(GgmlVulkanRegion, BfloatRouterMatMulRetainsF32OutputDomain) {
-  const auto operation = c::model_ops::bfloat_linear_f32();
+  const auto operation = c::model_ops::dense_linear_f32();
   const auto activation =
       c::TensorDesc::dense(c::DataType::kBFloat16,
                            std::array<std::int64_t, 2>{1, 8192})
@@ -305,6 +307,86 @@ TEST(GgmlVulkanRegion, BfloatRouterMatMulRetainsF32OutputDomain) {
                            std::array<std::int64_t, 2>{1, 512})
           .value();
   EXPECT_FALSE(region_supports(operation, inputs, invalid_outputs));
+}
+
+template<class A,class W> void dense_original_sources(const NativeDevice &device) {
+  namespace d=c::ggml_vulkan::detail;
+  constexpr std::int64_t k=66,n=4;
+  for(const bool batched:{false,true}) for(const std::int64_t m:{1,2,17}) {
+    SCOPED_TRACE(testing::Message()<<int(half_test::data_type<A>())<<"/"
+        <<int(half_test::data_type<W>())<<" batch="<<batched<<" M="<<m);
+    const std::int64_t b=batched?2:1;
+    const auto ad=(batched?c::TensorDesc::dense(half_test::data_type<A>(),std::array{b,m,k}):
+        c::TensorDesc::dense(half_test::data_type<A>(),std::array{m,k})).value();
+    const auto wd=(batched?c::TensorDesc::dense(half_test::data_type<W>(),std::array{b,n,k}):
+        c::TensorDesc::dense(half_test::data_type<W>(),std::array{n,k})).value();
+    const std::array inputs{ad,wd};
+    const auto yd=c::infer_single_output(c::model_ops::dense_linear_f32(),inputs).value();
+    d::RegionRecipe recipe;recipe.values={ad,wd,yd};recipe.inputs={0,1};recipe.outputs={2};
+    recipe.nodes={{c::model_ops::dense_linear_f32(),{0,1},{2}}};
+    auto region=d::Region::create(device,recipe);
+    ASSERT_TRUE(region)<<region.error().message();
+    auto arena=MetadataArena::create(3*ggml_tensor_overhead(),hyle::mem::system_allocator()).value();
+    std::vector<std::shared_ptr<ggml_backend_buffer>> owners;
+    std::vector<ggml_tensor*> tensors;
+    std::vector<d::RegionBinding> bindings;
+    for(const auto &desc:recipe.values) {
+      const auto bytes=desc.required_bytes().value();
+      auto buffer=device.allocate_buffer(bytes);
+      ASSERT_TRUE(buffer)<<buffer.error().message();
+      owners.emplace_back(*buffer,[device](auto *p){auto scope=device.activate();ggml_backend_buffer_free(p);});
+      const auto type=desc.data_type()==c::DataType::kFloat16?GGML_TYPE_F16:
+          desc.data_type()==c::DataType::kBFloat16?GGML_TYPE_BF16:GGML_TYPE_F32;
+      auto *t=ggml_new_tensor_1d(arena.get(),type,std::int64_t(desc.element_count().value()));
+      ASSERT_EQ(ggml_backend_tensor_alloc(*buffer,t,ggml_backend_buffer_get_base(*buffer)),GGML_STATUS_SUCCESS);
+      tensors.push_back(t);
+      bindings.push_back({device.buffer_handle(*buffer),0,bytes,owners.back()});
+    }
+    ASSERT_TRUE(region->bind(bindings).ok());
+    for(const int replay:{1,2}) {
+      std::vector<A> a(std::size_t(b*m*k),half_test::encode<A>(0));
+      std::vector<W> w(std::size_t(b*n*k),half_test::encode<W>(0));
+      for(std::int64_t batch=0;batch<b;++batch) {
+        for(std::int64_t row=0;row<m;++row) {
+          const auto first=std::size_t((batch*m+row)*k);
+          a[first]=half_test::encode<A>(1.+(std::is_same_v<A,float>?double(replay+row%3)/262144.:0.));
+          a[first+1]=half_test::encode<A>(-1.);
+          a[first+65]=half_test::encode<A>(0.25);
+        }
+        for(std::int64_t col=0;col<n;++col) {
+          const auto first=std::size_t((batch*n+col)*k);
+          const double scale=double((batch+1)*(col+1));
+          w[first]=half_test::encode<W>(scale+(std::is_same_v<W,float>?1./262144.:0.));
+          w[first+1]=half_test::encode<W>(scale);
+          w[first+65]=half_test::encode<W>(0.5);
+        }
+      }
+      ggml_backend_tensor_set(tensors[0],a.data(),0,a.size()*sizeof(A));
+      ggml_backend_tensor_set(tensors[1],w.data(),0,w.size()*sizeof(W));
+      ASSERT_TRUE(region->submit().status.ok());ASSERT_TRUE(region->wait().status.ok());
+      std::vector<float> actual(std::size_t(b*m*n));
+      ggml_backend_tensor_get(tensors[2],actual.data(),0,actual.size()*sizeof(float));
+      for(std::int64_t batch=0;batch<b;++batch)for(std::int64_t row=0;row<m;++row)
+        for(std::int64_t col=0;col<n;++col) {
+          double expected=0.;
+          for(std::int64_t inner=0;inner<k;++inner)
+            expected+=half_test::decode(a[std::size_t((batch*m+row)*k+inner)])*
+                half_test::decode(w[std::size_t((batch*n+col)*k+inner)]);
+          EXPECT_NEAR(actual[std::size_t((batch*m+row)*n+col)],float(expected),2.e-8F);
+        }
+    }
+  }
+}
+
+TEST(GgmlVulkanRegion, DenseLinearRetainsOriginalHalfBfloatAndFloatSources) {
+  auto device=NativeDevice::create();ASSERT_TRUE(device)<<device.error().message();
+  auto scope=device->activate();
+  using F16=hyle::simd::float16_t;using BF16=hyle::simd::bfloat16_t;
+  dense_original_sources<F16,F16>(*device);dense_original_sources<F16,BF16>(*device);
+  dense_original_sources<F16,float>(*device);dense_original_sources<BF16,F16>(*device);
+  dense_original_sources<BF16,BF16>(*device);dense_original_sources<BF16,float>(*device);
+  dense_original_sources<float,F16>(*device);dense_original_sources<float,BF16>(*device);
+  dense_original_sources<float,float>(*device);
 }
 
 TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {

@@ -1,0 +1,396 @@
+{
+  "schema": "hyle-correctness-evidence-v1",
+  "task": "Qwen3.5 finite multiple-draft MTP, generated checkpoints and max-q confidence controls",
+  "date": "2026-10-24",
+  "scope": {
+    "source": "Original cached complete Qwen3.5-2B BF16 text and one-block MTP roles",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "physical_roles": 335,
+    "payload_bytes": 3885311680,
+    "input_manifest_sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967",
+    "prompt_sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4",
+    "backends": [
+      "cpu",
+      "cuda"
+    ],
+    "sdk_rebuilds": 0,
+    "downloads": 0
+  },
+  "implemented": [
+    "Configured nonnegative maximum K, not a 1/2/4 whitelist; verifier width 1..K+1 derives from actual context, quota, EOS and confidence.",
+    "One Snapshot publishes selected target KV/conv/GDN prefix, target carry/prior, repaired draft KV/lag, pending and RNG. Accepted EOS and last-quota output remain unconsumed pending.",
+    "Recursive approximate draft hidden remains private; actual target hidden rebuilds retained NextN KV before publication.",
+    "Each stochastic proposal has its own retained q_i and acceptance draw; residual/bonus final draw at 2*m; cursor commits 2*m+1 for actual m, including m=0.",
+    "Default K1 threshold0 retains its fused graph; threshold0 adds no confidence softmax. Enabled threshold compares max actual normalized q, independent of selected random ID.",
+    "Full generated checkpoint key contains actual consumed IDs, never pending; new request resamples with new cursor; same-session exact resume preserves pending/cursor.",
+    "Partial prefix hit cold-admits only actual suffix, bounded by existing N/R/slots and budget. Retired phase precedes Family eviction. Existing Snapshot remains usable.",
+    "Strict episode ledger includes all original verifier inputs including rejected suffix and actual accepted boundary/RNG. Committed-token rebuild is explicitly separate from strict numerical replay."
+  ],
+  "validation": {
+    "runs": {
+      "recursive-check2": [
+        {
+          "case": "forced-prefix",
+          "exit": 0,
+          "seconds": 3.355839490890503
+        },
+        {
+          "case": "greedy-K0",
+          "exit": 0,
+          "seconds": 2.027276039123535
+        },
+        {
+          "case": "greedy-K1",
+          "exit": 0,
+          "seconds": 2.315328359603882
+        },
+        {
+          "case": "greedy-K2",
+          "exit": 0,
+          "seconds": 2.4286296367645264
+        },
+        {
+          "case": "greedy-K4",
+          "exit": 0,
+          "seconds": 2.6531245708465576
+        },
+        {
+          "case": "random-K2",
+          "exit": 0,
+          "seconds": 2.4721779823303223
+        },
+        {
+          "case": "random-K4",
+          "exit": 0,
+          "seconds": 2.7208456993103027
+        }
+      ],
+      "recursive-check5": [
+        {
+          "case": "strict-and-failure",
+          "exit": 0,
+          "seconds": 3.9375429153442383
+        },
+        {
+          "case": "greedy-K4",
+          "exit": 0,
+          "seconds": 2.610652446746826
+        },
+        {
+          "case": "random-K4",
+          "exit": 0,
+          "seconds": 2.7457849979400635
+        },
+        {
+          "case": "greedy-sessions-N2-R2",
+          "exit": 0,
+          "seconds": 4.656321287155151
+        },
+        {
+          "case": "random-sessions-N2-R2",
+          "exit": 0,
+          "seconds": 4.887032985687256
+        },
+        {
+          "case": "greedy-checkpoint-full",
+          "exit": 0,
+          "seconds": 2.828423500061035
+        },
+        {
+          "case": "greedy-checkpoint-partial-churn",
+          "exit": 0,
+          "seconds": 3.086339235305786
+        },
+        {
+          "case": "random-checkpoint-full",
+          "exit": 0,
+          "seconds": 2.960488796234131
+        },
+        {
+          "case": "random-checkpoint-partial-churn",
+          "exit": 0,
+          "seconds": 3.2271506786346436
+        }
+      ],
+      "cpu-check1": [
+        {
+          "case": "strict-and-failure",
+          "exit": 0,
+          "seconds": 54.69027614593506
+        },
+        {
+          "case": "greedy-K4",
+          "exit": 0,
+          "seconds": 18.04478883743286
+        },
+        {
+          "case": "random-K4",
+          "exit": 0,
+          "seconds": 18.01494550704956
+        },
+        {
+          "case": "greedy-context1",
+          "exit": 0,
+          "seconds": 1.8899853229522705
+        },
+        {
+          "case": "random-context1",
+          "exit": 0,
+          "seconds": 1.8840057849884033
+        }
+      ],
+      "confidence-check1": [
+        {
+          "case": "strict-and-failure",
+          "exit": 0,
+          "seconds": 3.9572389125823975
+        },
+        {
+          "case": "greedy-K0",
+          "exit": 0,
+          "seconds": 2.069812536239624
+        },
+        {
+          "case": "greedy-K1",
+          "exit": 0,
+          "seconds": 2.3433806896209717
+        },
+        {
+          "case": "greedy-K4",
+          "exit": 0,
+          "seconds": 2.706362724304199
+        },
+        {
+          "case": "random-K4",
+          "exit": 0,
+          "seconds": 2.7980501651763916
+        },
+        {
+          "case": "strict-confidence1",
+          "exit": 0,
+          "seconds": 3.395195245742798
+        },
+        {
+          "case": "greedy-K4-min1",
+          "exit": 0,
+          "seconds": 2.7898056507110596
+        },
+        {
+          "case": "random-K0-min0",
+          "exit": 0,
+          "seconds": 2.1167681217193604
+        },
+        {
+          "case": "random-K4-min1",
+          "exit": 0,
+          "seconds": 2.8761825561523438
+        },
+        {
+          "case": "random-K4-min0.5",
+          "exit": 0,
+          "seconds": 2.7981560230255127
+        }
+      ],
+      "confidence-cpu-check1": [
+        {
+          "case": "greedy-K4-min1",
+          "exit": 0,
+          "seconds": 18.47730040550232
+        },
+        {
+          "case": "random-K0-min0",
+          "exit": 0,
+          "seconds": 17.28779888153076
+        },
+        {
+          "case": "random-K4-min1",
+          "exit": 0,
+          "seconds": 18.13792085647583
+        },
+        {
+          "case": "random-K4-min0.5",
+          "exit": 0,
+          "seconds": 18.088202714920044
+        }
+      ],
+      "confidence-cli-check1": [
+        {
+          "case": "negative",
+          "exit": 1,
+          "seconds": 0.34209585189819336,
+          "error": "Qwen3.5 text consumer: --mtp-min-probability requires a finite probability within [0,1]",
+          "passed": true
+        },
+        {
+          "case": "above1",
+          "exit": 1,
+          "seconds": 0.35112977027893066,
+          "error": "Qwen3.5 text consumer: --mtp-min-probability requires a finite probability within [0,1]",
+          "passed": true
+        },
+        {
+          "case": "nan",
+          "exit": 1,
+          "seconds": 0.3523995876312256,
+          "error": "Qwen3.5 text consumer: --mtp-min-probability requires a finite probability within [0,1]",
+          "passed": true
+        },
+        {
+          "case": "requires-mtp",
+          "exit": 1,
+          "seconds": 0.3484218120574951,
+          "error": "Qwen3.5 text consumer: --mtp-min-probability requires --mtp on",
+          "passed": true
+        }
+      ],
+      "policy-check1": [
+        {
+          "name": "compile",
+          "exit": 0,
+          "seconds": 2.0184688568115234
+        },
+        {
+          "name": "link",
+          "exit": 0,
+          "seconds": 0.055632829666137695
+        },
+        {
+          "name": "run",
+          "exit": 0,
+          "seconds": 0.04158616065979004
+        }
+      ]
+    },
+    "policy_groups": 15,
+    "forced_prefix": {
+      "forced_prefix_cases": 8,
+      "recursive_continuations": 8,
+      "atomic_failure_check": true,
+      "performance_claim": false,
+      "quality_claim": false
+    },
+    "state_transactions": {
+      "strict_random_episodes": 4,
+      "strict_boundary_match": true,
+      "committed_rebuild_pending_rng_match": true,
+      "invalid_q_atomic_and_retry": true,
+      "exact_admissions": 2,
+      "exact_evictions": 1,
+      "draw": 28,
+      "length": 167,
+      "performance_claim": false,
+      "quality_claim": false
+    },
+    "cpu_state_transactions": {
+      "strict_random_episodes": 4,
+      "strict_boundary_match": true,
+      "committed_rebuild_pending_rng_match": true,
+      "invalid_q_atomic_and_retry": true,
+      "exact_admissions": 2,
+      "exact_evictions": 1,
+      "draw": 28,
+      "length": 164,
+      "performance_claim": false,
+      "quality_claim": false
+    },
+    "confidence": {
+      "cpu": {
+        "no_proposal_target_equivalence": {
+          "ids": [
+            12237,
+            608,
+            470,
+            38754,
+            15495,
+            29806,
+            13,
+            271
+          ],
+          "cursor": 8,
+          "identical": true
+        },
+        "partial_clip": {
+          "ids": [
+            12237,
+            27086,
+            20250,
+            17885,
+            6971,
+            271,
+            32,
+            5445
+          ],
+          "cursor": 13,
+          "proposals": [
+            3,
+            0,
+            1,
+            0
+          ],
+          "verified_rows": [
+            4,
+            1,
+            2,
+            1
+          ],
+          "draft_graph_calls": 9,
+          "decision_graph_calls": 3
+        }
+      },
+      "cuda": {
+        "no_proposal_target_equivalence": {
+          "ids": [
+            71093,
+            12305,
+            198,
+            464,
+            19298,
+            271,
+            1005,
+            80466
+          ],
+          "cursor": 8,
+          "identical": true
+        },
+        "partial_clip": {
+          "ids": [
+            71093,
+            12305,
+            198,
+            727,
+            14733,
+            20250,
+            17885,
+            23573
+          ],
+          "cursor": 13,
+          "proposals": [
+            2,
+            3
+          ],
+          "verified_rows": [
+            3,
+            4
+          ],
+          "draft_graph_calls": 8,
+          "decision_graph_calls": 2
+        }
+      }
+    }
+  },
+  "limits": [
+    "These are functional/state checks; recorded wall times and tokens/s are not an aligned performance comparison and make no speed claim.",
+    "Natural BF16 input checks are short P154 generation; forced prefix tests prove state/lifetime boundaries, not model task quality or all input-dependent arithmetic.",
+    "Full multiple-draft CPU/CUDA complete-model checks do not stand in for Apple/Vulkan, hybrid CPU+CUDA, other Qwen geometries, or complete quantized models.",
+    "CTsym original source projection is separately tested; this record does not claim a complete CTsym model run.",
+    "Independent random CPU/CUDA output sequences can differ numerically; no end-to-end quality equivalence or statistical sampler-distribution quality is claimed.",
+    "Recursive-check4 had scratch schedule filename collisions and an actual imported pending=-1 failure. Later frozen recursive-check5 is the successful corrected run; earlier failures have not been rewritten.",
+    "Each run archive contains its own exact frozen application source plus commands/image hashes. Shared SDK/provider object files and model weights are deliberately excluded."
+  ],
+  "artifacts": {
+    "file": "qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.logs.zip",
+    "bytes": 1213489,
+    "sha256": "9414bdd85b439743895eaa7cb4dc6ec6677054fd6eaa75a5c26801fd9c7f31f2",
+    "files": 445
+  }
+}

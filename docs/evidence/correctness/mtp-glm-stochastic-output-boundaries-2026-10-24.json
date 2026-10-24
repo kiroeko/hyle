@@ -1,0 +1,219 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite original-role CUDA Flash and Pro stochastic output-boundary journeys",
+  "implementation": [
+    "One shared pure hyle::inference::mtp::select_sampled_prefix selects consumed target rows and emitted pending IDs. The random acceptance flag alone no longer chooses the committed state.",
+    "An accepted proposal stopped by EOS or post-verification quota stays pending in its original I32 q-proposal lease; only after-current target/NextN state is published. A consumed accepted nonterminal proposal uses the original repaired prefix; a bonus EOS stays unconsumed pending after that prefix.",
+    "Explicit model-private SamplingLimits contains output quota, remaining context and EOS IDs. Invalid zero limits/out-of-vocabulary EOS reject at controller entry before its cold graph work; source arguments can already be authenticated by the caller. One-row quota/context tails retain mandatory-current target+NextN maintenance, project actual target p0 through the same original one-row full head, draw once, and publish no q proposal or second row.",
+    "Finite limits describe one component verifier episode and stop its automatic continuation. Default unbounded fixtures retain the existing real second-round/pending continuation. Thin Flash plain/GGUF/source adapters forward the same limits; Pro official/converted template receives the same type.",
+    "Independent expected-base boundary Heads reuse the actual retired original resources and real proposal/residual/bonus leases. Reserved RNG ranges publish atomically with all resources and pending; no host ID reconstruction, state rollback by approximate hidden, logit/p/q mutation or TopK substitution."
+  ],
+  "cases": [
+    {
+      "kind": "flash",
+      "result": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "109.318",
+        "timestamp": "2026-10-24T16:26:27.128",
+        "name": "AllTests"
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\flash\\attempt2\\checks.exe",
+          "--gtest_filter=GlmMtpStateConsumer.CudaOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\flash\\attempt2\\run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792830386.8204544,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 40584,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792830496.6887147,
+        "process_wall_seconds": 109.86803239997244
+      },
+      "commands": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\flash\\attempt2\\checks.exe",
+          "--gtest_filter=GlmMtpStateConsumer.CudaOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\flash\\attempt2\\run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792830386.8204544,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false
+      },
+      "image": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\flash\\attempt2\\checks.exe",
+          "bytes": 142396416,
+          "sha256": "902ce763db4d3346a9d5f9b4f522b868ee1dfefdf67f091bebed37c9f5fd3993"
+        },
+        "consumer_TUs": 1,
+        "SDK_TUs": 0
+      },
+      "properties": {
+        "original_moe_provider_router": "cublasLt",
+        "original_moe_provider_expert_gate": "sglang-cuda",
+        "original_moe_provider_shared_gate": "sglang-cuda",
+        "original_moe_provider_expert_up": "sglang-cuda",
+        "original_moe_provider_shared_up": "sglang-cuda",
+        "original_moe_provider_expert_down": "sglang-cuda",
+        "original_moe_provider_shared_down": "sglang-cuda",
+        "shared_lm_head_provider": "cublasLt",
+        "original_attention_provider_query_a": "sglang-cuda",
+        "original_attention_provider_query_b": "sglang-cuda",
+        "original_attention_provider_kv_a": "sglang-cuda",
+        "original_attention_provider_output": "sglang-cuda",
+        "original_attention_provider_key_bmm": "ggml-cuda",
+        "original_attention_provider_value_bmm": "ggml-cuda",
+        "target_verifier_head_provider": "cublasLt",
+        "random_default_schedule": "proposal0/accept1/final2; success advances3; cancellation and stale publish advance0",
+        "random_controlled_address_bound": "262144",
+        "random_actual_proposal": "100550",
+        "random_alpha": "0.065482",
+        "random_accepted": "1",
+        "random_rejected": "1",
+        "random_published_rounds": "4",
+        "random_opposite_branch_found": "1",
+        "scope": "Actual original NextN q/proposal and real two-row verifier p0/p1, shared common stochastic decision, same complete target/NextN StateHead plus original RNG metadata. Default three addresses and bounded independent controlled-address branch fixture are distinguished; no probability/logit changes or TopK substitution. Each selected branch consumes its actual residual/bonus and completes a second ordinary K1 round. Source component upstream/initial-history fixtures remain; not full-model task quality or natural acceptance-rate evidence."
+      },
+      "actual_transitions": [
+        "GLM RANDOM TAIL context=1 quota=1 emitted=78176 stopped=0 consumed=1 draw=1 second_submissions=0",
+        "GLM RANDOM TAIL context=1 quota=1 emitted=78176 stopped=1 consumed=1 draw=1 second_submissions=0",
+        "GLM RANDOM BOUNDARY name=quota1 accept=0 emitted=1 consumed=1 pending=144924 stopped=0 draw=3",
+        "GLM RANDOM BOUNDARY name=residual_EOS accept=0 emitted=1 consumed=1 pending=144924 stopped=1 draw=3",
+        "GLM RANDOM K1 proposal=100550 alpha=0.065481699432019286 accept_offset=1 reserved=3 accept=0 pending=144924 next_round_accept=0 next_pending=6739 cursor=6",
+        "GLM RANDOM BOUNDARY name=quota1 accept=1 emitted=1 consumed=1 pending=100550 stopped=0 draw=33",
+        "GLM RANDOM BOUNDARY name=accepted_proposal_EOS accept=1 emitted=1 consumed=1 pending=100550 stopped=1 draw=33",
+        "GLM RANDOM BOUNDARY name=bonus_EOS accept=1 emitted=2 consumed=2 pending=92526 stopped=1 draw=33",
+        "GLM RANDOM K1 proposal=100550 alpha=0.065481699432019286 accept_offset=31 reserved=33 accept=1 pending=92526 next_round_accept=0 next_pending=12090 cursor=36"
+      ],
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+        "bytes": 406523,
+        "sha256": "1ae81586fb9427d6238c26c15459acbfbc9d18730f04b6d99cbc45aac7bd2662"
+      }
+    },
+    {
+      "kind": "pro",
+      "result": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "94.101",
+        "timestamp": "2026-10-24T16:28:29.010",
+        "name": "AllTests"
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\checks.exe",
+          "--gtest_filter=GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792830508.6903083,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 47388,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792830604.3609695,
+        "process_wall_seconds": 95.66975020000245
+      },
+      "commands": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\checks.exe",
+          "--gtest_filter=GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792830508.6903083,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false
+      },
+      "image": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\checks.exe",
+          "bytes": 141342208,
+          "sha256": "9b749258eeba3942f847328091c35c12d202ed5d71c4f24a647fcf8202886b9b"
+        },
+        "consumer_TUs": 1,
+        "SDK_TUs": 0
+      },
+      "properties": {
+        "head_provider": "cublasLt",
+        "original_target_roles": "1559",
+        "original_target_source_bytes": "9872042432",
+        "actual_target_calls": "4",
+        "actual_target_submissions": "8",
+        "actual_target_policy_submissions": "3",
+        "accepted_target_conditioned_repairs": "0",
+        "actual_accepted_kv_repair_submissions": "0",
+        "stochastic_policy": "Actual NextN q samples proposal at draw0; actual target p0/q/p1 consumes accept1/final2. Same complete StateHead publishes pending and Cursor. Cancellation/stale publish advances0, successful K1 advances3; real target-only continuation consumes actual residual/bonus, samples its target pending and atomically advances one additional draw.",
+        "random_accepted": "0",
+        "random_rejected": "1",
+        "random_actual_proposal": "42456",
+        "random_committed_draws": "4",
+        "actual_nextn_steps": "4",
+        "actual_catchups": "0",
+        "actual_target_conditioned_repairs": "0",
+        "state_budget_bytes": "446998016",
+        "peak_state_backing_bytes": "291742428",
+        "scope": "Finite original target77+NextN78 stochastic consumer and actual untied full vocabulary, ordinary existing two-phase Graphs/StateHead/supplier. Natural single trial only; no forced proposal, logits, p/q or branch. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not full-model generation, task quality, natural acceptance-rate measurement or other quantized source coverage."
+      },
+      "actual_transitions": [
+        "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=0 consumed=1 draw=1 second_submissions=0",
+        "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=1 consumed=1 draw=1 second_submissions=0",
+        "GLM PRO RANDOM BOUNDARY name=quota1 accept=0 emitted=1 consumed=1 pending=16495 stopped=0 draw=3",
+        "GLM PRO RANDOM BOUNDARY name=residual_EOS accept=0 emitted=1 consumed=1 pending=16495 stopped=1 draw=3",
+        "GLM Pro K1 stochastic=1 scenario=0 proposal=42456 target0=62398 target1=39202 accepted=0 frontier=2054 pending=16495 continued_pending=28122"
+      ],
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+        "bytes": 156965,
+        "sha256": "8f4e2d49f2f11368fe574ef0c5605f03fcee334ce7ecd6cf2296559938654db9"
+      }
+    }
+  ],
+  "coverage": [
+    "Flash: actual target43+44+complete NextN, natural rejection and a separately labelled legal opposite acceptance from bounded independent Philox address search. Both genuine p/q branches retain original cancellation/stale retry/RNG and complete-state continuation checks.",
+    "Flash: target-only p0 ID78176, complete after-current cursor2055 and one committed draw; independent ordinary/EOS one-row Heads with zero speculative-second submissions. Actual quota1/rejected residual EOS144924, accepted proposal EOS100550 and bonus EOS92526 select consumed1/1/2 respectively.",
+    "Pro: original target77+complete NextN78 natural rejection; target-only p0 ID43038 one-row tail/terminal control, post-verification quota1/residual EOS16495, immutable retained complete state and original target-only pending continuation28122. The complete true-source task output remains a finite component fixture."
+  ],
+  "verification": {
+    "new_SDK_or_provider_TUs": 0,
+    "new_HTTP_requests": 0,
+    "new_weight_bytes": 0,
+    "consumer_TUs": 2,
+    "strict_MSVC_W4_WX": true,
+    "CUDAruntime_cases": 2,
+    "throughput_or_physical_memory_claim": false
+  },
+  "limits": [
+    "EOS IDs in boundary controls are chosen from the actual generated IDs to exercise the caller policy. They are not claimed to be the source tokenizer natural EOS or a quality/termination result of a full model task.",
+    "The one-row tail includes mandatory-current NextN maintenance to keep target and draft at the same prefix; it avoids proposal sampling and second-token execution, not all NextN work.",
+    "A stopped final emitted token remains pending and is not inserted into committed KV/conv/index state. RNG advance reflects the actual verified proposal width/address reservation, including explicitly controlled acceptance addresses, rather than the number of consumed rows.",
+    "This is not a complete GLM inference engine/server/scheduler, full trained trunk generation, multi-backend matrix, each publisher runtime, natural acceptance-rate measurement or performance result. Source component upstream/history adapters remain as documented in inherited evidence.",
+    "Q30/B09 entry paths were compiled with their actual artifact gates in the new consumer TUs. Their previous runtime images and source journeys remain separate; this evidence does not relabel the old quantized images as new EOS/quota checks."
+  ],
+  "inherited_evidence": [
+    "docs/evidence/correctness/mtp-glm-original-stochastic-state-2026-10-24.json",
+    "docs/evidence/correctness/mtp-qwen24-original-stochastic-state-2026-10-24.json"
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-glm-stochastic-output-boundaries-2026-10-24.zip",
+    "bytes": 880005,
+    "sha256": "dc09bb8f1569b9e0264c3cc00dec4f0251dc8c150d7f4bbbe6073a5b40002636"
+  },
+  "archive_records": 206
+}

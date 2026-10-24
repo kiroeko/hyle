@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../engine/inference/sampling_cursor.h"
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -21,6 +23,7 @@
 #include "dspark_original_attention_roles.h"
 #include "dspark_original_attention_reference.h"
 #include "dspark_original_expert_roles.h"
+#include "dspark_block5_policy.h"
 
 // Cold model assembly only. The caller may supply the matching target's
 // shared BF16 vocabulary. Target captures and other stage roles stay explicit.
@@ -277,30 +280,6 @@ struct Boundary final {
   std::int32_t pending=0;
   std::uint32_t consumed=0;
 };
-struct VerifiedPrefix final {
-  std::uint32_t accepted_drafts=0,consumed=1;
-  std::size_t pending_row=0;
-};
-// Fixed DSpark forward_head emits [current, proposal1, ..., proposal5].
-// Target row i consumes that row's token and predicts the next token. This is
-// only the consumer's greedy policy; it neither rewrites IDs nor computes a
-// replacement pending tensor on the host.
-inline Result<VerifiedPrefix> decide_block5(std::span<const std::int32_t> proposed,
-    std::span<const std::int32_t> target_ids) {
-  if(proposed.size()!=6 || target_ids.size()!=6)
-    return std::unexpected(Status::InvalidArgument("DSpark block5 verification needs current+five proposals and six target rows"));
-  for(const auto token:proposed)if(token<0 || token>=d::vocabulary)
-    return std::unexpected(Status::InvalidArgument("DSpark proposal token is outside the shared vocabulary"));
-  for(const auto token:target_ids)if(token<0 || token>=d::vocabulary)
-    return std::unexpected(Status::InvalidArgument("DSpark target token is outside the shared vocabulary"));
-  VerifiedPrefix result;
-  while(result.accepted_drafts<5 &&
-      proposed[result.accepted_drafts+1]==target_ids[result.accepted_drafts])
-    ++result.accepted_drafts;
-  result.consumed=1+result.accepted_drafts;
-  result.pending_row=result.accepted_drafts;
-  return result;
-}
 struct TargetVerifier final {
   sem::Fragment fragment{.profile=nullptr,.region=0x4453545645524946ULL};
   sem::ValueId normalized,head,logits,values;
@@ -345,9 +324,11 @@ struct State final {
   // resources are optional for the earlier captured-prefix component tests.
   std::vector<c::StateEntryId> target_entries;
   std::optional<c::StateEntryId> pending_entry;
+  std::optional<c::StateEntryId> random_entry;
   static Result<State> create(b::TargetIdentity target,
-      std::span<const c::TensorDesc> target_state={},std::size_t backing_bytes=64u<<20) {
+      std::span<const c::TensorDesc> target_state={},std::size_t backing_bytes=64u<<20,bool stochastic=false) {
     HYLE_RETURN_IF_ERROR(b::qualify_identity(target,{b::kSidecarRepository,b::kSidecarRevision,b::kSidecarFile}));
+    if(stochastic&&target_state.empty())return std::unexpected(Status::InvalidArgument("stochastic DSpark state needs a complete target tuple"));
     State result{.target=std::move(target)};
     HYLE_ASSIGN_OR_RETURN(auto ring,c::row_cache_carrier_description(h::kEncoding,h::kWindow));
     HYLE_ASSIGN_OR_RETURN(auto carry,b::plain(std::array<std::int64_t,2>{1,b::kHidden}));
@@ -363,6 +344,7 @@ struct State final {
           std::array<std::int64_t,1>{1}));
       specs.push_back({.description=pending});
     }
+    if(stochastic)specs.push_back({.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(hyle::inference::SamplingCursor)});
     HYLE_ASSIGN_OR_RETURN(result.schema,c::StateSchema::create(specs));
     HYLE_ASSIGN_OR_RETURN(result.store,c::StateStore::create(result.schema,
         {.max_versions=32,.max_drafts=4,.max_retained_blocks=256,.max_backing_bytes=backing_bytes}));
@@ -376,7 +358,14 @@ struct State final {
     if(!target_state.empty()) {
       HYLE_ASSIGN_OR_RETURN(result.pending_entry,result.schema.entry(result.entries.size()+target_state.size()));
     }
+    if(stochastic) {HYLE_ASSIGN_OR_RETURN(result.random_entry,result.schema.entry(specs.size()-1));}
     return result;
+  }
+  Result<hyle::inference::SamplingCursor> random(const c::StateVersion &version) const {
+    if(!random_entry)return std::unexpected(Status::InvalidArgument("DSpark state has no sampler cursor"));
+    HYLE_ASSIGN_OR_RETURN(auto member,version.member(*random_entry));
+    HYLE_ASSIGN_OR_RETURN(auto view,member.view());hyle::inference::SamplingCursor result;
+    HYLE_RETURN_IF_ERROR(view.read(std::as_writable_bytes(std::span(&result,1))));return result;
   }
   Result<Boundary> boundary(const c::StateVersion &version) const {
     HYLE_ASSIGN_OR_RETURN(auto member,version.member(entries[7]));
@@ -386,6 +375,7 @@ struct State final {
   Result<c::StateVersion> select(const c::StateVersion &from,
       std::span<const c::ReadLease> history,std::span<const c::ReadLease> captures,
       const b::CaptureFrame &frame,std::uint32_t accepted,std::int32_t pending) {
+    if(random_entry)return std::unexpected(Status::InvalidArgument("DSpark sampled state requires complete verified model/pending/cursor publication"));
     HYLE_ASSIGN_OR_RETURN(auto facts,boundary(from));
     HYLE_ASSIGN_OR_RETURN(auto locations,h::placement(frame));(void)locations;
     if(frame.target!=target || facts.session!=frame.session || facts.branch!=frame.branch ||
@@ -417,8 +407,9 @@ struct State final {
   Result<c::StateVersion> select_verified(const c::StateVersion &from,
       std::span<const c::ReadLease> history,std::span<const c::ReadLease> captures,
       std::span<const c::ReadLease> target_state,const c::ReadLease &pending,
-      const b::CaptureFrame &frame,std::uint32_t consumed) {
+      const b::CaptureFrame &frame,std::uint32_t consumed,const hyle::inference::SamplingCursor *next_random=nullptr) {
     HYLE_ASSIGN_OR_RETURN(auto facts,boundary(from));
+    if(bool(random_entry)!=bool(next_random))return std::unexpected(Status::InvalidArgument("DSpark sampled prefix must atomically supply its cursor"));
     if(!pending_entry || target_entries.empty() || target_state.size()!=target_entries.size() ||
         history.size()!=4 || captures.size()!=3 || frame.target!=target ||
         facts.session!=frame.session || facts.branch!=frame.branch || facts.epoch>=frame.epoch ||
@@ -447,6 +438,7 @@ struct State final {
     HYLE_RETURN_IF_ERROR(draft.replace(*pending_entry,pending));
     facts.epoch=frame.epoch;facts.next_position+=consumed;facts.pending=token;facts.consumed+=consumed;
     HYLE_RETURN_IF_ERROR(draft.replace_metadata(entries[7],std::as_bytes(std::span(&facts,1))));
+    if(next_random)HYLE_RETURN_IF_ERROR(draft.replace_metadata(*random_entry,std::as_bytes(std::span(next_random,1))));
     return draft.finalize();
   }
 };

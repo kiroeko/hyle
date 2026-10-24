@@ -1,0 +1,31 @@
+{
+  "kind": "declared CT exporter source follow-up for the original projection component",
+  "date": "2026-10-24",
+  "component_evidence": "docs/evidence/correctness/mtp-qwen35-ct-original-projection-2026-10-24.json",
+  "declared_version": "0.14.1.dev20+g5d2f568",
+  "resolved_source_commit": "5d2f5685ce3327832d448b8c700a6372f487cad0",
+  "resolution_source": "https://github.com/vllm-project/compressed-tensors/commit/5d2f568.patch",
+  "verification_method": "Read the primary repository commit and exact revision source with the web reader. No package installation, local source-byte hash, producer execution, calibration or complete-model run is claimed.",
+  "source_checks": [
+    {
+      "url": "https://github.com/vllm-project/compressed-tensors/blob/5d2f5685ce3327832d448b8c700a6372f487cad0/src/compressed_tensors/compressors/pack_quantized/base.py",
+      "functions": ["PackedQuantizationCompressor.compress", "PackedQuantizationCompressor.decompress"],
+      "finding": "The original physical weight_shape is retained. Unpacking uses this shape and weights.num_bits, then dequantizes with the original weight_scale and optional zero point and group index. Symmetric zero point is removed."
+    },
+    {
+      "url": "https://github.com/vllm-project/compressed-tensors/blob/5d2f5685ce3327832d448b8c700a6372f487cad0/src/compressed_tensors/compressors/pack_quantized/helpers.py",
+      "functions": ["pack_to_int32", "unpack_from_int32"],
+      "finding": "Natural column-axis packing places successive 4-bit codes at bit offsets 0,4,...,28. The stored unsigned nibble is unpacked and shifted by -8 to signed INT4; this agrees with the existing source-specific component oracle."
+    },
+    {
+      "url": "https://github.com/vllm-project/compressed-tensors/blob/5d2f5685ce3327832d448b8c700a6372f487cad0/src/compressed_tensors/quantization/lifecycle/forward.py",
+      "functions": ["dequantize", "_process_quantization", "_dequantize"],
+      "finding": "Group size is inferred from the original code and scale shapes when no arguments are supplied. Signed codes are cast to scale.dtype and multiplied in that dtype before the final output cast. For these BF16 scales, BF16 product rounding precedes a requested F32 output, as tested by the existing 215544 source-rounding witnesses."
+    }
+  ],
+  "conclusion": "The previously unavailable exact declared exporter source now confirms the CT packing and dequantization contract used in the real CPU/CUDA component checks. No product arithmetic change or repeated GPU run was needed.",
+  "remaining": [
+    "The publisher's actual exporter environment and calibration were not reproduced.",
+    "This source audit does not replace complete selected text/MTP acquisition, inference or task-quality checks."
+  ]
+}

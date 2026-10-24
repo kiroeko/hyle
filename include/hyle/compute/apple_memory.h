@@ -125,7 +125,9 @@ struct NativeStorage final {
 
 // The original MLX allocator's shared Metal buffers. Host accessibility does
 // not imply execution ordering: wait for GPU use before mapping or mutating.
-// This resource and its native device outlive all Buffer/array views and quotas.
+// Allocated Buffers/owned arrays retain their allocation controller after the
+// public wrapper is destroyed or moved. A borrowed ref alone retains nothing;
+// the native device and externally borrowed resources still outlive their use.
 class MemoryResource final {
 public:
   HYLE_COMPUTE_ROUTE_APPLE_API MemoryResource() noexcept;
@@ -148,7 +150,7 @@ public:
   // Cold readonly native view, no payload copy/eval/wait. Original native
   // handles retain the source lease through bind/submit/results. Source must
   // belong to this exact resource and use its dense physical carrier; native
-  // aliases must not mutate it. Resource outlives every returned array alias.
+  // aliases must not mutate it. The source lease retains its actual storage.
   // Budget applies to wrapper/opaque descriptor metadata, not backing twice.
   HYLE_COMPUTE_ROUTE_APPLE_API Result<mlx::core::array>
   binding(ReadLease source, const TensorDesc &description,

@@ -1,0 +1,193 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite original complete-model CUDA paths after resource-order correction",
+  "scope": "Original complete335-role Qwen3.5-2B Unsloth MTP GGUF Q4 CUDA ordinary/K1/K4random; no task-quality, throughput comparison or complete hardware-memory certification.",
+  "source": {
+    "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+    "size": 1384902048,
+    "lfs_sha256": "9f7b15d04cf2d5878c8122a7c181dbc09f050cd66080ce3374576e734ccb0910",
+    "api_xet_hash": "f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb",
+    "etag": "\"f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb\"",
+    "etag_basis": "API xetHash",
+    "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q4_K_XL.gguf",
+    "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+    "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe",
+    "header_sha256": "49b590f2fcfb258db2917af72c3cfebfcebaed4b7e86321eb040c0afe7feecb4",
+    "header_bytes": 10963104,
+    "full_file_sha256_verified": true
+  },
+  "source_id": "39daef4a62aeef1437121f3ea2556a0a451255a5a78caa0a743c2df5fb6c5a40",
+  "original_roles": 335,
+  "original_payload_bytes": 1373938944,
+  "shared_embedding_head_codec": "Q6_K",
+  "prompt_tokens": 154,
+  "capacity": 256,
+  "cache_byte_limit": 268435456,
+  "representation": "Original encoded role ranges resident on CUDA; no whole-model floating bank conversion.",
+  "CPU_evidence": {
+    "path": "docs/evidence/correctness/mtp-qwen35-original-gguf-q4-cpu-2026-10-24.json",
+    "bytes": 5214,
+    "sha256": "046cb2bf3b8a20b5279a99b3879714ed6a67288fefb632c18a6e37ba21d5eabe"
+  },
+  "cases": [
+    {
+      "name": "cuda-ordinary",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "generated_tokens": 4,
+      "mtp": false,
+      "sampling": "greedy",
+      "original_host_weight_bytes": 0,
+      "original_device_weight_bytes": 1331977472,
+      "score_dtype": "F32",
+      "score_policy": "gguf_encoded_weight_projection_f32_logits",
+      "cache_peak_requested_bytes": 42418224,
+      "cache_requested_byte_limit": 268435456,
+      "actual_target_rows": 157,
+      "actual_draft_rows": 0,
+      "prefix_decision_graph_calls": 0,
+      "sampling_draw_cursor": 0,
+      "CPU_short_case_generated_ids_equal": true,
+      "case_result": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q4/cuda-ordinary-resource-order/functional-result.json",
+        "bytes": 4576,
+        "sha256": "19632c91d1c6f84aaca233ea41300cb63a49eda6629394d8bb3feb37341e7e2e"
+      }
+    },
+    {
+      "name": "cuda-k1",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "generated_tokens": 4,
+      "mtp": true,
+      "sampling": "greedy",
+      "original_host_weight_bytes": 0,
+      "original_device_weight_bytes": 1373938944,
+      "score_dtype": "F32",
+      "score_policy": "gguf_encoded_weight_projection_f32_logits",
+      "cache_peak_requested_bytes": 62529587,
+      "cache_requested_byte_limit": 268435456,
+      "actual_target_rows": 157,
+      "actual_draft_rows": 157,
+      "prefix_decision_graph_calls": 0,
+      "sampling_draw_cursor": 0,
+      "CPU_short_case_generated_ids_equal": true,
+      "case_result": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q4/cuda-k1-resource-order/functional-result.json",
+        "bytes": 5114,
+        "sha256": "3bb04bd961c55bf05f369c5461b50527e0fbb6f07fb259ef1e8fc5a8c1d98846"
+      }
+    },
+    {
+      "name": "cuda-k4-random",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        1445,
+        18904,
+        1120
+      ],
+      "generated_tokens": 6,
+      "mtp": true,
+      "sampling": "random",
+      "original_host_weight_bytes": 0,
+      "original_device_weight_bytes": 1373938944,
+      "score_dtype": "F32",
+      "score_policy": "gguf_encoded_weight_projection_f32_logits",
+      "cache_peak_requested_bytes": 121155635,
+      "cache_requested_byte_limit": 268435456,
+      "actual_target_rows": 159,
+      "actual_draft_rows": 162,
+      "prefix_decision_graph_calls": 1,
+      "sampling_draw_cursor": 10,
+      "CPU_short_case_generated_ids_equal": true,
+      "case_result": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q4/cuda-k4-random-resource-order/functional-result.json",
+        "bytes": 4971,
+        "sha256": "5ae6dafb5fbaaf92069334fc6fdd92857184154b1894649a954f07fe2847f4f9"
+      }
+    }
+  ],
+  "first_failure": {
+    "case": "ordinary",
+    "process": {
+      "exit": 3221226505,
+      "seconds": 11.320250749588013
+    },
+    "last_completed_trace": "generation_decode_end",
+    "diagnostic": "HYLE fatal: live() == 0 at src/compute_backend_cuda/cuda_memory.cc:351",
+    "meaning": "All four requested next-token trace steps finished, but the normal Model destructor destroyed its CUDA allocation resource before still-live weight/pool buffers. No final JSON or functional PASS was signed.",
+    "source_archive": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q4/cuda-ordinary-checked-embedding/initial-source-freeze.zip",
+      "bytes": 198853,
+      "sha256": "fbf6df2895ae207b0d278006576552fa0bf670500193acd838cf6f177fe2667e"
+    },
+    "resource_assertion_preserved": true
+  },
+  "exact_fix": {
+    "source_diff": {
+      "old_main_sha256": "67044f0132eb318280bec14f7eddb3a5c59d73335b55a64adbd903c3574b5064",
+      "new_main_sha256": "3edf9a7ae4eb6b9db95b84ef4150d81e848e5d49da2da1ebe5713fc57868c48a",
+      "other_app_sources_unchanged": true,
+      "diff": "--- \n+++ \n@@ -1452,5 +1452,4 @@\n       return hyle::Status::Unavailable(\"original native resource scope is not yet retired\");\n     }\n-    retirement_backend.reset();\n     return status;\n   }\n@@ -1627,5 +1626,5 @@\n     // Preserve the original native endpoint as an explicit Session retirement\n     // continuation, while the accepted guard pins the complete cold scope.\n-    if (resources_->pending()) resources_->retirement_backend.emplace(std::move(execution));\n+    resources_->retirement_backend.emplace(std::move(execution));\n     for (auto &weak : session_links) if (auto session = weak.lock()) {\n       session->model_ = nullptr;\n"
+    },
+    "changes": [
+      "Remove ColdResources::retire premature retirement_backend.reset().",
+      "Always move the original execution Backend into ColdResources::retirement_backend during Model destruction."
+    ],
+    "lifetime": "ColdResources declares the original Backend first so its destructor runs last, after compiled programs, retained payloads, weights and pools. The normal path now preserves the same ordering needed by genuine unresolved retirement.",
+    "source_scope": "Only these two lines changed between first failing CUDA consumer and the three successful runs; other frozen app source hashes matched. No numeric, embedding or sampling change was made during this regression.",
+    "resource_guard": "The CUDA live-allocation assertion remains unchanged. Unknown native retirement/fault cases belong to the separately recorded focused lifecycle tests."
+  },
+  "score_precision": {
+    "policy": "gguf_encoded_weight_projection_f32_logits",
+    "meaning": "Recipe scores explicitly casts BF16 A to F32 and invokes the existing encoded GGUF MatMul into F32 logits. This tag does not promise dense native F32 accumulation; a selected encoded implementation may have its own quantized dot contract.",
+    "CPU_archive_note": "The already frozen CPU evidence retains its older report label. It was not rewritten; this supplemental CUDA snapshot includes the source-derived report correction."
+  },
+  "validation": {
+    "successful_cases": 3,
+    "failed_initial_cases": 1,
+    "SDK_builds": 0,
+    "new_HTTP": 0,
+    "shared_closure": {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/shared-object-dependencies.json",
+      "bytes": 31035,
+      "sha256": "9617019b489956619cf848cb9b37a829910b5f0b8391462c8d32e792e2c8f603"
+    },
+    "build": "One consumer TU per source attempt, reusing the existing CUDA public runtime/Graph/provider objects. No full SDK rebuild.",
+    "image": {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/recursive-probe.exe",
+      "bytes": 141274624,
+      "sha256": "0286bc8733dfdbc061f41cc7f6730e9e62657af3bd3d3c2ecec545c0418f9c32"
+    },
+    "limits": [
+      "P154, C256, short4/4/6-output functional runs only. Matching these CPU IDs does not establish all-shape numerical identity or task quality.",
+      "Finite256MiB limits cover the reported cache resource domain. Cache requested bytes and Graph workspace reports are not measured total physical VRAM peaks.",
+      "CPU and CUDA paths have different resource-domain accounting; the cache numbers are not an apples-to-apples hardware-memory comparison.",
+      "Only commands replay was used. No capture/performance claim is made.",
+      "The archive includes frozen consumer source, commands, first failure, exact fix and all successful reports, but no weights, object files, SDK or executable."
+    ]
+  },
+  "reproduction": {
+    "build": "python .scratch/qwen-multi-draft-20261024/build_geometry_cuda_check2.py",
+    "run": "python .scratch/qwen35-unsloth-mtp-20261024/run_q4_cuda.py --tag <new-local-result-tag> ordinary k1 k4-random"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-original-gguf-q4-cuda-2026-10-24-logs.zip",
+    "bytes": 437486,
+    "sha256": "33bc5b47ac4232cb9e53cdd24876ffc787ba93547e1b44bad00026a7f9e09f77"
+  },
+  "archived_files": 62
+}

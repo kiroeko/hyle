@@ -115,7 +115,7 @@ _hyle_contract_run("normal-variable tri-state canonicalization" TRUE
   ${_hyle_generator_args})
 
 # An explicitly empty -D value is almost always a lost shell/CI variable.  The
-# ordinary unspecified default remains `all`, but explicit empty must fail.
+# ordinary standalone default is `engine`, but explicit empty must fail.
 _hyle_contract_run("explicit-empty component selection" FALSE
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
   -B "${_hyle_contract_root}/explicit-empty"

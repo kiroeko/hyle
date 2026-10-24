@@ -51,6 +51,10 @@ hyle_fetchcontent_make_available_locked(${_dependency})
 FetchContent_GetProperties(${_dependency} SOURCE_DIR ggml_SOURCE_DIR)
 set(_manifests "${_patch_root}/patches.json")
 set(_patch_args --manifest "${_patch_root}/patches.json")
+# Composition replaces _manifests with generated files. Keep the original
+# canonical inputs so an ordinary incremental build reruns composition.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${_patch_root}/patches.json")
 set(_source_identity "${HYLE_DEP_${_patch_dependency_upper}_VENDORED_TREE_SHA256}")
 set(_locked ${_dependency} ${_patch_dependency})
 set(_licenses
@@ -87,6 +91,8 @@ if((_cpu OR _HYLE_COMPUTE_HAVE_CUDA OR _HYLE_COMPUTE_HAVE_APPLE) AND NOT _cpu_up
     "${_cpu_port}/patches.json" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_mixed_cpu_manifest.py")
 endif()
 if(_HYLE_COMPUTE_HAVE_APPLE)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${_patch_root}/metal-patches.json")
   list(APPEND _manifests "${_patch_root}/metal-patches.json")
   list(APPEND _patch_args --manifest "${_patch_root}/metal-patches.json")
   hyle_audit_in_tree_dependencies(ggml_metal_iq1)

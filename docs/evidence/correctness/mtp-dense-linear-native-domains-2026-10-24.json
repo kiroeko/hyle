@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-24",
+  "scope": "DenseLinearF32 provider dtype support; no full model/MTP/throughput conclusion",
+  "contract": {
+    "activation_and_stored_weight": [
+      "F16",
+      "BF16",
+      "F32"
+    ],
+    "layouts": [
+      "[M,K] x [N,K]",
+      "[B,M,K] x [B,N,K]"
+    ],
+    "output": "F32",
+    "products_and_accumulation": "F32",
+    "F32_activation_or_weight_narrowing": false,
+    "full_weight_bank_expansion": false
+  },
+  "implementation": {
+    "cpu": "Original BF16/BF16 native path retained; typed SIMD dot otherwise, unsupported mixed F16 boundaries widen a 256-element stack tile only.",
+    "metal": "Original rank2 BF16/BF16 path retained; all other dense combinations use F32-A matvec metadata, exact A widening when needed, actual source W dtype and batch pitch.",
+    "vulkan": "Original rank2 BF16/BF16 path retained; other combinations use F32-A matvec and actual W dtype, with source precision F32 for F32/F32."
+  },
+  "tests": {
+    "cpu": {
+      "passed": 6,
+      "new_matrix_combinations": 54,
+      "replays": 1,
+      "width": 270
+    },
+    "vulkan": {
+      "passed": 2,
+      "new_matrix_combinations": 54,
+      "replays": 2,
+      "width": 66
+    },
+    "metal": {
+      "passed": 2,
+      "new_matrix_combinations": 54,
+      "replays": 2,
+      "width": 66,
+      "device": "Mac16,12 Apple M4 16GiB"
+    },
+    "coverage": "Each backend: all 9 A/W dtype combinations, rank2/rank3, M1/M2/M17, independent batches, F32 A and W cancellation residuals; CPU additionally crosses its 256-element widening tile."
+  },
+  "admission": {
+    "cpu": "Dense rank2 or aligned rank3 only; public dimension checks and plain F16/BF16/F32 domains.",
+    "vulkan": "Dense rank2 or aligned rank3; no new dtype limitation. This finite test does not claim every shader dimension/device.",
+    "metal": "New matvec paths require even N when K>=32, M<=INT16_MAX and all inputs/outputs <=INT32_MAX-1024 elements; otherwise decline. The old rank2 BF16/BF16 path retains its existing admission."
+  },
+  "native_cache_boundary": {
+    "gpu_libraries": "Reused existing native Metal/Vulkan binaries; each predates the new GDN output-scale capability export.",
+    "absent_contract_probe": "Focused test-only exact int32 function returns 0, so GDN must decline. It never replaces Dense kernels, reports a supported contract, or modifies a cache binary.",
+    "GDN_validation": false,
+    "full_engine_validation": false
+  },
+  "resources": {
+    "new_CPU_or_GPU_SDK_builds": 0,
+    "model_download_bytes": 0,
+    "performance_claim": false
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-dense-linear-native-domains-2026-10-24-logs.zip",
+    "bytes": 226042,
+    "sha256": "92eecc2117db614abd99b26e671b91bd9664754c268f58df37dbacc3faa579fd"
+  },
+  "manifest_entries": 83
+}

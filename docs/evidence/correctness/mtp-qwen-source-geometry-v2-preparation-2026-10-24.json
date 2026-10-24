@@ -1,0 +1,348 @@
+{
+  "date": "2026-10-24",
+  "scope": "Local Qwen source-derived V2 input preparation and Python-to-C++ geometry grammar, not complete model execution.",
+  "format": {
+    "HF": "HYLE_QWEN_ROLE_FILES_V2",
+    "GGUF": "HYLE_QWEN_GGUF_ROLE_FILES_V2",
+    "geometry_line": 3,
+    "GGUF_source_line": 4,
+    "old_runtime_manifest_fallback": false,
+    "complete_inventory_validated_before_selection": true
+  },
+  "changes": [
+    "Replace fixed2B dimensions/counts with explicit source hidden/intermediate/head/rotary/GDN/convolution/context/epsilon/theta/tied-head/NextN/layer geometry.",
+    "Original local safetensors and original quantized range records share one HF V2 format; only actual text/NextN ranges are hashed, no visual payload copies or reads.",
+    "Preserve grouped HF versus cyclic GGUF GDN value-head ordering independently of codecs and parameter meaning.",
+    "Derive GGUF independent output.weight from actual inventory and map to lm_head.weight; preserve original negative decay, effective norm, packed layout and original9 Q27 codecs.",
+    "One complete prepared manifest can select ordinary or NextN execution; source geometry and complete NextN metadata are not dropped for ordinary selection."
+  ],
+  "checks": {
+    "Python_tests": 19,
+    "failures": 0,
+    "actual_header_and_config_sources": [
+      {
+        "source": {
+          "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+          "size": 1384902048,
+          "lfs_sha256": "9f7b15d04cf2d5878c8122a7c181dbc09f050cd66080ce3374576e734ccb0910",
+          "api_xet_hash": "f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb",
+          "etag": "\"f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb\"",
+          "etag_basis": "API xetHash",
+          "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q4_K_XL.gguf",
+          "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+          "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe"
+        },
+        "geometry": {
+          "hidden": 2048,
+          "intermediate": 6144,
+          "query_heads": 8,
+          "kv_heads": 2,
+          "key_depth": 256,
+          "value_depth": 256,
+          "rotary": 64,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 16,
+          "gdn_key_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "vocabulary": 248320,
+          "gdn_value_depth": 128,
+          "mtp_layers": 1,
+          "tied_head": true,
+          "gdn_layout": "cyclic",
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000.0,
+          "epsilon": 9.999999974752427e-07
+        },
+        "physical_roles": 335,
+        "codecs": {
+          "F32": 176,
+          "Q4_K": 75,
+          "Q5_K": 37,
+          "Q6_K": 28,
+          "Q8_0": 19
+        },
+        "selected_payload_bytes": 1373938944
+      },
+      {
+        "source": {
+          "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+          "size": 2893114784,
+          "lfs_sha256": "1eb01bfc3fbb04323e03fe6123d1d396f531474985b5d06e851ddf0522192f52",
+          "api_xet_hash": "5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944",
+          "etag": "\"5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944\"",
+          "etag_basis": "API xetHash",
+          "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q8_K_XL.gguf",
+          "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+          "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe"
+        },
+        "geometry": {
+          "hidden": 2048,
+          "intermediate": 6144,
+          "query_heads": 8,
+          "kv_heads": 2,
+          "key_depth": 256,
+          "value_depth": 256,
+          "rotary": 64,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 16,
+          "gdn_key_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "vocabulary": 248320,
+          "gdn_value_depth": 128,
+          "mtp_layers": 1,
+          "tied_head": true,
+          "gdn_layout": "cyclic",
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000.0,
+          "epsilon": 9.999999974752427e-07
+        },
+        "physical_roles": 335,
+        "codecs": {
+          "F16": 56,
+          "F32": 176,
+          "Q8_0": 103
+        },
+        "selected_payload_bytes": 2882151680
+      },
+      {
+        "source": {
+          "file": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+          "size": 16464440224,
+          "lfs_sha256": "322e194ff79741c7baa497c240f677f54b201b0efab44ca8e50f122b39123482",
+          "api_xet_hash": "76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473",
+          "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+          "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size",
+          "repository": "unsloth/Qwen3.8-27B-GGUF",
+          "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502"
+        },
+        "header_sha256": "ab8269365254d45b888f76452d2f49e894c9491ac854094cc2d57ab4e9105d44",
+        "header_bytes": 10996640,
+        "geometry": {
+          "hidden": 5120,
+          "intermediate": 17408,
+          "query_heads": 24,
+          "kv_heads": 4,
+          "key_depth": 256,
+          "value_depth": 256,
+          "rotary": 64,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 48,
+          "gdn_key_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "vocabulary": 248320,
+          "gdn_value_depth": 128,
+          "mtp_layers": 1,
+          "tied_head": false,
+          "gdn_layout": "cyclic",
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000.0,
+          "epsilon": 9.999999974752427e-07
+        },
+        "physical_roles": 866,
+        "codecs": {
+          "F32": 360,
+          "IQ3_S": 4,
+          "IQ4_NL": 7,
+          "IQ4_XS": 117,
+          "Q3_K": 7,
+          "Q4_K": 104,
+          "Q5_K": 131,
+          "Q6_K": 30,
+          "Q8_0": 106
+        },
+        "selected_payload_bytes": 16453443584,
+        "head": {
+          "embedding_physical": "token_embd.weight",
+          "target_head_physical": "output.weight",
+          "draft_embedding_physical": "token_embd.weight",
+          "draft_head_physical": "output.weight",
+          "independent_head_present": true,
+          "scope": "actual complete role inventory, not a source-family assumption"
+        }
+      },
+      {
+        "config": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\config.json",
+        "config_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+        "geometry": {
+          "hidden": 2048,
+          "intermediate": 6144,
+          "vocabulary": 248320,
+          "query_heads": 8,
+          "kv_heads": 2,
+          "key_depth": 256,
+          "value_depth": 256,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 16,
+          "gdn_key_depth": 128,
+          "gdn_value_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "rotary": 64,
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000,
+          "epsilon": 1e-06,
+          "tied_head": true,
+          "mtp_layers": 1,
+          "gdn_layout": "grouped"
+        },
+        "logical_roles": 335
+      },
+      {
+        "config": "C:\\public\\project-hyle\\hyle\\.scratch\\model-quantization-discovery-2026-10-19\\qwen-kimi\\nvidia--Qwen3.8-27B-NVFP4\\config.json",
+        "config_sha256": "71fa01bb64de20971045cd82a82c0ebb25a54e1b0a3f09ef23cf5479e9c54df8",
+        "geometry": {
+          "hidden": 5120,
+          "intermediate": 17408,
+          "vocabulary": 248320,
+          "query_heads": 24,
+          "kv_heads": 4,
+          "key_depth": 256,
+          "value_depth": 256,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 48,
+          "gdn_key_depth": 128,
+          "gdn_value_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "rotary": 64,
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000,
+          "epsilon": 1e-06,
+          "tied_head": false,
+          "mtp_layers": 1,
+          "gdn_layout": "grouped"
+        },
+        "logical_roles": 866
+      }
+    ],
+    "actual_prepared_roles": [
+      {
+        "name": "Q01",
+        "manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\Q01\\weights.tsv",
+        "roles": 785,
+        "geometry": {
+          "hidden": 2048,
+          "intermediate": 6144,
+          "vocabulary": 248320,
+          "query_heads": 8,
+          "kv_heads": 2,
+          "key_depth": 256,
+          "value_depth": 256,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 16,
+          "gdn_key_depth": 128,
+          "gdn_value_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "rotary": 64,
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000,
+          "epsilon": 1e-06,
+          "tied_head": true,
+          "mtp_layers": 1,
+          "gdn_layout": "grouped"
+        },
+        "source_id": "d3334d7cc58dd99b5d37d0482b0b5df4ff73ccbc41229e693708a9c0b53437c0"
+      },
+      {
+        "name": "Q03",
+        "manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\Q03\\weights.tsv",
+        "roles": 893,
+        "geometry": {
+          "hidden": 2048,
+          "intermediate": 6144,
+          "vocabulary": 248320,
+          "query_heads": 8,
+          "kv_heads": 2,
+          "key_depth": 256,
+          "value_depth": 256,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 16,
+          "gdn_key_depth": 128,
+          "gdn_value_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "rotary": 64,
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000,
+          "epsilon": 1e-06,
+          "tied_head": true,
+          "mtp_layers": 1,
+          "gdn_layout": "grouped"
+        },
+        "source_id": "9b7c33976bbe99e8fd4c22875ec8fd8fe309b51a8451891148a506c1940ced85"
+      },
+      {
+        "name": "original",
+        "manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "roles": 335,
+        "geometry": {
+          "hidden": 2048,
+          "intermediate": 6144,
+          "vocabulary": 248320,
+          "query_heads": 8,
+          "kv_heads": 2,
+          "key_depth": 256,
+          "value_depth": 256,
+          "gdn_key_heads": 16,
+          "gdn_value_heads": 16,
+          "gdn_key_depth": 128,
+          "gdn_value_depth": 128,
+          "conv_kernel": 4,
+          "context_limit": 262144,
+          "rotary": 64,
+          "layers": "GGGAGGGAGGGAGGGAGGGAGGGA",
+          "rope_theta": 10000000,
+          "epsilon": 1e-06,
+          "tied_head": true,
+          "mtp_layers": 1,
+          "gdn_layout": "grouped"
+        },
+        "source_id": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe"
+      }
+    ],
+    "std_only_Cpp_roundtrips": 5,
+    "Cpp_geometry_header": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\model_geometry.h",
+      "bytes": 6293,
+      "sha256": "45b5d847a27309c5ca922cf512b04c78fda70f24d6a05861af9b1f2d498143ab"
+    }
+  },
+  "source_semantics": {
+    "output_gate_type": "Pinned local vLLM GDN implementation maps swish to SiLU before RMSNormGated; local SGLang separately uses sigmoid for full-attention output gating. The finite HF preparer accepts absent/silu/swish GDN gate and rejects sigmoid.",
+    "references": [
+      {
+        "path": "C:\\public\\project-hyle\\vllm\\vllm\\model_executor\\layers\\mamba\\gdn\\qwen_gdn_linear_attn.py",
+        "bytes": 77728,
+        "sha256": "3fbf257fef7f303b0082fdbedce4394df74b78ad9a594157079c89632b5c221e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\models\\qwen3_5.py",
+        "bytes": 119896,
+        "sha256": "af6502d2112a21059eae648ee421b20dbc06bbc11151acaf6c160bf4db52e73a"
+      }
+    ],
+    "locations": [
+      "vllm qwen_gdn_linear_attn.py:565-577",
+      "sglang qwen3_5.py:503-511 and1574-1579"
+    ]
+  },
+  "limits": [
+    "No full Q27 weight or inference proof from header/config inventory.",
+    "No claim that all newly described geometry fits every provider or machine.",
+    "No complete V2 consumer model execution is represented by this preparation evidence.",
+    "No inference speed or task quality conclusion."
+  ],
+  "HTTP": 0,
+  "weight_copies": 0,
+  "SDK_builds": 0,
+  "model_runs": 0,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-qwen-source-geometry-v2-preparation-2026-10-24-logs.zip",
+    "bytes": 175302,
+    "sha256": "54a7af5cd6d5191940af15e82f3b33918bfe539993340b74b92aa062bf5b4ca8"
+  }
+}

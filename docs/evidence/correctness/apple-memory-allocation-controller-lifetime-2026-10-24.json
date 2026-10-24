@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-24",
+  "scope": "Apple allocation-controller lifetime after its public MemoryResource wrapper dies; two actual native focused tests, not in-flight Model cancellation or full-model revalidation.",
+  "machine": "Mac16,12 / Apple M4 / 16GiB / actual macOS27.0.1; arm64 deployment14.4",
+  "implementation": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_memory.mm",
+      "bytes": 36393,
+      "sha256": "751283710072a952fb2f386f264c8c08ef95c3a39e93907134cff0ce0dc58bc2"
+    },
+    "ownership": "Initial wrapper ref1, each successful allocation (including zero bytes) owns1ref, deallocate frees original MLX allocation then releases that ref; destructor and move replacement release only wrapper ref.",
+    "native_handle": "Original MTLBuffer identity unchanged",
+    "imported": "ImportedArrayStorage uses actual mx::array owner and its existing overridden deallocate; it never creates a second MLX allocation claim.",
+    "runtime": "No Context wrapper/Runtime reference added; no reaper or additional thread.",
+    "abi": "Public class layout and unique_ptr representation unchanged; destructor/move assignment release the MemoryState controller explicitly.",
+    "portable_stride_checks": "std::cmp_equal/cmp_less/cmp_greater handle signed MLX stride values with an explicit negative-stride rejection; no stride truncation."
+  },
+  "cases": [
+    {
+      "name": "BufferSurvivesWrapperDestructionAndMoveReplacement",
+      "covers": [
+        "original and replaced wrapper allocations",
+        "move construction",
+        "native handle identity",
+        "read after all wrappers destroyed",
+        "final deallocation",
+        "zero-byte allocation retains controller through Buffer.reset"
+      ]
+    },
+    {
+      "name": "TypedArrayAndImportedLeaseRetainBackingWithoutWrapper",
+      "covers": [
+        "typed allocation with finite budget",
+        "wrapper destruction before native array/lease",
+        "lease remains after original array reset",
+        "original values remain correct",
+        "final lease release returns payload live_bytes and unknown-owner counts to0"
+      ]
+    }
+  ],
+  "tests": 2,
+  "passed": 2,
+  "image": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/apple-memory-lifetime-20261024/attempt1/memory-lifetime",
+    "bytes": 12530736,
+    "sha256": "c7ec7fe5d9878560e3d71d467c893b7d51b9c2676edc8646a557236958f00acb"
+  },
+  "product_TUs": 1,
+  "test_TUs": 1,
+  "SDK_builds": 0,
+  "native_builds": 0,
+  "HTTP": 0,
+  "reused_closure": "Actual matched Apple GDN+Dense+I32Cast native closure from mtp-qwen35-apple-k1-complete-input-2026-10-24; no new native operator claim.",
+  "dependency_proof": "Actual GNU.d project headers compared to current Windows source SHA catalog; no drift before link.",
+  "limits": [
+    "Borrowed MemoryResourceRef itself does not retain the controller and cannot be used to allocate after the owner and all allocations disappear.",
+    "No promise that an external native device/context may die while its GPU work remains in flight.",
+    "No whole SDK, all allocation entry-point or full-model cancellation claim from these two cases."
+  ],
+  "evidence_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\apple-memory-allocation-controller-lifetime-2026-10-24-logs.zip",
+    "bytes": 188234,
+    "sha256": "f34bbad0e28e51619ecb5c0734867aacb22ddbc665dc61a05119f6d8be233889"
+  }
+}

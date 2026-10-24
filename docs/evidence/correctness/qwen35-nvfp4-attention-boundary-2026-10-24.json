@@ -1,0 +1,447 @@
+{
+  "scope": "Q03 P15 ordinary CPU/CUDA discrepancy: finite first-propagating-layer and attention-boundary attribution; not all MTP numerical/quality completion",
+  "artifact": {
+    "id": "Q03",
+    "repository": "AxionML/Qwen3.5-2B-NVFP4",
+    "revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25"
+  },
+  "configuration": {
+    "prompt_rows": 15,
+    "generated_steps": 1,
+    "mtp": "off",
+    "capacity": 256,
+    "requests": 1,
+    "source": "frozen aa91e19d3fa9051b987c574488695582085f2bcc95e7e7444511846cb9f9394b"
+  },
+  "findings": [
+    "Embedding and layer0,1,2 BF16 exits are bitwise identical. First propagating difference is full-attention layer3.",
+    "At layer3 input norm, original NVFP4 Q/K/V projections, Q/K norm and RoPE are all bitwise identical. First cut difference is PagedAttention output.",
+    "Actual CPU route is ggml-cpu; CUDA route is FlashInfer. Same Qrope/Krope/V, causal T15/Hq8/Hkv2/D256, QKscale1/16, plain BF16 cache.",
+    "Independent F64 mathematical attention followed by BF16 store matches CPU30718/30720 values, remaining2 differ by one BF16 code. CPU is not used as oracle.",
+    "Independent unnormalized exp -> BF16 tile -> row renormalization -> V -> BF16 store matches all30720 CUDA values. FP16 staging and BF16 after normalization do not reproduce it.",
+    "This is the documented native BF16 probability boundary, not extra source projection/cache/MTP corruption observed in this case. Later norm/quantization propagates and amplifies the difference.",
+    "Both diagnostic publication batches preserve each backends final hidden/logits bitwise, including against the pre-sampling reference."
+  ],
+  "first_layer": "04-layer-03-output",
+  "first_cut": "09-attention",
+  "attention_cross_backend": {
+    "boundary": "09-attention",
+    "elements": 30720,
+    "different": 4038,
+    "finite": true,
+    "max_absolute": 0.015625,
+    "rms": 0.0005581426199033217,
+    "first_differences": [
+      {
+        "index": 2062,
+        "cpu": 0.0238037109375,
+        "cuda": 0.02392578125,
+        "cpu_bits": 15555,
+        "cuda_bits": 15556
+      },
+      {
+        "index": 2075,
+        "cpu": -0.002227783203125,
+        "cuda": -0.002349853515625,
+        "cpu_bits": 47890,
+        "cuda_bits": 47898
+      },
+      {
+        "index": 2079,
+        "cpu": -0.0014495849609375,
+        "cuda": -0.00146484375,
+        "cpu_bits": 47806,
+        "cuda_bits": 47808
+      },
+      {
+        "index": 2084,
+        "cpu": 0.099609375,
+        "cuda": 0.09912109375,
+        "cpu_bits": 15820,
+        "cuda_bits": 15819
+      },
+      {
+        "index": 2085,
+        "cpu": -0.08349609375,
+        "cuda": -0.083984375,
+        "cpu_bits": 48555,
+        "cuda_bits": 48556
+      },
+      {
+        "index": 2087,
+        "cpu": -0.06298828125,
+        "cuda": -0.0625,
+        "cpu_bits": 48513,
+        "cuda_bits": 48512
+      },
+      {
+        "index": 2088,
+        "cpu": 0.0206298828125,
+        "cuda": 0.020751953125,
+        "cpu_bits": 15529,
+        "cuda_bits": 15530
+      },
+      {
+        "index": 2090,
+        "cpu": 0.034912109375,
+        "cuda": 0.03466796875,
+        "cpu_bits": 15631,
+        "cuda_bits": 15630
+      }
+    ],
+    "left_sha256": "c7d00737f0124348f05eda7c99860a01cb569a23533d3773fab4595d42a7b69f",
+    "right_sha256": "2f8cd82209ba96ae6cd766a4a900dc56489221ef610b135ccbae74187fb283d8"
+  },
+  "layer3_cross_backend": {
+    "boundary": "17-l3-output",
+    "elements": 30720,
+    "different": 21531,
+    "finite": true,
+    "max_absolute": 0.03125,
+    "rms": 0.004115609284754165,
+    "first_differences": [
+      {
+        "index": 2048,
+        "cpu": -0.06884765625,
+        "cuda": -0.0673828125,
+        "cpu_bits": 48525,
+        "cuda_bits": 48522
+      },
+      {
+        "index": 2049,
+        "cpu": 0.10791015625,
+        "cuda": 0.10302734375,
+        "cpu_bits": 15837,
+        "cuda_bits": 15827
+      },
+      {
+        "index": 2050,
+        "cpu": -0.05224609375,
+        "cuda": -0.052001953125,
+        "cpu_bits": 48470,
+        "cuda_bits": 48469
+      },
+      {
+        "index": 2051,
+        "cpu": 0.00567626953125,
+        "cuda": 0.00115966796875,
+        "cpu_bits": 15290,
+        "cuda_bits": 15000
+      },
+      {
+        "index": 2052,
+        "cpu": 0.017333984375,
+        "cuda": 0.016845703125,
+        "cpu_bits": 15502,
+        "cuda_bits": 15498
+      },
+      {
+        "index": 2053,
+        "cpu": -0.0751953125,
+        "cuda": -0.0712890625,
+        "cpu_bits": 48538,
+        "cuda_bits": 48530
+      },
+      {
+        "index": 2054,
+        "cpu": 0.01123046875,
+        "cuda": 0.017578125,
+        "cpu_bits": 15416,
+        "cuda_bits": 15504
+      },
+      {
+        "index": 2055,
+        "cpu": 0.142578125,
+        "cuda": 0.140625,
+        "cpu_bits": 15890,
+        "cuda_bits": 15888
+      }
+    ],
+    "left_sha256": "49c72391efed7d9b5ddc1815da4ac648418d7d411ac555ddcd384edbdbb8f405",
+    "right_sha256": "3d59dca9f45d9fc7d3f4caf80cf1196481b8cfc13e1be6928389b9741f31ccdb"
+  },
+  "final_logits_cross_backend": {
+    "elements": 248320,
+    "different": 248320,
+    "finite": true,
+    "max_absolute": 2.43086040019989,
+    "rms": 0.5337858491990869,
+    "first_differences": [
+      {
+        "index": 0,
+        "left": 4.720727443695068,
+        "right": 4.8474578857421875
+      },
+      {
+        "index": 1,
+        "left": 3.9226741790771484,
+        "right": 5.044546604156494
+      },
+      {
+        "index": 2,
+        "left": 6.315084934234619,
+        "right": 6.243474006652832
+      },
+      {
+        "index": 3,
+        "left": 5.720347881317139,
+        "right": 4.703035354614258
+      },
+      {
+        "index": 4,
+        "left": 5.6754913330078125,
+        "right": 5.127612113952637
+      },
+      {
+        "index": 5,
+        "left": 7.70330810546875,
+        "right": 7.772926330566406
+      },
+      {
+        "index": 6,
+        "left": 6.681906223297119,
+        "right": 7.78736686706543
+      },
+      {
+        "index": 7,
+        "left": 3.375577449798584,
+        "right": 4.731347560882568
+      }
+    ],
+    "left_sha256": "3045002005695441d01beb65e74b04a7fb631a13e9d7501d65682bd8ebf48d47",
+    "right_sha256": "1e0bf9068bcfdcfe59f9adb41bef06c2696245899396ed658a167737561b52ad"
+  },
+  "independent_reference_results": [
+    {
+      "backend": "cpu",
+      "elements": 30720,
+      "same_as_F64_rounded": 30718,
+      "different_from_F64_rounded": 2,
+      "max_bf16_ordered_code_distance": 1,
+      "above_1_bf16_code": 0,
+      "max_absolute_from_F64": 0.007790505507229817,
+      "rms_from_F64": 0.0009483576570569682,
+      "first_token_equals_original_V_for_all_GQA_heads": true,
+      "per_token": [
+        {
+          "token": 0,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.0
+        },
+        {
+          "token": 1,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.007435323534170646
+        },
+        {
+          "token": 2,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.007433262304621824
+        },
+        {
+          "token": 3,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.006930883675209554
+        },
+        {
+          "token": 4,
+          "different_from_rounded_F64": 1,
+          "max_absolute_from_F64": 0.005336208670066345
+        },
+        {
+          "token": 5,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.00735672705530499
+        },
+        {
+          "token": 6,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.007516020399221723
+        },
+        {
+          "token": 7,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.007790505507229817
+        },
+        {
+          "token": 8,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.0063247488559663445
+        },
+        {
+          "token": 9,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.007068044802442941
+        },
+        {
+          "token": 10,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.007074441592267888
+        },
+        {
+          "token": 11,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.007596404279814006
+        },
+        {
+          "token": 12,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.00495683972502059
+        },
+        {
+          "token": 13,
+          "different_from_rounded_F64": 1,
+          "max_absolute_from_F64": 0.004441757197726659
+        },
+        {
+          "token": 14,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.003956155548202389
+        }
+      ]
+    },
+    {
+      "backend": "cuda",
+      "elements": 30720,
+      "same_as_F64_rounded": 26682,
+      "different_from_F64_rounded": 4038,
+      "max_bf16_ordered_code_distance": 29360,
+      "above_1_bf16_code": 798,
+      "max_absolute_from_F64": 0.008694116324790446,
+      "rms_from_F64": 0.0009685541478627681,
+      "first_token_equals_original_V_for_all_GQA_heads": true,
+      "per_token": [
+        {
+          "token": 0,
+          "different_from_rounded_F64": 0,
+          "max_absolute_from_F64": 0.0
+        },
+        {
+          "token": 1,
+          "different_from_rounded_F64": 158,
+          "max_absolute_from_F64": 0.007435323534170646
+        },
+        {
+          "token": 2,
+          "different_from_rounded_F64": 168,
+          "max_absolute_from_F64": 0.007433262304621824
+        },
+        {
+          "token": 3,
+          "different_from_rounded_F64": 310,
+          "max_absolute_from_F64": 0.008694116324790446
+        },
+        {
+          "token": 4,
+          "different_from_rounded_F64": 345,
+          "max_absolute_from_F64": 0.005336208670066345
+        },
+        {
+          "token": 5,
+          "different_from_rounded_F64": 304,
+          "max_absolute_from_F64": 0.00735672705530499
+        },
+        {
+          "token": 6,
+          "different_from_rounded_F64": 280,
+          "max_absolute_from_F64": 0.007516020399221723
+        },
+        {
+          "token": 7,
+          "different_from_rounded_F64": 286,
+          "max_absolute_from_F64": 0.007790505507229817
+        },
+        {
+          "token": 8,
+          "different_from_rounded_F64": 293,
+          "max_absolute_from_F64": 0.0063247488559663445
+        },
+        {
+          "token": 9,
+          "different_from_rounded_F64": 289,
+          "max_absolute_from_F64": 0.007068044802442941
+        },
+        {
+          "token": 10,
+          "different_from_rounded_F64": 274,
+          "max_absolute_from_F64": 0.007074441592267888
+        },
+        {
+          "token": 11,
+          "different_from_rounded_F64": 243,
+          "max_absolute_from_F64": 0.008028595720185994
+        },
+        {
+          "token": 12,
+          "different_from_rounded_F64": 334,
+          "max_absolute_from_F64": 0.00495683972502059
+        },
+        {
+          "token": 13,
+          "different_from_rounded_F64": 428,
+          "max_absolute_from_F64": 0.004441757197726659
+        },
+        {
+          "token": 14,
+          "different_from_rounded_F64": 326,
+          "max_absolute_from_F64": 0.004247261729674934
+        }
+      ]
+    }
+  ],
+  "typed_probability_reference": {
+    "staging": "bf16_exp_renormalized",
+    "backend": "cuda",
+    "same_as_staged_rounded": 30720,
+    "different_from_staged_rounded": 0,
+    "rms_from_staged_F64": 0.0009479107673030096,
+    "max_absolute_from_staged_F64": 0.007736775858193212
+  },
+  "error_decomposition": {
+    "definition": "Per coordinate |sum((p_BF16-renormalized - p_F64)*V)| <= sum(abs(p_BF16-renormalized-p_F64)*abs(V)); add the final BF16 rounding cell half-width. No chosen absolute tolerance.",
+    "actual_CUDA_elements_inside_interval": 30720,
+    "elements": 30720,
+    "max_probability_boundary_bound": 0.004290613184402154,
+    "max_final_BF16_half_cell": 0.015625,
+    "max_actual_pre_output_boundary_change": 0.0021944482020654354,
+    "limitation": "This finite actual case matches the independent typed reference at every stored output. It is not a universal FlashInfer F32/exp2 error theorem or a full-model quality threshold."
+  },
+  "contract_audit": {
+    "existing_declaration": "docs/architecture/compute-design.md already distinguishes BF16 unnormalized attention weights from F32 online state; docs/user/compute.md also describes BF16 probability tiles.",
+    "clarification": "docs/user/batch-attention.md and BatchPlanReport::bf16_partials comment now distinguish the probability tile from optional split-KV partial storage.",
+    "no_new_ABI": true,
+    "no_new_precision_option": true,
+    "no_math_or_default_route_change": true
+  },
+  "regression": {
+    "test": "FlashinferProbabilityPrecision.BfloatProbabilityTileIsIndependentOfSplitKvPartials",
+    "geometry": "synthetic causal ragged T2/H1/D64 BF16, exact QKscores[0,1] and V[1,-3/8]",
+    "tests": 1,
+    "failures": 0,
+    "source": {
+      "path": "tests/compute_provider_flashinfer/probability_precision_test.cc",
+      "bytes": 3728,
+      "sha256": "cba2f7b156a7ff43706d3fc0479888c810cd4b00f7606bac80567effef25f672"
+    },
+    "registration": "tests/compute_provider_flashinfer/CMakeLists.txt",
+    "purpose": "Independent F64 ideal and BF16-staged references differ; actual CUDA follows staged value while bf16_partials remains false. No model payload."
+  },
+  "validation": {
+    "downloads": 0,
+    "SDK_builds": 0,
+    "full_model_runs": "Six P15 steps1 ordinary diagnostic/reference runs total for final two batches; first failed probe retained separately.",
+    "runtime_identity": "Retained current static closure; CPU native DLL6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f.",
+    "source_header_overlay": "Only old BFloatLinearF32 class region restored in a private scratch model_ops.h; full SHA67d6e6d00e7c5db80f42d4df78695cbc5673ecc2f48b6f104f2885ac6a72c27c matches retained dependency. Product WIP untouched."
+  },
+  "limits": [
+    "One ordinary P15 prefix, two concrete providers and one selected NVFP4 artifact; no general full-model quality guarantee.",
+    "No new acceptance-rate, long-task quality, all-context/all-prompt or all-MTP-mathematics claim.",
+    "F64 and independent typed references establish this observed source; they are not a universal FlashInfer F32/exp2 error theorem.",
+    "No provider is disabled and no precision is raised for bitwise agreement. Performance has not been investigated in this task."
+  ],
+  "evidence_archive": {
+    "path": "docs/evidence/correctness/qwen35-nvfp4-attention-boundary-2026-10-24.logs.zip",
+    "bytes": 2695780,
+    "sha256": "16264b63414f23c16739826a8d2cdd172c40de98316f1585ab11098ab4c591d2"
+  }
+}

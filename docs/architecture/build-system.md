@@ -4,6 +4,11 @@
 源码、静态SDK和共享SDK保持相同产品入口和计算语义。操作步骤只见
 [初始化指南](../developer/setup/README.md)与[交付指南](../user/distribution.md)。
 
+顶层新配置默认 `HYLE_COMPONENTS=engine`，构建项目内的 `hyle_engine` target，输出名为 `hyle`。
+它按中央组件图选择所需 Compute／Graph 和服务闭包；`util` 等模块仍可独立选择，不依赖引擎。
+`engine` 是应用选择，不增加 `hyle::engine` 库或 SDK component。顶层 `all` 包含引擎与全部库；
+嵌入父工程的 `all` 保持只库，应用须显式选择 `engine`。已有明确 cache 选择不被新的默认值覆盖。
+
 ## 一份内部图，两种消费层
 
 [`HyleComponents.cmake`](../../cmake/HyleComponents.cmake)声明factor直接边、公开头例外、trace消费和测试夹具。

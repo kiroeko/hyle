@@ -38,7 +38,7 @@ endif()
 
 project(hyle
   VERSION "${_hyle_project_version}"
-  DESCRIPTION "HYbrid LEvels - general-purpose high-performance C++ infra"
+  DESCRIPTION "Hyle inference engine and reusable high-performance C++ libraries"
   LANGUAGES CXX)
 
 # Keep IDE projects navigable without imposing folder policy when HYLE is
@@ -486,6 +486,13 @@ unset(_component_upper)
 # after all selected factor targets exist; no module CMakeLists may link one.
 hyle_add_product_facades()
 
+# Applications consume the same selected library products as an external
+# engine; they are neither factors nor exported C++ SDK components.
+if(HYLE_BUILD_ENGINE)
+  include(HyleRuntimeStaging)
+  add_subdirectory(engine)
+endif()
+
 # Trace backend construction is deliberately deferred until the selected
 # module graph has declared whether any target consumes the gate. This keeps a
 # Core-only package from manufacturing/registering an unrelated Tracy runtime.
@@ -519,5 +526,5 @@ if(HYLE_STATIC)
 else()
   set(_hyle_linkage shared)
 endif()
-message(STATUS "HYLE ${PROJECT_VERSION} | ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} | C++${CMAKE_CXX_STANDARD} | sanitizer=${HYLE_SANITIZER} | linkage=${_hyle_linkage} | products=${HYLE_RESOLVED_PRODUCTS} | factors=${HYLE_RESOLVED_COMPONENTS}")
+message(STATUS "HYLE ${PROJECT_VERSION} | ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} | C++${CMAKE_CXX_STANDARD} | sanitizer=${HYLE_SANITIZER} | linkage=${_hyle_linkage} | engine=${HYLE_BUILD_ENGINE} | products=${HYLE_RESOLVED_PRODUCTS} | factors=${HYLE_RESOLVED_COMPONENTS}")
 unset(_hyle_linkage)

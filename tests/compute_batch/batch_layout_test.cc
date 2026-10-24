@@ -106,6 +106,44 @@ TEST(BatchLayout, PageFootprintUsesTheOriginalBudgetAndRetiresWithItsVersion){
     EXPECT_EQ(budget.usage(resource)->live_bytes,retained);}
   EXPECT_EQ(budget.usage(resource)->live_bytes,base);
 }
+TEST(BatchLayout, MetadataBackingKeepsItsCategoryQuotaAndActualReaderLifetime){
+  const auto resource=hyle::mem::system_resource();
+  const std::array limits{c::ResourceBudgetLimit{resource,1u<<20}};
+  auto budget=c::ResourceBudget::create({.limits=limits}).value();
+  const auto base=budget.usage(resource)->live_bytes;
+  const auto external=static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal);
+  const auto metadata=static_cast<std::size_t>(c::ResourceBudgetCategory::kMetadata);
+  c::ReadLease escaped;
+  {
+    auto schema=c::BatchSchema::create(capacity(),{.resource_budget=budget}).value();Layout input;
+    auto version=schema.version(input.host()).value();
+    auto usage=budget.usage(resource).value();
+    EXPECT_EQ(usage.live_by_category[external],0u);
+    EXPECT_EQ(usage.live_by_category[metadata],usage.live_bytes);
+    {
+      auto pressure=budget.reserve(resource,usage.limit_bytes-usage.live_bytes).value();
+      auto failed=version.metadata();ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsResourceExhausted());
+      EXPECT_EQ(version.host().page_indices[0],2);
+    }
+    escaped=version.metadata().value();
+    // Promotion into the shared backing ledger consumes the same metadata
+    // charge once, rather than reclassifying it as external model state.
+    ASSERT_TRUE(c::detail::LeaseAccess::retain_budget(escaped,resource,budget).ok());
+    const auto retained=budget.usage(resource)->live_bytes;
+    ASSERT_TRUE(c::detail::LeaseAccess::retain_budget(escaped,resource,budget).ok());
+    EXPECT_EQ(budget.usage(resource)->live_bytes,retained);
+    usage=budget.usage(resource).value();
+    EXPECT_EQ(usage.live_by_category[external],0u);
+    EXPECT_EQ(usage.live_by_category[metadata],usage.live_bytes);
+  }
+  EXPECT_GT(budget.usage(resource)->live_bytes,base);
+  auto uses=c::LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=1}).value();
+  auto batch=uses.begin().value();ASSERT_TRUE(batch.read(escaped).ok());escaped.reset();
+  EXPECT_GT(budget.usage(resource)->live_bytes,base);
+  auto done=c::Completion::completed();ASSERT_TRUE(batch.attach(done).ok());
+  EXPECT_EQ(budget.usage(resource)->live_bytes,base);
+}
 TEST(BatchLayout, FailedExplicitExportPreservesActiveVersionAndCanRetry){
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
   auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();Layout input;auto version=schema.version(input.host()).value();
@@ -143,7 +181,7 @@ TEST(BatchLayout, RaggedUsesPackedRowsAndRejectsPagedSideTables){
   EXPECT_FALSE(schema.version({input.q,kv,input.pages,input.tails}));
 }
 TEST(BatchLayout, DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected){
-  auto input=capacity();input.query_type=c::DataType::kFloat32;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.query_heads=3;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.max_query_rows=UINT32_MAX;EXPECT_TRUE(c::BatchSchema::create(input).error().IsOutOfRange());
+  auto input=capacity();input.query_type=c::DataType::kFloat64;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.query_heads=3;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.max_query_rows=UINT32_MAX;EXPECT_TRUE(c::BatchSchema::create(input).error().IsOutOfRange());
   input=capacity();input.kv_heads=input.query_heads=1u<<30;input.qk_head_dim=input.page_size=1u<<30;EXPECT_TRUE(c::BatchSchema::create(input).error().IsOutOfRange());input=capacity();input.max_pages=0;EXPECT_FALSE(c::BatchSchema::create(input));
 }
 TEST(BatchLayout, QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion){

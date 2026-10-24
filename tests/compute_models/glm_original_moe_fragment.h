@@ -94,7 +94,7 @@ inline Result append(sem::Fragment &f,Value input,const Parameters &parameters,c
   Ports ports;ports.input=input;ports.map=parameters.map;
   // The fixed CUDA router path consumes BF16 operands and returns F32
   // logits. The same declared contract is used on every Hyle backend.
-  ports.logits=f.one(c::model_ops::bfloat_linear_f32(),{input,parameters.router});
+  ports.logits=f.one(c::model_ops::dense_linear_f32(),{input,parameters.router});
   ports.scores=core::unary(f,c::UnaryKind::kSigmoid,ports.logits);
   ports.selection=core::binary(f,c::BinaryKind::kAdd,ports.scores,parameters.bias);
   const auto top=f.append(c::Operation(c::TopK{.count=std::size_t(slots_count),.stable=true}),{ports.selection},2);

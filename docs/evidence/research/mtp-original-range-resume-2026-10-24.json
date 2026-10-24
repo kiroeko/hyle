@@ -1,0 +1,189 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite acquisition transport for the same original Q8 and four Q27 remaining extents; not a complete payload/model or speed conclusion",
+  "offline_validation": {
+    "observed_utc": "2026-10-24T09:18:39.9359746Z",
+    "original_budget_sha256": "24b008fb7a91f0eba34739cd4817fbf97b42ca7f435032d76cfb6e97ea398a17",
+    "entry_sha256": "b1be02b887c13b99bebe5407705b8353e5edc83576cee2eeaa2f4fc8d77d4442",
+    "selftest_sha256": "6d069ae0152d6c5f5f61cb4820ab641408c59ab1f25a2798de644f4f8e3ad19e",
+    "offline_tests": {
+      "HTTP": 0,
+      "live_receipt_writes": 0,
+      "live_marker_writes": 0,
+      "tests": [
+        {
+          "name": "full_cross_block_range_ifmatch_host_script_and_sha",
+          "passed": true,
+          "blocks": 3
+        },
+        {
+          "name": "partial_response_preserves_exact_received_prefix_and_error",
+          "passed": true
+        },
+        {
+          "name": "owner_stop_closes_worker_and_preserves_pending_prefix",
+          "passed": true
+        },
+        {
+          "name": "wrong_etag_rejects_before_body_commit",
+          "passed": true
+        },
+        {
+          "name": "wrong_range_rejects_before_body_commit",
+          "passed": true
+        },
+        {
+          "name": "wrong_length_rejects_before_body_commit",
+          "passed": true
+        },
+        {
+          "name": "external_final_host_rejects_before_body_commit",
+          "passed": true
+        },
+        {
+          "name": "local_commit_failure_is_hard_and_records_received_bytes",
+          "passed": true
+        },
+        {
+          "name": "partial_pending_commit_failure_still_records_actual_transfer",
+          "passed": true
+        },
+        {
+          "name": "request_and_source_upper_bounds_reject_before_http",
+          "passed": true
+        },
+        {
+          "name": "original_redirect_guard_rejects_hf_before_open",
+          "passed": true
+        },
+        {
+          "name": "full_prefix_zero_new_bytes_recovers_q8_publication_and_q27_completion_offline",
+          "passed": true
+        }
+      ]
+    },
+    "existing_receipts_read_only": {
+      "HTTP": 0,
+      "request_bytes": 33554432,
+      "receipt_block_bytes": 4194304,
+      "jobs": [
+        {
+          "name": "q8",
+          "verified_receipt_bytes": 1463054227,
+          "total_bytes": 2882151680,
+          "remaining_bytes": 1419097453,
+          "old_validator_compatible": true,
+          "body_hash_rechecked": false
+        },
+        {
+          "name": "q27-piece-0",
+          "verified_receipt_bytes": 2259825862,
+          "total_bytes": 4470583296,
+          "remaining_bytes": 2210757434,
+          "old_validator_compatible": true,
+          "body_hash_rechecked": false
+        },
+        {
+          "name": "q27-piece-1",
+          "verified_receipt_bytes": 680841648,
+          "total_bytes": 3207523968,
+          "remaining_bytes": 2526682320,
+          "old_validator_compatible": true,
+          "body_hash_rechecked": false
+        },
+        {
+          "name": "q27-piece-2",
+          "verified_receipt_bytes": 909893534,
+          "total_bytes": 3181962880,
+          "remaining_bytes": 2272069346,
+          "old_validator_compatible": true,
+          "body_hash_rechecked": false
+        },
+        {
+          "name": "q27-piece-3",
+          "verified_receipt_bytes": 1060999737,
+          "total_bytes": 3201940224,
+          "remaining_bytes": 2140940487,
+          "old_validator_compatible": true,
+          "body_hash_rechecked": false
+        }
+      ]
+    },
+    "live_markers_modified": false,
+    "HTTP_started": false,
+    "body_hashes_rechecked": false
+  },
+  "old_supervisor_terminal_before_switch": {
+    "old_parent_and_known_children_terminal": true,
+    "old_results_all_terminal": true,
+    "paused": true,
+    "owner": false,
+    "utc": "2026-10-24T09:19:49.8641284Z"
+  },
+  "new_batch": ".scratch/mtp-download-budget-20261023/batches/large-1792833594253853900",
+  "actual_first_complete_32MiB_responses": [
+    {
+      "name": "q8",
+      "verified_prefix_bytes": 1504997267,
+      "total_bytes": 2882151680,
+      "complete_response": true,
+      "received_bytes": 33554432,
+      "committed_bytes": 33554432,
+      "budget_request_id": 12873,
+      "partial_transport": false,
+      "error_type": null,
+      "error": null
+    },
+    {
+      "name": "q27-piece-0",
+      "verified_prefix_bytes": 2314351814,
+      "total_bytes": 4470583296,
+      "complete_response": true,
+      "received_bytes": 33554432,
+      "committed_bytes": 33554432,
+      "budget_request_id": 12871,
+      "partial_transport": false,
+      "error_type": null,
+      "error": null
+    },
+    {
+      "name": "q27-piece-1",
+      "verified_prefix_bytes": 714396080,
+      "total_bytes": 3207523968,
+      "complete_response": true,
+      "received_bytes": 33554432,
+      "committed_bytes": 33554432,
+      "budget_request_id": 12869,
+      "partial_transport": false,
+      "error_type": null,
+      "error": null
+    },
+    {
+      "name": "q27-piece-2",
+      "verified_prefix_bytes": 943447966,
+      "total_bytes": 3181962880,
+      "complete_response": true,
+      "received_bytes": 33554432,
+      "committed_bytes": 33554432,
+      "budget_request_id": 12870,
+      "partial_transport": false,
+      "error_type": null,
+      "error": null
+    },
+    {
+      "name": "q27-piece-3",
+      "verified_prefix_bytes": 1115525689,
+      "total_bytes": 3201940224,
+      "complete_response": true,
+      "received_bytes": 33554432,
+      "committed_bytes": 33554432,
+      "budget_request_id": 12872,
+      "partial_transport": false,
+      "error_type": null,
+      "error": null
+    }
+  ],
+  "no_source_or_range_expansion": true,
+  "full_LFS_and_original_role_publication_still_required": true,
+  "model_runs_by_transport": 0
+}

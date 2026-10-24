@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <type_traits>
 #include <vector>
 
 #import <Foundation/Foundation.h>
@@ -18,6 +19,7 @@
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/mem/quota_allocator.h"
+#include "../compute_provider_native/half_test_support.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -540,7 +542,7 @@ TEST(GgmlMetalProgram, BfloatRouterLinearRetainsNativeF32Score) {
                              std::array<std::int64_t, 2>{2, 2})
             .value()};
     auto program = metal::NativeProgram::create(
-        c::model_ops::bfloat_linear_f32(), descriptions);
+        c::model_ops::dense_linear_f32(), descriptions);
     ASSERT_TRUE(program) << program.error().message();
     const std::array<std::uint16_t, 2> activation{
         bfloat16(1.0F), bfloat16(0.001953125F)};
@@ -564,6 +566,75 @@ TEST(GgmlMetalProgram, BfloatRouterLinearRetainsNativeF32Score) {
     const auto *scores = static_cast<const float *>(owners[2].value.contents);
     EXPECT_NEAR(scores[0], 1.001953125F, 1.0e-6F);
     EXPECT_NEAR(scores[1], 1.0F, 1.0e-6F);
+    [device release];
+  }
+}
+
+template<class A,class W> void dense_original_sources(id<MTLDevice> device) {
+  constexpr std::int64_t k=66,n=4;
+  for(const bool batched:{false,true}) for(const std::int64_t m:{1,2,17}) {
+    SCOPED_TRACE(testing::Message()<<int(half_test::data_type<A>())<<"/"
+        <<int(half_test::data_type<W>())<<" batch="<<batched<<" M="<<m);
+    const std::int64_t b=batched?2:1;
+    const auto ad=(batched?c::TensorDesc::dense(half_test::data_type<A>(),std::array{b,m,k}):
+        c::TensorDesc::dense(half_test::data_type<A>(),std::array{m,k})).value();
+    const auto wd=(batched?c::TensorDesc::dense(half_test::data_type<W>(),std::array{b,n,k}):
+        c::TensorDesc::dense(half_test::data_type<W>(),std::array{n,k})).value();
+    const std::array descriptions{ad,wd};
+    auto program=metal::NativeProgram::create(c::model_ops::dense_linear_f32(),descriptions);
+    ASSERT_TRUE(program)<<program.error().message();
+    std::array<Buffer,3> owners;
+    std::array<metal::BufferView,3> ports;
+    const std::array bytes{ad.required_bytes().value(),wd.required_bytes().value(),(*program)->output_bytes()};
+    for(std::size_t port=0;port<3;++port) {
+      owners[port].value=[device newBufferWithLength:bytes[port] options:MTLResourceStorageModeShared];
+      ASSERT_NE(owners[port].value,nil);
+      ports[port]={(__bridge void *)owners[port].value,0};
+    }
+    for(const int replay:{1,2}) {
+      std::vector<A> a(std::size_t(b*m*k),half_test::encode<A>(0));
+      std::vector<W> w(std::size_t(b*n*k),half_test::encode<W>(0));
+      for(std::int64_t batch=0;batch<b;++batch) {
+        for(std::int64_t row=0;row<m;++row) {
+          const auto first=std::size_t((batch*m+row)*k);
+          a[first]=half_test::encode<A>(1.+(std::is_same_v<A,float>?double(replay+row%3)/262144.:0.));
+          a[first+1]=half_test::encode<A>(-1.);
+          a[first+65]=half_test::encode<A>(0.25);
+        }
+        for(std::int64_t col=0;col<n;++col) {
+          const auto first=std::size_t((batch*n+col)*k);
+          const double scale=double((batch+1)*(col+1));
+          w[first]=half_test::encode<W>(scale+(std::is_same_v<W,float>?1./262144.:0.));
+          w[first+1]=half_test::encode<W>(scale);
+          w[first+65]=half_test::encode<W>(0.5);
+        }
+      }
+      std::memcpy(owners[0].value.contents,a.data(),bytes[0]);
+      std::memcpy(owners[1].value.contents,w.data(),bytes[1]);
+      const auto status=(*program)->run(ports);
+      ASSERT_TRUE(status.ok())<<status.message();
+      const auto *actual=static_cast<const float *>(owners[2].value.contents);
+      for(std::int64_t batch=0;batch<b;++batch)for(std::int64_t row=0;row<m;++row)
+        for(std::int64_t col=0;col<n;++col) {
+          double expected=0.;
+          for(std::int64_t inner=0;inner<k;++inner)
+            expected+=half_test::decode(a[std::size_t((batch*m+row)*k+inner)])*
+                half_test::decode(w[std::size_t((batch*n+col)*k+inner)]);
+          EXPECT_NEAR(actual[std::size_t((batch*m+row)*n+col)],float(expected),2.e-8F);
+        }
+    }
+  }
+}
+
+TEST(GgmlMetalProgram, DenseLinearRetainsOriginalHalfBfloatAndFloatSources) {
+  @autoreleasepool {
+    id<MTLDevice> device=MTLCreateSystemDefaultDevice();ASSERT_NE(device,nil);
+    using F16=hyle::simd::float16_t;using BF16=hyle::simd::bfloat16_t;
+    dense_original_sources<F16,F16>(device);dense_original_sources<F16,BF16>(device);
+    dense_original_sources<F16,float>(device);dense_original_sources<BF16,F16>(device);
+    dense_original_sources<BF16,BF16>(device);dense_original_sources<BF16,float>(device);
+    dense_original_sources<float,F16>(device);dense_original_sources<float,BF16>(device);
+    dense_original_sources<float,float>(device);
     [device release];
   }
 }

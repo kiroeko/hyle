@@ -1,0 +1,384 @@
+{
+  "date": "2026-10-24",
+  "status": "fixed_source_entry_contract_and_bounded_acquisition_ready_not_engine_qualification",
+  "scope": "Corrects the earlier component-only exclusion of locally feasible Qwen27 FP8. Identifies two distinct projection bindings plus CT local-NVFP4 naming/arithmetic; reuses existing MTP state and Graph execution.",
+  "cat06": {
+    "repository": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+    "fixed_source_metadata": {
+      "config.json": {
+        "path": ".scratch/model-quantization-discovery-2026-10-19/qwen-kimi/Qwen--Qwen3.8-27B-FP8/config.json",
+        "bytes": 51350,
+        "sha256": "74227dd615bf1ea975aa676bdf355a0379858c12f394b5365cd9dfa5fc2c70bc",
+        "fixed_original_git_blob_sha1": "e66d0dcb2d8066e724407f0ded85b6c3c5cb213a"
+      },
+      "README.md": {
+        "path": ".scratch/model-quantization-discovery-2026-10-19/qwen-kimi/Qwen--Qwen3.8-27B-FP8/README.md",
+        "bytes": 65249,
+        "sha256": "a247d876f5398eed9ae898f32a984083552de57237b5e20714657e1675e26d2e",
+        "fixed_original_git_blob_sha1": "1e511f54d9bff1cbd905b8f4fcf7c15e0566bcec"
+      }
+    },
+    "configuration": {
+      "dtype": "bfloat16",
+      "activation_scheme": "dynamic",
+      "fmt": "e4m3",
+      "weight_block_size": [
+        128,
+        128
+      ],
+      "scale_fmt_present": false
+    },
+    "selected_reader": {
+      "reader": "Official-model README-supported SGLang, fixed existing Hyle dependency revision06992c92; generic original non-UE8M0 block-FP8 route",
+      "public_operation": "Float8BlockLinear(kDivide, 1.0e-10F)",
+      "activation": "Original BF16 -> exact F32 widening; max(abs(A)) per token/K128, clamp absmax by1e-10; scale=F32(absmax/448); saturated E4M3FN RNE of A/scale; no Power2 rounding",
+      "weights": "Preserve original E4 bytes; numeric BF16 scale -> exact F32 widening before canonical import. No E4*SF->BF16 weight product.",
+      "accumulation": "F32 dot of each actual code block, then F32 activation scale and original widened weight scale; F32 ordered block accumulation",
+      "output": "Final BF16 return; ordinary dense BF16 vocabulary scores retain the existing explicit F32-output head policy",
+      "qualification": "The model config does not mandate a unique bitwise policy across all compatible runtimes. This deliberately selects and records one fixed original reader; it is not inferred from the FP8 label and is not a universal vLLM/SGLang equality claim."
+    },
+    "original_reader_sources": [
+      {
+        "repository": "https://github.com/sgl-project/sglang.git",
+        "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+        "path": "python/sglang/srt/layers/quantization/fp8_utils.py",
+        "blob_bytes": 83796,
+        "blob_sha256": "dad19725ab4dde72170c9c4b6e1320898a9687f1c75857607193b19b9e021776",
+        "ranges": [
+          {
+            "first_line": 1274,
+            "last_line": 1304
+          }
+        ]
+      },
+      {
+        "repository": "https://github.com/sgl-project/sglang.git",
+        "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+        "path": "python/sglang/kernels/ops/quantization/fp8_kernel.py",
+        "blob_bytes": 74938,
+        "blob_sha256": "70e77198045fb8b7308be9c314392dee972ffd910260c53a36e2fd596f8b43bc",
+        "ranges": [
+          {
+            "first_line": 155,
+            "last_line": 195
+          },
+          {
+            "first_line": 607,
+            "last_line": 615
+          },
+          {
+            "first_line": 645,
+            "last_line": 657
+          },
+          {
+            "first_line": 823,
+            "last_line": 826
+          },
+          {
+            "first_line": 940,
+            "last_line": 1029
+          }
+        ]
+      },
+      {
+        "repository": "https://github.com/sgl-project/sglang.git",
+        "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+        "path": "python/sglang/kernels/aot/csrc/gemm/per_token_group_quant_8bit.cu",
+        "blob_bytes": 9796,
+        "blob_sha256": "fbc0d20e0bb890b0c84b665c92069399e2fd9ae6d9ab6fed4487ddd9ae43fc54",
+        "ranges": [
+          {
+            "first_line": 38,
+            "last_line": 46
+          },
+          {
+            "first_line": 84,
+            "last_line": 111
+          }
+        ]
+      }
+    ],
+    "original_header_census": {
+      "complete_files": 66,
+      "selected_logical_roles": 866,
+      "selected_physical_roles": 1273,
+      "actual_code_roles": 407,
+      "actual_BF16_scale_roles": 407,
+      "other_BF16_roles": 459,
+      "scale_layout": "Original BF16[ceil(N/128),K/128] is numerically widened exactly to F32; source E4 bytes remain unchanged",
+      "shape_and_geometry": "Fixed HF source geometry, grouped GDN head layout; independent original BF16 embedding/lm_head"
+    },
+    "acquisition": {
+      "original_files": 66,
+      "selected_physical_roles": 1273,
+      "selected_logical_roles": 866,
+      "selected_payload_bytes": 29945203072,
+      "selected_dtype_counts": {
+        "BF16": 866,
+        "F8_E4M3": 407
+      },
+      "cached_original_payload_bytes": 15440,
+      "missing_original_payload_bytes": 29945187632,
+      "missing_disjoint_original_intervals": 68,
+      "excluded_physical_roles": 333,
+      "excluded_payload_bytes": 921460192,
+      "newly_fetched_header_bytes": 201184,
+      "header_HTTP_attempts": 135,
+      "header_HTTP_failed_attempts": 5,
+      "header_result": {
+        "path": ".scratch/mtp-q27-fp8-20261024/header-results.json",
+        "bytes": 9131,
+        "sha256": "77ae4865629515d85b876f9cb06361213f7f5e09df7f5fddf6c83eb55627970e"
+      },
+      "header_only_plan": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat06-header-only-plan.json",
+        "bytes": 120508,
+        "sha256": "59625165fd5ce594bb602ca751100942481708d97571e7b2c78076682bd736e8"
+      },
+      "text_MTP_plan": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat06-text-mtp-range-plan.json",
+        "bytes": 468156,
+        "sha256": "4a8d7db3acb17ff61054f6c65e09870e8b639f9b9bf51f2b7cf07673fb8f3a1b"
+      },
+      "new_text_MTP_HTTP_body_bytes": null,
+      "body_state": "Root approved the exact missing29,945,187,632B. The first bounded batch naturally stopped after the original root owner restored PAUSED;3,418,319,106B of authenticated prefixes remain. Subsequent acquisition requires explicit root ownership. Completion is not yet qualified; mutable original budget and body/prefix receipts retain actual transfer counts.",
+      "body_executor": {
+        "path": ".scratch/mtp-q27-fp8-20261024/fetch-text-body.py",
+        "run_receipt": ".scratch/mtp-q27-fp8-20261024/body/run.json",
+        "first_session": 57045,
+        "first_session_terminal": {
+          "observed_utc": "2026-10-24T10:25:40.126645+00:00",
+          "pid": 45000,
+          "pid_alive": false,
+          "exit_code": 0,
+          "all68_range_futures_terminal": true,
+          "verified_body_bytes": 3418319106,
+          "complete_ranges": 7,
+          "root_owner_active": false,
+          "paused": true,
+          "observer": ".scratch/mtp-q27-fp8-20261024/body/observer.json"
+        },
+        "workers": 4,
+        "HTTP_request_bytes_maximum": 33554432,
+        "receipt_block_bytes_maximum": 4194304,
+        "resumption_passes_per_original_interval_maximum": 64,
+        "consecutive_zero_progress_transport_passes_maximum": 3,
+        "original_root_owner_read_only": true,
+        "offline_fake_checks": [
+          "Authenticated short EOF preserves the exact prefix",
+          "Resume from the authenticated extent reconstructs original bytes",
+          "Changed ETag commits zero bytes",
+          "Root pause before request performs no transport"
+        ],
+        "offline_fake_checks_passed": true,
+        "source_qualification": "On completion stream original header plus all payload fragments for the65 fully selected files; outside.safetensors excludes vision and must retain selected-range-only qualification.",
+        "second_full_bank_created": false,
+        "offline_role_publisher": ".scratch/mtp-q27-fp8-20261024/publish-text-roles.py",
+        "canonical_role_manifest_after_completion": ".scratch/mtp-q27-fp8-20261024/body/payload-role-files.json",
+        "publication_validation_after_completion": ".scratch/mtp-q27-fp8-20261024/body/published-validation.json",
+        "publication_gate": "Run publish-text-roles.py check before canonical prepare; incomplete original sources or absent publication return nonzero. Check authenticates the fixed metadata hashes and65 full-source LFS results; canonical prepare independently hashes each original role.",
+        "local_join": "Only original mtp.layers.0.self_attn.k_proj.weight5,242,880B and its weight_scale_inv640B span the cached tiny tiles; join these two unchanged roles locally. Other roles borrow contiguous original range offsets."
+      },
+      "limits": "Every source header had exact206/Range/ETag/original-total/length checks and complete nonoverlapping in-file extents. Five failed header attempts retained, <=2 attempts per header request. The completed header-only phase fetched no tensor or tokenizer; the subsequent body batch is separately bounded above."
+    },
+    "actual_missing_product_binding": [
+      "prepared role FP8block group/selected arithmetic policy",
+      "cold BF16-scale promotion and compressed canonical import without whole floating bank",
+      "FP8 dynamic activation projection in complete ordinary/MTP consumer"
+    ],
+    "feasibility": "29,945,203,072B encoded text+MTP fits a64GiB host in principle; actual complete CPU loading/workspace/pending continuation remains required. All-GPU27B is not claimed."
+  },
+  "cat15": {
+    "repository": "Qwen/Qwen3.8-2.4T-A95B-FP8",
+    "revision": "d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+    "config": {
+      "path": ".scratch/model-quantization-discovery-2026-10-19/qwen-kimi/Qwen--Qwen3.8-2.4T-A95B-FP8/config.json",
+      "bytes": 55622,
+      "sha256": "b7396b749964c6afb5387c58e6425db8628e85f8ae66739d284eb1c8f42c4d4e",
+      "fixed_original_git_blob_sha1": "f5dd0be634b7dcccbc3c87aa90870c24740a9694"
+    },
+    "relevant_configuration": {
+      "quant_method": "fp8",
+      "activation_scheme": "dynamic",
+      "weight_per_tensor": false,
+      "act_per_tensor": false,
+      "weight_block_size": [
+        128,
+        128
+      ]
+    },
+    "dtype": "bfloat16",
+    "same_selected_reader_contract": true,
+    "reuse": "Existing original E4/BF16-block128 MoE tile can use the same selected Divide/floor1e-10 contract through existing dense/grouped operations; no new algorithm, complete expert bank or source fetch follows.",
+    "qualifier": "Original tile with the newly selected Divide binding still needs its focused actual oracle. Existing Power2/encoded-A tests do not certify that new binding."
+  },
+  "cat08": {
+    "repository": "unsloth/Qwen3.8-27B-NVFP4",
+    "revision": "f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+    "config": {
+      "path": ".scratch/model-quantization-discovery-2026-10-19/qwen-kimi/unsloth--Qwen3.8-27B-NVFP4/config.json",
+      "bytes": 22564,
+      "sha256": "1b3c71868d1299e52df6fc907deb202d5132b1ef0f72aae0ef6d15185dd53a5c"
+    },
+    "original_target_header": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/header.json",
+      "bytes": 251128,
+      "sha256": "4b84e0212253cc57dc5d3a6ac51fec8eb4775c7c0c35d1d59b375822be22f9e4"
+    },
+    "original_header_HTTP_receipts": [
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/length.bin.http.json",
+        "bytes": 942,
+        "sha256": "2e3c010eef5c482776da271263d53443be79e4e0cc43fb684bbb760330538fcf"
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/header.json.http.json",
+        "bytes": 973,
+        "sha256": "9d996e57cd6eeb8fcc0b34b43b6bc0e28e2aa4a30a3ccb26b201b719439cdf5c"
+      }
+    ],
+    "header_state": "Authenticated historical complete original target header reused; zero additional header HTTP",
+    "actual_roles": {
+      "total_target_file_physical": 1953,
+      "text_prefix_physical": 1620,
+      "channel_projections": 233,
+      "local_NVFP4_projections": 168,
+      "optional_BF16_KV_calibration_roles": 32
+    },
+    "channel_token": {
+      "code": "Original F8_E4M3[N,K]",
+      "scale": "Original BF16[N,1]",
+      "source_math": "Select exact compressed-tensors0.17.2a20260716 BF16 QDQ reference; BF16 per-token absmax/448, replace exactly-zero scale by BF16 epsilon1/128, BF16 divide/clamp/E4 RNE/dequant; original W code*BF16 scale rounds to BF16 before F32 dot and BF16 output.",
+      "rank": "TOKEN reference preserves axes0/1: use explicit[1,rows,K] per-token QDQ before flattening; the literal rank2 Python helper has global aminmax behavior.",
+      "affected": "Attention and GDN projection roles plus last8FFN layers and independent lm_head; actual header overrides parent-module-ignore guesses.",
+      "scores": "Run the same declared channel projection with BF16 result, then explicit F32 widening; no dense-head shortcut or block128 import.",
+      "public_reference": "tests/compute_models/fp8_channel_token_qdq_fixture.h",
+      "existing_evidence": "docs/evidence/correctness/ct-channel-token-cross-backend-2026-10-20.json",
+      "qualifier": "That existing evidence is synthetic arithmetic, not this publisher original values or new engine wiring."
+    },
+    "local_NVFP4": {
+      "packed": "Original low-first U8[N,K/2]",
+      "scale": "Original E4M3FN[N,K/16]",
+      "globals": "Original independent F32[1] weight_global_scale/input_global_scale quantization multipliers; never pre-invert or rename into ModelOpt tree.",
+      "selected_public_operation": "LocalNvfp4Linear(Fp4InputRounding::kFloat32)",
+      "source_version": "0.17.2a20260716 thresholds normalized F32 directly to E2M1. Later dev46196ce607421d9992a47644612dc6b443f3c434 adds BF16 pre-rounding; that distinct optional operation variant is not silently selected.",
+      "source_contract": "docs/evidence/research/ct-local-nvfp4-contract-2026-10-20.json",
+      "source_location": "include/hyle/compute/model_ops.h:350-385"
+    },
+    "source_files": [
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/producer/ct-nightly-20260716/src/compressed_tensors/quantization/utils/helpers.py",
+        "bytes": 14358,
+        "sha256": "7bdea7dd218f314249f19d72ca8b707de78284b989b05b2f3778b6b065dce91f",
+        "lines": [
+          "75-87",
+          "113-125",
+          "159-196",
+          "364-370"
+        ]
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/producer/ct-nightly-20260716/src/compressed_tensors/quantization/lifecycle/forward_helpers.py",
+        "bytes": 7493,
+        "sha256": "8b3399fda143cc249c231e291d938c987a7da4793eeae35b3136b3390bbde6c8",
+        "lines": [
+          "176-210",
+          "246-266"
+        ]
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/producer/ct-nightly-20260716/src/compressed_tensors/quantization/quant_args.py",
+        "bytes": 16607,
+        "sha256": "9dd345f19890dd5e2c5b975bcebdcc89ef047dcab971b421306da6d39a37528a",
+        "lines": [
+          "67-80"
+        ]
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/producer/ct-nightly-20260716/src/compressed_tensors/compressors/nvfp4/helpers.py",
+        "bytes": 6335,
+        "sha256": "897f2f0fcead8bc62c9e4226b58134bf7444fbe7ff683d809d95cd04e3bc977a",
+        "lines": [
+          "original U8 low-first pack/unpack helpers; full blob identity"
+        ]
+      }
+    ],
+    "embedding": "Original BF16[248320,5120], no new embedding codec",
+    "MTP": "Separate original15-role BF16 sidecar; reuse existing family mathematics/state/proposal/acceptance. No new MTP protocol.",
+    "optional_KV_auxiliary": {
+      "exact_roles": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-bf16-cache-auxiliary-roles.json",
+        "bytes": 7602,
+        "sha256": "9bc353bf86fdaf5effe2800a9bbe30ba2202510ccaca7f73646a7e9a7ad6c56c"
+      },
+      "handling": "Validate the exact32 original names/BF16[1] shapes and omit only when the driver explicitly uses BF16 KV. Other auxiliaries remain strict. No FP8 KV-cache implementation is claimed."
+    },
+    "minimal_original_tiles": {
+      "plan": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-minimal-tiles-plan.json",
+        "bytes": 8052,
+        "sha256": "f65288308cb626bac8b7c1cd5733b2aff2691fc0f373587c314ad7f97ff2a710"
+      },
+      "state": "all8 exact source ranges acquired; engine binding/oracle not run by this metadata task",
+      "original_bytes": 39380,
+      "HTTP_attempts": 9,
+      "failed_attempts": 1,
+      "actual_received_bytes": 39380,
+      "records": [
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/00/complete.json",
+          "bytes": 1513,
+          "sha256": "43ae1c9f247db91e8328f41ca656d6ac7f41794f1c5c2f345a505eee8ea76024"
+        },
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/01/complete.json",
+          "bytes": 1494,
+          "sha256": "9a383f77a55c3340dc19e6a2cb765223a52bbc13cf930343e22cdcc8e4bcadd2"
+        },
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/02/complete.json",
+          "bytes": 1476,
+          "sha256": "b3a652234235ffb0a92711eed9f0be37178f1b145cca328ead00098b96461b9a"
+        },
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/03/complete.json",
+          "bytes": 1441,
+          "sha256": "ea5f2a816b6f9f5e8f3fd240d32047b15c170804956d3279d02e1ed9b7d4a1cf"
+        },
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/04/complete.json",
+          "bytes": 1517,
+          "sha256": "da2049407ad5414cce1016158c80f5f6bcfde3ec675bc8f6a917f0e6651f6f0a"
+        },
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/05/complete.json",
+          "bytes": 1512,
+          "sha256": "a3b8384c02c16cc36e73bdb617b384adf6b02aba4897fb3574a291849bf2670c"
+        },
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/06/complete.json",
+          "bytes": 1465,
+          "sha256": "a41d097a32e5ba622eb792dce28513d622b7291dd0742f92c477124dafa9bdcb"
+        },
+        {
+          "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/07/complete.json",
+          "bytes": 1464,
+          "sha256": "15f424214d2f7e76e2df23294516abcc1cfc16f860cea1f68d6be005a9db2f40"
+        }
+      ],
+      "whole_bank_or_sidecar_fetched": false
+    }
+  },
+  "global_limits": [
+    "No new SDK build or model run in this task. New product bindings remain implementation-agent work.",
+    "The selected fixed reader is explicit; different compatible runtimes and batch widths are not promised bitwise equal.",
+    "All new HTTP used unchanged budget.py and HTTPS hf-mirror.net-only redirect guard; original root owner/PAUSED markers were not changed.",
+    "Full-file LFS is not claimed for source files with intentionally omitted vision or partial tensor extents."
+  ],
+  "product_binding_locations": [
+    "engine/models/qwen35/prepared_roles.h:51,188-283",
+    "engine/models/qwen35/main.cc:561-659",
+    "engine/models/qwen35/prepare.py:141-191"
+  ]
+}

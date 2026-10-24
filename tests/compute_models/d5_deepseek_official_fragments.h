@@ -173,7 +173,7 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
     for(std::size_t i=0;i<3;++i)compact_weights[i]=f.input(expert_weight_description(model,i,routed_parameters->capacity));
     expert_map=f.input(sem::dense({model.experts},c::DataType::kInt32));
     const auto stored_input=f.one(c::Operation(c::Cast{c::DataType::kBFloat16}),{x});
-    routed_ports->logits=f.one(c::model_ops::bfloat_linear_f32(),{stored_input,router});
+    routed_ports->logits=f.one(c::model_ops::dense_linear_f32(),{stored_input,router});
     routed_ports->softplus=core::unary(f,c::UnaryKind::kSoftplus,routed_ports->logits);
     routed_ports->scores=core::unary(f,c::UnaryKind::kSqrt,routed_ports->softplus);
     routed_ports->selection=core::binary(f,c::BinaryKind::kAdd,routed_ports->scores,bias);

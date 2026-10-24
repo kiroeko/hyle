@@ -1,0 +1,245 @@
+{
+  "status": "PASS_BOUNDED_DEEPSEEK_STOCHASTIC_CONTROLS_EOS_QUOTA_CONTEXT_CONFIDENCE_AND_COMPLETE_PREFIX_PUBLICATION",
+  "date": "2026-10-24",
+  "finding": {
+    "before": "DS greedy Block5Limits and trained-width tails were complete, but the new random controllers bypassed them and selected consumed=1+accepted plus residual/bonus unconditionally. Accepted proposal EOS or a smaller publication quota could consume that terminal output and select bonus instead.",
+    "fix": "Reuse the original pure accepted-prefix selection with actual sampled IDs/decisions; select state row consumed-1 and preserve an accepted terminal proposal as its original pending lease. Bound actual verifier rows and conditionally clip from sampled-predecessor confidence before target work. RNG publishes once with the selected whole state."
+  },
+  "common_policy": {
+    "path": "engine/inference/mtp_acceptance.h",
+    "namespace": "hyle::inference::mtp",
+    "move_proof": {
+      "old_source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-current-cross-platform-syntax-20261024\\source\\engine\\models\\qwen35\\mtp_acceptance.h",
+      "old_sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a",
+      "new_source": "C:\\public\\project-hyle\\hyle\\engine\\inference\\mtp_acceptance.h",
+      "new_sha256": "318d218ed5fef788981b66158efe16d4f7f1586d256c2f90c0d94a894d474087",
+      "only_namespace_replacement": true
+    },
+    "Qwen_change": "Only include path, result qualification and two function-call qualifications; no compatibility alias/header, no math or extra kernels.",
+    "Qwen_current_strict_syntax": {
+      "exit": 0,
+      "seconds": 6.35999999998603,
+      "main_sha256": "662eeb74cd23bd06648bf92a1a68bab29ffbbf41db2297a17dcbec8dd1ebf491"
+    }
+  },
+  "actual": {
+    "tests": 1,
+    "failures": 0,
+    "skips": 0,
+    "process": {
+      "exit": 0,
+      "seconds": 120.42199999999139
+    },
+    "xml_seconds": 119.77,
+    "test": "DSparkFlashFormalState.CpuRandomMarkovPrefixCommitsActualStateAndCursor",
+    "endpoint": "CPU",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-stochastic-tails-20261024\\checks.exe",
+      "bytes": 141350400,
+      "sha256": "acabb6faac669f62bc7ea2076955284c07c1ec1498069f1811838281aa23503f"
+    },
+    "commits": [
+      {
+        "m": 2,
+        "accepted": 0,
+        "consumed": 1,
+        "pending": 26655,
+        "draw": 5
+      },
+      {
+        "m": 0,
+        "accepted": 0,
+        "consumed": 1,
+        "pending": 103645,
+        "draw": 6
+      },
+      {
+        "m": 1,
+        "accepted": 1,
+        "consumed": 2,
+        "pending": 113328,
+        "draw": 3
+      },
+      {
+        "m": 0,
+        "accepted": 0,
+        "consumed": 1,
+        "pending": 97182,
+        "draw": 4
+      },
+      {
+        "m": 0,
+        "accepted": 0,
+        "consumed": 1,
+        "pending": 31942,
+        "draw": 1
+      }
+    ],
+    "regular_publications": 5,
+    "retained_episode_tail_publications": 3,
+    "retained_tails": [
+      {
+        "configured_EOS": 28326,
+        "output_quota": 2,
+        "consumed_rows": 1,
+        "pending": 28326,
+        "pending_source": "original sampled proposal I32 sublease",
+        "draws_reserved": 3
+      },
+      {
+        "output_quota": 1,
+        "consumed_rows": 1,
+        "pending": 28326,
+        "pending_source": "same original sampled proposal sublease",
+        "draws_reserved": 3
+      },
+      {
+        "configured_bonus_EOS": 113328,
+        "output_quota": 2,
+        "consumed_rows": 2,
+        "pending": 113328,
+        "pending_source": "original common decision bonus I32 lease",
+        "draws_reserved": 3
+      }
+    ],
+    "source_state_checks": "Each retained branch publishes an independent expected-base Head with all21 target members at exact resource/native-handle/offset/generation of the selected actual row, original histories/captures, pending and Cursor. No target/draft probability, accepted flag or model tensor is manufactured.",
+    "actual_conditional_threshold": {
+      "threshold_probability": 1,
+      "domain": "raw logit",
+      "prepared_candidates": 2,
+      "retained_candidates": 0,
+      "target_rows": 1,
+      "pending": 31942,
+      "committed_draws": 1
+    },
+    "controls": "The ordinary continuation uses explicit max_drafts0, threshold.9, quota1 and context_rows1. Zero output/context and out-of-training maximum reject before any new Graph submission; Head and RNG remain unchanged.",
+    "graph_submissions": 77,
+    "state_backing_peak_bytes": 99648160,
+    "state_backing_budget_bytes": 414452992
+  },
+  "policy_and_existing_prefix_cache": {
+    "tests": 25,
+    "failures": 0,
+    "skips": 0,
+    "process": {
+      "exit": 0,
+      "seconds": 0.4370000000053551
+    },
+    "xml_seconds": 0.001
+  },
+  "implementation": [
+    "Formal and sidecar random controllers cold-prepare actual0..5 proposal/verifier shapes. Original trained stem remains five rows; this does not invent extra trained heads.",
+    "Confidence uses each actual sampled preceding ID and its declared original F32/BF16 projection boundary. It is not copied from the old greedy Markov head. The stopping decision precedes that candidate's own random identity mathematically.",
+    "After first-low confidence clipping to m, actual q_i prefix and target rows match m; only2m+1 addresses commit. An unused candidate at address2m may share the final address because stopping is independent of that candidate's own draw. No historical output is resampled.",
+    "The raw/probability domain remains explicit; the original fixed-five greedy confidence API retains its exact-five source contract. The new sampled API accepts the exact prepared conditional prefix extent.",
+    "All random sampler LeasePool capacities are known before StateStore creation and included once in its conservative backing bound; no borrowed native workspace is claimed as measured physical memory.",
+    "Sidecar uses the same accepted-prefix selector and original proposal sublease for terminal output, not a new sampler/executor. CPU/CUDA source branches compile under strict current flags."
+  ],
+  "source_versions": {
+    "executed": [
+      {
+        "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+        "bytes": 84519,
+        "sha256": "766164285a3cd4f3dd76b4d3709f34fa52975e5ac9ccf191f7a65bde5ea5dc08"
+      },
+      {
+        "path": "tests/compute_models/dspark_stochastic_head.h",
+        "bytes": 6866,
+        "sha256": "940ace7349b837156159574c51b26f103f43f02c266ecccba5527537881d71af"
+      },
+      {
+        "path": "tests/compute_models/dspark_block5_policy.h",
+        "bytes": 8159,
+        "sha256": "307a3aa4d759b6450098bc6c8a3254acf25d23ecbad8ddf630c988ee8dda594e"
+      },
+      {
+        "path": "engine/inference/mtp_acceptance.h",
+        "bytes": 4534,
+        "sha256": "318d218ed5fef788981b66158efe16d4f7f1586d256c2f90c0d94a894d474087"
+      },
+      {
+        "path": "engine/inference/sampling_graph.h",
+        "bytes": 17641,
+        "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+      },
+      {
+        "path": "engine/inference/sampling_cursor.h",
+        "bytes": 1200,
+        "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+      }
+    ],
+    "current_final": [
+      {
+        "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+        "bytes": 84597,
+        "sha256": "c900340d1c86996d6fbf3ab10f15fc56336d914fab9875c7656be42dc40f00e2"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_state_consumer_test.cc",
+        "bytes": 195890,
+        "sha256": "965d9ea3d2236c9fd0ab018c5214da8095b114215a66bef48a099aadeb8087b8"
+      },
+      {
+        "path": "tests/compute_models/dspark_block5_policy.h",
+        "bytes": 8159,
+        "sha256": "307a3aa4d759b6450098bc6c8a3254acf25d23ecbad8ddf630c988ee8dda594e"
+      },
+      {
+        "path": "tests/compute_models/dspark_block5_policy_test.cc",
+        "bytes": 22156,
+        "sha256": "21824fea35c93f19be4998c8dec2a32e12766f6e2a18597a62d3ae5036620166"
+      },
+      {
+        "path": "tests/compute_models/dspark_stochastic_head.h",
+        "bytes": 6866,
+        "sha256": "940ace7349b837156159574c51b26f103f43f02c266ecccba5527537881d71af"
+      },
+      {
+        "path": "engine/inference/mtp_acceptance.h",
+        "bytes": 4534,
+        "sha256": "318d218ed5fef788981b66158efe16d4f7f1586d256c2f90c0d94a894d474087"
+      },
+      {
+        "path": "tests/tools/qwen_prefix_cache_test.cc",
+        "bytes": 39231,
+        "sha256": "d55c4f0f53e806999c3991678feb94cd07647b199ef5e7bb20bd10c96971fb05"
+      },
+      {
+        "path": "tests/graph_route_cpu/qwen_sampling_graph_test.cc",
+        "bytes": 31426,
+        "sha256": "039928af96353c8165238f00a6e44bb5821e2606de8e6580b4856af19e014601"
+      }
+    ],
+    "final_guard_only_difference": "After the valid-source run, default limits became an explicit valid aggregate rather than replacing vocabulary0, and max_drafts>5 rejects before clipping to prepared capacity. Both full current consumer TUs then passed strict/Zs. The valid-source mathematics, chosen states and graph operations are unchanged.",
+    "formal_final_syntax": {
+      "exit": 0,
+      "seconds": 5.562000000005355
+    },
+    "sidecar_final_syntax": {
+      "exit": 0,
+      "seconds": 6.35899999999674
+    }
+  },
+  "boundaries": [
+    "This actual finite Flash original-role consumer reuses cached trained target/draft/head and explicitly fixture upstream/initial histories. It is not a full huge-model application, task-quality/acceptance-rate or TPS result.",
+    "Configured EOS uses actual generated valid IDs to exercise policy boundaries, not a claim of naturally generated model EOS. The three terminal publications reuse one genuine retired accepted episode without rerunning or modifying its probabilities.",
+    "Pro and two sidecar source precision/state chains already have actual random/pending evidence. This followup compiles their new shared control wiring and runs one source representative; it does not repeat a backend/publisher matrix or certify all combinations.",
+    "All0..5 cold shapes prepare in this actual run; runtime episodes are m2/m1/m0 and metadata policy covers all widths. This is not a trained random full-five-row runtime throughput claim.",
+    "One initial private standalone-prefix recipe compiled but failed to link incomplete old base-static dependencies. The actual25-case check instead uses the already matched DS closure, without a product build change.",
+    "No SDK/native compilation, HTTP, new expert/model acquisition, arbitrary plugin framework or second executor. Source hashes and the final image identity remain separate."
+  ],
+  "reuse": [
+    "docs/evidence/correctness/deepseek-mtp-short-verifier-tails-2026-10-24.json",
+    "docs/evidence/correctness/deepseek-mtp-source-stochastic-flash-2026-10-24.json",
+    "docs/evidence/correctness/deepseek-mtp-source-stochastic-pro-2026-10-24.json",
+    "docs/evidence/correctness/deepseek-mtp-source-stochastic-sidecars-2026-10-24.json"
+  ],
+  "HTTP_bytes": 0,
+  "SDK_builds": 0,
+  "native_rebuilds": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/deepseek-mtp-stochastic-controls-tails-2026-10-24.logs.zip",
+    "bytes": 174724,
+    "sha256": "f248e707d21e45ba911ad38abb1ebbea923769a9c10e4e911c915f7592b46dbc"
+  }
+}

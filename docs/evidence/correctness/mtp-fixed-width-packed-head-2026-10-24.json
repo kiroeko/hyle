@@ -1,0 +1,897 @@
+{
+  "kind": "Bounded numerical-width and newly connected original packed target-head correctness",
+  "date": "2026-10-24",
+  "status": "PASS",
+  "packed_target_head": {
+    "source_repository": "nvidia/Qwen3.8-27B-NVFP4",
+    "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+    "hf": "https://huggingface.co/nvidia/Qwen3.8-27B-NVFP4/tree/482ca0f3832238542f8f5295dde86b5f22711d80",
+    "original_source": {
+      "file": "model-00003-of-00003.safetensors",
+      "size": 1970287672,
+      "lfs_sha256": "0506ad35dc21469708e7813bd76c592cef08bd0317b4a1fe899745ebe2435271",
+      "api_xet_hash": "51b1729553bbf7f9d5bb49e2b0b7ac71eada5086f8d6086d91f7876896dc340e",
+      "etag": "\"51b1729553bbf7f9d5bb49e2b0b7ac71eada5086f8d6086d91f7876896dc340e\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+    },
+    "original_ranges": [
+      {
+        "kind": "codes",
+        "inclusive": [
+          1067201592,
+          1067209271
+        ],
+        "bytes": 7680
+      },
+      {
+        "kind": "scales",
+        "inclusive": [
+          849458232,
+          849459191
+        ],
+        "bytes": 960
+      },
+      {
+        "kind": "globals",
+        "inclusive": [
+          7136,
+          7143
+        ],
+        "bytes": 8
+      }
+    ],
+    "body_bytes": 8648,
+    "acquisition": {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat7-head-results.json",
+      "bytes": 2997,
+      "sha256": "794dc3b900bdf2a41f6c333f23f5cd459fd5ade6964711adef0c9bf73ca3e268"
+    },
+    "validation": {
+      "status": "PASS",
+      "original_inputs": [
+        {
+          "path": ".scratch\\mtp-metadata-offline-20261024\\components\\q27-nvfp4-original-head\\codes.bin",
+          "bytes": 7680,
+          "sha256": "530e89c74f3e901b1dfed5211678794f958e604713ce1361929825a446a50b48"
+        },
+        {
+          "path": ".scratch\\mtp-metadata-offline-20261024\\components\\q27-nvfp4-original-head\\scales.bin",
+          "bytes": 960,
+          "sha256": "307d15f039f3f47f5f7216aa1a91e3db61631595870df60309ce70baac380396"
+        },
+        {
+          "path": ".scratch\\mtp-metadata-offline-20261024\\components\\q27-nvfp4-original-head\\globals.bin",
+          "bytes": 8,
+          "sha256": "ce5c5c4d46a87b32c971a20b6a4df3df3d3c40f8269d7afb8f084e905c243fb1"
+        }
+      ],
+      "scope": "Actual first three physical head rows/full K5120, two sparse BF16 input rows; no full vocabulary, full target or performance claim.",
+      "arithmetic": "Original group16 A QDQ to BF16, scale-first original E2M1/E4M3 W decode to BF16, F32 one-term dot, final BF16 projection and explicit F32 widening.",
+      "independent_oracle": {
+        "path": ".scratch\\mtp-correctness-20261024\\projection-check\\head_oracle.py",
+        "bytes": 3751,
+        "sha256": "493bd861e05f1ad6bc02167b525d1afca1920ae2a08ce167b93cb553ce69bfc4"
+      },
+      "expected": [
+        0.003448486328125,
+        -0.007049560546875,
+        -0.010009765625,
+        -0.0341796875,
+        -0.04248046875,
+        -0.078125
+      ],
+      "source_math": {
+        "input_global": 0.0205543152987957,
+        "weight_global": 0.00012715657067019492,
+        "witnesses": [
+          {
+            "row": 0,
+            "column": 0,
+            "lane": 0,
+            "original_A": 1.25,
+            "QDQ_A": 1.234375,
+            "code": 1,
+            "original_scale": 99,
+            "BF16_weight": 0.0027923583984375,
+            "F32_dot": 0.003446817398071289,
+            "logit": 0.003448486328125
+          },
+          {
+            "row": 0,
+            "column": 1,
+            "lane": 0,
+            "original_A": 1.25,
+            "QDQ_A": 1.234375,
+            "code": 11,
+            "original_scale": 95,
+            "BF16_weight": -0.005706787109375,
+            "F32_dot": -0.007044315338134766,
+            "logit": -0.007049560546875
+          },
+          {
+            "row": 0,
+            "column": 2,
+            "lane": 0,
+            "original_A": 1.25,
+            "QDQ_A": 1.234375,
+            "code": 10,
+            "original_scale": 104,
+            "BF16_weight": -0.00811767578125,
+            "F32_dot": -0.010020256042480469,
+            "logit": -0.010009765625
+          },
+          {
+            "row": 1,
+            "column": 0,
+            "lane": 33,
+            "original_A": 6.5,
+            "QDQ_A": 6.40625,
+            "code": 11,
+            "original_scale": 94,
+            "BF16_weight": -0.005340576171875,
+            "F32_dot": -0.03421306610107422,
+            "logit": -0.0341796875
+          },
+          {
+            "row": 1,
+            "column": 1,
+            "lane": 33,
+            "original_A": 6.5,
+            "QDQ_A": 6.40625,
+            "code": 12,
+            "original_scale": 93,
+            "BF16_weight": -0.006622314453125,
+            "F32_dot": -0.04242420196533203,
+            "logit": -0.04248046875
+          },
+          {
+            "row": 1,
+            "column": 2,
+            "lane": 33,
+            "original_A": 6.5,
+            "QDQ_A": 6.40625,
+            "code": 12,
+            "original_scale": 100,
+            "BF16_weight": -0.01220703125,
+            "F32_dot": -0.0782012939453125,
+            "logit": -0.078125
+          }
+        ],
+        "no_final_BF16_round_changed": 6,
+        "no_activation_QDQ_changed": 6
+      },
+      "backends": {
+        "cpu": {
+          "status": "PASS",
+          "output": {
+            "path": ".scratch\\mtp-correctness-20261024\\projection-check\\cpu\\head-vectors\\logits.f32",
+            "bytes": 24,
+            "sha256": "9109bbc21e7fbd0e87c1ac195d1e0bc17d5455ea712db014d7322ce3693e2a27"
+          },
+          "actual": [
+            0.003448486328125,
+            -0.007049560546875,
+            -0.010009765625,
+            -0.0341796875,
+            -0.04248046875,
+            -0.078125
+          ],
+          "checked_exact_values": 6,
+          "observation": {
+            "score_policy": "nvfp4_qdq_bf16_projection_f32_logits",
+            "score_dtype": "F32",
+            "underlying_projection_dtype": "BF16",
+            "packed_projection_nodes": 1,
+            "dense_f32_projection_nodes": 0,
+            "logical_head_shape": [
+              3,
+              5120
+            ],
+            "original_bytes": 8648,
+            "checked_output_values": 6,
+            "whole_floating_head_bank": false,
+            "missing_input_scale_rejected": true,
+            "declared_graph_workspace_bytes": 20492
+          }
+        },
+        "cuda": {
+          "status": "PASS",
+          "output": {
+            "path": ".scratch\\mtp-correctness-20261024\\projection-check\\cuda\\head-vectors\\logits.f32",
+            "bytes": 24,
+            "sha256": "9109bbc21e7fbd0e87c1ac195d1e0bc17d5455ea712db014d7322ce3693e2a27"
+          },
+          "actual": [
+            0.003448486328125,
+            -0.007049560546875,
+            -0.010009765625,
+            -0.0341796875,
+            -0.04248046875,
+            -0.078125
+          ],
+          "checked_exact_values": 6,
+          "observation": {
+            "score_policy": "nvfp4_qdq_bf16_projection_f32_logits",
+            "score_dtype": "F32",
+            "underlying_projection_dtype": "BF16",
+            "packed_projection_nodes": 1,
+            "dense_f32_projection_nodes": 0,
+            "logical_head_shape": [
+              3,
+              5120
+            ],
+            "original_bytes": 8648,
+            "checked_output_values": 6,
+            "whole_floating_head_bank": false,
+            "missing_input_scale_rejected": true,
+            "declared_graph_workspace_bytes": 20492
+          }
+        }
+      },
+      "HTTP": 0,
+      "SDK_builds": 0
+    },
+    "product_fix": "Recipe::scores selects the original typed NVFP4 projection, retaining its BF16 QDQ/operand/output boundaries, then widens its BF16 result to the F32 logits buffer. It does not relabel that as DenseLinearF32. The six engine reports derive score policy from the actual loaded head; prefix reuse remains Model/math-local.",
+    "prior_contract": "docs/evidence/correctness/nvfp4-reference-linear-2026-10-20.json",
+    "source_reader": "docs/evidence/research/nvfp4-channel-global-contract-2026-10-20.json"
+  },
+  "fixed_original_A_projection": {
+    "validation": {
+      "status": "PASS",
+      "scope": "Current ordinary BF16 QKV projection only, one identical original A row at T1/T3/T5; no MTP graph, recurrence, task or performance claim.",
+      "observation": {
+        "status": "FIXED_A_T1_T3_T5_COMPLETE",
+        "source_identity": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+        "source_file": "C:/Users/kiro/Downloads/Qwen3.5-2B/model.safetensors-00001-of-00001.safetensors",
+        "source_offset": 1017390096,
+        "source_bytes": 25165824,
+        "graph_calls": 3,
+        "rows": [
+          1,
+          3,
+          5
+        ],
+        "A_row_bytes": 4096,
+        "output_row_elements": 6144,
+        "full_model_claim": false,
+        "default_hot_graph_instrumented": false,
+        "cross_width_equality_required": false
+      },
+      "reused_all6144_proof": {
+        "path": ".scratch\\qwen-mtp-quality-20261022\\review\\prefix-existing-numeric-contract.verified.json",
+        "bytes": 14954,
+        "sha256": "80498c9203b03136e302e720b7651069b2f27e01344f1a152941c7e3336f82fc"
+      },
+      "unchanged_existing_contract": "abs(actual_BF16_float - FP64_fsum_dot) <= 0.008*abs(FP64_fsum_dot)+0.0001",
+      "necessary_F32_bound_note": "Conditional ideal F32 summation plus final BF16 rounding compatibility, not a vendor reduction-algorithm proof.",
+      "same_original_input": true,
+      "same_original_weight": true,
+      "old_T1_equal_channels": {
+        "T1": 6144,
+        "T3": 6136,
+        "T5": 6136
+      },
+      "cross_width_different_channels": {
+        "T1_T3": 8,
+        "T1_T5": 8
+      },
+      "independently_recomputed_channels": [
+        2507,
+        2899,
+        2918,
+        3090,
+        4012,
+        4744,
+        5376,
+        5642
+      ],
+      "checks": [
+        {
+          "width": 1,
+          "channel": 2507,
+          "actual_bits": "0x39f5",
+          "actual": 0.0004673004150390625,
+          "FP64_dot": 0.0004682723665609956,
+          "absolute_error": 9.719515219330788e-07,
+          "unchanged_existing_tolerance": 0.00010374617893248797,
+          "ratio": 0.00936855248004429,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 2507,
+          "actual_bits": "0x39f6",
+          "actual": 0.000469207763671875,
+          "FP64_dot": 0.0004682723665609956,
+          "absolute_error": 9.353971108794212e-07,
+          "unchanged_existing_tolerance": 0.00010374617893248797,
+          "ratio": 0.009016207830537293,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 2507,
+          "actual_bits": "0x39f6",
+          "actual": 0.000469207763671875,
+          "FP64_dot": 0.0004682723665609956,
+          "absolute_error": 9.353971108794212e-07,
+          "unchanged_existing_tolerance": 0.00010374617893248797,
+          "ratio": 0.009016207830537293,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 1,
+          "channel": 2899,
+          "actual_bits": "0xba7c",
+          "actual": -0.0009613037109375,
+          "FP64_dot": -0.0009616727475076914,
+          "absolute_error": 3.6903657019138336e-07,
+          "unchanged_existing_tolerance": 0.00010769338198006154,
+          "ratio": 0.0034267339682925654,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 2899,
+          "actual_bits": "0xba7d",
+          "actual": -0.000965118408203125,
+          "FP64_dot": -0.0009616727475076914,
+          "absolute_error": 3.4456606954336166e-06,
+          "unchanged_existing_tolerance": 0.00010769338198006154,
+          "ratio": 0.03199510157524396,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 2899,
+          "actual_bits": "0xba7d",
+          "actual": -0.000965118408203125,
+          "FP64_dot": -0.0009616727475076914,
+          "absolute_error": 3.4456606954336166e-06,
+          "unchanged_existing_tolerance": 0.00010769338198006154,
+          "ratio": 0.03199510157524396,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 1,
+          "channel": 2918,
+          "actual_bits": "0xbda3",
+          "actual": -0.07958984375,
+          "FP64_dot": -0.07983327028341591,
+          "absolute_error": 0.00024342653341591358,
+          "unchanged_existing_tolerance": 0.0007386661622673274,
+          "ratio": 0.32954878110121977,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 2918,
+          "actual_bits": "0xbda4",
+          "actual": -0.080078125,
+          "FP64_dot": -0.07983327028341591,
+          "absolute_error": 0.0002448547165840864,
+          "unchanged_existing_tolerance": 0.0007386661622673274,
+          "ratio": 0.33148224338922966,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 2918,
+          "actual_bits": "0xbda4",
+          "actual": -0.080078125,
+          "FP64_dot": -0.07983327028341591,
+          "absolute_error": 0.0002448547165840864,
+          "unchanged_existing_tolerance": 0.0007386661622673274,
+          "ratio": 0.33148224338922966,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 1,
+          "channel": 3090,
+          "actual_bits": "0x3c3e",
+          "actual": 0.0115966796875,
+          "FP64_dot": 0.011627163738012314,
+          "absolute_error": 3.0484050512313843e-05,
+          "unchanged_existing_tolerance": 0.0001930173099040985,
+          "ratio": 0.15793428334204831,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 3090,
+          "actual_bits": "0x3c3f",
+          "actual": 0.01165771484375,
+          "FP64_dot": 0.011627163738012314,
+          "absolute_error": 3.055110573768616e-05,
+          "unchanged_existing_tolerance": 0.0001930173099040985,
+          "ratio": 0.15828168858464356,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 3090,
+          "actual_bits": "0x3c3f",
+          "actual": 0.01165771484375,
+          "FP64_dot": 0.011627163738012314,
+          "absolute_error": 3.055110573768616e-05,
+          "unchanged_existing_tolerance": 0.0001930173099040985,
+          "ratio": 0.15828168858464356,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 1,
+          "channel": 4012,
+          "actual_bits": "0x3c7c",
+          "actual": 0.015380859375,
+          "FP64_dot": 0.015350542184023652,
+          "absolute_error": 3.0317190976347774e-05,
+          "unchanged_existing_tolerance": 0.00022280433747218925,
+          "ratio": 0.13607091908671665,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 4012,
+          "actual_bits": "0x3c7b",
+          "actual": 0.01531982421875,
+          "FP64_dot": 0.015350542184023652,
+          "absolute_error": 3.0717965273652226e-05,
+          "unchanged_existing_tolerance": 0.00022280433747218925,
+          "ratio": 0.1378696915067306,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 4012,
+          "actual_bits": "0x3c7b",
+          "actual": 0.01531982421875,
+          "FP64_dot": 0.015350542184023652,
+          "absolute_error": 3.0717965273652226e-05,
+          "unchanged_existing_tolerance": 0.00022280433747218925,
+          "ratio": 0.1378696915067306,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 1,
+          "channel": 4744,
+          "actual_bits": "0x4051",
+          "actual": 3.265625,
+          "FP64_dot": 3.25781326321885,
+          "absolute_error": 0.007811736781150103,
+          "unchanged_existing_tolerance": 0.0261625061057508,
+          "ratio": 0.2985851871213897,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 4744,
+          "actual_bits": "0x4050",
+          "actual": 3.25,
+          "FP64_dot": 3.25781326321885,
+          "absolute_error": 0.007813263218849897,
+          "unchanged_existing_tolerance": 0.0261625061057508,
+          "ratio": 0.2986435315970154,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 4744,
+          "actual_bits": "0x4050",
+          "actual": 3.25,
+          "FP64_dot": 3.25781326321885,
+          "absolute_error": 0.007813263218849897,
+          "unchanged_existing_tolerance": 0.0261625061057508,
+          "ratio": 0.2986435315970154,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 1,
+          "channel": 5376,
+          "actual_bits": "0x35f0",
+          "actual": 1.7881393432617188e-06,
+          "FP64_dot": 1.7663114704191685e-06,
+          "absolute_error": 2.1827872842550278e-08,
+          "unchanged_existing_tolerance": 0.00010001413049176336,
+          "ratio": 0.00021824788892553444,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 5376,
+          "actual_bits": "0x361e",
+          "actual": 2.3543834686279297e-06,
+          "FP64_dot": 1.7663114704191685e-06,
+          "absolute_error": 5.880719982087612e-07,
+          "unchanged_existing_tolerance": 0.00010001413049176336,
+          "ratio": 0.005879889124839132,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 5376,
+          "actual_bits": "0x361e",
+          "actual": 2.3543834686279297e-06,
+          "FP64_dot": 1.7663114704191685e-06,
+          "absolute_error": 5.880719982087612e-07,
+          "unchanged_existing_tolerance": 0.00010001413049176336,
+          "ratio": 0.005879889124839132,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 1,
+          "channel": 5642,
+          "actual_bits": "0x4032",
+          "actual": 2.78125,
+          "FP64_dot": 2.7734436718039888,
+          "absolute_error": 0.007806328196011236,
+          "unchanged_existing_tolerance": 0.02228754937443191,
+          "ratio": 0.35025511620252836,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 3,
+          "channel": 5642,
+          "actual_bits": "0x4031",
+          "actual": 2.765625,
+          "FP64_dot": 2.7734436718039888,
+          "absolute_error": 0.007818671803988764,
+          "unchanged_existing_tolerance": 0.02228754937443191,
+          "ratio": 0.35080895044289967,
+          "f32_necessary_cell_compatible": true
+        },
+        {
+          "width": 5,
+          "channel": 5642,
+          "actual_bits": "0x4031",
+          "actual": 2.765625,
+          "FP64_dot": 2.7734436718039888,
+          "absolute_error": 0.007818671803988764,
+          "unchanged_existing_tolerance": 0.02228754937443191,
+          "ratio": 0.35080895044289967,
+          "f32_necessary_cell_compatible": true
+        }
+      ],
+      "failures": [],
+      "outputs": [
+        {
+          "path": ".scratch\\mtp-correctness-20261024\\projection-check\\cuda\\width-vectors\\T1-row0.bf16",
+          "bytes": 12288,
+          "sha256": "49d9c8a66a526ca93f0749aa0207eb04bc6c9a20d66423a0e69237822db3d84a"
+        },
+        {
+          "path": ".scratch\\mtp-correctness-20261024\\projection-check\\cuda\\width-vectors\\T3-row0.bf16",
+          "bytes": 12288,
+          "sha256": "3a5656de5b01fb2ce1a622af2555398eab182d0be6b4596433e8cfa43dfc6922"
+        },
+        {
+          "path": ".scratch\\mtp-correctness-20261024\\projection-check\\cuda\\width-vectors\\T5-row0.bf16",
+          "bytes": 12288,
+          "sha256": "3a5656de5b01fb2ce1a622af2555398eab182d0be6b4596433e8cfa43dfc6922"
+        }
+      ],
+      "routes": {
+        "T1": "step\tprovider\timplementation\toperation\n0\t\t0\tview\n1\tcublasLt\t1\tmatmul\n",
+        "T3": "step\tprovider\timplementation\toperation\n0\t\t0\tview\n1\tcublasLt\t1\tmatmul\n",
+        "T5": "step\tprovider\timplementation\toperation\n0\t\t0\tview\n1\tcublasLt\t1\tmatmul\n"
+      },
+      "script": {
+        "path": ".scratch\\mtp-correctness-20261024\\projection-check\\width_oracle.py",
+        "bytes": 4032,
+        "sha256": "fa1d63e68de83f3c1009e8aaba5d85a418a9e159dff9ddb013a68cf86b60386e"
+      },
+      "HTTP": 0,
+      "full_model_runs": 0
+    },
+    "summary": "T1 equals the previously proved6144-channel output. T3 andT5 each differ at exactly the same8channels. Only those8channels were recomputed with FP64 fsum and exact dyadic F32-bound/BF16-cell analysis; all pass unchanged prior criteria. Remaining identical channel values inherit the original all6144 proof.",
+    "contract": "Preserves supplied finite verifier conditionals; no cross-width bit equality or identical-seed text requirement.",
+    "old_evidence": "docs/evidence/correctness/qwen-mtp-quality-prefix-2026-10-22.json",
+    "state_and_sampling_evidence": [
+      "docs/evidence/correctness/qwen35-mtp-prefix-state-values-2026-10-24.json",
+      "docs/evidence/correctness/qwen-mtp-multirow-sampling-2026-10-24.json"
+    ]
+  },
+  "build": [
+    {
+      "backend": "cpu",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-correctness-20261024\\projection-check\\cpu\\projection.exe",
+        "bytes": 139988480,
+        "sha256": "88c02230dfd21e25b6d06283661b938a677250d69ae8513f5f66d84db5ef171d"
+      },
+      "sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_projection_width_probe.cc",
+          "bytes": 11421,
+          "sha256": "5de7adb363129fb692825b4d19f8a5980cc0aa9187aea73ef32365e2dbf540bf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 408516,
+          "sha256": "638e603db575eeb3defd0b1b99c10dd506b285b9916414eeefbcdc122581109b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\backend.h",
+          "bytes": 18451,
+          "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\batch_schedule.h",
+          "bytes": 7902,
+          "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\driver.h",
+          "bytes": 166,
+          "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\host_predicates.h",
+          "bytes": 1486,
+          "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\model_geometry.h",
+          "bytes": 6722,
+          "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_acceptance.h",
+          "bytes": 4516,
+          "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+          "bytes": 17605,
+          "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_schedule.h",
+          "bytes": 5912,
+          "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\native_gate.h",
+          "bytes": 1050,
+          "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prefix_cache.h",
+          "bytes": 20952,
+          "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+          "bytes": 12730,
+          "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_roles.h",
+          "bytes": 18414,
+          "sha256": "09499648a3f703227976688a59b80c150aa6b6d8e6d4b0125cfff2c0c7a685f4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\probe_geometry.h",
+          "bytes": 1099,
+          "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\retained_resources.h",
+          "bytes": 1932,
+          "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+          "bytes": 16900,
+          "sha256": "1540305c2ffd8d52e015c5379e8b0fe7b5d65c08fea38754752a4596231d5914"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\schedule.h",
+          "bytes": 4762,
+          "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_cache.h",
+          "bytes": 8963,
+          "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_schedule.h",
+          "bytes": 4134,
+          "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+          "bytes": 13643,
+          "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+        }
+      ],
+      "compile": {
+        "path": ".scratch/mtp-correctness-20261024/projection-check/cpu/compile/command.json",
+        "bytes": 1214,
+        "sha256": "0370a046d73b35d101106f083b4ccb942dd8e7c942419a387355ba3145abe0ac"
+      },
+      "link": {
+        "path": ".scratch/mtp-correctness-20261024/projection-check/cpu/link/command.json",
+        "bytes": 32108,
+        "sha256": "3a7ed7a81c10e481614a6e9f0d8f7cc462a626f32075aba014b111fca34a6404"
+      },
+      "head_run": {
+        "exit": 0,
+        "seconds": 0.8549377918243408
+      },
+      "SDK_rebuilt": false
+    },
+    {
+      "backend": "cuda",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-correctness-20261024\\projection-check\\cuda\\projection.exe",
+        "bytes": 140004864,
+        "sha256": "dc2a42bc870380d267a64ddaec0d43b9fd730f9d68b42a45425521069042701b"
+      },
+      "sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_projection_width_probe.cc",
+          "bytes": 11421,
+          "sha256": "5de7adb363129fb692825b4d19f8a5980cc0aa9187aea73ef32365e2dbf540bf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 408516,
+          "sha256": "638e603db575eeb3defd0b1b99c10dd506b285b9916414eeefbcdc122581109b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\backend.h",
+          "bytes": 18451,
+          "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\batch_schedule.h",
+          "bytes": 7902,
+          "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\driver.h",
+          "bytes": 166,
+          "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\host_predicates.h",
+          "bytes": 1486,
+          "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\model_geometry.h",
+          "bytes": 6722,
+          "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_acceptance.h",
+          "bytes": 4516,
+          "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+          "bytes": 17605,
+          "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_schedule.h",
+          "bytes": 5912,
+          "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\native_gate.h",
+          "bytes": 1050,
+          "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prefix_cache.h",
+          "bytes": 20952,
+          "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+          "bytes": 12730,
+          "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_roles.h",
+          "bytes": 18414,
+          "sha256": "09499648a3f703227976688a59b80c150aa6b6d8e6d4b0125cfff2c0c7a685f4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\probe_geometry.h",
+          "bytes": 1099,
+          "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\retained_resources.h",
+          "bytes": 1932,
+          "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+          "bytes": 16900,
+          "sha256": "1540305c2ffd8d52e015c5379e8b0fe7b5d65c08fea38754752a4596231d5914"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\schedule.h",
+          "bytes": 4762,
+          "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_cache.h",
+          "bytes": 8963,
+          "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_schedule.h",
+          "bytes": 4134,
+          "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+          "bytes": 13643,
+          "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+        }
+      ],
+      "compile": {
+        "path": ".scratch/mtp-correctness-20261024/projection-check/cuda/compile/command.json",
+        "bytes": 1906,
+        "sha256": "0b9ceff257af6b108518819f24296187969129df5530c2bf53a37ce8b22aaa47"
+      },
+      "link": {
+        "path": ".scratch/mtp-correctness-20261024/projection-check/cuda/link/command.json",
+        "bytes": 31997,
+        "sha256": "806f58e3da6e4e7b6df008cf97b10898901fcfa3888132e856be3a06c98a5a70"
+      },
+      "head_run": {
+        "exit": 0,
+        "seconds": 1.1804008483886719
+      },
+      "SDK_rebuilt": false
+    }
+  ],
+  "fixture_correction": {
+    "error": "fixed projection: shape requires exactly one binding for every independent graph dimension\n",
+    "process": {
+      "exit": 1,
+      "seconds": 0.8865115642547607
+    },
+    "cause": "Focused consumer omitted Recipe independent last_row shape binding. Fixed via normal finite-exact child compile; no product math/resource guard was changed."
+  },
+  "operations": {
+    "new_inference_graph_calls": 5,
+    "head_CPU_graphs": 1,
+    "head_CUDA_graphs": 1,
+    "fixed_A_CUDA_graphs": 3,
+    "new_HTTP_requests_by_this_checker": 0,
+    "new_tensor_body_bytes_by_this_checker": 0,
+    "SDK_builds": 0,
+    "whole_model_runs": 0
+  },
+  "limitations": [
+    "The source head test selects the actual first3vocabulary rows with fullK5120; it does not run the complete NVIDIA27B target, full248320vocabulary or trained NextN.",
+    "No Graph physical BF16/F32[3,5120] weight bank is present. Workspace values are declared Graph report values, not measured native peak or a universal full-model memory bound.",
+    "The fixed-A test uses the current ordinary Recipe projection as a terminal tiny graph. It does not add diagnostic ports to the default full-model hot graph, establish a vendor reduction tree, or test model intelligence.",
+    "State-value same-width/suffix/lag1 and multirow p/q wiring are signed only by the separately linked actual evidence; this test does not replace them.",
+    "The initial focused head fixture omitted its independent Recipe last_row shape binding and correctly failed. It was fixed using the normal finite-exact child API, without changing product math or relaxing Graph checks.",
+    "No model weights, SDK, object files or executables are embedded in the evidence archive. Original bytes are identified by fixed revision, exactRange, strongETag and slice hashes."
+  ],
+  "reproduction": {
+    "build_cpu": "python .scratch/mtp-correctness-20261024/projection-check/check.py build cpu",
+    "build_cuda": "python .scratch/mtp-correctness-20261024/projection-check/check.py build cuda",
+    "head": "python .scratch/mtp-correctness-20261024/projection-check/check.py run-head <cpu|cuda>",
+    "width": "python .scratch/mtp-correctness-20261024/projection-check/check.py run-width cuda",
+    "oracles": [
+      "python .scratch/mtp-correctness-20261024/projection-check/head_oracle.py cpu cuda",
+      "python .scratch/mtp-correctness-20261024/projection-check/width_oracle.py"
+    ]
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-fixed-width-packed-head-2026-10-24-logs.zip",
+    "bytes": 247776,
+    "sha256": "ca6da397fba25786390b5807234d95f0181ac5283e9ff25d174ef98c7ed88272"
+  },
+  "archived_files": 88
+}

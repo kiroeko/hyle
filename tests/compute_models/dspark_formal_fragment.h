@@ -179,7 +179,7 @@ inline MoeResult append_moe(sem::Fragment &f,Value input,const MoeParameters &pa
   if(std::none_of(f.inputs.begin(),f.inputs.end(),[&](Value value){return value.ordinal()==parameters.map.ordinal();}))
     throw std::runtime_error("target exact global map must be an ordinary input");
   MoePorts ports;ports.input=input;ports.map=parameters.map;
-  ports.logits=f.one(c::model_ops::bfloat_linear_f32(),{input,parameters.router});
+  ports.logits=f.one(c::model_ops::dense_linear_f32(),{input,parameters.router});
   ports.softplus=core::unary(f,c::UnaryKind::kSoftplus,ports.logits);ports.scores=core::unary(f,c::UnaryKind::kSqrt,ports.softplus);
   ports.selection=binary(f,c::BinaryKind::kAdd,ports.scores,parameters.bias);
   const auto selected=f.append(c::Operation(c::TopK{.count=std::size_t(kSlots),.stable=true}),{ports.selection},2);

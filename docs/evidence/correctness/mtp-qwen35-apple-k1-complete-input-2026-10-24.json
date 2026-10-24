@@ -1,0 +1,191 @@
+{
+  "date": "2026-10-24",
+  "scope": "Limited complete original BF16 Qwen3.5-2B text consumer on one Mac16,12: ordinary/MTP K1, greedy/random, P154+4/C256/N1/R1. Not the complete Apple MTP feature matrix.",
+  "hardware": [
+    {
+      "command": [
+        "uname",
+        "-a"
+      ],
+      "exit": 0,
+      "output": "Darwin Kiros-MacBook-Air.local 27.0.0 Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132 arm64\n"
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "exit": 0,
+      "output": "Mac16,12\n"
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "exit": 0,
+      "output": "17179869184\n"
+    },
+    {
+      "command": [
+        "/usr/bin/c++",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+    }
+  ],
+  "deployment_target": "14.4; compiled and linked at that target, actual device runs macOS27, not an actual macOS14.4 runtime test.",
+  "frozen_source": {
+    "original_sha256": "9a244b68c7e7f485e0162b66bb75a254d8248f71783c21cd3174506cf3c14077",
+    "adaptations": [
+      "Clang nested Sampling aggregate default {false,{},0}",
+      "Cold CLI finite positive floats use classic-locale istringstream with noskipws/full consumption, matching the current product fix",
+      "MTP full_head produces model logits; the caller builds greedy TopK only for greedy policy, matching the current product fix"
+    ]
+  },
+  "input": {
+    "original": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/models/qwen35-2b/model.safetensors",
+      "bytes": 4548221488,
+      "sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1"
+    },
+    "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+    "header_bytes": 76656,
+    "checked_text_MTP_roles": 335,
+    "weight_copies": 0,
+    "HTTP": 0
+  },
+  "sampling": {
+    "temperature": 0.8,
+    "top_k": 40,
+    "top_p": 0.95,
+    "seed": 42
+  },
+  "cases": [
+    {
+      "case": "mtp-off-greedy",
+      "exit": 0,
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-k1-functional-20261024/attempt1/hyle-apple",
+        "bytes": 12891304,
+        "sha256": "974117365e4e9eebb3e8cf53daa2c9d258bdee32181b566304d1cc1d9fb4f190"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draw_cursor": 0,
+      "committed_target_rows": 157
+    },
+    {
+      "case": "mtp-off-random",
+      "exit": 0,
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-k1-functional-20261024/attempt1/hyle-apple",
+        "bytes": 12891304,
+        "sha256": "974117365e4e9eebb3e8cf53daa2c9d258bdee32181b566304d1cc1d9fb4f190"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draw_cursor": 4,
+      "committed_target_rows": 157
+    },
+    {
+      "case": "mtp-on-greedy",
+      "exit": 0,
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-k1-functional-20261024/attempt1/hyle-apple",
+        "bytes": 12891304,
+        "sha256": "974117365e4e9eebb3e8cf53daa2c9d258bdee32181b566304d1cc1d9fb4f190"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draw_cursor": 0,
+      "committed_target_rows": 157
+    },
+    {
+      "case": "mtp-on-random-int-cast-fixed",
+      "exit": 0,
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-k1-functional-20261024/attempt1/hyle-apple",
+        "bytes": 12891304,
+        "sha256": "c77821fa220ed9780fe66059d9f1f8fcf9154109084b91f659f5d77dbd0c5075"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        727
+      ],
+      "draw_cursor": 5,
+      "committed_target_rows": 157
+    }
+  ],
+  "discovered_and_fixed": [
+    {
+      "problem": "Frozen CLI failed Clang nested default-parameter rules and float from_chars was unavailable at deployment14.4.",
+      "fix": "Two frontend/CLI changes above. A private target26 compile attempt never ran a model and is not used in this evidence."
+    },
+    {
+      "problem": "Random MTP built a dead greedy TopK node77, both outputs had zero consumers and zero published boundaries; Apple could not prepare that unused operation.",
+      "fix": "Move token selection to the caller; no generic DCE or replacement TopK implementation."
+    },
+    {
+      "problem": "After removing dead TopK, artifact preparation declined at attempt56: categorical I32 choice -> F32 Cast -> Bool Cast was unsupported, eventually exhausting the original4096 attempts.",
+      "fix": "Actual I32->F32 Cast delegates to MLX astype. No expansion of unrelated integer conversion semantics. The fixed T2 graph succeeds in84 attempts; the4096 product limit is unchanged."
+    }
+  ],
+  "numeric_checks": {
+    "native_Apple_tests": 2,
+    "failures": 0,
+    "coverage": [
+      "I32 extrema and2^24 rounding neighbors, contiguous and transposed logical inputs, bit-level F32 oracle",
+      "Actual0/1 I32->F32->Bool->Select acceptance chain"
+    ]
+  },
+  "closure": {
+    "cached": "Existing10/24 Graph/GDN and current Dense objects, same actual native scale contract and embedded kernels as prior native-readiness evidence.",
+    "CacheStorage": "Explicit tag is not binary compatible with old headers. Actual constructors/comparisons/paged consumers and budget/lease objects were refreshed against current headers; source/dependency identities are included.",
+    "new_product_TUs": "17 initial small TUs compiled; one unrelated CPU native_batch object is excluded from the Apple image. One further actual Apple tensor TU supplies the required Cast.",
+    "no_private_graph_diagnostic_in_final": true,
+    "final": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-k1-functional-20261024/attempt1/hyle-apple",
+      "bytes": 12891304,
+      "sha256": "d3c04f31b901e94565bfbad8001d40092c7b698849c0fa8a3aebdb48f22da27e"
+    },
+    "SDK_builds": 0,
+    "native_builds": 0,
+    "SDK_copies": 0,
+    "model_copies": 0,
+    "HTTP": 0
+  },
+  "limits": [
+    "No new all-model/all-quantization claim",
+    "No K>1, confidence control, multi-session/prefix/restore/cancellation coverage from these four runs",
+    "No full-task quality or distribution-equivalence conclusion from four output tokens",
+    "No performance comparison; no claims about private provider memory bounds"
+  ],
+  "previous_native_evidence": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-native-runtime-readiness-2026-10-24.json",
+    "bytes": 4609,
+    "sha256": "404edec4035464aa4b5ac8b357639cf056ba6785eca7276df96fb433e66fd3c5"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-qwen35-apple-k1-complete-input-2026-10-24-logs.zip",
+    "bytes": 856203,
+    "sha256": "593b2db394485c9a5cf52ebdb12cdd155c466db264b14253bd601cbe987097a6"
+  }
+}

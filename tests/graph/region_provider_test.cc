@@ -8387,6 +8387,87 @@ TEST(GraphRegions,
   EXPECT_EQ(lifetime.external_charge_at_destroy, 0U);
 }
 
+TEST(GraphRegions,
+     OwnerlessSystemMaterializationRetainsLeaseUntilNativeRetirement) {
+  const std::array values{1.F, 2.F, 3.F, 4.F};
+  hyle::compute::ResourceBudget budget;
+  ColdCopyResourceLifetime lifetime{.budget = &budget};
+  RegionProbe probe;
+  probe.asynchronous_backend = true;
+  probe.unknown_completion_observation = true;
+  struct RetireOnExit final {
+    RegionProbe &probe;
+    ~RetireOnExit() {
+      if (probe.abandoned_lifetime.valid())
+        finish_abandoned_prefix(probe);
+    }
+  } cleanup{probe};
+  {
+    auto context = make_context(probe);
+    ColdCopyResource resource{
+        {new HostResource, ColdCopyResourceDeleter{&lifetime}}};
+    auto adopted = hyle::compute::StorageOwner::adopt(context, std::move(resource));
+    ASSERT_TRUE(adopted) << adopted.error().message();
+    auto owner = std::move(*adopted);
+    const std::array limits{
+        hyle::compute::ResourceBudgetLimit{hyle::mem::system_resource(), SIZE_MAX},
+        hyle::compute::ResourceBudgetLimit{owner.ref(), SIZE_MAX}};
+    budget = hyle::compute::ResourceBudget::create({.limits = limits}).value();
+    auto backing = Buffer::create(hyle::mem::system_resource(), 16, 64).value();
+    ASSERT_TRUE(backing.write(0, std::as_bytes(std::span(values))).ok());
+    auto ready = hyle::compute::ReadLease::adopt(std::move(backing),
+        {.resource_budget = budget}).value();
+    auto builder = GraphBuilder::create().value();
+    const auto constant = builder.constant(row(4)).value();
+    ASSERT_TRUE(builder.publish(constant).ok());
+    const auto graph = std::move(builder).finish().value();
+    const std::array bindings{hyle::graph::ConstantBinding{
+        .value = constant,
+        .tensor = ready.tensor(row(4)).value(),
+        .policy = hyle::graph::ConstantPolicy::kMaterialize,
+        .lease = ready}};
+    const std::array storage{hyle::graph::StorageDomain{
+        .resource = owner.ref(), .owner = owner}};
+    const std::array targets{hyle::graph::ExecutionTarget{
+        .source = hyle::graph::ExecutionSource::acquire(context).value(),
+        .default_storage = hyle::graph::StorageDomainId{0}}};
+    auto compiled = hyle::graph::compile(graph,
+        {.storage_domains = storage, .targets = targets},
+        {.constants = bindings,
+         .compilation_storage = {{.max_resident_bytes = 1U << 20,
+                                  .max_peak_bytes = 1U << 20}},
+         .resource_budget = budget});
+    ASSERT_FALSE(compiled);
+    EXPECT_TRUE(compiled.error().IsUnavailable());
+    EXPECT_EQ(compiled.error().message(),
+              "injected unknown preparation observation");
+  } // Source handles, destination owner and failed compile result are gone.
+  EXPECT_EQ(probe.copy_count, 1U);
+  EXPECT_EQ(probe.submit_count, 1U);
+  EXPECT_EQ(probe.completion_wait_count, 1U);
+  ASSERT_TRUE(probe.abandoned_lifetime.valid());
+  EXPECT_EQ(probe.context_destroy_count, 0U);
+  EXPECT_EQ(lifetime.destroys, 0U);
+  const auto external_bytes = [&] {
+    return budget.usage(hyle::mem::system_resource())
+        ->live_by_category[static_cast<std::size_t>(
+            hyle::compute::ResourceBudgetCategory::kExternal)];
+  };
+  EXPECT_EQ(external_bytes(), 16U);
+  std::array<float, 4> actual{};
+  ASSERT_TRUE(probe.queued_copy_destinations[0].read(
+      std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, values);
+  finish_abandoned_prefix(probe);
+  EXPECT_FALSE(probe.abandoned_lifetime.valid());
+  EXPECT_EQ(probe.completed_prefix, 1U);
+  EXPECT_EQ(probe.copy_count, 1U);
+  EXPECT_EQ(external_bytes(), 0U);
+  EXPECT_EQ(probe.context_destroy_count, 1U);
+  EXPECT_EQ(lifetime.destroys, 1U);
+  EXPECT_EQ(lifetime.constant_charge_at_destroy, 0U);
+}
+
 TEST(GraphRegions, QueuedMaterializationRejectsRawSourceBeforeCopy) {
   RegionProbe probe;
   probe.asynchronous_backend = true;

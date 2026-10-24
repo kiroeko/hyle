@@ -1,0 +1,314 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite current GeometryV2 Qwen3.5-2B BF16 K2/K4 selected-prefix state value and causal rejected-suffix check. No model task quality/performance or arbitrary cross-width equality claim.",
+  "source": {
+    "prepared_manifest": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "prompt": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    "prompt_rows": 15,
+    "context": 64,
+    "resident_sessions": 4,
+    "active_sequences": 1,
+    "candidate_boundaries": 5,
+    "finite_cache_byte_limit": 1073741824
+  },
+  "validation": {
+    "backends": [
+      {
+        "backend": "cpu",
+        "prefix_cases": 17,
+        "perturbed_suffix_pairs": 7,
+        "exact_checked_bytes": 138608640,
+        "old_complete_state_unchanged": true,
+        "final_live_versions": 0,
+        "new_graph_ports": 0,
+        "cross_width_bit_equality_required": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "process": {
+          "path": ".scratch/mtp-correctness-20261024/state-check/cpu/run/process.json",
+          "bytes": 52,
+          "sha256": "a8907a681fe82059d008c4658787ae3e1b9bdbe7d6e798ea6c0d0b51b89c8749"
+        },
+        "source_manifest": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_prefix_value_probe.cc",
+            "bytes": 12217,
+            "sha256": "c5405969bb40c5375ad4e0d37601bb9661a7eb97250360793b7c0565754d2126"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "bytes": 405598,
+            "sha256": "b766774fec0414d34ee97396c572da56fc22c9e95b97d2a1c81b1e71bae20d1e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_session_probe.cc",
+            "bytes": 112361,
+            "sha256": "e688c1980f1c9064ce3b1deb01ccca19c63a2957e608d113466db2e4b3356905"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\backend.h",
+            "bytes": 17705,
+            "sha256": "797e0c7eaec98f20da7490bf6c4393af8337ee75a517fa3b6ca3417d80ac4d0f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\batch_schedule.h",
+            "bytes": 7902,
+            "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\driver.h",
+            "bytes": 166,
+            "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\model_geometry.h",
+            "bytes": 6722,
+            "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_acceptance.h",
+            "bytes": 4516,
+            "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+            "bytes": 17605,
+            "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_schedule.h",
+            "bytes": 5912,
+            "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\native_gate.h",
+            "bytes": 1050,
+            "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prefix_cache.h",
+            "bytes": 20952,
+            "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+            "bytes": 12730,
+            "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_roles.h",
+            "bytes": 18414,
+            "sha256": "09499648a3f703227976688a59b80c150aa6b6d8e6d4b0125cfff2c0c7a685f4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\probe_geometry.h",
+            "bytes": 1099,
+            "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+            "bytes": 13287,
+            "sha256": "a32ee4c0d6737841a8f091bfe394997024274ba920276cbb17cdd37631cace1f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\schedule.h",
+            "bytes": 4762,
+            "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_cache.h",
+            "bytes": 8963,
+            "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_schedule.h",
+            "bytes": 4134,
+            "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+            "bytes": 13643,
+            "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+          }
+        ]
+      },
+      {
+        "backend": "cuda",
+        "prefix_cases": 17,
+        "perturbed_suffix_pairs": 7,
+        "exact_checked_bytes": 138608640,
+        "old_complete_state_unchanged": true,
+        "final_live_versions": 0,
+        "new_graph_ports": 0,
+        "cross_width_bit_equality_required": false,
+        "quality_claim": false,
+        "performance_claim": false,
+        "process": {
+          "path": ".scratch/mtp-correctness-20261024/state-check/cuda/run/process.json",
+          "bytes": 52,
+          "sha256": "9b6ce60aa854b556e2eb7c938131f4c6b448ada1f59174f803e5ce89c47f9b82"
+        },
+        "source_manifest": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_prefix_value_probe.cc",
+            "bytes": 12217,
+            "sha256": "c5405969bb40c5375ad4e0d37601bb9661a7eb97250360793b7c0565754d2126"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\backend.h",
+            "bytes": 17705,
+            "sha256": "797e0c7eaec98f20da7490bf6c4393af8337ee75a517fa3b6ca3417d80ac4d0f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\batch_schedule.h",
+            "bytes": 7902,
+            "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\driver.h",
+            "bytes": 166,
+            "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\model_geometry.h",
+            "bytes": 6722,
+            "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_acceptance.h",
+            "bytes": 4516,
+            "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+            "bytes": 17605,
+            "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_schedule.h",
+            "bytes": 5912,
+            "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\native_gate.h",
+            "bytes": 1050,
+            "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prefix_cache.h",
+            "bytes": 20952,
+            "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+            "bytes": 12730,
+            "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_roles.h",
+            "bytes": 18414,
+            "sha256": "09499648a3f703227976688a59b80c150aa6b6d8e6d4b0125cfff2c0c7a685f4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\probe_geometry.h",
+            "bytes": 1099,
+            "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+            "bytes": 13287,
+            "sha256": "a32ee4c0d6737841a8f091bfe394997024274ba920276cbb17cdd37631cace1f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\schedule.h",
+            "bytes": 4762,
+            "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_cache.h",
+            "bytes": 8963,
+            "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_schedule.h",
+            "bytes": 4134,
+            "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+            "bytes": 13643,
+            "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\batch_probe.cc",
+            "bytes": 26876,
+            "sha256": "33aadb707e545d0ea0f8ad5bff591acd5ef5e5a2504b119870bd10f492e6707c"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "bytes": 405598,
+            "sha256": "b766774fec0414d34ee97396c572da56fc22c9e95b97d2a1c81b1e71bae20d1e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_session_probe.cc",
+            "bytes": 112361,
+            "sha256": "e688c1980f1c9064ce3b1deb01ccca19c63a2957e608d113466db2e4b3356905"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\native_gate.cc",
+            "bytes": 11066,
+            "sha256": "9fba275b89d616cf92b514368df5511985e361256407ba255fd04abc4d0d9433"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\retained_budget_probe.cc",
+            "bytes": 19739,
+            "sha256": "5cdbcdfb1f32da1576df64dc0a26bc3dc8ae1291c75d82dc069f819e0a844a02"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\retirement_probe.cc",
+            "bytes": 40236,
+            "sha256": "9202c1988f914f911fa490bfa78da562aab55a3aa574338b1cbf81cc0512df42"
+          }
+        ]
+      }
+    ],
+    "actual_backend_runs": 2,
+    "prefix_cases_per_backend": 17,
+    "suffix_perturbation_pairs_per_backend": 7,
+    "exact_compared_bytes_per_backend": 138608640,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "new_graph_ports": 0,
+    "product_math_or_state_changes": 0
+  },
+  "oracles": [
+    "Each actually published layer conv/GDN state and carry/prior equals row n-1 / n-2 of the same completed unmodified verifier Graph, before native append/result observation is revoked.",
+    "Every target logical committed KV byte equals the corresponding prefix of an actual full-acceptance peer using the same base/input width. Physical page IDs may differ and are not mistaken for numerical state.",
+    "Actual repaired draft KV equals an independent original target-hidden/token input assembly through the existing same-width KV-only draft Graph; recursive approximate hidden is not an oracle.",
+    "Changing only unconsumed suffix IDs at the same verifier width leaves all52 committed payloads and metadata unchanged, then an identical real T1 continuation also preserves all52 payloads.",
+    "Both initial lag0 and retained lag1 catch-up paths execute. Complete old state remains unchanged and all evaluated version references retire to zero."
+  ],
+  "compiled_source_retention": "Compiled source files are retained by exact recorded SHA. Frozen main.cc is reconstructed by removing only root subsequent early-identity CRLF handling line, with its recorded original hash checked. A first CPU compile guard also watched irrelevant native_gate.cc and rejected that instrument; final CPU compile tracks only participating source/header files. No failed test or arithmetic failure is hidden.",
+  "limits": [
+    "One actual original Q35 BF16 source, P15, widths3/5, finite first/middle/near-tail/full consumption. No complete other-model/codec/platform or full-model task-quality guarantee.",
+    "Same-width source/port/causal invariance uses exact equality. T1 vsT3/T5 general math is allowed existing provider-dependent floating variation; no bit equality or seedwise ordinary/MTP ID equality is required.",
+    "Forced selection and suffix perturbation are explicit diagnostics, not claimed natural acceptance/throughput or a modified production execution graph."
+  ],
+  "reusable_prior_evidence": [
+    "docs/evidence/correctness/qwen-mtp-quality-prefix-2026-10-22.json",
+    "docs/evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json"
+  ],
+  "log_bundle": {
+    "path": "docs/evidence/correctness/qwen35-mtp-prefix-state-values-2026-10-24-logs.zip",
+    "bytes": 185012,
+    "sha256": "8ed7e84ef747a75cb2dd6dc1453e106b11f13d93f0795d64797bcb685d34956c"
+  }
+}

@@ -35,6 +35,9 @@
 #include "dspark_original_target_weights.h"
 #include "glm_shared_vocabulary_reference.h"
 #include "hyle/compute/state_versions.h"
+#include "dspark_stochastic_head.h"
+#include "sampling_fixture.h"
+#include "../../engine/inference/sampling_cursor.h"
 
 namespace {
 namespace native=dspark_native_consumer;
@@ -61,6 +64,9 @@ struct Fixture final {
   std::int64_t position,capacity;
   const c::ModelArtifactProfileDescription *profile;
   const char *expert_directory,*frontier_file,*wait_flag,*scope;
+  bool short_verifier_tails=false;
+  bool stochastic_mtp=false;
+  bool stochastic_branch_witness=true;
 };
 inline constexpr Fixture kProFixture{4351,4368,&cpu_c4_model_branches::pro_profile,
     "HYLE_DSPARK_PRO_EXPERT_DIR","HYLE_DSPARK_PRO_FRONTIER_FILE","HYLE_DSPARK_PRO_WAIT_FOR_EXPERTS",
@@ -155,9 +161,13 @@ struct FrontierSupply final {
 #endif
         }
         ++requests;announced=true;
-        std::printf("DSpark Pro actual expert frontier section=%s stage=%zu missing=%zu; %s\n",label,stage,missing.size(),wait?"waiting for explicit external acquisition":"missing acquisition fails");std::fflush(stdout);
+        std::printf("DSpark Pro actual expert frontier section=%s stage=%zu missing=%zu ids=",label,stage,missing.size());
+        for(std::size_t i=0;i<missing.size();++i)std::printf("%s%d",i?",":"",int(missing[i]));
+        std::printf("; %s\n",wait?"waiting for explicit external acquisition":"missing acquisition fails");std::fflush(stdout);
       }
-      if(!wait)throw std::runtime_error("original Pro selected expert bytes are not acquired; actual frontier request recorded");
+      if(!wait)throw std::runtime_error(request.empty()?
+          "original Pro selected expert bytes are not acquired; actual missing IDs printed (no frontier file configured)":
+          "original Pro selected expert bytes are not acquired; actual frontier request recorded");
       if(std::chrono::steady_clock::now()-started>std::chrono::minutes(20))
         throw std::runtime_error("original Pro external expert acquisition exceeded bounded frontier wait");
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -276,7 +286,7 @@ struct Verifier final {
   std::vector<Value> ids;
 };
 Verifier verifier(const own::Bound &bound,std::int64_t rows,const c::ModelArtifactProfileDescription *profile) {
-  if(rows!=1&&rows!=6)throw std::runtime_error("Pro verifier needs one or six actual normalized target rows");
+  if(rows<1||rows>6)throw std::runtime_error("Pro verifier needs one through six actual normalized target rows");
   Verifier result;result.fragment.region+=std::uint64_t(rows);
   result.fragment.profile=draft_program::checked_profile(*bound.source,profile);
   auto &f=result.fragment;const auto &model=bound.source->geometry();Value joined;
@@ -285,7 +295,7 @@ Verifier verifier(const own::Bound &bound,std::int64_t rows,const c::ModelArtifa
     joined=i?draft::ds::concat(f,joined,input,0):input;
   }
   const auto head=draft_program::immutable(f,result.constants,bound.at("head.weight"),bound.at("head.weight").description);
-  result.logits=f.one(c::model_ops::bfloat_linear_f32(),{joined,head});
+  result.logits=f.one(c::model_ops::dense_linear_f32(),{joined,head});
   const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{result.logits},2);result.scores=top[0];
   for(std::int64_t i=0;i<rows;++i) {
     auto id=draft::math::reshape(f,draft::ds::slice(f,top[1],0,i,1),{1});id=draft::math::copy(f,id);f.outputs.push_back(id);result.ids.push_back(id);
@@ -297,8 +307,8 @@ void report_head(const Run &run,std::size_t row_count) {
   const auto copied=take(run.graph.producer(take(run.graph.output_id(row_count),"Pro fullV diagnostic")),"Pro fullV Copy producer");
   if(!take(run.graph.operation(copied),"Pro fullV Copy operation").get_if<c::Copy>())throw std::runtime_error("Pro fullV diagnostic must own its Copy");
   const auto projected=take(run.graph.producer(take(run.graph.node_input(copied,0),"Pro fullV Copy predecessor")),"Pro actual fullV operation");
-  if(!take(run.graph.operation(projected),"Pro original fullV operation").custom_as<c::model_ops::BFloatLinearF32>())
-    throw std::runtime_error("Pro actual fullV must retain BFloatLinearF32");
+  if(!take(run.graph.operation(projected),"Pro original fullV operation").custom_as<c::model_ops::DenseLinearF32>())
+    throw std::runtime_error("Pro actual fullV must retain DenseLinearF32");
   std::size_t selected=0;for(std::size_t i=0;i<run.compiled.report.step_count();++i) {
     const auto step=take(run.compiled.report.step(i),"Pro fullV selected provider");
     for(std::size_t j=0;j<step.node_count;++j)if(take(run.compiled.report.step_node(i,j),"Pro fullV actual node")==projected) {
@@ -324,8 +334,9 @@ CaptureJoin capture_join(const dspark_target_geometry::Geometry &model,const c::
 struct State final {
   c::StateSchema schema;c::StateStore store;std::array<c::StateEntryId,kMembers> entries;
   std::vector<c::TensorDesc> descriptions;
+  std::optional<c::StateEntryId> random_entry;
   static State create(std::span<const c::TensorDesc> target_descriptions,std::size_t budget,
-      const dspark_target_geometry::Geometry &model) {
+      const dspark_target_geometry::Geometry &model,bool stochastic=false) {
     if(target_descriptions.size()!=21)throw std::runtime_error("Pro target state must retain all21 actual cache resources");
     State result;std::vector<c::StateEntrySpec> specs;
     for(std::size_t i=0;i<3;++i)result.descriptions.push_back(take(c::row_cache_carrier_description(draft::kEncoding,128),"Pro main history schema"));
@@ -335,22 +346,31 @@ struct State final {
     specs.push_back({.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(policy::Boundary)});
     for(const auto &description:target_descriptions)specs.push_back({.description=description});
     specs.push_back({.description=dense(c::DataType::kInt32,{1})});
-    result.schema=take(c::StateSchema::create(specs),"Pro single30member schema");
+    if(stochastic)specs.push_back({.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(hyle::inference::SamplingCursor)});
+    result.schema=take(c::StateSchema::create(specs),"Pro complete model and optional RNG schema");
     result.store=take(c::StateStore::create(result.schema,{.max_versions=16,.max_drafts=4,.max_retained_blocks=600,
         .max_backing_bytes=budget}),"Pro bounded StateStore");
-    for(std::size_t i=0;i<kMembers;++i)result.entries[i]=take(result.schema.entry(i),"Pro typed state member");return result;
+    for(std::size_t i=0;i<kMembers;++i)result.entries[i]=take(result.schema.entry(i),"Pro typed state member");
+    if(stochastic)result.random_entry=take(result.schema.entry(kMembers),"Pro transactional RNG member");
+    return result;
   }
   policy::Boundary frontier(const c::StateVersion &version) const {
     const auto data=read(take(version.member(entries[7]),"Pro actual protocol metadata"));
     if(data.size()!=sizeof(policy::Boundary))throw std::runtime_error("Pro metadata extent");
     policy::Boundary result;std::memcpy(&result,data.data(),data.size());return result;
   }
+  hyle::inference::SamplingCursor random(const c::StateVersion &version) const {
+    if(!random_entry)throw std::runtime_error("stochastic state has no RNG metadata");
+    const auto raw=read(take(version.member(*random_entry),"DSpark actual RNG metadata"));
+    if(raw.size()!=sizeof(hyle::inference::SamplingCursor))throw std::runtime_error("DSpark RNG metadata extent");
+    hyle::inference::SamplingCursor result;std::memcpy(&result,raw.data(),raw.size());return result;
+  }
   std::vector<c::ReadLease> members(const c::StateVersion &version,std::size_t first,std::size_t count) const {
     std::vector<c::ReadLease> result;for(std::size_t i=0;i<count;++i)result.push_back(take(version.member(entries.at(first+i)),"Pro retained state lease"));return result;
   }
   c::StateVersion selected(const c::StateVersion &from,std::span<const c::ReadLease> history,
       std::span<const c::ReadLease> captures,std::span<const c::ReadLease> target_state,const c::ReadLease &pending,
-      std::uint32_t consumed,std::uint64_t epoch) {
+      std::uint32_t consumed,std::uint64_t epoch,const hyle::inference::SamplingCursor *next_random=nullptr) {
     auto facts=frontier(from);const auto ids=values<std::int32_t>(pending);
     if(history.size()!=4||captures.size()!=3||target_state.size()!=21||!consumed||consumed>6||epoch<=facts.epoch||
         ids.size()!=1||ids[0]<0||ids[0]>=draft::kVocabulary)throw std::runtime_error("Pro selected prefix/epoch/pending contract");
@@ -363,6 +383,8 @@ struct State final {
     check(staged.replace(entries[kPending],pending),"Pro pending is actual verifier row lease");
     facts.epoch=epoch;facts.next_position+=consumed;facts.consumed+=consumed;facts.pending=ids[0];
     check(staged.replace_metadata(entries[7],std::as_bytes(std::span(&facts,1))),"Pro accepted epoch/frontier");
+    if(bool(random_entry)!=bool(next_random))throw std::runtime_error("DSpark random cursor must publish with its complete model state");
+    if(next_random)check(staged.replace_metadata(*random_entry,std::as_bytes(std::span(next_random,1))),"DSpark accepted transactional RNG cursor");
     return take(staged.finalize(),"Pro complete atomic candidate");
   }
 };
@@ -404,10 +426,33 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
   auto main6=prepare_plain(backend,draft_program::build_main_projection(bound,6,0x0ca22000,setup.profile));
   auto history6=prepare_plain(backend,draft_program::build_main_history(bound,6,0x0ca22100,setup.profile));
   auto main1=prepare_plain(backend,draft_program::build_main_projection(bound,1,0x0ca22200,setup.profile));
-  auto history1=prepare_plain(backend,draft_program::build_main_history(bound,1,0x0ca22300,setup.profile));
+  // Shortened verifier blocks retain at most five real one-row checkpoints
+  // plus a following ordinary step. Their rings must not reuse live storage.
+  auto history1=prepare_plain(backend,draft_program::build_main_history(bound,1,0x0ca22300,setup.profile),7);
   auto joined_captures=prepare_plain(backend,capture_join(model,setup.profile),1);
-  auto verify6=prepare_plain(backend,verifier(bound,6,setup.profile));auto verify1=prepare_plain(backend,verifier(bound,1,setup.profile));
-  report_head(verify6.run,6);report_head(verify1.run,1);
+  std::array<std::optional<Plain<Verifier>>,6> verifiers;
+  for(std::size_t rows=1;rows<=verifiers.size();++rows) {
+    verifiers[rows-1].emplace(prepare_plain(backend,verifier(bound,std::int64_t(rows),setup.profile)));
+    report_head(verifiers[rows-1]->run,rows);
+  }
+  namespace stochastic=dspark_stochastic_head;
+  const stochastic::s::Policy sample_policy{.temperature=1,.top_k=0,.top_p=1};
+  std::array<std::optional<Plain<stochastic::Proposal>>,6> proposals;
+  std::array<std::optional<Plain<stochastic::Verification>>,6> decisions;
+  std::optional<Plain<stochastic::Verification>> bonus_ordinary,bonus_decision;
+  std::optional<Plain<stochastic::Proposal>> bonus_draft;
+  if(setup.stochastic_mtp) {
+    for(std::size_t count=0;count<=5;++count) {
+      if(count)proposals[count].emplace(prepare_plain(backend,stochastic::proposal(bound,count,sample_policy,setup.profile),3));
+      decisions[count].emplace(prepare_plain(backend,stochastic::verification(count,sample_policy,setup.profile),4));
+    }
+    if(setup.stochastic_branch_witness) {
+      auto bonus_policy=sample_policy;bonus_policy.temperature=8;
+      bonus_ordinary.emplace(prepare_plain(backend,stochastic::verification(0,bonus_policy,setup.profile),4));
+      bonus_draft.emplace(prepare_plain(backend,stochastic::proposal(bound,1,bonus_policy,setup.profile),3));
+      bonus_decision.emplace(prepare_plain(backend,stochastic::verification(1,bonus_policy,setup.profile),4));
+    }
+  }
   std::vector<c::TensorDesc> target_descriptions;
   for(std::size_t stage=0;stage<3;++stage) {
     const auto descriptions=target::descriptions(dspark_original_target_roles::compression_ratio(stage),setup.capacity,model);
@@ -418,13 +463,20 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
   };
   for(const auto &part:proposal.run.phases)add(part.pool.stats().capacity_bytes);
   for(const auto &plan:targets)for(const auto &part:plan.run.phases)add(part.pool.stats().capacity_bytes);
-  for(const auto *part:{&main6.run,&history6.run,&main1.run,&history1.run,&joined_captures.run,&verify6.run,&verify1.run})add(part->pool.stats().capacity_bytes);
+  for(const auto *part:{&main6.run,&history6.run,&main1.run,&history1.run,&joined_captures.run})add(part->pool.stats().capacity_bytes);
+  for(const auto &plan:verifiers)add(plan->run.pool.stats().capacity_bytes);
+  for(const auto &plan:proposals)if(plan)add(plan->run.pool.stats().capacity_bytes);
+  for(const auto &plan:decisions)if(plan)add(plan->run.pool.stats().capacity_bytes);
+  if(bonus_ordinary)add(bonus_ordinary->run.pool.stats().capacity_bytes);
+  if(bonus_decision)add(bonus_decision->run.pool.stats().capacity_bytes);
+  if(bonus_draft)add(bonus_draft->run.pool.stats().capacity_bytes);
   const auto initial_budget=[&](std::size_t amount){if(amount>std::numeric_limits<std::size_t>::max()-255)throw std::runtime_error("Pro initial state alignment overflow");add((amount+255)&~std::size_t{255});};
   for(const auto &description:target_descriptions)initial_budget(take(description.required_bytes(),"Pro actual target initial backing"));
   for(std::size_t i=0;i<3;++i)initial_budget(128*std::size_t(draft::kEncoding.row_bytes()));
   initial_budget(std::size_t(model.hidden)*sizeof(float));for(std::size_t i=0;i<3;++i)initial_budget(std::size_t(4*model.hidden)*sizeof(float));
   initial_budget(sizeof(std::int32_t));add(22*((sizeof(policy::Boundary)+63)&~std::size_t{63}));
-  auto state=State::create(target_descriptions,budget,model);std::size_t peak=0;
+  if(setup.stochastic_mtp)add(22*((sizeof(hyle::inference::SamplingCursor)+63)&~std::size_t{63}));
+  auto state=State::create(target_descriptions,budget,model,setup.stochastic_mtp);std::size_t peak=0;
   const auto account=[&]{const auto stats=state.store.stats();peak=std::max(peak,stats.backing_bytes);EXPECT_LE(stats.backing_bytes,budget);EXPECT_LE(stats.versions,16U);EXPECT_LE(stats.drafts,4U);};
   std::vector<c::StateMember> members;
   for(std::size_t i=0;i<7;++i)members.push_back({state.entries[i],upload(owner,Bytes(take(state.descriptions[i].required_bytes(),"Pro finite draft initial fixture")))});
@@ -439,7 +491,9 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
     }
   }
   members.push_back({state.entries[kPending],upload(owner,bytes<std::int32_t>(std::array<std::int32_t,1>{3}))});
-  auto base=take(state.store.import(members),"Pro complete finite initial30member state");members.clear();account();
+  const hyle::inference::SamplingCursor initial_random{123,7,0};
+  if(state.random_entry)members.push_back({*state.random_entry,{},std::as_bytes(std::span(&initial_random,1))});
+  auto base=take(state.store.import(members),"Pro complete finite initial model/RNG state");members.clear();account();
   const auto initial_ring=read(take(base.member(state.entries[0]),"Pro retained old ring"));
   const auto initial_pending=take(base.member(state.entries[kPending]),"Pro retained pending");
   std::size_t draft_episodes=0,target_rows=0,main_calls=0,history_calls=0,head_calls=0,full_values=0,feedback=0;
@@ -452,7 +506,7 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
     auto rings=state.members(version,0,3);input.insert(input.end(),rings.begin(),rings.end());
     auto output=native::execute_draft(backend,proposal.run,input);
     const auto get=floats(proposal.recipe,output,input);const auto raw=[&](Value value){return read(actual(proposal.recipe,output,input,value));};
-    draft_reference::observe(*source,proposal.recipe.result,get,raw,draft_episodes==0);verified();++draft_episodes;++feedback;return output;
+    draft_reference::observe(*source,proposal.recipe.result,get,raw,draft_episodes==0&&!setup.short_verifier_tails&&!setup.stochastic_mtp);verified();++draft_episodes;++feedback;return output;
   };
   struct Row final {std::array<c::ReadLease,21> state;std::array<c::ReadLease,3> captures;c::ReadLease normalized;};
   const auto target_row=[&](std::int64_t position,std::int32_t token,std::span<const c::ReadLease> previous) {
@@ -465,11 +519,11 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
     auto &plan=targets.at(std::size_t(position-setup.position));auto output=native::execute_draft(backend,plan.run,input);
     const auto get=floats(plan.recipe,output,input);const auto raw=[&](Value value){return read(actual(plan.recipe,output,input,value));};
     const auto current=target::Plan::make(position,setup.capacity,model);
-    for(std::size_t stage=0;stage<3;++stage)target_reference::observe_layer(*target_supply.source,stage,plan.recipe.layers[stage],plan.recipe.state_inputs[stage],current,get,raw,target_rows==0);
+    for(std::size_t stage=0;stage<3;++stage)target_reference::observe_layer(*target_supply.source,stage,plan.recipe.layers[stage],plan.recipe.state_inputs[stage],current,get,raw,target_rows==0&&!setup.short_verifier_tails&&!setup.stochastic_mtp);
     target_reference::observe_head(*target_supply.source,plan.recipe.head,get);verified();
     Row row;for(std::size_t i=0;i<21;++i)row.state[i]=output[i];for(std::size_t i=0;i<3;++i)row.captures[i]=output[21+i];row.normalized=output[24];++target_rows;return row;
   };
-  const auto catchup=[&](std::span<const Row> rows,std::span<const c::ReadLease> old,std::int64_t position) {
+  const auto catchup_one_or_six=[&](std::span<const Row> rows,std::span<const c::ReadLease> old,std::int64_t position) {
     if(rows.empty()||(rows.size()!=1&&rows.size()!=6)||old.size()!=3)throw std::runtime_error("Pro accepted main-history row contract");
     auto &projection=rows.size()==6?main6:main1;auto &history=rows.size()==6?history6:history1;
     std::vector<c::ReadLease> captures;
@@ -480,31 +534,407 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
       captures=backend.execute(joined_captures.run,input);
     }
     auto projected=backend.execute(projection.run,captures);
-    draft_reference::observe_main(*source,projection.recipe.ports,floats(projection.recipe,projected,captures),main_calls==0);verified();++main_calls;
+    draft_reference::observe_main(*source,projection.recipe.ports,floats(projection.recipe,projected,captures),main_calls==0&&!setup.short_verifier_tails&&!setup.stochastic_mtp);verified();++main_calls;
     std::vector<std::int32_t> positions(rows.size()),slots(rows.size());std::iota(positions.begin(),positions.end(),std::int32_t(position));
     for(std::size_t i=0;i<slots.size();++i)slots[i]=positions[i]%128;
     std::vector<c::ReadLease> input{projected[0],upload(owner,bytes<std::int32_t>(positions)),upload(owner,bytes<std::int32_t>(slots))};input.insert(input.end(),old.begin(),old.end());
     auto output=backend.execute(history.run,input);
     const auto raw=[&](Value value){return read(actual(history.recipe,output,input,value));};
-    draft_reference::observe_history(*source,history.recipe.ports,floats(history.recipe,output,input),raw,history_calls==0);verified();++history_calls;return output;
+    draft_reference::observe_history(*source,history.recipe.ports,floats(history.recipe,output,input),raw,history_calls==0&&!setup.short_verifier_tails&&!setup.stochastic_mtp);verified();++history_calls;return output;
+  };
+  const auto catchup=[&](std::span<const Row> rows,std::span<const c::ReadLease> old,std::int64_t position) {
+    if(rows.empty()||rows.size()>6||old.size()!=3)throw std::runtime_error("Pro bounded main-history row contract");
+    if(rows.size()==1||rows.size()==6)return catchup_one_or_six(rows,old,position);
+    // The trained draft still has five rows. Only target/main-history work is
+    // shortened, using already-prepared one-row math for this finite fixture.
+    std::vector<c::ReadLease> output,prior(old.begin(),old.end());
+    for(std::size_t i=0;i<rows.size();++i) {
+      auto current=catchup_one_or_six(rows.subspan(i,1),prior,position+std::int64_t(i));
+      prior.assign(current.begin(),current.begin()+3);
+      output.insert(output.end(),current.begin(),current.begin()+4);
+    }
+    return output;
   };
   const auto verify_rows=[&](std::span<const Row> rows) {
-    auto &plan=rows.size()==6?verify6:verify1;std::vector<c::ReadLease> input;std::vector<std::uint16_t> normalized;
+    if(rows.empty()||rows.size()>6)throw std::runtime_error("Pro verifier needs one through six actual target rows");
+    auto &plan=*verifiers.at(rows.size()-1);std::vector<c::ReadLease> input;std::vector<std::uint16_t> normalized;
     for(const auto &row:rows) {input.push_back(row.normalized);auto bits=values<std::uint16_t>(row.normalized);normalized.insert(normalized.end(),bits.begin(),bits.end());}
     auto output=backend.execute(plan.run,input);const auto logits=values<float>(output.at(rows.size())),scores=values<float>(output.at(rows.size()+1));
     std::vector<std::int32_t> ids;for(std::size_t i=0;i<rows.size();++i) {auto current=values<std::int32_t>(output[i]);if(current.size()!=1)throw std::runtime_error("Pro verifier row needs its own I32 lease");ids.push_back(current[0]);}
-    EXPECT_TRUE(lm::expect_logits(logits,normalized,source->raw("head.weight"),std::size_t(draft::kVocabulary),std::size_t(model.hidden),head_calls==0,ids));
+    EXPECT_TRUE(lm::expect_logits(logits,normalized,source->raw("head.weight"),std::size_t(draft::kVocabulary),std::size_t(model.hidden),head_calls==0&&!setup.stochastic_mtp,ids));
     EXPECT_TRUE(lm::expect_greedy(logits,ids,std::size_t(draft::kVocabulary),scores));verified();
     if(!head_calls)full_values=logits.size();++head_calls;return output;
   };
+  if(!setup.short_verifier_tails && !setup.stochastic_mtp) {
+    auto head=take(c::StateHead::create(state.store,base),"Pro bounded strategy Head");
+    const auto round=[&](const c::StateVersion &from,policy::DraftControl control,std::uint64_t epoch) {
+      const auto facts=state.frontier(from);
+      policy::Block5Limits bounds{.output_quota=7,.context_rows=std::size_t(setup.capacity-facts.next_position),
+          .vocabulary=draft::kVocabulary,.confidence_domain=policy::ConfidenceDomain::kRawLogit,.draft=control};
+      const auto maximum=take(policy::block5_verification_capacity(bounds),"Pro bounded draft capacity");
+      if(!maximum)throw std::runtime_error("Pro finite strategy has no target capacity");
+      std::vector<std::int32_t> ids{facts.pending};std::vector<float> confidence;
+      if(maximum>1) {
+        auto proposed=draft_from(from);ids=values<std::int32_t>(proposed[3]);
+        if(control.minimum_confidence && *control.minimum_confidence>0.F)
+          confidence=values<float>(actual(proposal.recipe,proposed,{},proposal.recipe.result.confidence));
+      }
+      const auto count=take(policy::block5_verification_rows(bounds,confidence),"Pro raw confidence bounded prefix");
+      std::vector<Row> rows;auto prior=state.members(from,kTargetFirst,21);
+      for(std::size_t i=0;i<count;++i) {
+        rows.push_back(target_row(facts.next_position+std::int64_t(i),ids.at(i),prior));
+        prior.assign(rows.back().state.begin(),rows.back().state.end());
+      }
+      auto histories=catchup(rows,state.members(from,0,3),facts.next_position);
+      auto verified_rows=verify_rows(rows);std::vector<std::int32_t> target_ids;
+      for(std::size_t i=0;i<count;++i)target_ids.push_back(values<std::int32_t>(verified_rows[i])[0]);
+      const auto decision=take(policy::decide_block5(ids,target_ids,bounds,confidence),"Pro configured exact verifier decision");
+      const auto selected=decision.pending_row;
+      auto candidate=state.selected(from,std::span(histories).subspan(selected*4,4),rows[selected].captures,
+          rows[selected].state,verified_rows[selected],decision.consumed,epoch);
+      check(head.publish(from.identity(),candidate),"Pro configured complete publication");account();
+      EXPECT_EQ(read(take(candidate.member(state.entries[kPending]),"Pro bounded pending")),read(verified_rows[selected]));
+      return candidate;
+    };
+    auto shortened=round(base,{.max_drafts=2,.minimum_confidence=.5F},2);
+    const auto before_disabled=draft_episodes;
+    auto ordinary=round(shortened,{.max_drafts=0,.minimum_confidence=.9F},3);
+    EXPECT_EQ(draft_episodes,before_disabled); // no draft, confidence or temporary proposal cache
+    EXPECT_EQ(state.frontier(ordinary).next_position,state.frontier(shortened).next_position+1);
+    // Ordinary target work already caught up all three main-history rings.
+    // Re-enable from that complete state, with its actual pending ID lease.
+    auto resumed=draft_from(ordinary);
+    EXPECT_EQ(values<std::int32_t>(resumed[3])[0],state.frontier(ordinary).pending);
+    EXPECT_EQ(read(take(base.member(state.entries[0]),"Pro unchanged base ring")),initial_ring);
+    ::testing::Test::RecordProperty("bounded_draft_controls","max2/raw-confidence>=0.5; disabled0 target-only; reenabled5 from complete main-history");
+  }
+  check(state.store.collect(),"Pro retire bounded strategy versions");
+
+  if(setup.stochastic_mtp) {
+    using Cursor=hyle::inference::SamplingCursor;
+    const auto identities=[&](const Cursor &cursor,std::size_t count,bool proposal) {
+      std::vector<std::uint32_t> keys;
+      for(std::size_t row=0;row<(proposal?count:count+1);++row) {
+        const auto address=proposal?2*row:(row==count?2*count:2*row+1);
+        const auto words=cursor.identity(address);keys.insert(keys.end(),words.begin(),words.end());
+      }
+      return upload(owner,bytes<std::uint32_t>(keys));
+    };
+    const auto same_lease=[&](const c::ReadLease &a,const c::ReadLease &b) {
+      const auto av=take(a.view(),"random actual state backing"),bv=take(b.view(),"random selected producer backing");
+      EXPECT_EQ(av.resource(),bv.resource());EXPECT_EQ(av.native_handle(),bv.native_handle());
+      EXPECT_EQ(av.offset(),bv.offset());EXPECT_EQ(av.size(),bv.size());EXPECT_EQ(a.generation(),b.generation());
+    };
+    std::size_t publications=0,rejections=0,bonuses=0,target_only=0,markov_rows=0,cancelled=0,invalid=0;
+    std::size_t bounded_tails=0,conditional_stops=0;
+    std::optional<Cursor> bonus_cursor;std::int32_t bonus_proposal=-1;
+    const auto round=[&](c::StateHead &head,std::size_t maximum,std::uint64_t epoch,bool fail_and_retry,
+        bool high_temperature=false,policy::Block5Limits bounds={.output_quota=6,.context_rows=6,.vocabulary=draft::kVocabulary}) {
+      const auto from=take(head.current(),"random original complete Head");const auto facts=state.frontier(from);
+      if(maximum>5)throw std::runtime_error("random DSpark maximum exceeds five trained draft rows");
+      if(bounds.draft.max_drafts>5)throw std::runtime_error("random DSpark policy exceeds five trained draft rows");
+      if(bounds.vocabulary!=draft::kVocabulary||facts.next_position<0||facts.next_position>setup.capacity)
+        throw std::runtime_error("random DSpark limits differ from its actual source vocabulary/context");
+      bounds.draft.max_drafts=static_cast<std::uint32_t>((std::min)(maximum,std::size_t(bounds.draft.max_drafts)));
+      bounds.context_rows=(std::min)(bounds.context_rows,std::size_t(setup.capacity-facts.next_position));
+      const auto capacity=take(policy::block5_verification_capacity(bounds),"random DSpark bounded row capacity");
+      if(!capacity||std::ranges::find(bounds.eos_tokens,facts.pending)!=bounds.eos_tokens.end())
+        throw std::runtime_error("random DSpark round already reached its output/context/EOS boundary");
+      auto count=capacity-1;
+      const auto cursor=state.random(from);
+      std::vector<std::int32_t> ids{facts.pending};std::vector<c::ReadLease> sampled;
+      auto *proposal_program=count?(high_temperature?&*bonus_draft:&*proposals[count]):nullptr;
+      if(count) {
+        auto raw=draft_from(from);auto &program=*proposal_program;
+        const std::array inputs{actual(proposal.recipe,raw,{},proposal.recipe.result.head.base_logits),
+            take(from.member(state.entries[kPending]),"random actual previous pending"),identities(cursor,count,true),
+            actual(proposal.recipe,raw,{},proposal.recipe.result.hidden)};
+        sampled=backend.execute(program.run,inputs);ids=values<std::int32_t>(sampled[program.recipe.ids]);
+        if(ids.size()!=count+1||ids[0]!=facts.pending)throw std::runtime_error("random Markov proposal sequence mismatches pending");
+        const auto &markov_role=bound.at(own::Section::kDraft,2,"markov_head.markov_w1.weight");
+        const auto raw_markov=source->raw(markov_role.name);const auto rank=std::size_t(markov_role.description.dimensions().back());
+        for(std::size_t row=0;row<count;++row) {
+          if(values<std::uint8_t>(sampled[program.recipe.valid[row]])!=std::vector<std::uint8_t>{1})
+            throw std::runtime_error("DSpark proposal q is invalid; no target row or state may use it");
+          const auto expected=raw_markov.subspan(std::size_t(ids[row])*rank*2,rank*2);
+          EXPECT_EQ(read(sampled[program.recipe.markov[row]]),Bytes(expected.begin(),expected.end()));++markov_rows;
+        }
+        std::vector<float> confidence;
+        for(const auto port:program.recipe.confidence) {
+          const auto value=values<float>(sampled[port]);
+          if(value.size()!=1)throw std::runtime_error("random DSpark confidence is not a scalar");
+          confidence.push_back(value[0]);
+        }
+        const auto clipped=take(policy::block5_sampled_verification_rows(bounds,confidence),"actual sampled-predecessor confidence prefix")-1;
+        if(clipped<count)++conditional_stops;
+        count=clipped;ids.resize(count+1);
+        std::printf("DSpark random proposal pending=%d rows=%zu ids=",facts.pending,count);
+        for(const auto id:ids)std::printf("%d,",id);std::printf(" draw=%llu\n",static_cast<unsigned long long>(cursor.draw));std::fflush(stdout);
+      }
+      const auto next_cursor=cursor.advanced(2*count+1);
+      std::vector<Row> rows;auto prior=state.members(from,kTargetFirst,21);
+      for(std::size_t row=0;row<=count;++row) {
+        rows.push_back(target_row(facts.next_position+std::int64_t(row),ids.at(row),prior));
+        prior.assign(rows.back().state.begin(),rows.back().state.end());
+      }
+      auto histories=catchup(rows,state.members(from,0,3),facts.next_position);
+
+      const auto target_result=verify_rows(rows);
+      auto &decision=high_temperature?(count?*bonus_decision:*bonus_ordinary):*decisions[count];
+      if(setup.stochastic_branch_witness && count==2 && cursor.draw==0 && !cuda) {
+        // Controlled branch coverage selects a seed from actual source q0/p0,
+        // without modifying either support or a sampled result. The Graph
+        // below must independently reproduce this proposal and acceptance.
+        const auto q_logits=values<float>(sampled[proposal_program->recipe.adjusted[0]]);
+        const auto target_logits=values<float>(target_result[count+1]);
+        bonus_proposal=values<std::int32_t>(target_result[0])[0];
+        const auto target_distribution_row=std::span(target_logits).first(std::size_t(draft::kVocabulary));
+        const auto qmax=*std::max_element(q_logits.begin(),q_logits.end()),pmax=*std::max_element(target_distribution_row.begin(),target_distribution_row.end());
+        double qmass=0,pmass=0,left=0,mass=0;
+        for(std::size_t id=0;id<q_logits.size();++id) {
+          const auto weight=std::exp((double(q_logits[id])-double(qmax))/8.);qmass+=weight;
+          if(id<std::size_t(bonus_proposal))left+=weight;
+          if(id==std::size_t(bonus_proposal))mass=weight;
+          pmass+=std::exp((double(target_distribution_row[id])-double(pmax))/8.);
+        }
+        const auto probability=mass/qmass;
+        const auto alpha=std::min(1.,std::exp((double(target_distribution_row[std::size_t(bonus_proposal)])-double(pmax))/8.)/pmass/probability);
+        const auto uniform=[](const auto &identity) {
+          const auto words=sampling_test::philox({0,0,identity[2],identity[3]},{identity[0],identity[1]});
+          return (double(words[0])*0x1p20+double(words[1]>>12)+.5)*0x1p-52;
+        };
+        for(std::uint64_t seed=0;seed<4000000;++seed) {
+          const Cursor trial{seed,7,0};const auto u=uniform(trial.identity());
+          if(u>(left+.25*mass)/qmass && u<(left+.75*mass)/qmass && uniform(trial.identity(1))<alpha*.25) {bonus_cursor=trial;break;}
+        }
+        if(!bonus_cursor)throw std::runtime_error("bounded controlled CPU seed search found no original-role bonus witness");
+        std::printf("DSpark controlled seed=%llu targetProposal=%d q8=%.9g alpha8=%.9g (branch witness,not natural acceptance rate)\n",
+            static_cast<unsigned long long>(bonus_cursor->seed),bonus_proposal,probability,alpha);std::fflush(stdout);
+      }
+
+      std::vector<c::ReadLease> inputs{target_result[count+1],identities(cursor,count,false)};
+      if(count) {
+        inputs.push_back(upload(owner,bytes<std::int32_t>(std::span(ids).subspan(1))));
+        for(std::size_t row=0;row<count;++row)inputs.push_back(sampled[proposal_program->recipe.q[row]]);
+      }
+      auto checked=backend.execute(decision.run,inputs);
+      const auto validate=[&](const auto &output) {
+        for(const auto port:decision.recipe.valid)
+          if(values<std::uint8_t>(output[port])!=std::vector<std::uint8_t>{1})throw std::runtime_error("random speculative row invalid; state not published");
+      };
+      if(fail_and_retry && count) {
+        const auto before=state.random(take(head.current(),"Head before invalid q"));auto bad=inputs;
+        std::vector<float> nan(std::size_t(draft::kVocabulary),0.F);nan.back()=std::numeric_limits<float>::quiet_NaN();
+        bad[3]=upload(owner,bytes<float>(nan));
+        EXPECT_THROW(validate(backend.execute(decision.run,bad)),std::runtime_error);++invalid;
+        EXPECT_EQ(take(head.current(),"Head after invalid q").identity(),from.identity());EXPECT_EQ(state.random(from),before);
+        checked=backend.execute(decision.run,inputs); // exact cursor and q, no history resampling
+      }
+      validate(checked);std::size_t accepted=0;
+      std::vector<std::uint8_t> accepts;
+      for(const auto port:decision.recipe.accepted) {
+        const auto value=values<std::uint8_t>(checked[port]);if(value.size()!=1||value[0]>1)throw std::runtime_error("random acceptance is not a scalar Bool");
+        accepts.push_back(value[0]);
+      }
+      while(accepted<accepts.size()&&accepts[accepted])++accepted;
+      std::vector<std::int32_t> final_ids;
+      for(const auto port:decision.recipe.final_ids) {
+        const auto id=values<std::int32_t>(checked[port]);if(id.size()!=1)throw std::runtime_error("random final token is not I32 scalar");
+        final_ids.push_back(id[0]);
+      }
+      const auto select=[&](std::size_t quota,std::span<const std::int32_t> eos) {
+        std::vector<std::int32_t> emitted;
+        return hyle::inference::mtp::select_sampled_prefix(ids,accepts,final_ids,quota,eos,draft::kVocabulary,emitted);
+      };
+      const auto pending_for=[&](const hyle::inference::mtp::AcceptedPrefix &selection) {
+        const auto row=selection.consumed-1;
+        if(row<count&&accepts[row])
+          return take(sampled[proposal_program->recipe.ids].subview((row+1)*sizeof(std::int32_t),sizeof(std::int32_t)),"accepted terminal proposal stays actual pending");
+        return checked[decision.recipe.final_ids.at(count?(std::min)(row,count-1):0)];
+      };
+      const auto choice=select(bounds.output_quota,bounds.eos_tokens);
+      const auto selected=choice.consumed-1;const auto consumed=static_cast<std::uint32_t>(choice.consumed);
+      const auto pending=pending_for(choice);
+      EXPECT_EQ(values<std::int32_t>(pending),std::vector<std::int32_t>{choice.next_id});
+      auto candidate=state.selected(from,std::span(histories).subspan(selected*4,4),rows[selected].captures,
+          rows[selected].state,pending,consumed,epoch,&next_cursor);
+      if(fail_and_retry) {
+        auto abandoned=take(state.store.begin(from),"random cancelled complete candidate");
+        check(abandoned.replace(state.entries[kPending],pending),"random staged pending before cancellation");
+        check(abandoned.replace_metadata(*state.random_entry,std::as_bytes(std::span(&next_cursor,1))),"random staged cursor before cancellation");
+        check(abandoned.cancel(),"random pending/cursor cancellation");++cancelled;
+        EXPECT_EQ(take(head.current(),"Head after random cancellation").identity(),from.identity());EXPECT_EQ(state.random(from),cursor);
+      }
+      check(head.publish(from.identity(),candidate),"random full model/pending/RNG atomic publication");++publications;
+      EXPECT_EQ(state.random(candidate),next_cursor);EXPECT_EQ(state.frontier(candidate).next_position,facts.next_position+consumed);
+      same_lease(take(candidate.member(state.entries[kPending]),"random committed pending"),pending);
+      for(std::size_t i=0;i<21;++i)same_lease(take(candidate.member(state.entries[8+i]),"random committed target prefix"),rows[selected].state[i]);
+      if(count&&accepted<count)++rejections;else if(count)++bonuses;else ++target_only;
+      if(high_temperature&&count==1) {
+        EXPECT_EQ(ids.at(1),bonus_proposal);EXPECT_EQ(accepted,1u);
+        // Reuse the already retired, actual accepted source episode. Configured
+        // EOS and a smaller publication quota must select after-current state
+        // and the proposal's own lease, never consume it to obtain a bonus.
+        const std::array eos{ids[1]},bonus_eos{final_ids[0]};
+        for(const auto &[quota,terminal]:std::array<std::pair<std::size_t,std::span<const std::int32_t>>,3>{
+            std::pair<std::size_t,std::span<const std::int32_t>>{2,eos},{1,{}},{2,bonus_eos}}) {
+          const auto tail=select(quota,terminal);const auto tail_row=tail.consumed-1;const auto tail_pending=pending_for(tail);
+          auto tail_state=state.selected(from,std::span(histories).subspan(tail_row*4,4),rows[tail_row].captures,
+              rows[tail_row].state,tail_pending,static_cast<std::uint32_t>(tail.consumed),epoch+100+bounded_tails,&next_cursor);
+          auto tail_head=take(c::StateHead::create(state.store,from),"independent original sampled tail Head");
+          check(tail_head.publish(from.identity(),tail_state),"sampled EOS/quota complete prefix and RNG");
+          EXPECT_EQ(state.frontier(tail_state).next_position,facts.next_position+tail.consumed);
+          EXPECT_EQ(state.frontier(tail_state).pending,tail.next_id);EXPECT_EQ(state.random(tail_state),next_cursor);
+          same_lease(take(tail_state.member(state.entries[kPending]),"sampled terminal original pending"),tail_pending);
+          for(std::size_t i=0;i<21;++i)same_lease(take(tail_state.member(state.entries[8+i]),"sampled tail target state"),rows[tail_row].state[i]);
+          if(quota==1||terminal.data()==eos.data()) {EXPECT_EQ(tail.consumed,1u);EXPECT_EQ(tail.next_id,ids[1]);}
+          else {EXPECT_EQ(tail.consumed,2u);EXPECT_EQ(tail.next_id,final_ids[0]);}
+          ++bounded_tails;
+        }
+      }
+      EXPECT_TRUE(head.publish(from.identity(),candidate).IsUnavailable());account();
+      std::printf("DSpark random committed m=%zu accept=%zu consumed=%u pending=%d draw=%llu\n",count,accepted,consumed,
+          state.frontier(candidate).pending,static_cast<unsigned long long>(next_cursor.draw));std::fflush(stdout);
+      return candidate;
+    };
+    auto head=take(c::StateHead::create(state.store,base),"random complete model/RNG Head");
+    auto first=round(head,2,2,setup.stochastic_branch_witness);
+    auto continued=round(head,2,3,false,false,{.output_quota=1,.context_rows=1,.vocabulary=draft::kVocabulary,
+        .draft={.max_drafts=0,.minimum_confidence=.9F}});
+    EXPECT_EQ(state.frontier(continued).next_position,state.frontier(first).next_position+1);
+    EXPECT_EQ(state.random(continued).draw,6u);EXPECT_EQ(state.random(base),initial_random);
+    EXPECT_EQ(read(take(base.member(state.entries[0]),"random old history stays immutable")),initial_ring);
+    {
+      const auto calls=backend.submissions;const auto before=take(head.current(),"random bounded rejection Head");
+      EXPECT_THROW((void)round(head,2,30,false,false,{.output_quota=0,.context_rows=6,.vocabulary=draft::kVocabulary}),std::runtime_error);
+      EXPECT_THROW((void)round(head,2,30,false,false,{.output_quota=6,.context_rows=0,.vocabulary=draft::kVocabulary}),std::runtime_error);
+      EXPECT_THROW((void)round(head,6,30,false),std::runtime_error);
+      EXPECT_EQ(backend.submissions,calls);EXPECT_EQ(take(head.current(),"bounded rejection keeps actual Head").identity(),before.identity());
+      EXPECT_EQ(state.random(before),state.random(take(head.current(),"bounded rejection keeps RNG")));
+    }
+    if(setup.stochastic_branch_witness) {
+    if(!bonus_cursor)throw std::runtime_error("controlled CPU bonus cursor unavailable");
+    auto seeded=take(state.store.begin(base),"controlled original-state sampler address");
+    check(seeded.replace_metadata(*state.random_entry,std::as_bytes(std::span(&*bonus_cursor,1))),"explicit fixture seed, unchanged model state");
+    auto bonus_base=take(seeded.finalize(),"controlled stochastic initial state");
+    auto bonus_head=take(c::StateHead::create(state.store,bonus_base),"controlled bonus complete Head");
+    auto bonus=round(bonus_head,1,4,false,true);
+    EXPECT_EQ(state.frontier(bonus).next_position,setup.position+2);
+    EXPECT_EQ(state.random(bonus),bonus_cursor->advanced(3));
+    EXPECT_EQ(state.random(bonus_base),*bonus_cursor);
+    const auto bonus_pending=state.frontier(bonus).pending;
+    auto bonus_continued=round(bonus_head,0,5,false,true);
+    EXPECT_EQ(state.frontier(bonus_continued).next_position,setup.position+3);
+    EXPECT_EQ(state.random(bonus_continued),bonus_cursor->advanced(4));
+    ::testing::Test::RecordProperty("actual_bonus_pending_consumed_next",bonus_pending);
+    EXPECT_EQ(read(take(base.member(state.entries[0]),"old reader after all-accepted bonus")),initial_ring);
+
+    auto threshold_head=take(c::StateHead::create(state.store,base),"actual sampled-confidence threshold Head");
+    auto threshold=round(threshold_head,2,40,false,false,{.output_quota=6,.context_rows=6,.vocabulary=draft::kVocabulary,
+        .draft={.max_drafts=2,.minimum_confidence=1.F}});
+    EXPECT_EQ(state.frontier(threshold).next_position,setup.position+1);
+    EXPECT_EQ(state.random(threshold),initial_random.advanced(1));
+    EXPECT_GT(conditional_stops,0u);
+
+    }
+    ::testing::Test::RecordProperty("random_publications",int(publications));::testing::Test::RecordProperty("random_rejection_prefixes",int(rejections));
+    ::testing::Test::RecordProperty("random_all_accepted_bonus",int(bonuses));::testing::Test::RecordProperty("random_target_only_continuations",int(target_only));::testing::Test::RecordProperty("sampled_markov_rows",int(markov_rows));
+    ::testing::Test::RecordProperty("random_invalid_q_retries",int(invalid));::testing::Test::RecordProperty("random_cancelled_candidates",int(cancelled));
+    ::testing::Test::RecordProperty("random_actual_retained_tail_publications",int(bounded_tails));
+    ::testing::Test::RecordProperty("random_actual_conditional_threshold_stops",int(conditional_stops));
+  } else
+
   {
     auto proposal_result=draft_from(base);const auto proposal_ids=values<std::int32_t>(proposal_result[3]);const auto retained_proposal=read(proposal_result[3]);
     if(proposal_ids.size()!=6)throw std::runtime_error("formal Pro draft must return current plus five actual IDs");
-    std::array<Row,6> rows;auto prior=state.members(base,kTargetFirst,21);
-    for(std::size_t i=0;i<rows.size();++i) {rows[i]=target_row(setup.position+std::int64_t(i),proposal_ids[i],prior);prior.assign(rows[i].state.begin(),rows[i].state.end());}
+    std::vector<Row> rows;auto prior=state.members(base,kTargetFirst,21);
+    const auto count=setup.short_verifier_tails?5u:6u;rows.reserve(count);
+    for(std::size_t i=0;i<count;++i) {rows.push_back(target_row(setup.position+std::int64_t(i),proposal_ids[i],prior));prior.assign(rows.back().state.begin(),rows.back().state.end());}
+    if(setup.short_verifier_tails) {
+      std::size_t publications=0,continuations=0,policy_tails=0,bonus_eos_tails=0;
+      const auto same_lease=[&](const c::ReadLease &actual_lease,const c::ReadLease &original_lease) {
+        const auto a=take(actual_lease.view(),"short verifier published storage");
+        const auto b=take(original_lease.view(),"short verifier actual producer storage");
+        EXPECT_EQ(a.resource(),b.resource());EXPECT_EQ(a.native_handle(),b.native_handle());
+        EXPECT_EQ(a.offset(),b.offset());EXPECT_EQ(a.size(),b.size());
+        EXPECT_EQ(actual_lease.generation(),original_lease.generation());
+      };
+      for(std::size_t width=2;width<=5;++width) {
+        const auto prefix=std::span(rows).first(width);
+        auto histories=catchup(prefix,state.members(base,0,3),setup.position);
+        auto verified_rows=verify_rows(prefix);std::vector<std::int32_t> target_ids;
+        for(std::size_t i=0;i<width;++i)target_ids.push_back(values<std::int32_t>(verified_rows[i])[0]);
+        std::string target_tape;for(const auto id:target_ids)target_tape+=(target_tape.empty()?"":",")+std::to_string(id);
+        ::testing::Test::RecordProperty("short_verifier_targets_"+std::to_string(width),target_tape);
+        const auto publish=[&](const policy::VerifiedPrefix &decision,std::uint64_t epoch) {
+          const auto selected=decision.pending_row;const auto &row=prefix[selected];
+          auto head=take(c::StateHead::create(state.store,base),"short verifier complete state Head");
+          auto candidate=state.selected(base,std::span(histories).subspan(selected*4,4),row.captures,
+              row.state,verified_rows[selected],decision.consumed,epoch);
+          check(head.publish(base.identity(),candidate),"short verifier atomic30member publication");++publications;
+          for(std::size_t i=0;i<4;++i)same_lease(take(candidate.member(state.entries[i]),"short verifier main history"),histories[selected*4+i]);
+          for(std::size_t i=0;i<3;++i)same_lease(take(candidate.member(state.entries[4+i]),"short verifier target capture"),row.captures[i]);
+          for(std::size_t i=0;i<21;++i)same_lease(take(candidate.member(state.entries[8+i]),"short verifier target cache"),row.state[i]);
+          same_lease(take(candidate.member(state.entries[kPending]),"short verifier pending output"),verified_rows[selected]);
+          EXPECT_EQ(state.frontier(candidate).next_position,setup.position+decision.consumed);account();
+          return candidate;
+        };
+        policy::Block5Limits bounds{.output_quota=width,.context_rows=std::size_t(setup.capacity-setup.position),.vocabulary=draft::kVocabulary};
+        const auto natural=take(policy::decide_block5(proposal_ids,target_ids,bounds),"actual shortened verifier natural decision");
+        {
+          auto candidate=publish(natural,100+width);const auto facts=state.frontier(candidate);
+          // This source fixture rejects at its first actual target row. Reuse
+          // that authenticated correction frontier, never invent a new token.
+          EXPECT_EQ(natural.consumed,1u);verified();
+          auto next=target_row(facts.next_position,facts.pending,state.members(candidate,kTargetFirst,21));
+          const std::array one{next};auto next_history=catchup(one,state.members(candidate,0,3),facts.next_position);
+          auto next_ids=verify_rows(one);
+          auto continued=state.selected(candidate,std::span(next_history).first(4),next.captures,next.state,next_ids[0],1,200+width);
+          auto head=take(c::StateHead::create(state.store,candidate),"short rejection continuation Head");
+          check(head.publish(candidate.identity(),continued),"short rejection actual pending continuation");++continuations;
+          EXPECT_EQ(state.frontier(continued).next_position,facts.next_position+1);
+          same_lease(take(continued.member(state.entries[kPending]),"continued actual pending"),next_ids[0]);
+          EXPECT_TRUE(head.publish(base.identity(),base).IsUnavailable());account();
+        }
+        // Controlled policy choices use these actual verifier IDs and leases,
+        // but do not claim that the trained draft naturally proposed them.
+        auto matched=proposal_ids;
+        for(std::size_t i=0;i+1<width;++i)matched[i+1]=target_ids[i];
+        for(std::size_t scenario=0;scenario<4;++scenario) {
+          auto controlled=bounds;std::array<std::int32_t,1> eos{};
+          if(scenario<2) {
+            // Repeated actual IDs can make the designated bonus token an
+            // earlier EOS. Record only a genuine final-row EOS for this case;
+            // the exhaustive small policy/state test covers all positions.
+            if(scenario==1&&std::find(target_ids.begin(),target_ids.end()-1,target_ids.back())!=target_ids.end()-1)continue;
+            controlled.output_quota=7;eos[0]=target_ids[scenario==0?0:width-1];controlled.eos_tokens=eos;
+            controlled.draft.max_drafts=static_cast<std::uint32_t>(width-1);
+          } else if(scenario==3) {controlled.output_quota=7;controlled.context_rows=width;}
+          const auto decision=take(policy::decide_block5(matched,target_ids,controlled),"actual lease EOS/quota/context policy tail");
+          auto selected=publish(decision,300+width*4+scenario);
+          if(scenario<2)EXPECT_TRUE(decision.stopped_on_eos);
+          else if(scenario==2)EXPECT_TRUE(decision.output_quota_exhausted);
+          else EXPECT_TRUE(decision.context_exhausted);
+          EXPECT_FALSE(decision.can_continue());++policy_tails;
+          if(scenario==1){EXPECT_EQ(decision.pending_row,width-1);++bonus_eos_tails;}
+          EXPECT_EQ(state.frontier(selected).pending,target_ids[decision.pending_row]);
+        }
+        EXPECT_EQ(read(take(base.member(state.entries[0]),"short verifier unchanged old ring")),initial_ring);
+        check(state.store.collect(),"retire shortened verifier state before the next width");
+      }
+      EXPECT_EQ(read(proposal_result[3]),retained_proposal);
+      ::testing::Test::RecordProperty("actual_short_verifier_widths","2,3,4,5");
+      ::testing::Test::RecordProperty("actual_short_state_publications",int(publications));
+      ::testing::Test::RecordProperty("actual_short_rejection_continuations",int(continuations));
+      ::testing::Test::RecordProperty("actual_lease_policy_tails",int(policy_tails));
+      ::testing::Test::RecordProperty("actual_lease_unique_bonus_eos_tails",int(bonus_eos_tails));
+      ::testing::Test::RecordProperty("tail_policy_scope","accepted EOS/bonus EOS/quota/context with actual head IDs and leases; explicitly controlled decisions, not natural EOS or acceptance-rate evidence");
+    } else {
     auto rings=state.members(base,0,3);auto histories=catchup(rows,rings,setup.position);auto verified_rows=verify_rows(rows);
     std::vector<std::int32_t> target_ids;for(std::size_t i=0;i<6;++i)target_ids.push_back(values<std::int32_t>(verified_rows[i])[0]);
-    const auto decision=take(policy::decide_block5(proposal_ids,target_ids),"Pro actual fullV K5 decision");
+    const auto decision=take(policy::decide_block5(proposal_ids,target_ids,
+        {.output_quota=7,.context_rows=std::size_t(setup.capacity-setup.position),.vocabulary=draft::kVocabulary}),
+        "Pro actual fullV K5 decision");
     auto head=take(c::StateHead::create(state.store,base),"Pro one complete StateHead");
     const auto select=[&](std::uint32_t accepted,std::uint64_t epoch) {
       const auto &row=rows.at(accepted);return state.selected(base,std::span(histories).subspan(std::size_t(accepted)*4,4),row.captures,row.state,verified_rows[accepted],accepted+1,epoch);
@@ -533,6 +963,7 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
     ::testing::Test::RecordProperty("natural_accepted_drafts",int(decision.accepted_drafts));
     ::testing::Test::RecordProperty("controlled_prefixes","0,2,5; prefix policy only, not natural acceptance");
     ::testing::Test::RecordProperty("natural_proposal1",proposal_ids[1]);::testing::Test::RecordProperty("natural_target0",target_ids[0]);
+    }
   }
   base={};check(state.store.collect(),"Pro collect old/controlled complete versions");account();
   EXPECT_EQ(state.store.stats().versions,0U);EXPECT_EQ(state.store.stats().drafts,0U);
@@ -546,12 +977,34 @@ void run(std::shared_ptr<own::Data> source,c::Context &context,const c::StorageO
   ::testing::Test::RecordProperty("actual_main_projection_submissions",int(main_calls));::testing::Test::RecordProperty("actual_main_history_submissions",int(history_calls));
   ::testing::Test::RecordProperty("actual_verifier_submissions",int(head_calls));::testing::Test::RecordProperty("first_target_fullV_values",std::to_string(full_values));
   ::testing::Test::RecordProperty("first_draft_fullV_values",std::to_string(5*std::size_t(draft::kVocabulary)));
-  ::testing::Test::RecordProperty("actual_pending_feedback",int(feedback));::testing::Test::RecordProperty("state_members",int(kMembers));
+  ::testing::Test::RecordProperty("actual_pending_feedback",int(feedback));::testing::Test::RecordProperty("state_members",int(kMembers+bool(state.random_entry)));
   ::testing::Test::RecordProperty("state_backing_budget",std::to_string(budget));::testing::Test::RecordProperty("state_backing_peak",std::to_string(peak));
   ::testing::Test::RecordProperty("target_resident_slot_bytes",std::to_string(target_supply.layout.slot_bytes));::testing::Test::RecordProperty("draft_resident_slot_bytes",std::to_string(draft_supply.layout.slot_bytes));
   ::testing::Test::RecordProperty("actual_expert_attachments",int(acquisition.attachments));::testing::Test::RecordProperty("actual_missing_frontiers",int(acquisition.requests));
-  ::testing::Test::RecordProperty("scope",setup.scope);
+  ::testing::Test::RecordProperty("scope",setup.stochastic_mtp?
+      "Original identified Pro/Flash three-stage/base fullV plus source Markov conditioned on actual sampled predecessor; common stochastic q/p acceptance, residual/bonus and complete31member model/RNG Head. One ordinary continuation, invalid-q retry/cancel and immutable old readers. When enabled, controlled CPU seed/temperature8 bonus witness is explicit; natural-only mode performs no seed search. Neither is complete trained-model quality/TPS.":setup.short_verifier_tails?
+      "Identified original three-stage draft and target-tail, finite synthetic input/cache frontier. One trained five-row draft, actual target verifier widths2/3/4/5, complete30member state, actual first-rejection continuation. EOS/bonusEOS/quota/context use actual verifier IDs/leases with explicitly controlled policies; not natural EOS, a full-model generation, acceptance-rate or TPS claim.":setup.scope);
 }
+TEST(DSparkStochasticHeadSchema,RejectsEmptySourceAndOutOfTrainingCountBeforeLookup) {
+  const own::Bound empty;
+  const auto *profile=&cpu_c4_model_branches::flash_profile;
+  EXPECT_THROW((void)dspark_stochastic_head::proposal(empty,0,{},profile),std::runtime_error);
+  EXPECT_THROW((void)dspark_stochastic_head::proposal(empty,6,{},profile),std::runtime_error);
+  EXPECT_THROW((void)dspark_stochastic_head::proposal(empty,1,{},profile),std::runtime_error);
+  EXPECT_THROW((void)dspark_stochastic_head::verification(6,{},profile),std::runtime_error);
+}
+TEST(DSparkStochasticHeadSchema,TargetOnlyAndFiveDraftsKeepTheActualConditionalRows) {
+  const auto *profile=&cpu_c4_model_branches::flash_profile;
+  for(const std::size_t count:{0u,1u,2u,5u}) {
+    const auto recipe=dspark_stochastic_head::verification(count,{},profile);
+    ASSERT_EQ(recipe.fragment.inputs.size(),count?count+3:2);
+    EXPECT_EQ(recipe.fragment.description(recipe.fragment.inputs[0]),sem::dense({std::int64_t(count+1),draft::kVocabulary}));
+    EXPECT_EQ(recipe.accepted.size(),count);EXPECT_EQ(recipe.final_ids.size(),std::max<std::size_t>(1,count));
+    EXPECT_EQ(recipe.valid.size(),std::max<std::size_t>(1,count));
+    for(const auto port:recipe.final_ids)EXPECT_EQ(recipe.fragment.description(recipe.fragment.outputs[port]),sem::dense({1},c::DataType::kInt32));
+  }
+}
+
 struct DSparkProOriginalState: ::testing::Test {
   static inline std::shared_ptr<own::Data> source;
   static void SetUpTestSuite() {
@@ -566,6 +1019,14 @@ TEST_F(DSparkProOriginalState,CpuOriginalTargetTailAndFormalDraftPublishesBlock5
   if(!source)GTEST_SKIP()<<"Set authenticated HYLE_DSPARK_PRO_DIR";
   auto context=take(g::cpu::create_context(),"Pro ordinary CPU Context");auto owner=take(c::StorageOwner::adopt(context,System{}),"Pro actual CPU owner");run(source,context,owner,false,kProFixture);
 }
+TEST_F(DSparkProOriginalState,CpuNaturalRandomMarkovPrefixAndPendingContinue) {
+  if(!source)GTEST_SKIP()<<"Set authenticated HYLE_DSPARK_PRO_DIR";
+  auto context=take(g::cpu::create_context(),"Pro stochastic CPU Context");
+  auto owner=take(c::StorageOwner::adopt(context,System{}),"Pro stochastic actual CPU owner");
+  auto setup=kProFixture;setup.stochastic_mtp=true;setup.stochastic_branch_witness=false;
+  run(source,context,owner,false,setup);
+}
+
 #endif
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
 struct SharedDevice final {std::shared_ptr<c::cuda::MemoryResource> resource;m::MemoryResourceRef ref() noexcept{return resource->ref();}};
@@ -573,6 +1034,13 @@ TEST_F(DSparkProOriginalState,CudaOriginalTargetTailAndFormalDraftPublishesBlock
   if(!source)GTEST_SKIP()<<"Set authenticated HYLE_DSPARK_PRO_DIR";
   auto context=take(g::cuda::create_context(),"Pro ordinary CUDA Context");auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"Pro same actual CUDA resource"));
   auto owner=take(c::StorageOwner::adopt(context,SharedDevice{device}),"Pro shared typed CUDA owner");run(source,context,owner,true,kProFixture,device.get());
+}
+TEST_F(DSparkProOriginalState,CudaShortVerifierTailsPreserveActualStateAndContinue) {
+  if(!source)GTEST_SKIP()<<"Set authenticated HYLE_DSPARK_PRO_DIR";
+  auto context=take(g::cuda::create_context(),"Pro short-verifier CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"Pro actual short-verifier resource"));
+  auto owner=take(c::StorageOwner::adopt(context,SharedDevice{device}),"Pro short-verifier owner");
+  auto setup=kProFixture;setup.short_verifier_tails=true;run(source,context,owner,true,setup,device.get());
 }
 #endif
 struct DSparkFlashFormalState: ::testing::Test {
@@ -595,6 +1063,14 @@ TEST_F(DSparkFlashFormalState,CpuOriginalTargetTailAndFormalDraftPublishesBlock5
   auto context=take(g::cpu::create_context(),"Flash ordinary CPU Context");
   auto owner=take(c::StorageOwner::adopt(context,System{}),"Flash actual CPU owner");run(source,context,owner,false,kFlashFixture);
 }
+
+TEST_F(DSparkFlashFormalState,CpuRandomMarkovPrefixCommitsActualStateAndCursor) {
+  if(!source)GTEST_SKIP()<<"Set authenticated HYLE_DSPARK_FORMAL_FLASH_DIR";
+  auto context=take(g::cpu::create_context(),"Flash stochastic CPU Context");
+  auto owner=take(c::StorageOwner::adopt(context,System{}),"Flash stochastic actual CPU owner");
+  auto setup=kFlashFixture;setup.stochastic_mtp=true;run(source,context,owner,false,setup);
+}
+
 #endif
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
 TEST_F(DSparkFlashFormalState,CudaOriginalTargetTailAndFormalDraftPublishesBlock5Prefix) {
@@ -602,6 +1078,13 @@ TEST_F(DSparkFlashFormalState,CudaOriginalTargetTailAndFormalDraftPublishesBlock
   auto context=take(g::cuda::create_context(),"Flash ordinary CUDA Context");
   auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"Flash same actual CUDA resource"));
   auto owner=take(c::StorageOwner::adopt(context,SharedDevice{device}),"Flash shared typed CUDA owner");run(source,context,owner,true,kFlashFixture,device.get());
+}
+TEST_F(DSparkFlashFormalState,CudaShortVerifierTailsPreserveActualStateAndContinue) {
+  if(!source)GTEST_SKIP()<<"Set authenticated HYLE_DSPARK_FORMAL_FLASH_DIR";
+  auto context=take(g::cuda::create_context(),"Flash short-verifier CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"Flash actual short-verifier resource"));
+  auto owner=take(c::StorageOwner::adopt(context,SharedDevice{device}),"Flash short-verifier owner");
+  auto setup=kFlashFixture;setup.short_verifier_tails=true;run(source,context,owner,true,setup,device.get());
 }
 #endif
 } // namespace

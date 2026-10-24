@@ -1,0 +1,256 @@
+{
+  "status": "PASS bounded ordinary/MTP prepared output and state capture migration",
+  "scope": "Shared lower-level inference assembly; no new scheduler/executor, application/server, model math or precision policy",
+  "changes": [
+    "Each exact child stores only published output facts and one compact ValueId ordinal index; duplicate caller bitmap and model-private description scans removed.",
+    "Cold bulk preparation scans published outputs and physical reports once; full ValueId, exact route, ambiguity and missing output checks remain.",
+    "Ordinary and MTP GDN/history/carry binding and capture use actual cold descriptions/ownership; persistent logits/hidden/probes allocate in their actual resource domain.",
+    "Original output leases are captured before append extraction/reset, preserving model-specific prefix selection, repair, budgets and atomic state/pending/RNG publication.",
+    "Two GLM real component consumers use the same facts and capture helper while keeping their existing caller-pool and model contracts."
+  ],
+  "actual_checks": {
+    "CPU_bulk_facts": {
+      "four_actual_ownerships": true,
+      "finite_children": 2,
+      "wrong_count_and_short_index_rejected": true,
+      "finite_parent_and_mismatched_child_rejected": true
+    },
+    "untrained_GA_state_comparison": {
+      "reports": {
+        "old": {
+          "state": "passed",
+          "backend": "vulkan",
+          "layers": "GA",
+          "fixture_bytes": 298632,
+          "ordinary_ids": [
+            36,
+            8
+          ],
+          "ordinary_rng": 2,
+          "ordinary_state_prefix_row": 0,
+          "real_proposals": [
+            36,
+            62,
+            39
+          ],
+          "real_target_candidates": [
+            2,
+            25,
+            39
+          ],
+          "controlled_consumed": 2,
+          "selected_prefix_row": 1,
+          "mtp_pending": 25,
+          "mtp_rng": 6,
+          "draft_frontier": 3,
+          "draft_lag": 1,
+          "real_head_false_repair": true,
+          "old_snapshots_unchanged": true,
+          "leases_survive_take_append": true,
+          "ordinary_cache_peak": 126981,
+          "mtp_cache_peak": 149511,
+          "cache_limit": 16777216,
+          "natural_acceptance_claim": false,
+          "quality_claim": false,
+          "performance_claim": false,
+          "HTTP": 0
+        },
+        "current": {
+          "state": "passed",
+          "backend": "vulkan",
+          "layers": "GA",
+          "fixture_bytes": 298632,
+          "ordinary_ids": [
+            36,
+            8
+          ],
+          "ordinary_rng": 2,
+          "ordinary_state_prefix_row": 0,
+          "real_proposals": [
+            36,
+            62,
+            39
+          ],
+          "real_target_candidates": [
+            2,
+            25,
+            39
+          ],
+          "controlled_consumed": 2,
+          "selected_prefix_row": 1,
+          "mtp_pending": 25,
+          "mtp_rng": 6,
+          "draft_frontier": 3,
+          "draft_lag": 1,
+          "real_head_false_repair": true,
+          "old_snapshots_unchanged": true,
+          "leases_survive_take_append": true,
+          "ordinary_cache_peak": 126981,
+          "mtp_cache_peak": 149511,
+          "cache_limit": 16777216,
+          "natural_acceptance_claim": false,
+          "quality_claim": false,
+          "performance_claim": false,
+          "HTTP": 0
+        }
+      },
+      "state_files_compared": 35,
+      "all_state_bytes_equal": true,
+      "nonzero_finite_GDN_and_distinct_prefixes": true,
+      "summary": {
+        "path": ".scratch/mtp-state-ports-20261024/gdn-regression/gdn2/summary-final.json",
+        "bytes": 25571,
+        "sha256": "9d5103d3c29092e63d14fc8c1f9d4a72b52e6bfc8a744003cfda9b15d885d232"
+      },
+      "witness": {
+        "path": ".scratch/mtp-state-ports-20261024/gdn-regression/gdn2/state-witnesses.json",
+        "bytes": 27370,
+        "sha256": "fb448c2c6f330d529816f0c4ee0db996fa9e23927bfce2e1419b8bf85846e8c5"
+      }
+    },
+    "existing_untrained_A_natural_K2_and_R2": {
+      "status": "PASS_TINY_PHASE_READBACK",
+      "backend": "vulkan",
+      "fixture_bytes": 206336,
+      "head_true_calls": 2,
+      "head_false_calls": 1,
+      "id_caller_owned": 0,
+      "valid_caller_owned": 0,
+      "probability_caller_owned": 0,
+      "proposals": [
+        31,
+        39
+      ],
+      "consumed": 1,
+      "pending": 42,
+      "cursor": 6,
+      "draft_lag": 0,
+      "classic_R2": true,
+      "classic_cursors": [
+        4,
+        4
+      ],
+      "classic_pending": [
+        39,
+        2
+      ],
+      "classic_consumed": [
+        1,
+        1
+      ],
+      "classic_valid_caller_owned": 0,
+      "classic_accept_caller_owned": 0,
+      "classic_draft_ids_caller_owned": 0,
+      "classic_next_ids_caller_owned": 0,
+      "sampling": "random",
+      "sampling_policy_order": "temperature_top_k_top_p",
+      "sampling_temperature": 1,
+      "sampling_top_k": 8,
+      "sampling_top_p": 0.9,
+      "sampling_seed": 123,
+      "mtp_acceptance_policy": "min_one_p_over_q",
+      "frontier_sampling_graph_calls": 2,
+      "mtp_max_drafts": 2,
+      "mtp_min_draft_probability": 0.0001,
+      "draft_program_graph_calls": 3,
+      "prefix_decision_graph_calls": 1,
+      "cold_exact_admissions": 0,
+      "cold_exact_evictions": 0,
+      "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+      "cpu_ffn_layers": 0,
+      "original_host_weight_bytes": 0,
+      "original_device_weight_bytes": 206336,
+      "cache_shared_backing_bytes": 49669,
+      "cache_retained_output_backing_bytes": 2432,
+      "cache_metadata_requested_bytes": 0,
+      "cache_live_requested_bytes": 52101,
+      "cache_peak_requested_bytes": 52101,
+      "cache_requested_byte_limit": 16777216,
+      "native_execution_private_bytes_unknown": true,
+      "physical_vram_limit_known": false,
+      "quality_claim": false,
+      "performance_claim": false
+    },
+    "GLM_consumer_compile_and_shared_graph": {
+      "actual_result": {
+        "GLM_Flash_strict_consumer_compile": "PASS",
+        "GLM_Pro_strict_consumer_compile": "PASS",
+        "shared_model_graph_run_actual_graph": "PASS"
+      },
+      "GLM_compile_mode": "original /c /O2 /W4 /WX CPU+CUDA retained command, not syntax-only",
+      "GLM_runtime_runs": 0,
+      "toy": {
+        "status": "PASS_MODEL_GRAPH_RUN_RETAIN_OUTPUT",
+        "backend": "cpu",
+        "compiled_image": "cpu+cuda",
+        "CUDA_VISIBLE_DEVICES": "-1",
+        "values": 17,
+        "submissions": 1,
+        "source_alias_cold_rejected": true,
+        "lease_valid_after_reset_and_pool_destruction": true,
+        "finite_budget_baseline": 424,
+        "finite_budget_retained_live": 4076,
+        "retired_to_baseline": true
+      },
+      "summary": {
+        "path": ".scratch/mtp-output-capture-migration-20261024/check1/summary.json",
+        "bytes": 13390,
+        "sha256": "242deaf9dca3dbe834687bd12cdc803b119f280f308a9c1fdd88d25d854bf012"
+      }
+    },
+    "CPU_projection_probe_strict_syntax": {
+      "exit": 0,
+      "seconds": 8.875,
+      "timeout": false
+    }
+  },
+  "source": [
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 6830,
+      "sha256": "fc74f081a5ad3c090bca09ed2dc3fddc6d5498174545e4f68102d53a526eaf36"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 423743,
+      "sha256": "5f39cf6138a7544034ab126714a8805dac34e5e47c85c39ef317f7f427e9c339"
+    },
+    {
+      "path": "tests/compute_models/model_graph_run.h",
+      "bytes": 4263,
+      "sha256": "97f3e6786bea252d8d6bfb33fae545e9fc42d824b072cf16a7eba65a527daed0"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 417095,
+      "sha256": "72684627baacd51b1e3adebcfbda56088442ed157e32639a07168d100174e63b"
+    },
+    {
+      "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 169439,
+      "sha256": "b4f38979911705c8120da9b745857507b8516b80dbd8b5b0604c660cc58101c0"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_projection_width_probe.cc",
+      "bytes": 11476,
+      "sha256": "6d39e4214550c9bcbad2917e794735a62a22ad9d773c83586d8eb6788564d918"
+    }
+  ],
+  "first_attempts_preserved": [
+    "Private GA fixture used two 2-byte BF16 scalars, violating Vulkan file-stream alignment before execution; corrected only to legal allow_f32 scalar zeros for the same old/current comparison.",
+    "Private GLM source freeze mixed duplicated physical headers; corrected to canonical TU compilation with before/after source pins. No product workaround."
+  ],
+  "limits": [
+    "GA consumed2 is an explicit state control, not natural acceptance evidence.",
+    "Small untrained fixtures and helper tests do not establish trained-model quality or end-to-end speed.",
+    "No full GLM model or new backend/model matrix was run; complete architecture and performance remain active."
+  ],
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "performance_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-prepared-state-ports-2026-10-24.zip",
+    "bytes": 1012037,
+    "sha256": "6c98d7202676e70eff55cc58ecaf9b3914df0dcd75baf62aa0deb7158c9e36a0"
+  }
+}

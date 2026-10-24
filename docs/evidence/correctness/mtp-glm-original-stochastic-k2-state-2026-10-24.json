@@ -1,0 +1,282 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite original-role CUDA GLM Flash and Pro K2 state journeys",
+  "source_identities": [
+    {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "target_tail_layers": [
+        43,
+        44
+      ],
+      "nextn_layer": 45
+    },
+    {
+      "repository": "zai-org/GLM-5.3",
+      "revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+      "target_tail_layer": 77,
+      "nextn_layer": 78
+    }
+  ],
+  "reader": {
+    "repository": "sglang",
+    "commit": "234ccba7f625e12639e621044496bcc6197c3758",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\models\\glm5_next_nextn.py",
+        "bytes": 4307,
+        "sha256": "3fad675ff95cbb7bbe5ff6e4bcf549e18a430e1ce7d0a06da003e0c1fac587c2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\models\\deepseek_nextn.py",
+        "bytes": 12616,
+        "sha256": "b83261e82f4195bafc75ed7c92c2b0bc05d77b794866d841c92e6226269bf470"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\speculative\\eagle_worker_v2.py",
+        "bytes": 81848,
+        "sha256": "204aa1981b6c8e6ede13160ebd7e94e79a6fd9fa04b008397dc46614c7025316"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\layers\\attention\\index_topk_share.py",
+        "bytes": 3199,
+        "sha256": "e4b2218c1b0ef472c5dc51c87e889c10742d33360d3fc7215458b64b6d3deebe"
+      }
+    ],
+    "contract": "No K1 prohibition. eagle_worker_v2:756..848 iterates NextN, increases positions and carries each actual hidden to the next forward. IndexTopKShareState keeps same-iteration selection/carry until iteration exit. One trained NextN layer does not limit proposals to one."
+  },
+  "implementation": [
+    "Existing family consumers accept finite maximum_drafts=1 or2. Default K1 is retained. Flash Quark/MLX/GGUF thin wrappers forward the same option; Pro uses its existing Official/Converted Runtime template. This is component functionality, not a new whole-model GLM application.",
+    "Second proposal is sampled from real recursive same-epoch NextN logits after consuming actual first proposal. Original target tails consume current/q0/q1 privately. Three actual final-normalized taps are projected together in one T3 original shared-head graph; actual T3 logits pass the established original-weight value reference.",
+    "GLM fragment adapter calls the existing hyle::inference::sampling::speculative_prefix. No p/q/logit mutation, host ID reconstruction or replacement greedy selection. Actual q0/q1 distributions, proposals, residual/bonus and valid flags are bound by their real result leases.",
+    "Prefix0 means after mandatory current, never pre-current base. Prefix1/2 replay accepted q0/q1 NextN from true target taps and preserve actual corresponding target states. Current+accepted nonterminal drafts is the committed consumed-row count. Same-epoch frozen index selections are unchanged during draft/verify/repair.",
+    "Accepted journal slot0/1 is caught up sequentially only after expected-base publication seals the iteration. lag2 becomes1 then0 with original epoch provenance; only then fresh epoch8 consumes the actual residual/bonus. Unverified approximate second/third states are never published as repaired accepted state.",
+    "Natural schedule is proposal0/proposal1/accept2/accept3/final4, atomic cursor+5. Independent bounded controlled accept addresses are searched using original distributions and KAT-qualified Philox/F64, are distinct, final=max+1 and commit maxused+1. They prove reachable branch state behavior, not natural acceptance rate.",
+    "Caller admits m2/T3 only for quota/context>=3 and non-EOS first proposal. Context/quota2 or first-proposal EOS uses existing m1/T2 three-draw path; context/quota1 is existing target-only p0 one draw with mandatory-current NextN maintenance. Public limits/acceptance mathematics and prior K1 tail proof are reused. No fixed five-draw claim for shorter episodes.",
+    "Independent Heads reuse already retired authentic T3 state/ID leases to select quota1/2/3 and second-proposal EOS. Accepted terminal/unemitted proposals remain pending in q0/q1 lease and are not consumed. Cancellation after staged pending+cursor and wrong-type replacement, stale expected-base rejection and same-decision retry leave old Head/RNG intact."
+  ],
+  "cases": [
+    {
+      "family": "flash",
+      "result": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "96.304",
+        "timestamp": "2026-10-24T18:35:35.460",
+        "name": "AllTests"
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-k2-state-20261024\\flash\\attempt2\\checks.exe",
+          "--gtest_filter=GlmMtpStateConsumer.CudaOriginalTarget43And44AndNextNRandomK2PublishesCompletePrefixes",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-k2-state-20261024\\flash\\attempt2\\run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792838135.1589777,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 49548,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792838232.000959,
+        "process_wall_seconds": 96.84163770001032
+      },
+      "image": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-k2-state-20261024\\flash\\attempt2\\checks.exe",
+          "bytes": 142435840,
+          "sha256": "ba00a48cd71c3d36e8524fce88f20f7afeb950d4bc7b7861a7157457598028fc"
+        },
+        "consumer_TUs": 1,
+        "SDK_TUs": 0
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+        "bytes": 417081,
+        "sha256": "33848fc816397c21236f2d2a3720788c63a891b36715695f1f71f492fc75d3cd"
+      },
+      "properties": {
+        "original_moe_provider_router": "cublasLt",
+        "original_moe_provider_expert_gate": "sglang-cuda",
+        "original_moe_provider_shared_gate": "sglang-cuda",
+        "original_moe_provider_expert_up": "sglang-cuda",
+        "original_moe_provider_shared_up": "sglang-cuda",
+        "original_moe_provider_expert_down": "sglang-cuda",
+        "original_moe_provider_shared_down": "sglang-cuda",
+        "shared_lm_head_provider": "cublasLt",
+        "original_attention_provider_query_a": "sglang-cuda",
+        "original_attention_provider_query_b": "sglang-cuda",
+        "original_attention_provider_kv_a": "sglang-cuda",
+        "original_attention_provider_output": "sglang-cuda",
+        "original_attention_provider_key_bmm": "ggml-cuda",
+        "original_attention_provider_value_bmm": "ggml-cuda",
+        "target_verifier_head_provider": "cublasLt",
+        "k2_default_draw_schedule": "proposal0,proposal1,accept2,accept3,final4; successful complete Head advances5",
+        "k2_controlled_address_bound": "262144",
+        "k2_scope": "Actual two recursive NextN proposals, three true target rows, common stochastic acceptance, complete target-conditioned prefix0/1/2 replay, original result leases and atomic RNG. Controlled-address and EOS/quota fixtures are explicit; not natural acceptance rate or whole-model task quality."
+      },
+      "actual_transitions": [
+        "GLM K2 BOUNDARY name=natural proposal0=100550 proposal1=107350 accept0=0 accept1=0 consumed=1 consumed_drafts=0 emitted=1 pending=131920 stopped=0 accept_addresses=2,3 final_address=4 draw=5",
+        "GLM K2 CONTINUED consumed_drafts=0 consumed_pending=131920 next_pending=66881 cursor=6",
+        "GLM K2 BOUNDARY name=quota1 proposal0=100550 proposal1=107350 accept0=1 accept1=1 consumed=1 consumed_drafts=0 emitted=1 pending=100550 stopped=0 accept_addresses=31,58 final_address=59 draw=60",
+        "GLM K2 BOUNDARY name=quota2 proposal0=100550 proposal1=107350 accept0=1 accept1=1 consumed=2 consumed_drafts=1 emitted=2 pending=107350 stopped=0 accept_addresses=31,58 final_address=59 draw=60",
+        "GLM K2 BOUNDARY name=all_accepted_bonus proposal0=100550 proposal1=107350 accept0=1 accept1=1 consumed=3 consumed_drafts=2 emitted=3 pending=138617 stopped=0 accept_addresses=31,58 final_address=59 draw=60",
+        "GLM K2 CONTINUED consumed_drafts=2 consumed_pending=138617 next_pending=116699 cursor=61",
+        "GLM K2 BOUNDARY name=accepted_second_EOS proposal0=100550 proposal1=107350 accept0=1 accept1=1 consumed=2 consumed_drafts=1 emitted=2 pending=107350 stopped=1 accept_addresses=31,58 final_address=59 draw=60"
+      ],
+      "source_change_after_run": "Flash only: three thin source-format wrapper signatures/calls now forward optional maximum_drafts=1; no executed official K2 math/control change. Pro unchanged. Shared helper gained only four explanatory admission comments and explicit standard/state-header includes. Final strict Flash TU syntax passed."
+    },
+    {
+      "family": "pro",
+      "result": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "91.632",
+        "timestamp": "2026-10-24T18:37:28.863",
+        "name": "AllTests"
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-k2-state-20261024\\pro\\attempt2\\checks.exe",
+          "--gtest_filter=GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomK2PublishesCompletePrefixes",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-k2-state-20261024\\pro\\attempt2\\run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792838248.534676,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 12088,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792838341.6131396,
+        "process_wall_seconds": 93.07820310001262
+      },
+      "image": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-k2-state-20261024\\pro\\attempt2\\checks.exe",
+          "bytes": 141405696,
+          "sha256": "2fc3ae5df601ef76637d12d149e74a3fbde28a7d23c611f2eb44cf6ffef93b31"
+        },
+        "consumer_TUs": 1,
+        "SDK_TUs": 0
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+        "bytes": 169559,
+        "sha256": "08a5605860d437605a508b1ec36b90d5b694938bba4711e071927a48018d35b3"
+      },
+      "properties": {
+        "head_provider": "cublasLt",
+        "k2_default_draw_schedule": "proposal0,proposal1,accept2,accept3,final4; successful complete Head advances5",
+        "k2_controlled_address_bound": "262144",
+        "k2_scope": "Actual two recursive NextN proposals, three true target rows, common stochastic acceptance, complete target-conditioned prefix0/1/2 replay, original result leases and atomic RNG. Controlled-address and EOS/quota fixtures are explicit; not natural acceptance rate or whole-model task quality."
+      },
+      "actual_transitions": [
+        "GLM K2 BOUNDARY name=natural proposal0=42456 proposal1=518 accept0=0 accept1=0 consumed=1 consumed_drafts=0 emitted=1 pending=122596 stopped=0 accept_addresses=2,3 final_address=4 draw=5",
+        "GLM PRO K2 CONTINUED consumed_drafts=0 consumed_pending=122596 next_pending=83871 cursor=6",
+        "GLM K2 BOUNDARY name=quota1 proposal0=42456 proposal1=518 accept0=1 accept1=1 consumed=1 consumed_drafts=0 emitted=1 pending=42456 stopped=0 accept_addresses=5,84 final_address=85 draw=86",
+        "GLM K2 BOUNDARY name=quota2 proposal0=42456 proposal1=518 accept0=1 accept1=1 consumed=2 consumed_drafts=1 emitted=2 pending=518 stopped=0 accept_addresses=5,84 final_address=85 draw=86",
+        "GLM K2 BOUNDARY name=all_accepted_bonus proposal0=42456 proposal1=518 accept0=1 accept1=1 consumed=3 consumed_drafts=2 emitted=3 pending=94946 stopped=0 accept_addresses=5,84 final_address=85 draw=86",
+        "GLM PRO K2 CONTINUED consumed_drafts=2 consumed_pending=94946 next_pending=100698 cursor=87",
+        "GLM K2 BOUNDARY name=accepted_second_EOS proposal0=42456 proposal1=518 accept0=1 accept1=1 consumed=2 consumed_drafts=1 emitted=2 pending=518 stopped=1 accept_addresses=5,84 final_address=85 draw=86"
+      ],
+      "source_change_after_run": "Consumer unchanged after actual run; shared helper gained explanatory comments and explicit standard/state-header includes only."
+    }
+  ],
+  "verification": {
+    "consumer_compile_attempts": 2,
+    "consumer_TUs_per_family_per_attempt": 1,
+    "all_compile_link_exit0": true,
+    "SDK_TUs": 0,
+    "HTTP_bytes": 0,
+    "new_model_payload_bytes": 0,
+    "actual_original_source_frontier_missing": 0,
+    "final_canonical_flash_syntax": {
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+        "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "/nologo",
+        "/c",
+        "/std:c++latest",
+        "/EHsc",
+        "/Zc:preprocessor",
+        "/Zc:__cplusplus",
+        "/utf-8",
+        "/O2",
+        "/Ob2",
+        "/MD",
+        "/DNDEBUG",
+        "/permissive-",
+        "/bigobj",
+        "/W4",
+        "/WX",
+        "/wd4324",
+        "/wd4702",
+        "/DHYLE_STATIC",
+        "/DNOMINMAX",
+        "/DGGML_USE_CUDA",
+        "/DHYLE_COMPUTE_CUDA=1",
+        "/DHYLE_COMPUTE_GGML_CUDA=1",
+        "/IC:\\public\\project-hyle\\hyle\\include",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+        "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+        "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+        "/external:W0",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+        "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+        "/DHYLE_TEST_GLM_STATE_CPU=1",
+        "/DHYLE_TEST_GLM_STATE_CUDA=1",
+        "/DHYLE_TEST_GLM_Q30_NEXTN_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/glm-quark-selected-20261024/Q30/generated/q30_nextn_static_pins.h\"",
+        "/DHYLE_TEST_GLM_Q30_TARGET43_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/glm-quark-selected-20261024/Q30/generated/q30_target43_static_pins.h\"",
+        "/DHYLE_TEST_GLM_Q30_TARGET44_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/glm-quark-selected-20261024/Q30/generated/q30_target44_static_pins.h\"",
+        "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+        "/Zs"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792838568.7195709,
+      "timeout_seconds": 180,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 33636,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792838575.784754,
+      "process_wall_seconds": 7.0641071000136435
+    },
+    "canonical_deltas": "Three Flash wrapper option-forwarding pairs plus four shared-helper admission comments and explicit dependency includes after frozen actual-run source; no executed graph/state/RNG math changes. /Zs /W4 /WX checks all final Flash entry definitions."
+  },
+  "limitations": [
+    "Finite original tail-layer/NextN components use explicit generated upstream activations/residual token adapter, initial histories and Pro upstream index fixture. This is not complete GLM generation, task quality, throughput, physical-memory peak, all publishers or all backends.",
+    "Actual executions are one Flash and one Pro CUDA source journey. Shared paths are instantiated by both CPU/CUDA compile gates; CPU K2 was not additionally run. Selected quantized wrappers expose the option and compile, not every quantized K2 bank rerun.",
+    "Natural two-proposal episodes both rejected first proposal. Accepted prefix1/2 and bonus continuations use explicit legal controlled RNG addresses and unmodified real distributions, separately labelled in raw logs.",
+    "K2 is the finite component capacity of this patch; it does not introduce an unbounded speculation tree. Existing complete Qwen K2/K4 and generic arbitrary-prefix mathematics are separate evidence.",
+    "Final syntax wrapper initially reused an already-created scratch output directory and did not invoke the compiler; corrected separate compile output then passed. Model runs and source images were never overwritten."
+  ],
+  "prior_evidence": [
+    "docs/evidence/correctness/mtp-glm-stochastic-output-boundaries-2026-10-24.json",
+    "docs/evidence/correctness/mtp-glm-original-stochastic-state-2026-10-24.json"
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-glm-original-stochastic-k2-state-2026-10-24.zip",
+    "bytes": 1030241,
+    "sha256": "a7e000278dff26a943b556a5edb638a86c0a6c4f5937245fd97fd97c9651898f",
+    "entries": 223,
+    "includes": "Frozen compiled sources/private headers, commands/dependency identities, full raw logs/XML, source inputs and current narrow source delta; no weights/SDK/EXE/DLL/OBJ."
+  }
+}

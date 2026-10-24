@@ -1,0 +1,1352 @@
+{
+  "status": "bounded_body_attribution_and_leaf_screen_complete_no_product_change",
+  "date": "2026-10-25",
+  "baseline": "docs/evidence/performance/mtp-current-single-and-multiturn-2026-10-25.json",
+  "source_trace": "docs/evidence/performance/mtp-current-cost-attribution-2026-10-25.json",
+  "body": {
+    "status": "offline_complete_no_new_candidate",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\body-cost-breakdown\\analyze.py",
+      "bytes": 8098,
+      "sha256": "ed0148bc2b9bc33004285b1a89f478e975146723e813d8a93b5b7ae400b6b8aa"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\mtp-current-cost-attribution-2026-10-25.zip",
+      "bytes": 9692222,
+      "sha256": "e076c0d141b4bd219372051b299c4c0100d0a72d3488b0da73f859ee4bc92f62"
+    },
+    "scope": "Each own process last24 captured T2 target launches, matched by actual kernel count and runtime correlationId. No cross-process timestamp subtraction.",
+    "SQL": {
+      "targets": "SELECT correlationId,MIN(start),COUNT(*)\n FROM CUPTI_ACTIVITY_KIND_KERNEL WHERE COALESCE(graphId,0)>0\n GROUP BY correlationId HAVING COUNT(*)=? ORDER BY MIN(start)",
+      "kernels": "SELECT k.start,k.end,s.value,k.gridX,k.gridY,k.gridZ\n FROM CUPTI_ACTIVITY_KIND_KERNEL k JOIN StringIds s ON s.id=k.demangledName\n WHERE k.correlationId=? ORDER BY k.start",
+      "copies": "SELECT start,end,bytes FROM CUPTI_ACTIVITY_KIND_MEMCPY\n WHERE correlationId=? ORDER BY start",
+      "memsets": "SELECT start,end FROM CUPTI_ACTIVITY_KIND_MEMSET\n WHERE correlationId=? ORDER BY start"
+    },
+    "grouping": {
+      "N6144_K2048": "66 physical projections:24gate+24up+18GDNqkv;Hgrid(8,48,1) directLt,peergrid(192,1,1) nativeMMF.",
+      "N2048_mixedK": "66 physical projections:24down K6144 plus42 K2048 GDNz/out+attentiono;Hgrid(8,16,1),peergrid(64,1,1). Deliberately not split further.",
+      "vocabulary_head": "One target vocabulary projection per graph;Hgrid(8,1940,1),peergrid(7760,1,1). Separate captured draft graphs are excluded.",
+      "other_matrix": "54 smaller/Q projections; retained asone actual group,not a new candidate.",
+      "source_anchors": [
+        "main.cc:2369,2425-2430,2448-2473,877-884",
+        "V2 manifest GGGAGGGAGGGAGGGAGGGAGGGA andoriginalBF16 Wgeometry",
+        "default_policy.cc:49-52,119-157"
+      ]
+    },
+    "arms": {
+      "hyle_mtp": {
+        "archive_member": ".scratch/mtp-performance-convergence-20261025/current-structure/hyle_mtp/trace.sqlite",
+        "sqlite_bytes": 11612160,
+        "sqlite_sha256": "ad5aa59bce3f3b13175a19b7dcabb8e5bfe1cf484c737c602fa134c262f79fed",
+        "captured_target_count": 66,
+        "selected_target_count": 24,
+        "selected_correlation_ids": [
+          257909,
+          258158,
+          258407,
+          258656,
+          258905,
+          259154,
+          259403,
+          259652,
+          259901,
+          260150,
+          260399,
+          260648,
+          260897,
+          261146,
+          261395,
+          261644,
+          261893,
+          262142,
+          262391,
+          262640,
+          262889,
+          263138,
+          263387,
+          263636
+        ],
+        "first_selected_kernel_start_ns": 3212369152,
+        "ms": {
+          "other_kernels": {
+            "count": 24,
+            "mean": 0.9027103333333333,
+            "median": 0.8615200000000001,
+            "min": 0.85848,
+            "max": 1.238831
+          },
+          "N6144_K2048": {
+            "count": 24,
+            "mean": 4.286298,
+            "median": 4.2776675,
+            "min": 3.924054,
+            "max": 5.084651
+          },
+          "other_matrix": {
+            "count": 24,
+            "mean": 0.7617607083333333,
+            "median": 0.700264,
+            "min": 0.691257,
+            "max": 1.137111
+          },
+          "N2048_mixedK": {
+            "count": 24,
+            "mean": 2.378369541666667,
+            "median": 2.296552,
+            "min": 2.264104,
+            "max": 2.760516
+          },
+          "vocabulary_head": {
+            "count": 24,
+            "mean": 2.3291385416666666,
+            "median": 2.244746,
+            "min": 2.108171,
+            "max": 2.933731
+          },
+          "two_main_body_groups": {
+            "count": 24,
+            "mean": 6.664667541666667,
+            "median": 6.6037875,
+            "min": 6.192932,
+            "max": 7.408468
+          },
+          "all_kernel_activity": {
+            "count": 24,
+            "mean": 10.658277125,
+            "median": 10.57821,
+            "min": 10.071479,
+            "max": 11.406952
+          },
+          "copy_activity": {
+            "count": 24,
+            "mean": 0.14402920833333333,
+            "median": 0.136366,
+            "min": 0.135902,
+            "max": 0.312925
+          },
+          "busy_union": {
+            "count": 24,
+            "mean": 10.800175666666666,
+            "median": 10.712544000000001,
+            "min": 10.206359,
+            "max": 11.540872
+          },
+          "gpu_span": {
+            "count": 24,
+            "mean": 10.943745875,
+            "median": 10.8879415,
+            "min": 10.285851,
+            "max": 11.61995
+          },
+          "within_graph_unoccupied": {
+            "count": 24,
+            "mean": 0.14357020833333334,
+            "median": 0.0790635,
+            "min": 0.077028,
+            "max": 0.755781
+          }
+        },
+        "copy_bytes": {
+          "count": 24,
+          "mean": 39731200,
+          "median": 39731200.0,
+          "min": 39731200,
+          "max": 39731200
+        },
+        "copy_count": {
+          "count": 24,
+          "mean": 135,
+          "median": 135.0,
+          "min": 135,
+          "max": 135
+        },
+        "kernel_counts_per_graph": {
+          "other_kernels": [
+            551
+          ],
+          "N6144_K2048": [
+            66
+          ],
+          "other_matrix": [
+            54
+          ],
+          "N2048_mixedK": [
+            66
+          ],
+          "vocabulary_head": [
+            1
+          ]
+        },
+        "matrix_kernel_names": {
+          "N6144_K2048": [
+            "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x1_tn_align8>(T1::Params)"
+          ],
+          "other_matrix": [
+            "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x1_tn_align8>(T1::Params)",
+            "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_16x16_128x2_tn_align8>(T1::Params)"
+          ],
+          "N2048_mixedK": [
+            "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x2_tn_align8>(T1::Params)"
+          ],
+          "vocabulary_head": [
+            "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_16x16_128x1_tn_align8>(T1::Params)"
+          ]
+        }
+      },
+      "peer_mtp": {
+        "archive_member": ".scratch/mtp-performance-convergence-20261025/current-structure/peer_mtp/trace.sqlite",
+        "sqlite_bytes": 6770688,
+        "sqlite_sha256": "ea8810426d35ce23e4a7d49248bd2270855eef8bd30e980aa9974947b3d84efb",
+        "captured_target_count": 62,
+        "selected_target_count": 24,
+        "selected_correlation_ids": [
+          33953,
+          34042,
+          34131,
+          34220,
+          34309,
+          34398,
+          34487,
+          34576,
+          34665,
+          34754,
+          34843,
+          34932,
+          35021,
+          35110,
+          35199,
+          35288,
+          35377,
+          35466,
+          35555,
+          35644,
+          35733,
+          35822,
+          35911,
+          36000
+        ],
+        "first_selected_kernel_start_ns": 2758619006,
+        "ms": {
+          "other_kernels": {
+            "count": 24,
+            "mean": 1.0246362916666667,
+            "median": 1.001483,
+            "min": 0.995955,
+            "max": 1.560873
+          },
+          "N6144_K2048": {
+            "count": 24,
+            "mean": 4.077248833333333,
+            "median": 3.973987,
+            "min": 3.741172,
+            "max": 5.092169
+          },
+          "other_matrix": {
+            "count": 24,
+            "mean": 0.714681375,
+            "median": 0.6931285,
+            "min": 0.68956,
+            "max": 1.025685
+          },
+          "N2048_mixedK": {
+            "count": 24,
+            "mean": 2.392620125,
+            "median": 2.3250335,
+            "min": 2.14843,
+            "max": 3.197343
+          },
+          "vocabulary_head": {
+            "count": 24,
+            "mean": 2.2883481249999997,
+            "median": 2.1423949999999996,
+            "min": 2.101708,
+            "max": 2.816004
+          },
+          "two_main_body_groups": {
+            "count": 24,
+            "mean": 6.4698689583333335,
+            "median": 6.378669,
+            "min": 6.063844,
+            "max": 7.521203
+          },
+          "all_kernel_activity": {
+            "count": 24,
+            "mean": 10.49753475,
+            "median": 10.4082215,
+            "min": 9.86143,
+            "max": 11.329697
+          },
+          "copy_activity": {
+            "count": 24,
+            "mean": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "busy_union": {
+            "count": 24,
+            "mean": 10.495181458333333,
+            "median": 10.4062375,
+            "min": 9.858934,
+            "max": 11.327233
+          },
+          "gpu_span": {
+            "count": 24,
+            "mean": 10.529263416666666,
+            "median": 10.434553999999999,
+            "min": 9.887711,
+            "max": 11.35624
+          },
+          "within_graph_unoccupied": {
+            "count": 24,
+            "mean": 0.034081958333333336,
+            "median": 0.028398,
+            "min": 0.027566,
+            "max": 0.164874
+          }
+        },
+        "copy_bytes": {
+          "count": 24,
+          "mean": 0,
+          "median": 0.0,
+          "min": 0,
+          "max": 0
+        },
+        "copy_count": {
+          "count": 24,
+          "mean": 0,
+          "median": 0.0,
+          "min": 0,
+          "max": 0
+        },
+        "kernel_counts_per_graph": {
+          "other_kernels": [
+            540
+          ],
+          "N6144_K2048": [
+            66
+          ],
+          "other_matrix": [
+            54
+          ],
+          "N2048_mixedK": [
+            66
+          ],
+          "vocabulary_head": [
+            1
+          ]
+        },
+        "matrix_kernel_names": {
+          "N6144_K2048": [
+            "void mul_mat_f<__nv_bfloat162, (int)32, (int)2, (int)8, (bool)0>(const T1 *, const float *, const int *, float *, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)"
+          ],
+          "other_matrix": [
+            "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_16x16_128x1_tn_align8>(T1::Params)",
+            "void mul_mat_f<__nv_bfloat162, (int)32, (int)2, (int)8, (bool)0>(const T1 *, const float *, const int *, float *, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)"
+          ],
+          "N2048_mixedK": [
+            "void mul_mat_f<__nv_bfloat162, (int)32, (int)2, (int)8, (bool)0>(const T1 *, const float *, const int *, float *, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)"
+          ],
+          "vocabulary_head": [
+            "void mul_mat_f<__nv_bfloat162, (int)32, (int)2, (int)8, (bool)0>(const T1 *, const float *, const int *, float *, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)"
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "other_kernels": {
+        "H_mean_ms": 0.9027103333333333,
+        "P_mean_ms": 1.0246362916666667,
+        "H_minus_P_mean_ms": -0.12192595833333342,
+        "H_median_ms": 0.8615200000000001,
+        "P_median_ms": 1.001483
+      },
+      "N6144_K2048": {
+        "H_mean_ms": 4.286298,
+        "P_mean_ms": 4.077248833333333,
+        "H_minus_P_mean_ms": 0.2090491666666674,
+        "H_median_ms": 4.2776675,
+        "P_median_ms": 3.973987
+      },
+      "other_matrix": {
+        "H_mean_ms": 0.7617607083333333,
+        "P_mean_ms": 0.714681375,
+        "H_minus_P_mean_ms": 0.04707933333333336,
+        "H_median_ms": 0.700264,
+        "P_median_ms": 0.6931285
+      },
+      "N2048_mixedK": {
+        "H_mean_ms": 2.378369541666667,
+        "P_mean_ms": 2.392620125,
+        "H_minus_P_mean_ms": -0.014250583333333289,
+        "H_median_ms": 2.296552,
+        "P_median_ms": 2.3250335
+      },
+      "vocabulary_head": {
+        "H_mean_ms": 2.3291385416666666,
+        "P_mean_ms": 2.2883481249999997,
+        "H_minus_P_mean_ms": 0.04079041666666683,
+        "H_median_ms": 2.244746,
+        "P_median_ms": 2.1423949999999996
+      },
+      "two_main_body_groups": {
+        "H_mean_ms": 6.664667541666667,
+        "P_mean_ms": 6.4698689583333335,
+        "H_minus_P_mean_ms": 0.19479858333333322,
+        "H_median_ms": 6.6037875,
+        "P_median_ms": 6.378669
+      },
+      "all_kernel_activity": {
+        "H_mean_ms": 10.658277125,
+        "P_mean_ms": 10.49753475,
+        "H_minus_P_mean_ms": 0.16074237499999988,
+        "H_median_ms": 10.57821,
+        "P_median_ms": 10.4082215
+      },
+      "copy_activity": {
+        "H_mean_ms": 0.14402920833333333,
+        "P_mean_ms": 0.0,
+        "H_minus_P_mean_ms": 0.14402920833333333,
+        "H_median_ms": 0.136366,
+        "P_median_ms": 0.0
+      },
+      "busy_union": {
+        "H_mean_ms": 10.800175666666666,
+        "P_mean_ms": 10.495181458333333,
+        "H_minus_P_mean_ms": 0.30499420833333346,
+        "H_median_ms": 10.712544000000001,
+        "P_median_ms": 10.4062375
+      },
+      "gpu_span": {
+        "H_mean_ms": 10.943745875,
+        "P_mean_ms": 10.529263416666666,
+        "H_minus_P_mean_ms": 0.4144824583333335,
+        "H_median_ms": 10.8879415,
+        "P_median_ms": 10.434553999999999
+      },
+      "within_graph_unoccupied": {
+        "H_mean_ms": 0.14357020833333334,
+        "P_mean_ms": 0.034081958333333336,
+        "H_minus_P_mean_ms": 0.10948825000000001,
+        "H_median_ms": 0.0790635,
+        "P_median_ms": 0.028398
+      }
+    },
+    "correction": "Earlier H4.122/P4.257ms was only each last single target. It does not describe the24target window. Earlier6.734/6.387ms was allcapturedtarget mean activity;10.876/10.425ms was allcapturedtarget median busyunion. Do not mix them or subtract medians as additive budgets.",
+    "conclusion": "In this consistent warm24 window,N6144/K2048 explains the two-main-body-group positive mean difference;N2048mixedK offsets it slightly. Stop further shape subdivision. The newly screened whole-M2 MMVF leaf is already closed and no implementation candidate is opened.",
+    "limits": [
+      "Hyle body BF16 A/W/Y withF32 accumulation differs from peer nativeMMF BF16 W +F32 A/Y; equal geometry is not identical numerical arithmetic or a promise of recoverable wall time.",
+      "Different natural continuations/accepts/context lengths:24 ownprocess target calls are not token-aligned pairedsamples. All selected calls are T2,not wholedecode.",
+      "Kernelactivitysums are additive descriptively;busyunion includes overlaps withcopy/memset. Group medians do not sum to median total. Within-graph emptyspace is not purehosttime.",
+      "Capturedonly decomposition intentionally excludes eager target/draft. Wholetrace peer has3 uncapturedtarget and11 uncaptureddraft calls;H66/P62 capturedtarget counts are not logicalcall totals.",
+      "Peer zero capturedgraph D2D does not mean zero totaltransfer: original eager/intergraph D2H remains outside these pertargetgraph buckets; no complete-transfer advantage claimed.",
+      "BothMTP traces reportedCUPTI invalidGraph/NodeID queries(H250/P692),driver13.4 unsupported fallback13.3. Runtime correlation andobserved signatures support these buckets,not completeoriginal graphlineage certification.",
+      "No new GPU,compiler,model,download,profiler,PMU,formalTPSsample or productedit. No new candidate."
+    ]
+  },
+  "native_API": {
+    "scope": "Only the previously requested existing Hyle MTP graph Update/Instantiate API query; no new experiment or candidate.",
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\mtp-current-cost-attribution-2026-10-25.zip",
+      "bytes": 9692222,
+      "sha256": "e076c0d141b4bd219372051b299c4c0100d0a72d3488b0da73f859ee4bc92f62"
+    },
+    "sqlite": {
+      "zip_member": ".scratch/mtp-performance-convergence-20261025/current-structure/hyle_mtp/trace.sqlite",
+      "bytes": 11612160,
+      "sha256": "ad5aa59bce3f3b13175a19b7dcabb8e5bfe1cf484c737c602fa134c262f79fed",
+      "access": "deserialized in-memory"
+    },
+    "SQL": {
+      "table_existence": "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('CUPTI_ACTIVITY_KIND_RUNTIME','CUPTI_ACTIVITY_KIND_DRIVER') ORDER BY name",
+      "pragma": "PRAGMA table_info(CUPTI_ACTIVITY_KIND_RUNTIME)",
+      "runtime_rows": "SELECT s.value AS api,a.start,a.end,a.end-a.start AS duration_ns,\n a.eventClass,a.globalTid,a.correlationId,a.nameId,a.returnValue,a.callchainId\n FROM CUPTI_ACTIVITY_KIND_RUNTIME a JOIN StringIds s ON s.id=a.nameId\n WHERE s.value LIKE '%GraphExecUpdate%' OR s.value LIKE '%GraphInstantiate%'\n ORDER BY a.start"
+    },
+    "actual_tables": [
+      "CUPTI_ACTIVITY_KIND_RUNTIME"
+    ],
+    "runtime_pragma": [
+      {
+        "cid": 0,
+        "name": "start",
+        "type": "INTEGER",
+        "notnull": 1,
+        "default_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 1,
+        "name": "end",
+        "type": "INTEGER",
+        "notnull": 1,
+        "default_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "eventClass",
+        "type": "INTEGER",
+        "notnull": 1,
+        "default_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "globalTid",
+        "type": "INTEGER",
+        "notnull": 0,
+        "default_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "correlationId",
+        "type": "INTEGER",
+        "notnull": 0,
+        "default_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "nameId",
+        "type": "INTEGER",
+        "notnull": 1,
+        "default_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "returnValue",
+        "type": "INTEGER",
+        "notnull": 1,
+        "default_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "callchainId",
+        "type": "INTEGER",
+        "notnull": 0,
+        "default_value": null,
+        "pk": 0
+      }
+    ],
+    "runtime_rows": [
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2440518647,
+        "end": 2440676855,
+        "duration_ns": 158208,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 123729,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2448445126,
+        "end": 2451439892,
+        "duration_ns": 2994766,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 130839,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2469103572,
+        "end": 2469282243,
+        "duration_ns": 178671,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 132606,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2474243831,
+        "end": 2477301338,
+        "duration_ns": 3057507,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 139708,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2493640831,
+        "end": 2493774816,
+        "duration_ns": 133985,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 140323,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2497927086,
+        "end": 2500886890,
+        "duration_ns": 2959804,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 147425,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2516069030,
+        "end": 2516100848,
+        "duration_ns": 31818,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 148040,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2566593109,
+        "end": 2569261683,
+        "duration_ns": 2668574,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 155881,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2585468090,
+        "end": 2585490873,
+        "duration_ns": 22783,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 156348,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2599993817,
+        "end": 2600015237,
+        "duration_ns": 21420,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 156965,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2616197941,
+        "end": 2616218780,
+        "duration_ns": 20839,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 157582,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 2646040173,
+        "end": 2646148268,
+        "duration_ns": 108095,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 158281,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2649599240,
+        "end": 2649840168,
+        "duration_ns": 240928,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 165383,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2666050576,
+        "end": 2666071326,
+        "duration_ns": 20750,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 165987,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2669402682,
+        "end": 2669631813,
+        "duration_ns": 229131,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 173091,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2685254051,
+        "end": 2685273195,
+        "duration_ns": 19144,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 173562,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2689212011,
+        "end": 2689563772,
+        "duration_ns": 351761,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 180666,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2704923072,
+        "end": 2704943543,
+        "duration_ns": 20471,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 181283,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 2708300050,
+        "end": 2708672974,
+        "duration_ns": 372924,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 188387,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3047642022,
+        "end": 3047733250,
+        "duration_ns": 91228,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 203723,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3051129322,
+        "end": 3052612660,
+        "duration_ns": 1483338,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 210825,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3069404105,
+        "end": 3069490072,
+        "duration_ns": 85967,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 211709,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3072989526,
+        "end": 3074490216,
+        "duration_ns": 1500690,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 218811,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3093990914,
+        "end": 3095662231,
+        "duration_ns": 1671317,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 226224,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3114455857,
+        "end": 3116325142,
+        "duration_ns": 1869285,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 233569,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3131833797,
+        "end": 3131925373,
+        "duration_ns": 91576,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 234184,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 3135421779,
+        "end": 3135704713,
+        "duration_ns": 282934,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 241286,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphExecUpdate_v10020",
+        "start": 3151214409,
+        "end": 3151236430,
+        "duration_ns": 22021,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 241903,
+        "nameId": 231,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3171119996,
+        "end": 3172733533,
+        "duration_ns": 1613537,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 249484,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3188954845,
+        "end": 3189044649,
+        "duration_ns": 89804,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 250142,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3192503993,
+        "end": 3194092353,
+        "duration_ns": 1588360,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 257244,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      },
+      {
+        "api": "cudaGraphInstantiateWithFlags_v11040",
+        "start": 3209527546,
+        "end": 3209623454,
+        "duration_ns": 95908,
+        "eventClass": 0,
+        "globalTid": 282310280781756,
+        "correlationId": 257859,
+        "nameId": 207,
+        "returnValue": 0,
+        "callchainId": null
+      }
+    ],
+    "runtime_summary": {
+      "cudaGraphInstantiateWithFlags_v11040": {
+        "calls": 19,
+        "total_duration_ns": 22440620,
+        "total_duration_ms": 22.44062,
+        "return_value_counts": {
+          "0": 19
+        }
+      },
+      "cudaGraphExecUpdate_v10020": {
+        "calls": 13,
+        "total_duration_ns": 1656924,
+        "total_duration_ms": 1.656924,
+        "return_value_counts": {
+          "0": 13
+        }
+      }
+    },
+    "driver": {
+      "table": "CUPTI_ACTIVITY_KIND_DRIVER",
+      "present": false,
+      "calls": null,
+      "total_duration_ns": null,
+      "return_values": null,
+      "meaning": "Unknown because driver API table is absent from actual export; not zero."
+    },
+    "limits": [
+      "Runtime table has returnValue but no output UpdateResult/result_info fields. All13Update API returns0; outputpointers/graphlineage not reconstructed.",
+      "No one-to-one causal match to13 validseeds from a different privateprocess is claimed.",
+      "Runtime/driver calls may nest; driverunknown andnot added. API durations not subtracted fromkernel/coldgap or treated as recoverable wall.",
+      "Only32 matchingruntime rows retained. No GPU/compiler/model/network ornewcandidate."
+    ]
+  },
+  "leaf": {
+    "proof": {
+      "status": "closed_negative_leaf_no_product_change",
+      "shape": {
+        "M": 2,
+        "N": 6144,
+        "K": 2048
+      },
+      "actual_run_count": 1,
+      "actual_compile_tus": 2,
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "product_changes": 0,
+      "source_gate_unchanged": true,
+      "plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\plan.json",
+        "bytes": 11581,
+        "sha256": "b9e359a809b25181c32b14b9f7e92950796632e4df534e79566ee92e34c99f8f"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\run1\\summary.json",
+        "bytes": 4631,
+        "sha256": "c9badf3e6df38240e1c3efa16b58545f9cce1979c7593848ecea05e2f386ecc0"
+      },
+      "route_review": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\route-review.json",
+        "bytes": 5471,
+        "sha256": "c9136dcb3ad4d9a141f3f2c84a6c52b2d01a2dd7449f253f7953d3d941e0385c"
+      },
+      "warnings": {
+        "host": {
+          "stderr_bytes": 0,
+          "warning_codes": {},
+          "raw": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\host\\process\\stderr.log"
+        },
+        "native": {
+          "stderr_bytes": 17800,
+          "warning_codes": {
+            "C4819": 90
+          },
+          "raw": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\native\\process\\stderr.log"
+        },
+        "link": {
+          "stderr_bytes": 0,
+          "warning_codes": {},
+          "raw": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\link\\process\\stderr.log"
+        }
+      },
+      "cleanup": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\cleanup-candidates.json",
+        "bytes": 1230,
+        "sha256": "d1b1383e4d1be06eb1a300b441a60592e52a32f6eac7eeb86a484647d5394d5d"
+      },
+      "GPU_released": true
+    },
+    "result": {
+      "passed": true,
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\link\\m2-wide.exe",
+          "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "1084498960",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\ffn-slice\\candidate\\prefill\\07-post-attn-norm.bf16"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792863503.8759704,
+        "timeout_seconds": 120,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 50288,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792863504.2677126,
+        "process_wall_seconds": 0.3914181999862194
+      },
+      "plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\plan.json",
+        "bytes": 11581,
+        "sha256": "b9e359a809b25181c32b14b9f7e92950796632e4df534e79566ee92e34c99f8f"
+      },
+      "scope": "One leaf screen only; no consumer integration, model, SDK, download or dual epilogue.",
+      "actual": {
+        "passed": true,
+        "scope": "four-bank serial working-set approximation, no PMU cache-miss or real decode claim",
+        "m": 2,
+        "k": 2048,
+        "n": 6144,
+        "workspace_cap": 33554432,
+        "cublasLt_version": 130600,
+        "cublasLt_dll_path_known": false,
+        "device": "NVIDIA GeForce RTX 4070",
+        "weight_bank_count": 4,
+        "weight_working_set_bytes": 100663296,
+        "actual_L2_bytes": 37748736,
+        "graph_leaves": 64,
+        "host_graph_launches_per_trial": 1,
+        "trials": 5,
+        "gate": "independent F64 dot + fixed gamma(2K+4) F32/FTZ bound + outward BF16 RNE endpoints",
+        "choices": [
+          {
+            "kind": "Lt_production_request1",
+            "baseline_request1": true,
+            "config": [
+              21,
+              5,
+              1,
+              0,
+              0,
+              0,
+              19,
+              0,
+              0
+            ],
+            "workspace_bytes": 0,
+            "BF16_outputs_checked": 12288,
+            "BF16_values_different_from_baseline": 0,
+            "device_ms_per_leaf": [
+              0.05563199892640114,
+              0.058800000697374344,
+              0.07076799869537354,
+              0.05488000065088272,
+              0.06284800171852112
+            ],
+            "host_ms_per_leaf": [
+              0.055915625,
+              0.0590140625,
+              0.0709796875,
+              0.0550703125,
+              0.063071875
+            ],
+            "device_ms_median": 0.058800000697374344
+          },
+          {
+            "kind": "whole_M2_typed_MMVF",
+            "baseline_request1": false,
+            "config": null,
+            "workspace_bytes": 0,
+            "BF16_outputs_checked": 12288,
+            "BF16_values_different_from_baseline": 13,
+            "device_ms_per_leaf": [
+              0.05881600081920624,
+              0.053328000009059906,
+              0.053599998354911804,
+              0.061503998935222626,
+              0.058240000158548355
+            ],
+            "host_ms_per_leaf": [
+              0.05913125,
+              0.0535515625,
+              0.0538125,
+              0.061690625,
+              0.058434375
+            ],
+            "device_ms_median": 0.058240000158548355
+          }
+        ]
+      },
+      "positive_leaf": false,
+      "device_time_reduction_percent": 0.9523818574563303,
+      "decision": "Close this leaf candidate; no further samples or tuning.",
+      "limitations": [
+        "Retained T23 prefill first2 rows, not freshly captured current T2 verifier activations. Leaf exploration cannot claim current model/decode performance.",
+        "Four identical original weight banks rotate working set; no PMU cache-miss/absolute cold bandwidth claim.",
+        "Profiled current role totals are descriptive, not promised recoverable wall time."
+      ],
+      "status": "closed_negative_leaf_no_product_change",
+      "GPU_released": true,
+      "compilation_warnings": {
+        "host": {
+          "stderr_bytes": 0,
+          "warning_codes": {},
+          "raw": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\host\\process\\stderr.log"
+        },
+        "native": {
+          "stderr_bytes": 17800,
+          "warning_codes": {
+            "C4819": 90
+          },
+          "raw": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\native\\process\\stderr.log"
+        },
+        "link": {
+          "stderr_bytes": 0,
+          "warning_codes": {},
+          "raw": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\link\\process\\stderr.log"
+        }
+      }
+    },
+    "route_review": {
+      "scope": "Read-only current BF16 T2 target projection shape/route audit; not a kernel-duration speed claim.",
+      "current_image_sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1",
+      "archive": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\mtp-current-cost-attribution-2026-10-25.zip",
+        "bytes": 9692222,
+        "sha256": "e076c0d141b4bd219372051b299c4c0100d0a72d3488b0da73f859ee4bc92f62"
+      },
+      "method": "Existing archived SQLite deserialized in-memory; no trace extraction/mutation or new GPU measurement.",
+      "facts": {
+        "hyle_mtp": {
+          "sqlite_zip_member": ".scratch/mtp-performance-convergence-20261025/current-structure/hyle_mtp/trace.sqlite",
+          "sqlite_bytes": 11612160,
+          "sqlite_sha256": "ad5aa59bce3f3b13175a19b7dcabb8e5bfe1cf484c737c602fa134c262f79fed",
+          "target_kernel_count": 738,
+          "target_captured_launches": 66,
+          "projection_grid": [
+            8,
+            48,
+            1
+          ],
+          "matching_matrix_kernels_per_target": [
+            66
+          ],
+          "matching_matrix_activity_ms_per_target_median": 4.3057185,
+          "kernel_names": [
+            "void cutlass::Kernel2<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_16x16_128x1_tn_align8>(T1::Params)"
+          ]
+        },
+        "peer_mtp": {
+          "sqlite_zip_member": ".scratch/mtp-performance-convergence-20261025/current-structure/peer_mtp/trace.sqlite",
+          "sqlite_bytes": 6770688,
+          "sqlite_sha256": "ea8810426d35ce23e4a7d49248bd2270855eef8bd30e980aa9974947b3d84efb",
+          "target_kernel_count": 727,
+          "target_captured_launches": 62,
+          "projection_grid": [
+            192,
+            1,
+            1
+          ],
+          "matching_matrix_kernels_per_target": [
+            66
+          ],
+          "matching_matrix_activity_ms_per_target_median": 3.943739,
+          "kernel_names": [
+            "void mul_mat_f<__nv_bfloat162, (int)32, (int)2, (int)8, (bool)0>(const T1 *, const float *, const int *, float *, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int)"
+          ]
+        }
+      },
+      "role_mapping": {
+        "M": 2,
+        "N": 6144,
+        "K": 2048,
+        "original_weight_shape": [
+          6144,
+          2048
+        ],
+        "per_target_count": 66,
+        "counts": {
+          "FFN_gate": 24,
+          "FFN_up": 24,
+          "GDN_qkv": 18
+        },
+        "derivation": "Original 24-layer GGGAGGGA pattern:48 FFN plus18 GDN QKV projections have original N6144/K2048 BF16 weights; source/ordered graph kernels jointly identify family, not grid alone."
+      },
+      "source_anchors": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "lines": "877-884",
+          "fact": "Original FFN gate, BF16 SiLU, up, BF16 multiply, down graph stays unchanged."
+        },
+        {
+          "path": "src/compute_route_cuda/default_policy.cc",
+          "lines": "49-52,119-157",
+          "fact": "Ordinary plain rank2 MatMul prefers admitted direct cuBLAS candidate."
+        },
+        {
+          "path": "src/compute_provider_cublas/cublas_provider.cc",
+          "lines": "488-525",
+          "fact": "Original BF16 CUBLAS_COMPUTE_32F,32MiB workspace,compute-type reduction; leaf retains these."
+        },
+        {
+          "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+          "lines": "350-392,420-437",
+          "fact": "Dual and paired BF16 region matchers admit M1 only."
+        },
+        {
+          "path": ".scratch/architecture-refactor-2026-10-18/paired-projection-route/native-source/src/ggml-cuda/mmvf.cuh",
+          "lines": "517-547",
+          "fact": "Existing paired/dual epilogue asserts ncols_dst1. No widening or new epilogue in this candidate."
+        }
+      ],
+      "negative_prior": {
+        "evidence": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-m2-typed-mmvf-consumer-screen-2026-10-24.json",
+          "bytes": 58041,
+          "sha256": "f38800702f96d29fb394b7789929d399b58c813b6fa864fdd142fcaceff15b6e"
+        },
+        "shape": {
+          "M": 2,
+          "N": 2048,
+          "K": 6144
+        },
+        "distinction": "Closed prior selector explicitly tests tokens2,inner6144,output2048. Current candidate is M2,N6144,K2048,not reopening olddown. Prior whole-M1 route screen also does not certifyM2."
+      },
+      "candidate": {
+        "only_choice": "Existing whole-M2 typed MMVF template; no row split/dual fusion/F32 weight shadow/extra Cast.",
+        "decision": "Closed after the sole finite leaf:0.95% median reduction with overlapping5trial ranges; no consumer or new tuning.",
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\plan.json",
+          "bytes": 11581,
+          "sha256": "b9e359a809b25181c32b14b9f7e92950796632e4df534e79566ee92e34c99f8f"
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\run1\\summary.json",
+          "bytes": 4631,
+          "sha256": "c9badf3e6df38240e1c3efa16b58545f9cce1979c7593848ecea05e2f386ecc0"
+        }
+      },
+      "limits": [
+        "Trace different-process kernel sums are descriptive and not recoverable complete-wall budgets.",
+        "The peer uses native MMF with F32 carrier; copying its algorithm does not prove Hyle BF16 numerical or performance equivalence.",
+        "ActualA is retainedT23 prefill first2 layer0post-attention norm rows,not a newly capturedcurrent verifier.",
+        "Current host-only read review and two-TU leaf do not current-certify all nativeSDK or quantmodes."
+      ]
+    }
+  },
+  "provider_source_review": {
+    "source": {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 62683,
+      "sha256": "beaa64011ae8199aecb277aef654b7d439b2f9bcdf74e9c4e6278c67c19ceb4b"
+    },
+    "facts": [
+      "MatMul support accepts same BF16 A/W/Y and F32 accumulation;M1 has direct typed BF16 vector lowering.",
+      "M2 retains BF16 A, uses ggml_mul_mat F32 internal Y and as_output BF16 Cast. Merely preferring that provider does not select original F32-activation MMF; native dispatcher uses cuBLAS for non-F32 src1.",
+      "Explicitly widening small A could reach original MMF and preserve original output BF16 Cast. No measured benefit supports introducing those extra casts in this batch.",
+      "Direct typed MMF requires type propagation through dispatch/input/output templates; it is not an existing switch or accepted implementation. No new API or vendor algorithm fork is introduced."
+    ],
+    "anchors": [
+      "tensor_program.cc:371-381,741-775,1119-1133",
+      "third_party/ggml_cuda_runtime/patches.json final dispatcher",
+      "native mmf.cu:14-31 and mmf.cuh:51,125,208,282"
+    ]
+  },
+  "decisions": [
+    "Close wide-M2 typed MMVF: five intervals overlap, only0.95% median difference; no consumer integration or further repeats.",
+    "Do not infer all-window speed from a last single target. Same warm24 grouping localizes most body activity difference to66 N6144/K2048 projections.",
+    "Runtime API returns for13GraphExecUpdate calls are0; out-result and native lineage remain unknown. No evidence of API-error fallback for those13calls.",
+    "Retain original canonical route, BF16 boundaries, default K1 and complete comparison endpoints. This batch establishes attribution and negative screens, not a tokens/s improvement."
+  ],
+  "limits": [
+    "Warm target groups are each process own last24 captured T2 targets; they are not aligned cross-process timestamps or complete eager decode.",
+    "BF16 versus F32 activation/output carriers, different continuations/contexts and driver/tool graph-ID warnings remain; activity differences are not recoverable speed promises.",
+    "The numerical leaf uses true original post-attention-normalized input from a T23 prefill, first two rows; it is not a current T2 verifier input.",
+    "Leaf C4819 warnings and13BF16 output bit differences are preserved; both fixed numerical gates pass, no full-model quality or bitwise claim.",
+    "CUDA driver table is absent; returnValue0 is an API fact, not a recovered UpdateResult structure. Runtime intervals are not added to driver/kernel/coldgap durations."
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/mtp-body-route-attribution-2026-10-25.zip",
+    "bytes": 44652,
+    "sha256": "16ed6ad9e9fac6a2f37489a81767ec0efa4c71b4e73e80ff63807c45f2b2a6b2"
+  },
+  "archive_layout": {
+    "leaf": "Original leaf proof payloads under leaf/",
+    "body": "Offline scripts/results/SQL under body/"
+  },
+  "leaf_cleanup": {
+    "performed": true,
+    "inventory": {
+      "count": 4,
+      "logical_bytes": 1559263,
+      "files": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\host\\probe.obj",
+          "bytes": 419016,
+          "sha256": "d7a5b3a0503f6e16d79c30e79ae2c3460ac284b20171eefd59feeba202ccefad"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\native\\typed.obj",
+          "bytes": 80780,
+          "sha256": "c9d6d1d87632fef96a9cabf06a7d39f81c3755ca8649e33c63d495c42793905d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\link\\m2-wide.exe",
+          "bytes": 491520,
+          "sha256": "8362257f152a1e33ff40860b36130173a5449dd6cbd3659f5b8f1b2f4e093448"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\link\\m2-wide.map",
+          "bytes": 567947,
+          "sha256": "bc29e041b8d76b16c1f68c106e44ef9b33569e6838f7689a760d61877342efb6"
+        }
+      ],
+      "executed": false,
+      "policy": "Root test.ps1 guarded exact-file cleanup only; sources/commands/deps/logs/results/inputs and shared caches remain."
+    },
+    "policy": "Root test.ps1 exact-file preview/Apply; shared caches, sources, commands, data and original clean baseline retained.",
+    "receipt": {
+      "path": ".scratch/mtp-performance-convergence-20261025/m2-wide-leaf/cleanup-removed.json",
+      "bytes": 974,
+      "sha256": "230dc5435215053b69017592d62205f442df75e5e8dfc7b258717cd4d710b215"
+    }
+  },
+  "new_model_processes": 0,
+  "new_leaf_processes": 1,
+  "new_SDK_builds": 0,
+  "new_HTTP": 0,
+  "new_product_changes": 0,
+  "GPU_released": true
+}

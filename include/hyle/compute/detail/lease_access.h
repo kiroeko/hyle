@@ -14,6 +14,11 @@ struct LeaseAccess final {
   static const void *identity(const ReadLease &lease) noexcept { return lease.block_; }
   static const void *identity(const WriteLease &lease) noexcept { return lease.block_; }
   static const void *identity(const AppendLease &lease) noexcept { return lease.block_; }
+  // Immutable host layout bytes are real backing, charged for the complete
+  // lease lifetime, but belong to metadata rather than model/cache payload.
+  // Ordinary public imports retain their existing kExternal classification.
+  static HYLE_COMPUTE_API Result<ReadLease>
+  adopt_metadata(mem::Buffer &&backing, LeaseImportOptions options = {}) noexcept;
   // Opt-in conversion of an original exclusive full block. Failure leaves the
   // writer untouched; appendable roots can never promote a prefix to WriteLease.
   static HYLE_COMPUTE_API Result<AppendLeasePublication>
@@ -93,6 +98,9 @@ struct LeaseAccess final {
   static HYLE_COMPUTE_API Result<ReadLease> publish_after_writes(WriteLease &lease) noexcept;
 private:
   friend class AppendLease;
+  friend class ::hyle::compute::ReadLease;
+  static Result<ReadLease> adopt_readonly(mem::Buffer &&backing,
+      LeaseImportOptions options, ResourceBudgetCategory category) noexcept;
   static Result<ReadLease> publish_append(AppendLease &lease) noexcept;
 };
 } // namespace hyle::compute::detail

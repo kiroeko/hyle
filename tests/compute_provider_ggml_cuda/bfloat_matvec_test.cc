@@ -187,7 +187,7 @@ TEST(GgmlCudaBfloatMatvec, BfloatWeightsPreserveFloat32ActivationCancellation) {
     auto output = output_buffer(memory.ref(), yd);
     const std::array inputs{ConstTensorView::create(ad, activation.view()).value(),
                             ConstTensorView::create(wd, weights.view()).value()};
-    const auto status = execute(context, model_ops::bfloat_linear_f32(), inputs,
+    const auto status = execute(context, model_ops::dense_linear_f32(), inputs,
                                TensorView::create(yd, output.view()).value());
     ASSERT_TRUE(status.ok()) << status.message();
     const auto actual = half_test::read<float>(output);
@@ -204,7 +204,7 @@ TEST(GgmlCudaBfloatMatvec, BfloatWeightsPreserveFloat32ActivationCancellation) {
   for (const auto rows : {std::int64_t{2}, std::int64_t{17}}) {
     const auto ad = dense(DataType::kFloat32, {rows, 4096});
     const auto yd = dense(DataType::kFloat32, {rows, 154880});
-    const auto prepared = prepare(context, model_ops::bfloat_linear_f32(),
+    const auto prepared = prepare(context, model_ops::dense_linear_f32(),
         std::array{ad, head}, std::array{yd}, memory.ref());
     ASSERT_TRUE(prepared) << prepared.error().message();
     EXPECT_LT(prepared->workspace_requirement().size, head.required_bytes().value() / 4);
@@ -214,7 +214,7 @@ TEST(GgmlCudaBfloatMatvec, BfloatWeightsPreserveFloat32ActivationCancellation) {
     const auto ad = dense(DataType::kFloat32, {shape[0], shape[1]});
     const auto wd = dense(DataType::kBFloat16, {3, shape[1]});
     const auto yd = dense(DataType::kFloat32, {shape[0], 3});
-    const auto rejected = prepare(context, model_ops::bfloat_linear_f32(),
+    const auto rejected = prepare(context, model_ops::dense_linear_f32(),
         std::array{ad, wd}, std::array{yd}, memory.ref());
     ASSERT_FALSE(rejected);
     EXPECT_TRUE(rejected.error().IsUnimplemented());
@@ -247,7 +247,7 @@ TEST(GgmlCudaBfloatMatvec, BatchedBfloatWeightsPreserveOriginalFloat32Rows) {
     auto output=output_buffer(memory.ref(),yd);
     const std::array inputs{ConstTensorView::create(ad,activation.view()).value(),
                             ConstTensorView::create(wd,weights.view()).value()};
-    const auto status=execute(context,model_ops::bfloat_linear_f32(),inputs,
+    const auto status=execute(context,model_ops::dense_linear_f32(),inputs,
         TensorView::create(yd,output.view()).value());
     ASSERT_TRUE(status.ok())<<status.message();
     const auto actual=half_test::read<float>(output);
@@ -262,13 +262,13 @@ TEST(GgmlCudaBfloatMatvec, BatchedBfloatWeightsPreserveOriginalFloat32Rows) {
     const auto ad=dense(DataType::kFloat32,{64,1,nk[1]});
     const auto wd=dense(DataType::kBFloat16,{64,nk[0],nk[1]});
     const auto yd=dense(DataType::kFloat32,{64,1,nk[0]});
-    const auto prepared=prepare(context,model_ops::bfloat_linear_f32(),
+    const auto prepared=prepare(context,model_ops::dense_linear_f32(),
         std::array{ad,wd},std::array{yd},memory.ref());
     ASSERT_TRUE(prepared)<<prepared.error().message();
     EXPECT_LT(prepared->workspace_requirement().size,wd.required_bytes().value()/4);
   }
   // Multiple original W batches with N>512 fail before native MMF/cuBLAS.
-  const auto rejected=prepare(context,model_ops::bfloat_linear_f32(),
+  const auto rejected=prepare(context,model_ops::dense_linear_f32(),
       std::array{dense(DataType::kFloat32,{3,1,66}),dense(DataType::kBFloat16,{3,513,66})},
       std::array{dense(DataType::kFloat32,{3,1,513})},memory.ref());
   ASSERT_FALSE(rejected);EXPECT_TRUE(rejected.error().IsUnimplemented());
@@ -277,5 +277,149 @@ TEST(GgmlCudaBfloatMatvec, BatchedBfloatWeightsPreserveOriginalFloat32Rows) {
 TEST(GgmlCudaBfloatMatvec, Float32SourceAndOutputKeepTheirPrecision) {
   // The F32 control retains input bits that BF16/TF32 would discard.
   matvec<float>(128, true);
+}
+
+TEST(GgmlCudaDenseLinear, HalfWeightsPreserveFloat32ActivationAndOutput) {
+  using Half = hyle::simd::float16_t;
+  auto context = Context::create(cuda::device(0).value(), ggml_cuda::provider()).value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  constexpr std::int64_t width = 66, columns = 4;
+  for (const auto rows : {std::int64_t{1}, std::int64_t{2}, std::int64_t{17}}) {
+    const auto ad = dense(DataType::kFloat32, {rows, width});
+    const auto wd = dense(DataType::kFloat16, {columns, width});
+    const auto yd = dense(DataType::kFloat32, {rows, columns});
+    std::vector<float> a(std::size_t(rows * width), 0);
+    std::vector<Half> w(std::size_t(columns * width), half_test::encode<Half>(0));
+    for (std::int64_t row = 0; row < rows; ++row) {
+      const auto first = std::size_t(row * width);
+      a[first] = 1 + float(row % 3 + 1) / 262144; a[first + 1] = -1;
+      a[first + 2] = 1; a[first + 3] = 1.F / 128;
+    }
+    for (std::int64_t column = 0; column < 3; ++column) {
+      const auto first = std::size_t(column * width);
+      w[first] = w[first + 1] = half_test::encode<Half>(column == 2 ? -1. : double(column + 1));
+    }
+    w[std::size_t(3 * width + 2)] = half_test::encode<Half>(1);
+    w[std::size_t(3 * width + 3)] = half_test::encode<Half>(1. / 64);
+    EXPECT_EQ(half_test::decode(half_test::encode<Half>(a[0])), 1);
+    auto activation = upload<float>(memory.ref(), a), weights = upload<Half>(memory.ref(), w);
+    auto output = output_buffer(memory.ref(), yd);
+    const auto status = execute(context, model_ops::dense_linear_f32(),
+        std::array{ConstTensorView::create(ad, activation.view()).value(), ConstTensorView::create(wd, weights.view()).value()},
+        TensorView::create(yd, output.view()).value());
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto actual = half_test::read<float>(output);
+    for (std::int64_t row = 0; row < rows; ++row) {
+      for (std::int64_t column = 0; column < 3; ++column)
+        EXPECT_EQ(actual[std::size_t(row * columns + column)],
+            float(column == 2 ? -1 : column + 1) * float(row % 3 + 1) / 262144);
+      EXPECT_EQ(actual[std::size_t(row * columns + 3)], 1.F + 1.F / 8192);
+      EXPECT_EQ(half_test::decode(half_test::encode<Half>(actual[std::size_t(row * columns + 3)])), 1);
+    }
+  }
+  // Original full vocabulary F16 bank is imported without a full F32 copy.
+  // Cold qualification only: no allocation or execution of these large tensors.
+  const auto head = dense(DataType::kFloat16, {248320, 2048});
+  const auto prepared = prepare(context, model_ops::dense_linear_f32(),
+      std::array{dense(DataType::kFloat32, {17, 2048}), head},
+      std::array{dense(DataType::kFloat32, {17, 248320})}, memory.ref());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_LT(prepared->workspace_requirement().size, head.required_bytes().value() / 4);
+  const auto odd = prepare(context, model_ops::dense_linear_f32(),
+      std::array{dense(DataType::kFloat32, {2, 65}), dense(DataType::kFloat16, {4, 65})},
+      std::array{dense(DataType::kFloat32, {2, 4})}, memory.ref());
+  ASSERT_FALSE(odd); EXPECT_TRUE(odd.error().IsUnimplemented());
+}
+
+TEST(GgmlCudaDenseLinear, BatchedBfloatActivationDoesNotNarrowToHalfWeightRange) {
+  using Half = hyle::simd::float16_t;
+  auto context = Context::create(cuda::device(0).value(), ggml_cuda::provider()).value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  constexpr std::int64_t batches = 3, rows = 2, width = 66, columns = 3;
+  const auto ad = dense(DataType::kBFloat16, {batches, rows, width});
+  const auto wd = dense(DataType::kFloat16, {batches, columns, width});
+  const auto yd = dense(DataType::kFloat32, {batches, rows, columns});
+  std::vector<BF16> a(std::size_t(batches * rows * width), half_test::encode<BF16>(0));
+  std::vector<Half> w(std::size_t(batches * columns * width), half_test::encode<Half>(0));
+  for (std::int64_t batch = 0; batch < batches; ++batch) {
+    for (std::int64_t row = 0; row < rows; ++row) {
+      const auto first = std::size_t((batch * rows + row) * width);
+      a[first] = half_test::encode<BF16>(65536. * double(batch + 1));
+      a[first + 1] = half_test::encode<BF16>(-65536. * double(batch + 1));
+      a[first + 2] = half_test::encode<BF16>(1); a[first + 3] = half_test::encode<BF16>(.25);
+    }
+    const auto first = std::size_t(batch * columns * width);
+    w[first] = half_test::encode<Half>(1. / 2048);
+    w[first + std::size_t(width)] = w[first + std::size_t(width) + 1] = half_test::encode<Half>(1. / 2048);
+    w[first + std::size_t(2 * width) + 2] = half_test::encode<Half>(1);
+    w[first + std::size_t(2 * width) + 3] = half_test::encode<Half>(1. / 2048);
+  }
+  auto activation = upload<BF16>(memory.ref(), a), weights = upload<Half>(memory.ref(), w);
+  auto output = output_buffer(memory.ref(), yd);
+  const auto status = execute(context, model_ops::dense_linear_f32(),
+      std::array{ConstTensorView::create(ad, activation.view()).value(), ConstTensorView::create(wd, weights.view()).value()},
+      TensorView::create(yd, output.view()).value());
+  ASSERT_TRUE(status.ok()) << status.message();
+  const auto actual = half_test::read<float>(output);
+  for (std::int64_t batch = 0; batch < batches; ++batch) for (std::int64_t row = 0; row < rows; ++row) {
+    const auto first = std::size_t((batch * rows + row) * columns);
+    EXPECT_EQ(actual[first], float(32 * (batch + 1))); EXPECT_EQ(actual[first + 1], 0);
+    EXPECT_EQ(actual[first + 2], 1.F + 1.F / 8192);
+  }
+}
+
+TEST(GgmlCudaDenseLinear, OriginalFloat32WeightAndActivationBitsSurvive) {
+  auto context = Context::create(cuda::device(0).value(), ggml_cuda::provider()).value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto ad = dense(DataType::kFloat32, {2, 66}), wd = dense(DataType::kFloat32, {3, 66});
+  const auto yd = dense(DataType::kFloat32, {2, 3});
+  std::vector<float> a(132, 0), w(198, 0);
+  for (std::size_t row = 0; row < 2; ++row) { a[row * 66] = 1.F + float(row + 1) / 262144; a[row * 66 + 1] = -1; }
+  for (std::size_t column = 0; column < 3; ++column) w[column * 66] = w[column * 66 + 1] = float(column + 1);
+  auto activation = upload<float>(memory.ref(), a), weights = upload<float>(memory.ref(), w);
+  auto output = output_buffer(memory.ref(), yd);
+  const auto status = execute(context, model_ops::dense_linear_f32(),
+      std::array{ConstTensorView::create(ad, activation.view()).value(), ConstTensorView::create(wd, weights.view()).value()},
+      TensorView::create(yd, output.view()).value());
+  ASSERT_TRUE(status.ok()) << status.message(); const auto actual = half_test::read<float>(output);
+  for (std::size_t row = 0; row < 2; ++row) for (std::size_t column = 0; column < 3; ++column)
+    EXPECT_EQ(actual[row * 3 + column], float((row + 1) * (column + 1)) / 262144);
+  const auto odd = prepare(context, model_ops::dense_linear_f32(),
+      std::array{dense(DataType::kFloat32, {2, 65}), dense(DataType::kFloat32, {3, 65})},
+      std::array{dense(DataType::kFloat32, {2, 3})}, memory.ref());
+  ASSERT_FALSE(odd); EXPECT_TRUE(odd.error().IsUnimplemented());
+}
+
+template<class A, class W> void dense_pair(Context &context, mem::MemoryResourceRef resource) {
+  const auto ad = dense(half_test::data_type<A>(), {2, 66});
+  const auto wd = dense(half_test::data_type<W>(), {3, 66}), yd = dense(DataType::kFloat32, {2, 3});
+  std::vector<A> a(132, half_test::encode<A>(0)); std::vector<W> w(198, half_test::encode<W>(0));
+  for (std::size_t row = 0; row < 2; ++row) {
+    a[row * 66] = half_test::encode<A>(1 + double(row + 1) / 262144);
+    a[row * 66 + 1] = half_test::encode<A>(-1); a[row * 66 + 2] = half_test::encode<A>(.25);
+  }
+  w[0] = w[1] = half_test::encode<W>(1); w[66 + 2] = half_test::encode<W>(1 + 1. / 262144);
+  w[132 + 2] = half_test::encode<W>(1. / 2048);
+  auto activation = upload<A>(resource, a), weights = upload<W>(resource, w); auto output = output_buffer(resource, yd);
+  const auto status = execute(context, model_ops::dense_linear_f32(),
+      std::array{ConstTensorView::create(ad, activation.view()).value(), ConstTensorView::create(wd, weights.view()).value()},
+      TensorView::create(yd, output.view()).value());
+  ASSERT_TRUE(status.ok()) << status.message(); const auto actual = half_test::read<float>(output);
+  for (std::size_t row = 0; row < 2; ++row) for (std::size_t column = 0; column < 3; ++column) {
+    double expected = 0;
+    for (std::size_t k = 0; k < 66; ++k)
+      expected += half_test::decode(a[row * 66 + k]) * half_test::decode(w[column * 66 + k]);
+    EXPECT_EQ(actual[row * 3 + column], expected);
+  }
+}
+TEST(GgmlCudaDenseLinear, AllDenseFloatingPairsUseOriginalOperands) {
+  using Half = hyle::simd::float16_t;
+  auto context = Context::create(cuda::device(0).value(), ggml_cuda::provider()).value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  dense_pair<Half, Half>(context, memory.ref()); dense_pair<Half, BF16>(context, memory.ref());
+  dense_pair<Half, float>(context, memory.ref()); dense_pair<BF16, Half>(context, memory.ref());
+  dense_pair<BF16, BF16>(context, memory.ref()); dense_pair<BF16, float>(context, memory.ref());
+  dense_pair<float, Half>(context, memory.ref()); dense_pair<float, BF16>(context, memory.ref());
+  dense_pair<float, float>(context, memory.ref());
 }
 } // namespace

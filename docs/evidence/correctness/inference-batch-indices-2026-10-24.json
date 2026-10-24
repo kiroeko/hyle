@@ -1,0 +1,347 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Cold-prepared finite host index scratch shared by natural ordinary/MTP requests and fixed replay. Payload, compatibility, state admission and publication remain at existing callers.",
+  "changes": [
+    "Natural paths prepare N/R and fixed waves prepare R/R index storage once; no hot nested bucket vectors.",
+    "Actual full-hit width1, first-seen order, resource-driven shrink and only-completed-prefix marking retained.",
+    "Fixed whole-wave row preflight precedes bucket execution; old cold shape-planning API unchanged.",
+    "Borrowed selections stay local; no lease/history/report container or state budget copied into scratch."
+  ],
+  "host_properties": {
+    "state": "passed",
+    "host_property_groups": 4,
+    "host_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\host-check1\\summary.json",
+      "bytes": 2868,
+      "sha256": "0b6d273e616ca54066367fb6378d95e72a8aa1979e09d98f77251bd24aa4944d"
+    },
+    "independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\host-check1\\review.json",
+      "bytes": 2159,
+      "sha256": "1674b0e7e77062749fa97dd59ba5d63d3f1908f620c5eaf1e921d7682a6aca32"
+    },
+    "proof_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\host-check1\\proof.zip",
+      "bytes": 19387,
+      "sha256": "102357d33494e5e68d4390cf1f956b3c36fadc6e3cce83af50d26c4e72c76f4f"
+    },
+    "cleanup": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\host-check1\\cleanup-candidates.json",
+      "bytes": 626,
+      "sha256": "ce69283121d67f991ce203102046cef65baf6e02ab4f5e2726fdb513e555f6c1"
+    },
+    "new_consumer_tus": 1,
+    "new_sdk_tus": 0,
+    "model_runs": 0,
+    "gpu_runs": 0,
+    "http_requests": 0,
+    "canonical_edits": 0
+  },
+  "host_review": {
+    "state": "no substantive new issue found",
+    "scope": "independent read-only header/main integration review; no token/lease/execution changes",
+    "main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 424704,
+      "sha256": "cc34c5251a8618a21b925f8f47ed20ac8a0070150462399a9413cade1969a05b"
+    },
+    "header": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\batch_indices.h",
+      "bytes": 2562,
+      "sha256": "f0bb89ff4fa0707b87f5941d34bbda2c91fc3bdc946d69845f1a2de16c080230"
+    },
+    "checks": {
+      "cold_capacity": "natural prepare(N,R) before ready, active/calls<=N; fixed prepare(R,R), immutable ScheduleWave<=R from existing make_schedule_waves",
+      "group_order": "select scans uncompleted candidates from first; same first-seen order; natural retains role/generation/planned_rows and full-hit limit1; fixed actual kind/rows skip0",
+      "shrink": "natural drops only bucket payload suffix; selected index span stays intact and mark_selected(bucket.size()) marks actual completed prefix after execute and report reserve",
+      "fixed_preflight": "main:6318 validates all resolved rows count and each<=logical query_rows, before first reset/select and any model.prepare/submit/finish of the bucket",
+      "span_lifetime": "spans consumed synchronously within each bucket before next select/reset; report members retain their own SmallVector; no Snapshot/ReadLease/native permissions enter scratch",
+      "failure_boundary": "header limit/reset/mark validation precedes matcher or done mutation; caller postcommit work/order preserved; fixed preflight exceptions still precede wave execution",
+      "fastpath": "inline4 buffers: actual N1/R1 selected pointer inside object; no hash/registry/virtual dispatch/provider changes; no general allocator counter claim"
+    },
+    "limitations": [
+      "host run observes only selected.data, not private mask pointer",
+      "fixed whole-wave preflight and payload/span lifetimes are source review, not additional model/IO-failure tests",
+      "original call/q/state/results/report containers were intentionally not replaced"
+    ]
+  },
+  "actual_consumer": {
+    "state": "passed",
+    "scope": "One current existing A-only natural Text4x2 N2/R2 full/partial prefixes/evict/restore, greedy recovery/lateIO, stochastic MTP K2R2 and fixed CLI tape. Compare previous actual reports, real stderr formatter and request grouping sequence; dispatch/wave/batch/members remain part of the complete JSON comparison.",
+    "differences": [],
+    "added_report_fields": [],
+    "request_groups": {
+      "lines": [
+        "generation_session id=u0 turn=1 episode=0",
+        "generation_session id=u1 turn=1 episode=0",
+        "generation_batch requests=2 T=2 role=0 full_hit=0",
+        "generation_session id=u0 turn=1 episode=0",
+        "generation_session id=u1 turn=1 episode=0",
+        "generation_batch requests=2 T=1 role=0 full_hit=0",
+        "generation_session id=u0 turn=1 episode=1",
+        "generation_session id=u1 turn=1 episode=1",
+        "generation_batch requests=2 T=1 role=0 full_hit=0",
+        "generation_session id=u2 turn=1 episode=0",
+        "generation_session id=u3 turn=1 episode=0",
+        "generation_batch requests=1 T=0 role=0 full_hit=1",
+        "generation_batch requests=1 T=1 role=0 full_hit=0",
+        "generation_session id=u2 turn=1 episode=0",
+        "generation_session id=u3 turn=1 episode=0",
+        "generation_batch requests=2 T=1 role=0 full_hit=0",
+        "generation_session id=u2 turn=1 episode=1",
+        "generation_session id=u3 turn=1 episode=1",
+        "generation_batch requests=2 T=1 role=0 full_hit=0",
+        "generation_session id=u0 turn=2 episode=2",
+        "generation_session id=u1 turn=2 episode=2",
+        "generation_batch requests=2 T=2 role=0 full_hit=0",
+        "generation_session id=u0 turn=2 episode=2",
+        "generation_session id=u1 turn=2 episode=2",
+        "generation_batch requests=2 T=1 role=0 full_hit=0",
+        "generation_session id=u2 turn=2 episode=2",
+        "generation_session id=u3 turn=2 episode=2",
+        "generation_batch requests=2 T=2 role=0 full_hit=0",
+        "generation_session id=u2 turn=2 episode=2",
+        "generation_session id=u3 turn=2 episode=2",
+        "generation_batch requests=2 T=1 role=0 full_hit=0",
+        "generation_session id=m0 turn=1 episode=0",
+        "generation_session id=m1 turn=1 episode=0",
+        "generation_batch requests=2 T=2 role=2 full_hit=0",
+        "generation_session id=m0 turn=1 episode=0",
+        "generation_session id=m1 turn=1 episode=0",
+        "generation_batch requests=2 T=3 role=1 full_hit=0",
+        "generation_session id=m0 turn=1 episode=1",
+        "generation_session id=m1 turn=1 episode=1",
+        "generation_batch requests=2 T=2 role=1 full_hit=0",
+        "generation_session id=m0 turn=1 episode=2",
+        "generation_session id=m1 turn=1 episode=2",
+        "generation_batch requests=2 T=1 role=5 full_hit=0"
+      ],
+      "counts": {
+        "batch": 15,
+        "session": 28
+      }
+    },
+    "late_IO_failures_observed": {
+      "expected_late_diagnostic_failure": 1,
+      "expected_fullhit_late_diagnostic_failure": 1
+    },
+    "committed_math_ledgers_RNG_geometry_equal": true,
+    "compile": {
+      "exit": 0,
+      "seconds": 16.39100000000326,
+      "timeout": false
+    },
+    "reporting_compile": {
+      "exit": 0,
+      "seconds": 1.4219999999913853,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 2.1559999999881256,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 2.109000000025844,
+      "timeout": false
+    },
+    "consumer_TUs": 1,
+    "reporting_TUs": 1,
+    "actual_processes": 1,
+    "old_runs": 0,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "full_models": 0,
+    "quality_claim": false,
+    "performance_claim": false,
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\source-pins.json",
+      "bytes": 16974,
+      "sha256": "55a7d417e40bf21d53b79ef57c92322b6c1aded7d353a129901fbc20e9b020ef"
+    },
+    "baseline": {
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\summary.json",
+        "bytes": 163485,
+        "sha256": "e05145b8c081086a49cc07c4faa213927c3b885fb6f38c6645bca3277de055c8"
+      },
+      "probe": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\probe.cc",
+        "bytes": 12286,
+        "sha256": "27167dbb69910d61626f508f215dfd155db99dcb227d74ce30d79c646b6fd132"
+      },
+      "reports": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\reference\\reports.json",
+        "bytes": 99998,
+        "sha256": "60ba70406f166fd3e4e928facdc1ea873b3b168dd92a8227e8cfcad292d41301"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\reference\\stderr.log",
+        "bytes": 27164,
+        "sha256": "e9ef27201d85dee1cfe5df022d5d4b921fd03e7254bc27815d8750af769d3d46"
+      },
+      "independent_K1_bridge": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-k1-acceptance-20261024\\qwen\\proof-summary.json",
+        "bytes": 4842,
+        "sha256": "80b1e77559a4cecfe285313cae40082a828940539f77a147c2ff8fceb0c40a33"
+      },
+      "reference_chain": "Existing actual eight reports at main88a791; classicK1/m0 selector then separately compared old88a791/new0ced with complete states/ledger/RNG identical. Current batch-index grouping changes now use that same actual report baseline; no old or GLM rerun.",
+      "fixture": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "bytes": 206336,
+          "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\weights.tsv",
+          "bytes": 5308,
+          "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+        }
+      ],
+      "closure": {
+        "route": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-program-fixed\\archive\\route.lib",
+          "bytes": 28072348,
+          "sha256": "349091d9fca48d66730ce6316d80a85458f4c7b983ab3e21460b88bfdfc2cb0c"
+        },
+        "native_region": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-region-fixed2\\compile\\unit.obj",
+          "bytes": 2654635,
+          "sha256": "2fc293d76f54d7b4f7e4e3ac84f758d89acb2366acceb3e843d7ec50934ffcfb"
+        }
+      },
+      "scope": "One existing A-only current tiny consumer. No old rebuild/run, no new mixed/cold matrix.",
+      "SDK_builds": 0,
+      "HTTP": 0
+    },
+    "image": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\link\\probe.exe",
+        "bytes": 69524480,
+        "sha256": "2b49fe7a10d24a1a748d1edcf167382d7fa5a5930890b9fe4223015c8ae4f388"
+      },
+      "objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\compile\\unit.obj",
+          "bytes": 12567379,
+          "sha256": "c81193951dce2e308cc26553a1bf6bf6f583dfc112499b9d80b9e0fc359db4fb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\reporting-compile\\unit.obj",
+          "bytes": 49438,
+          "sha256": "75ac4fca94d08b9063b1b25485c644d95b77ef7aeeb4b8f82628d4705da05be6"
+        }
+      ],
+      "baseline_link": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\reference\\link-command.json",
+        "bytes": 18384,
+        "sha256": "95e9d40a362641f701d32725c2ce2373ea279df1b34407ac775cd606c10f88f2"
+      },
+      "native": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        }
+      ],
+      "SDK_builds": 0
+    },
+    "formatter": {
+      "actual_line_counts": {
+        "prefix_hit": 0,
+        "request_prefix_hit": 2,
+        "prepared": 53,
+        "step": 53,
+        "preparation": 0,
+        "batch_plan": 0
+      },
+      "actual_field_sequences": {
+        "prefix_hit": [],
+        "request_prefix_hit": [
+          [
+            "name",
+            "reused_tokens",
+            "prompt_graph_calls",
+            "frontier_sampling_graph_calls",
+            "visible"
+          ]
+        ],
+        "prepared": [
+          [
+            "T",
+            "visible",
+            "replay",
+            "cold_batch_seconds",
+            "capture_recorded",
+            "capture_reused"
+          ]
+        ],
+        "step": [
+          [
+            "tokens",
+            "visible",
+            "seconds",
+            "submit_seconds",
+            "step_seconds",
+            "progress",
+            "next"
+          ]
+        ],
+        "preparation": [],
+        "batch_plan": []
+      },
+      "full_sequence_and_non_timing_values_equal": true,
+      "unexercised": [
+        "prefix_hit",
+        "preparation",
+        "batch_plan"
+      ]
+    },
+    "report_count": 8,
+    "excluded_fields": "Only seconds / *_seconds / *tokens_per_second*. No process identities required exclusion.",
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-indices-20261024\\regression\\summary.json",
+      "bytes": 166116,
+      "sha256": "8536951b44debf72d909ce4ea0e65e0b54f0119a68bf9eb8abae1dbf8569a421"
+    },
+    "boundary": "Tiny untrained A-only fixture, actual current execution and existing finite request/formatter contracts; no new GDN/mixed/full-model/quality/performance coverage."
+  },
+  "source_only": {
+    "scope": "source-only migration checks; no build/runtime/model/download performed",
+    "checks": {
+      "only_index_worklists_and_cold_preparation_changed": true,
+      "cold_bucket_planning_API_kept": true,
+      "runtime_bucket_materialization_removed": true,
+      "fixed_entire_wave_preflight_before_first_select": true,
+      "natural_mark_after_execution_and_report_reserve": true,
+      "natural_full_hit_limit_1": true,
+      "selected_owns_no_payloads": true,
+      "scratch_noncopyable": true
+    },
+    "semantics": "Only done/selected pure index buffers are cold-prepared and reused. Compatibility and full-hit policy, candidate/bucket payloads, admission/retirement, postcommit member reserve, report storage and fixed logical-row preflight stay at original callers. selected spans are ephemeral until next reset/select/prepare; budget shrinking marks only completed prefix."
+  },
+  "limitations": [
+    "Host checks observe selected-pointer stability and four finite properties, not a global allocation trace.",
+    "Actual model consumer is the existing small A-only Windows Vulkan fixture; no full-model quality, all-platform or TPS claim.",
+    "Cross-family phase/repair adapters and request/report separation remain unfinished."
+  ],
+  "SDK_builds": 0,
+  "HTTP_requests": 0,
+  "downloads_bytes": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-batch-indices-2026-10-24.zip",
+    "bytes": 480012,
+    "sha256": "56a22b106a519d19011a9439c1fec5a82791857c0065a7db12e66881212d0a5b"
+  },
+  "cleanup": {
+    "state": "completed",
+    "files": 8,
+    "logical_bytes": 83711219,
+    "private_DLL_hardlinks_removed": 1,
+    "physical_freed_bytes_measured": false,
+    "record": ".scratch/inference-batch-indices-20261024/binary-cleanup-removed.json",
+    "preserved": "Source, commands, results, fixture and original native/allocator caches."
+  }
+}

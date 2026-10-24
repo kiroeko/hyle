@@ -6,7 +6,7 @@ Graph 用于把多个 Compute operation 编成可复用执行计划：推导中�
 普通 CPU/CUDA 路径使用共享 Queue 片段；[Vulkan](vulkan-compute.md) 与
 [Apple](apple-compute.md) 同一 Runtime 的固定纯图也可通过实际 ExecutionSource 进入同一
 Executable／Invocation，内部继续使用原生 Program、结果与完成机制。其余混合运行时仍在迁移。
-Graph 不拥有模型加载、请求循环或 offload 策略。
+项目内的引擎层拥有模型加载、请求循环和 offload 策略；Graph 保持模型无关，亦可独立使用。
 
 先看下面的两节点例子和[生命周期](#四个生命周期对象)，再按需要选择：
 
@@ -132,7 +132,7 @@ CUDA的Scan／TopK以CCCL primitive为基础，Graph为每个invocation规划独
 `kRequirePrepared`及capture；每个invocation持有独立workspace。单行仍用设备归约。
 其它非空Scan／TopK路径仍声明managed commands，`kRequirePrepared`会跳过这些候选，prefer-capture如实报告
 节点的commands路线。Gather也使用已准备的CUDA kernel，可参与capture；checked模式先在设备验证全部索引，
-错误时保留整个输出，在Completion边界报错并退役该invocation。I32 Scan的溢出摘要仍需要host等待，
+错误时保留该 Gather 的输出，在Completion边界报错并退役该invocation。I32 Scan的溢出摘要仍需要host等待，
 以`blocks_host=true`声明；发生上述错误后的新请求使用新的invocation。
 `HostWaitPolicy`控制跨队列依赖的host等待，不取消Provider内部的必要检查；普通单队列入口仍可
 使用默认选项。执行期不临时改选Provider。

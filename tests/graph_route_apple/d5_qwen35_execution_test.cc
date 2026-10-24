@@ -1582,7 +1582,7 @@ TEST(AppleGraphQwen38_24T,
   const auto weight = upload(context, weight_desc, std::span(weights));
   auto call = prepare(context,
                       q24::workload(c::WorkloadPhase::kDecode, 0x0a10),
-                      c::model_ops::bfloat_linear_f32(), activation_desc,
+                      c::model_ops::dense_linear_f32(), activation_desc,
                       weight);
   for (const double fraction : {0.001953125, 0.0029296875}) {
     std::vector<B16> input(q24::kHidden);

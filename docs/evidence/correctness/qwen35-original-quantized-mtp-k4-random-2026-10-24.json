@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS",
+  "scope": "One complete original-model CUDA random K4 journey per existing GPTQ/NVFP4 identity, extending the existing ordinary/K1 source evidence.",
+  "model": "Qwen3.5-2B",
+  "prompt_tokens": 154,
+  "capacity": 256,
+  "maximum_output_tokens": 6,
+  "policy": {
+    "temperature": 1,
+    "top_k": 8,
+    "top_p": 0.9,
+    "seed": 123
+  },
+  "cache_requested_byte_limit": 268435456,
+  "cases": [
+    {
+      "source": "Q01",
+      "codec": "GPTQ",
+      "source_id": "d3334d7cc58dd99b5d37d0482b0b5df4ff73ccbc41229e693708a9c0b53437c0",
+      "exit": 0,
+      "physical_roles": 785,
+      "physical_role_counts_from_actual_prepared_manifest": {
+        "text": 770,
+        "mtp": 15
+      },
+      "frozen_report_counts": {
+        "text": 320,
+        "mtp": 15
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        6673,
+        271
+      ],
+      "proposals": [
+        4,
+        0
+      ],
+      "consumed_drafts": 3,
+      "sampling_draw_cursor": 11,
+      "target_rows": 160,
+      "draft_rows": 163,
+      "original_device_weight_bytes": 1936773760,
+      "cache_peak_requested_bytes": 121155635
+    },
+    {
+      "source": "Q03",
+      "codec": "NVFP4",
+      "source_id": "9b7c33976bbe99e8fd4c22875ec8fd8fe309b51a8451891148a506c1940ced85",
+      "exit": 0,
+      "physical_roles": 893,
+      "physical_role_counts_from_actual_prepared_manifest": {
+        "text": 878,
+        "mtp": 15
+      },
+      "frozen_report_counts": {
+        "text": 320,
+        "mtp": 15
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        2880,
+        271
+      ],
+      "proposals": [
+        4,
+        0
+      ],
+      "consumed_drafts": 3,
+      "sampling_draw_cursor": 11,
+      "target_rows": 160,
+      "draft_rows": 163,
+      "original_device_weight_bytes": 1912027216,
+      "cache_peak_requested_bytes": 121155635
+    }
+  ],
+  "consumer": {
+    "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/recursive-probe.exe",
+    "bytes": 141274624,
+    "sha256": "0286bc8733dfdbc061f41cc7f6730e9e62657af3bd3d3c2ecec545c0418f9c32"
+  },
+  "fresh_TUs": 0,
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "weight_copies": 0,
+  "limits": [
+    "Finite original-source functional execution, not task-quality or inference performance comparison.",
+    "Do not require equal output IDs across different original quantized sources or the BF16 checkpoint.",
+    "Frozen consumer predates the model-independent sampler header relocation; the mathematical nodes/policy are the same.",
+    "Frozen consumer hardcodes the obsolete BF16 tensor counts 320/15 in reports. Actual physical counts come from the archived prepared manifest; current product reports now count the selected loaded physical roles. No raw report is rewritten.",
+    "Known cache and workspace do not certify physical peak VRAM or native-private allocations.",
+    "Shared rejection/state correctness and multi-user/checkpoint algorithms use their separate existing evidence, not a Cartesian rerun here."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/qwen35-original-quantized-mtp-k4-random-2026-10-24-logs.zip",
+    "bytes": 287285,
+    "sha256": "bedd8d2c1155c940a023b8b61eaa696ca9d50f8383f5f06a63d58e7127b08f23"
+  },
+  "archive_members": 47
+}

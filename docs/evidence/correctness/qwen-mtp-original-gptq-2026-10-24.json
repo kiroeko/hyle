@@ -1,0 +1,131 @@
+{
+  "status": "PASS_CPU_CUDA_ORDINARY_MTP_SHORT_JOURNEY",
+  "date": "2026-10-24",
+  "repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+  "revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+  "original_quantized_roles": true,
+  "full_model": true,
+  "prompt_tokens": 154,
+  "requested_output_tokens": 4,
+  "capacity": 256,
+  "max_sessions": 1,
+  "active_sequences": 1,
+  "draft_tokens": 1,
+  "text_logical_roles": 320,
+  "mtp_logical_roles": 15,
+  "original_physical_roles": 785,
+  "ordinary_weight_bytes": 1815117440,
+  "mtp_weight_bytes": 1936773760,
+  "model_manifest": {
+    "path": ".scratch/mtp-full-quant-20261024/inputs-Q01/weights.tsv",
+    "bytes": 129369,
+    "sha256": "0d99fb3d8648e181ac8a4381216370a39b77bd96b7ab5fb576232c50fa4a95ed"
+  },
+  "model_sources": "Borrow original cached extents and newly fetched necessary ranges; no copied or dequantized checkpoint",
+  "compiled_model_sources": {
+    "cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 297418,
+      "sha256": "f976b71c979a6883be85942e96517c6bb3e3e380764bf5011b6ef8a2977020ac"
+    },
+    "cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 297418,
+      "sha256": "f976b71c979a6883be85942e96517c6bb3e3e380764bf5011b6ef8a2977020ac"
+    }
+  },
+  "source_note": "At measurement time, the only uncompiled source edit was a comment describing optional packed contraction. Later engine changes are outside this record.",
+  "cpu_staged_native_runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+    "bytes": 1206784,
+    "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+  },
+  "runs": [
+    {
+      "backend": "cpu",
+      "mode": "ordinary",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "source_id": "b41ca51625d8aeba5ec157c58466c182217ed2b087c261ca3f708a1009889bb1",
+      "parsed": {
+        "path": ".scratch/mtp-full-quant-20261024/engine-check/Q01-cpu-ordinary/parsed.json",
+        "bytes": 2070,
+        "sha256": "2bc79bfdc08929724c5ff865318d5493ab6fbd48672e3156afa16046a1fa4343"
+      }
+    },
+    {
+      "backend": "cpu",
+      "mode": "mtp",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "source_id": "b41ca51625d8aeba5ec157c58466c182217ed2b087c261ca3f708a1009889bb1",
+      "parsed": {
+        "path": ".scratch/mtp-full-quant-20261024/engine-check/Q01-cpu-mtp/parsed.json",
+        "bytes": 2301,
+        "sha256": "e5d0aba2d2183ec1bb161fd029ccb55da6f47780129317b24ceb3ca4078ce012"
+      }
+    },
+    {
+      "backend": "cuda",
+      "mode": "ordinary",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "source_id": "b41ca51625d8aeba5ec157c58466c182217ed2b087c261ca3f708a1009889bb1",
+      "parsed": {
+        "path": ".scratch/mtp-full-quant-20261024/engine-check/Q01-cuda-ordinary/parsed.json",
+        "bytes": 2067,
+        "sha256": "9210db7f834879ae94a6939000d53c4ccb3594f06c9669de93d662a122a584df"
+      }
+    },
+    {
+      "backend": "cuda",
+      "mode": "mtp",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "source_id": "b41ca51625d8aeba5ec157c58466c182217ed2b087c261ca3f708a1009889bb1",
+      "parsed": {
+        "path": ".scratch/mtp-full-quant-20261024/engine-check/Q01-cuda-mtp/parsed.json",
+        "bytes": 2291,
+        "sha256": "67beac57c5ac603a876235d0e1730ed6fc4e0df6c59cf80eda92632e6dd354b7"
+      }
+    }
+  ],
+  "numerical_observation": "All four generated ID lists equal the existing BF16 P154+4 baseline. This is not full-logit, task-quality or broad quantization parity evidence.",
+  "cpu_anomaly_resolution": "Old validation DLL omitted current native paged-parameter edits. Reusing the corrected original runtime with the same model image restored the expected short output. Separate native regression covers page math.",
+  "packed_routes": "CUDA contracts the original GPTQ chain. CPU preserves default routing: multirow may decode per projection into reusable Invocation workspace; one-row uses packed contraction.",
+  "memory_limit_note": "Managed CPU provider private temporary allocations are not measured here; no total peak-memory bound is claimed.",
+  "performance_claim": false,
+  "task_quality_claim": false,
+  "full_CMake_build": false,
+  "not_covered": [
+    "Multi-turn, multiple sessions and batch widths for this artifact",
+    "Stochastic sampling, K>1 and numerical task quality",
+    "All platforms and hybrid placement",
+    "Formal throughput or RAM/VRAM comparison"
+  ],
+  "logs": {
+    "path": "docs/evidence/correctness/qwen-mtp-original-gptq-2026-10-24.logs.zip",
+    "bytes": 16673,
+    "sha256": "3cafab4a0e878b3ac98980c74196135c2f8eaa0f01f2e65a1f9c573907a51601"
+  }
+}

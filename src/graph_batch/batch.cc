@@ -322,7 +322,7 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
       if(!storage.valid() || storage.ordinal()>=environment.storage_domains.size())return std::unexpected(Status::InvalidArgument("native capability target storage is invalid"));
       if(has_append){
         HYLE_ASSIGN_OR_RETURN(auto append_source,gd::GraphRegionSource::shared_queue(endpoint,detail::PagedAppendAccess::provider()));
-        detail::AppendAdapter append_adapter{environment.storage_domains[storage.ordinal()].resource,context.device().device_class()};
+        detail::AppendAdapter append_adapter{environment.storage_domains[storage.ordinal()].resource,context.device().device_class(),{}};
         auto native=cd::BackendExtensionAccess::query(context,cd::kPagedAppendExtensionId);
         if(native){
           HYLE_RETURN_IF_ERROR(cd::BackendExtensionAccess::call(*native,[](void*,const void*table,void*user)noexcept->Status{

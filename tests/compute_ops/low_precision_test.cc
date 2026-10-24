@@ -98,6 +98,28 @@ TEST(ComputeOpsCacheStorage, CacheDepthBlocksAndRealCopyCarrier) {
   EXPECT_EQ(*value->required_bytes(), 8704u);
 }
 
+TEST(ComputeOpsCacheStorage, PlainFloat32AndQ8RemainDifferentAcrossCopyAndAssignment) {
+  const auto plain = CacheStorage::plain(DataType::kFloat32).value();
+  const auto q8 = CacheStorage::q8_0().value();
+  EXPECT_EQ(plain.data_type(), q8.data_type());
+  EXPECT_EQ(plain.scale(), q8.scale());
+  EXPECT_NE(plain, q8);
+  EXPECT_TRUE(plain.format().is_plain());
+  EXPECT_EQ(q8.format().id(), kGgufQ8_0);
+  constexpr std::array<std::int64_t, 2> shape{3, 256};
+  const auto dense = cache_tensor_description(plain, shape).value();
+  EXPECT_EQ(dense.data_type(), DataType::kFloat32);
+  EXPECT_TRUE(dense.is_plain());
+  EXPECT_EQ(dense.required_bytes().value(), 3u * 256 * sizeof(float));
+  EXPECT_EQ(cache_carrier_description(plain, shape).value(), dense);
+  auto copied = plain;
+  EXPECT_EQ(copied, plain);
+  copied = q8;
+  EXPECT_EQ(copied, q8);
+  EXPECT_FALSE(copied.format().is_plain());
+  EXPECT_EQ(CacheStorage{}, CacheStorage::plain(DataType::kFloat16).value());
+}
+
 TEST(ComputeOpsCacheStorage, Float8ScaleIsSeparateFromCodeBytes) {
   const auto k = CacheStorage::float8(0.25F);
   const auto v = CacheStorage::float8(2.0F);
@@ -122,7 +144,7 @@ TEST(ComputeOpsCacheStorage, RefusesInvalidInterpretationAndOverflow) {
     EXPECT_FALSE(CacheStorage::float8(scale));
   const auto q8 = CacheStorage::q8_0();
   ASSERT_TRUE(q8);
-  EXPECT_FALSE(CacheStorage::plain(DataType::kFloat32));
+  EXPECT_FALSE(CacheStorage::plain(DataType::kFloat64));
   EXPECT_FALSE(CacheStorage::plain(DataType::kUnknown));
   EXPECT_FALSE(CacheStorage::plain(DataType::kInt8));
   EXPECT_TRUE(validate_cache_storage(*q8).ok());

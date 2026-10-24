@@ -182,15 +182,15 @@ Status select_layouts(Operation operation, std::span<const TensorDesc> inputs,
                       std::span<const TensorDesc> outputs,
                       BatchGeometry &geometry) noexcept {
   const auto *matmul = operation.get_if<MatMul>();
-  const bool scores = operation.custom_as<model_ops::BFloatLinearF32>().has_value();
+  const bool scores = operation.custom_as<model_ops::DenseLinearF32>().has_value();
   if ((!matmul && !scores) || inputs.size() != 2 || outputs.size() != 1)
     return Status::Unimplemented(
-        "cuBLAS provider implements MatMul and BFloatLinearF32 only");
+        "cuBLAS provider implements MatMul and DenseLinearF32 only");
   if (matmul && matmul->accumulation_type != DataType::kFloat32)
     return Status::Unimplemented("cuBLAS requires FP32 accumulation");
-  if (scores && inputs[0].data_type() == DataType::kFloat32)
+  if (scores && inputs[0].data_type() != inputs[1].data_type())
     return Status::Unimplemented(
-        "cuBLAS mixed F32 activation/BF16 weight precision is served by the direct native matvec");
+        "cuBLAS mixed activation/weight precision is served by the direct native matvec");
   auto &layouts = geometry.matrices;
   HYLE_RETURN_IF_ERROR(matrix_layout(inputs[0], layouts[0]));
   HYLE_RETURN_IF_ERROR(matrix_layout(inputs[1], layouts[1]));
@@ -203,9 +203,9 @@ Status select_layouts(Operation operation, std::span<const TensorDesc> inputs,
   if (scores) {
     if (outputs[0] != inferred[0])
       return Status::InvalidArgument(
-          "cuBLAS BFloatLinearF32 output differs from inference");
+          "cuBLAS DenseLinearF32 output differs from inference");
     // Dense stored [E,K] is the same allocation as column-major [K,E].
-    // Only the descriptor changes; the original BF16 weight address is used.
+    // Only the descriptor changes; the original floating weight address is used.
     std::swap(layouts[1].rows, layouts[1].columns);
     layouts[1].order = CUBLASLT_ORDER_COL;
   }

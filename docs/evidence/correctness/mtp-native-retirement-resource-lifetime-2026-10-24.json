@@ -1,0 +1,339 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS bounded public Graph and actual Model/Session retirement journeys",
+  "scope": "Original Vulkan accepted work, partial-submit failure, unknown native observation, owner teardown and explicit retry; Apple protocol audit and actual relocated-gate compile. Not a GPU-preemption or complete hardware/error matrix claim.",
+  "repairs": {
+    "blocking_retirement": "Context::drain drives the original Vulkan queue without closing future admission. An abandoned accepted prefix that needs QueueWaitIdle cannot be retired by collect(false) polling.",
+    "diagnosis_vs_retirement": "Unknown fence/drain status retains guards and native owners. Typed in-flight/attachment state, rather than error status, decides retirement. One Model handoff attempt replaces unbounded abort polling.",
+    "controller_ownership": "All public Vulkan raw allocation/import/export tokens and typed native Buffer allocations retain their exact original MemoryState. Zero-size raw buffers are covered. Public wrapper layout and native handles are unchanged.",
+    "callback_reentry": "Blocking drain/close from the same Runtime retirement callback is rejected. The original native Run tail still owns its Runtime; no callback joins its own unfinished publication.",
+    "cold_resources": "One finite engine-private ColdResources scope holds original weights, pools, schema, count/inventory policy addresses, families, IO and literals. A preallocated node per serial carrier attaches the scope to the original CompletionRetention without per-token heap allocation.",
+    "application_links": "Model teardown invalidates Session.model_ and candidate_admission host links, releases Invocation application roots, and hands the original Backend to the scope. Session can explicitly retry its original retirement continuation.",
+    "destruction_order": "The scope owns Backend as its first field so payloads die before their resource controller. Model declares/initializes Backend before resources_ for constructor unwind, and always hands it off on normal or unresolved teardown. Snapshot carries the scope for escaped raw policy/count borrows.",
+    "gate_route": "Relocated native private includes are corrected. macOS gate source selection follows the actual Apple route, allowing a Vulkan-only macOS configuration rather than inferring route from host OS."
+  },
+  "tests": {
+    "public_vulkan_graph": {
+      "passed": 5,
+      "seconds_reported_by_gtest": 0.452,
+      "process": {
+        "exit": 0,
+        "seconds": 0.5149440765380859
+      },
+      "cases": [
+        "Real native/managed accepted prefix, rejected next native submit, abandoned Completion; nonclosing drain retires and a fresh Graph uses the same Context.",
+        "Unknown original queue idle retains guards; an explicit later original-queue retry retires them.",
+        "Raw allocation/ReadLease, readonly import, typed Tensor with budget/view and zero-byte raw Buffer outlive MemoryResource wrappers.",
+        "Retirement callback cannot block on its own publication; the outer original drain still retires correctly.",
+        "Synchronous device IO preserves its first observation diagnosis after the next real fence proves retirement; native owners and controller release."
+      ]
+    },
+    "actual_model_session": {
+      "passed": 2,
+      "seconds_reported_by_gtest": 0.536,
+      "process": {
+        "exit": 0,
+        "seconds": 0.620288610458374
+      },
+      "fixture": "Locally generated untrained BF16 source, 13 roles / 98,944 bytes, H64/I128/V64, one attention layer, D64, capacity32, two input tokens. No trained-model quality or MTP coverage inferred.",
+      "fault_boundary": "Accept the original whole Graph first; then withhold terminal fence/wait/idle observations, drop the public Completion and destroy Model.",
+      "cases": [
+        "Session keeps original native scope after Model destruction; unknown retry retains it, restored native observation retires it, last Session releases scope and Runtime.",
+        "Model and Session both die while work remains unknown; the original accepted attachment alone keeps the scope. Its real final callback releases the scope without self-join, cycle or application owner."
+      ],
+      "current_cpu_syntax": {
+        "exit": 0,
+        "seconds": 5.338129043579102
+      },
+      "final_cli_cpu_syntax": {
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/wd4702",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/external:W0",
+          "/DHYLE_COMPUTE_CPU=1",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/IC:\\public\\project-hyle\\hyle\\engine",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/Zs",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/IC:\\public\\project-hyle\\hyle\\engine\\models\\qwen35",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-lifetime-audit-20261024\\main-cpu-syntax\\unit.obj",
+          "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-lifetime-audit-20261024\\main-cpu-syntax\\unit.pdb",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-lifetime-audit-20261024\\main-cpu-syntax\\deps.json",
+          "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792825473.3354757,
+        "timeout_seconds": 90,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 33544,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792825478.4571438,
+        "process_wall_seconds": 5.121395199996186
+      }
+    },
+    "gate": {
+      "Vulkan_MSVC": {
+        "exit": 0,
+        "seconds": 2.236588954925537
+      },
+      "Apple_Clang_macos144": {
+        "exit": 0,
+        "hardware": "Mac16,12",
+        "toolchain": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "source_sha256": {
+          "engine/models/qwen35/native_gate_apple.mm": "919457e3b0ccfcb1f5ec1e0e53b04de76fec9ef3520a46ff0aaa1ea7cb5f770c",
+          "engine/models/qwen35/native_gate.h": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e",
+          "engine/models/qwen35/backend.h": "797e0c7eaec98f20da7490bf6c4393af8337ee75a517fa3b6ca3417d80ac4d0f",
+          "src/compute_route_apple/apple_runtime_internal.h": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+        }
+      },
+      "three_macos_route_selections": {
+        "exit": 0,
+        "seconds": 5.130988359451294
+      }
+    },
+    "normal_CUDA_model_teardown": {
+      "path": "docs/evidence/correctness/mtp-qwen35-original-gguf-q4-cuda-2026-10-24.json",
+      "bytes": 9857,
+      "sha256": "43f6a6c19acccfda23742b15b1b04f7c8f26e935168f5fea3197545220b75710"
+    },
+    "normal_CUDA_scope": "Independent ordinary/K1/K4random original full Q4 source runs all exit0 after the two-line normal ownership correction. That consumer predates later constructor field-order and Snapshot-owner changes; those are covered by current tiny Model compilation/runtime and CPU syntax, not silently assigned the older full-model proof."
+  },
+  "audit": {
+    "Apple": {
+      "queue_admission": "apple_context.cc:167,1532: enqueue accepts an original host FIFO Job and pins leases before queueing. This is not proof that GPU kernels have started.",
+      "execution_retirement": "apple_context.cc:678: pre-execution cancellation can skip math; accepted partial evaluation is synchronized on the original stream before failure publication. :649-716 retires native leases before publishing terminal/completion callbacks.",
+      "existing_gate_boundary": "The Apple gate holds the original worker and observes a queued successor. Its cancellation proof is queued admission, not native GPU preemption.",
+      "resource_controller": "Apple MemoryState self-retention and its two actual lifetime tests were implemented by the parallel scope audit; use its separate evidence/object identity, not this gate compile as a resource-runtime proof."
+    },
+    "Vulkan": {
+      "partial_acceptance": "vulkan_run.cc:660 marks needs_drain after a real accepted prefix. :300 requires blocking queue proof; nonblocking collect alone cannot discharge it.",
+      "explicit_blocking_API": "Native Completion::wait still blocks/retries until terminal proof. Context::drain and Model abort handoff return unknown diagnosis with retained owners; no claim that every wait API now returns after one unknown observation.",
+      "concurrency": "Model execution_slot_count remains1. N/R admission/batch sizes do not imply concurrent independent native Model invocations."
+    }
+  },
+  "failed_instrumentation": [
+    "An initial H32/D32 synthetic fixture was outside the existing paged-attention D64/128/256 domain; changed the test fixture to D64, no provider admission widened.",
+    "Injecting a rejected second submit and persistent unknown waits before Graph::submit returned stalled in its synchronous dependency wait, before Model abort. The bounded runner was stopped (exit4294967295); source and logs retained. The final Model test arms observation faults only after public whole-Graph acceptance; partial acceptance is tested independently by the public Graph suite."
+  ],
+  "limitations": [
+    "Unknown driver failures do not promise automatic retirement; actual owners remain attached until the original endpoint can establish a terminal state.",
+    "No GPU preemption, arbitrary multi-GPU placement, exhaustive cancellation cross-product or throughput improvement is claimed.",
+    "Constructor-unwind field ordering and escaped Snapshot resource ownership are compiled and reviewed; there is no separate partial-loader exception-injection runtime case in this proof.",
+    "The synchronous DeviceIO regression observes a first failed wait/idle followed by a real fence; its normal wait contract does not expose a returned unretired IO call after one observation failure.",
+    "No whole-model Apple destructor/unknown-driver fault journey is inferred from the Apple source audit or gate compile."
+  ],
+  "work": {
+    "HTTP": 0,
+    "model_download_bytes": 0,
+    "SDK_rebuilds": 0,
+    "Vulkan_product_TUs": 3,
+    "new_test_TUs": 2,
+    "temporary_weights_bytes": 98944,
+    "weights_in_archive": false,
+    "per_token_heap_allocation_added": false,
+    "new_threads_or_reaper": false
+  },
+  "source_inventory": [
+    {
+      "path": "include/hyle/compute/vulkan.h",
+      "bytes": 17719,
+      "sha256": "14178a51acd2c3b7a86fe0bf3c23768045e60c05c22c6bc0ed6964580a201d1c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_internal.h",
+      "bytes": 15433,
+      "sha256": "c3854eeea96c493eab11e5ee6ac4a1ec15d4b5cd26f88913fd799599ba78258c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_device.cc",
+      "bytes": 21315,
+      "sha256": "6dc079d8496fd9918c1cf456250c49a1e79c2ea44e32f61f5d920e196696f80c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_memory.cc",
+      "bytes": 50476,
+      "sha256": "0cfbb6dd32934fe9f6ec18dd0f1ecf67e897f22cbb799a7000dee8eed9b6549c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "bytes": 29826,
+      "sha256": "fa48d23eb42c7290b90cf868d395e01e0c32c0cf6864799d1151839b3b8c1199"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "bytes": 71894,
+      "sha256": "92235ad77fec7a233e64b2fb2ccc1857315ca9a1e624c7087830759520439df2"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 410029,
+      "sha256": "b1f620ef9d8659569602355e981772e4b7b5a97cb6753c44e650bad878543527"
+    },
+    {
+      "path": "engine/models/qwen35/backend.h",
+      "bytes": 18451,
+      "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 13921,
+      "sha256": "9f0e49356a57c3338c5bd8c0cb962db8310c7b001eff867fb10fe6b858516718"
+    },
+    {
+      "path": "engine/models/qwen35/retained_resources.h",
+      "bytes": 1932,
+      "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+    },
+    {
+      "path": "engine/models/qwen35/native_gate.cc",
+      "bytes": 11023,
+      "sha256": "98c33aa414f733879482ae06a23aa85f357dbb3c862451f8e6f4aee358217506"
+    },
+    {
+      "path": "engine/models/qwen35/native_gate.h",
+      "bytes": 1050,
+      "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+    },
+    {
+      "path": "engine/models/qwen35/native_gate_apple.mm",
+      "bytes": 8840,
+      "sha256": "919457e3b0ccfcb1f5ec1e0e53b04de76fec9ef3520a46ff0aaa1ea7cb5f770c"
+    },
+    {
+      "path": "engine/models/qwen35/CMakeLists.txt",
+      "bytes": 1234,
+      "sha256": "ce42a336e07d1cfebce6767506034a7468c7a45a77bda3a41a5e306f33ec89ce"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 12413,
+      "sha256": "94cd465421247a926f6e677cdd1cd0bd155344f7f1c520467b8b74e1a4631b87"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 9244,
+      "sha256": "6343c77381815e2ed38cabc17ac0b4145d8ac14d8fbbd88cda55a0d83ab81e5d"
+    },
+    {
+      "path": "tests/graph_route_vulkan/retirement_test.cc",
+      "bytes": 12313,
+      "sha256": "a8696f21c22f07631671050cf2ebe0d89e789ae528b60ae85063ec81a0a47497"
+    },
+    {
+      "path": "tests/tools/qwen_resource_retirement_test.cc",
+      "bytes": 7119,
+      "sha256": "fa176f092a4db7a12f884c836870e8a554c703f9cae8241dc3521193c94b4e8a"
+    },
+    {
+      "path": "tests/tooling/engine_components_test.py",
+      "bytes": 10064,
+      "sha256": "8a56ddf69c08f261435b659d37dcab85df86b81150d7696e4965e5b76603605b"
+    },
+    {
+      "path": "engine/models/qwen35/batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": "engine/models/qwen35/driver.h",
+      "bytes": 166,
+      "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+    },
+    {
+      "path": "engine/models/qwen35/host_predicates.h",
+      "bytes": 1486,
+      "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+    },
+    {
+      "path": "engine/models/qwen35/model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_acceptance.h",
+      "bytes": 4516,
+      "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_schedule.h",
+      "bytes": 5912,
+      "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+    },
+    {
+      "path": "engine/models/qwen35/prefix_cache.h",
+      "bytes": 20952,
+      "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 18614,
+      "sha256": "c677c3f7d79dfeefd6d32f32b8f6aa4f87cee71d010caf733f5974da81ab0ca6"
+    },
+    {
+      "path": "engine/models/qwen35/probe_geometry.h",
+      "bytes": 1099,
+      "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+    },
+    {
+      "path": "engine/models/qwen35/sampling_graph.h",
+      "bytes": 16900,
+      "sha256": "1540305c2ffd8d52e015c5379e8b0fe7b5d65c08fea38754752a4596231d5914"
+    },
+    {
+      "path": "engine/models/qwen35/schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "path": "engine/models/qwen35/session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": "engine/models/qwen35/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    }
+  ],
+  "compiled_model_source_note": "Archived current main follows successful tiny compilation by a read_ids CLI parser-only edit and two comments. The actual Model/ColdResources/Session paths exercised by the tiny tests are unchanged; the tiny tests call Model directly and never read CLI ids. No exact pre-edit full-main snapshot is invented. The final CLI version has its own later CPU /Zs proof, included separately. No compiled binary or weight payload is archived.",
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-native-retirement-resource-lifetime-2026-10-24-logs.zip",
+    "bytes": 272530,
+    "sha256": "6173fc61a804e2a5c625e71e9aef4e52e5e39d4de1a98c02612506e529c64184"
+  }
+}

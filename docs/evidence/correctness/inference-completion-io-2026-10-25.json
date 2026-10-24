@@ -1,0 +1,199 @@
+{
+  "state": "passed",
+  "date": "2026-10-25",
+  "scope": "Global inference architecture batch: ordinary/MTP natural and fixed requests, replay, complete model state and synchronous completion-to-entry IO.",
+  "changes": [
+    "Completion target carries only original session/commit/fact destinations and two capture demands.",
+    "Static synchronous observer borrows existing step facts, committed state and original output views within original native lease/carrier guard.",
+    "Entry owns names/paths/default reporting/trace IO; raw Model finish owns original state/ledger publication. No Model IO compatibility methods.",
+    "Natural/fixed observers use existing request/call storage; no added hot IO table, tensor copy, provider lookup or callback owner.",
+    "Six real probe callers migrated; one preexisting stale Tensor.freeze call corrected to the original Backend.freeze."
+  ],
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 428269,
+      "sha256": "8dfff21459d59388f231da9ddc2968b53c80c971bc3751780bf045cd4a437d13"
+    },
+    {
+      "path": "engine/models/qwen35/batch_probe.cc",
+      "bytes": 27616,
+      "sha256": "dd61e2ed0762b6fad4ec851a3adac9d33277de3e4b830b4d7bc134b569864631"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_session_probe.cc",
+      "bytes": 115054,
+      "sha256": "50a8212798ecc1f3d55cb6ba9e89abd38bdcc818e8c7c28ff068a93442f385a1"
+    },
+    {
+      "path": "engine/models/qwen35/retained_budget_probe.cc",
+      "bytes": 20220,
+      "sha256": "9f7b03878ba2c3b2a6bbb3ee1cddab9479bd119db0f28f64f66a06fae010bc36"
+    },
+    {
+      "path": "engine/models/qwen35/retirement_probe.cc",
+      "bytes": 41323,
+      "sha256": "60f93a955bcb680d30d8d6ef7de0e4e5896af71b31ae403b997e48464a613d94"
+    },
+    {
+      "path": "tests/tools/qwen_random_mtp_probe.cc",
+      "bytes": 9756,
+      "sha256": "d447c5ff72620fe62e19201013300c389722b758718d5a8c005d758b03264889"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_prefix_value_probe.cc",
+      "bytes": 12508,
+      "sha256": "cf6fa0262448d49ac44441c6af8016ccda1584f87cde7f882c043d0f3cef208e"
+    }
+  ],
+  "source_checks": {
+    "checks": {
+      "original_prepare_graph_math_and_resource_definitions_unchanged": true,
+      "wait_select_complete_state_repair_ledger_commit_abort_guard_body_preserved_except_capture_gates": true,
+      "all_ledger_endpoints_and_postcommit_report_observation_fills_byte_equal": true,
+      "completion_target_has_no_entry_path_name_fields": true,
+      "view_has_no_state_or_runtime_owner": true,
+      "view_borrows_existing_step_facts_and_committed_head": true,
+      "finish_has_no_file_or_stream_or_named_report_io": true,
+      "original_readback_guard_encloses_synchronous_observer": true,
+      "additional_tensor_views_only_when_requested": true,
+      "generated_probe_owners_retained_before_take_append": true,
+      "entry_uses_original_backend_read_without_export": true,
+      "entry_preserves_default_print_vs_explicit_observation": true,
+      "no_model_io_convenience_shims": true,
+      "all_direct_callers_use_free_single_io_entries": true,
+      "original_source_line_endings_preserved": true,
+      "no_old_io_aggregate_fields_in_targets": true
+    },
+    "compiled": false,
+    "tests_run": false,
+    "models_run": false,
+    "network": false,
+    "scope": "Qwen completion facts and synchronous entry IO only; original math, commit witness and resource retirement remain original.",
+    "limitations": [
+      "Source comparisons only; root/verification own finite actual tests.",
+      "CompletedEvaluationView and observer are synchronous borrows; no escape, preparation reentry or request/state mutation during observation.",
+      "Cold Model graph/route diagnostics remain outside this slice. Logical progress remains ledger-idempotent; no new bytewise exactly-once file guarantee."
+    ]
+  },
+  "independent_review": {
+    "path": ".scratch/inference-completion-io-20261025/independent-review.md",
+    "bytes": 6194,
+    "sha256": "02773e9d195364714f284ae7b84d798eb8c14a812914ef3be669465a33ed68de"
+  },
+  "syntax": {
+    "state": "passed",
+    "actual_caller_TUs": 6,
+    "attempts": 7,
+    "first_failure": {
+      "source_before": {
+        "path": "tests/tools/qwen_mtp_prefix_value_probe.cc",
+        "sha256": "eba5bfa1365340daf881ae568567b6b2e48826f14e232a8a48cf5d23cbf2a75b",
+        "bytes": 12459,
+        "crlf": 0
+      },
+      "process": {
+        "exit": 2,
+        "seconds": 4.844000000011874,
+        "timeout": false
+      },
+      "output": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-completion-io-20261025\\caller-syntax\\qwen_mtp_prefix_value_probe\\stdout.log",
+        "bytes": 260,
+        "sha256": "8e88cc3f6efc87021bc4a83d908ffd143d235fc8de8ac837c2994ed9e5565d4a"
+      },
+      "cause": "Preexisting Tensor::freeze call in diagnostic consumer; also present in exact before source. Use original Backend.freeze(buffer,ready) directly.",
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_prefix_value_probe.cc",
+        "bytes": 12508,
+        "sha256": "cf6fa0262448d49ac44441c6af8016ccda1584f87cde7f882c043d0f3cef208e"
+      }
+    },
+    "runtime": false
+  },
+  "actual_regression": {
+    "state": "passed",
+    "differences": [],
+    "added_report_fields": [],
+    "report_count": 8,
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefix-directory-20261024\\qwen-regression\\summary.json",
+      "bytes": 166143,
+      "sha256": "0854d3169f233cb338a235d3c844cdc676c5e603a57328aa5d50d927ba679c8f"
+    },
+    "late_IO_failures_observed": {
+      "expected_late_diagnostic_failure": 1,
+      "expected_fullhit_late_diagnostic_failure": 1
+    },
+    "trace_results": [
+      {
+        "trace_case": "cpu-a",
+        "backend": "cpu",
+        "caller_outputs": 4,
+        "retained_outputs": 0,
+        "steps": 2,
+        "final_visible": 3,
+        "final_pending": 5,
+        "l0_probes_per_step": 0,
+        "old_gdn_history_bytes": 0,
+        "old_gdn_recurrent_bytes": 0,
+        "prior_reader_unchanged": true,
+        "retired": true,
+        "HTTP": 0
+      },
+      {
+        "trace_case": "vulkan-ga",
+        "backend": "vulkan",
+        "caller_outputs": 0,
+        "retained_outputs": 22,
+        "steps": 2,
+        "final_visible": 3,
+        "final_pending": 39,
+        "l0_probes_per_step": 9,
+        "old_gdn_history_bytes": 1152,
+        "old_gdn_recurrent_bytes": 16384,
+        "prior_reader_unchanged": true,
+        "retired": true,
+        "HTTP": 0
+      }
+    ],
+    "trace_file_count": 44,
+    "trace_bytes": 52968
+  },
+  "verification_archive": {
+    "path": ".scratch/inference-completion-io-20261025/verification/proof.zip",
+    "bytes": 629976,
+    "sha256": "07e3a997dba41825bae3343cee8ba2ed4070c1d6f7e53482ab3b397a5670a3da"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-completion-io-2026-10-25.zip",
+    "bytes": 958706,
+    "sha256": "47ec797c3a1a11b0da8a51a0e3f786b45d69ebdd1ad4b154670a38c52c45f17c"
+  },
+  "limits": [
+    "Existing finite tiny fixtures only; no full-model quality claim or formal throughput measurement.",
+    "Synchronous views may not escape, mutate state or reenter preparation. Original retirement remains authoritative.",
+    "Cold graph/route diagnostics remain outside this completion-IO slice.",
+    "Logical generation progress is ledger-idempotent; no byte-level exactly-once promise after partial filesystem/stream failure.",
+    "Whole architecture extension review and ordinary/MTP performance remain separate goal tasks."
+  ],
+  "HTTP": 0,
+  "SDK_builds": 0,
+  "performance_claim": false,
+  "cleanup": {
+    "performed": true,
+    "manifest": {
+      "path": ".scratch/inference-completion-io-20261025/verification/cleanup-candidates.json",
+      "bytes": 3513,
+      "sha256": "ea1de45036a154ce89145e32b12c0a3ccf7ee1bf83ab81337a8e7fdb94ce9e77"
+    },
+    "count": 12,
+    "logical_bytes": 167682519,
+    "scope": "Only this batch rebuildable binaries and two private DLL hardlinks; retain original caches, sources, logs and traces.",
+    "receipt": {
+      "path": ".scratch/inference-completion-io-20261025/verification/binary-cleanup-removed.json",
+      "bytes": 3404,
+      "sha256": "2bf1e7093d6185394b1ca7c4d6c3918ca1a84d99c787fc5c97894e96b4fd34a2"
+    }
+  }
+}

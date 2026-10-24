@@ -1,7 +1,7 @@
 # HYLE factor selection, dependency closure, and product facade catalog.
 #
-# HYLE_COMPONENTS names cohesive products a consumer wants. Product facades
-# select one or more internal factor roots; HYLE_BUILD_<FACTOR> variables are
+# HYLE_COMPONENTS selects the engine application or cohesive library products.
+# Library facades select one or more internal factor roots; HYLE_BUILD_<FACTOR> variables are
 # the executable form of the internal DAG used by source ownership, module
 # tests, and optional dependency discovery. Keep both catalogs synchronized
 # with docs/architecture/build-system.md.
@@ -461,7 +461,7 @@ _hyle_declare_component(compute_route_vulkan
   SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/vulkan_batch.h hyle/compute/vulkan_row_cache.h hyle/compute/detail/vulkan_plan.h hyle/compute/detail/vulkan_batch_access.h)
 _hyle_declare_component(graph_route_vulkan
   TRACE
-  PRIVATE_DEPS graph_batch compute util_core
+  PRIVATE_DEPS graph_batch compute container util_core
   PUBLIC_DEPS core compute_ops compute_route_vulkan compute_batch error graph
   PUBLIC_TYPE_DEPS compute_batch compute_route_vulkan
   TEST_DEPS graph_progress
@@ -639,6 +639,12 @@ foreach(_product IN ITEMS compute graph compute_stream)
   _hyle_declare_product("${_product}" FACTORS ${_roots})
 endforeach()
 
+# The application is a build root, not a C++ SDK facade. Keep its library
+# requirements in the existing product graph instead of duplicating factor or
+# route selection. HYLE_BUILD_ENGINE is derived below, never a public option.
+set(_HYLE_ENGINE_PRODUCTS compute graph graph_progress compute_stream mem)
+set(HYLE_BUILD_ENGINE FALSE)
+
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream
 # source consumers use only HYLE_COMPONENTS; HYLE_DEV_FACTORS is a top-level
@@ -666,7 +672,7 @@ else()
   if(DEFINED HYLE_COMPONENTS)
     set(_hyle_selection_input "${HYLE_COMPONENTS}")
   elseif(PROJECT_IS_TOP_LEVEL)
-    set(_hyle_selection_input "all")
+    set(_hyle_selection_input "engine")
   else()
     message(FATAL_ERROR
       "An embedding parent must set HYLE_COMPONENTS before add_subdirectory(). "
@@ -674,7 +680,7 @@ else()
       "all-product build.")
   endif()
   set(HYLE_COMPONENTS "${_hyle_selection_input}" CACHE STRING
-      "HYLE products to build (all or a semicolon/comma-separated product list)"
+      "HYLE build roots: engine, all, or a semicolon/comma-separated library product list"
       FORCE)
 endif()
 
@@ -697,6 +703,11 @@ if("all" IN_LIST _hyle_requested)
     set(_hyle_requested_products "")
   else()
     set(_hyle_requested_products ${HYLE_KNOWN_PRODUCTS})
+    # An embedding parent asking for every library must not gain an executable
+    # application by accident. It can explicitly select engine when desired.
+    if(PROJECT_IS_TOP_LEVEL)
+      set(HYLE_BUILD_ENGINE TRUE)
+    endif()
     set(_hyle_requested_roots "")
     foreach(_product IN LISTS _hyle_requested_products)
       string(TOUPPER "${_product}" _product_upper)
@@ -712,8 +723,8 @@ elseif(NOT _hyle_requested)
       "build, or provide one or more internal factor roots.")
   else()
     message(FATAL_ERROR
-      "HYLE_COMPONENTS is explicitly empty. Omit it (or use 'all') for the full "
-      "product, or provide one or more product roots. Refusing to turn an empty "
+      "HYLE_COMPONENTS is explicitly empty. Omit it for the engine, use 'all' "
+      "for the complete project, or provide one or more library product roots. Refusing to turn an empty "
       "script/CI argument into an accidental all-product build.")
   endif()
 else()
@@ -731,13 +742,20 @@ else()
     endforeach()
   else()
     foreach(_product IN LISTS _hyle_requested)
-      if(NOT _product IN_LIST HYLE_KNOWN_PRODUCTS)
+      if(_product STREQUAL "engine")
+        set(HYLE_BUILD_ENGINE TRUE)
+        list(APPEND _hyle_requested_products ${_HYLE_ENGINE_PRODUCTS})
+      elseif(_product IN_LIST HYLE_KNOWN_PRODUCTS)
+        list(APPEND _hyle_requested_products "${_product}")
+      else()
         list(JOIN HYLE_KNOWN_PRODUCTS ", " _hyle_known_text)
         message(FATAL_ERROR
-          "Unknown HYLE product '${_product}'. Known products: "
-          "${_hyle_known_text}")
+          "Unknown HYLE product '${_product}'. Known build roots: "
+          "engine, all, ${_hyle_known_text}")
       endif()
-      list(APPEND _hyle_requested_products "${_product}")
+    endforeach()
+    list(REMOVE_DUPLICATES _hyle_requested_products)
+    foreach(_product IN LISTS _hyle_requested_products)
       string(TOUPPER "${_product}" _product_upper)
       list(APPEND _hyle_requested_roots
         ${_HYLE_PRODUCT_FACTORS_${_product_upper}})
@@ -938,7 +956,7 @@ else()
   message(STATUS
     "HYLE products: requested='${HYLE_COMPONENTS}' "
     "available='${HYLE_RESOLVED_PRODUCTS}' production='${_hyle_production_text}' "
-    "test-fixtures='${_hyle_fixture_text}'")
+    "test-fixtures='${_hyle_fixture_text}' engine=${HYLE_BUILD_ENGINE}")
 endif()
 
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)

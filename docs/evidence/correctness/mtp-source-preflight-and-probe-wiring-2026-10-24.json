@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite source-capability preflight and diagnostic Geometry V2 source wiring",
+  "product_changes": [
+    "CLI rejects MTP when prepared source geometry has no supported NextN, before prompt or body loading.",
+    "The direct Model execution assembly also validates its draft-cache request before creating the backend.",
+    "The actual random transaction diagnostic now uses source-derived V2 Model/cache signatures and explicitly retains its fixed2B fixture boundary."
+  ],
+  "actual_error_checks": [
+    {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multi-draft-20261024\\mtp-source-preflight-check2\\preflight.exe",
+        "--direct-source-check",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original"
+      ],
+      "exit": 0,
+      "expected_exit": 0,
+      "seconds": 0.38212120000389405,
+      "passed": true
+    },
+    {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multi-draft-20261024\\mtp-source-preflight-check2\\preflight.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multi-draft-20261024\\mtp-source-preflight-check2\\no-nextn-source",
+        "--mtp",
+        "on",
+        "--capacity",
+        "64",
+        "--steps",
+        "2"
+      ],
+      "exit": 1,
+      "expected_exit": 1,
+      "seconds": 0.3917430000146851,
+      "passed": true
+    }
+  ],
+  "unavailable_source_fixture": "Derived metadata-only no-NextN geometry, not a claim about absent training weights in the original BF16 model.",
+  "ordinary_scope": "The disabled-MTP geometry validator accepts this source; ordinary inference for the derived fixture was not run.",
+  "random_probe_syntax": {
+    "passed": true,
+    "translation_units": 1,
+    "compiler": "MSVC /W4 /WX",
+    "linked": false,
+    "executed": false
+  },
+  "actual_new_body_reads": 0,
+  "HTTP": 0,
+  "SDK_builds": 0,
+  "implementation_identity": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 405598,
+      "sha256": "b766774fec0414d34ee97396c572da56fc22c9e95b97d2a1c81b1e71bae20d1e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\backend.h",
+      "bytes": 17705,
+      "sha256": "797e0c7eaec98f20da7490bf6c4393af8337ee75a517fa3b6ca3417d80ac4d0f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+      "bytes": 13643,
+      "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+    }
+  ],
+  "limitations": [
+    "No model numerical, throughput or broad backend result is inferred from these failure checks.",
+    "The standalone verification image reuses an installed CPU+CUDA SDK closure with its CPU entrypoint; this is not a pureCPU package proof.",
+    "An earlier metadata-fixture script error and a missing DLL search path were corrected; their failed attempts are not passes."
+  ],
+  "logs": {
+    "path": "docs/evidence/correctness/mtp-source-preflight-and-probe-wiring-2026-10-24-logs.zip",
+    "bytes": 214094,
+    "sha256": "4fc14a665974abbc01fa1a7c46d3ded62040d06a4f15ea3c5fd4dca8e259028a"
+  }
+}

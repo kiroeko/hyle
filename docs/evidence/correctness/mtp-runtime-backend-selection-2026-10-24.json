@@ -1,0 +1,250 @@
+{
+  "status": "PASS bounded runtime backend selection integration",
+  "scope": "Behavior-preserving cold assembly and current consumer integration; not whole-engine function or performance closure",
+  "changes": [
+    "Compiled route availability is independent of explicit BackendSelection and engine --backend.",
+    "One stable State owns original native endpoints, fixed domains, queues and retirement callbacks; moving Backend preserves addresses.",
+    "Primary CPU selection in CPU+CUDA executes real CPU work with CUDA devices hidden; no unused GPU context is created.",
+    "Model host predicate encoding, cache defaults, workspace budget, weight placement and reports follow the selected instance.",
+    "Generic MTP session diagnostic accepts explicit --backend and preserves its non-CUDA prefix-only scope."
+  ],
+  "windows": {
+    "cuda_cpu_tests": {
+      "tests": 6,
+      "passed": 6,
+      "permanent_tests": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+        "bytes": 19829,
+        "sha256": "f4b684ff04cc2d3537117149cdae7c8214ea44fd60e918006005646b052de58e"
+      },
+      "new_cases": [
+        "explicit CPU selection keeps original CPU Context/Queue and system resource after move; 17 exact Neg outputs",
+        "invalid enum, CPU-assist with CPU primary and all uncompiled backends reject without fallback"
+      ],
+      "retained_cases": [
+        "explicit CUDA single endpoint",
+        "CPU-CUDA-CPU transfers/borrowed constant/move/retirement",
+        "finite zero staging rejects required crossing",
+        "original CPU file endpoint exports immutable host lease and retires budget"
+      ]
+    },
+    "cpu_hidden_cuda": {
+      "CUDA_VISIBLE_DEVICES": "-1",
+      "tests": 1,
+      "passed": 1,
+      "same_image_as_cuda_suite": true,
+      "original_cpu_graph_actually_executed": true
+    },
+    "vulkan_retirement": {
+      "tests": 4,
+      "passed": 4,
+      "permanent_tests": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_resource_retirement_test.cc",
+        "bytes": 13183,
+        "sha256": "3a10a62158ac03dcb217462a5bb5a955cf06d1e66056977b3b8015bd6ca7fa7f"
+      },
+      "cases": [
+        "Session retires original work after Model destruction",
+        "last callback releases scope without application owners",
+        "actual Bool alias valid replay and nonbinary byte rejection",
+        "actual F32 alias valid replay, .5/Inf/NaN and undersized scratch rejection with canaries"
+      ]
+    },
+    "vulkan_tiny": {
+      "result": {
+        "status": "PASS_TINY_PHASE_READBACK",
+        "backend": "vulkan",
+        "fixture_bytes": 206336,
+        "head_true_calls": 2,
+        "head_false_calls": 1,
+        "id_caller_owned": 0,
+        "valid_caller_owned": 0,
+        "probability_caller_owned": 0,
+        "proposals": [
+          31,
+          39
+        ],
+        "consumed": 1,
+        "pending": 42,
+        "cursor": 6,
+        "draft_lag": 0,
+        "classic_R2": true,
+        "classic_cursors": [
+          4,
+          4
+        ],
+        "classic_pending": [
+          39,
+          2
+        ],
+        "classic_consumed": [
+          1,
+          1
+        ],
+        "classic_valid_caller_owned": 0,
+        "classic_accept_caller_owned": 0,
+        "classic_draft_ids_caller_owned": 0,
+        "classic_next_ids_caller_owned": 0,
+        "sampling": "random",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 8,
+        "sampling_top_p": 0.9,
+        "sampling_seed": 123,
+        "mtp_acceptance_policy": "min_one_p_over_q",
+        "frontier_sampling_graph_calls": 2,
+        "mtp_max_drafts": 2,
+        "mtp_min_draft_probability": 0.0001,
+        "draft_program_graph_calls": 3,
+        "prefix_decision_graph_calls": 1,
+        "cold_exact_admissions": 0,
+        "cold_exact_evictions": 0,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "cpu_ffn_layers": 0,
+        "original_host_weight_bytes": 0,
+        "original_device_weight_bytes": 206336,
+        "cache_shared_backing_bytes": 49669,
+        "cache_retained_output_backing_bytes": 2432,
+        "cache_metadata_requested_bytes": 0,
+        "cache_live_requested_bytes": 52101,
+        "cache_peak_requested_bytes": 52101,
+        "cache_requested_byte_limit": 16777216,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "migration": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-migration.json",
+        "bytes": 712,
+        "sha256": "2d1fd3ad2eda26aac65b177c3c28872e1d7ed55a592979e0e015ff17707a421c"
+      },
+      "math_and_graph_unchanged": true,
+      "final_all_versions_retired_assertion": true,
+      "explicit_runtime_selection": "vulkan",
+      "full_model_quality_claim": false
+    },
+    "summary": {
+      "path": ".scratch/mtp-runtime-backend-20261024/verification1/summary.json",
+      "bytes": 15957,
+      "sha256": "0ad256aeccffe574b9ce1a8b78f737f7b618b8b09b4171c8e5fd42fa43d5b85a"
+    }
+  },
+  "apple": {
+    "checks": [
+      {
+        "name": "syntax-model",
+        "exit": 0,
+        "seconds": 1.950272625
+      },
+      {
+        "name": "syntax-native-gate",
+        "exit": 0,
+        "seconds": 0.8104729999999998
+      },
+      {
+        "name": "compile-smoke",
+        "exit": 0,
+        "seconds": 0.7413994169999998
+      },
+      {
+        "name": "link-smoke",
+        "exit": 0,
+        "seconds": 0.15067712500000008
+      },
+      {
+        "name": "run-smoke",
+        "exit": 0,
+        "seconds": 0.7336259169999999
+      }
+    ],
+    "summary": {
+      "path": ".scratch/mtp-runtime-backend-20261024/mac-product-check1/summary.json",
+      "bytes": 5683,
+      "sha256": "e9dddc3987eda0bad570680928b96147d0e013e2b53c55d439c6303720b6b9af"
+    },
+    "scope": "CPU/Apple/mixed factory, moves, actual domains/queues and 16-byte read/write; model and native gate strict syntax"
+  },
+  "strict_consumers": {
+    "cpu": {
+      "exit": 0,
+      "seconds": 5.375,
+      "timeout": false
+    },
+    "other": [
+      {
+        "configuration": "cuda-main",
+        "process": {
+          "exit": 0,
+          "seconds": 5.437000000005355,
+          "timeout": false
+        }
+      },
+      {
+        "configuration": "cuda-vulkan-main",
+        "process": {
+          "exit": 0,
+          "seconds": 5.532000000006519,
+          "timeout": false
+        }
+      },
+      {
+        "configuration": "cuda-session-probe",
+        "process": {
+          "exit": 0,
+          "seconds": 6.312000000005355,
+          "timeout": false
+        }
+      },
+      {
+        "configuration": "cuda-native-gate",
+        "process": {
+          "exit": 0,
+          "seconds": 2.125,
+          "timeout": false
+        }
+      }
+    ]
+  },
+  "source": [
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 23020,
+      "sha256": "fe7d3c10c3d4c1a5ac7f9243d5d9a26ca508b91391d6cb2c99707112ac1dcff6"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 423051,
+      "sha256": "9f17cc04ed7842c5cab5b4d73d16e6bd90045ccd0e5460ad9c8b0f49b68da31d"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_session_probe.cc",
+      "bytes": 113586,
+      "sha256": "0056fba7e5d7ebeadba1bfec473b65d597ca00bc4960ef552ed678bc4175cc78"
+    },
+    {
+      "path": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+      "bytes": 19829,
+      "sha256": "f4b684ff04cc2d3537117149cdae7c8214ea44fd60e918006005646b052de58e"
+    },
+    {
+      "path": "tests/tools/qwen_resource_retirement_test.cc",
+      "bytes": 13183,
+      "sha256": "3a10a62158ac03dcb217462a5bb5a955cf06d1e66056977b3b8015bd6ca7fa7f"
+    }
+  ],
+  "limits": [
+    "No complete trained model rerun for this architecture batch.",
+    "CPU+CUDA+Vulkan coexisting model syntax passed; combined native SDK link/runtime was not run.",
+    "No throughput, quality, allocation-free whole-engine or arbitrary device placement claim.",
+    "Existing FP8 functional baseline runs independently with frozen model code."
+  ],
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "performance_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-runtime-backend-selection-2026-10-24.zip",
+    "bytes": 308598,
+    "sha256": "242b99d820f62f74b830ddb01fda182a84d23d13d77c5947bb89797e39c7db8f"
+  }
+}

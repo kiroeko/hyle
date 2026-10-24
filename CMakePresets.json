@@ -73,6 +73,38 @@
       }
     },
     {
+      "name": "engine-cpu",
+      "displayName": "Hyle inference engine (CPU)",
+      "description": "Build the Hyle application and its required CPU library closure. Tests and benchmarks are off.",
+      "inherits": "compute-cpu",
+      "binaryDir": "${sourceDir}/build-engine-cpu",
+      "cacheVariables": { "HYLE_COMPONENTS": "engine" }
+    },
+    {
+      "name": "engine-cuda",
+      "displayName": "Hyle inference engine (CUDA)",
+      "description": "Build the Hyle application and its required CUDA library closure. Requires the supported CUDA toolkit and C++ toolchain.",
+      "inherits": "compute-cuda",
+      "binaryDir": "${sourceDir}/build-engine-cuda",
+      "cacheVariables": { "HYLE_COMPONENTS": "engine" }
+    },
+    {
+      "name": "engine-apple",
+      "displayName": "Hyle inference engine (Apple MLX and Metal)",
+      "description": "Build the Hyle application and its required Apple library closure on Apple Silicon.",
+      "inherits": "compute-apple",
+      "binaryDir": "${sourceDir}/build-engine-apple",
+      "cacheVariables": { "HYLE_COMPONENTS": "engine" }
+    },
+    {
+      "name": "engine-vulkan",
+      "displayName": "Hyle inference engine (Vulkan)",
+      "description": "Build the Hyle application and its required Vulkan library closure.",
+      "inherits": "compute-vulkan",
+      "binaryDir": "${sourceDir}/build-engine-vulkan",
+      "cacheVariables": { "HYLE_COMPONENTS": "engine" }
+    },
+    {
       "name": "windows",
       "displayName": "Windows VS 2022 CPU development",
       "description": "Direct CMake/IDE preset for Visual Studio 2022. Use an initialized developer shell with a supported v143 toolset; ordinary builds use scripts/init.py and scripts/build.py.",
@@ -155,8 +187,8 @@
     },
     {
       "name": "package-feature-shared",
-      "displayName": "Portable feature SDK (shared)",
-      "description": "Deterministic all-component SDK input: tests/bench, trace, sanitizer, TLS, and exact-ISA specialization are explicitly OFF; HTTP/2 is explicitly ON.",
+      "displayName": "Complete Hyle application and SDK (shared)",
+      "description": "Deterministic complete-project package: application and library SDK; tests/bench, trace, sanitizer, TLS, and exact-ISA specialization are explicitly OFF; HTTP/2 is explicitly ON.",
       "binaryDir": "${sourceDir}/build-package-feature-shared",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -174,7 +206,7 @@
     },
     {
       "name": "package-feature-static",
-      "displayName": "Portable feature SDK (static, CUDA-free)",
+      "displayName": "Complete Hyle application and SDK (static, CUDA-free)",
       "inherits": "package-feature-shared",
       "binaryDir": "${sourceDir}/build-package-feature-static",
       "cacheVariables": {
@@ -188,6 +220,7 @@
       "inherits": "hyle-dev",
       "binaryDir": "${sourceDir}/build-bench",
       "cacheVariables": {
+        "HYLE_COMPONENTS": "all",
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "ON"
       }
@@ -230,6 +263,10 @@
     }
   ],
   "buildPresets": [
+    { "name": "engine-cpu", "configurePreset": "engine-cpu", "configuration": "Release", "jobs": 2 },
+    { "name": "engine-cuda", "configurePreset": "engine-cuda", "configuration": "Release", "jobs": 2 },
+    { "name": "engine-apple", "configurePreset": "engine-apple", "configuration": "Release", "jobs": 2 },
+    { "name": "engine-vulkan", "configurePreset": "engine-vulkan", "configuration": "Release", "jobs": 2 },
     { "name": "compute-apple", "configurePreset": "compute-apple", "jobs": 2 },
     { "name": "compute-vulkan", "configurePreset": "compute-vulkan", "jobs": 2 },
     { "name": "compute-cpu", "configurePreset": "compute-cpu", "configuration": "Release", "jobs": 2 },

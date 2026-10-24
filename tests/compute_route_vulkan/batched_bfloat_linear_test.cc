@@ -45,7 +45,7 @@ TEST(BatchedBfloatVulkan, OriginalFloat32RowsAndBatchOffsets) {
   const auto activation = context.upload(ad, std::as_bytes(std::span(a))).value();
   const auto weights = context.upload(wd, std::as_bytes(std::span(w))).value();
   const std::array<v::Argument, 2> arguments{ad, wd};
-  auto prepared = v::prepare(context, c::model_ops::bfloat_linear_f32(), arguments);
+  auto prepared = v::prepare(context, c::model_ops::dense_linear_f32(), arguments);
   ASSERT_TRUE(prepared) << prepared.error().message();
   ASSERT_EQ(prepared->output_descriptions().size(), 1U);
   EXPECT_EQ(prepared->output_descriptions()[0], yd);
@@ -84,7 +84,7 @@ TEST(BatchedBfloatVulkan, ColdDomainAndBfloatActivationRejection) {
     const auto wd = description(c::DataType::kBFloat16, {64, nk[0], nk[1]});
     const auto yd = description(c::DataType::kFloat32, {64, 1, nk[0]});
     const std::array<v::Argument, 2> arguments{ad, wd};
-    auto prepared = v::prepare(context, c::model_ops::bfloat_linear_f32(), arguments);
+    auto prepared = v::prepare(context, c::model_ops::dense_linear_f32(), arguments);
     ASSERT_TRUE(prepared) << prepared.error().message();
     ASSERT_EQ(prepared->output_descriptions().size(), 1U);
     EXPECT_EQ(prepared->output_descriptions()[0], yd);
@@ -94,16 +94,16 @@ TEST(BatchedBfloatVulkan, ColdDomainAndBfloatActivationRejection) {
   const std::array descriptions{ad, wd};
   // The public schema permits BF16 activations; this backend's exact batched
   // native domain admits F32 A only and must reject BF16 A during prepare.
-  const auto inferred = c::infer_single_output(c::model_ops::bfloat_linear_f32(), descriptions);
+  const auto inferred = c::infer_single_output(c::model_ops::dense_linear_f32(), descriptions);
   ASSERT_TRUE(inferred);
   EXPECT_EQ(inferred->data_type(), c::DataType::kFloat32);
   const std::array<v::Argument, 2> arguments{ad, wd};
-  const auto rejected = v::prepare(context, c::model_ops::bfloat_linear_f32(), arguments);
+  const auto rejected = v::prepare(context, c::model_ops::dense_linear_f32(), arguments);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsUnimplemented());
   const std::array mismatched{
       description(c::DataType::kFloat32, {3, 2, 66}),
       description(c::DataType::kBFloat16, {1, 4, 66})};
-  EXPECT_FALSE(c::infer_single_output(c::model_ops::bfloat_linear_f32(), mismatched));
+  EXPECT_FALSE(c::infer_single_output(c::model_ops::dense_linear_f32(), mismatched));
 }
 } // namespace

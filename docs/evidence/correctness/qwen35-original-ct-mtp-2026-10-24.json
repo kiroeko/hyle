@@ -1,0 +1,518 @@
+{
+  "schema": "hyle.qwen35.original-ct-mtp-functional.v1",
+  "updated": "2026-10-24T16:19:33",
+  "status": "five specified finite CPU/CUDA cases completed with native exit0; stochastic backend divergence retained",
+  "source": {
+    "repository": "cyankiwi/Qwen3.5-2B-AWQ-4bit",
+    "revision": "718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+    "hf": "https://huggingface.co/cyankiwi/Qwen3.5-2B-AWQ-4bit/tree/718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+    "original_safetensors": {
+      "file": "model-00001-of-00001.safetensors",
+      "size": 2501307856,
+      "lfs_sha256": "b499f113e72c62a70fae030a97f7bb87db0cf02d65379b628270e3bfa73b2ea5",
+      "api_xet_hash": "419e256bf2d70a9bf6b06c067f70bc7027644d5f9cf5033f6fd7fe356c2e1df5",
+      "etag": "\"419e256bf2d70a9bf6b06c067f70bc7027644d5f9cf5033f6fd7fe356c2e1df5\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size",
+      "repository": "cyankiwi/Qwen3.5-2B-AWQ-4bit",
+      "revision": "718fd9b52c5ca16f1f856f6c4e4209129802a6a2"
+    },
+    "whole_file_lfs_computed": false,
+    "selected_physical_roles": 649,
+    "logical_text_roles": 320,
+    "logical_mtp_roles": 15,
+    "all_selected_original_bytes": 1838357584,
+    "text_selected_original_bytes": 1792067552,
+    "mtp_selected_original_bytes": 46290032,
+    "physical_dtypes": {
+      "BF16": 335,
+      "I32": 157,
+      "I64": 157
+    },
+    "physical_contract": "Original CT signed symmetric INT4 I32 packed words, BF16 group scales and I64 original [N,K] shapes; repository AWQ label is not the codec.",
+    "roles_receipt": {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat00/full-text-payload/payload-role-files.json",
+      "bytes": 293264,
+      "sha256": "73cb7910a7608f9ccf364085970196a7f3bc1d3af8005f4d80f73adfd16e2bbf"
+    },
+    "prepared_input": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/input.json",
+      "bytes": 177986,
+      "sha256": "1c5194da39c49ae7a04cae29a5345caab315e708f2e84f1b7eee6764c014026d"
+    },
+    "manifest": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/weights.tsv",
+      "bytes": 121260,
+      "sha256": "6c0f15c6202a141c3fd07d439124ff478bd6f185de7cc0197ae18bf6af2d7655"
+    },
+    "source_id": "d9b92a555da65d642b2542399680e8266b5fa13978dea91005c4ed1a637f551a",
+    "qualification": "All649 selected text/MTP original roles have acquired role SHA records. Vision is excluded; original full-file LFS is an authenticated source identity, not a digest computed over this partial acquisition."
+  },
+  "configuration": {
+    "P": 154,
+    "C": 256,
+    "maximum_outputs": {
+      "ordinary": 4,
+      "k1": 4,
+      "k4-random": 6
+    },
+    "cache_requested_byte_limit": 268435456,
+    "prefix_cache": "off",
+    "replay": "commands",
+    "prompt": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    "runner": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/run-original-ready.py",
+      "bytes": 11363,
+      "sha256": "9d8aac1d0abe1a7dc8ad57bc84f4dc7c4af29705d6c9245f1ad5df715074c39e"
+    },
+    "runtime": {
+      "cpu": {
+        "image": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/build/bin/hyle.exe",
+          "bytes": 22687744,
+          "sha256": "4d5cdf71ff56b806cd943426e5ad6f2049af8809933599022eac5e742eddd7f6"
+        },
+        "environment": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/runtime-environment.json",
+          "bytes": 334,
+          "sha256": "a2842878b0a82a24795c270461e9cf2004cd38f81705864e0faf53e0a8ff8728"
+        },
+        "native": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/build/bin/hyle_ggml_cpu_pure_ffa4_current.dll",
+          "bytes": 1359360,
+          "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+        },
+        "source": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/source-identities.json",
+          "bytes": 4197,
+          "sha256": "5d4a0e29a14c5e789c04aca81b38c0f89115a2baffd2f67d77f65877edeee42d"
+        }
+      },
+      "cuda": {
+        "image": {
+          "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/recursive-probe.exe",
+          "bytes": 141274624,
+          "sha256": "0286bc8733dfdbc061f41cc7f6730e9e62657af3bd3d3c2ecec545c0418f9c32"
+        },
+        "environment": {
+          "path": ".scratch/qwen35-unsloth-mtp-20261024/engine-check/ready-cuda.json",
+          "bytes": 7425,
+          "sha256": "1204b5aa545f986d27c79f3bf7a32c3f2ca05ad41fc76d967ef801c4a1dd1c8d"
+        },
+        "native": {
+          "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        "source": {
+          "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/sources.json",
+          "bytes": 3734,
+          "sha256": "e965086dcfdf3ce08be371e0533cc98ca89a51469cf620f4bddd5cc82804a259"
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "profile": "CT",
+      "case": "cpu-ordinary",
+      "native_exit": 0,
+      "source_id": "d9b92a555da65d642b2542399680e8266b5fa13978dea91005c4ed1a637f551a",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "score_policy": "bf16_inputs_f32_output",
+      "host_weight_bytes": 1792067552,
+      "device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 42754632,
+      "performance_claim": false,
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "functional_status": "PASS_bounded_original_role_run",
+      "process": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cpu-ordinary/process.json",
+        "bytes": 52,
+        "sha256": "78a1b5bcc79d3bbf934d817ee9e1382521500eb3f705cc2b35a407b2b4a17611"
+      },
+      "command": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cpu-ordinary/command.json",
+        "bytes": 1113,
+        "sha256": "02fc9a52e7952a3543568ac7f6b0b179335ca29c1e93c19daaf77d1934da50da"
+      },
+      "native_report_fields": {
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_max_drafts": 1,
+        "sampling_draw_cursor": 0,
+        "actual_target_rows": 157,
+        "actual_draft_rows": 0,
+        "verified_target_rows": 3,
+        "committed_target_rows": 157,
+        "consumed_drafts": 0,
+        "draft_rounds": 0,
+        "visible_tokens": 157,
+        "draft_frontier": null,
+        "draft_lag": null,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "cache_metadata_requested_bytes": 232972,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "rounds": null
+      }
+    },
+    {
+      "profile": "CT",
+      "case": "cpu-k1",
+      "native_exit": 0,
+      "source_id": "d9b92a555da65d642b2542399680e8266b5fa13978dea91005c4ed1a637f551a",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "score_policy": "bf16_inputs_f32_output",
+      "host_weight_bytes": 1838357584,
+      "device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 62915043,
+      "performance_claim": false,
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "functional_status": "PASS_bounded_original_role_run",
+      "process": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cpu-k1/process.json",
+        "bytes": 52,
+        "sha256": "d630c4a9ac082412aca3d017bf6c464432b1c2e1e374eb7b918efe3fb88bcf04"
+      },
+      "command": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cpu-k1/command.json",
+        "bytes": 1112,
+        "sha256": "be60c474e4b47bec963d665febf292b7498e204e508576ffd864498187334ad6"
+      },
+      "native_report_fields": {
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_max_drafts": 1,
+        "sampling_draw_cursor": 0,
+        "actual_target_rows": 157,
+        "actual_draft_rows": 157,
+        "verified_target_rows": 3,
+        "committed_target_rows": 157,
+        "consumed_drafts": 1,
+        "draft_rounds": 1,
+        "visible_tokens": 157,
+        "draft_frontier": 157,
+        "draft_lag": 0,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "cache_metadata_requested_bytes": 267544,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "rounds": [
+          {
+            "pending": 71093,
+            "draft": 12305,
+            "target_first": 12305,
+            "target_second": 198,
+            "accepted_draft": true,
+            "proposals": 1,
+            "verified_rows": 2,
+            "consumed_drafts": 1,
+            "auxiliary_graph_calls": 0,
+            "committed_target_rows": 2,
+            "draft_rows": 1
+          },
+          {
+            "pending": 198,
+            "draft": -1,
+            "target_first": 464,
+            "target_second": -1,
+            "accepted_draft": false,
+            "proposals": 0,
+            "verified_rows": 1,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 0,
+            "committed_target_rows": 1,
+            "draft_rows": 2
+          }
+        ]
+      }
+    },
+    {
+      "profile": "CT",
+      "case": "cpu-k4-random",
+      "native_exit": 0,
+      "source_id": "d9b92a555da65d642b2542399680e8266b5fa13978dea91005c4ed1a637f551a",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        19298,
+        198
+      ],
+      "score_policy": "bf16_inputs_f32_output",
+      "host_weight_bytes": 1838357584,
+      "device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 121566567,
+      "performance_claim": false,
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "functional_status": "PASS_bounded_original_role_run",
+      "process": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cpu-k4-random/process.json",
+        "bytes": 53,
+        "sha256": "3ea3f77f049e0ef0feb6c449aee891306bb5615cf2ad728996b447175b0283b7"
+      },
+      "command": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cpu-k4-random/command.json",
+        "bytes": 1261,
+        "sha256": "61e6ef66d0c56c8e8b0969d515042aabe0ec793b59c3195bde425fab27eb4074"
+      },
+      "native_report_fields": {
+        "sampling": "random",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 8,
+        "sampling_top_p": 0.9,
+        "sampling_seed": 123,
+        "mtp_max_drafts": 4,
+        "sampling_draw_cursor": 13,
+        "actual_target_rows": 161,
+        "actual_draft_rows": 164,
+        "verified_target_rows": 7,
+        "committed_target_rows": 159,
+        "consumed_drafts": 3,
+        "draft_rounds": 2,
+        "visible_tokens": 159,
+        "draft_frontier": 158,
+        "draft_lag": 1,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "cache_metadata_requested_bytes": 299684,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "rounds": [
+          {
+            "pending": 71093,
+            "draft": 12305,
+            "target_first": 12305,
+            "target_second": 198,
+            "accepted_draft": true,
+            "proposals": 4,
+            "verified_rows": 5,
+            "consumed_drafts": 2,
+            "auxiliary_graph_calls": 6,
+            "committed_target_rows": 3,
+            "draft_rows": 6
+          },
+          {
+            "pending": 464,
+            "draft": 19298,
+            "target_first": 19298,
+            "target_second": 198,
+            "accepted_draft": true,
+            "proposals": 1,
+            "verified_rows": 2,
+            "consumed_drafts": 1,
+            "auxiliary_graph_calls": 3,
+            "committed_target_rows": 2,
+            "draft_rows": 4
+          }
+        ]
+      }
+    },
+    {
+      "profile": "CT",
+      "case": "cuda-ordinary",
+      "native_exit": 0,
+      "source_id": "d9b92a555da65d642b2542399680e8266b5fa13978dea91005c4ed1a637f551a",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "score_policy": "bf16_inputs_f32_output",
+      "host_weight_bytes": 0,
+      "device_weight_bytes": 1792067552,
+      "cache_peak_requested_bytes": 42418224,
+      "performance_claim": false,
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "functional_status": "PASS_bounded_original_role_run",
+      "process": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cuda-ordinary/process.json",
+        "bytes": 53,
+        "sha256": "202a1f39162f8f16fc4895d7e13249eea8debbd6bf8b17760058875b9368d4eb"
+      },
+      "command": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cuda-ordinary/command.json",
+        "bytes": 1141,
+        "sha256": "75e172360239e8754a7537b0687baa46a621fc5ab3f57e63f93a19b657b06412"
+      },
+      "native_report_fields": {
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_max_drafts": 1,
+        "sampling_draw_cursor": 0,
+        "actual_target_rows": 157,
+        "actual_draft_rows": 0,
+        "verified_target_rows": 3,
+        "committed_target_rows": 157,
+        "consumed_drafts": 0,
+        "draft_rounds": 0,
+        "visible_tokens": 157,
+        "draft_frontier": null,
+        "draft_lag": null,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "cache_metadata_requested_bytes": 0,
+        "native_execution_private_bytes_unknown": false,
+        "physical_vram_limit_known": false,
+        "rounds": null
+      }
+    },
+    {
+      "profile": "CT",
+      "case": "cuda-k4-random",
+      "native_exit": 0,
+      "source_id": "d9b92a555da65d642b2542399680e8266b5fa13978dea91005c4ed1a637f551a",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        54572,
+        198
+      ],
+      "score_policy": "bf16_inputs_f32_output",
+      "host_weight_bytes": 0,
+      "device_weight_bytes": 1838357584,
+      "cache_peak_requested_bytes": 121155635,
+      "performance_claim": false,
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "functional_status": "PASS_bounded_original_role_run",
+      "process": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cuda-k4-random/process.json",
+        "bytes": 51,
+        "sha256": "db9f5f354978c6b00bfeae17f21060a74d73b74ec0e90428483a8a6ef26bb11e"
+      },
+      "command": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/CT/retained-cuda-k4-random/command.json",
+        "bytes": 1289,
+        "sha256": "5aff9d20a4f498569ec7e4a6c9dcc30eab76077ce1e16feb978d3ce9bbebd1da"
+      },
+      "native_report_fields": {
+        "sampling": "random",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 8,
+        "sampling_top_p": 0.9,
+        "sampling_seed": 123,
+        "mtp_max_drafts": 4,
+        "sampling_draw_cursor": 11,
+        "actual_target_rows": 160,
+        "actual_draft_rows": 163,
+        "verified_target_rows": 6,
+        "committed_target_rows": 159,
+        "consumed_drafts": 3,
+        "draft_rounds": 1,
+        "visible_tokens": 159,
+        "draft_frontier": 159,
+        "draft_lag": 0,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "cache_metadata_requested_bytes": 0,
+        "native_execution_private_bytes_unknown": false,
+        "physical_vram_limit_known": false,
+        "rounds": [
+          {
+            "pending": 71093,
+            "draft": 12305,
+            "target_first": 12305,
+            "target_second": 198,
+            "accepted_draft": true,
+            "proposals": 4,
+            "verified_rows": 5,
+            "consumed_drafts": 3,
+            "auxiliary_graph_calls": 6,
+            "committed_target_rows": 4,
+            "draft_rows": 7
+          },
+          {
+            "pending": 54572,
+            "draft": -1,
+            "target_first": 198,
+            "target_second": -1,
+            "accepted_draft": false,
+            "proposals": 0,
+            "verified_rows": 1,
+            "consumed_drafts": 0,
+            "auxiliary_graph_calls": 0,
+            "committed_target_rows": 1,
+            "draft_rows": 2
+          }
+        ]
+      }
+    }
+  ],
+  "backend_divergence": {
+    "cpu_ids": [
+      71093,
+      12305,
+      198,
+      464,
+      19298,
+      198
+    ],
+    "cuda_ids": [
+      71093,
+      12305,
+      198,
+      464,
+      54572,
+      198
+    ],
+    "first_different_output_one_based": 5,
+    "cpu_first_k4_consumed_drafts": 2,
+    "cuda_first_k4_consumed_drafts": 3,
+    "cpu_draw_cursor": 13,
+    "cuda_draw_cursor": 11,
+    "observed": "The first four output IDs agree. CPU commits current+2 accepted draft rows in the first K4 block and subsequently runs K1 with pending464; CUDA commits current+3 and consumes its sampled bonus54572 before a tail T1. The changed draw frontier follows the different accepted prefix.",
+    "cause": "Not yet determined. These logs do not distinguish legal backend arithmetic/sampling sensitivity from a CT connection error.",
+    "correctness_claim": "No cross-backend identical-continuation or task-quality pass."
+  },
+  "prior_finite_math_proofs": [
+    "docs/evidence/correctness/mtp-qwen35-ct-original-projection-2026-10-24.json",
+    "docs/evidence/correctness/mtp-qwen35-ct-declared-exporter-2026-10-24.json"
+  ],
+  "limits": [
+    "These are retained, pinned consumers; this evidence is not a certification of the current working-tree source.",
+    "CUDA K1 and cross-session/prefix-cache CT matrices were not added. CPU K1 and actual CUDA K4 are reported separately.",
+    "Requested cache backing and original placed weight bytes are logical accounting, not measured RAM/VRAM peaks. CPU execution-private allocation is explicitly unknown.",
+    "Existing reports include timings in raw logs; no throughput comparison or performance claim is made.",
+    "No new HTTP, SDK build, implicit fallback, model-body duplication or seed/answer adjustment was performed by these five run commands.",
+    "The stochastic CPU/CUDA row2 discrepancy needs a single-prefix p/q/proposal/uniform investigation; no publisher or task matrix is required."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/qwen35-original-ct-mtp-2026-10-24-logs.zip",
+    "bytes": 401445,
+    "sha256": "1d9ffc61fe396aa0b577edd96ec5d4cc22d7b9586d9270440ddc9045c0170c5f"
+  }
+}

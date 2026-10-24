@@ -677,7 +677,7 @@ TEST(CudaQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
   const std::array inputs_desc{activation_desc, weight_desc};
   const std::array outputs_desc{output_desc};
   auto call = make_call(context, resource,
-                        c::model_ops::bfloat_linear_f32(), inputs_desc,
+                        c::model_ops::dense_linear_f32(), inputs_desc,
                         outputs_desc, workload);
   EXPECT_EQ(call.prepared.provider().id, c::ggml_cuda::kProviderId);
   std::vector<BF16> weights(q24::kExperts * q24::kHidden);

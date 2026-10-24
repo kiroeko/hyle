@@ -1,0 +1,288 @@
+{
+  "kind": "original CT symmetric4 MTP projection component correctness",
+  "date": "2026-10-24",
+  "status": "CPU_and_CUDA_actual_public_Graph_passed",
+  "source": {
+    "repository": "cyankiwi/Qwen3.5-2B-AWQ-4bit",
+    "revision": "718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+    "hf": "https://huggingface.co/cyankiwi/Qwen3.5-2B-AWQ-4bit/tree/718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+    "original_file": {
+      "file": "model-00001-of-00001.safetensors",
+      "size": 2501307856,
+      "lfs_sha256": "b499f113e72c62a70fae030a97f7bb87db0cf02d65379b628270e3bfa73b2ea5",
+      "api_xet_hash": "419e256bf2d70a9bf6b06c067f70bc7027644d5f9cf5033f6fd7fe356c2e1df5",
+      "etag": "\"419e256bf2d70a9bf6b06c067f70bc7027644d5f9cf5033f6fd7fe356c2e1df5\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+    },
+    "header": {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat00/header.json",
+      "bytes": 117112,
+      "sha256": "43cad8e5afbdfb6bccabcafc30f56b5f233beb0b46911c8d4b8d89a4b2e91d99"
+    },
+    "component_roles": [
+      {
+        "name": "mtp.layers.0.self_attn.k_proj.weight_packed",
+        "path": ".scratch/mtp-metadata-offline-20261024/cat00/k-proj-component/weight_packed.bin",
+        "offset": 0,
+        "bytes": 524288,
+        "sha256": "24ab5b37c21041c7d05b40feb27b522317b09e98f9058cfe2cac99cd3dbe07e3",
+        "original_range": [
+          704762704,
+          705286991
+        ]
+      },
+      {
+        "name": "mtp.layers.0.self_attn.k_proj.weight_scale",
+        "path": ".scratch/mtp-metadata-offline-20261024/cat00/k-proj-component/weight_scale.bin",
+        "offset": 0,
+        "bytes": 65536,
+        "sha256": "bbe5ac097fda15a4c0547322ef6ea350550c0bb281fa1edba0c07c267e2616ec",
+        "original_range": [
+          2500377552,
+          2500443087
+        ]
+      }
+    ],
+    "new_original_tensor_bytes": 589824,
+    "component_budget_ids": [
+      10255,
+      10256
+    ],
+    "all_actual_transport_host": "hf-mirror.net",
+    "full_original_LFS_SHA256_recomputed": false
+  },
+  "original_shapes": {
+    "total_original_I64_values_bytes": 2512,
+    "total_checked_roles": 157,
+    "target_roles": 150,
+    "mtp_roles": 7,
+    "cache_sha256": "f68df981cbfc9d443467def563b793fd54ec448b515efff1486989d45866d267",
+    "budget_request_id": 10179,
+    "component_shape": {
+      "original_values": [
+        512,
+        2048
+      ],
+      "cache_offset": 2448,
+      "bytes": 16
+    },
+    "proof": {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat00/shape-prepare-check.json",
+      "bytes": 41683,
+      "sha256": "7224b646bbcce9c24aa49377bec574395c6524ae6f99eb05ef19f4fcc8b6a25d"
+    }
+  },
+  "physical_contract": {
+    "codes": {
+      "dtype": "I32",
+      "shape": [
+        512,
+        256
+      ]
+    },
+    "scales": {
+      "dtype": "BF16",
+      "shape": [
+        512,
+        64
+      ]
+    },
+    "original_shape": {
+      "dtype": "I64",
+      "shape": [
+        2
+      ],
+      "values": [
+        512,
+        2048
+      ]
+    },
+    "derived_group_size": 32
+  },
+  "operation_path": "Original borrowed codes/scales -> ArtifactWeightDecode(CompressedTensorsSymmetric4,group32,BF16 or F32) -> permute -> F32 accumulation MatMul with same BF16 or F32 input/output. Decoded output is published as an explicit decomposition witness; commands replay, no capture/performance claim.",
+  "oracle": {
+    "implementation": "Independent software half encoder and original little-endian words; no product decoder/producer unpacker called.",
+    "decoded_values_per_profile": 1048576,
+    "projection_output_values_per_profile": 1536,
+    "rows": 3,
+    "activations": "One-hot k0 (BF16:1;F32:1+2^-15), k7:-1/16, and k31:1/k32:-1 across a scale group boundary.",
+    "equality": "Every decoded value and sparse projection output compared exactly; no tolerance.",
+    "source_BF16_product_rounding_witnesses": 215544,
+    "F32_not_BF16_projection_witnesses": 436
+  },
+  "hardware": {
+    "system": "Windows x64",
+    "cpu": "13th Gen Intel(R) Core(TM) i9-13900K",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "cuda_driver": "617.14"
+  },
+  "results": [
+    {
+      "backend": "CPU",
+      "dtypes": [
+        "BF16",
+        "F32"
+      ],
+      "profiles": 2,
+      "exact_decode_pass": true,
+      "exact_projection_pass": true
+    },
+    {
+      "backend": "CUDA",
+      "dtypes": [
+        "BF16",
+        "F32"
+      ],
+      "profiles": 2,
+      "exact_decode_pass": true,
+      "exact_projection_pass": true
+    }
+  ],
+  "producer_packing": {
+    "declared_exporter_version": "0.14.1.dev20+g5d2f568",
+    "exact_declared_exporter_source_verified": false,
+    "independently_cached_source_versions": [
+      "0.17.2a20260716",
+      "0.18.0/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4"
+    ],
+    "source_018": [
+      {
+        "original_url": "https://raw.githubusercontent.com/vllm-project/compressed-tensors/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4/src/compressed_tensors/compressors/pack_quantized/base.py",
+        "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "source": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-source/compressors/pack_quantized/base.py",
+          "bytes": 6753,
+          "sha256": "c0a8e902efb2069e34eb823157696a575193897069f70587150c59cdbe414d68"
+        },
+        "receipt": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-0.http.json",
+          "bytes": 2096,
+          "sha256": "e747be7aecd8a83dc20695d99ced634c96ce3c785378d330d739e43ef79c2876"
+        }
+      },
+      {
+        "original_url": "https://raw.githubusercontent.com/vllm-project/compressed-tensors/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4/src/compressed_tensors/compressors/pack_quantized/helpers.py",
+        "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "source": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-source/compressors/pack_quantized/helpers.py",
+          "bytes": 5644,
+          "sha256": "3fe695db3e38ee665d5c459ddce366df3e2dfed51be70058bcc6a9838117477d"
+        },
+        "receipt": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-1.http.json",
+          "bytes": 2105,
+          "sha256": "af2b7c023fa63cea8bd4a88240a60d0386fb89368181453783088f46228f8f21"
+        }
+      },
+      {
+        "original_url": "https://raw.githubusercontent.com/vllm-project/compressed-tensors/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4/src/compressed_tensors/quantization/lifecycle/forward.py",
+        "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "source": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-source/quantization/lifecycle/forward.py",
+          "bytes": 10819,
+          "sha256": "37b21c5c383a4d592023dfd1f8ed9755a80b26e16585f4c2c4c3839803e2e98f"
+        },
+        "receipt": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-2.http.json",
+          "bytes": 2096,
+          "sha256": "de7c47635e92f316667e5ec760be5b4c25a05b52b63ac1f2e1cfbf9dab9f7822"
+        }
+      },
+      {
+        "original_url": "https://raw.githubusercontent.com/vllm-project/compressed-tensors/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4/src/compressed_tensors/quantization/lifecycle/forward_helpers.py",
+        "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "source": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-source/quantization/lifecycle/forward_helpers.py",
+          "bytes": 17360,
+          "sha256": "ed0411b24577ce1df427ff091ab34e3c8d8e61a6be19deb95a3aac97b48e4443"
+        },
+        "receipt": {
+          "path": ".scratch/ct-asymmetric-int4-header/ct-3.http.json",
+          "bytes": 2120,
+          "sha256": "97c70a4a3e28191973e38c466bd2b63a98a74edff7106cfb1734984bd16c2542"
+        }
+      }
+    ],
+    "source_017": {
+      "archive": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/producer/compressed_tensors-0.17.2a20260716.tar.gz",
+        "bytes": 271067,
+        "sha256": "d77167ac493971d3d0fab1820e5e60210e00e62e51500c5cf35fc5b0ea02b220"
+      },
+      "members": [
+        {
+          "member": "compressed_tensors-0.17.2a20260716/src/compressed_tensors/compressors/pack_quantized/base.py",
+          "bytes": 6753,
+          "sha256": "c0a8e902efb2069e34eb823157696a575193897069f70587150c59cdbe414d68"
+        },
+        {
+          "member": "compressed_tensors-0.17.2a20260716/src/compressed_tensors/compressors/pack_quantized/helpers.py",
+          "bytes": 5644,
+          "sha256": "3fe695db3e38ee665d5c459ddce366df3e2dfed51be70058bcc6a9838117477d"
+        },
+        {
+          "member": "compressed_tensors-0.17.2a20260716/src/compressed_tensors/quantization/lifecycle/forward_helpers.py",
+          "bytes": 7493,
+          "sha256": "8b3399fda143cc249c231e291d938c987a7da4793eeae35b3136b3390bbde6c8"
+        }
+      ]
+    },
+    "verified_contract": [
+      "Signed symmetric INT4, natural K-axis groups, low-first nibble q-8, no zero-point or actorder.",
+      "Dequantization converts signed codes to scale.dtype, multiplies in original BF16 scale dtype, then casts to declared decode/output type.",
+      "0.17 and0.18 pack/unpack source files are byte-identical; both dequantizers preserve source-scale multiplication before final cast."
+    ],
+    "limitation": "Exact0.14.1.dev20 exporter source/calibration is not available locally and was not downloaded. Actual source bits, complete original shapes and independent oracle qualify this component against the existing public CT contract; they do not establish full source-model quality or exact publisher-exporter reproduction."
+  },
+  "engineering": {
+    "fresh_TUs": 1,
+    "SDK_builds": 0,
+    "model_downloads_by_consumer": 0,
+    "source": {
+      "path": ".scratch/mtp-metadata-offline-20261024/ct-original-component/consumer.cc",
+      "bytes": 8277,
+      "sha256": "5b234cbe7e9d4101a5106640218ff206f544a31e7384c74e6353ad14b469fcc8"
+    },
+    "script": {
+      "path": ".scratch/mtp-metadata-offline-20261024/ct-original-component/check.py",
+      "bytes": 4965,
+      "sha256": "bd8391fe6029bc9f98f24fcbc27dd829170db7096fbd599b92dcbc32fbb93cfa"
+    },
+    "compile_command": {
+      "path": ".scratch/mtp-metadata-offline-20261024/ct-original-component/compile/command.json",
+      "bytes": 1875,
+      "sha256": "255c375e86b732b2ab423c0ebad93a36b308d87023c54f60248e9920e170069d"
+    },
+    "link_plan": {
+      "path": ".scratch/mtp-metadata-offline-20261024/ct-original-component/link-plan.json",
+      "bytes": 32925,
+      "sha256": "b65c0a1c20e74e9acb9e889d3bb7ff742abafa2917cb5db1ec790a839d88bc49"
+    },
+    "run_command": {
+      "path": ".scratch/mtp-metadata-offline-20261024/ct-original-component/run/command.json",
+      "bytes": 537,
+      "sha256": "dd0e218026c408b7f4a4092ed05361b3d9f40be45e2c7de1871c0d2767b9856b"
+    },
+    "native_runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-metadata-offline-20261024\\ct-original-component\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    }
+  },
+  "retained_logs_archive": "docs/evidence/correctness/mtp-qwen35-ct-original-projection-2026-10-24-logs.zip",
+  "limitations": [
+    "Only the original MTP k_proj component was executed; no complete original CT text/MTP bank or inference run is claimed.",
+    "BF16/F32 sparse projection checks are correctness witnesses, not throughput or complete model task-quality measurements.",
+    "Weights, SDKs, native DLLs and executables are retained only in the existing cache/scratch; archive includes reproducible source, commands, identity receipts and output."
+  ],
+  "retained_logs_identity": {
+    "path": "docs/evidence/correctness/mtp-qwen35-ct-original-projection-2026-10-24-logs.zip",
+    "bytes": 42467,
+    "sha256": "79008f040f37507574305cd0b7fac80e484ea14f0315f2fec44a2156d8f1c9d8"
+  },
+  "declared_exporter_followup": {
+    "evidence": "docs/evidence/correctness/mtp-qwen35-ct-declared-exporter-2026-10-24.json",
+    "exact_declared_source_contract_later_verified": true,
+    "note": "The embedded producer_packing limitation records the earlier component-run checkpoint; the linked follow-up resolves source packing/dequantization, not calibration or full inference."
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS shared scalar readback and actual tiny stochastic K2",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 422030,
+      "sha256": "37e848baedf1bf8e86b840433e4d2943455d3742e08707ec1b759c86c98eef1c"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_schedule.h",
+      "bytes": 5912,
+      "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+    },
+    {
+      "path": "engine/inference/readback.h",
+      "bytes": 3272,
+      "sha256": "87c003172827bced25ac85132b285e3356c25dbea68ce521f444937d8a527861"
+    },
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 20328,
+      "sha256": "12b7222b3bdf03eb327796e5a6619a98db17c392196dd3c28814b7458f733b89"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 3465,
+      "sha256": "ba89b36c9eaf993ac36b073343f28922590b725aceee7a0450ccb77349f93870"
+    },
+    {
+      "path": "engine/inference/execution_resources.h",
+      "bytes": 3312,
+      "sha256": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65"
+    },
+    {
+      "path": "engine/inference/sampling_graph.h",
+      "bytes": 17641,
+      "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-shared-draft-readback-2026-10-24.zip",
+    "bytes": 232184,
+    "sha256": "a2a80133177301e33e03fe0b024227df635bdf228f8bb94bdaf100978c9f2e64"
+  },
+  "archive_entries": 40,
+  "previous": {
+    "path": "docs/evidence/correctness/mtp-shared-backend-domains-2026-10-24.json",
+    "bytes": 4656,
+    "sha256": "56babb66af6cbcc3d7bf36476f3c9c0d4fbece5e6e34f00544f14a04afc2004b"
+  },
+  "changes": [
+    "Move finite caller/native readback into model-independent engine/inference/readback.h",
+    "Use original Buffer and GraphOutput contracts, with Status/Result propagation",
+    "Migrate DraftProgram ID, valid predicate and maximum probability",
+    "Reuse the same helper in prefix sampling and sampling frontier"
+  ],
+  "run": {
+    "status": "PASS_TINY_DRAFT_READBACK",
+    "backend": "vulkan",
+    "fixture_bytes": 206336,
+    "head_true_calls": 2,
+    "head_false_calls": 1,
+    "id_caller_owned": 0,
+    "valid_caller_owned": 0,
+    "probability_caller_owned": 0,
+    "proposals": [
+      31,
+      39
+    ],
+    "consumed": 1,
+    "pending": 42,
+    "cursor": 6,
+    "draft_lag": 0,
+    "sampling": "random",
+    "sampling_policy_order": "temperature_top_k_top_p",
+    "sampling_temperature": 1,
+    "sampling_top_k": 8,
+    "sampling_top_p": 0.9,
+    "sampling_seed": 123,
+    "mtp_acceptance_policy": "min_one_p_over_q",
+    "frontier_sampling_graph_calls": 0,
+    "mtp_max_drafts": 2,
+    "mtp_min_draft_probability": 0.0001,
+    "draft_program_graph_calls": 3,
+    "prefix_decision_graph_calls": 1,
+    "cold_exact_admissions": 0,
+    "cold_exact_evictions": 0,
+    "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+    "cpu_ffn_layers": 0,
+    "original_host_weight_bytes": 0,
+    "original_device_weight_bytes": 206336,
+    "cache_shared_backing_bytes": 24837,
+    "cache_retained_output_backing_bytes": 1280,
+    "cache_metadata_requested_bytes": 0,
+    "cache_live_requested_bytes": 26117,
+    "cache_peak_requested_bytes": 26373,
+    "cache_requested_byte_limit": 16777216,
+    "native_execution_private_bytes_unknown": true,
+    "physical_vram_limit_known": false,
+    "quality_claim": false,
+    "performance_claim": false
+  },
+  "untrained_fixture": {
+    "physical_roles": 28,
+    "bytes": 206336,
+    "geometry": "H64, FFN128, V64, one attention layer plus one NextN",
+    "committed_target_rows": 1,
+    "consumed_drafts": 0,
+    "interpretation": "Both proposals were actually generated; the verifier rejected the first, preserving mandatory-current state and publishing residual pending42."
+  },
+  "checks": {
+    "cpu_strict_syntax": {
+      "exit": 0,
+      "seconds": 5.4210000000020955,
+      "timeout": false
+    },
+    "tiny_vulkan_actual_journey": {
+      "exit": 0,
+      "seconds": 2.9530000000086147,
+      "timeout": false
+    },
+    "independent_review": "All optional/head=false/m0 paths preserve preparation, binding and read conditions; failed readback cannot publish head or RNG"
+  },
+  "limits": [
+    "Untrained finite functional fixture; not model quality, throughput or memory-comparison evidence",
+    "Positive threshold reads actual probability; this fixture does not force threshold clipping",
+    "No new greedy, backend or quantization matrix was run",
+    "Persistent q/hidden/page ownership and original retirement remain unchanged",
+    "Remaining main-phase outputs and runtime backend selection are still pending"
+  ],
+  "full_trained_model_runs": 0,
+  "untrained_tiny_model_journeys": 1,
+  "SDK_builds": 0,
+  "HTTP_requests": 0,
+  "model_download_bytes": 0
+}

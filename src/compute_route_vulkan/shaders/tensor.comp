@@ -115,6 +115,27 @@ uint float_storage_bits(uint value, uint type) {
 float decode(uint value, uint type) {
     return uintBitsToFloat(float_storage_bits(value, type));
 }
+uint signed_i32_f32_bits(uint bits) {
+    // Integer conversion rounding can vary across native shader compilers.
+    // Build IEEE F32 explicitly, including INT_MIN and ties-to-even at 2^24.
+    uint sign_bit = bits & 0x80000000u;
+    uint magnitude = sign_bit == 0u ? bits : 0u - bits;
+    if (magnitude == 0u) return 0u;
+    uint exponent = uint(findMSB(magnitude));
+    uint significand;
+    if (exponent <= 23u) {
+        significand = magnitude << (23u - exponent);
+    } else {
+        uint shift = exponent - 23u;
+        significand = magnitude >> shift;
+        uint remainder = magnitude & ((1u << shift) - 1u);
+        uint midpoint = 1u << (shift - 1u);
+        significand += uint(remainder > midpoint ||
+                            (remainder == midpoint && (significand & 1u) != 0u));
+        if (significand == 0x1000000u) { significand >>= 1u; ++exponent; }
+    }
+    return sign_bit | ((exponent + 127u) << 23u) | (significand & 0x7fffffu);
+}
 uint half_rne(float value) {
     uint bits = floatBitsToUint(value), sign_bit = (bits >> 16u) & 0x8000u;
     uint exponent = (bits >> 23u) & 255u, mantissa = bits & 0x7fffffu;
@@ -233,6 +254,7 @@ uint evaluate(uint index, uint half_word) {
     uint bits = load_bytes(0, offsets.x + half_word * 4u, min(width(type_a), 4u));
     if (operation == 0) return bits;
     if (operation == 2) {
+        if (type_a == 3 && type_d == 0) return signed_i32_f32_bits(bits);
         // Bool is stored as one byte. Compare source magnitude bits so even
         // subnormals and NaNs are nonzero independently of device float FTZ.
         if (type_d == 5) {

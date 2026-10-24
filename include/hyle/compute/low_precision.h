@@ -85,7 +85,7 @@ inline constexpr StorageFormatId kGgufNvfp4{0x48594c4547475546ULL, 21};
 // A cold cache interpretation, copied into its schema and encoder recipe.
 // Q8_0 scales are inside each block; FP8 uses one positive finite scale for
 // this cache's entire lifetime. Changing that scale requires new cache storage.
-// Plain F16/BF16 and Q8_0 require scale == 1. Native qualification is separate.
+// Plain F16/BF16/F32 and Q8_0 require scale == 1. Native qualification is separate.
 class CacheStorage final {
 public:
   constexpr CacheStorage() noexcept = default;
@@ -98,9 +98,12 @@ public:
   friend constexpr bool operator==(const CacheStorage &,
                                    const CacheStorage &) noexcept = default;
 private:
-  constexpr CacheStorage(DataType type, float scale) noexcept
-      : data_type_(type), scale_(scale) {}
+  enum class Encoding : std::uint8_t { kPlain, kQ8_0 };
+  constexpr CacheStorage(DataType type, float scale,
+                         Encoding encoding = Encoding::kPlain) noexcept
+      : data_type_(type), encoding_(encoding), scale_(scale) {}
   DataType data_type_ = DataType::kFloat16;
+  Encoding encoding_ = Encoding::kPlain;
   float scale_ = 1.0F;
 };
 static_assert(sizeof(CacheStorage) == 8);

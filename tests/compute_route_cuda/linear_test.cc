@@ -27,7 +27,7 @@ TEST(CudaDefaultCompute, BfloatLinearF32UsesAdmittedMatrixRoute) {
   const std::array outputs{
       c::TensorDesc::dense(c::DataType::kFloat32,
                            std::array<std::int64_t, 2>{3, 7}).value()};
-  auto prepared = c::prepare(*context, c::model_ops::bfloat_linear_f32(),
+  auto prepared = c::prepare(*context, c::model_ops::dense_linear_f32(),
                             inputs, outputs, memory->ref());
   ASSERT_TRUE(prepared) << prepared.error().message();
   ASSERT_EQ(prepared->provider().id, c::cublas::kProviderId);

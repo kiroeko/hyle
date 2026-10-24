@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-24",
+  "scope": "Engine-private optional CPU+CUDA cold Backend assembly; full Qwen/MTP target/draft split remains unimplemented",
+  "interface": {
+    "factory": "Backend::create_cpu_cuda(WorkspaceBudgets={})",
+    "domains": [
+      "0 CUDA device with original StorageOwner",
+      "1 original CPU host resource",
+      "2 same-context pinned staging retained by StorageOwner"
+    ],
+    "targets_and_lanes": [
+      "CUDA 0",
+      "CPU 1"
+    ],
+    "existing_default": "create() still creates only CUDA target0/domain0/queue0 with original typed staging resource ownership.",
+    "constants": "storage_owner_for(actual resource) distinguishes GPU owned storage, process-lifetime CPU memory and retained mixed pinned resource. kBorrow still permits additional immutable domain replicas.",
+    "leases": "adopt_buffer/freeze accepts CPU host buffers only in mixed assembly and preserves the GPU owner path for device buffers.",
+    "reuse": "batch::compile with existing sources/transfers; forwards placements and resource budgets, no new provider whitelist, executor, bridge or CLI option."
+  },
+  "tests": {
+    "passed": 3,
+    "numeric": "Real host input -> CPU Abs/Add with CUDA-borrowed constant -> CUDA Neg -> CPU Abs/host output; 17 F32 elements, two changed-input submissions match independent scalar oracle.",
+    "ownership": "Move preserves pinned resource identity and actual device/staging Context owner; refreshed queue bindings point at the moved Backend.",
+    "budget": "Positive finite CPU/device/pinned total budgets; all graph/replica/episode charges return to initial live-budget control baseline after drain/destruction. Zero pinned workspace rejects required crossings.",
+    "retirement": "drain succeeds and closes new submission; native Backend collector succeeds.",
+    "CPU_only": "Additional current header CPU-only TU compiles; no CPU-only native/model run claimed."
+  },
+  "build": {
+    "new_test_translation_units": 1,
+    "new_small_CPU_header_TUs": 1,
+    "SDK_builds": 0,
+    "native_builds": 0,
+    "HTTP": 0,
+    "model_weight_bytes": 0
+  },
+  "actual_runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\backend-cpu-cuda-check6\\link\\backend-check.exe",
+    "bytes": 142035968,
+    "sha256": "6c5053b09af78405f8593e15ee04c8a4ea5aabfe4b5b6040c3f3789cceb8a119"
+  },
+  "pending": [
+    "Model role/target/draft placement",
+    "CPU-resident weight loading and actual-resource constant binding in Recipe",
+    "Full mixed ordinary/MTP state execution and quality/performance comparison"
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-backend-cpu-cuda-assembly-2026-10-24-logs.zip",
+    "bytes": 55011,
+    "sha256": "a3371235ea823b1a58c6f8462863f07fe0479ea7ead1ab7096b7ec36e3f87799"
+  }
+}

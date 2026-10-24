@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-24",
+  "scope": "Actual Apple/MLX mass-validity guard after replacing approximate mass/mass ==1 with nonzero mass and nonfinite mass-mass. Finite component check only; no full-model rerun.",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+    "bytes": 16900,
+    "sha256": "1540305c2ffd8d52e015c5379e8b0fe7b5d65c08fea38754752a4596231d5914"
+  },
+  "machine": "Mac16,12 / Apple M4 /16GiB / native Apple endpoint only; arm64 deployment14.4 on actual macOS27.0.1",
+  "algorithm": "The nonnegative SumExp mass must be nonzero and mass-mass must convert to false; NaN/+Inf produce a true nonfinite guard. No approximate quotient must equal exactly one.",
+  "cases": [
+    {
+      "name": "finite-non-power-mass",
+      "predicate_values": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "finite-non-power-mass-2",
+      "predicate_values": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "zero-mass-all-negative-infinity",
+      "predicate_values": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "nan-unselected-column",
+      "predicate_values": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "positive-infinity-unselected-column",
+      "predicate_values": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "predicates": [
+    "distribution.valid",
+    "decision.valid",
+    "decision.p_valid",
+    "decision.q_valid",
+    "decision.bonus_valid"
+  ],
+  "actual_cases": 5,
+  "actual_predicate_checks": 25,
+  "process": {
+    "exit": 0,
+    "seconds": 5.883724917
+  },
+  "image": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/apple-sampling-mass-20261024/attempt1/sampling-mass",
+    "bytes": 13111936,
+    "sha256": "ab690dd9ff54ed08ea1a28b8d491f001108d74d14e3e3a65de034337679c8e0d"
+  },
+  "consumer_object": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/apple-sampling-mass-20261024/attempt1/toy.o",
+    "bytes": 1442632,
+    "sha256": "5c8fe9a31b9fd4b3baa6ba15716b4581ff876982159cbe507ed407f100ec82e9"
+  },
+  "reused_current_memory_object": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/apple-memory-lifetime-20261024/attempt1/memory.o",
+    "bytes": 130768,
+    "sha256": "bb045b6e93afce9fd37027e932089a87caa371659788c6ca12e1054166929d21"
+  },
+  "fresh_consumer_TUs": 1,
+  "new_product_TUs": 0,
+  "new_native_TUs": 0,
+  "SDK_builds": 0,
+  "model_weight_bytes_loaded": 0,
+  "HTTP": 0,
+  "related": [
+    "docs/evidence/correctness/mtp-qwen35-native-multik-random-complete-input-2026-10-24.json",
+    "docs/evidence/correctness/apple-memory-allocation-controller-lifetime-2026-10-24.json"
+  ],
+  "limits": [
+    "Uses the frozen successful GeometryV2 Qwen Recipe/Backend and current sampling helper; qwen35::run is not called. This does not claim the later CLI/ColdScope changes ran as a full engine.",
+    "Original real MLX/native closure reused; new tiny Graph arithmetic actually executes, with no absent-probe stub or CPU fallback endpoint.",
+    "Finite positive log rows check the validity predicate itself; arbitrary unnormalized input is not asserted to be a normalized sampling distribution.",
+    "Other decision outputs remain published to preserve complete original Graph math, but their IDs/frequencies are not asserted as a sampling oracle.",
+    "No task quality, throughput, all provider error or full Apple model matrix claim."
+  ],
+  "evidence_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-apple-sampling-mass-validity-2026-10-24-logs.zip",
+    "bytes": 148241,
+    "sha256": "e05bb4190ccb79d0310a758fc6f73774caf56e8f27b12ea52dc75886e3a7a647"
+  }
+}

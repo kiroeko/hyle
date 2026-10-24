@@ -1,0 +1,230 @@
+{
+  "status": "PASS bounded ordinary/MTP shared preparation",
+  "scope": "Lower-level inference preparation and fixed configuration; original execution, sampling addresses, model state containers and retirement remain authoritative.",
+  "changes": [
+    "One Model-owned integer upload scratch reuses packed IDs, target/draft positions, catchups and random identities. Actual cold Phase and prefix-sampler tensor extents reserve capacity; no per-Phase duplicate scratch or maximum-plan preallocation.",
+    "Sampler, CPU FFN placement, cache plan, capacity, replay and diagnostic topology are constructor-fixed. DraftPolicy is read-only after the first preparation starts; cached graph keys remain unchanged.",
+    "Single- and multi-request entry points share the existing recursive draft/prefix/head preparation. Target shape and replay-use discovery remain with their actual request plans."
+  ],
+  "checks": {
+    "strict_main": {
+      "exit": 0,
+      "seconds": 5.860000000015134,
+      "timeout": false
+    },
+    "strict_existing_prefix_probe": {
+      "exit": 0,
+      "seconds": 5.703000000008615,
+      "timeout": false
+    },
+    "finite_journey": {
+      "scope": "One current TU/image, GA ordinary P2/T1 and actual proposal/T3 consumed2 control plus pending catchup; A natural random K2 and classic B2/R2 Phase switch.",
+      "actual_state_files": 35,
+      "all_original_GA_state_bytes_equal": true,
+      "GA": {
+        "ordinary_ids": [
+          36,
+          8
+        ],
+        "real_proposal_input": [
+          36,
+          62,
+          39
+        ],
+        "real_target_candidates": [
+          2,
+          25,
+          39
+        ],
+        "forced_consumed": 2,
+        "selected_state_row": 1,
+        "pending": 25,
+        "RNG": 6,
+        "head_false_repair": true,
+        "old_checkpoints_unchanged": true,
+        "natural_acceptance_claim": false,
+        "extra_catchup": "Same current GA model consumes the pending token once: length4 ->5, RNG6 ->7, draft lag1 ->0; original35 dumps remain before this additional episode."
+      },
+      "A": {
+        "actual_natural_K2": true,
+        "proposals": [
+          31,
+          39
+        ],
+        "consumed": 1,
+        "pending": 42,
+        "RNG": 6,
+        "classic_R2": true,
+        "independent_classic_RNG": [
+          4,
+          4
+        ],
+        "classic_pending": [
+          39,
+          2
+        ],
+        "classic_consumed": [
+          1,
+          1
+        ],
+        "all_sampling_baseline_fields_equal": [
+          "proposals",
+          "consumed",
+          "pending",
+          "cursor",
+          "draft_lag",
+          "classic_cursors",
+          "classic_pending",
+          "classic_consumed",
+          "head_true_calls",
+          "head_false_calls",
+          "draft_program_graph_calls",
+          "prefix_decision_graph_calls",
+          "frontier_sampling_graph_calls"
+        ]
+      },
+      "input_scratch": {
+        "vector_order": [
+          "packed_ids",
+          "positions",
+          "draft_positions",
+          "catchups",
+          "sampling_identities"
+        ],
+        "observations": [
+          {
+            "scratch": "GA-ordinary",
+            "checks": 2,
+            "capacity": [
+              0,
+              2,
+              0,
+              0,
+              12
+            ],
+            "maximum_observed_size": [
+              0,
+              2,
+              0,
+              0,
+              12
+            ],
+            "capacity_and_address_stable": true,
+            "whole_path_zero_allocation_claim": false
+          },
+          {
+            "scratch": "GA-MTP-catchup",
+            "checks": 4,
+            "capacity": [
+              0,
+              3,
+              2,
+              1,
+              12
+            ],
+            "maximum_observed_size": [
+              0,
+              3,
+              2,
+              1,
+              12
+            ],
+            "capacity_and_address_stable": true,
+            "whole_path_zero_allocation_claim": false
+          },
+          {
+            "scratch": "A-natural-K2-R2",
+            "checks": 4,
+            "capacity": [
+              2,
+              4,
+              2,
+              0,
+              24
+            ],
+            "maximum_observed_size": [
+              2,
+              4,
+              2,
+              0,
+              24
+            ],
+            "capacity_and_address_stable": true,
+            "whole_path_zero_allocation_claim": false
+          }
+        ],
+        "total_postepisode_observations": 10,
+        "scope": "Observed five dedicated input vectors only; no whole-path zero-allocation claim."
+      },
+      "configuration": {
+        "compiled_const_fields": [
+          "sampler",
+          "cpu_ffn_layers",
+          "cache_plan",
+          "capacity",
+          "replay_policy"
+        ],
+        "actual_late_modification_rejections": 6,
+        "preserves": "DraftPolicy getters, family/phase/draft maps, live version count, active episode pointer, original GA checkpoint bytes; actual subsequent ordinary/MTP episodes still pass."
+      },
+      "successful_strict_compile": {
+        "exit": 0,
+        "seconds": 15.48499999998603,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.3589999999967404,
+        "timeout": false
+      },
+      "actual_run": {
+        "exit": 0,
+        "seconds": 1.9690000000118744,
+        "timeout": false
+      },
+      "distinct_private_TUs": 1,
+      "strict_compile_attempts": 2,
+      "successful_compiles": 1,
+      "links": 1,
+      "actual_processes": 1,
+      "private_models": 3,
+      "complete_models": 0
+    },
+    "details": {
+      "path": ".scratch/mtp-round-preparation-20261024/regression/summary.json",
+      "bytes": 5870,
+      "sha256": "321fdaed8bc8440cbe5fd775c465f6d3e7c5eea9ced6362f3db5697f96dd08a8"
+    }
+  },
+  "source": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 429766,
+      "sha256": "24c7d4594c82428a6829205d45a06239884b179deaa1f5ab45f79c545a404d2b"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_prefix_value_probe.cc",
+      "bytes": 12234,
+      "sha256": "751ca7edb82a77cf0ca973086ce870a56f968c14ae378e543949d05f1b1c3762"
+    }
+  ],
+  "first_failure": {
+    "reason": "InputPreparationScratch::prepare references Phase.requests, which does not exist; real finite request count is Phase.family->requests",
+    "correction": "Exactly Phase.requests -> Phase.family->requests; no fixture, mathematics or invariant relaxation.",
+    "preserved": true
+  },
+  "limits": [
+    "The existing Model serial-call contract and one carrier still apply; no new cross-thread concurrency guarantee.",
+    "Stable capacity/address observations cover the five upload vectors; other host metadata still allocates.",
+    "GA consumed2 is an explicit complete-state control; A K2 acceptance is a separate natural small-model journey.",
+    "No trained-model quality, full backend matrix, end-to-end speed or VRAM improvement is claimed."
+  ],
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "performance_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-shared-preparation-2026-10-24.zip",
+    "bytes": 573007,
+    "sha256": "ca26b057820048bd4ca88bd6c4d4c7797ee3dbedd6dd65b1f27fbaabffa0efe8"
+  }
+}

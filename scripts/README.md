@@ -20,6 +20,29 @@ Windows、Linux、macOS 使用同样的三个入口：`python scripts/init.py`�
 | 生成并检查 SIMD 操作/Provider 路由 | `simd-op-coverage.py` |
 | 检查 SIMD 公共边界的第三方类型/include | `check-no-vendor.sh` |
 
+新配置默认选择 `engine`，构建 `hyle` 推理程序及其所需库。下面先准备 CUDA Release 开发与测试环境，
+然后增量构建和运行测试；CPU 使用 `--backends cpu`，Apple Silicon 使用 `metal`，Vulkan 使用 `vulkan`。
+编译器、CUDA Toolkit 等系统工具需先安装，项目依赖会复用共享缓存。
+
+```sh
+python scripts/init.py --name engine-cuda --backends cuda --config Release --tests
+python scripts/build.py --name engine-cuda
+python scripts/test.py --name engine-cuda
+```
+
+`--components` 是项目选择入口：`engine` 自动包含 compute、graph、执行进度和资源传输等所需库；
+`util`、`compute,graph` 等选择只构建对应库；`all` 选择完整项目。库使用者无需开启引擎，
+例如 `init.py --name util --components util --tests` 不准备 GPU 或推理 Provider 的依赖。
+`--backends all` 准备当前系统支持的后端集合，`cpu,cuda` 等组合按需选择。
+这些参数选择编译路线，具体模型与运行设备以程序实际支持为准；同时编译 CPU 和 CUDA 不等于启用混合执行。
+
+调试配置可另建 `init.py --name engine-debug --backends cuda --config Debug --tests`。
+多个配置共享依赖缓存，各自保留产物；重复初始化已有名称时，未指定的组件、配置和测试选项保持原值。
+`build.py` 默认构建选定项目及已启用的测试，只需要程序时可用 `--target hyle_engine`；
+之后运行测试仍需先构建相应测试目标。`build.py --install [prefix]` 安装完整选定项目，
+包含引擎的选择提供 `bin/hyle`（Windows 为 `hyle.exe`）及库；只选择库则安装该 SDK 子集。
+所需运行库由 CMake 暂存和安装，不需要手动拼接 Provider DLL 路径。
+
 `hyle_perf/` 保留可复用的统计、数据模型和日志解析函数。专项 `validate-*-bench.py` 用于检查对应
 benchmark 的结构、输出或资源事实，不决定是否可以开发，也不代替数值和实际运行验证。
 

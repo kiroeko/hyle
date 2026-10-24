@@ -69,9 +69,14 @@ Status qualify(void *, BatchCapacity capacity,
   if(!((capacity.qk_head_dim==capacity.value_head_dim) ||
        (capacity.qk_head_dim==64 && capacity.value_head_dim==128) || highdim_scalar))
     return Status::Unimplemented("ggml CPU batch value depth is outside its finite domain");
+  const bool native_query = capacity.query_type == DataType::kFloat16 ||
+      capacity.query_type == DataType::kBFloat16
+#if defined(HYLE_GGML_CPU_F32_FLASH)
+      || capacity.query_type == DataType::kFloat32
+#endif
+      ;
   if ((capacity.storage != BatchStorage::kRagged && capacity.storage != BatchStorage::kPaged) ||
-      (capacity.query_type != DataType::kFloat16 &&
-       capacity.query_type != DataType::kBFloat16) ||
+      !native_query ||
       (capacity.qk_head_dim != 64 && capacity.qk_head_dim != 128 &&
        capacity.qk_head_dim != 256 && !highdim_scalar) || !std::isfinite(options.scale))
     return Status::Unimplemented("ggml CPU native batch requires qualified resident flash");

@@ -50,7 +50,7 @@ inline Value append_head(sem::Fragment &f,Value actual_bfloat,Value weight,
       input.dimensions()[0]<=0||input.dimensions()[1]!=hidden)
     throw std::runtime_error("DSpark head needs its actual BF16 normalized producer");
   if(bfloat_table(f.description(weight),vocabulary,hidden))
-    return f.one(c::model_ops::bfloat_linear_f32(),{actual_bfloat,weight});
+    return f.one(c::model_ops::dense_linear_f32(),{actual_bfloat,weight});
   const auto visible=f.one(c::Operation(c::Cast{.output_type=c::DataType::kFloat32}),{actual_bfloat});
   return f.one(c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}),{visible,weight});
 }

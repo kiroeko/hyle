@@ -637,7 +637,7 @@ TEST(CpuQwen38_24T,
   auto context = c::cpu::create_context().value();
   auto queue = context.create_queue().value();
   auto router = make_call(
-      context, c::model_ops::bfloat_linear_f32(),
+      context, c::model_ops::dense_linear_f32(),
       std::array{activation_desc, weight_desc},
       std::array{logits_desc}, workload);
   auto softmax = make_call(context, c::Operation(c::Softmax{}),

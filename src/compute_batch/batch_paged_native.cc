@@ -70,8 +70,9 @@ Result<NativePagedBatchProgram> NativePagedBatchProgram::prepare(
   HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
   const auto capacity = schema.capacity();
   if (capacity.storage != BatchStorage::kPaged || capacity.page_size != 16 ||
-      (capacity.query_type != DataType::kFloat16 && capacity.query_type != DataType::kBFloat16))
-    return std::unexpected(Status::Unimplemented("native page recipe requires F16/BF16 page16 schema"));
+      (capacity.query_type != DataType::kFloat16 && capacity.query_type != DataType::kBFloat16 &&
+       capacity.query_type != DataType::kFloat32))
+    return std::unexpected(Status::Unimplemented("native page recipe requires F16/BF16/F32 page16 schema"));
   const std::uint64_t refs = capacity.max_page_refs;
   if (refs > std::uint32_t(INT32_MAX) || refs > SIZE_MAX / sizeof(std::int32_t))
     return std::unexpected(Status::OutOfRange("native page table extent overflow"));
@@ -142,7 +143,7 @@ Result<ReadLease> NativePagedBatchVersion::indices() const noexcept {
     std::copy(pages.begin(), pages.end(), indices);
     HYLE_RETURN_IF_ERROR(mapping.close());
   }
-  HYLE_ASSIGN_OR_RETURN(auto ready, ReadLease::adopt(std::move(buffer),
+  HYLE_ASSIGN_OR_RETURN(auto ready, detail::LeaseAccess::adopt_metadata(std::move(buffer),
       {.allocator = data_->allocator, .resource_budget = data_->budget}));
   // The export retains independent owners, never this cache-containing state.
   // Otherwise cached lease -> version -> cached lease would form a cycle.

@@ -17,7 +17,26 @@ namespace hyle::compute::vulkan::detail {
 struct BufferBudget final {
   mem::AllocatorRef allocator;
   compute::ResourceBudget::Reservation reservation;
+  void *controller = nullptr;
+  void (*release_controller)(void *) noexcept = nullptr;
 };
+
+Status retain_buffer_controller(Buffer &buffer, void *owner,
+    void (*release)(void *) noexcept, mem::AllocatorRef allocator) noexcept {
+  if (!owner || !release || !allocator.valid())
+    return Status::InvalidArgument("Vulkan buffer controller owner is invalid");
+  if (!buffer.budget) {
+    auto *storage = allocator.allocate(sizeof(BufferBudget), alignof(BufferBudget));
+    if (!storage) return Status::ResourceExhausted("Vulkan buffer controller metadata");
+    buffer.budget = std::construct_at(static_cast<BufferBudget *>(storage), allocator,
+        compute::ResourceBudget::Reservation{});
+  }
+  if (buffer.budget->controller)
+    return Status::FailedPrecondition("Vulkan buffer already retains its controller");
+  buffer.budget->controller = owner;
+  buffer.budget->release_controller = release;
+  return Status::Ok();
+}
 
 Status native_status(VkResult result, const char *operation) noexcept {
   if (result == VK_SUCCESS)
@@ -56,8 +75,11 @@ Buffer::~Buffer() {
     device->fn.FreeMemory(device->native.device, memory, nullptr);
   if (budget != nullptr) {
     const auto allocator = budget->allocator;
+    auto *controller = budget->controller;
+    const auto release = budget->release_controller;
     std::destroy_at(budget);
     allocator.deallocate(budget, sizeof(BufferBudget), alignof(BufferBudget));
+    if (release) release(controller);
   }
 }
 
@@ -468,6 +490,9 @@ Status Context::with_queue(
 
 Status Context::collect() const noexcept {
   return state_ ? detail::collect(state_, false) : Status::Ok();
+}
+Status Context::drain() const noexcept {
+  return state_ ? detail::collect(state_, true) : Status::Ok();
 }
 Status Context::close() noexcept {
   if (!state_)

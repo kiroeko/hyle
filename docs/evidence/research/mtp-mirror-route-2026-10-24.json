@@ -1,0 +1,97 @@
+{
+  "observed_at_unix": 1792831229.762034,
+  "active_mode": "rule",
+  "configuration_changed": false,
+  "connections": [
+    {
+      "chains": [
+        "DIRECT"
+      ],
+      "rule": "DomainSuffix",
+      "rulePayload": "hf-mirror.net",
+      "download": 2795,
+      "upload": 1004,
+      "start": "2026-10-24T16:40:29.1801931+08:00",
+      "host": "hf-mirror.net",
+      "process": ""
+    },
+    {
+      "chains": [
+        "DIRECT"
+      ],
+      "rule": "DomainSuffix",
+      "rulePayload": "hf-mirror.net",
+      "download": 67233,
+      "upload": 1001,
+      "start": "2026-10-24T16:40:27.5658683+08:00",
+      "host": "hf-mirror.net",
+      "process": ""
+    },
+    {
+      "chains": [
+        "DIRECT"
+      ],
+      "rule": "DomainSuffix",
+      "rulePayload": "hf-mirror.net",
+      "download": 17350385,
+      "upload": 967,
+      "start": "2026-10-24T16:33:44.3836528+08:00",
+      "host": "hf-mirror.net",
+      "process": ""
+    },
+    {
+      "chains": [
+        "DIRECT"
+      ],
+      "rule": "DomainSuffix",
+      "rulePayload": "hf-mirror.net",
+      "download": 1477304,
+      "upload": 1001,
+      "start": "2026-10-24T16:40:21.2132065+08:00",
+      "host": "hf-mirror.net",
+      "process": ""
+    },
+    {
+      "chains": [
+        "DIRECT"
+      ],
+      "rule": "DomainSuffix",
+      "rulePayload": "hf-mirror.net",
+      "download": 3734636,
+      "upload": 1003,
+      "start": "2026-10-24T16:39:52.4410764+08:00",
+      "host": "hf-mirror.net",
+      "process": ""
+    },
+    {
+      "chains": [
+        "DIRECT"
+      ],
+      "rule": "DomainSuffix",
+      "rulePayload": "hf-mirror.net",
+      "download": 4194886,
+      "upload": 1001,
+      "start": "2026-10-24T16:39:40.4327005+08:00",
+      "host": "hf-mirror.net",
+      "process": ""
+    }
+  ],
+  "recent_matching_logs": [
+    "[2026-10-24 16:39:40.433] time=\"2026-10-24T16:39:40.432700500+08:00\" level=info msg=\"[TCP] 198.18.0.1:7358 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:39:44.935] time=\"2026-10-24T16:39:44.935347100+08:00\" level=info msg=\"[TCP] 198.18.0.1:8970 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:39:52.441] time=\"2026-10-24T16:39:52.441076400+08:00\" level=info msg=\"[TCP] 198.18.0.1:3521 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:39:56.211] time=\"2026-10-24T16:39:56.211420000+08:00\" level=info msg=\"[TCP] 198.18.0.1:8798 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:40:07.200] time=\"2026-10-24T16:40:07.200298400+08:00\" level=info msg=\"[TCP] 198.18.0.1:8493 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:40:08.301] time=\"2026-10-24T16:40:08.300581800+08:00\" level=info msg=\"[TCP] 198.18.0.1:8497 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:40:10.381] time=\"2026-10-24T16:40:10.378651700+08:00\" level=info msg=\"[TCP] 198.18.0.1:5980 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:40:21.213] time=\"2026-10-24T16:40:21.213206500+08:00\" level=info msg=\"[TCP] 198.18.0.1:2976 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:40:27.566] time=\"2026-10-24T16:40:27.564859500+08:00\" level=info msg=\"[TCP] 198.18.0.1:12904 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\"",
+    "[2026-10-24 16:40:29.180] time=\"2026-10-24T16:40:29.180193100+08:00\" level=info msg=\"[TCP] 198.18.0.1:12910 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\""
+  ],
+  "source_scope": "Current already-running necessary MTP ranges; observer starts no model HTTP",
+  "conclusion": {
+    "all_observed_mirror_chains_direct": true,
+    "log_direct_confirmed": true,
+    "scope": "These current mirror streams and log rows only; no global unrelated-traffic attribution or root-cause claim for transport stalls."
+  }
+}

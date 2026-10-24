@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite source/prepared-role/token admission review for the actual Qwen/HF/GGUF/CT consumer and existing GLM/DS components. No new full model matrix.",
+  "fixed": [
+    {
+      "problem": "Non-scheduled CLI prompt/continuation/forced token tape used INT32_MAX instead of known model vocabulary, delaying rejection until model load/compute",
+      "change": "All three calls pass actual source vocabulary and configured capacity before Model construction",
+      "source_calls": [
+        "qwen35::read_ids(decode_ids, geometry.vocabulary, capacity)",
+        "qwen35::read_ids(input / \"prompt.ids\", geometry.vocabulary, capacity)",
+        "qwen35::read_ids(continuation, geometry.vocabulary, capacity)"
+      ]
+    },
+    {
+      "problem": "Formatted int64 extraction at exact EOF could silently omit an overflowing last token",
+      "before": "Original frozen function reproduced [1] from 1 followed by 9223372036854775808 at EOF",
+      "change": "Bounded lexical token plus complete from_chars consumption; reject malformed, overflow and embedded NUL",
+      "exact_function_sha256": "2f8216dfb920dda19f04ec030ab83fc42d198cc82816a7c8831406fcf0bd0728",
+      "tests": 18,
+      "lexical_limit": "31 characters per word, explicitly rejected when exceeded; canonical supported nonnegative I32 IDs need at most10 digits"
+    },
+    {
+      "problem": "Prepared GPTQ/NVFP4 axes used integer division without first requiring complete source blocks",
+      "change": "GPTQ K%8/N%8 and U32 group-size bound; NVFP4 K%16, aligned with public weight_decode contracts",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prepared_roles.h",
+        "bytes": 18614,
+        "sha256": "c677c3f7d79dfeefd6d32f32b8f6aa4f87cee71d010caf733f5974da81ab0ca6"
+      },
+      "new_bad_geometry_fixtures": 4,
+      "new_negative_checks": 7,
+      "total_current_metadata_checks": 303
+    }
+  ],
+  "reviewed_boundaries": [
+    {
+      "path": "engine/models/qwen35/main.cc:306",
+      "result": "mtp_layers0 with --mtp on rejects before backend/weight loading; no implicit ordinary-mode fallback"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h:187",
+      "result": "Whole supplied logical/physical inventory validated even with MTP off; missing, ambiguous, extra and unknown codec roles fail; text-only ordinary input is explicitly allowed"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_gguf_roles.h:91",
+      "result": "Complete source inventory, original nonoverlapping ranges, codec block width, physical meaning and NextN geometry checked before selection"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc:1116",
+      "result": "Immutable source geometry and all selected file ranges checked before pipeline allocation; stream complete/read/copy/retirement verified; original CT I64 shape contents checked after selected IO"
+    },
+    {
+      "path": "tests/compute_models/glm_original_expert_frontier.h:114",
+      "result": "Cache miss explicitly fails or waits for explicit external source; lookup starts no HTTP"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc:1816",
+      "result": "Missing actual expert IDs cannot substitute synthetic experts; explicit hook must fill every actual ID"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_formal_roles.h:234",
+      "result": "Source identity and duplicate expert attachments reject; map copy/swap preserves previous attachment directory on failure; absent roles/experts throw"
+    },
+    {
+      "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc:164",
+      "result": "Actual missing expert IDs fail/emit explicit frontier or bounded external wait; no source-triggered HTTP"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_state_consumer.h:104",
+      "result": "Complete typed suppliers reject mixed or omitted original banks; finite partial fixture boundaries are not full engine fallback"
+    }
+  ],
+  "reuse_after_error": "Metadata and token readers build only local results. Actual token test succeeds on a valid read after earlier rejected inputs. Existing consumer state/publication/retirement proof remains separately scoped; current ColdScope/Session failure lifetime integration is not revalidated here.",
+  "limits": [
+    "No GLM/DS complete-model, all vendor failure points or all unsupported formats claim.",
+    "Only selected role payload contents are read/validated; MTP-off does not fetch unselected NextN bodies.",
+    "The prepared input must still retain its authenticated original source files; runtime does not silently download or manufacture missing source roles.",
+    "Parser and metadata tests require no SDK, weight body or device; main 3-call ordering is checked from actual source, not another full-model error run."
+  ],
+  "SDK_builds": 0,
+  "model_runs": 0,
+  "HTTP": 0,
+  "additional_syntax_validation": {
+    "main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 410029,
+      "sha256": "b1f620ef9d8659569602355e981772e4b7b5a97cb6753c44e650bad878543527"
+    },
+    "process": {
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "/nologo",
+        "/c",
+        "/std:c++latest",
+        "/EHsc",
+        "/Zc:preprocessor",
+        "/Zc:__cplusplus",
+        "/utf-8",
+        "/O2",
+        "/Ob2",
+        "/MD",
+        "/DNDEBUG",
+        "/permissive-",
+        "/bigobj",
+        "/W4",
+        "/WX",
+        "/wd4324",
+        "/wd4702",
+        "/DHYLE_STATIC",
+        "/DNOMINMAX",
+        "/external:W0",
+        "/DHYLE_COMPUTE_CPU=1",
+        "/IC:\\public\\project-hyle\\hyle\\include",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/IC:\\public\\project-hyle\\hyle\\engine",
+        "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+        "/Zs",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/IC:\\public\\project-hyle\\hyle\\engine\\models\\qwen35",
+        "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-lifetime-audit-20261024\\main-cpu-syntax\\unit.obj",
+        "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-lifetime-audit-20261024\\main-cpu-syntax\\unit.pdb",
+        "/sourceDependencies",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-lifetime-audit-20261024\\main-cpu-syntax\\deps.json",
+        "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792825473.3354757,
+      "timeout_seconds": 90,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 33544,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792825478.4571438,
+      "process_wall_seconds": 5.121395199996186
+    },
+    "scope": "CPU syntax only, final bounded string read_ids and current source; no link or model run",
+    "reason": "Final bounded std::string+setw31 token reader landed after the preceding shared-model syntax run; one CPU /Zs check covers final source without relinking or rerunning model."
+  },
+  "evidence_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-mtp-input-role-error-boundaries-2026-10-24-logs.zip",
+    "bytes": 28297,
+    "sha256": "d1f0a7abeab11483632bb1621b40f8f481f927f4a85d5edb5cd0662402a951fa"
+  }
+}

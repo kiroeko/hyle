@@ -1,0 +1,210 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite complete original BF16 Qwen3.5-2B text+MTP consumers: native Apple and Vulkan each K4 random and actual N2R2 K2 random. Not complete task-quality or a performance benchmark.",
+  "source_identity": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+  "original_tensors": 335,
+  "original_weight_bytes": 3885311680,
+  "prompt_tokens_per_request": 154,
+  "capacity": 192,
+  "sampling": {
+    "temperature": 1,
+    "top_k": 40,
+    "top_p": 0.9,
+    "seed": 424242
+  },
+  "backends": {
+    "apple": {
+      "cases": [
+        {
+          "name": "K4-random",
+          "exit_code": 0,
+          "generated_ids": [
+            71093,
+            12305,
+            198,
+            12237,
+            198,
+            608
+          ],
+          "stream": 0,
+          "draw": 13,
+          "consumed_tokens": 159,
+          "draft_frontier": 158,
+          "draft_lag": 1,
+          "first_round_proposals": 4,
+          "first_round_consumed_drafts": 2
+        },
+        {
+          "name": "N2R2-K2-random",
+          "exit_code": 0,
+          "actual_batch_width": 2,
+          "retired_requests": 2,
+          "live_committed_versions": 0,
+          "sessions": [
+            {
+              "session": "a",
+              "generated_ids": [
+                71093,
+                12305,
+                198,
+                1445
+              ],
+              "stream": 0,
+              "draw": 6,
+              "consumed_tokens": 157,
+              "draft_frontier": 156,
+              "draft_lag": 1
+            },
+            {
+              "session": "b",
+              "generated_ids": [
+                71093,
+                12305,
+                198,
+                464
+              ],
+              "stream": 1,
+              "draw": 6,
+              "consumed_tokens": 157,
+              "draft_frontier": 156,
+              "draft_lag": 1
+            }
+          ]
+        }
+      ],
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-multik-functional-20261024/attempt1/hyle-apple",
+        "bytes": 13089832,
+        "sha256": "2e0433a2c66a701705dd328597430c44a5060bcfcfce73d73a4173c8a6d402b7"
+      },
+      "SDK_builds": 0,
+      "native_builds": 0
+    },
+    "vulkan": {
+      "cases": [
+        {
+          "name": "K4-random",
+          "exit_code": 0,
+          "generated_ids": [
+            71093,
+            12305,
+            198,
+            12237,
+            198,
+            608
+          ],
+          "stream": 0,
+          "draw": 13,
+          "consumed_tokens": 159,
+          "draft_frontier": 158,
+          "draft_lag": 1,
+          "first_round_proposals": 4,
+          "first_round_consumed_drafts": 2
+        },
+        {
+          "name": "N2R2-K2-random",
+          "exit_code": 0,
+          "actual_batch_width": 2,
+          "retired_requests": 2,
+          "live_committed_versions": 0,
+          "sessions": [
+            {
+              "session": "a",
+              "generated_ids": [
+                71093,
+                12305,
+                198,
+                1445
+              ],
+              "stream": 0,
+              "draw": 6,
+              "consumed_tokens": 157,
+              "draft_frontier": 156,
+              "draft_lag": 1
+            },
+            {
+              "session": "b",
+              "generated_ids": [
+                71093,
+                12305,
+                198,
+                464
+              ],
+              "stream": 1,
+              "draw": 6,
+              "consumed_tokens": 157,
+              "draft_frontier": 156,
+              "draft_lag": 1
+            }
+          ]
+        }
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-vulkan-multik-20261024\\build1\\hyle-vulkan.exe",
+        "bytes": 49734144,
+        "sha256": "cd7250da843348ec5c7b3b0b2b0497341fe52e5db05b3a73f892fd66e3c91947"
+      },
+      "SDK_builds": 0,
+      "native_builds": 0
+    }
+  },
+  "fixes": [
+    {
+      "problem": "Windows CRLF source identity rejected before native load",
+      "change": "Strip identity trailing CR before SHA validation",
+      "separate_evidence": "mtp-source-geometry-newlines-2026-10-24.json"
+    },
+    {
+      "problem": "Native borrowed constants incorrectly supplied an ownerless ready lease after CPU system-resource integration",
+      "change": "Retain ready lease only with actual owner or exact process-system resource; native source remains explicitly borrowed",
+      "before": "apple/K4-random-attempt1/stderr.log"
+    },
+    {
+      "problem": "Vulkan could not read a one-byte Bool borrowed view through correctly aligned native IO",
+      "change": "Only native-generated host predicate ports publish exact F32 0/1; mathematical Bool and CPU/CUDA graph unchanged; inline16 scratch grows naturally beyond16",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\host_predicates.h",
+        "bytes": 1486,
+        "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+      },
+      "focused_checks": 33
+    },
+    {
+      "problem": "Sampler mistook approximate finite mass/mass for invalid distribution",
+      "actual_finite_mass": 1.14776,
+      "actual_divide_minus_one": -5.96046e-08,
+      "change": "Require nonzero SumExp and nonfinite detection from mass-mass; no exact native division equality",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\sampling_graph.h",
+        "bytes": 16900,
+        "sha256": "1540305c2ffd8d52e015c5379e8b0fe7b5d65c08fea38754752a4596231d5914"
+      },
+      "vulkan_toy_cases": 5,
+      "vulkan_checked_predicates": 25,
+      "cpu_toy_cases": 10,
+      "cuda_toy_cases": 10,
+      "diagnostic": "vulkan/before-gate/stderr.log"
+    }
+  ],
+  "source_boundaries": {
+    "base": "geometry-cpu-check2 + already-proven default-init/portable CLI/CRLF/native-borrow fixes",
+    "apple": "Actual Apple runs precede native F32 predicate wire and division-gate followup. Their precise source is inside the archived evidence; do not relabel them as later code.",
+    "vulkan": "Final no-private-diagnostic TU includes native F32/inline16 predicate transport and repaired gate. Original 4096 planner and unaligned IO guard unchanged.",
+    "later_guards": "Later mtp_layers0 preflight guards are outside the valid-MTP frozen consumer; current head-score and ColdScope WIP changes are not claimed."
+  },
+  "limits": [
+    "No MTP task-quality equivalence claim from these short outputs.",
+    "No prefix reuse/restore/EOS/cancellation coverage added by this finite pair.",
+    "Finite cold/host resource reporting does not cap opaque native driver/provider storage.",
+    "Apple target deployment14.4 on actual macOS27.0.1; not an actual14.4 OS runtime.",
+    "Toy positive rows inspect mass validity; they do not assert arbitrary unnormalized input is a normalized sampling distribution.",
+    "No HTTP/model payload copies/SDK rebuilds/native rebuilds."
+  ],
+  "performance_claim": false,
+  "HTTP": 0,
+  "evidence_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-qwen35-native-multik-random-complete-input-2026-10-24-logs.zip",
+    "bytes": 589977,
+    "sha256": "99cf785ba7d8c0fb7f90f3031270fbf928049bade48fdd7dfc6a2262ba52d604"
+  }
+}

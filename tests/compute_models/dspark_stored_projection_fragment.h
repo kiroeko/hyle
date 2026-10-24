@@ -10,7 +10,7 @@
 #include "hyle/graph/graph.h"
 
 // Cold typed projection leaves only. Plain BF16 weights explicitly consume
-// BF16 activations and return F32 accumulation through BFloatLinearF32. This
+// BF16 activations and return F32 accumulation through DenseLinearF32. This
 // is a Hyle precision policy, not equality to every peer's F32-A dispatch.
 namespace dspark_stored_projection_fragment {
 namespace c=hyle::compute;
@@ -34,7 +34,7 @@ inline sem::ValueId linear(sem::Fragment &f,sem::ValueId input,sem::ValueId weig
       throw std::runtime_error("stored projection requires dense BF16 [N,K] and [T,K]");
     if(activation.data_type()!=c::DataType::kBFloat16)
       input=f.one(c::Operation(c::Cast{c::DataType::kBFloat16}),{input});
-    return f.one(c::model_ops::bfloat_linear_f32(),{input,weight});
+    return f.one(c::model_ops::dense_linear_f32(),{input,weight});
   }
   return f.one(c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}),{input,weight});
 }
@@ -44,7 +44,7 @@ inline hyle::Result<g::ValueId> linear(g::GraphBuilder &f,g::ValueId input,
     if(description.rank()!=2||description.data_type()!=c::DataType::kBFloat16||!description.is_dense())
       return std::unexpected(hyle::Status::InvalidArgument("stored projection requires dense BF16 [N,K]"));
     HYLE_ASSIGN_OR_RETURN(auto stored,f.add(c::Cast{c::DataType::kBFloat16},input));
-    return f.add(c::model_ops::bfloat_linear_f32(),stored,weight);
+    return f.add(c::model_ops::dense_linear_f32(),stored,weight);
   }
   return f.add(c::MatMul{.accumulation_type=c::DataType::kFloat32},input,weight);
 }

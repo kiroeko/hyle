@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite behavior-preserving extraction",
+  "sources": [
+    {
+      "path": "engine/inference/execution_resources.h",
+      "bytes": 3312,
+      "sha256": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 3465,
+      "sha256": "ba89b36c9eaf993ac36b073343f28922590b725aceee7a0450ccb77349f93870"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 424931,
+      "sha256": "d05059c298ce25d5045efc64cc5d823d0150abaa21357e4f07231b932a519a62"
+    },
+    {
+      "path": "engine/models/qwen35/backend.h",
+      "bytes": 20163,
+      "sha256": "67424eb918398b02165900131dcf1f46d9d3a924b1ff7e5a1c405d46e92c8b93"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_projection_width_probe.cc",
+      "bytes": 11529,
+      "sha256": "1df3473f478665714d4327996a85d4105c72d2d184b1267024a3d10b5e62ac4c"
+    },
+    {
+      "path": "tests/tools/qwen_resource_retirement_test.cc",
+      "bytes": 7119,
+      "sha256": "fa176f092a4db7a12f884c836870e8a554c703f9cae8241dc3521193c94b4e8a"
+    },
+    {
+      "path": "tests/graph_route_vulkan/retirement_test.cc",
+      "bytes": 12254,
+      "sha256": "c67de27f3637d4041f422ef6c4678c68f54d0c66269892ef73dda392962baa99"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-shared-cold-resources-output-2026-10-24.zip",
+    "bytes": 215057,
+    "sha256": "324055db8c8969a48dcbceb3bb0ef9feb1538a85a4b59e1803e6e66cc962078e"
+  },
+  "archive_entries": 136,
+  "changes": [
+    "Move the original completion-retention node into engine/inference unchanged",
+    "Select required queue bindings using real compiled lane IDs",
+    "Prepare actual published output description, storage domain and ownership",
+    "Migrate Qwen prefix sampling and frontier scalar bindings/readback",
+    "Remove the old private header and its stale unused Vulkan-test include"
+  ],
+  "checks": {
+    "cpu_consumer_strict_syntax": {
+      "exit": 0,
+      "seconds": 6.094000000011874,
+      "timeout": false
+    },
+    "cpu_queue_selection_and_17_exact_values": {
+      "exit": 0,
+      "seconds": 0.25,
+      "timeout": false
+    },
+    "output_facts": "Four real ownerships, static route, two exact children and rejected mismatches",
+    "vulkan_original_retirement_cases": {
+      "passed": 2,
+      "names": [
+        "SessionRetiresOriginalWorkAfterItsModelWasDestroyed",
+        "LastOriginalCallbackReleasesScopeWithoutApplicationOwners"
+      ],
+      "original_process": {
+        "exit": 1,
+        "seconds": 0.8129999999946449,
+        "timeout": false
+      },
+      "process_scope": "Both original cases passed; process exit1 from a subsequent private-fixture unsupported Cast. The corrected fixture was run separately."
+    },
+    "vulkan_native_readback": {
+      "exit": 0,
+      "seconds": 0.45300000000861473,
+      "timeout": false
+    },
+    "independent_review": "No definite m0/multi-proposal, readback lifetime or publication regression found"
+  },
+  "limits": [
+    "Not the complete backend-assembly or model-architecture refactor",
+    "Model scalar readback retains its explicit primary-domain external-output contract",
+    "No model mathematics, graph sampling policy, precision or fusion changes",
+    "No full model, throughput, memory-comparison or cross-platform runtime claim",
+    "CPU strict syntax predates only the equivalent lane ordinal-to-reported-ID change; runtime probes use current header",
+    "Pending Qwen27 FP8 complete journeys use their separate frozen image"
+  ],
+  "SDK_builds": 0,
+  "HTTP_requests": 0,
+  "trained_model_download_bytes": 0
+}

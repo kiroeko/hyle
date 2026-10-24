@@ -1,0 +1,224 @@
+{
+  "state": "bounded_current_BF16_entries_and_preparation_diagnostics_passed",
+  "date": "2026-10-25",
+  "scope": "Current selected BF16 math app/report and4 truly changed Graph/batch/CUDA-region source TUs, existing native BF16 templates/compatible provider closure. No blanket current SDK or new quant-mode certification. Four actual processes:2short entries+2separate two-turn diagnostic processes, no peer run/profile/formal TPS window.",
+  "image": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\link\\hyle.exe",
+      "bytes": 141404672,
+      "sha256": "1b453f96c03da0b8b5dd704ac33403f99ad86f5257cf00e2025796e5f2706495"
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "replacements": {
+      "C:\\public\\project-hyle\\hyle\\.scratch\\graph-system-constant-lease-20261024\\executable\\executable.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\product-0\\unit.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\graph_batch--batch.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\product-1\\unit.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\graph_batch--paged_append.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\product-2\\unit.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\graph_provider_ggml_cuda--ggml_cuda_region.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\product-3\\unit.obj"
+    },
+    "source": {
+      "canonical": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 429902,
+        "sha256": "9b73fe9afe325d139072a94632e26d739e2b3cb48b411320c0c5bed320e9b9e9"
+      },
+      "overlay": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\main2.cc",
+        "bytes": 438682,
+        "sha256": "bd1ba71a9e0c9b5d789b585ba916eb1c412e5b9f708580940c78b57ae603d166"
+      },
+      "patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\source2.patch",
+        "bytes": 3386,
+        "sha256": "dcddc7c1000fc48e3ec85dd3a87a18211ca6b4a3f59c6d0c476302916740dfc8"
+      },
+      "probe": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\probe2.cc",
+        "bytes": 192,
+        "sha256": "8a5e838d9a5fe60f30b420e5e87d09eb30b9674771e6e9e95cea96961055cab5"
+      },
+      "first_instrumentation_failure": "Bare PreparationObservation not available outside Model; private namespace qualification only. Original failure source/compile preserved.",
+      "scope": "Deferred private preparation timers only; no throughput evidence or graph/math/state change."
+    },
+    "scope": "Current BF16 app/report and4 current actual Graph/batch/CUDA-region TUs. Retained unchanged native BF16 templates and other compatible old provider objects. Not all quant modes or blanket full-SDK current-source certification.",
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "input_adaptation": {
+    "state": "exact_original_role_and_prompt_match",
+    "old_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp\\weights.tsv",
+    "V2_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+    "roles": 335,
+    "bytes": 3885311680,
+    "role_fields_compared": [
+      "name",
+      "dtype",
+      "shape",
+      "original_absolute_source_path",
+      "offset",
+      "bytes"
+    ],
+    "prompt_rows": 154,
+    "prompt_ids_equal": true,
+    "identity_change": "V2 source identity includes explicit geometry/source representation; not old V1 sha string.",
+    "failed_entry": "plain-entry: old V1 unsupported, rejected before weights loaded; no product bug or model correctness conclusion.",
+    "HTTP": 0
+  },
+  "runs": {
+    "plain-entry2": {
+      "process": {
+        "exit": 0,
+        "seconds": 2.0469999999913853,
+        "timeout": false
+      },
+      "work": {
+        "generated_tokens": 4,
+        "actual_graph_calls": 4,
+        "actual_target_rows": 157,
+        "live_committed_versions": 0
+      }
+    },
+    "mtp-entry": {
+      "process": {
+        "exit": 0,
+        "seconds": 2.25,
+        "timeout": false
+      },
+      "work": {
+        "generated_tokens": 4,
+        "actual_graph_calls": 3,
+        "actual_target_rows": 157,
+        "live_committed_versions": 0,
+        "actual_draft_rows": 157,
+        "draft_rounds": 1,
+        "agreements": 1,
+        "verified_target_rows": 3
+      }
+    },
+    "plain-two-turn": {
+      "process": {
+        "exit": 0,
+        "seconds": 3.125,
+        "timeout": false
+      },
+      "work": {
+        "generated_tokens": 128,
+        "actual_graph_calls": 128,
+        "actual_target_rows": 435,
+        "live_committed_versions": 0
+      },
+      "last24": {
+        "rows": 24,
+        "median_seconds": {
+          "layout_seconds": 4.8150000000000005e-05,
+          "batch_seconds": 9.444999999999999e-05,
+          "replay_seconds": 0.00015345000000000002,
+          "prepare_seconds": 0.00033775,
+          "submit_seconds": 7.275e-05,
+          "finish_seconds": 0.0094531,
+          "total_seconds": 0.0099243
+        },
+        "sum_seconds": {
+          "layout_seconds": 0.0011664,
+          "batch_seconds": 0.0024116,
+          "replay_seconds": 0.0038178,
+          "prepare_seconds": 0.0083288,
+          "submit_seconds": 0.0017604,
+          "finish_seconds": 0.2306394,
+          "total_seconds": 0.2407286
+        },
+        "capture_recorded": 0,
+        "capture_reused": 24,
+        "prepare_bucket_wall_share": 0.0345982986649696,
+        "prepare_plus_submit_bucket_wall_share": 0.04191109822430738
+      },
+      "exported_work_differences": {}
+    },
+    "mtp-two-turn": {
+      "process": {
+        "exit": 0,
+        "seconds": 3.39000000001397,
+        "timeout": false
+      },
+      "work": {
+        "generated_tokens": 128,
+        "actual_graph_calls": 68,
+        "actual_target_rows": 441,
+        "live_committed_versions": 0,
+        "actual_draft_rows": 434,
+        "draft_rounds": 66,
+        "agreements": 60,
+        "verified_target_rows": 132
+      },
+      "last24": {
+        "rows": 24,
+        "median_seconds": {
+          "layout_seconds": 9.779999999999999e-05,
+          "batch_seconds": 0.0001408,
+          "replay_seconds": 0.00020395,
+          "prepare_seconds": 0.00048095,
+          "submit_seconds": 9.24e-05,
+          "finish_seconds": 0.01340135,
+          "total_seconds": 0.01400015
+        },
+        "sum_seconds": {
+          "layout_seconds": 0.0023438,
+          "batch_seconds": 0.0034898,
+          "replay_seconds": 0.0055428000000000005,
+          "prepare_seconds": 0.012203199999999999,
+          "submit_seconds": 0.0022048,
+          "finish_seconds": 0.3255689,
+          "total_seconds": 0.3399769
+        },
+        "capture_recorded": 1,
+        "capture_reused": 47,
+        "prepare_bucket_wall_share": 0.035894203400289836,
+        "prepare_plus_submit_bucket_wall_share": 0.04237934989112495
+      },
+      "exported_work_differences": {}
+    }
+  },
+  "first_failures": [
+    {
+      "stage": "private app compile",
+      "record": "app/process.json",
+      "cause": "Missing namespace qualifier for instrumentation-only PreparationObservation, corrected only in private main2.cc/app2. No product source change."
+    },
+    {
+      "stage": "first plain entry",
+      "record": "plain-entry/process.json",
+      "cause": "Old V1 manifest is not supported by current prepared V2 input. Rebound to existing V2 after exact335-role source-range/codec and P154 equality; no model work in first failure."
+    }
+  ],
+  "IO_scope": {
+    "default_step_stderr": "Original cerr/unitbuf formatting is retained. Natural continuous wall includes the previous step post-endpoint reporting; Model step_seconds excludes its own postcommit IO.",
+    "private_diagnostics": "Flat POD records were cold-reserved1024; appended after finish and all diagnostic lines emitted only after qwen35::run returned, outside original run endpoints. Extra clocks/record writes still make these diagnostic processes unsuitable TPS evidence.",
+    "attribution": "prepare is an encompassing host wall bucket with native waits. finish includes GPU wait plus normal completion/publication/report work. Local sums/shares do not equal total host gap or reclaimable speedup; medians are not additive."
+  },
+  "throughput_evidence": false,
+  "memory_evidence": false,
+  "conclusions": [
+    "Two actual entry checks and two separate two-turn diagnostics passed. Same exported work and MTP60/66 acceptance as the dated Oct24 window.",
+    "Tail prepare+submit wall share is 4.191% ordinary and4.238% MTP in these diagnostic calls. It is neither measured total host cost nor an achievable speedup.",
+    "finish includes GPU wait, completion and publication; default post-endpoint stderr and private clock overhead remain explicit.",
+    "No current peer gap follows from these single diagnostic samples. Reestablish a contemporaneous clean ordinary/MTP baseline before choosing the major hotspot."
+  ],
+  "next_action": "Build a clean current consumer and use the existing single/two-turn ordinary/MTP four-arm12+4 protocol. Then attribute actual remaining GPU target/draft and host gaps; split replay only when its bounded cost warrants it.",
+  "retained_artifacts": "Current working image/reporting+four refreshed Graph objects retained for the next baseline/profile. No SDK or weight copy; diagnostic source/first failures/logs archived.",
+  "archive": {
+    "path": "docs/evidence/performance/mtp-current-prepare-diagnostics-2026-10-25.zip",
+    "bytes": 355957,
+    "sha256": "ab042c38dd83af6fa9772ca27f737ee0a0ff161805334aee20b3569b370619cd"
+  },
+  "source_summary": {
+    "path": ".scratch/mtp-performance-convergence-20261025/current-cuda/summary.json",
+    "bytes": 613468,
+    "sha256": "a6713a8ab0f71dd56c8cc66cef20bba1b08f9136e0bbed9ee6b16b129531b08d"
+  },
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "product_performance_changes": 0
+}

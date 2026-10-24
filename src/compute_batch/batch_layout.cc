@@ -1,5 +1,6 @@
 #include "hyle/compute/batch_ops.h"
 #include "hyle/compute/detail/batch_provider.h"
+#include "hyle/compute/detail/lease_access.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
 
@@ -129,8 +130,8 @@ Result<TensorDesc> row_cache_paged_description(RowCacheBatchCapacity c)noexcept{
 
 Status validate_batch_capacity(BatchCapacity c) noexcept {
   if((c.storage!=BatchStorage::kPaged && c.storage!=BatchStorage::kRagged) ||
-     (c.query_type!=DataType::kFloat16 && c.query_type!=DataType::kBFloat16) ||
-     (c.output_type!=DataType::kFloat16 && c.output_type!=DataType::kBFloat16) ||
+     (c.query_type!=DataType::kFloat16 && c.query_type!=DataType::kBFloat16 && c.query_type!=DataType::kFloat32) ||
+     (c.output_type!=DataType::kFloat16 && c.output_type!=DataType::kBFloat16 && c.output_type!=DataType::kFloat32) ||
      !c.max_requests || c.max_requests>=std::uint32_t(INT32_MAX) || !c.max_query_rows || !c.max_kv_rows ||
      !c.query_heads || !c.kv_heads || !c.qk_head_dim || !c.value_head_dim || c.query_heads%c.kv_heads)
     return Status::InvalidArgument("batch capacities, dtype or GQA are invalid");
@@ -282,7 +283,7 @@ Result<BatchLayoutVersion> BatchSchema::version(HostBatchLayout h)const noexcept
     copy(offsets.page_indices,h.page_indices);copy(offsets.last_page_lengths,h.last_page_lengths);
     HYLE_RETURN_IF_ERROR(mapping.close());
   }
-  HYLE_ASSIGN_OR_RETURN(p->bytes,ReadLease::adopt(std::move(buffer),{.allocator=data_->allocator,.resource_budget=data_->options.resource_budget}));
+  HYLE_ASSIGN_OR_RETURN(p->bytes,detail::LeaseAccess::adopt_metadata(std::move(buffer),{.allocator=data_->allocator,.resource_budget=data_->options.resource_budget}));
   HYLE_ASSIGN_OR_RETURN(auto view,p->bytes.view());HYLE_ASSIGN_OR_RETURN(p->mapping,view.map_host());
   return result;
 }
@@ -333,7 +334,7 @@ Result<ReadLease> BatchLayoutVersion::metadata()const noexcept {
       if(!segment.bytes.empty())std::memcpy(bytes.data()+segment.offset,segment.bytes.data(),segment.bytes.size());
     HYLE_RETURN_IF_ERROR(mapping.close());
   }
-  HYLE_ASSIGN_OR_RETURN(auto ready,ReadLease::adopt(std::move(buffer),
+  HYLE_ASSIGN_OR_RETURN(auto ready,detail::LeaseAccess::adopt_metadata(std::move(buffer),
       {.allocator=data_->allocator,.resource_budget=data_->schema.data_->options.resource_budget}));
   data_->exported=std::move(ready);return data_->exported;
 }

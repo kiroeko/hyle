@@ -1,0 +1,522 @@
+{
+  "status": "PASS",
+  "date": "2026-10-24",
+  "scope": "Two existing root-run complete original Qwen3.5-2B UD-Q8_K_XL CUDA functional journeys: ordinary greedy and natural K4 random MTP.",
+  "source": {
+    "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+    "size": 2893114784,
+    "lfs_sha256": "1eb01bfc3fbb04323e03fe6123d1d396f531474985b5d06e851ddf0522192f52",
+    "api_xet_hash": "5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944",
+    "etag": "\"5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944\"",
+    "etag_basis": "API xetHash",
+    "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q8_K_XL.gguf",
+    "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+    "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe",
+    "header_sha256": "f78b889f79f76f2632d20297119c51b08d64d2978f85789056184929b3b305b4",
+    "header_bytes": 10963104,
+    "full_file_sha256_verified": true
+  },
+  "original_role_count": 335,
+  "original_payload_bytes": 2882151680,
+  "prepared": {
+    "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/input.json",
+    "bytes": 3053,
+    "sha256": "161a38c6011c963755e0c0521c7bdb2f2c9c408e0cdeb6942fd95c094cd5af7f"
+  },
+  "manifest": {
+    "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/weights.tsv",
+    "bytes": 79944,
+    "sha256": "7123d4298acb89339a5c94357b59bd5a2c4f33154ab1390cf812921551b88358"
+  },
+  "runtime": {
+    "image": {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/recursive-probe.exe",
+      "bytes": 141278208,
+      "sha256": "f0c744b50d582cb2d1b3006cefdfce24947d3b27ec67e91767aef1bf5dd832c4"
+    },
+    "environment": {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/engine-check/ready-cuda.json",
+      "bytes": 7425,
+      "sha256": "1204b5aa545f986d27c79f3bf7a32c3f2ca05ad41fc76d967ef801c4a1dd1c8d"
+    },
+    "native": {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "source": {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/sources.json",
+      "bytes": 3870,
+      "sha256": "157f0cab010763719d2c624885fce33f17b9b5792c1e1aa2eb534a3bc5e17254"
+    }
+  },
+  "frozen_main": {
+    "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/main.cc",
+    "bytes": 410599,
+    "sha256": "662eeb74cd23bd06648bf92a1a68bab29ffbbf41db2297a17dcbec8dd1ebf491"
+  },
+  "geometry": {
+    "prompt_tokens": 154,
+    "context_capacity": 256,
+    "cache_requested_byte_limit": 268435456,
+    "ordinary_maximum_outputs": 4,
+    "mtp_maximum_outputs": 6,
+    "mtp_maximum_drafts": 4,
+    "random_top_k": 8,
+    "random_top_p": 0.9,
+    "random_seed": 123
+  },
+  "score_contract": {
+    "actual_report_policy": "bf16_inputs_f32_output",
+    "output_dtype": "F32",
+    "tied_head": true,
+    "original_physical_head": "token_embd.weight",
+    "original_head_storage": {
+      "kind": "plain",
+      "dtype": "F16",
+      "logical_dtype": "F16",
+      "logical_shape": [
+        248320,
+        2048
+      ],
+      "original_ne": [
+        2048,
+        248320
+      ]
+    },
+    "arithmetic": "Recipe::scores starts from BF16 model activations; for the original F16 tied head it explicitly casts activation rows to F32, uses DenseLinearF32 with original F16 weights and publishes F32 logits. No whole-bank head conversion is asserted.",
+    "frozen_source": {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/main.cc",
+      "bytes": 410599,
+      "sha256": "662eeb74cd23bd06648bf92a1a68bab29ffbbf41db2297a17dcbec8dd1ebf491"
+    },
+    "source_lines": [
+      633,
+      635,
+      645,
+      651,
+      657,
+      658,
+      659
+    ]
+  },
+  "cases": [
+    {
+      "case": "cuda-ordinary",
+      "status": "PASS",
+      "process": {
+        "exit": 0,
+        "seconds": 2.218743324279785
+      },
+      "functional_result": {
+        "profile": "Q8",
+        "case": "cuda-ordinary",
+        "native_exit": 0,
+        "source_id": "40b1c3d6fee71020f28d69e4b651877dc589db44630543ecf724f35755cdcda9",
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          464
+        ],
+        "score_policy": "bf16_inputs_f32_output",
+        "host_weight_bytes": 0,
+        "device_weight_bytes": 2817490176,
+        "cache_peak_requested_bytes": 42418224,
+        "image": {
+          "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/recursive-probe.exe",
+          "bytes": 141278208,
+          "sha256": "f0c744b50d582cb2d1b3006cefdfce24947d3b27ec67e91767aef1bf5dd832c4"
+        },
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 320,
+        "mtp_tensors": 0,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "score_dtype": "F32",
+      "committed_target_rows": 157,
+      "sampling_draw_cursor": 0,
+      "draft_frontier": null,
+      "draft_lag": null,
+      "consumed_drafts": 0,
+      "native_execution_private_bytes_unknown": false,
+      "actual_report": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-ordinary/stdout.log",
+        "bytes": 2372,
+        "sha256": "3edb93db13e45ce67090c609e799b21e0534679e124b133a2768a54d6240599a"
+      }
+    },
+    {
+      "case": "cuda-k4-random",
+      "status": "PASS",
+      "process": {
+        "exit": 0,
+        "seconds": 2.677617311477661
+      },
+      "functional_result": {
+        "profile": "Q8",
+        "case": "cuda-k4-random",
+        "native_exit": 0,
+        "source_id": "40b1c3d6fee71020f28d69e4b651877dc589db44630543ecf724f35755cdcda9",
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          1445,
+          18904,
+          1120
+        ],
+        "score_policy": "bf16_inputs_f32_output",
+        "host_weight_bytes": 0,
+        "device_weight_bytes": 2882151680,
+        "cache_peak_requested_bytes": 121155635,
+        "image": {
+          "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/recursive-probe.exe",
+          "bytes": 141278208,
+          "sha256": "f0c744b50d582cb2d1b3006cefdfce24947d3b27ec67e91767aef1bf5dd832c4"
+        },
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 320,
+        "mtp_tensors": 15,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "score_dtype": "F32",
+      "committed_target_rows": 159,
+      "sampling_draw_cursor": 10,
+      "draft_frontier": 158,
+      "draft_lag": 1,
+      "consumed_drafts": 4,
+      "native_execution_private_bytes_unknown": false,
+      "actual_report": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-k4-random/stdout.log",
+        "bytes": 2492,
+        "sha256": "b22a0c75a5826dd8c9cffcc060e671ce9c83eb342003a1fb5501430c03814c50"
+      }
+    }
+  ],
+  "role_counts": {
+    "scope": "selected_physical_roles",
+    "main": 320,
+    "mtp_when_enabled": 15
+  },
+  "cache_limit_is_total_physical_VRAM_limit": false,
+  "model_runs_represented": 2,
+  "new_model_runs_by_archivist": 0,
+  "additional_HTTP_by_archivist": 0,
+  "additional_builds_by_archivist": 0,
+  "additional_SDK_builds": 0,
+  "automatic_model_retry": false,
+  "performance_claim": false,
+  "limitations": [
+    "These are two finite complete-input functional journeys, not throughput measurements or complete generation-task quality validation.",
+    "The executable was already frozen and built from one current application TU with the retained SDK/object closure; this archive task performed no build and does not certify a fresh full SDK/install.",
+    "The finite requested cache-byte cap is distinct from total physical VRAM occupancy.",
+    "Source and prepared-role identities are shared with the separately published pure CPU Q8 journeys; this evidence covers the two CUDA cases only."
+  ],
+  "files": [
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q8_K_XL/payload-role-files.json",
+      "bytes": 108458,
+      "sha256": "414e95aa6666d55f7ca9babe568454d4022a0b033f62cf59fecf25c8c51921ac"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q8_K_XL/payload-acquisition.json",
+      "bytes": 255275,
+      "sha256": "117ba580be9ffb286f30ed5b72d99e3c527a4fd5ebfa9bcaf0cc6b82ed9bc73d"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/input.json",
+      "bytes": 3053,
+      "sha256": "161a38c6011c963755e0c0521c7bdb2f2c9c408e0cdeb6942fd95c094cd5af7f"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/weights.tsv",
+      "bytes": 79944,
+      "sha256": "7123d4298acb89339a5c94357b59bd5a2c4f33154ab1390cf812921551b88358"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-ordinary/command.json",
+      "bytes": 1364,
+      "sha256": "949e22245414289e44b456afe30685eb6f0b10533ad974fe1af880e45ce3a991"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-ordinary/process.json",
+      "bytes": 52,
+      "sha256": "da7e3d5230052047336267cae5365288b49d9446f39f959fb2d83c8fd1a262ec"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-ordinary/stdout.log",
+      "bytes": 2372,
+      "sha256": "3edb93db13e45ce67090c609e799b21e0534679e124b133a2768a54d6240599a"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-ordinary/stderr.log",
+      "bytes": 35493,
+      "sha256": "b142037406e36f0888ade9357e0df3b80f8e6765861c1be7023d80d6adce1f95"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-ordinary/functional-result.json",
+      "bytes": 765,
+      "sha256": "475b64ce54736781670799163dddc53b53cc563df3d2a6bf093021240e77135c"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-k4-random/command.json",
+      "bytes": 1531,
+      "sha256": "b2c2024b7714e505eab09b817568588853023f50b2d4aae2a79dcc3b25e40bc4"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-k4-random/process.json",
+      "bytes": 52,
+      "sha256": "265e0d9930c5bd267e8f64d5e852987565339ba49229af5aa40111abbeb15199"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-k4-random/stdout.log",
+      "bytes": 2492,
+      "sha256": "b22a0c75a5826dd8c9cffcc060e671ce9c83eb342003a1fb5501430c03814c50"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-k4-random/stderr.log",
+      "bytes": 6130,
+      "sha256": "910b1d3843375107cf49839ee4c5ee851936a576886bb351a7d3503bad402051"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cuda-k4-random/functional-result.json",
+      "bytes": 792,
+      "sha256": "5687fee47f6bf68d94c038a62938c33143b74e6246b467ffdab7d0a3e0809d1c"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/current-image.json",
+      "bytes": 3040,
+      "sha256": "0a58713a271eb5ff48382124c92001738bb7fc7c617d800bb408b25695b9b735"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/sources.json",
+      "bytes": 3870,
+      "sha256": "157f0cab010763719d2c624885fce33f17b9b5792c1e1aa2eb534a3bc5e17254"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/shared-object-dependencies.json",
+      "bytes": 31035,
+      "sha256": "9617019b489956619cf848cb9b37a829910b5f0b8391462c8d32e792e2c8f603"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/compile-command.json",
+      "bytes": 1795,
+      "sha256": "fbf0ab8ae9558ba59d0ab1642f35f700231e9a97b3fbc6a8400daa92aaff7cc4"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/compile-process.json",
+      "bytes": 53,
+      "sha256": "bada766aaed291de0b4fc2cd94a8707bb0307f6578542ca37db4be9c2d86223e"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/link-command.json",
+      "bytes": 31765,
+      "sha256": "d7cbcfab1ed7868b19b6081a63005867b92249d8ec2feaede4ee476396ab95d3"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/link-process.json",
+      "bytes": 52,
+      "sha256": "89765e0fe42aac1398364e077f586d60c547c414c5c00e17867945cdb938090d"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/future-plan-audit.json",
+      "bytes": 4842,
+      "sha256": "364be2f05d65b54c231e2ac6067bb32c7af1bd437a91ec2e8d3f8fb94dc87d9c"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/inference/mtp_acceptance.h",
+      "bytes": 5397,
+      "sha256": "da971b0c12426f821c8e9850aab2e9f404a19d172b658576884bf4902f6d3f67"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/inference/sampling_cursor.h",
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/inference/sampling_graph.h",
+      "bytes": 17641,
+      "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/backend.h",
+      "bytes": 18451,
+      "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/batch_probe.cc",
+      "bytes": 26876,
+      "sha256": "33aadb707e545d0ea0f8ad5bff591acd5ef5e5a2504b119870bd10f492e6707c"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/driver.h",
+      "bytes": 166,
+      "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/host_predicates.h",
+      "bytes": 1486,
+      "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/main.cc",
+      "bytes": 410599,
+      "sha256": "662eeb74cd23bd06648bf92a1a68bab29ffbbf41db2297a17dcbec8dd1ebf491"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/mtp_schedule.h",
+      "bytes": 5912,
+      "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/mtp_session_probe.cc",
+      "bytes": 112361,
+      "sha256": "e688c1980f1c9064ce3b1deb01ccca19c63a2957e608d113466db2e4b3356905"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/native_gate.cc",
+      "bytes": 11023,
+      "sha256": "98c33aa414f733879482ae06a23aa85f357dbb3c862451f8e6f4aee358217506"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/native_gate.h",
+      "bytes": 1050,
+      "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/prefix_cache.h",
+      "bytes": 20952,
+      "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/prepared_roles.h",
+      "bytes": 18614,
+      "sha256": "c677c3f7d79dfeefd6d32f32b8f6aa4f87cee71d010caf733f5974da81ab0ca6"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/probe_geometry.h",
+      "bytes": 1099,
+      "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/retained_budget_probe.cc",
+      "bytes": 19739,
+      "sha256": "5cdbcdfb1f32da1576df64dc0a26bc3dc8ae1291c75d82dc069f819e0a844a02"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/retained_resources.h",
+      "bytes": 1932,
+      "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/retirement_probe.cc",
+      "bytes": 40236,
+      "sha256": "9202c1988f914f911fa490bfa78da562aab55a3aa574338b1cbf81cc0512df42"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/session_state.h",
+      "bytes": 12965,
+      "sha256": "80cae237ea8a58f468dd80b34c479ef08849574e954c80557648bbcfbfc7b814"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/probe.cc",
+      "bytes": 106,
+      "sha256": "6d9e7e30414006f363e2bd5bad0624a8c6784b7000ddf39ead2a277660c73986"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/publish-cuda.py",
+      "bytes": 6706,
+      "sha256": "2aedb075e3993321b673917e25283a995cef166698a58b46fe29fb7ff8bf1356"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/current-runtime-plans/Q8.json",
+      "bytes": 11064,
+      "sha256": "defaab6d9d44a176c896031a4cdaf6096b606fe522d4053671ab31c73b19e054"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/current-runtime-ready.py",
+      "bytes": 12202,
+      "sha256": "161b3a237f7edac165d1d12148a305bec63225af2230a200d6de748f4f1f0e58"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/run-original-ready.py",
+      "bytes": 11363,
+      "sha256": "9d8aac1d0abe1a7dc8ad57bc84f4dc7c4af29705d6c9245f1ad5df715074c39e"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/run-ready-v2.py",
+      "bytes": 5332,
+      "sha256": "1e14969e1b255cbe12c2fb6865cad469bfb8a42c363703bb79c525642044a339"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q8_K_XL/typed-role-inventory.json",
+      "bytes": 246160,
+      "sha256": "8877b426d28c6e00d3d1430694af0ae83fe2095ea62b1e3164e5a9702e2a3736"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/build_geometry_cuda_check2.py",
+      "bytes": 3886,
+      "sha256": "7146afe0153eea725f29ef4d4e95ea7291cd50335d95ea0acfcb8c3024cdda63"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/engine-check/ready-cuda.json",
+      "bytes": 7425,
+      "sha256": "1204b5aa545f986d27c79f3bf7a32c3f2ca05ad41fc76d967ef801c4a1dd1c8d"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-qwen35-q8-original-pure-cpu-complete-input-2026-10-24.json",
+      "bytes": 27419,
+      "sha256": "40649c1153f45e23f5fb3f827b29e6bde12d7fc0a5d3e4d38096a417ddeb0bda"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-q8-original-cuda-complete-input-2026-10-24.zip",
+    "bytes": 337578,
+    "sha256": "43cb3cb88fa38705401060a1c906460f927ce8760b51c489f8508f249b92c936"
+  }
+}

@@ -257,7 +257,7 @@ TEST(CublasProvider, BfloatLinearF32KeepsStoredWeightOrderAndSubBfloatScores) {
   stored[0] = from_float<BFloat>(1);
   stored[1] = from_float<BFloat>(1.0F / 128);
   ASSERT_TRUE(weights.storage.view().write(std::as_bytes(std::span(stored))).ok());
-  auto preparation = compute::prepare(owner, compute::model_ops::bfloat_linear_f32(),
+  auto preparation = compute::prepare(owner, compute::model_ops::dense_linear_f32(),
       std::array{input.view.as_const(), weights.view.as_const()}, std::array{output.view});
   ASSERT_TRUE(preparation) << preparation.error().message();
   auto prepared = std::move(*preparation);
@@ -313,14 +313,97 @@ TEST(CublasProvider, ScoreOperationDoesNotRelaxOrdinaryMatMulDtypes) {
       std::array{input, rhs}, std::array{score}, resource.ref());
   ASSERT_FALSE(ordinary);
   EXPECT_TRUE(ordinary.error().IsInvalidArgument());
-  auto wrong_score = compute::prepare(owner, compute::model_ops::bfloat_linear_f32(),
+  auto wrong_score = compute::prepare(owner, compute::model_ops::dense_linear_f32(),
       std::array{input, stored}, std::array{rounded}, resource.ref());
   ASSERT_FALSE(wrong_score);
   EXPECT_TRUE(wrong_score.error().IsInvalidArgument());
-  auto mixed_inputs = compute::prepare(owner, compute::model_ops::bfloat_linear_f32(),
+  auto mixed_inputs = compute::prepare(owner, compute::model_ops::dense_linear_f32(),
       std::array{input, wrong_weight}, std::array{score}, resource.ref());
   ASSERT_FALSE(mixed_inputs);
-  EXPECT_TRUE(mixed_inputs.error().IsInvalidArgument());
+  EXPECT_TRUE(mixed_inputs.error().IsUnimplemented());
+}
+
+TEST(CublasProvider, DenseHalfProjectionKeepsFloat32OutputAtOddInnerWidth) {
+  auto owner = context();
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  Matrix input(matrix(compute::DataType::kFloat16, 3, 5, false), resource.ref());
+  Matrix weights(matrix(compute::DataType::kFloat16, 7, 5, false), resource.ref());
+  Matrix output(matrix(compute::DataType::kFloat32, 3, 7, false), resource.ref());
+  std::array<__half, 15> a{}; std::array<__half, 35> w{};
+  for (std::size_t row = 0; row < 3; ++row) {
+    a[row * 5] = __float2half(1); a[row * 5 + 1] = __float2half(.25F);
+  }
+  for (std::size_t column = 0; column < 7; ++column) {
+    w[column * 5] = __float2half(float(column + 1));
+    w[column * 5 + 1] = __float2half(1.F / 2048);
+  }
+  ASSERT_TRUE(input.storage.view().write(std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(weights.storage.view().write(std::as_bytes(std::span(w))).ok());
+  auto prepared = compute::prepare(owner, compute::model_ops::dense_linear_f32(),
+      std::array{input.view.as_const(), weights.view.as_const()}, std::array{output.view});
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  const auto need = prepared->workspace_requirement();
+  auto workspace = mem::Buffer::create(resource.ref(), need.size, need.alignment).value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
+  auto done = invocation.submit(queue, input.view.as_const(), weights.view.as_const(), output.view);
+  ASSERT_TRUE(done) << done.error().message(); ASSERT_TRUE(done->wait().ok());
+  std::array<float, 21> actual{};
+  ASSERT_TRUE(output.storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+  for (std::size_t row = 0; row < 3; ++row) for (std::size_t column = 0; column < 7; ++column)
+    EXPECT_EQ(actual[row * 7 + column], float(column + 1) + 1.F / 8192);
+  EXPECT_EQ(__half2float(__float2half(actual[0])), 1.F);
+  const auto rejected = compute::prepare(owner, compute::model_ops::dense_linear_f32(),
+      std::array{matrix(compute::DataType::kFloat32, 3, 5, false), weights.description},
+      std::array{output.description}, resource.ref());
+  ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsUnimplemented());
+}
+
+template<class T> void batched_dense_projection(compute::DataType type) {
+  auto owner = context();
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  const auto tensor = [](compute::DataType dtype, std::initializer_list<std::int64_t> shape) {
+    return compute::TensorDesc::dense(dtype, std::span(shape.begin(), shape.size())).value();
+  };
+  Matrix input(tensor(type, {2, 3, 5}), resource.ref());
+  Matrix weights(tensor(type, {2, 7, 5}), resource.ref());
+  Matrix output(tensor(compute::DataType::kFloat32, {2, 3, 7}), resource.ref());
+  std::vector<T> a(30, from_float<T>(0)), w(70, from_float<T>(0));
+  for (std::size_t batch = 0; batch < 2; ++batch) {
+    for (std::size_t row = 0; row < 3; ++row) {
+      const auto first = (batch * 3 + row) * 5;
+      a[first] = from_float<T>(1.F + float(row + 1) / 262144); a[first + 1] = from_float<T>(-1);
+      a[first + 2] = from_float<T>(1); a[first + 3] = from_float<T>(.25F);
+    }
+    const auto first = batch * 35;
+    w[first] = w[first + 1] = from_float<T>(1);
+    w[first + 5 + 2] = from_float<T>(1); w[first + 5 + 3] = from_float<T>(1.F / 2048);
+    for (std::size_t column = 2; column < 7; ++column)
+      w[first + column * 5 + 2] = from_float<T>(float((batch + 1) * column));
+  }
+  ASSERT_TRUE(input.storage.view().write(std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(weights.storage.view().write(std::as_bytes(std::span(w))).ok());
+  auto prepared = compute::prepare(owner, compute::model_ops::dense_linear_f32(),
+      std::array{input.view.as_const(), weights.view.as_const()}, std::array{output.view});
+  ASSERT_TRUE(prepared) << prepared.error().message(); const auto need = prepared->workspace_requirement();
+  auto workspace = mem::Buffer::create(resource.ref(), need.size, need.alignment).value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
+  auto done = invocation.submit(queue, input.view.as_const(), weights.view.as_const(), output.view);
+  ASSERT_TRUE(done) << done.error().message(); ASSERT_TRUE(done->wait().ok());
+  std::array<float, 42> actual{};
+  ASSERT_TRUE(output.storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+  for (std::size_t batch = 0; batch < 2; ++batch) for (std::size_t row = 0; row < 3; ++row) {
+    const auto first = (batch * 3 + row) * 7;
+    EXPECT_EQ(actual[first], to_float(a[(batch * 3 + row) * 5]) - 1.F);
+    EXPECT_EQ(actual[first + 1], 1.F + 1.F / 8192);
+    for (std::size_t column = 2; column < 7; ++column)
+      EXPECT_EQ(actual[first + column], float((batch + 1) * column));
+  }
+}
+TEST(CublasProvider, DenseFloatingProjectionPreservesExactBatchAndFloatSource) {
+  batched_dense_projection<__half>(compute::DataType::kFloat16);
+  batched_dense_projection<float>(compute::DataType::kFloat32);
 }
 
 compute::TensorDesc batched_matrix(compute::DataType type,

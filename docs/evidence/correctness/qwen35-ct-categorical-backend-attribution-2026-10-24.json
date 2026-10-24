@@ -1,0 +1,1126 @@
+{
+  "schema": "hyle.ct.backend-categorical-attribution.v1",
+  "updated": "2026-10-24T16:36:36",
+  "default_functional_evidence": {
+    "path": "docs/evidence/correctness/qwen35-original-ct-mtp-2026-10-24.json",
+    "bytes": 19822,
+    "sha256": "0935b9d53e60545c74d322828a7f6b6bbd63ad2546cff72b65f94b41393b9419"
+  },
+  "conclusion": {
+    "native_choices_both_match_their_independent_F64_recipe": true,
+    "changing_draw_algorithm_alone_reproduces_both_native_choices_on_each_actual_q": true,
+    "claim": "This one cross-backend stochastic divergence is consistent with the explicit distinct-Categorical-algorithm contract. It is not evidence of CT miswiring; this does not certify every CT tensor or task."
+  },
+  "qualification": "A finite causal explanation of this stochastic sequence difference, not a full CT numerical/task qualification.",
+  "actual_cross_matrix": {
+    "cpu": {
+      "cpu_cdf": 1445,
+      "cuda_gumbel_max": 464
+    },
+    "cuda": {
+      "cpu_cdf": 1445,
+      "cuda_gumbel_max": 464
+    }
+  },
+  "key_facts": {
+    "first_changed_draft_index_zero_based": 2,
+    "CPU_proposal": 1445,
+    "CUDA_proposal": 464,
+    "proposal_key": [
+      123,
+      0,
+      5,
+      0
+    ],
+    "accept_key": [
+      123,
+      0,
+      6,
+      0
+    ],
+    "same_all_proposal_accept_and_final_addresses": true,
+    "default_prefix_accepted_drafts": {
+      "CPU": 2,
+      "CUDA": 3
+    },
+    "q_probability_L1": 0.024227030118406906
+  },
+  "observations": {
+    "cpu": {
+      "ids": {
+        "process": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cpu/ids-run/process.json",
+          "bytes": 883,
+          "sha256": "2596db078dd451e7bf70944f6050923798a0b1b95793f94a24e05d4e57aed845"
+        },
+        "command": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cpu/ids-run/command.json",
+          "bytes": 749,
+          "sha256": "c3c1337b9f25ccbbf5dfccc8241c295f74babfefb423c1e244e859d6f8611fe2"
+        },
+        "metadata": {
+          "seed": 123,
+          "stream": 0,
+          "draw": 1,
+          "vocabulary": 248320,
+          "proposals": [
+            12305,
+            198,
+            1445,
+            18904
+          ],
+          "accept_identity_rows_and_final": [
+            123,
+            0,
+            2,
+            0,
+            123,
+            0,
+            4,
+            0,
+            123,
+            0,
+            6,
+            0,
+            123,
+            0,
+            8,
+            0,
+            123,
+            0,
+            9,
+            0
+          ],
+          "proposal_identity_rows": [
+            [
+              123,
+              0,
+              1,
+              0
+            ],
+            [
+              123,
+              0,
+              3,
+              0
+            ],
+            [
+              123,
+              0,
+              5,
+              0
+            ],
+            [
+              123,
+              0,
+              7,
+              0
+            ]
+          ],
+          "accepted": [
+            1,
+            1,
+            0,
+            1
+          ],
+          "final_ids": [
+            198,
+            464,
+            464,
+            1120
+          ],
+          "row2_values_read": false
+        },
+        "all_default_report_fields_identical": true,
+        "compared_fields": [
+          "source_id",
+          "generated_ids",
+          "sampling_draw_cursor",
+          "actual_target_rows",
+          "actual_draft_rows",
+          "consumed_drafts",
+          "draft_rounds",
+          "actual_graph_calls",
+          "draft_program_graph_calls",
+          "prefix_decision_graph_calls",
+          "prefill_graph_calls",
+          "decode_graph_calls",
+          "rounds"
+        ]
+      },
+      "rows": {
+        "process": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cpu/rows-run/process.json",
+          "bytes": 885,
+          "sha256": "db6b83a1c8179b59af0e05c2614e8c3f7fb959f99302b8c1985871dde4c2cb70"
+        },
+        "command": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cpu/rows-run/command.json",
+          "bytes": 749,
+          "sha256": "a93bac9c0b51cf4633e74949cbee4244ccb2d7af3a95abbcfbdafc7767ed14ff"
+        },
+        "metadata": {
+          "seed": 123,
+          "stream": 0,
+          "draw": 1,
+          "vocabulary": 248320,
+          "proposals": [
+            12305,
+            198,
+            1445,
+            18904
+          ],
+          "accept_identity_rows_and_final": [
+            123,
+            0,
+            2,
+            0,
+            123,
+            0,
+            4,
+            0,
+            123,
+            0,
+            6,
+            0,
+            123,
+            0,
+            8,
+            0,
+            123,
+            0,
+            9,
+            0
+          ],
+          "proposal_identity_rows": [
+            [
+              123,
+              0,
+              1,
+              0
+            ],
+            [
+              123,
+              0,
+              3,
+              0
+            ],
+            [
+              123,
+              0,
+              5,
+              0
+            ],
+            [
+              123,
+              0,
+              7,
+              0
+            ]
+          ],
+          "accepted": [
+            1,
+            1,
+            0,
+            1
+          ],
+          "final_ids": [
+            198,
+            464,
+            464,
+            1120
+          ],
+          "row2_values_read": true
+        },
+        "all_default_report_fields_identical": true,
+        "compared_fields": [
+          "source_id",
+          "generated_ids",
+          "sampling_draw_cursor",
+          "actual_target_rows",
+          "actual_draft_rows",
+          "consumed_drafts",
+          "draft_rounds",
+          "actual_graph_calls",
+          "draft_program_graph_calls",
+          "prefix_decision_graph_calls",
+          "prefill_graph_calls",
+          "decode_graph_calls",
+          "rounds"
+        ]
+      }
+    },
+    "cuda": {
+      "ids": {
+        "process": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cuda/ids-run/process.json",
+          "bytes": 885,
+          "sha256": "3a44e87032cb9521575ec79f99d9717d345881b91f93b2bd84f75c216db7a670"
+        },
+        "command": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cuda/ids-run/command.json",
+          "bytes": 750,
+          "sha256": "ccb78f0481b8da6c5167dee37677af25d0a42272995057e3e8531976c964b431"
+        },
+        "metadata": {
+          "seed": 123,
+          "stream": 0,
+          "draw": 1,
+          "vocabulary": 248320,
+          "proposals": [
+            12305,
+            198,
+            464,
+            6673
+          ],
+          "accept_identity_rows_and_final": [
+            123,
+            0,
+            2,
+            0,
+            123,
+            0,
+            4,
+            0,
+            123,
+            0,
+            6,
+            0,
+            123,
+            0,
+            8,
+            0,
+            123,
+            0,
+            9,
+            0
+          ],
+          "proposal_identity_rows": [
+            [
+              123,
+              0,
+              1,
+              0
+            ],
+            [
+              123,
+              0,
+              3,
+              0
+            ],
+            [
+              123,
+              0,
+              5,
+              0
+            ],
+            [
+              123,
+              0,
+              7,
+              0
+            ]
+          ],
+          "accepted": [
+            1,
+            1,
+            1,
+            0
+          ],
+          "final_ids": [
+            198,
+            464,
+            6673,
+            54572
+          ],
+          "row2_values_read": false
+        },
+        "all_default_report_fields_identical": true,
+        "compared_fields": [
+          "source_id",
+          "generated_ids",
+          "sampling_draw_cursor",
+          "actual_target_rows",
+          "actual_draft_rows",
+          "consumed_drafts",
+          "draft_rounds",
+          "actual_graph_calls",
+          "draft_program_graph_calls",
+          "prefix_decision_graph_calls",
+          "prefill_graph_calls",
+          "decode_graph_calls",
+          "rounds"
+        ]
+      },
+      "rows": {
+        "process": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cuda/rows-run/process.json",
+          "bytes": 884,
+          "sha256": "364edc46eb1fa6f752daa9db8c95baaaf5ae6ba50d682f2a2135062b97cd5fe7"
+        },
+        "command": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cuda/rows-run/command.json",
+          "bytes": 750,
+          "sha256": "e1a50d30f313e12a17bef249a332f817c15b1c9906d4a6d4095c4af1020f7091"
+        },
+        "metadata": {
+          "seed": 123,
+          "stream": 0,
+          "draw": 1,
+          "vocabulary": 248320,
+          "proposals": [
+            12305,
+            198,
+            464,
+            6673
+          ],
+          "accept_identity_rows_and_final": [
+            123,
+            0,
+            2,
+            0,
+            123,
+            0,
+            4,
+            0,
+            123,
+            0,
+            6,
+            0,
+            123,
+            0,
+            8,
+            0,
+            123,
+            0,
+            9,
+            0
+          ],
+          "proposal_identity_rows": [
+            [
+              123,
+              0,
+              1,
+              0
+            ],
+            [
+              123,
+              0,
+              3,
+              0
+            ],
+            [
+              123,
+              0,
+              5,
+              0
+            ],
+            [
+              123,
+              0,
+              7,
+              0
+            ]
+          ],
+          "accepted": [
+            1,
+            1,
+            1,
+            0
+          ],
+          "final_ids": [
+            198,
+            464,
+            6673,
+            54572
+          ],
+          "row2_values_read": true
+        },
+        "all_default_report_fields_identical": true,
+        "compared_fields": [
+          "source_id",
+          "generated_ids",
+          "sampling_draw_cursor",
+          "actual_target_rows",
+          "actual_draft_rows",
+          "consumed_drafts",
+          "draft_rounds",
+          "actual_graph_calls",
+          "draft_program_graph_calls",
+          "prefix_decision_graph_calls",
+          "prefill_graph_calls",
+          "decode_graph_calls",
+          "rounds"
+        ]
+      }
+    }
+  },
+  "analysis": {
+    "schema": "hyle.ct.single-prefix-categorical-attribution.v1",
+    "raw_default_graph_unchanged": true,
+    "private_observations_only": true,
+    "original_random_case": "P154 C256 steps6 K4 temperature1 topK8 topP0.9 seed123",
+    "proposal_identity": [
+      123,
+      0,
+      5,
+      0
+    ],
+    "metadata": {
+      "cpu": {
+        "seed": 123,
+        "stream": 0,
+        "draw": 1,
+        "vocabulary": 248320,
+        "proposals": [
+          12305,
+          198,
+          1445,
+          18904
+        ],
+        "accept_identity_rows_and_final": [
+          123,
+          0,
+          2,
+          0,
+          123,
+          0,
+          4,
+          0,
+          123,
+          0,
+          6,
+          0,
+          123,
+          0,
+          8,
+          0,
+          123,
+          0,
+          9,
+          0
+        ],
+        "proposal_identity_rows": [
+          [
+            123,
+            0,
+            1,
+            0
+          ],
+          [
+            123,
+            0,
+            3,
+            0
+          ],
+          [
+            123,
+            0,
+            5,
+            0
+          ],
+          [
+            123,
+            0,
+            7,
+            0
+          ]
+        ],
+        "accepted": [
+          1,
+          1,
+          0,
+          1
+        ],
+        "final_ids": [
+          198,
+          464,
+          464,
+          1120
+        ],
+        "row2_values_read": true
+      },
+      "cuda": {
+        "seed": 123,
+        "stream": 0,
+        "draw": 1,
+        "vocabulary": 248320,
+        "proposals": [
+          12305,
+          198,
+          464,
+          6673
+        ],
+        "accept_identity_rows_and_final": [
+          123,
+          0,
+          2,
+          0,
+          123,
+          0,
+          4,
+          0,
+          123,
+          0,
+          6,
+          0,
+          123,
+          0,
+          8,
+          0,
+          123,
+          0,
+          9,
+          0
+        ],
+        "proposal_identity_rows": [
+          [
+            123,
+            0,
+            1,
+            0
+          ],
+          [
+            123,
+            0,
+            3,
+            0
+          ],
+          [
+            123,
+            0,
+            5,
+            0
+          ],
+          [
+            123,
+            0,
+            7,
+            0
+          ]
+        ],
+        "accepted": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "final_ids": [
+          198,
+          464,
+          6673,
+          54572
+        ],
+        "row2_values_read": true
+      }
+    },
+    "rows": {
+      "cpu": {
+        "native_proposal": 1445,
+        "native_accept": 0,
+        "support": [
+          {
+            "id": 464,
+            "logq": -0.6373805403709412,
+            "probability": 0.5286754558677392
+          },
+          {
+            "id": 727,
+            "logq": -1.7678279876708984,
+            "probability": 0.1707033562528954
+          },
+          {
+            "id": 1445,
+            "logq": -1.201904296875,
+            "probability": 0.30062119448649943
+          }
+        ],
+        "sum_exp_logq": 1.000000006607134,
+        "F64_target_policy": {
+          "probabilities": {
+            "464": 0.8860303880448879,
+            "12237": 0.11396961195511203
+          },
+          "top8": [
+            {
+              "id": 464,
+              "logit": 23.7911376953125,
+              "prior_cdf": 0
+            },
+            {
+              "id": 12237,
+              "logit": 21.740318298339844,
+              "prior_cdf": 0.7974395950213661
+            },
+            {
+              "id": 727,
+              "logit": 20.87995147705078,
+              "prior_cdf": 0.900013820949182
+            },
+            {
+              "id": 1445,
+              "logit": 20.851943969726562,
+              "prior_cdf": 0.9434034248349356
+            },
+            {
+              "id": 1005,
+              "logit": 19.499462127685547,
+              "prior_cdf": 0.9855946541491298
+            },
+            {
+              "id": 8436,
+              "logit": 17.724939346313477,
+              "prior_cdf": 0.9965052075336217
+            },
+            {
+              "id": 2,
+              "logit": 17.453500747680664,
+              "prior_cdf": 0.9983552484205187
+            },
+            {
+              "id": 18221,
+              "logit": 15.659425735473633,
+              "prior_cdf": 0.9997655014491758
+            }
+          ],
+          "policy": "independent F64 interpretation of T1 -> stable K8 -> P0.9 on observed original F32 logits; not an exported default-graph internal p"
+        },
+        "selected_original_q": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cpu/rows-run/draft-logq-row2.f32",
+          "bytes": 993280,
+          "sha256": "8b30a16bd8c595dd988e479d08f8d720493dfe40d2dcb3f53fe113d36d7352ad"
+        },
+        "selected_original_raw_p_logits": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cpu/rows-run/target-row2.f32",
+          "bytes": 993280,
+          "sha256": "0a3c6bca2674e24c0e0435a31f3f678da6c200a35116093dced5b1de48f4801d"
+        },
+        "at_native_proposal": {
+          "q": 0.30062119448649943,
+          "p_F64": 0.0,
+          "alpha_F64": 0.0
+        }
+      },
+      "cuda": {
+        "native_proposal": 464,
+        "native_accept": 1,
+        "support": [
+          {
+            "id": 464,
+            "logq": -0.614726185798645,
+            "probability": 0.5407889507331993
+          },
+          {
+            "id": 727,
+            "logq": -1.7867881059646606,
+            "probability": 0.16749729016543977
+          },
+          {
+            "id": 1445,
+            "logq": -1.2319823503494263,
+            "probability": 0.29171372532100825
+          }
+        ],
+        "sum_exp_logq": 0.9999999662196474,
+        "F64_target_policy": {
+          "probabilities": {
+            "464": 0.8529375389452857,
+            "12237": 0.1005674737202031,
+            "727": 0.0464949873345112
+          },
+          "top8": [
+            {
+              "id": 464,
+              "logit": 23.853378295898438,
+              "prior_cdf": 0
+            },
+            {
+              "id": 12237,
+              "logit": 21.71552085876465,
+              "prior_cdf": 0.8038388237126408
+            },
+            {
+              "id": 727,
+              "logit": 20.94403648376465,
+              "prior_cdf": 0.8986172055844999
+            },
+            {
+              "id": 1445,
+              "logit": 20.91974449157715,
+              "prior_cdf": 0.942435743544177
+            },
+            {
+              "id": 1005,
+              "logit": 19.605728149414062,
+              "prior_cdf": 0.985202666545975
+            },
+            {
+              "id": 8436,
+              "logit": 17.70157241821289,
+              "prior_cdf": 0.9966957869954581
+            },
+            {
+              "id": 2,
+              "logit": 17.48250961303711,
+              "prior_cdf": 0.9984076682307049
+            },
+            {
+              "id": 18221,
+              "logit": 15.637166023254395,
+              "prior_cdf": 0.9997827732394544
+            }
+          ],
+          "policy": "independent F64 interpretation of T1 -> stable K8 -> P0.9 on observed original F32 logits; not an exported default-graph internal p"
+        },
+        "selected_original_q": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cuda/rows-run/draft-logq-row2.f32",
+          "bytes": 993280,
+          "sha256": "6e9e1e6840ae26470cae64bf5c077d4d74ae8fc056861739062edacfaedf554c"
+        },
+        "selected_original_raw_p_logits": {
+          "path": ".scratch/ct-prefix-diagnostic-20261024/cuda/rows-run/target-row2.f32",
+          "bytes": 993280,
+          "sha256": "b46a42fe21b6cd0edd64073581df51fab780dcc15b472502a6cc0e747fde38ac"
+        },
+        "at_native_proposal": {
+          "q": 0.5407889507331993,
+          "p_F64": 0.8529375389452857,
+          "alpha_F64": 1.0
+        }
+      }
+    },
+    "cross_algorithm_by_actual_q": {
+      "cpu": {
+        "cpu_cdf": {
+          "selected": 1445,
+          "uniform": 0.7899538558429614,
+          "cdf_lower": 0.6993788074997451,
+          "cdf_upper": 1.0,
+          "boundary_margin": 0.09057504834321628
+        },
+        "cuda_gumbel_max": {
+          "selected": 464,
+          "winner_score": 0.0003459182764715685,
+          "runner_up": 1445,
+          "runner_up_score": -0.4669405074374401,
+          "score_margin": 0.46728642571391166,
+          "gumbel": 0.6377264586474127
+        }
+      },
+      "cuda": {
+        "cpu_cdf": {
+          "selected": 1445,
+          "uniform": 0.7899538558429614,
+          "cdf_lower": 0.708286264824799,
+          "cdf_upper": 1.0,
+          "boundary_margin": 0.08166759101816246
+        },
+        "cuda_gumbel_max": {
+          "selected": 464,
+          "winner_score": 0.02300027284876771,
+          "runner_up": 1445,
+          "runner_up_score": -0.49701856091186636,
+          "score_margin": 0.5200188337606341,
+          "gumbel": 0.6377264586474127
+        }
+      }
+    },
+    "q_comparison": {
+      "supports_equal": true,
+      "common_support": 3,
+      "probability_L1": 0.024227030118406906,
+      "max_abs_common_logq": 0.03007805347442627
+    },
+    "accept_key": [
+      123,
+      0,
+      6,
+      0
+    ],
+    "accept_draw": {
+      "cpu_CDF_uniform": 0.2899586056007132,
+      "cuda_two_gumbel_effective_uniform": 0.27199819094041566
+    },
+    "finite_conclusion": {
+      "native_choices_both_match_their_independent_F64_recipe": true,
+      "changing_draw_algorithm_alone_reproduces_both_native_choices_on_each_actual_q": true,
+      "claim": "This one cross-backend stochastic divergence is consistent with the explicit distinct-Categorical-algorithm contract. It is not evidence of CT miswiring; this does not certify every CT tensor or task."
+    },
+    "limitations": [
+      "F64 oracles use original F32 q inputs; CPU SIMD exp and CUDA F32 logs differ from scalar F64, so margins are reported rather than claiming intermediate bit equality.",
+      "The target p summary is an F64 reconstruction from an existing exported logits row; it is not a new graph port and is not claimed to equal hidden default-graph F32 p bitwise.",
+      "Only the first row2 prefix of one fixed CT random request is inspected. No new publisher, task, seed search or performance matrix was run."
+    ]
+  },
+  "build_delta": {
+    "new_model_TUs": 2,
+    "new_SDK_TUs": 0,
+    "product_files_changed": 0,
+    "default_Graph_ports_or_operations_changed": 0,
+    "private_observation": "After original sampling wait and original scalar result reads, before unbind: record host proposals/identities/accepted/final IDs. Optional row mode copies original target-logits row2 and retained q[2] into two binary diagnostic files; no graph math or sampler execution is inserted.",
+    "private_compile_warning": "First CPU observer TU failed only MSVC C4996/WX for getenv. Changed the private logger to safe CRT _dupenv_s; original failure retained, same two final model TUs compiled and linked.",
+    "sources": {
+      "cpu": {
+        "base": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\source\\engine\\models\\qwen35\\main.cc",
+          "bytes": 410029,
+          "sha256": "b1f620ef9d8659569602355e981772e4b7b5a97cb6753c44e650bad878543527"
+        },
+        "observed": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\main.cc",
+          "bytes": 419344,
+          "sha256": "162bcb209ef9e9218df930f135b195902978f1d83dd38db5ec8a1d54a29f2337"
+        },
+        "headers": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\backend.h",
+            "bytes": 18451,
+            "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\batch_schedule.h",
+            "bytes": 7902,
+            "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\driver.h",
+            "bytes": 166,
+            "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\host_predicates.h",
+            "bytes": 1486,
+            "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\model_geometry.h",
+            "bytes": 6722,
+            "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\mtp_acceptance.h",
+            "bytes": 4516,
+            "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\mtp_graph.h",
+            "bytes": 17605,
+            "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\mtp_schedule.h",
+            "bytes": 5912,
+            "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\native_gate.h",
+            "bytes": 1050,
+            "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\prefix_cache.h",
+            "bytes": 20952,
+            "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+            "bytes": 12730,
+            "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\prepared_roles.h",
+            "bytes": 18614,
+            "sha256": "c677c3f7d79dfeefd6d32f32b8f6aa4f87cee71d010caf733f5974da81ab0ca6"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\probe_geometry.h",
+            "bytes": 1099,
+            "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\retained_resources.h",
+            "bytes": 1932,
+            "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\sampling_graph.h",
+            "bytes": 16900,
+            "sha256": "1540305c2ffd8d52e015c5379e8b0fe7b5d65c08fea38754752a4596231d5914"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\schedule.h",
+            "bytes": 4762,
+            "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\session_cache.h",
+            "bytes": 8963,
+            "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\session_schedule.h",
+            "bytes": 4134,
+            "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cpu\\source\\engine\\models\\qwen35\\session_state.h",
+            "bytes": 13921,
+            "sha256": "9f0e49356a57c3338c5bd8c0cb962db8310c7b001eff867fb10fe6b858516718"
+          }
+        ],
+        "math_graph_sampling_unchanged": true,
+        "delta": "cstdlib include plus one gated host observation after original sampling wait/result reads, before unbind; optional original row reads only"
+      },
+      "cuda": {
+        "base": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multi-draft-20261024\\geometry-cuda-check2\\source\\engine\\models\\qwen35\\main.cc",
+          "bytes": 408872,
+          "sha256": "3edf9a7ae4eb6b9db95b84ef4150d81e848e5d49da2da1ebe5713fc57868c48a"
+        },
+        "observed": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\main.cc",
+          "bytes": 418170,
+          "sha256": "c7937ab16db4b3f83216489dcd58e9ff9c599be789eb50d587e6e914962b7c0b"
+        },
+        "headers": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\backend.h",
+            "bytes": 18451,
+            "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\batch_schedule.h",
+            "bytes": 7902,
+            "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\driver.h",
+            "bytes": 166,
+            "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\host_predicates.h",
+            "bytes": 1486,
+            "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\model_geometry.h",
+            "bytes": 6722,
+            "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\mtp_acceptance.h",
+            "bytes": 4516,
+            "sha256": "951318021acbc697c52a377e4a7405d2033d9b077e22b78d91e16d13385b5b7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\mtp_graph.h",
+            "bytes": 17605,
+            "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\mtp_schedule.h",
+            "bytes": 5912,
+            "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\native_gate.h",
+            "bytes": 1050,
+            "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\prefix_cache.h",
+            "bytes": 20952,
+            "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+            "bytes": 12730,
+            "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\prepared_roles.h",
+            "bytes": 18414,
+            "sha256": "09499648a3f703227976688a59b80c150aa6b6d8e6d4b0125cfff2c0c7a685f4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\probe_geometry.h",
+            "bytes": 1099,
+            "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\retained_resources.h",
+            "bytes": 1932,
+            "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\sampling_graph.h",
+            "bytes": 16900,
+            "sha256": "1540305c2ffd8d52e015c5379e8b0fe7b5d65c08fea38754752a4596231d5914"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\schedule.h",
+            "bytes": 4762,
+            "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\session_cache.h",
+            "bytes": 8963,
+            "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\session_schedule.h",
+            "bytes": 4134,
+            "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-prefix-diagnostic-20261024\\cuda\\source\\engine\\models\\qwen35\\session_state.h",
+            "bytes": 13643,
+            "sha256": "1da2de3997f720d52a007aeeec829a873caa858836e5a347d2941f577aafa99e"
+          }
+        ],
+        "math_graph_sampling_unchanged": true,
+        "delta": "cstdlib include plus one gated host observation after original sampling wait/result reads, before unbind; optional original row reads only"
+      }
+    }
+  },
+  "primary_contracts": [
+    {
+      "path": "include/hyle/compute/sampling_ops.h",
+      "lines": [
+        45,
+        49
+      ],
+      "fact": "Different qualified CPU/GPU draw algorithms and selected IDs are explicitly permitted; only RandomBits has cross-backend bit equality."
+    },
+    {
+      "path": "src/compute_provider_native/sampling.cc",
+      "lines": [
+        155,
+        174
+      ],
+      "fact": "One52-bit midpoint uniform followed by ascending-token cumulative probability."
+    },
+    {
+      "path": "src/compute_provider_cuda/sampling_kernel.cu",
+      "lines": [
+        88,
+        93
+      ],
+      "fact": "One independent addressed Gumbel per token followed by max and stable-index tie break."
+    }
+  ],
+  "limits": [
+    "F64 oracles use original F32 q inputs; CPU SIMD exp and CUDA F32 logs differ from scalar F64, so margins are reported rather than claiming intermediate bit equality.",
+    "The target p summary is an F64 reconstruction from an existing exported logits row; it is not a new graph port and is not claimed to equal hidden default-graph F32 p bitwise.",
+    "Only the first row2 prefix of one fixed CT random request is inspected. No new publisher, task, seed search or performance matrix was run.",
+    "The observed CPU/CUDA q2 probabilities differ by L1~0.02423; this proof records but does not fully classify every source of that distribution difference. Both actual q rows independently give the same per-algorithm winners, so that difference is unnecessary to explain this native token split.",
+    "This proof keeps original default outputs distinct from privately instrumented observations, which reproduce the default IDs, RNG cursor, state row counts, rounds and graph-call counts exactly.",
+    "No new HTTP, SDK rebuild, publisher/model/task matrix, seed adjustment or TPS measurement."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/qwen35-ct-categorical-backend-attribution-2026-10-24-logs.zip",
+    "bytes": 2257854,
+    "sha256": "c7893abf560ed9009280058fded994d479aac76456fe36e34a3caecabe0c5ad6"
+  }
+}

@@ -1,0 +1,189 @@
+{
+  "date": "2026-10-24",
+  "scope": "Limited complete original BF16 Qwen3.5-2B text consumer on one RTX4070 Vulkan device: ordinary/MTP K1, greedy/random, P154+4/C256/N1/R1. Not the complete Vulkan MTP feature matrix.",
+  "hardware": {
+    "command": [
+      "nvidia-smi",
+      "--query-gpu=name,driver_version,memory.total",
+      "--format=csv,noheader"
+    ],
+    "exit": 0,
+    "stdout": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB\n",
+    "stderr": ""
+  },
+  "frozen_source": {
+    "original_sha256": "9a244b68c7e7f485e0162b66bb75a254d8248f71783c21cd3174506cf3c14077",
+    "adaptations": [
+      "Portable Sampling aggregate default and classic-locale finite CLI float parser, matching current product",
+      "MTP full_head publishes logits; greedy token choice is built only by the greedy caller, matching current product"
+    ]
+  },
+  "input": {
+    "original": {
+      "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+      "bytes": 4548221488,
+      "sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1"
+    },
+    "artifact_identity": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "checked_text_MTP_roles": 335,
+    "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+    "header_bytes": 76656,
+    "weight_copies": 0,
+    "HTTP": 0
+  },
+  "sampling": {
+    "temperature": 0.8,
+    "top_k": 40,
+    "top_p": 0.95,
+    "seed": 42
+  },
+  "cases": [
+    {
+      "case": "mtp-off-greedy",
+      "exit": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-vulkan-k1-20261024\\build1\\link2\\hyle-vulkan.exe",
+        "bytes": 49553920,
+        "sha256": "10773cd4cf653ac2f9bf0c304d8b275e16131b3c2a8f26cd411eb3dfac616530"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draw_cursor": 0,
+      "committed_target_rows": 157,
+      "draft_frontier": null,
+      "draft_lag": null
+    },
+    {
+      "case": "mtp-off-random",
+      "exit": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-vulkan-k1-20261024\\build1\\link2\\hyle-vulkan.exe",
+        "bytes": 49553920,
+        "sha256": "10773cd4cf653ac2f9bf0c304d8b275e16131b3c2a8f26cd411eb3dfac616530"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draw_cursor": 4,
+      "committed_target_rows": 157,
+      "draft_frontier": null,
+      "draft_lag": null
+    },
+    {
+      "case": "mtp-on-greedy",
+      "exit": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-vulkan-k1-20261024\\build1\\link2\\hyle-vulkan.exe",
+        "bytes": 49553920,
+        "sha256": "10773cd4cf653ac2f9bf0c304d8b275e16131b3c2a8f26cd411eb3dfac616530"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "draw_cursor": 0,
+      "committed_target_rows": 157,
+      "draft_frontier": 157,
+      "draft_lag": 0
+    },
+    {
+      "case": "mtp-on-random-int-cast-fixed",
+      "exit": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-vulkan-k1-20261024\\build1\\link2\\hyle-vulkan.exe",
+        "bytes": 49555968,
+        "sha256": "4669cea474e3f3bb2d0956a06b3d28775d74b8fd060f7d16d74aa61f1beb235c"
+      },
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        727
+      ],
+      "draw_cursor": 5,
+      "committed_target_rows": 157,
+      "draft_frontier": 157,
+      "draft_lag": 0
+    }
+  ],
+  "diagnosed_failures": [
+    {
+      "problem": "First manually assembled native closure carried a GDN-scale-capable but older GGML Vulkan object. Actual paged BF16 FLASH_ATTN_EXT was rejected at first prefill.",
+      "classification": "Manual validation closure drift, not a new BF16 product gap or a formal CMake cache invalidation failure.",
+      "resolution": "Refresh exactly one native translation unit whose source SHA equals current locked patches.json after_sha256; reuse shaders and SDK. No product manifest or guard change."
+    },
+    {
+      "problem": "Random MTP acceptance categorical I32 output could not be converted to F32 by the product Vulkan tensor route.",
+      "classification": "Actual missing finite Cast primitive.",
+      "resolution": "Admit only signed I32->F32 and build exact IEEE F32 round-to-nearest-even bits in the existing tensor shader, including INT_MIN and 2^24 midpoint ties. Other previously unsupported integer casts still decline."
+    }
+  ],
+  "numeric_checks": {
+    "native_Vulkan_tests": 3,
+    "failures": 0,
+    "coverage": [
+      "16 signed boundaries plus256 full-range deterministic integers; dense and unaligned byte strides and both transposed views;1088 exact F32 bit comparisons",
+      "0/1 I32->F32->Bool->Select acceptance chain",
+      "Existing independent F32/F16/BF16 unary/binary/Cast oracles"
+    ]
+  },
+  "closure": {
+    "current_native_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-proposal\\native-after\\src\\ggml-vulkan\\ggml-vulkan.cpp",
+      "bytes": 1078730,
+      "sha256": "dcaab6e022298178106d51e54a524499a447fe710759a4d243b27bcb4ef746f2"
+    },
+    "current_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_vulkan_runtime\\patches.json",
+      "bytes": 92235,
+      "sha256": "505e55f8a06e087b062569457cec0378e929d1bf0afe7b09444a993c98d76f86"
+    },
+    "current_native_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-vulkan-k1-20261024\\build1\\current-native\\native.obj",
+      "bytes": 7741513,
+      "sha256": "f09464b395c4bac2df5e23d17b1c9118910319e5f930fe11b0dd69349509e7b8"
+    },
+    "original_stale_native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\native\\native.obj",
+      "bytes": 7728794,
+      "sha256": "3f0f8bf54ce8c0e6b3186630b723de6dc351ed4e453c249e62a40677076d786e"
+    },
+    "CacheStorage": "Explicit tag is not binary compatible with old headers. Its current constructors/comparisons/native paged consumers and current lease/budget objects were selected/refreshed; identities are archived.",
+    "planner": "Original finite planner limits; no private Graph diagnostic or fake native capability symbols in successful images.",
+    "final": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-vulkan-k1-20261024\\build1\\link2\\hyle-vulkan.exe",
+      "bytes": 49555968,
+      "sha256": "799b4a5215bd5228ccbd5f97ef6b44ff9aab7ea73a5c3a55c56830edf0977222"
+    },
+    "successful_run_images_recorded_separately": true,
+    "final_relink_after_focused_tests_was_not_a_model_rerun": true,
+    "fresh_product_TUs": 22,
+    "fresh_model_TUs": 1,
+    "fresh_native_TUs": 1,
+    "shader_compilations": 1,
+    "SDK_builds": 0,
+    "SDK_copies": 0,
+    "model_copies": 0,
+    "HTTP": 0
+  },
+  "limits": [
+    "No all-model/all-quantization claim",
+    "No K>1, confidence control, multi-session/prefix/restore/cancellation coverage from these four runs",
+    "No task quality or distribution-equivalence conclusion from four output tokens",
+    "No performance comparison or native private allocation bound is claimed"
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-qwen35-vulkan-k1-complete-input-2026-10-24-logs.zip",
+    "bytes": 1019680,
+    "sha256": "66e75dca3e9eebe1abcf884294f2c2d69480b833fd77dd92e2f655ac52259f76"
+  }
+}

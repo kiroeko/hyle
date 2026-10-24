@@ -2069,8 +2069,8 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
           "constant binding does not match its graph description");
     }
     plan.constant_bindings[slot] = binding.tensor;
-    if (binding.owner.valid() != binding.lease.valid())
-      return Status::InvalidArgument("constant ownership requires both storage owner and ready lease");
+    if (binding.owner && !binding.lease)
+      return Status::InvalidArgument("constant storage owner requires a ready lease");
     if (binding.lease) {
       HYLE_ASSIGN_OR_RETURN(auto retained, binding.lease.view());
       const auto backing = compute::detail::LeaseAccess::metadata_backing_allocator(binding.lease);
@@ -2080,11 +2080,18 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
           backing.free_fn() == system.free_fn() &&
           backing.realloc_fn() == system.realloc_fn() &&
           backing.state() == system.state();
+      // A CPU ready lease already owns its Buffer. Its original resource and
+      // metadata allocator need no separate owner only when both are the
+      // exact process-lifetime system objects, not a host-accessible wrapper.
+      if (!binding.owner &&
+          (retained.resource() != mem::system_resource() || !process_allocator))
+        return Status::InvalidArgument(
+            "ownerless constant lease requires the process system resource and allocator");
       if (!binding.owner.owns_allocator(backing) && !process_allocator)
         return Status::InvalidArgument(
             "constant storage owner does not retain its lease metadata allocator");
       const auto actual = binding.tensor.storage();
-      if (binding.owner.ref() != retained.resource() ||
+      if ((binding.owner && binding.owner.ref() != retained.resource()) ||
           retained.resource() != actual.resource() ||
           retained.native_handle() != actual.native_handle() ||
           actual.offset() < retained.offset() ||
@@ -2330,7 +2337,12 @@ Status materialize_constants(detail::PlanState &plan,
       if (selected.mode == compute::TransferMode::kQueuedDirect) {
         const auto endpoint = detail::ExecutionSourceAccess::compute(
             plan.targets[selected.target].source);
-        if (!binding.owner || !binding.lease || !acquired.owner->storage_owner ||
+        // bind_constants already proved a system lease's complete process
+        // resource/allocator identity and its exact view. Keep that real lease
+        // in ConstantCopyBatch through native retirement just like owned bytes.
+        const bool retained_source = binding.lease &&
+            (binding.owner || binding.tensor.storage().resource() == mem::system_resource());
+        if (!retained_source || !acquired.owner->storage_owner ||
             !plan.metadata_owner || !endpoint || !*endpoint ||
             acquired.owner->storage_owner.context_identity() != (*endpoint)->identity_key())
           return Status::FailedPrecondition(
@@ -5763,6 +5775,11 @@ Status prepare_placed_steps(
         selected_report = std::move(report);
         return Status::Ok();
       }
+      if ((outcome.search_limit || outcome.prepare_limit) &&
+          !discovery.last_rejection.ok())
+        return std::move(status)
+            .WithContext(discovery.last_rejection.message())
+            .WithContext("graph search exhausted after a rejected candidate");
       return status;
     }
     if (status.ok() || (outcome.rejected_region && outcome.rejected_operation))

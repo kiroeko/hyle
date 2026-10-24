@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-24",
+  "scope": "Prepared GGUF metadata capability guard; no weight body, device or performance claim.",
+  "problem": "The main entry rejected MTP on a zero-NextN source, but select_gguf_roles itself silently returned ordinary roles for include_mtp=true.",
+  "fix": "Reject an explicit MTP request unless the source geometry declares one NextN layer; ordinary zero-NextN sources remain legal.",
+  "before": {
+    "exit": 1,
+    "diagnostic": "invalid prepared roles were accepted",
+    "prepared_gguf_header_sha256": "9d8bb89742960f45ad71005197f29ab09ac92fdd8b5af33fc1188ef8f2563810"
+  },
+  "after": {
+    "exit": 0,
+    "checks": 299,
+    "new_checks": 4,
+    "cases": [
+      "Direct ordinary zero-NextN selection succeeds",
+      "Direct MTP zero-NextN selection rejects",
+      "Shared ordinary zero-NextN reader succeeds",
+      "Shared MTP zero-NextN reader rejects"
+    ]
+  },
+  "reuse": "The existing 295 metadata checks run in the same standard-library-only program, including three cached real V2 manifests.",
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "model_payload_bytes_read": 0,
+  "sources": [
+    {
+      "path": "engine/models/qwen35/prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 18414,
+      "sha256": "09499648a3f703227976688a59b80c150aa6b6d8e6d4b0125cfff2c0c7a685f4"
+    },
+    {
+      "path": "engine/models/qwen35/model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "bytes": 29001,
+      "sha256": "566aea323345b0408b3d367c239c7b57557ada6fd3fa4b02f1e4fae0fc62d3ae"
+    },
+    {
+      "path": "tests/tools/qwen_geometry_fixture.h",
+      "bytes": 1527,
+      "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-gguf-source-capability-2026-10-24-logs.zip",
+    "bytes": 34574,
+    "sha256": "29b3ad68bbaabf93b2d0837e36c2ce108cbbea19ad4da65061899f78f73d600d"
+  },
+  "archive_members": 33
+}

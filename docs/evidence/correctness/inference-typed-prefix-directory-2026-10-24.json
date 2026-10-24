@@ -1,0 +1,343 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Shared typed radix/LRU/pin directory and request-window adaptation with original Qwen Snapshot/replay and a real GLM Pro StateVersion suffix component.",
+  "changes": [
+    "One typed payload per directory entry; no model state container, owner inventory or second radix implementation.",
+    "Original finite E+1 entries/2E+2 nodes and post-insert victim pruning; nothrow payload operations; failed publication does not consume rvalue payload.",
+    "Qwen keeps complete Snapshot/replay validation and canonical version identity; callers consume payload directly.",
+    "GLM uses actual complete StateVersion, independent new-request pending/RNG and historical same-request restore; original pools and budget unchanged."
+  ],
+  "sources": [
+    {
+      "path": "engine/inference/token_prefix.h",
+      "sha256": "fdc43b99c1fb398cd968e1047a26269f89deb6e0e5e4b45161161f20b531f7ba",
+      "bytes": 2068,
+      "crlf": 0
+    },
+    {
+      "path": "engine/inference/prefix_directory.h",
+      "sha256": "5161c250059bf9a02dffbcdfcfba2b1c4292d11f741d3decf59568644fae1e9c",
+      "bytes": 14899,
+      "crlf": 0
+    },
+    {
+      "path": "engine/models/qwen35/prefix_cache.h",
+      "sha256": "01ae750cd254085f9a59f32ad6a3b3ba6ecbb8ead9afe059a1049f2156860b29",
+      "bytes": 7893,
+      "crlf": 157
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "sha256": "6dd544c2898febb875e09f2abddc31804d8406886ccb3a1e2302c6a50eaddba5",
+      "bytes": 424866,
+      "crlf": 0
+    },
+    {
+      "path": "engine/models/qwen35/mtp_session_probe.cc",
+      "sha256": "3c3f017ed5d29d4b7085865418f75f986a1009f8f6586a78a0c990f25e19164d",
+      "bytes": 113706,
+      "crlf": 0
+    },
+    {
+      "path": "tests/tools/qwen_prefix_cache_test.cc",
+      "sha256": "8fca94377fff218f1af8a11b7b0dbacd89b5b3547427111f29ff428cc510c196",
+      "bytes": 45200,
+      "crlf": 700
+    }
+  ],
+  "GLM_source": {
+    "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+    "bytes": 183093,
+    "sha256": "d45ffc9e113e64f636c9bb087bf9699115e5157c0da11cb0e0e2305b3490b8d8"
+  },
+  "source_checks": {
+    "checks": {
+      "private_radix_lru_prune_algorithms_byte_equal": true,
+      "model_replay_checkpoint_algorithms_byte_equal": true,
+      "qwen_publication_validation_byte_equal": true,
+      "one_shared_token_definition_and_unchanged_hash_factory": true,
+      "fixed_pools_exact_original_bounds": true,
+      "entry_presence_uses_node_and_one_payload": true,
+      "no_model_state_or_runtime_dependencies_in_shared_headers": true,
+      "single_publish_algorithm_for_const_and_rvalue": true,
+      "failed_publish_does_not_move_payload": true,
+      "nothrow_payload_lifecycle_constrained": true,
+      "engine/models/qwen35/main.cc_only_typed_payload_and_counter_access_changed": true,
+      "engine/models/qwen35/mtp_session_probe.cc_only_typed_payload_and_counter_access_changed": true,
+      "legacy_line_endings_preserved": true,
+      "new_shared_headers_lf": true,
+      "qwen_lookup_is_single_fail_closed_query": true
+    },
+    "compiled": false,
+    "tests_run": false,
+    "models_run": false,
+    "network": false,
+    "limitations": [
+      "Source comparison only. Root owns finite existing host/integration runs; GLM original component validation belongs to another agent.",
+      "Shared directory requires immutable caller-validated payloads, a single serialized owner, and directory lifetime longer than all Hits.",
+      "Qwen retains original replay/head validation. Published payloads must be immutable; one lookup rechecks model identity, next_id and actual complete length and fails closed without a compatibility retry."
+    ],
+    "test_source_added": "One typed default-valued payload/pin/move/rvalue-consumption case in existing qwen_prefix_cache_test only; not executed by this agent."
+  },
+  "independent_review": {
+    "path": ".scratch/inference-prefix-directory-20261024/independent-review.md",
+    "bytes": 4608,
+    "sha256": "13be5ee909c56b5a585f2672af307405ddf2a3cd9c3d4393f48287b6cc572c65"
+  },
+  "host": {
+    "checks": [
+      "PASS MTP first/middle rejection and all-prefix bonus",
+      "PASS MTP accepted/bonus EOS and quota pending boundaries",
+      "PASS MTP malformed selections and actual-width RNG blocks",
+      "PASS turn/cohort waves and independent Session call order",
+      "PASS actual suffix rows, full hits and kind-separated buckets",
+      "PASS finite wave-local batch shapes and conservative replay counts",
+      "PASS R1/R2 state/page capacity and rejected invalid/overflow limits",
+      "PASS aligned hidden/history capacity, independent live rows and reuse",
+      "PASS exact boundaries, replay chunks and model/math domains",
+      "PASS shared read-only pins, bounded admission and LRU",
+      "PASS transactional sampling addresses and overflow",
+      "PASS independent sampler metadata and canonical state-version retirement",
+      "PASS complete generated/multiturn consumed keys, lag/RNG retention, pins and retirement",
+      "PASS rejected unconsumed pending, missing inputs and invalid completed checkpoints",
+      "PASS split/prune/internal-boundary churn against linear oracle",
+      "PASS typed payload node presence, move pins and reset",
+      "PASS allocation-free commit and bounded structural scratch"
+    ],
+    "compile": {
+      "exit": 0,
+      "seconds": 2.1710000000020955,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 0.0629999999946449,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.03200000000651926,
+      "timeout": false
+    }
+  },
+  "qwen": {
+    "report_count": 8,
+    "differences": [],
+    "added_fields": [],
+    "grouping": {
+      "batch": 15,
+      "session": 28
+    },
+    "late_IO_failures": {
+      "expected_late_diagnostic_failure": 1,
+      "expected_fullhit_late_diagnostic_failure": 1
+    },
+    "process": {
+      "compile": {
+        "exit": 0,
+        "seconds": 16.453999999997905,
+        "timeout": false
+      },
+      "reporting_compile": {
+        "exit": 0,
+        "seconds": 1.5160000000032596,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.327999999979511,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 1.8280000000086147,
+        "timeout": false
+      }
+    },
+    "proof": {
+      "path": ".scratch/inference-prefix-directory-20261024/qwen-regression/proof-summary.json",
+      "bytes": 9473,
+      "sha256": "d3b530e0551b97ff564f089625208cfbaa669c9d01cd2531b88bba914e53f372"
+    }
+  },
+  "GLM": {
+    "passed": true,
+    "scope": "One original GLM Pro K1 case plus its explicit two-request/two-turn typed StateHead directory adapter",
+    "source_mode": "canonical TU with pre/post actual dependency SHA; recorded copies are evidence only",
+    "consumer_tus": 1,
+    "compile_attempts": 1,
+    "runtime_cases": 1,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "compile": {
+      "exit": 0,
+      "seconds": 15.96799999999348,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.7349999999860302,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 87.54699999999139,
+      "timeout": false
+    },
+    "functional_result": {
+      "passed": true,
+      "tests": 1,
+      "skips": 0,
+      "case": "GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+      "properties": {
+        "head_provider": "cublasLt",
+        "request_directory_r0_pending": "28122",
+        "request_directory_r0_committed_draws": "4",
+        "request_directory_requests": "2",
+        "request_directory_turns": "4",
+        "request_directory_fifo": "0,1,0,1",
+        "request_directory_full_hits": "1",
+        "request_directory_evictions": "1",
+        "request_directory_same_request_restore_graphs": "0",
+        "request_directory_new_request_draws": "2",
+        "request_directory_cancelled_forks": "1",
+        "request_directory_stale_forks": "1",
+        "request_directory_retained_state_versions": "6",
+        "request_directory_current_backing_bytes": "241678044",
+        "request_directory_scope": "Original target77/NextN78 finite suffix after this exact initial StateVersion and upstream fixture; N1 FIFO limits active admissions, not all retained StateStore versions. Directory holds real complete lag0 state. New request resamples full-V pending with stream18; same request restores stream17 draw3 without sampling. Each request then consumes its own pending through actual target+NextN ordinary continuation. No arbitrary GLM prompt prefill or complete-model/server claim.",
+        "original_target_roles": "1559",
+        "original_target_source_bytes": "9872042432",
+        "actual_target_calls": "5",
+        "actual_target_submissions": "10",
+        "actual_target_policy_submissions": "5",
+        "accepted_target_conditioned_repairs": "0",
+        "actual_accepted_kv_repair_submissions": "0",
+        "stochastic_policy": "Actual NextN q samples proposal at draw0; actual target p0/q/p1 consumes accept1/final2. Same complete StateHead publishes pending and Cursor. Cancellation/stale publish advances0, successful K1 advances3; real target-only continuation consumes actual residual/bonus, samples its target pending and atomically advances one additional draw.",
+        "random_accepted": "0",
+        "random_rejected": "1",
+        "random_actual_proposal": "42456",
+        "random_committed_draws": "4",
+        "actual_nextn_steps": "5",
+        "actual_catchups": "0",
+        "actual_target_conditioned_repairs": "0",
+        "state_budget_bytes": "446998016",
+        "peak_state_backing_bytes": "291742452",
+        "scope": "Finite original target77+NextN78 natural K1 plus two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage."
+      },
+      "SDK_builds": 0,
+      "HTTP": 0
+    },
+    "comparison_review": {
+      "unexpected_differences": 0,
+      "common_properties": 19,
+      "unchanged_common_properties": 13,
+      "all_properties_equal": false,
+      "explained_changes": {
+        "actual_target_policy_submissions": {
+          "old": "3",
+          "current": "5"
+        },
+        "actual_nextn_steps": {
+          "old": "4",
+          "current": "5"
+        },
+        "actual_target_submissions": {
+          "old": "8",
+          "current": "10"
+        },
+        "actual_target_calls": {
+          "old": "4",
+          "current": "5"
+        },
+        "peak_state_backing_bytes": {
+          "old": "291742428",
+          "current": "291742452"
+        },
+        "scope": {
+          "old": "Finite original target77+NextN78 stochastic consumer and actual untied full vocabulary, ordinary existing two-phase Graphs/StateHead/supplier. Natural single trial only; no forced proposal, logits, p/q or branch. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not full-model generation, task quality, natural acceptance-rate measurement or other quantized source coverage.",
+          "current": "Finite original target77+NextN78 natural K1 plus two-request/two-turn typed directory and FIFO adapter; original request tokens/pending/draw4 unchanged, second request independently resamples and continues actual target+NextN from the complete cached boundary. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not arbitrary prompt prefill, full-model generation, task quality, acceptance-rate measurement, TPS or other quantized source coverage."
+        }
+      },
+      "counter_reason": "Second real request adds one target call(two target submissions), two vocabulary/policy submissions and one NextN step. Original r0 output/pending/RNG and budget remain unchanged.",
+      "peak_reason": "Observed +24B peak backing with the additional real request; no full allocation-attribution claim.",
+      "new_properties": {
+        "request_directory_r0_committed_draws": "4",
+        "request_directory_full_hits": "1",
+        "request_directory_same_request_restore_graphs": "0",
+        "request_directory_scope": "Original target77/NextN78 finite suffix after this exact initial StateVersion and upstream fixture; N1 FIFO limits active admissions, not all retained StateStore versions. Directory holds real complete lag0 state. New request resamples full-V pending with stream18; same request restores stream17 draw3 without sampling. Each request then consumes its own pending through actual target+NextN ordinary continuation. No arbitrary GLM prompt prefill or complete-model/server claim.",
+        "request_directory_r0_pending": "28122",
+        "request_directory_turns": "4",
+        "request_directory_requests": "2",
+        "request_directory_stale_forks": "1",
+        "request_directory_retained_state_versions": "6",
+        "request_directory_cancelled_forks": "1",
+        "request_directory_new_request_draws": "2",
+        "request_directory_evictions": "1",
+        "request_directory_fifo": "0,1,0,1",
+        "request_directory_current_backing_bytes": "241678044"
+      },
+      "removed": {},
+      "r0_key_lines_exactly_equal": [
+        "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=0 consumed=1 draw=1 second_submissions=0",
+        "GLM PRO RANDOM TAIL context=1 quota=1 emitted=43038 stopped=1 consumed=1 draw=1 second_submissions=0",
+        "GLM PRO RANDOM BOUNDARY name=quota1 accept=0 emitted=1 consumed=1 pending=16495 stopped=0 draw=3",
+        "GLM PRO RANDOM BOUNDARY name=residual_EOS accept=0 emitted=1 consumed=1 pending=16495 stopped=1 draw=3",
+        "GLM Pro K1 stochastic=1 scenario=0 proposal=42456 target0=62398 target1=39202 accepted=0 frontier=2054 pending=16495 continued_pending=28122"
+      ],
+      "runtime_cases": 1,
+      "N1_contract": "RequestWindow active admissions only; actual StateStore retained_versions=6 and current_backing_bytes=241678044 are reported separately.",
+      "throughput_claim": false
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefix-directory-20261024\\verification\\attempt1\\checks.exe",
+      "bytes": 141485568,
+      "sha256": "9a4798485ea653bc1579ef082708e98b58af91720ccf1cc17214c419bd4ac5ba"
+    },
+    "stable_sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+        "bytes": 183093,
+        "sha256": "d45ffc9e113e64f636c9bb087bf9699115e5157c0da11cb0e0e2305b3490b8d8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\prefix_directory.h",
+        "bytes": 14899,
+        "sha256": "5161c250059bf9a02dffbcdfcfba2b1c4292d11f741d3decf59568644fae1e9c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\token_prefix.h",
+        "bytes": 2068,
+        "sha256": "fdc43b99c1fb398cd968e1047a26269f89deb6e0e5e4b45161161f20b531f7ba"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_window.h",
+        "bytes": 3792,
+        "sha256": "37f3998cc2e13da1beb9729e1025ac1ece5928b28a494e99583b436c9a8eaf77"
+      }
+    ],
+    "limitations": [
+      "Original target77/NextN78 suffix with authenticated original roles; upstream/history/initial context remain explicit fixtures.",
+      "N1 limits active request admissions, not all retained StateStore versions or whole-process memory.",
+      "No arbitrary GLM prompt prefill, complete model service, performance, or publisher/backend matrix claim."
+    ]
+  },
+  "limits": [
+    "Qwen actual integration uses retained tiny A-only Vulkan reports; no new full-model/GDN/mixed/platform-matrix coverage.",
+    "GLM cache domain fixes the exact original-role initial StateVersion/upstream fixture. Key covers its consumed suffix only; no arbitrary GLM prompt prefill or whole-model claim.",
+    "N1 is the request window admission bound. Actual retained StateStore versions, candidate metadata and old readers remain separately budgeted.",
+    "The 24-byte added backing peak is an accounted functional-state change, not a physical GPU/RSS or throughput benchmark. No quality/TPS claim."
+  ],
+  "cleanup": {
+    "exact_files": 13,
+    "logical_bytes": 264922344,
+    "private_DLL_hardlinks": 2,
+    "original_cache_and_native_closures_retained": true,
+    "performed": true
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-typed-prefix-directory-2026-10-24.zip",
+    "bytes": 729041,
+    "sha256": "60dabeb12bc2b4504243cf01391564506c91ec8ed43110c445d54a364371d41d"
+  }
+}

@@ -2956,6 +2956,142 @@ TEST(GraphCompile, RejectsMissingForeignAndMismatchedConstantBindings) {
   }
 }
 
+TEST(GraphCompile, ProcessSystemConstantLeaseSurvivesCallerAndExecutableRelease) {
+  auto context = hyle::compute::test::native_context().value();
+  const auto resource = hyle::compute::cpu::memory_resource(context.device()).value();
+  ASSERT_EQ(resource, hyle::mem::system_resource());
+  auto queue = context.create_queue().value();
+  const std::array limits{hyle::compute::ResourceBudgetLimit{resource, 1U << 20}};
+  auto budget = hyle::compute::ResourceBudget::create({.limits = limits}).value();
+  const auto external_bytes = [&] {
+    return budget.usage(resource)->live_by_category[static_cast<std::size_t>(
+        hyle::compute::ResourceBudgetCategory::kExternal)];
+  };
+  for (const auto policy : {hyle::graph::ConstantPolicy::kBorrow,
+                            hyle::graph::ConstantPolicy::kMaterialize}) {
+    SCOPED_TRACE(static_cast<int>(policy));
+    Invocation run;
+    auto output = make_tensor(row(4));
+    {
+      auto backing = Buffer::create(resource, 32, 64).value();
+      const std::array values{11.F, 12.F, 1.F, 2.F, 3.F, 4.F, 17.F, 18.F};
+      ASSERT_TRUE(backing.view().write(std::as_bytes(std::span(values))).ok());
+      auto source = hyle::compute::ReadLease::adopt(std::move(backing),
+          {.resource_budget = budget}).value();
+      auto permission = source.subview(4, 24).value();
+      const auto tensor = source.subview(8, 16)->tensor(row(4)).value();
+      auto builder = GraphBuilder::create().value();
+      const auto constant = builder.constant(row(4)).value();
+      const auto result = builder.add(RmsNorm{}, constant).value();
+      ASSERT_TRUE(builder.publish(result).ok());
+      const auto graph = std::move(builder).finish().value();
+      const std::array bindings{ConstantBinding{.value = constant,
+          .tensor = tensor, .policy = policy, .lease = permission}};
+      auto compiled = hyle::graph::compile(graph, context, {.constants = bindings});
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->report.materialized_constant_count(),
+                policy == hyle::graph::ConstantPolicy::kMaterialize ? 1U : 0U);
+      run = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(run.bind(result, output.view).ok());
+    } // caller ready handles, bindings, Graph and Executable are all gone.
+    EXPECT_EQ(external_bytes(),
+              policy == hyle::graph::ConstantPolicy::kBorrow ? 32U : 0U);
+    ASSERT_TRUE(run.submit(queue)->wait().ok());
+    const float factor = 1.F / std::sqrt(7.5F + RmsNorm{}.epsilon);
+    expect_near(read(output, 4),
+                std::array{factor, 2.F * factor, 3.F * factor, 4.F * factor});
+    run = {};
+    EXPECT_EQ(external_bytes(), 0U);
+  }
+}
+
+TEST(GraphCompile, OwnerlessConstantLeaseRequiresExactProcessResourceAndAllocator) {
+  auto context = hyle::compute::test::native_context().value();
+  auto builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(4)).value();
+  ASSERT_TRUE(builder.publish(constant).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto reject = [&](hyle::compute::ReadLease source) {
+    for (const auto policy : {hyle::graph::ConstantPolicy::kBorrow,
+                              hyle::graph::ConstantPolicy::kMaterialize}) {
+      const std::array bindings{ConstantBinding{.value = constant,
+          .tensor = source.tensor(row(4)).value(), .policy = policy, .lease = source}};
+      auto failed = hyle::graph::compile(graph, context, {.constants = bindings});
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsInvalidArgument());
+      EXPECT_NE(failed.error().message().find("ownerless constant"), std::string_view::npos);
+    }
+  };
+  HostResource host_wrapper;
+  reject(hyle::compute::ReadLease::adopt(Buffer::create(
+      hyle::mem::MemoryResourceRef(host_wrapper), 16, 64).value()).value());
+  EXPECT_EQ(host_wrapper.live_allocations, 0U);
+  AllocatorProbe probe;
+  reject(hyle::compute::ReadLease::adopt(Buffer::create(
+      hyle::mem::system_resource(), 16, 64).value(),
+      {.allocator = probe_allocator(probe)}).value());
+  EXPECT_EQ(probe.allocations.load(), probe.deallocations.load());
+  const auto system = hyle::mem::system_allocator();
+  const auto allocate = +[](void *, std::size_t n, std::size_t a) noexcept {
+    return hyle::mem::system_allocator().allocate(n, a);
+  };
+  const auto free = +[](void *, void *p, std::size_t n, std::size_t a) noexcept {
+    hyle::mem::system_allocator().deallocate(p, n, a);
+  };
+  const auto reallocate = +[](void *, void *p, std::size_t old_n,
+                            std::size_t n, std::size_t a) noexcept {
+    return hyle::mem::system_allocator().reallocate(p, old_n, n, a);
+  };
+  // Each field is independently required, including identical callbacks with
+  // a different state. System callbacks explicitly ignore their state.
+  const std::array allocators{
+      AllocatorRef(allocate, system.free_fn(), system.realloc_fn(), system.state()),
+      AllocatorRef(system.alloc_fn(), free, system.realloc_fn(), system.state()),
+      AllocatorRef(system.alloc_fn(), system.free_fn(), reallocate, system.state()),
+      AllocatorRef(system.alloc_fn(), system.free_fn(), system.realloc_fn(), &probe)};
+  for (const auto allocator : allocators)
+    reject(hyle::compute::ReadLease::adopt(Buffer::create(
+        hyle::mem::system_resource(), 16, 64).value(), {.allocator = allocator}).value());
+}
+
+TEST(GraphCompile, ProcessSystemConstantLeaseKeepsHandleOffsetAndExtentChecks) {
+  auto context = hyle::compute::test::native_context().value();
+  auto builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(4)).value();
+  ASSERT_TRUE(builder.publish(constant).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto source = hyle::compute::ReadLease::adopt(
+      Buffer::create(hyle::mem::system_resource(), 64, 64).value()).value();
+  auto permission = source.subview(16, 32).value();
+  auto separate = make_tensor(row(4));
+  HostResource other_resource;
+  auto other = make_tensor(row(4), hyle::mem::MemoryResourceRef(other_resource));
+  const std::array invalid_views{separate.view.as_const(), other.view.as_const(),
+      source.subview(0, 16)->tensor(row(4)).value(),
+      source.subview(40, 16)->tensor(row(4)).value(),
+      source.subview(48, 16)->tensor(row(4)).value()};
+  for (const auto tensor : invalid_views)
+    for (const auto policy : {hyle::graph::ConstantPolicy::kBorrow,
+                              hyle::graph::ConstantPolicy::kMaterialize}) {
+      const std::array bindings{ConstantBinding{.value = constant,
+          .tensor = tensor, .policy = policy, .lease = permission}};
+      auto failed = hyle::graph::compile(graph, context, {.constants = bindings});
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsInvalidArgument());
+      EXPECT_NE(failed.error().message().find("outside its owned ready lease"), std::string_view::npos);
+    }
+  struct SystemResource final {
+    hyle::mem::MemoryResourceRef ref() noexcept { return hyle::mem::system_resource(); }
+  };
+  auto owner = hyle::compute::StorageOwner::adopt(context, SystemResource{}).value();
+  const std::array missing_lease{ConstantBinding{.value = constant,
+      .tensor = source.subview(16, 16)->tensor(row(4)).value(), .owner = owner}};
+  auto failed = hyle::graph::compile(graph, context, {.constants = missing_lease});
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsInvalidArgument());
+  EXPECT_NE(failed.error().message().find("requires a ready lease"), std::string_view::npos);
+}
+
 TEST(GraphCompile, ReadonlyResourceFamilyRequiresActualSourceAuthority) {
   auto context = hyle::compute::test::native_context().value();
   HostResource imported_resource;

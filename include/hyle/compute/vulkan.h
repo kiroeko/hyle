@@ -185,6 +185,16 @@ public:
   // Nonblocking retirement, including abandoned submissions. Unknown native
   // observation failures retain pending resources and return their diagnosis.
   HYLE_COMPUTE_ROUTE_VULKAN_API Status collect() const noexcept;
+  // Blocking retirement without closing admission. In particular, a rejected
+  // suffix may require draining its already accepted prefix on the original
+  // queue; collect() cannot make that blocking proof. The original execution
+  // error is still returned after retirement. An unknown native wait/drain
+  // result retains unresolved work and permits a later drain/collect retry.
+  // Callers must exclude concurrent producers if they require a quiescent
+  // Context, rather than only retirement of the currently accepted work.
+  // Blocking drain/close from this Context's own retirement callback is
+  // rejected; a callback cannot join its own unfinished publication tail.
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status drain() const noexcept;
   // Stop accepting compute and drain. A persistent native observation failure
   // retains unresolved work; callers may retry close/collect. Device loss is a
   // native terminal failure, never successful output. Destruction calls close.

@@ -1,0 +1,649 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Shared host request progress, schema-independent token input plans and common retained-version admission; finite Windows CPU/Vulkan checks, not whole-architecture completion.",
+  "changes": [
+    "GenerationTurn and GenerationSessionSchedule belong to hyle::inference. Qwen Request composes host RequestProgress; no old namespace aliases.",
+    "Host progress borrows stable turns and preserves existing cold output reserve. Authoritative model head, journal, RNG advancement and MTP repair stay in their original layer.",
+    "One allocation-free borrowed-facts version query replaces natural single/batch and fixed initial/batch duplicate calculations; original caller retirement/sole-owner/eviction/error policies retained.",
+    "TokenPlan copies actual token chunks independently of benchmark Phase; fixed tape converts its validated phase spans only during cold input preparation."
+  ],
+  "request_progress_and_grammar": {
+    "state": "passed",
+    "scope": "std-only shared host types/progress and existing grammar regression",
+    "compile": {
+      "exit": 0,
+      "seconds": 1.3440000000118744,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.10999999998603016,
+      "timeout": false
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\parser1\\source-pins.json",
+      "bytes": 1218,
+      "sha256": "c1bdb6111617021ef6c5532de877127f7ca7424b18ef1f50f9b3827429468e24"
+    },
+    "model_runs": 0,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "version_admission": {
+    "state": "passed",
+    "kind": "std-only version admission policy",
+    "canonical_header_tested": true,
+    "source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_version_admission_test.cc",
+        "bytes": 6755,
+        "sha256": "6899f47aac2245161163292fc9381cf42be2c26962c694a42ac9f1772c15cd02"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\version_admission.h",
+        "bytes": 3009,
+        "sha256": "7983b7652aefa836bb4bf00eab7c5662099ca5f62cc7a2a03e3340623a0205b1"
+      }
+    ],
+    "compile": {
+      "exit": 0,
+      "seconds": 0.5150000000139698,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.03200000000651926,
+      "timeout": false
+    },
+    "contracts": [
+      "shared canonical bases deduplicated while each new head counts",
+      "unselected session and directory retainers block retirement at N1",
+      "dropping one alias does not free a canonical version",
+      "fresh and mixed new/replacement admission rereads actual live facts",
+      "saturated size_t fit uses subtraction without wrap",
+      "existing owner/request ranges compose through inline transform views",
+      "positive queries perform zero tracked operator-new allocations",
+      "spare-capacity fast result does not inspect retainers"
+    ],
+    "main_changed": false,
+    "sdk_builds": 0,
+    "model_runs": 0,
+    "http_requests": 0,
+    "cmake_registration": "not modified; root owns caller/target integration"
+  },
+  "token_input_cache_and_pool": {
+    "state": "passed",
+    "scope": "Canonical prefix/cache tests including chunk-owned token input keys, actual aligned state pools, original Q35/Q27 budgets and allocation-free cache commits",
+    "source": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\prefix_cache.h",
+        "bytes": 21118,
+        "sha256": "4fa7b31cffbeb35ddf5ac6023ae766679ac1530e7de43652990111c1862385ca"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_prefix_cache_test.cc",
+        "bytes": 42576,
+        "sha256": "85e53b722b66841bc9030b10f6f7b124550af1014ac5051d2372a032d045994e"
+      }
+    ],
+    "SDK_builds": 0,
+    "model_execution": false,
+    "HTTP": 0
+  },
+  "actual_natural_and_fixed_consumers": {
+    "state": "passed",
+    "scope": "Finite behavior-preserving host RequestProgress/turn schema/token-plan factory/version-admission migration, one current consumer TU and one actual process.",
+    "current_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 425796,
+      "sha256": "b06483f165e4ce51680187c20082e1ef687a30999591412d02d27c592923aa62"
+    },
+    "shared_request_progress": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\source\\engine\\inference\\request_progress.h",
+      "bytes": 1109,
+      "sha256": "fe4373bf3f0cad1e9884345384de5f37dd7b391cc2b69fe3826c01fd5444f285"
+    },
+    "shared_admission": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\source\\engine\\inference\\version_admission.h",
+      "bytes": 3009,
+      "sha256": "7983b7652aefa836bb4bf00eab7c5662099ca5f62cc7a2a03e3340623a0205b1"
+    },
+    "token_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\source\\engine\\models\\qwen35\\prefix_cache.h",
+      "bytes": 21118,
+      "sha256": "4fa7b31cffbeb35ddf5ac6023ae766679ac1530e7de43652990111c1862385ca"
+    },
+    "previous_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\reference\\main.cc",
+      "bytes": 425818,
+      "sha256": "1616e8c85571a60b35c3b6f0368f1345d6421e439f9a2b56812df398cc86aa5b"
+    },
+    "baseline_reports": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\reference\\reports.json",
+      "bytes": 87080,
+      "sha256": "e819e750f36911fa678b915267ae445cab28ed662c88a6cf35909f0ff8f3ef34"
+    },
+    "complete_postrun_audit": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\summary.json",
+      "bytes": 115555,
+      "sha256": "8ee89bc7c7e1f0841de3ebd106c24245c93a560e13291900d520a149bf912ab2"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\link\\probe.exe",
+      "bytes": 69522432,
+      "sha256": "ad581e2aa56a30af604296a0929a02b33082f95be91d17e5f3e9dbe731107418"
+    },
+    "comparison": {
+      "existing_non_timing_report_fields_equal": true,
+      "committed_ledgers_math_RNG_geometry_and_resource_counts_equal": true,
+      "differences": 0,
+      "added_fields": 0,
+      "natural_Text": "Same4 users x2 turns/N2R2/quota3+2/20 outputs/full+partial prefix/idle eviction+rebuild/pending journal; previous actual generated IDs and draw5 each unchanged.",
+      "MTP": "Same natural2 users/N2R2/K2/4 outputs each; complete committed ledgers, outputs, draw10, actual dispatch and geometry unchanged.",
+      "greedy_and_late_IO": "Same historicalpending vs canonical freshTop1 and both Graph-postcommit/host-fullhit-postcommit IO failure repeat-observation/repeat-call invariants unchanged."
+    },
+    "fixed_CLI": {
+      "scope": "Wiring/resource check only; no old fixed numerical comparison.",
+      "actual_report": {
+        "source_id": "3333333333333333333333333333333333333333333333333333333333333333",
+        "score_dtype": "F32",
+        "score_policy": "bf16_inputs_f32_output",
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 13,
+        "mtp_tensors": 0,
+        "session_count": 2,
+        "execution": "equal_T_batched",
+        "processed_tokens": 10,
+        "generated_tokens": 8,
+        "graph_participations": 8,
+        "prefix_hits": 0,
+        "prefix_misses": 4,
+        "prefix_full_hits": 0,
+        "reused_tokens": 0,
+        "interleaved_seconds": 0.0718517,
+        "startup_total_seconds": 0.165428,
+        "step_sum_seconds": 0.14326309999999998,
+        "max_cached_sessions": 2,
+        "active_sequences": 2,
+        "effective_cache_sessions": 2,
+        "cache_recurrent_payload_bytes_per_snapshot": 0,
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_acceptance_policy": "disabled",
+        "frontier_sampling_graph_calls": 0,
+        "mtp_max_drafts": 0,
+        "mtp_min_draft_probability": 0,
+        "draft_program_graph_calls": 0,
+        "prefix_decision_graph_calls": 0,
+        "cold_exact_admissions": 0,
+        "cold_exact_evictions": 0,
+        "backend": "vulkan",
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "cpu_ffn_layers": 0,
+        "original_host_weight_bytes": 0,
+        "original_device_weight_bytes": 98944,
+        "cache_shared_backing_bytes": 16386,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_metadata_requested_bytes": 0,
+        "cache_live_requested_bytes": 16386,
+        "cache_peak_requested_bytes": 16386,
+        "cache_requested_byte_limit": 16777216,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "cache_page_rows": 16,
+        "cache_max_physical_pages": 4,
+        "cache_live_snapshot_versions": 2,
+        "cache_peak_committed_versions": 2,
+        "cache_committed_version_limit": 2,
+        "cache_retained_sessions": 2,
+        "prefix_cache": "auto",
+        "prefix_entry_capacity": 2,
+        "prefix_entries": 1,
+        "prefix_evictions": 3,
+        "diagnostic": false,
+        "logical_dispatch_session_ids": [
+          "f0",
+          "f1",
+          "f0",
+          "f1",
+          "f0",
+          "f1",
+          "f0",
+          "f1"
+        ],
+        "evicted_session_ids": [],
+        "actual_graph_calls": 4,
+        "actual_graph_tokens": 10,
+        "max_batch_requests": 2,
+        "batches": [
+          {
+            "kind": "prefill",
+            "restore": false,
+            "query_rows": 2,
+            "requests": 2,
+            "seconds": 0.0315285,
+            "session_ids": [
+              "f0",
+              "f1"
+            ]
+          },
+          {
+            "kind": "decode",
+            "restore": false,
+            "query_rows": 1,
+            "requests": 2,
+            "seconds": 0.0308959,
+            "session_ids": [
+              "f0",
+              "f1"
+            ]
+          },
+          {
+            "kind": "prefill",
+            "restore": false,
+            "query_rows": 1,
+            "requests": 2,
+            "seconds": 0.0045651,
+            "session_ids": [
+              "f0",
+              "f1"
+            ]
+          },
+          {
+            "kind": "decode",
+            "restore": false,
+            "query_rows": 1,
+            "requests": 2,
+            "seconds": 0.0045937,
+            "session_ids": [
+              "f0",
+              "f1"
+            ]
+          }
+        ],
+        "waves": [
+          {
+            "kind": "prefill",
+            "outputs": 2,
+            "logical_tokens": 4,
+            "actual_tokens": 4,
+            "graph_calls": 1,
+            "seconds": 0.0316409
+          },
+          {
+            "kind": "decode",
+            "outputs": 2,
+            "logical_tokens": 2,
+            "actual_tokens": 2,
+            "graph_calls": 1,
+            "seconds": 0.030952
+          },
+          {
+            "kind": "prefill",
+            "outputs": 2,
+            "logical_tokens": 2,
+            "actual_tokens": 2,
+            "graph_calls": 1,
+            "seconds": 0.004618
+          },
+          {
+            "kind": "decode",
+            "outputs": 2,
+            "logical_tokens": 2,
+            "actual_tokens": 2,
+            "graph_calls": 1,
+            "seconds": 0.0046405
+          }
+        ],
+        "sessions": [
+          {
+            "source_id": "3333333333333333333333333333333333333333333333333333333333333333",
+            "score_dtype": "F32",
+            "score_policy": "bf16_inputs_f32_output",
+            "weight_count_scope": "selected_physical_roles",
+            "text_tensors": 13,
+            "mtp_tensors": 0,
+            "visible_tokens": 5,
+            "generated_ids": [
+              39,
+              37,
+              41,
+              42
+            ],
+            "fixed_decode": true,
+            "decode_input_ids": [
+              3,
+              5
+            ],
+            "schedule": true,
+            "phase_count": 4,
+            "turn_count": 2,
+            "processed_tokens": 5,
+            "generated_tokens": 4,
+            "session_seconds": 0.0718114,
+            "startup_total_seconds": 0.1653933,
+            "step_sum_seconds": 0.07166819999999999,
+            "cache_hits": 1,
+            "cache_misses": 1,
+            "restored_calls": 0,
+            "restored_tokens": 0,
+            "restore_contract": "recompute_original_inputs",
+            "cache_prepare_seconds": 1.2999999999999998E-06,
+            "prefix_cache": "auto",
+            "prefix_hits": 0,
+            "prefix_misses": 2,
+            "prefix_full_hits": 0,
+            "reused_tokens": 0,
+            "graph_participations": 4,
+            "prefix_sampling_graph_calls": 0,
+            "sampling_stream": 0,
+            "sampling_draw_cursor": 0,
+            "graph_input_tokens": 5,
+            "sampling": "greedy",
+            "sampling_policy_order": "temperature_top_k_top_p",
+            "sampling_temperature": 1,
+            "sampling_top_k": 0,
+            "sampling_top_p": 1,
+            "sampling_seed": 0,
+            "mtp_acceptance_policy": "disabled",
+            "frontier_sampling_graph_calls": 0,
+            "mtp_max_drafts": 0,
+            "mtp_min_draft_probability": 0,
+            "draft_program_graph_calls": 0,
+            "prefix_decision_graph_calls": 0,
+            "cold_exact_admissions": 0,
+            "cold_exact_evictions": 0,
+            "backend": "vulkan",
+            "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+            "cpu_ffn_layers": 0,
+            "original_host_weight_bytes": 0,
+            "original_device_weight_bytes": 98944,
+            "cache_shared_backing_bytes": 16386,
+            "cache_retained_output_backing_bytes": 0,
+            "cache_metadata_requested_bytes": 0,
+            "cache_live_requested_bytes": 16386,
+            "cache_peak_requested_bytes": 16386,
+            "cache_requested_byte_limit": 16777216,
+            "native_execution_private_bytes_unknown": true,
+            "physical_vram_limit_known": false,
+            "cache_committed_version_limit": 2,
+            "cache_live_snapshot_versions": 2,
+            "cache_peak_committed_versions": 2,
+            "diagnostic": false,
+            "recomputed_decision_changes": [],
+            "session_id": "f0",
+            "trace_subdirectory": "session0_f0",
+            "phases": [
+              {
+                "turn": 1,
+                "kind": "prefill",
+                "name": "round1_prefill",
+                "input_tokens": 2,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 0,
+                "context_after": 2,
+                "seconds": 0.0315924,
+                "step_sum_seconds": 0.0315923
+              },
+              {
+                "turn": 1,
+                "kind": "decode",
+                "name": "round1_decode",
+                "input_tokens": 1,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 2,
+                "context_after": 3,
+                "seconds": 0.0309028,
+                "step_sum_seconds": 0.0309028
+              },
+              {
+                "turn": 2,
+                "kind": "prefill",
+                "name": "round2_prefill",
+                "input_tokens": 1,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 3,
+                "context_after": 4,
+                "seconds": 0.0045732,
+                "step_sum_seconds": 0.0045731
+              },
+              {
+                "turn": 2,
+                "kind": "decode",
+                "name": "round2_decode",
+                "input_tokens": 1,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 4,
+                "context_after": 5,
+                "seconds": 0.0046,
+                "step_sum_seconds": 0.0046
+              }
+            ]
+          },
+          {
+            "source_id": "3333333333333333333333333333333333333333333333333333333333333333",
+            "score_dtype": "F32",
+            "score_policy": "bf16_inputs_f32_output",
+            "weight_count_scope": "selected_physical_roles",
+            "text_tensors": 13,
+            "mtp_tensors": 0,
+            "visible_tokens": 5,
+            "generated_ids": [
+              39,
+              37,
+              41,
+              42
+            ],
+            "fixed_decode": true,
+            "decode_input_ids": [
+              3,
+              5
+            ],
+            "schedule": true,
+            "phase_count": 4,
+            "turn_count": 2,
+            "processed_tokens": 5,
+            "generated_tokens": 4,
+            "session_seconds": 0.0717551,
+            "startup_total_seconds": 0.1653933,
+            "step_sum_seconds": 0.0715949,
+            "cache_hits": 1,
+            "cache_misses": 1,
+            "restored_calls": 0,
+            "restored_tokens": 0,
+            "restore_contract": "recompute_original_inputs",
+            "cache_prepare_seconds": 3E-07,
+            "prefix_cache": "auto",
+            "prefix_hits": 0,
+            "prefix_misses": 2,
+            "prefix_full_hits": 0,
+            "reused_tokens": 0,
+            "graph_participations": 4,
+            "prefix_sampling_graph_calls": 0,
+            "sampling_stream": 0,
+            "sampling_draw_cursor": 0,
+            "graph_input_tokens": 5,
+            "sampling": "greedy",
+            "sampling_policy_order": "temperature_top_k_top_p",
+            "sampling_temperature": 1,
+            "sampling_top_k": 0,
+            "sampling_top_p": 1,
+            "sampling_seed": 0,
+            "mtp_acceptance_policy": "disabled",
+            "frontier_sampling_graph_calls": 0,
+            "mtp_max_drafts": 0,
+            "mtp_min_draft_probability": 0,
+            "draft_program_graph_calls": 0,
+            "prefix_decision_graph_calls": 0,
+            "cold_exact_admissions": 0,
+            "cold_exact_evictions": 0,
+            "backend": "vulkan",
+            "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+            "cpu_ffn_layers": 0,
+            "original_host_weight_bytes": 0,
+            "original_device_weight_bytes": 98944,
+            "cache_shared_backing_bytes": 16386,
+            "cache_retained_output_backing_bytes": 0,
+            "cache_metadata_requested_bytes": 0,
+            "cache_live_requested_bytes": 16386,
+            "cache_peak_requested_bytes": 16386,
+            "cache_requested_byte_limit": 16777216,
+            "native_execution_private_bytes_unknown": true,
+            "physical_vram_limit_known": false,
+            "cache_committed_version_limit": 2,
+            "cache_live_snapshot_versions": 2,
+            "cache_peak_committed_versions": 2,
+            "diagnostic": false,
+            "recomputed_decision_changes": [],
+            "session_id": "f1",
+            "trace_subdirectory": "session1_f1",
+            "phases": [
+              {
+                "turn": 1,
+                "kind": "prefill",
+                "name": "round1_prefill",
+                "input_tokens": 2,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 0,
+                "context_after": 2,
+                "seconds": 0.0315361,
+                "step_sum_seconds": 0.031536
+              },
+              {
+                "turn": 1,
+                "kind": "decode",
+                "name": "round1_decode",
+                "input_tokens": 1,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 2,
+                "context_after": 3,
+                "seconds": 0.0308974,
+                "step_sum_seconds": 0.0308974
+              },
+              {
+                "turn": 2,
+                "kind": "prefill",
+                "name": "round2_prefill",
+                "input_tokens": 1,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 3,
+                "context_after": 4,
+                "seconds": 0.0045667,
+                "step_sum_seconds": 0.0045667
+              },
+              {
+                "turn": 2,
+                "kind": "decode",
+                "name": "round2_decode",
+                "input_tokens": 1,
+                "calls": 1,
+                "generated_tokens": 1,
+                "context_before": 4,
+                "context_after": 5,
+                "seconds": 0.0045948,
+                "step_sum_seconds": 0.0045948
+              }
+            ]
+          }
+        ]
+      },
+      "consumed_inputs": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "users": 2,
+      "per_user_consumed": 5,
+      "actual_R2_batches": 4,
+      "participations": 8,
+      "prefix": "auto",
+      "N": 2,
+      "R": 2,
+      "mtp": false,
+      "greedy": true
+    },
+    "compile": {
+      "exit": 0,
+      "seconds": 16.562000000005355,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.312000000005355,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 1.8910000000032596,
+      "timeout": false
+    },
+    "compiled_private_TUs": 1,
+    "actual_processes": 1,
+    "old_versions_built": 0,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "model_downloads": 0,
+    "weight_payload_copies": 0,
+    "original_corrected_closure": {
+      "route": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-program-fixed\\archive\\route.lib",
+        "bytes": 28072348,
+        "sha256": "349091d9fca48d66730ce6316d80a85458f4c7b983ab3e21460b88bfdfc2cb0c"
+      },
+      "native_region": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-region-fixed2\\compile\\unit.obj",
+        "bytes": 2654635,
+        "sha256": "2fc293d76f54d7b4f7e4e3ac84f758d89acb2366acceb3e843d7ec50934ffcfb"
+      }
+    },
+    "quality_claim": false,
+    "performance_claim": false
+  },
+  "source_review": {
+    "path": {
+      "path": ".scratch/inference-request-boundaries-20261024/integration-review.md",
+      "bytes": 4387,
+      "sha256": "089d05cd12c61311d773041d775b19a327934b4c0d8b763031575782286d9cf7"
+    },
+    "math_and_Graph_unchanged_bytes": 247921,
+    "math_and_Graph_unchanged_sha256": "92d865348fee207e9c3d05eac83f6f56a58dc8576fde3cb76491be8488b6a47c",
+    "fixed_body_after_admission_unchanged_bytes": 38997,
+    "fixed_body_after_admission_unchanged_sha256": "73b7610bb2ac970760001472309ceeca0fff07aed72b86b3c98ea6dab225dd82"
+  },
+  "limitations": [
+    "Version query consumes complete serialized caller ownership/retainer facts; it does not discover arbitrary escaped owners or authorize native retirement.",
+    "Actual consumer uses original small untrained A-only fixture. No trained-model quality/TPS/memory improvement or all-platform claim.",
+    "Host request/report separation, model math/prepared-state separation and cross-family generation adapters remain unfinished.",
+    "New standard-library-only test target registered in CMake; manual strict compilation/run passed, CMake registration not reconfigured."
+  ],
+  "SDK_builds": 0,
+  "downloads_bytes": 0,
+  "HTTP_requests": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-request-boundaries-2026-10-24.zip",
+    "bytes": 413371,
+    "sha256": "706135db365e10bf07ccdd90a628eabb3c62b40ff3f024060e4c74a3175f22d3"
+  },
+  "cleanup": {
+    "state": "removed",
+    "files": 12,
+    "bytes": 106013504,
+    "receipt": ".scratch/inference-request-boundaries-20261024/binary-cleanup-removed.json",
+    "retained": "Source, commands, actual reports, fixtures and the previous corrected production Vulkan cache",
+    "script": "test.ps1 -RemoveRequestBoundaryCheckBinaries -Apply"
+  }
+}

@@ -5,9 +5,11 @@
 #import <Metal/Metal.h>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <utility>
 #include <mlx/allocator.h>
 #include <mlx/backend/metal/device.h>
 #include "hyle/mem/std_allocator.h"
@@ -23,6 +25,16 @@ namespace detail {
 namespace { const char memory_authority = 0; }
 
 struct MemoryState : mem::MemoryResource {
+  // One wrapper reference, plus one for each live allocator ownership claim.
+  // The original native handle stays an MTLBuffer; no Runtime/Context is held.
+  std::atomic<std::size_t> references{1};
+  void retain() noexcept {
+    const auto previous = references.fetch_add(1, std::memory_order_relaxed);
+    HYLE_FATAL_ASSERT(previous != 0 && previous != SIZE_MAX);
+  }
+  void release() noexcept {
+    if (references.fetch_sub(1, std::memory_order_acq_rel) == 1) delete this;
+  }
   std::string_view name() const noexcept override { return "MLX shared Metal"; }
   mem::MemoryProperties properties() const noexcept override {
     return {.flags = mem::MemoryProperty::kHostAccessible |
@@ -36,7 +48,11 @@ struct MemoryState : mem::MemoryResource {
   Result<mem::ResourceAllocation> allocate(std::size_t bytes, std::size_t alignment) noexcept override {
     if (alignment == 0 || (alignment & (alignment - 1)) != 0)
       return std::unexpected(Status::InvalidArgument("Apple allocation alignment must be a power of two"));
-    if (bytes == 0) return mem::ResourceAllocation{nullptr, 0, alignment};
+    if (bytes == 0) {
+      // Even an empty Buffer calls deallocate on its original resource.
+      retain();
+      return mem::ResourceAllocation{nullptr, 0, alignment};
+    }
     try {
       auto buffer = mx::allocator::malloc(bytes);
       if (buffer.ptr() == nullptr)
@@ -47,12 +63,14 @@ struct MemoryState : mem::MemoryResource {
         mx::allocator::free(buffer);
         return std::unexpected(Status::InvalidArgument("MLX backing cannot satisfy shared host alignment"));
       }
+      retain();
       return mem::ResourceAllocation{buffer.ptr(), bytes, alignment};
     } catch (...) { return std::unexpected(native_exception()); }
   }
   void deallocate(mem::ResourceAllocation allocation) noexcept override {
     if (allocation.native_handle != nullptr)
       mx::allocator::free(mx::allocator::Buffer(allocation.native_handle));
+    release();
   }
   Result<mem::ResourceHostMapping> map_host(void *handle, std::size_t offset,
                                            std::size_t bytes, mem::HostAccess) noexcept override {
@@ -232,7 +250,7 @@ Result<mx::array> readonly_tensor(ConstTensorView tensor, const InputSpec &spec,
       bool packed = true;
       for (std::size_t index = 0; index < packed_count; ++index) {
         const auto axis = packed_axes[index];
-        packed &= strides[axis] == packed_stride;
+        packed &= std::cmp_equal(strides[axis], packed_stride);
         const auto extent = static_cast<std::size_t>(spec.shape[axis]);
         if (packed_stride > SIZE_MAX / extent) packed = false;
         else packed_stride *= extent;
@@ -243,13 +261,13 @@ Result<mx::array> readonly_tensor(ConstTensorView tensor, const InputSpec &spec,
       for (std::size_t axis = 0; axis < strides.size(); ++axis) {
         const auto reverse = strides.size() - axis - 1;
         if (spec.shape[reverse] != 1) {
-          flags.row_contiguous &= strides[reverse] == row_stride;
+          flags.row_contiguous &= std::cmp_equal(strides[reverse], row_stride);
           const auto extent = static_cast<std::size_t>(spec.shape[reverse]);
           if (extent && row_stride > SIZE_MAX / extent) flags.row_contiguous = false;
           else row_stride *= extent;
         }
         if (spec.shape[axis] != 1) {
-          flags.col_contiguous &= strides[axis] == column_stride;
+          flags.col_contiguous &= std::cmp_equal(strides[axis], column_stride);
           const auto extent = static_cast<std::size_t>(spec.shape[axis]);
           if (extent && column_stride > SIZE_MAX / extent) flags.col_contiguous = false;
           else column_stride *= extent;
@@ -309,8 +327,16 @@ Result<CopySpan> copy_span(mem::ConstBufferView view, mem::HostAccess access) no
 MemoryResource::MemoryResource() noexcept = default;
 MemoryResource::MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept : state_(std::move(state)) {}
 MemoryResource::MemoryResource(MemoryResource &&) noexcept = default;
-MemoryResource &MemoryResource::operator=(MemoryResource &&) noexcept = default;
-MemoryResource::~MemoryResource() = default;
+MemoryResource &MemoryResource::operator=(MemoryResource &&other) noexcept {
+  if (this != &other) {
+    if (auto *previous = state_.release()) previous->release();
+    state_ = std::move(other.state_);
+  }
+  return *this;
+}
+MemoryResource::~MemoryResource() {
+  if (auto *previous = state_.release()) previous->release();
+}
 
 Result<MemoryResource> MemoryResource::create(const Context &context) noexcept {
   if (!context.valid()) return std::unexpected(Status::InvalidArgument("Apple memory requires a valid Context"));
@@ -474,8 +500,9 @@ Status detail::MemoryAccess::match_readonly(const mx::array &source,
     if (strides[axis] < 0)
       return Status::InvalidArgument("Apple readonly view has a negative byte stride");
     if (source.shape()[axis] <= 1) continue; // Unused singleton strides name the same bytes.
-    if (source.strides()[axis] > SIZE_MAX / unit ||
-        source.strides()[axis] * unit != static_cast<std::size_t>(strides[axis]))
+    const auto native_stride = source.strides()[axis];
+    if (std::cmp_less(native_stride, 0) || std::cmp_greater(native_stride, SIZE_MAX / unit) ||
+        static_cast<std::size_t>(native_stride) * unit != static_cast<std::size_t>(strides[axis]))
       return Status::InvalidArgument("Apple readonly view stride differs from its native array");
   }
   return Status::Ok();

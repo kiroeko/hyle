@@ -7,6 +7,8 @@
 #include "../compute_route_vulkan/vulkan_copy_internal.h"
 #include "../compute_route_vulkan/vulkan_memory_internal.h"
 #include "../compute_route_vulkan/vulkan_program_internal.h"
+#include "hyle/core/assert.h"
+#include "hyle/graph/detail/region_access.h"
 
 #include <mutex>
 #include <algorithm>
@@ -132,6 +134,19 @@ Result<compute::Completion> copy_submit(void *prepared, void *invocation,
     HYLE_RETURN_IF_ERROR(cv::detail::qualify_copy_dependency(artifact.runtime, dependency));
   return cv::detail::submit_copy_recording(*slot.recording);
 }
+const gd::RegionBindingReleaseVTable copy_release_table{
+    .validate = [](void *, void *invocation) noexcept -> Status {
+      return cv::detail::copy_recording_retired_gate(*static_cast<CopySlot *>(invocation)->recording);
+    },
+    .release = [](void *, void *invocation) noexcept {
+      auto &slot = *static_cast<CopySlot *>(invocation);
+      // The original recording owns both physical VkBuffer backings. Release
+      // them only after its actual Run and all Completion observers retired.
+      HYLE_FATAL_ASSERT(cv::detail::clear_copy_recording(*slot.recording).ok());
+      slot.source = {}; slot.destination = {};
+      slot.source_physical = {}; slot.destination_physical = {};
+      slot.bound = false; slot.sealed = false;
+    }};
 const ProviderRegionPreparedVTable copy_table{
     .destroy_prepared = [](void *state, mem::AllocatorRef allocator) noexcept {
       allocator.destroy(static_cast<CopyArtifact *>(state));
@@ -164,7 +179,10 @@ const ProviderRegionPreparedVTable copy_table{
           static_cast<CopyArtifact *>(prepared)->runtime, source);
     },
     .prepare_bindings = &copy_bind,
-    .seal_bindings = &copy_seal};
+    .seal_bindings = &copy_seal,
+    .query_extension = [](void *, compute::ProviderExtensionId id) noexcept -> const void * {
+      return id == gd::kRegionBindingReleaseExtensionId ? &copy_release_table : nullptr;
+    }};
 Result<bool> can_copy(const gd::ExecutionSourceState &state,
     const gd::CopySourceDescription &source, mem::MemoryResourceRef destination) noexcept {
   const auto &owner = native(state);

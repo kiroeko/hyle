@@ -37,6 +37,12 @@ hyle_add_test(graph_route_cuda NAME sampling_consumer
   SOURCES ../compute_route_cuda/sampling_consumer.cc DEPS hyle_compute_backend_cuda)
 target_compile_definitions(hyle_graph_route_cuda_sampling_consumer_test PRIVATE HYLE_G08_GRAPH=1)
 hyle_stage_runtime(hyle_graph_route_cuda_sampling_consumer_test)
+
+hyle_add_test(graph_route_cuda NAME qwen_sampling_graph
+  SOURCES ../graph_route_cpu/qwen_sampling_graph_test.cc
+  DEFINES HYLE_TEST_QWEN_SAMPLING_CUDA=1
+  DEPS hyle_compute_backend_cuda)
+hyle_stage_runtime(hyle_graph_route_cuda_qwen_sampling_graph_test)
 endif()
 
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_state)

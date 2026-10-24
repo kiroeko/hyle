@@ -1,0 +1,350 @@
+{
+  "passed": true,
+  "scope": "one DS Pro original short-tail case and one existing host policy TU",
+  "distinct_consumer_tus": 2,
+  "compile_attempts_per_tu": 3,
+  "actual_runtime_cases": 1,
+  "host_runtime_actions": 1,
+  "new_sdk_tus": 0,
+  "new_HTTP": 0,
+  "throughput_claim": false,
+  "canonical_edits_by_verification_agent": 0,
+  "stable_input_pins": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\mtp_acceptance.h",
+      "bytes": 6899,
+      "sha256": "8d72de0dc241901758188fddc78b04f5b3aedde2e500ef521c71ec13a05df9ec"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy.h",
+      "bytes": 8698,
+      "sha256": "5f167e24f824b9f21162d75f8f6a94cb8402db5309515f11f9abc5ccb1550153"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+      "bytes": 23649,
+      "sha256": "c30cbbb52f82978b35b2ab760db201942c2e6f4b622075278e0a9d424e6c5584"
+    }
+  ],
+  "checks": {
+    "host": {
+      "summary": {
+        "passed": true,
+        "tests": 15,
+        "skips": 0,
+        "filter": "DSparkBlock5Policy.*:DSparkBlock5State.*",
+        "scope": "DS shared-greedy-selector source migration; no whole-model quality or throughput claim",
+        "properties": {}
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ds-greedy-20261024\\host\\attempt3\\checks.exe",
+        "bytes": 647168,
+        "sha256": "4f3df4ec5a53019091302eb18f12d1eb26bc6a05afbad2779e5945a26d0a8ba6"
+      },
+      "compile": {
+        "exit": 0,
+        "seconds": 1.8589999999967404,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 0.07899999999790452,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.0470000000204891,
+        "timeout": false
+      }
+    },
+    "actual": {
+      "summary": {
+        "passed": true,
+        "tests": 1,
+        "skips": 0,
+        "filter": "DSparkProOriginalState.CudaShortVerifierTailsPreserveActualStateAndContinue",
+        "scope": "DS shared-greedy-selector source migration; no whole-model quality or throughput claim",
+        "properties": {
+          "target_fullV1_provider": "cublasLt",
+          "target_fullV2_provider": "cublasLt",
+          "target_fullV3_provider": "cublasLt",
+          "target_fullV4_provider": "cublasLt",
+          "target_fullV5_provider": "cublasLt",
+          "target_fullV6_provider": "cublasLt",
+          "short_verifier_targets_2": "296,16976",
+          "short_verifier_targets_3": "296,16976,20",
+          "short_verifier_targets_4": "296,16976,20,1051",
+          "short_verifier_targets_5": "296,16976,20,1051,119784",
+          "actual_short_verifier_widths": "2,3,4,5",
+          "actual_short_state_publications": "20",
+          "actual_short_rejection_continuations": "4",
+          "actual_lease_policy_tails": "16",
+          "actual_lease_unique_bonus_eos_tails": "4",
+          "tail_policy_scope": "accepted EOS/bonus EOS/quota/context with actual head IDs and leases; explicitly controlled decisions, not natural EOS or acceptance-rate evidence",
+          "actual_submissions": "86",
+          "dense_original_roles": "216",
+          "dense_original_source_bytes": "6504119672",
+          "actual_draft_episodes": "1",
+          "actual_target_rows": "9",
+          "actual_main_projection_submissions": "18",
+          "actual_main_history_submissions": "18",
+          "actual_verifier_submissions": "8",
+          "first_target_fullV_values": "258560",
+          "first_draft_fullV_values": "646400",
+          "actual_pending_feedback": "1",
+          "state_members": "30",
+          "state_backing_budget": "606836864",
+          "state_backing_peak": "283939704",
+          "target_resident_slot_bytes": "247727616",
+          "draft_resident_slot_bytes": "1238631936",
+          "actual_expert_attachments": "159",
+          "actual_missing_frontiers": "0",
+          "scope": "Identified original three-stage draft and target-tail, finite synthetic input/cache frontier. One trained five-row draft, actual target verifier widths2/3/4/5, complete30member state, actual first-rejection continuation. EOS/bonusEOS/quota/context use actual verifier IDs/leases with explicitly controlled policies; not natural EOS, a full-model generation, acceptance-rate or TPS claim."
+        }
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ds-greedy-20261024\\actual\\attempt3\\checks.exe",
+        "bytes": 141101568,
+        "sha256": "8ce768698f9961c47d370b9661c6efd338336fb9fecdd04b69928b928aa1ddbc"
+      },
+      "compile": {
+        "exit": 0,
+        "seconds": 9.28200000000652,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.6719999999913853,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 112.92199999999139,
+        "timeout": false
+      }
+    }
+  },
+  "actual_baseline_comparison": {
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\pro-focused\\results.xml",
+      "bytes": 3810,
+      "sha256": "3f46c3b1ae2165aea9a0a318dd4958c86284c2333bcebbdc86cc4abb4955c103"
+    },
+    "properties": {
+      "actual_draft_episodes": {
+        "old": "1",
+        "current": "1"
+      },
+      "actual_expert_attachments": {
+        "old": "159",
+        "current": "159"
+      },
+      "actual_lease_policy_tails": {
+        "old": "16",
+        "current": "16"
+      },
+      "actual_lease_unique_bonus_eos_tails": {
+        "old": "4",
+        "current": "4"
+      },
+      "actual_main_history_submissions": {
+        "old": "18",
+        "current": "18"
+      },
+      "actual_main_projection_submissions": {
+        "old": "18",
+        "current": "18"
+      },
+      "actual_missing_frontiers": {
+        "old": "0",
+        "current": "0"
+      },
+      "actual_pending_feedback": {
+        "old": "1",
+        "current": "1"
+      },
+      "actual_short_rejection_continuations": {
+        "old": "4",
+        "current": "4"
+      },
+      "actual_short_state_publications": {
+        "old": "20",
+        "current": "20"
+      },
+      "actual_short_verifier_widths": {
+        "old": "2,3,4,5",
+        "current": "2,3,4,5"
+      },
+      "actual_submissions": {
+        "old": "86",
+        "current": "86"
+      },
+      "actual_target_rows": {
+        "old": "9",
+        "current": "9"
+      },
+      "actual_verifier_submissions": {
+        "old": "8",
+        "current": "8"
+      },
+      "dense_original_roles": {
+        "old": "216",
+        "current": "216"
+      },
+      "dense_original_source_bytes": {
+        "old": "6504119672",
+        "current": "6504119672"
+      },
+      "draft_resident_slot_bytes": {
+        "old": "1238631936",
+        "current": "1238631936"
+      },
+      "first_draft_fullV_values": {
+        "old": "646400",
+        "current": "646400"
+      },
+      "first_target_fullV_values": {
+        "old": "258560",
+        "current": "258560"
+      },
+      "scope": {
+        "old": "Original Pro0813 target58/59/60+distinctfinalHC/norm and formal mtp.0/1/2+independent BF16 vocabulary, all384 global expert IDs with actual selected E2M1/UE8 experts, explicit PowerOfTwo/floor1e-4 A128, fullV K5 and atomic30member state. Natural once and labelled controlled0/2/5 prefix policies; actual pending continuation, immutable old readers and bounded backing. Layer57 input and initial valid cacheprefix are finite synthetic fixtures; no complete61-layer target, quality, natural acceptance-rate or TPS claim. Missing original experts fail; external acquisition wait is explicit fixture mode.",
+        "current": "Identified original three-stage draft and target-tail, finite synthetic input/cache frontier. One trained five-row draft, actual target verifier widths2/3/4/5, complete30member state, actual first-rejection continuation. EOS/bonusEOS/quota/context use actual verifier IDs/leases with explicitly controlled policies; not natural EOS, a full-model generation, acceptance-rate or TPS claim."
+      },
+      "short_verifier_targets_2": {
+        "old": "296,16976",
+        "current": "296,16976"
+      },
+      "short_verifier_targets_3": {
+        "old": "296,16976,20",
+        "current": "296,16976,20"
+      },
+      "short_verifier_targets_4": {
+        "old": "296,16976,20,1051",
+        "current": "296,16976,20,1051"
+      },
+      "short_verifier_targets_5": {
+        "old": "296,16976,20,1051,119784",
+        "current": "296,16976,20,1051,119784"
+      },
+      "state_backing_budget": {
+        "old": "606836864",
+        "current": "606836864"
+      },
+      "state_backing_peak": {
+        "old": "283939704",
+        "current": "283939704"
+      },
+      "state_members": {
+        "old": "30",
+        "current": "30"
+      },
+      "tail_policy_scope": {
+        "old": "accepted EOS/bonus EOS/quota/context with actual head IDs and leases; explicitly controlled decisions, not natural EOS or acceptance-rate evidence",
+        "current": "accepted EOS/bonus EOS/quota/context with actual head IDs and leases; explicitly controlled decisions, not natural EOS or acceptance-rate evidence"
+      },
+      "target_fullV1_provider": {
+        "old": "cublasLt",
+        "current": "cublasLt"
+      },
+      "target_fullV2_provider": {
+        "old": "cublasLt",
+        "current": "cublasLt"
+      },
+      "target_fullV3_provider": {
+        "old": "cublasLt",
+        "current": "cublasLt"
+      },
+      "target_fullV4_provider": {
+        "old": "cublasLt",
+        "current": "cublasLt"
+      },
+      "target_fullV5_provider": {
+        "old": "cublasLt",
+        "current": "cublasLt"
+      },
+      "target_fullV6_provider": {
+        "old": "cublasLt",
+        "current": "cublasLt"
+      },
+      "target_resident_slot_bytes": {
+        "old": "247727616",
+        "current": "247727616"
+      }
+    },
+    "differences": {
+      "scope": {
+        "old": "Original Pro0813 target58/59/60+distinctfinalHC/norm and formal mtp.0/1/2+independent BF16 vocabulary, all384 global expert IDs with actual selected E2M1/UE8 experts, explicit PowerOfTwo/floor1e-4 A128, fullV K5 and atomic30member state. Natural once and labelled controlled0/2/5 prefix policies; actual pending continuation, immutable old readers and bounded backing. Layer57 input and initial valid cacheprefix are finite synthetic fixtures; no complete61-layer target, quality, natural acceptance-rate or TPS claim. Missing original experts fail; external acquisition wait is explicit fixture mode.",
+        "current": "Identified original three-stage draft and target-tail, finite synthetic input/cache frontier. One trained five-row draft, actual target verifier widths2/3/4/5, complete30member state, actual first-rejection continuation. EOS/bonusEOS/quota/context use actual verifier IDs/leases with explicitly controlled policies; not natural EOS, a full-model generation, acceptance-rate or TPS claim."
+      }
+    },
+    "added_properties": {},
+    "removed_properties": {},
+    "throughput_claim": false
+  },
+  "baseline_review": {
+    "all_properties_identical": false,
+    "unchanged_common_properties": 34,
+    "added": 0,
+    "removed": 0,
+    "unexpected_differences": 0,
+    "scope_only_change": "The old image predates an already-recorded report-only scope correction. Exact current text matches that prior diff; no new scope change is attributed to this batch.",
+    "prior_report_only_correction": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\report-only-scope-correction.diff",
+      "bytes": 1281,
+      "sha256": "6be1f7fa5d1b6044b7c2570b9d6a2eb8474b962ff74bc06ba1f98258002ad1bd"
+    },
+    "claim": "34 common non-time behavior/provider/contract properties are identical; all35 are not claimed identical."
+  },
+  "attempt_history": [
+    {
+      "attempt": 1,
+      "actual": "Compile failed: private frozen dependency list missed later stochastic helper. No link/run.",
+      "host": "Strict compile failed C4459: public template local proposals hid host fixture constant. Product source owner renamed local proposal_count; warning remained enabled."
+    },
+    {
+      "attempt": 2,
+      "actual": "Compile/link passed but private loop variable shadowed source filename; canonical TU consumed rather than intended frozen source. No model run.",
+      "host": "Compile passed with same canonical-source instrumentation issue; initial link omitted Console subsystem, LNK1561. Same obj Console link2 passed; no runtime."
+    },
+    {
+      "attempt": 3,
+      "actual": "One frozen TU, dependency-isolation gate, strict compile/link and original Pro short-tail runtime.",
+      "host": "One frozen TU, dependency-isolation gate, strict compile/link and existing policy/state plus span case runtime."
+    }
+  ],
+  "limitations": [
+    "One Pro greedy short-tail original-role path; no new Flash, stochastic or full-model matrix.",
+    "The greedy Pro case has 30 state members and does not execute stochastic cursor publication; no new RNG runtime coverage is claimed.",
+    "Actual short-tail EOS/quota/context cases are controlled policies on authentic IDs/leases, not natural EOS or acceptance-rate evidence.",
+    "Host cases use the existing StateStore fixtures, not trained inference or TPS measurements."
+  ],
+  "state": "passed",
+  "date": "2026-10-24",
+  "changes": [
+    "The existing choose_prefix remains the single acceptance scan; vector and bounded span outputs are selected statically.",
+    "DS preserves trained shape, confidence, all-ID validation, original Status failures and actual target pending lease selection.",
+    "The stack-only DS output introduces no host allocation or second sampler/state executor."
+  ],
+  "comparison_result": {
+    "equal_properties": 34,
+    "metadata_differences": 1,
+    "difference": "Only the existing scope description correction; all other shared properties identical, no fields added or removed."
+  },
+  "cleanup": {
+    "exact_files": 14,
+    "logical_bytes": 310683223,
+    "private_DLL_hardlinks": 2,
+    "original_caches_retained": true,
+    "performed": true
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-ds-greedy-2026-10-24.zip",
+    "bytes": 1303614,
+    "sha256": "64b52ace5b9a391b532207ed07cce407931a13ce623760e628f3434bd957a021"
+  },
+  "generation_contract_review": {
+    "scope": "Independent source review and existing finite evidence; not another runtime or whole-model claim",
+    "sha256": "e7109d8363f8bdc829e3958732e1b6fe9fca138ce98559b5accce557f8908090"
+  }
+}

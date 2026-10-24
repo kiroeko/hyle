@@ -124,6 +124,11 @@ function(hyle_add_header_self_contained_test module)
   unset(_hyle_extra_include_dir)
 endfunction()
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME hyle_engine_components_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/engine_components_test.py")
+set_tests_properties(hyle_engine_components_test PROPERTIES
+  LABELS "tooling;build;components")
 add_test(NAME hyle_product_macro_contract_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/product_macro_contract_test.py")
@@ -140,6 +145,122 @@ add_test(NAME hyle_shared_export_hygiene_test
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/shared_export_hygiene_test.py")
 set_tests_properties(hyle_shared_export_hygiene_test PROPERTIES
   LABELS "tooling;build;package")
+
+# Consumer input grammar is host-only and does not need a model, Compute
+# product, native SDK, or GoogleTest linkage. Keep it in the normal build/test
+# aggregate so the regression is exercised by scripts/test.py as well as CTest.
+add_executable(hyle_qwen_generation_schedule_test tools/qwen_generation_schedule_test.cc)
+target_link_libraries(hyle_qwen_generation_schedule_test PRIVATE hyle_build_contract)
+target_compile_features(hyle_qwen_generation_schedule_test PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_qwen_generation_schedule_test)
+hyle_apply_sanitizer(hyle_qwen_generation_schedule_test)
+set_target_properties(hyle_qwen_generation_schedule_test PROPERTIES
+  FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+add_dependencies(hyle_tests hyle_qwen_generation_schedule_test)
+add_test(NAME hyle_qwen_generation_schedule_test
+  COMMAND hyle_qwen_generation_schedule_test
+    "${CMAKE_CURRENT_BINARY_DIR}/qwen-generation-schedule/$<CONFIG>")
+set_tests_properties(hyle_qwen_generation_schedule_test PROPERTIES
+  LABELS "tooling;generation;parser" TIMEOUT 30)
+
+add_executable(hyle_inference_version_admission_test tools/inference_version_admission_test.cc)
+target_link_libraries(hyle_inference_version_admission_test PRIVATE hyle_build_contract)
+target_compile_features(hyle_inference_version_admission_test PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_inference_version_admission_test)
+hyle_apply_sanitizer(hyle_inference_version_admission_test)
+set_target_properties(hyle_inference_version_admission_test PROPERTIES
+  FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+add_dependencies(hyle_tests hyle_inference_version_admission_test)
+add_test(NAME hyle_inference_version_admission_test COMMAND hyle_inference_version_admission_test)
+set_tests_properties(hyle_inference_version_admission_test PROPERTIES
+  LABELS "tooling;generation;cache" TIMEOUT 30)
+
+add_executable(hyle_inference_request_window_test tools/inference_request_window_test.cc)
+target_link_libraries(hyle_inference_request_window_test PRIVATE hyle_build_contract)
+target_compile_features(hyle_inference_request_window_test PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_inference_request_window_test)
+hyle_apply_sanitizer(hyle_inference_request_window_test)
+set_target_properties(hyle_inference_request_window_test PROPERTIES
+  FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+add_dependencies(hyle_tests hyle_inference_request_window_test)
+add_test(NAME hyle_inference_request_window_test COMMAND hyle_inference_request_window_test)
+set_tests_properties(hyle_inference_request_window_test PROPERTIES
+  LABELS "tooling;generation;admission" TIMEOUT 30)
+
+add_executable(hyle_inference_request_progress_test tools/inference_request_progress_test.cc)
+target_link_libraries(hyle_inference_request_progress_test PRIVATE hyle_build_contract)
+target_compile_features(hyle_inference_request_progress_test PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_inference_request_progress_test)
+hyle_apply_sanitizer(hyle_inference_request_progress_test)
+set_target_properties(hyle_inference_request_progress_test PROPERTIES
+  FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+add_dependencies(hyle_tests hyle_inference_request_progress_test)
+add_test(NAME hyle_inference_request_progress_test COMMAND hyle_inference_request_progress_test)
+set_tests_properties(hyle_inference_request_progress_test PROPERTIES
+  LABELS "tooling;generation;progress" TIMEOUT 30)
+
+# Engine-owned policy checks use the real host storage primitives only when
+# those factors are already selected; a util-only test build stays independent.
+if(TARGET hyle_compute_batch)
+  add_executable(hyle_qwen_prefix_cache_test tools/qwen_prefix_cache_test.cc)
+  target_link_libraries(hyle_qwen_prefix_cache_test PRIVATE hyle_compute_batch)
+  target_compile_definitions(hyle_qwen_prefix_cache_test PRIVATE HYLE_PREFIX_CACHE_STANDALONE)
+  target_compile_features(hyle_qwen_prefix_cache_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_qwen_prefix_cache_test)
+  hyle_apply_sanitizer(hyle_qwen_prefix_cache_test)
+  set_target_properties(hyle_qwen_prefix_cache_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_prefix_cache_test)
+  add_test(NAME hyle_qwen_prefix_cache_test COMMAND hyle_qwen_prefix_cache_test)
+  set_tests_properties(hyle_qwen_prefix_cache_test PROPERTIES
+    LABELS "tooling;generation;cache" TIMEOUT 30)
+endif()
+
+add_executable(hyle_qwen_prepared_roles_test tools/qwen_prepared_roles_test.cc)
+target_link_libraries(hyle_qwen_prepared_roles_test PRIVATE hyle_build_contract)
+target_compile_features(hyle_qwen_prepared_roles_test PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_qwen_prepared_roles_test)
+hyle_apply_sanitizer(hyle_qwen_prepared_roles_test)
+set_target_properties(hyle_qwen_prepared_roles_test PROPERTIES
+  FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+add_dependencies(hyle_tests hyle_qwen_prepared_roles_test)
+add_test(NAME hyle_qwen_prepared_roles_test
+  COMMAND hyle_qwen_prepared_roles_test
+    "${CMAKE_CURRENT_BINARY_DIR}/qwen-prepared-roles/$<CONFIG>")
+set_tests_properties(hyle_qwen_prepared_roles_test PROPERTIES
+  LABELS "tooling;mtp;parser;quantization" TIMEOUT 30)
+
+add_test(NAME hyle_qwen_gguf_roles_test
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/qwen_gguf_roles_test.py")
+set_tests_properties(hyle_qwen_gguf_roles_test PROPERTIES
+  LABELS "tooling;mtp;parser;quantization" TIMEOUT 30)
+
+add_test(NAME hyle_qwen_hf_roles_test
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tooling/qwen_hf_roles_test.py")
+set_tests_properties(hyle_qwen_hf_roles_test PROPERTIES
+  LABELS "tooling;mtp;parser;quantization" TIMEOUT 30)
+
+if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
+   AND TARGET hyle_graph_route_cpu_cuda AND TARGET hyle_graph_route_cpu
+   AND TARGET hyle_graph_route_cuda)
+  hyle_add_test(graph_route_cpu_cuda NAME qwen_backend
+    SOURCES tools/qwen_backend_cpu_cuda_test.cc
+    DEPS hyle_graph_route_cpu hyle_graph_route_cuda hyle_graph_progress)
+  hyle_stage_runtime(hyle_graph_route_cpu_cuda_qwen_backend_test)
+endif()
+
+if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
+   AND TARGET hyle_compute_stream_vulkan AND TARGET hyle_graph_progress)
+  hyle_add_test(graph_route_vulkan NAME qwen_resource_retirement
+    SOURCES tools/qwen_resource_retirement_test.cc
+      "${HYLE_SOURCE_DIR}/engine/reporting/execution_report.cc"
+    DEPS hyle_compute_stream_vulkan hyle_graph_progress hyle_graph_batch
+      hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
+  target_include_directories(hyle_graph_route_vulkan_qwen_resource_retirement_test SYSTEM PRIVATE
+    "${HYLE_GGML_SOURCE_DIR}/src")
+  hyle_stage_runtime(hyle_graph_route_vulkan_qwen_resource_retirement_test)
+endif()
+
 # Every module owns its test registration beside its test sources. A real
 # subdirectory gives each module independent source/binary/variable scope while
 # target names and the common output directory remain stable.

@@ -181,7 +181,8 @@ Result<detail::SharedBackingReservation> detail::ResourceBudgetAccess::adopt_bac
     BackingIdentity original_allocation, std::size_t bytes,
     ResourceBudget::Reservation &existing) noexcept {
   if (!same_scope(existing, budget) || existing.unknown_ || existing.row_ == SIZE_MAX ||
-      existing.category_ != ResourceBudgetCategory::kExternal ||
+      (existing.category_ != ResourceBudgetCategory::kExternal &&
+       existing.category_ != ResourceBudgetCategory::kMetadata) ||
       existing.state_->rows[existing.row_].resource != nominated || existing.charge_.size() != bytes)
     return std::unexpected(Status::InvalidArgument("existing backing reservation does not match"));
   HYLE_ASSIGN_OR_RETURN(auto *record, detail::reserve_backing_record(

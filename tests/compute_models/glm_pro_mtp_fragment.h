@@ -234,7 +234,7 @@ inline Prefix append_prefix(sem::Fragment &f,Value hidden,Value embedding,const 
   result.embedding_norm=norm(f,cast(f,embedding,c::DataType::kFloat32),p.embedding_norm,kHidden);
   result.joined=f.one(c::Operation(c::Concat{.axis=1}),
       {result.embedding_norm.stored,result.hidden_norm.stored});
-  const auto raw=f.one(c::model_ops::bfloat_linear_f32(),{result.joined,p.eh});
+  const auto raw=f.one(c::model_ops::dense_linear_f32(),{result.joined,p.eh});
   result.eh={result.joined,raw,cast(f,raw,c::DataType::kBFloat16)};
   result.input_norm=norm(f,cast(f,result.eh.stored,c::DataType::kFloat32),p.input_norm,kHidden);
   result.query=fp8(f,result.input_norm.stored,p.query_a);
@@ -350,7 +350,7 @@ inline Result append_step(sem::Fragment &f,const Prefix &prefix,const State &sta
     index.rope=rotate(f,reshape(f,index.query.stored,{1,kIndexHeads,kIndexDepth}),state.positions);
     index.encoded=codec::quantize(f,reshape(f,cast(f,index.rope.stored,c::DataType::kFloat32),{kIndexHeads,kIndexDepth}),kIndexHeads);
     index.weights_input=prefix.input_norm.stored;
-    index.weights=f.one(c::model_ops::bfloat_linear_f32(),{index.weights_input,p.index_weights});
+    index.weights=f.one(c::model_ops::dense_linear_f32(),{index.weights_input,p.index_weights});
     index.scores=codec::score_encoded(f,result.state.codes,result.state.scales,index.encoded,index.weights,options.visible);
     const auto top=f.append(c::Operation(c::TopK{.count=std::size_t(options.selected),.stable=true}),{index.scores},2);
     index.ids=contiguous(f,reshape(f,top[1],{options.selected}));result.state.selection=index.ids;
@@ -364,7 +364,7 @@ inline Result append_step(sem::Fragment &f,const Prefix &prefix,const State &sta
       cast(f,a.residual_stored,c::DataType::kFloat32),cast(f,result.feed_forward.output,c::DataType::kFloat32));
   result.ports.shared_norm=norm(f,result.ports.combined,p.shared_norm,kHidden);
   result.hidden=result.ports.shared_norm.stored;
-  result.ports.logits=f.one(c::model_ops::bfloat_linear_f32(),{result.hidden,p.head});
+  result.ports.logits=f.one(c::model_ops::dense_linear_f32(),{result.hidden,p.head});
   const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{result.ports.logits},2);
   result.ports.top_values=top[0];result.pending=contiguous(f,reshape(f,top[1],{1}));
   result.ports.pending=result.pending;

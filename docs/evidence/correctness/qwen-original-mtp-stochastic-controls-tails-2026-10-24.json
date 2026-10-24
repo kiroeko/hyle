@@ -1,0 +1,350 @@
+{
+  "status": "PASS",
+  "date": "2026-10-24",
+  "scope": "Finite existing Qwen Q24/Q27 original-component stochastic K1 controller request boundaries, with one actual Q24 GGUF source journey. Not a full large-model application or a backend/publisher matrix.",
+  "before": "Original-component random controller had no quota/context/EOS input and always selected the sampled residual/bonus and consumed all accepted drafts. Full Qwen2B/GLM/DeepSeek tail proofs did not prove this separate consumer.",
+  "changes": [
+    "Move GLM SamplingLimits verbatim to hyle::inference::mtp, no compatibility alias, all GLM uses directly qualified; only follow-up is GLM->MTP diagnostic wording.",
+    "Every Qwen original source wrapper forwards explicit quota/context/EOS into the one existing controller; actual source vocabulary, positive limits and pending EOS are checked before mandatory-current execution; remaining context is clamped to actual cache rows.",
+    "One-row tail uses the existing same-source target p0 head and one categorical draw, commits full mandatory-current target/NextN state with real pending lease and cursor; q is not sampled and no proposed second row is executed.",
+    "General K1 uses common select_sampled_prefix; accepted terminal/quota proposal remains its real q ID lease with after-current state, otherwise decision residual/bonus lease and matching consumed/repair checkpoint.",
+    "Explicit finite limits stop after their component episode; the default retains actual pending continuation. Existing StateStore/StateDraft/StateHead provide transaction and retirement. No new executor, sampler algorithm, provider, SDK or weights."
+  ],
+  "source_current": {
+    "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+    "bytes": 306882,
+    "sha256": "79506443c38de0423272734efa4eb7eb4185038cdeaedbb7ee10ded745e6f99c"
+  },
+  "shared_helper_current": {
+    "path": "engine/inference/mtp_acceptance.h",
+    "bytes": 5397,
+    "sha256": "33b0cb3a3dc91b6cb493937183fe3e598da44821b9fddb0292a1e7a6e151db50"
+  },
+  "actual_run": {
+    "test": "CudaQ24OriginalTargetAndNextNRandomVerifierContinuesAtomically",
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-tails-20261024\\checks.exe",
+        "--gtest_filter=QwenMtpStateConsumer.CudaQ24OriginalTargetAndNextNRandomVerifierContinuesAtomically",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-tails-20261024\\run2\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792831233.9301002,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 50096,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792831421.7374492,
+      "process_wall_seconds": 187.8063291000144
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-stochastic-tails-20261024\\checks.exe",
+      "bytes": 141545472,
+      "sha256": "87c7c2774ea3e689a967c189cd976221d5cc1678f1f5c4a68de38a15eee2f91e"
+    },
+    "events": [
+      "QWEN RANDOM TAIL context=1 quota=18446744073709551615 pending=22 consumed=1 draw=1 no_second=1",
+      "QWEN RANDOM TAIL context=18446744073709551615 quota=1 pending=22 consumed=1 draw=1 no_second=1",
+      "QWEN RANDOM BOUNDARY name=quota1 accepted=0 emitted=1 consumed=1 pending=23 stopped=0 draw=3",
+      "QWEN RANDOM BOUNDARY name=residual_EOS accepted=0 emitted=1 consumed=1 pending=23 stopped=1 draw=3",
+      "QWEN RANDOM K1 moe=1 proposal=84 accepted=0 pending=23 continued_pending=279 cursor=4"
+    ],
+    "properties": {
+      "original24_provider_blk.92.nextn.eh_proj.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_q.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_k.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_v.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_output.weight": "ggml-cuda",
+      "original24_provider_output.weight": "ggml-cuda",
+      "full_head_provider": "ggml-cuda",
+      "original24_provider_blk.92.ffn_gate_inp.weight": "cublasLt",
+      "original24_provider_blk.92.ffn_gate_inp_shexp.weight": "cublasLt",
+      "original24_provider_blk.92.ffn_gate_shexp.weight": "ggml-cuda",
+      "original24_provider_blk.92.ffn_up_shexp.weight": "ggml-cuda",
+      "original24_provider_blk.92.ffn_down_shexp.weight": "ggml-cuda",
+      "original24_provider_expert_0": "ggml-cuda",
+      "original24_provider_expert_1": "ggml-cuda",
+      "original24_provider_expert_2": "ggml-cuda",
+      "full_head_encoded_bytes": "1144258560",
+      "target_provider_blk.91.attn_q.weight": "ggml-cuda",
+      "target_provider_blk.91.attn_k.weight": "ggml-cuda",
+      "target_provider_blk.91.attn_v.weight": "ggml-cuda",
+      "target_provider_blk.91.attn_output.weight": "ggml-cuda",
+      "target_provider_blk.91.ffn_gate_inp.weight": "cublasLt",
+      "target_provider_blk.91.ffn_gate_inp_shexp.weight": "cublasLt",
+      "target_provider_blk.91.ffn_gate_shexp.weight": "ggml-cuda",
+      "target_provider_blk.91.ffn_up_shexp.weight": "ggml-cuda",
+      "target_provider_blk.91.ffn_down_shexp.weight": "ggml-cuda",
+      "target_expert_provider_0": "ggml-cuda",
+      "target_expert_provider_1": "ggml-cuda",
+      "target_expert_provider_2": "ggml-cuda",
+      "sampling_q_input_host": "0",
+      "sampling_target_logits_input_host": "0",
+      "sampling_q_log_output_host": "0",
+      "sampling_pending_output_host": "0",
+      "sampling_next_target_logits_host": "0",
+      "random_actual_proposal": "84",
+      "random_accepted": "0",
+      "random_rejected": "1",
+      "random_committed_draws": "4",
+      "bounded_tail_heads": "4",
+      "whole_state_publications": "2",
+      "cancelled_unpublished_drafts": "2",
+      "rejected_stale_publishes": "2",
+      "accepted_target_conditioned_repairs": "0",
+      "target_verifier_full_vocabulary": "248320",
+      "state_budget_bytes": "52395776",
+      "peak_state_backing_bytes": "34355788",
+      "stochastic_policy": "actual NextN q categorical proposal0 -> actual target row1; real full-V target p0/q/p1 common accept1/final2 -> direct I32 result lease; full original target/NextN resources plus Cursor metadata in same expected-base Head. Cancel/stale/failure advances0, K1 success advances3, actual residual/bonus target-only continuation advances1.",
+      "scope": "One natural finite original-role target/NextN stochastic K1 and actual pending continuation on the existing common Qwen component controller. Previous-layer input/history remain explicit fixtures; no full-model quality, natural acceptance-rate, all identities/backends, or performance claim."
+    },
+    "assertions": [
+      "Context1 and quota1 each sampled actual p0 -> pending22, consumed1, draw1. All target/NextN resource slots equal first; both model submission counters unchanged while these tails ran.",
+      "Natural actual q proposal84 rejected -> residual23/draw3. Independent real-lease quota1 and configured EOS23 Heads each commit consumed1; EOS stops.",
+      "Default original target/NextN consumes pending23 and emits279 with cursor4.",
+      "Wrong typed state splice and StateDraft cancellation leave Head/RNG unchanged; stale expected-base publications reject; old whole-state images/read-only leases remain unchanged.",
+      "State backing peak34355788B <= declared52395776B; output uses and state versions/drafts retired to zero."
+    ],
+    "branch_limits": "This natural Q24 run rejects. Accepted-proposal EOS is implemented through the same shared prefix selection and direct q lease branch, but no controlled Q24 accept/bonus was manufactured or claimed by this evidence. Earlier Qwen greedy and GLM/DS actual acceptance proofs retain their own limited scope."
+  },
+  "syntax": {
+    "status": "PASS",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+      "bytes": 306882,
+      "sha256": "79506443c38de0423272734efa4eb7eb4185038cdeaedbb7ee10ded745e6f99c"
+    },
+    "headers": {
+      "GGUF": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\generated\\qwen_gguf_original_artifacts.h",
+        "bytes": 2802,
+        "sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa"
+      },
+      "B07": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\B07\\generated\\qwen_gguf_b07_artifacts.h",
+        "bytes": 6918,
+        "sha256": "ebe750c7fc4504f3abd3de93e60ccd4114669951ece8ac3957f40e4f1173cd1c"
+      },
+      "B04": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\B04\\generated\\qwen_gguf_b04_artifacts.h",
+        "bytes": 9688,
+        "sha256": "0353ed3db266bf9f9c40c680b90f22fc62312118e16f560910aa71d3f046ab45"
+      },
+      "Q14": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\Q14\\generated\\qwen_gguf_q14_artifacts.h",
+        "bytes": 10522,
+        "sha256": "5707c051454fb7b13db32241b7ae6f9607b009655925914fc12db382e3496327"
+      },
+      "Q03": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q03\\generated\\qwen_q03_original_pins.h",
+        "bytes": 20169,
+        "sha256": "101d678d82b887583bb8f33dd535b3d29d2eac853bf63c7688b5de99074311c4"
+      },
+      "Q01": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q01\\generated\\qwen_q01_original_pins.h",
+        "bytes": 19642,
+        "sha256": "12da24cf0f47a3126f5dca053b570855e15dbfb09047add7210ef5fc3962ba49"
+      },
+      "Q09": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q09\\generated\\qwen_q09_original_pins.h",
+        "bytes": 21542,
+        "sha256": "67d0818c30ac0d70da46ff0c0828027e319bec282c197717bc276fb03153ed09"
+      },
+      "Q10": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q10\\generated\\qwen_q10_original_pins.h",
+        "bytes": 20015,
+        "sha256": "9158193c4aaa677170b7039f4877b06cf8fbfb90dc77092995840f2db26202db"
+      }
+    },
+    "new_SDK_TUs": 0,
+    "device_runs": 0,
+    "results": [
+      {
+        "endpoint": "cpu",
+        "result": {
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "/external:W0",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\src",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include",
+            "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+            "/nologo",
+            "/c",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:preprocessor",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/O2",
+            "/Ob2",
+            "/MD",
+            "/DNDEBUG",
+            "/permissive-",
+            "/bigobj",
+            "/W4",
+            "/WX",
+            "/wd4324",
+            "/wd4702",
+            "/DHYLE_STATIC",
+            "/DNOMINMAX",
+            "/external:W0",
+            "/DHYLE_COMPUTE_CPU=1",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/IC:\\public\\project-hyle\\hyle\\engine",
+            "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+            "/Zs",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/IC:\\public\\project-hyle\\hyle\\engine\\models\\qwen35",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/DHYLE_TEST_QWEN_STATE_CPU=1",
+            "/DHYLE_GGML_CPU_IQ1_EXTENSIONS=1",
+            "/Zs",
+            "/DHYLE_TEST_QWEN_GGUF_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/S01/generated/qwen_gguf_original_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_B07_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/B07/generated/qwen_gguf_b07_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_B04_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/B04/generated/qwen_gguf_b04_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_Q14_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/Q14/generated/qwen_gguf_q14_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_Q03_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q03/generated/qwen_q03_original_pins.h\"",
+            "/DHYLE_TEST_QWEN_Q01_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q01/generated/qwen_q01_original_pins.h\"",
+            "/DHYLE_TEST_QWEN_Q09_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q09/generated/qwen_q09_original_pins.h\"",
+            "/DHYLE_TEST_QWEN_Q10_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q10/generated/qwen_q10_original_pins.h\"",
+            "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792831304.401992,
+          "timeout_seconds": 120,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "pid": 7760,
+          "exit": 0,
+          "timed_out": false,
+          "finished": 1792831310.254234,
+          "process_wall_seconds": 5.851474499999313
+        }
+      },
+      {
+        "endpoint": "cpu-cuda",
+        "result": {
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+            "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+            "/nologo",
+            "/c",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:preprocessor",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/O2",
+            "/Ob2",
+            "/MD",
+            "/DNDEBUG",
+            "/permissive-",
+            "/bigobj",
+            "/W4",
+            "/WX",
+            "/wd4324",
+            "/wd4702",
+            "/DHYLE_STATIC",
+            "/DNOMINMAX",
+            "/DGGML_USE_CUDA",
+            "/DHYLE_COMPUTE_CUDA=1",
+            "/DHYLE_COMPUTE_GGML_CUDA=1",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+            "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+            "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+            "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+            "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+            "/external:W0",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+            "/DHYLE_TEST_QWEN_STATE_CPU=1",
+            "/DHYLE_TEST_QWEN_STATE_CUDA=1",
+            "/DHYLE_GGML_CPU_IQ1_EXTENSIONS=1",
+            "/DHYLE_GGML_CUDA_IQ1_EXTENSIONS=1",
+            "/Zs",
+            "/DHYLE_TEST_QWEN_GGUF_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/S01/generated/qwen_gguf_original_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_B07_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/B07/generated/qwen_gguf_b07_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_B04_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/B04/generated/qwen_gguf_b04_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_Q14_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/Q14/generated/qwen_gguf_q14_artifacts.h\"",
+            "/DHYLE_TEST_QWEN_Q03_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q03/generated/qwen_q03_original_pins.h\"",
+            "/DHYLE_TEST_QWEN_Q01_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q01/generated/qwen_q01_original_pins.h\"",
+            "/DHYLE_TEST_QWEN_Q09_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q09/generated/qwen_q09_original_pins.h\"",
+            "/DHYLE_TEST_QWEN_Q10_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-bfloat-selected-20261023/derived/Q10/generated/qwen_q10_original_pins.h\"",
+            "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792831311.5991607,
+          "timeout_seconds": 120,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "pid": 38780,
+          "exit": 0,
+          "timed_out": false,
+          "finished": 1792831317.7305055,
+          "process_wall_seconds": 6.130338499991922
+        }
+      }
+    ]
+  },
+  "type_move": {
+    "shared_definition_literal_unchanged": true,
+    "new_namespace": "hyle::inference::mtp",
+    "legacy_alias": false,
+    "definition_sha256": "4dc7bcc29602454b7a9ffa2fbf1a4d152557b15cd520bd47c31e4c85d51dfea7",
+    "source": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\flash\\attempt2\\source\\tests\\compute_models\\glm_target_verifier_fragment.h",
+    "consumers": [
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\flash\\attempt2\\source\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+        "current": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+        "only_qualified_type_replacement": true
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-sampled-boundaries-20261024\\pro\\attempt1\\source\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+        "current": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+        "only_qualified_type_replacement": true
+      }
+    ],
+    "diagnostic_only_followup": {
+      "change": "GLM sampling needs -> MTP sampling needs",
+      "normalized_definition_unchanged": true,
+      "current_header": {
+        "path": "engine/inference/mtp_acceptance.h",
+        "bytes": 5397,
+        "sha256": "33b0cb3a3dc91b6cb493937183fe3e598da44821b9fddb0292a1e7a6e151db50"
+      },
+      "requires_model_rerun": false
+    }
+  },
+  "resources": {
+    "consumer_object_TUs": 1,
+    "initial_failed_compile_attempt": "Two CTAD arrays of differing size declared together were split; failed compile1 is preserved, compile2/link2 actual pass.",
+    "new_SDK_TUs": 0,
+    "new_native_TUs": 0,
+    "http_requests": 0,
+    "new_weight_bytes": 0,
+    "old_B05_image2_runner_or_source_modified": false
+  },
+  "not_claimed": [
+    "Complete Q24/Q27 transformer inference or task quality; upstream input/history are explicit finite component fixtures.",
+    "All artifact/backends combinations or a performance/VRAM measurement.",
+    "Q24 actual accepted-proposal EOS/bonus in this natural rejected episode.",
+    "Current diagnostic-string-only common header was not used by runtime image; exact pre-rename source snapshot and post-rename header are both archived."
+  ],
+  "logs_archive": {
+    "path": "docs/evidence/correctness/qwen-original-mtp-stochastic-controls-tails-2026-10-24-logs.zip",
+    "bytes": 790755,
+    "sha256": "5716819423b61121e414578719de71c1f1bb1fa9d2825e232c15fbfe02c1fca1"
+  }
+}

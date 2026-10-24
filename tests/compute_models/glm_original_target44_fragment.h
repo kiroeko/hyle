@@ -118,7 +118,7 @@ inline ProjectionPorts project(sem::Fragment &f,Value input,Value weight,
   if(f.description(input).data_type()!=storage_type||f.description(weight).data_type()!=c::DataType::kBFloat16)
     throw std::runtime_error("GLM KDA projection requires actual BF16 weights and declared activation storage");
   ProjectionPorts result;result.input=input;
-  result.raw=f.one(c::model_ops::bfloat_linear_f32(),{input,weight});
+  result.raw=f.one(c::model_ops::dense_linear_f32(),{input,weight});
   result.stored=hc::store(f,result.raw,storage_type);return result;
 }
 inline L2Ports l2(sem::Fragment &f,Value actual) {

@@ -2,6 +2,7 @@
 
 首次构建和最小消费者见[使用指南](usage-guide.md)，工具链与初始化参数见
 [环境与构建](../developer/setup/README.md)。本页说明源码、静态 SDK 和动态 SDK 的交付合同。
+推理引擎的 `hyle` 程序、当前模型和运行限制见[引擎指南](inference.md)；SDK 模块可以独立交付。
 
 ## 选择交付方式
 
@@ -24,7 +25,9 @@ target_link_libraries(my_app PRIVATE hyle::mem hyle::container)
 hyle_stage_runtime(my_app)
 ```
 
-`HYLE_COMPONENTS` 接受产品名的逗号或分号集合；嵌入时必须显式给出，顶层构建默认 `all`。
+`HYLE_COMPONENTS` 接受产品名的逗号或分号集合；嵌入时必须显式给出，顶层新配置默认 `engine`。
+选择 `util`、`mem;container` 或 `compute;graph` 等模块只构建相应库闭包；
+顶层 `all` 包含所有库与引擎，父工程显式 `all` 只选库，构建应用须明确包含 `engine`。
 CMake 自动解析依赖。只链接代码直接使用的产品；不要手工链接内部 `_factor_*` target、
 复制第三方 include 路径或枚举库顺序。
 

@@ -1,0 +1,118 @@
+{
+  "kind": "Followup acquisition instrument failure, distinct from source identity/transport failure",
+  "captured_utc": "2026-10-24T07:41:13.466707+00:00",
+  "prior_pilot_evidence": {
+    "path": "docs/evidence/research/q27-four-piece-download-pilot-2026-10-24.json",
+    "bytes": 26850,
+    "sha256": "a7a2f7919b22e05eb4a44176e2e7666b5e734019556ca09811fa5fd621357fb7"
+  },
+  "plan": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/pieces/plan.json",
+    "bytes": 305896,
+    "sha256": "000a4b66dd220b7fa2500b28064d7e58c7ef59cdc6688d50cbde83fad9efeddb"
+  },
+  "budget_helper": {
+    "path": ".scratch/mtp-download-budget-20261023/budget.py",
+    "bytes": 9307,
+    "sha256": "24b008fb7a91f0eba34739cd4817fbf97b42ca7f435032d76cfb6e97ea398a17"
+  },
+  "worker": 2,
+  "stderr": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/pieces/batches/1792827109669052900/piece-2.stderr.log",
+    "bytes": 2290,
+    "sha256": "775c41c2833d8c8c72e2e50abc9a88f07e375e26b4f6027b393b53f77b4f094a"
+  },
+  "failure_trace": "Traceback (most recent call last):\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-download-budget-20261023\\budget.py\", line 214, in <module>\n    main()\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-download-budget-20261023\\budget.py\", line 210, in main\n    runpy.run_path(str(script), run_name='__main__')\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-metadata-offline-20261024\\q27\\piece-fetch.py\", line 215, in <module>\n    if __name__=='__main__':main()\n                            ^^^^^^\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-metadata-offline-20261024\\q27\\piece-fetch.py\", line 210, in main\n    with h.exclusive():result=acquire(plan,args.piece,budget,args.max_new_bytes)\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-metadata-offline-20261024\\q27\\piece-fetch.py\", line 134, in acquire\n    body,sha,ordinal,complete=p.fetch_prefix(budget,transfer,first,first+amount-1)\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\fetch-payloads.py\", line 118, in fetch_prefix\n    raise failure\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\fetch-payloads.py\", line 84, in fetch_prefix\n    with urllib.request.urlopen(request, timeout=30) as response:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-download-budget-20261023\\budget.py\", line 169, in open_range\n    update(ordinal, outcome='opened', status=getattr(response, 'status', None),\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-download-budget-20261023\\budget.py\", line 144, in update\n    with locked() as record:\n         ^^^^^^^^\n  File \"C:\\Program Files\\Python312\\Lib\\contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"C:\\public\\project-hyle\\hyle\\.scratch\\mtp-download-budget-20261023\\budget.py\", line 92, in locked\n    msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)\nOSError: [Errno 36] Resource deadlock avoided\n",
+  "ledger_request": {
+    "id": 11560,
+    "script": ".scratch/mtp-metadata-offline-20261024/q27/piece-fetch.py",
+    "started": "2026-10-24T07:37:11.069806+00:00",
+    "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "source_url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "exclusive_host": "hf-mirror.net",
+    "range": [
+      9522727456,
+      9526921759
+    ],
+    "bytes": 4194304,
+    "outcome": "failed",
+    "received_bytes": 0,
+    "verified_response": null,
+    "error_type": "OSError",
+    "error": "[Errno 36] Resource deadlock avoided",
+    "updated": "2026-10-24T07:37:30.018124+00:00"
+  },
+  "verified_piece_prefix_bytes": 75497472,
+  "verified_piece_block_count": 18,
+  "diagnosis": "OSError errno36 from msvcrt.locking(LK_LOCK,1) while budget.open_range tries to update the opened response. No verified response/body from this request is published; retained block prefix is unchanged. This is not an original source mismatch. Lock contention/finite-wait starvation is a candidate, not a proven specific critical-section bottleneck.",
+  "offline_ledger_snapshot": {
+    "bytes": 10141695,
+    "request_count": 11608,
+    "prior_single_unlocked_parse_seconds": 0.032,
+    "prior_single_unlocked_serialize_seconds": 0.078,
+    "qualification": "Offline in-memory observation only; no global lock, write, live critical-section duration or concurrency attribution measured."
+  },
+  "intervention": {
+    "HTTP_by_auditor": 0,
+    "fetch_started": false,
+    "auto_retry": false,
+    "pinned_script_changed": false,
+    "other_accepted_workers_cancelled": false
+  },
+  "scope": "The accepted4GiB maximum followup is partial; original64MiB pilot remains4/4pass. Other workers continue independently under the existing root owner.",
+  "bounded_wait_followup": {
+    "captured_utc": "2026-10-24T07:45:09.830628+00:00",
+    "wrapper": {
+      "path": ".scratch/mtp-download-budget-20261023/budget-wait.py",
+      "bytes": 1720,
+      "sha256": "f786115509fe67fe56146b832260978534fa3523a9e9d4433c781efbbd656b93"
+    },
+    "controlled_test_record": {
+      "path": ".scratch/mtp-download-budget-20261023/lock-wait-check/result.json",
+      "bytes": 393,
+      "sha256": "1ef279a15d00f1b5a3b85f3d8904f06923b3252f57e6202fc01756c15c655d06"
+    },
+    "controlled_test": {
+      "original": {
+        "error": "OSError",
+        "errno": 36,
+        "seconds": 9.062000000005355
+      },
+      "bounded_timeout": {
+        "seconds": 0.15700000000651926,
+        "raised": true
+      },
+      "retry_after_release": {
+        "acquired": true,
+        "seconds": 3.7960000000020955
+      },
+      "child_exit": 0,
+      "HTTP": 0,
+      "actual_budget_writes": 0,
+      "original_budget_source_modified": false
+    },
+    "policy": "Peripheral process-local Windows lock waiting only: nonblocking original CRT attempts, bounded120s, original budget.py executed unchanged. No HTTP/host/Range/ETag/accounting change; existing request script identity remains piece-fetch.py.",
+    "original_budget_source_SHA_matches_pin": true,
+    "root_reported_resume_maximum_new_bytes": 1015021568,
+    "root_reported_preceding_worker_pid_terminated": 37068,
+    "actual_first_new_verified_block": {
+      "offset": 75497472,
+      "bytes": 4194304,
+      "sha256": "0c2c3c8a139414e82f54839055c09769c60c6109978e5005f171dbb7a07b7d8d",
+      "absolute_inclusive": [
+        9522727456,
+        9526921759
+      ],
+      "requested_inclusive": [
+        9522727456,
+        9526921759
+      ],
+      "complete_response": true,
+      "budget_request_id": 11620
+    },
+    "actual_piece2_verified_prefix_bytes": 92274688,
+    "other_accepted_workers_cancelled": false,
+    "live_budget_JSON_read_by_auditor": false,
+    "remaining_qualification": "Actual piece receipt demonstrates forward progress after explicit root restart with the newentry. This is not proof of indefinite lock freedom or complete model acquisition; further batches remain independently bounded."
+  }
+}

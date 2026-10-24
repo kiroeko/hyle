@@ -182,7 +182,7 @@ Status run() {
   HYLE_ASSIGN_OR_RETURN(auto dense_ordinary, builder.result(dense_node));
   // This existing precision contract takes the original [N,K] constant;
   // ordinary MatMul above takes the logical [K,N] view and returns BF16.
-  HYLE_ASSIGN_OR_RETURN(auto score_node, builder.add_node(c::model_ops::bfloat_linear_f32(),
+  HYLE_ASSIGN_OR_RETURN(auto score_node, builder.add_node(c::model_ops::dense_linear_f32(),
       std::array{input, stored}, std::array{score_spec}));
   HYLE_ASSIGN_OR_RETURN(auto score, builder.result(score_node));
   for (const auto output : {ordinary, dense_ordinary, score}) HYLE_RETURN_IF_ERROR(builder.publish(output));

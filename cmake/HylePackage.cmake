@@ -91,6 +91,27 @@ function(hyle_install_package)
   include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
 
+  # The application ships beside the selected SDK closure, without becoming a
+  # find_package component or an imported library target. Source builds use
+  # hyle_stage_runtime; installed ELF/Mach-O executables locate the same SDK
+  # libraries relative to their own runtime directory.
+  if(TARGET hyle_engine)
+    if(UNIX)
+      file(RELATIVE_PATH _hyle_engine_libdir
+        "/${CMAKE_INSTALL_BINDIR}" "/${CMAKE_INSTALL_LIBDIR}")
+      if(APPLE)
+        set(_hyle_engine_origin "@loader_path")
+      else()
+        set(_hyle_engine_origin "$ORIGIN")
+      endif()
+      set_target_properties(hyle_engine PROPERTIES
+        INSTALL_RPATH "${_hyle_engine_origin}/${_hyle_engine_libdir}"
+        INSTALL_RPATH_USE_LINK_PATH OFF)
+    endif()
+    install(TARGETS hyle_engine
+      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT Hyle_Runtime)
+  endif()
+
   set(_hyle_export_targets "")
   set(_hyle_package_factors "")
   if(DEFINED HYLE_PRODUCTION_COMPONENT_LIST)

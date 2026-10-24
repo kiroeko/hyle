@@ -1,0 +1,144 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite shared Backend/domain-table migration",
+  "previous": {
+    "path": "docs/evidence/correctness/mtp-shared-cold-resources-output-2026-10-24.json",
+    "bytes": 3766,
+    "sha256": "d9ad616450b9be990ec90d883ac5fea8ea7026fd12e4d4e50d683d68fae8a582"
+  },
+  "sources": [
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 20328,
+      "sha256": "12b7222b3bdf03eb327796e5a6619a98db17c392196dd3c28814b7458f733b89"
+    },
+    {
+      "path": "engine/inference/execution_resources.h",
+      "bytes": 3312,
+      "sha256": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 3465,
+      "sha256": "ba89b36c9eaf993ac36b073343f28922590b725aceee7a0450ccb77349f93870"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 424827,
+      "sha256": "ca333afe95e3d6e9179704b1965932c4196f1112bda385c0c70a36de53e0e5ed"
+    },
+    {
+      "path": "engine/models/qwen35/native_gate.h",
+      "bytes": 1098,
+      "sha256": "d021a32ecac3452117df547a46d409c2772c30b36a73c895e758ed109f57b744"
+    },
+    {
+      "path": "engine/models/qwen35/native_gate.cc",
+      "bytes": 11071,
+      "sha256": "2a678440c98e983ebdc8ecad55343e1cbb431b88a093569c9578f91e64517a17"
+    },
+    {
+      "path": "engine/models/qwen35/native_gate_apple.mm",
+      "bytes": 8888,
+      "sha256": "4c4b4fa96e7911242988e037aed1e9f96ad0e68cab1a3e524f511b68ba10ed8a"
+    },
+    {
+      "path": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+      "bytes": 15305,
+      "sha256": "f27167b384c7e76b67fa07a5081c4ecb14ee23091457567f5c4e81181570bf91"
+    },
+    {
+      "path": "tests/tools/qwen_resource_retirement_test.cc",
+      "bytes": 7119,
+      "sha256": "fa176f092a4db7a12f884c836870e8a554c703f9cae8241dc3521193c94b4e8a"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-shared-backend-domains-2026-10-24.zip",
+    "bytes": 182034,
+    "sha256": "90e45d1d1e337530944e8b580d61f8cce80ae315137934ae13b6a9d48045fa5a"
+  },
+  "archive_entries": 98,
+  "changes": [
+    "Move model-independent Backend and WorkspaceBudgets into engine/inference",
+    "Use one fixed cold table for compile, resource_for and storage_owner_for",
+    "Prepare scalar caller storage using the actual reported domain",
+    "Migrate model/native-gate/test consumers and delete the old private header"
+  ],
+  "checks": {
+    "windows_strict_header_configurations": [
+      {
+        "configuration": "cpu",
+        "process": {
+          "exit": 0,
+          "seconds": 1.9840000000258442,
+          "timeout": false
+        }
+      },
+      {
+        "configuration": "cuda",
+        "process": {
+          "exit": 0,
+          "seconds": 2.0469999999913853,
+          "timeout": false
+        }
+      },
+      {
+        "configuration": "cpu-cuda",
+        "process": {
+          "exit": 0,
+          "seconds": 2.0469999999913853,
+          "timeout": false
+        }
+      },
+      {
+        "configuration": "vulkan",
+        "process": {
+          "exit": 0,
+          "seconds": 2.1410000000032596,
+          "timeout": false
+        }
+      },
+      {
+        "configuration": "cpu-vulkan",
+        "process": {
+          "exit": 0,
+          "seconds": 2.125,
+          "timeout": false
+        }
+      }
+    ],
+    "cuda_four_existing_cases_and_moved_domain_mapping": {
+      "exit": 0,
+      "seconds": 0.6720000000204891,
+      "timeout": false
+    },
+    "vulkan_two_original_retirement_cases_and_provider_owned_readback": {
+      "exit": 0,
+      "seconds": 0.7650000000139698,
+      "timeout": false
+    },
+    "windows_native_gate_strict_syntax": {
+      "exit": 0,
+      "seconds": 2.2339999999967404,
+      "timeout": false
+    },
+    "mac_air_cpu_apple_strict_header_syntax": {
+      "exit": 0,
+      "seconds": 0.630010667,
+      "SDK_builds": 0,
+      "model_runs": 0,
+      "HTTP": 0
+    },
+    "independent_review": "Domain counts, budgets, original owners, control-block addresses and destruction order remain consistent"
+  },
+  "limits": [
+    "The existing compile-time backend priority is preserved; runtime backend selection remains pending",
+    "No full-model, throughput, memory-comparison or complete cross-platform runtime claim",
+    "No model mathematics, sampling policy, precision or fusion changes",
+    "The pending complete FP8 journeys continue to use their separate frozen image"
+  ],
+  "SDK_builds": 0,
+  "model_runs": 0,
+  "model_download_bytes": 0
+}

@@ -12,6 +12,7 @@
 #include "hyle/compute/model_ops.h"
 #include "native_context.h"
 #include "fp8_shared_linear.h"
+#include "float8_quantize_kernel.h"
 #include "fp8/sglang_fp8_sm89.h"
 #include "fp8/sglang_fp8_dynamic_sm89.h"
 #include "fp8/sglang_fp8_quantize_cuda_sm89.h"
@@ -28,6 +29,7 @@ constexpr ProviderRuntimeProperties kRuntime{
 struct Shape final {
   int m, n, k;
   bool dynamic = false, bfloat = false, power2 = false, multiply_reciprocal = false;
+  bool native_f32_power2 = false;
   float floor = 1.0e-10F;
   std::size_t workspace_bytes = 0;
   int quant_groups = 1;
@@ -42,6 +44,12 @@ struct Prepared final {
   CUfunction quant_function = nullptr;
 };
 struct Invocation final { void *workspace; };
+
+float8_quantize::native::Program native_quantization(const Shape &shape) noexcept {
+  return {.groups = static_cast<std::uint64_t>(shape.m) *
+                        static_cast<std::uint64_t>(shape.k / 128),
+          .floor = shape.floor, .bfloat = false, .power2 = true};
+}
 
 Result<Shape> select_one(Operation operation, std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs) noexcept {
@@ -87,9 +95,9 @@ Result<Shape> select_one(Operation operation, std::span<const TensorDesc> inputs
       shape.quant_groups = 16;
       while (groups % shape.quant_groups != 0) shape.quant_groups /= 2;
     }
-    if (shape.power2 && !shape.bfloat)
-      return std::unexpected(Status::Unimplemented(
-          "SGLang FP8 power-of-two activation scales are qualified for BF16 input"));
+    // The original pow2 Triton quantizer is BF16-only. F32 uses the existing
+    // native F32 quantizer and its row-major scales, never that BF16 ABI.
+    shape.native_f32_power2 = shape.power2 && !shape.bfloat;
   }
   return shape;
 }
@@ -175,9 +183,10 @@ CUresult launch_matmul(const Prepared &prepared, const void *activation,
       reinterpret_cast<CUdeviceptr>(activation) + std::size_t(m) * k,
       reinterpret_cast<CUdeviceptr>(weight) + std::size_t(n) * k, 0, 0};
   // Exact original Triton 3.8 ABI, including its two zero-sized scratch slots.
+  const bool column_major_scales = prepared.shape.power2 && !prepared.shape.native_f32_power2;
   std::array integers{m, n, k, k, 1, 1, k, n, 1,
-                     prepared.shape.power2 ? 1 : k / 128,
-                     prepared.shape.power2 ? m : 1, 1, k / 128};
+                     column_major_scales ? 1 : k / 128,
+                     column_major_scales ? m : 1, 1, k / 128};
   std::array<void *, 20> arguments;
   for (std::size_t i = 0; i < 5; ++i) arguments[i] = &pointers[i];
   for (std::size_t i = 0; i < integers.size(); ++i) arguments[i + 5] = &integers[i];
@@ -193,6 +202,10 @@ CUresult launch_matmul(const Prepared &prepared, const void *activation,
 
 CUresult launch_quantizer(const Prepared &prepared, const void *source,
                           const void *activation, CUstream stream) noexcept {
+  // Keep the original Triton pow2 entry strictly BF16. The separately selected
+  // native F32 path never calls this ABI.
+  if (prepared.shape.power2 && !prepared.shape.bfloat)
+    return CUDA_ERROR_INVALID_VALUE;
   const auto m = prepared.shape.m, k = prepared.shape.k;
   auto input = reinterpret_cast<CUdeviceptr>(source);
   auto encoded = reinterpret_cast<CUdeviceptr>(activation);
@@ -244,7 +257,20 @@ detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &seq
       ? static_cast<Invocation *>(lane)->workspace : *a;
   cuda::detail::ScopedPrimaryContext scope(prepared.primary);
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
-  if (prepared.shape.dynamic) {
+  if (prepared.shape.native_f32_power2) {
+    unsigned *status = nullptr;
+    auto initialized = cuda::detail::acquire_device_status(sequence, &status);
+    if (!initialized.status.ok()) return initialized;
+    auto *encoded = static_cast<unsigned char *>(static_cast<Invocation *>(lane)->workspace);
+    auto *scales = reinterpret_cast<float *>(encoded +
+        static_cast<std::size_t>(prepared.shape.m) * prepared.shape.k);
+    const auto result = float8_quantize::native::launch(native_quantization(prepared.shape),
+        *a, encoded, scales, status, *stream);
+    // The shared status reset already owns a real accepted prefix. Numeric
+    // failure is reported by that original Completion, including partial IO.
+    if (result != cudaSuccess)
+      return detail::EnqueueResult::accepted_command(cuda::status(result));
+  } else if (prepared.shape.dynamic) {
     const auto result = launch_quantizer(prepared, *a, activation, *stream);
     if (result != CUDA_SUCCESS)
       return detail::EnqueueResult::accepted_command(cuda::status(result));
@@ -298,7 +324,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
                                                           shape.dynamic ? 4u : 1u},
                         .persistent_bytes = std::nullopt, .copy_bytes = 0,
                         .repack_bytes = 0, .synchronization_count = 0,
-                        .dispatch_count = pair ? 3u : shape.dynamic ? 2u : 1u},
+                        .dispatch_count = (pair ? 3u : shape.dynamic ? 2u : 1u) +
+                            (shape.native_f32_power2 ? 1u : 0u)},
                .implementation = ProviderImplementationId{route}};
   return Status::Ok();
 }
@@ -335,7 +362,7 @@ ProviderPrepareOutcome prepare(void *state,
                                  "_w8a8_block_fp8_matmul");
   // Finish lazy native code allocation before capture/replay and concurrent use.
   if (result == CUDA_SUCCESS) result = cuFuncLoad(prepared->function);
-  if (result == CUDA_SUCCESS && shape->dynamic) {
+  if (result == CUDA_SUCCESS && shape->dynamic && !shape->native_f32_power2) {
     const auto *image = shape->power2 ? kSglangFp8QuantizeBf16Pow2 : kSglangFp8QuantizeCuda;
     result = cuModuleLoadData(&prepared->quant_module, image);
     if (result == CUDA_SUCCESS)
@@ -353,6 +380,16 @@ ProviderPrepareOutcome prepare(void *state,
     return result == CUDA_ERROR_OUT_OF_MEMORY
                ? ProviderPrepareOutcome::resource_declined(status)
                : ProviderPrepareOutcome::error(status);
+  }
+  if (shape->native_f32_power2) {
+    // Finish native kernel loading before commands/capture, as with the
+    // existing standalone Float8BlockQuantize public operation.
+    status = cuda::status(float8_quantize::native::prepare(native_quantization(*shape)));
+    if (!status.ok()) {
+      destroy(prepared, allocator);
+      return status.IsResourceExhausted() ? ProviderPrepareOutcome::resource_declined(status)
+                                          : ProviderPrepareOutcome::error(status);
+    }
   }
   *output = {.vtable = &kVTable, .state = prepared,
              .workspace = {shape->workspace_bytes, shape->dynamic ? 4u : 1u},

@@ -1,0 +1,69 @@
+{
+  "status": "PASS bounded ordinary/MTP cold projection binding migration",
+  "scope": "Model-private loaded-weight binding reused by ordinary and MTP; foundational Graph/Compute execution and backend selection remain unchanged.",
+  "changes": [
+    "One cold binding per logical projection owns no storage: stable loaded Tensor references and existing typed computation parameters only.",
+    "One emitter serves ordinary/MTP target and draft, frontier and prefix programs; score policy uses the same binding.",
+    "Dense/GGUF logits remain direct F32; quantized reference projections retain their original BF16 result followed by F32 widening.",
+    "GPTQ F16 decode and exact four-node fusion candidate chain, CT BF16 product rounding, the two NVFP4 global contracts, block128 Divide/floor and channel/token BF16 QDQ are preserved.",
+    "Binding destruction precedes original weights and pools; no Provider/platform fields or per-token dispatch were added."
+  ],
+  "actual_checks": {
+    "CPU_strict_main": {
+      "exit": 0,
+      "seconds": 5.0939999999827705,
+      "timeout": false
+    },
+    "CPU_strict_projection_tool": {
+      "exit": 0,
+      "seconds": 5.1560000000172295,
+      "timeout": false
+    },
+    "finite_CPU_consumers": {
+      "state": "passed_finite_CPU_projection_binding_math",
+      "actual_math_graph_submissions": 7,
+      "cold_GGUF_graphs": 1,
+      "cold_GGUF_graph_submissions": 0,
+      "component_processes": 2,
+      "whole_model_processes": 0,
+      "compiled_private_TUs": 2,
+      "scope": "Original Q27 FP8 block128, CT channel head/localNVFP4, original ModelOpt head; existing synthetic GPTQ F16 closed4-node and CTsym independent-oracle cases, plus plain F32 head precision witness. Only fixed CPU, no whole model/trained quality/performance or other format/backend qualification."
+    },
+    "finite_summary": {
+      "path": ".scratch/mtp-projection-binding-20261024/regression/summary.json",
+      "bytes": 17102,
+      "sha256": "6cd1c9a29c21ab7aa785b5cee94ba9d3790c6ca14122f8c17ede0d7bf126860c"
+    }
+  },
+  "source": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 427519,
+      "sha256": "68abcc4f032c5a9c52ed226fd974521be973f3a116ccefe10713d011c2c012ad"
+    },
+    {
+      "path": "engine/models/qwen35/projection_binding.h",
+      "bytes": 2503,
+      "sha256": "4b40fe3bd003bfbe62fa332354e063708079e49da10d144179ec79f1facebc6a"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_projection_width_probe.cc",
+      "bytes": 11737,
+      "sha256": "f3d1a29b1fc274f2304dc5397c510a58c82fda6fa32e6d42bdd1d42d4abc9d07"
+    }
+  ],
+  "limits": [
+    "Seven fixed CPU Graph submissions and one GGUF cold graph do not establish trained-model quality or end-to-end performance.",
+    "No complete model, new backend matrix or SDK build; existing separate backend/model evidence remains separate.",
+    "Actual selected Provider fusion regions and end-to-end speed were not measured in these component probes.",
+    "Shared cross-model state and ordinary/MTP orchestration architecture are still being converged."
+  ],
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "performance_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-cold-projection-bindings-2026-10-24.zip",
+    "bytes": 474102,
+    "sha256": "2a22a4edb22dc07f1857e96638050441715169fcdd7077947e211abf6f696fe0"
+  }
+}

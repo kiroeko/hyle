@@ -1,0 +1,275 @@
+{
+  "date": "2026-10-25",
+  "status": "PASS_bounded_numeric_check_not_performance_or_whole_model_certification",
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-fixed-chunk-numeric-2026-10-25.zip",
+    "bytes": 127021,
+    "sha256": "ddfd212429d0030d183e1df06f7bfbe555d20dbad19a6e2e967d2f4dde10369a"
+  },
+  "private_frozen_numeric_archive": {
+    "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/proof.zip",
+    "bytes": 127021,
+    "sha256": "ddfd212429d0030d183e1df06f7bfbe555d20dbad19a6e2e967d2f4dde10369a"
+  },
+  "private_frozen_numeric_summary": {
+    "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/proof-summary.json",
+    "bytes": 14410,
+    "sha256": "5ec11853c1008f6f7f48e4af7163d4372fda7528b10c4a9f0b886ad54080f09b"
+  },
+  "candidate_source_archive": {
+    "path": ".scratch/mtp-fixed-chunk-20261025/proof.zip",
+    "bytes": 106634,
+    "sha256": "b7e16925af4dbf66fbda1d27e563e28cb3fa8dae681a2061520517a34ef95317"
+  },
+  "purpose": "Bounded numerical check of the private fixed-512-logical-KV-row FlashInfer planning candidate. No product change or performance result.",
+  "source": {
+    "original": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\public_batch_cuda_consumer.cc",
+      "bytes": 14677,
+      "sha256": "1914f0ceb762e0645192d13c9f3c76010a0f6c31b1eda9832a9c6733e2e2333f"
+    },
+    "private_consumer": {
+      "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/numeric_consumer.cc",
+      "bytes": 15126,
+      "sha256": "2bcf3be89d8911caf3b6145c57ad10cdd8cc95a79512ec30aa93a6f1b7a20373"
+    },
+    "data_layout_only_adaptation": true,
+    "independent_oracle_body_byte_unchanged": true,
+    "oracle_sha256": "17b86af49f1022df33692c516d8b7ce8cf0890eb30fbde9b61f8e29438433ada",
+    "candidate_native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\compile\\native-batch.obj",
+      "bytes": 9300246,
+      "sha256": "616175eb968d22792d42df0d729c1c80a52cf7def3c2c57cf25bc24c0c2c5f6b"
+    },
+    "original_native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-batch-portable-llp64-posenc.obj",
+      "bytes": 9300682,
+      "sha256": "476be33d56818ea80e206cc9b8258fc8ecf17cb04b10e149a9d2a8e71d81ffe9"
+    },
+    "native_candidate": "Private helper returns fixed 512/page_size pages for paged causal window-1 R1 BF16 Q1/Q2 with equal supported head dimensions; original provider and remaining clean closure reused."
+  },
+  "scope": {
+    "consumer_TUs_built": 1,
+    "native_TUs_built_here": 0,
+    "links": 2,
+    "actual_processes": 2,
+    "episodes_per_process": 4,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "models": 0,
+    "GPU_released": true,
+    "context": "actual NVIDIA GeForce RTX 4070, compute capability 8.9, reported by runtime",
+    "data": "deterministic source fixture, BF16 Q/K/V/Y, R1 H8/KV2 D256 page16 causal window-1, default F32 split partial policy",
+    "witness": "Reverse physical page references, one unused whole page and all unused tail rows poisoned with BF16 NaN; last valid row V=8..8.875 and K=0 makes causal final-row exclusion visible.",
+    "native_route": "Direct BatchProgram requires native BatchPlanning extension; Graph uses public PagedAttention with OperationFallbackPolicy::kReject and all three actual CTA16 plan reports; no SDPA/ggml operation fallback.",
+    "replay": "Original Direct prepare/run and Graph kCommands prepare_replay/submit/wait. Original held-output prepare rejection and layout-generation checks retained. Optional HYLE_G06_CAPTURE_REPLAY path was not enabled, so no separate CUDA capture compatibility certification.",
+    "internal_F32_partial_error": "unknown; no public internal partial tensor was read or compared"
+  },
+  "gate": {
+    "original_independent_double_oracle_preserved": true,
+    "absolute_tolerance": 0.007,
+    "every_output_requires_finite_error": true,
+    "outputs_checked_per_process": 43008,
+    "oracle_calls_per_process": 12,
+    "candidate_max_abs_error": 0.000745921497,
+    "baseline_max_abs_error": 0.000798288786
+  },
+  "episodes": [
+    {
+      "Q": 1,
+      "KV": 129,
+      "tail": 1,
+      "values_per_route": 2048,
+      "candidate_max_abs_error_to_F64": [
+        0.000745921497,
+        0.000745921497,
+        0.000745921497
+      ],
+      "baseline_max_abs_error_to_F64": [
+        0.000798288786,
+        0.000798288786,
+        0.000798288786
+      ],
+      "candidate_vs_baseline_direct_BF16_different_values": 397,
+      "candidate_vs_baseline_max_abs_delta": 0.0009765625,
+      "each_native_Direct_equals_both_Graph_outputs": {
+        "candidate": true,
+        "baseline": true
+      },
+      "candidate_split_kv": false,
+      "baseline_split_kv": true
+    },
+    {
+      "Q": 2,
+      "KV": 257,
+      "tail": 1,
+      "values_per_route": 4096,
+      "candidate_max_abs_error_to_F64": [
+        0.000462299172,
+        0.000462299172,
+        0.000462299172
+      ],
+      "baseline_max_abs_error_to_F64": [
+        0.000540116791,
+        0.000540116791,
+        0.000540116791
+      ],
+      "candidate_vs_baseline_direct_BF16_different_values": 919,
+      "candidate_vs_baseline_max_abs_delta": 0.00048828125,
+      "each_native_Direct_equals_both_Graph_outputs": {
+        "candidate": true,
+        "baseline": true
+      },
+      "candidate_split_kv": false,
+      "baseline_split_kv": true
+    },
+    {
+      "Q": 2,
+      "KV": 385,
+      "tail": 1,
+      "values_per_route": 4096,
+      "candidate_max_abs_error_to_F64": [
+        0.000440520156,
+        0.000440520156,
+        0.000440520156
+      ],
+      "baseline_max_abs_error_to_F64": [
+        0.000424159036,
+        0.000424159036,
+        0.000424159036
+      ],
+      "candidate_vs_baseline_direct_BF16_different_values": 829,
+      "candidate_vs_baseline_max_abs_delta": 0.00048828125,
+      "each_native_Direct_equals_both_Graph_outputs": {
+        "candidate": true,
+        "baseline": true
+      },
+      "candidate_split_kv": false,
+      "baseline_split_kv": true
+    },
+    {
+      "Q": 2,
+      "KV": 513,
+      "tail": 1,
+      "values_per_route": 4096,
+      "candidate_max_abs_error_to_F64": [
+        0.000397036675,
+        0.000397036675,
+        0.000397036675
+      ],
+      "baseline_max_abs_error_to_F64": [
+        0.000486476625,
+        0.000486476625,
+        0.000486476625
+      ],
+      "candidate_vs_baseline_direct_BF16_different_values": 952,
+      "candidate_vs_baseline_max_abs_delta": 0.00048828125,
+      "each_native_Direct_equals_both_Graph_outputs": {
+        "candidate": true,
+        "baseline": true
+      },
+      "candidate_split_kv": true,
+      "baseline_split_kv": true
+    }
+  ],
+  "process_counts": {
+    "consumer_TUs": 1,
+    "native_TUs_built_by_this_check": 0,
+    "links": 2,
+    "candidate_processes": 1,
+    "baseline_processes": 1,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "model_runs": 0
+  },
+  "actual_processes": {
+    "candidate": {
+      "exit": 0,
+      "seconds": 0.9690000000118744,
+      "timeout": false
+    },
+    "baseline": {
+      "exit": 0,
+      "seconds": 1.0150000000139698,
+      "timeout": false
+    },
+    "elapsed_seconds_are_not_TPS": true
+  },
+  "validation": {
+    "all_43008_output_values_per_process_pass_original_F64_gate": true,
+    "all_errors_finite": true,
+    "original_old_output_reuse_rejections_preserved": true,
+    "original_layout_generation_checks_preserved": true,
+    "compile_warning_count": 0,
+    "compiled_dependencies_unchanged_after_runs": true,
+    "numerical_failure": false,
+    "compile_or_runtime_failure": false,
+    "offline_analysis_setup_failure": [
+      {
+        "kind": "offline_analysis_script_setup",
+        "source": "analyze-firstfailed.py.txt",
+        "error": "LookupError: unknown encoding: utf8-sig; preceding SyntaxWarning: invalid decimal literal ==1for.",
+        "correction": "Use utf-8-sig and separate integer literal from for keyword. No consumer compile or actual run repeated."
+      }
+    ]
+  },
+  "limits": [
+    "Only these four deterministic BF16 episodes are covered; this is not a whole-model, all-shape, mask/window, dtype, or backend matrix.",
+    "Final BF16 outputs are checked against the original independent sequential-double attention oracle. Internal F32 partial error is unknown and was not read or certified.",
+    "Candidate and original BF16 outputs are not bitwise identical. Their observed differences are reported per episode; both satisfy the unchanged absolute-error gate.",
+    "Direct and two Graph outputs agree byte-for-byte within each native variant. Graph used kCommands replay; optional HYLE_G06_CAPTURE_REPLAY was not enabled, so there is no separate CUDA capture compatibility certification.",
+    "Real native BatchPlanning/CTA reports and Graph fallback rejection establish this path; IDs or a ggml SDPA fallback were not used as the numerical oracle.",
+    "No throughput claim can be made from the raw process times, which include CPU oracle calculation and output-file IO."
+  ],
+  "conclusion": "The four fixed episodes satisfy the unchanged public independent-double gate. Candidate and original native plans produce finite but not necessarily identical BF16 values; Direct and Graph agree within each native variant. This permits only the bounded numerical statement, not general attention accuracy or achieved performance.",
+  "publication": "The public zip is an unchanged copy of the frozen private numeric proof.zip. It contains sources/patch, exact compile/link/run commands, dependency/source pins, original logs, per-output BF16 files and summaries; no weights, SDK, objects, libraries or executables.",
+  "cleanup": {
+    "count": 7,
+    "logical_bytes": 281435632,
+    "files": [
+      {
+        "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/compile/unit.obj",
+        "bytes": 1179419,
+        "sha256": "5bcbccb1a88459d097ff803198a52f7cbb6729624599519de32b7e0ff4a1badd"
+      },
+      {
+        "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/candidate-link/numeric.exe",
+        "bytes": 140061184,
+        "sha256": "5ac6096ec63679f4b85360026056913c48575325907735b31bb2ec11c406094f"
+      },
+      {
+        "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/candidate-link/numeric.exp",
+        "bytes": 25017,
+        "sha256": "ff85d90cd29c2d62c96c9b6d87f7086b9f6bf7ed3dd5d3cdad56d523864ab4f4"
+      },
+      {
+        "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/candidate-link/numeric.lib",
+        "bytes": 41650,
+        "sha256": "a4721b3240b83fe2a136965b0482c98e82c2426e9650c81885ec652f213027f1"
+      },
+      {
+        "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/baseline-link/numeric.exe",
+        "bytes": 140061696,
+        "sha256": "4c81d0c97e90a055067241522145afa4453dc4c1ee632b267b7bd34cb76bc202"
+      },
+      {
+        "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/baseline-link/numeric.exp",
+        "bytes": 25016,
+        "sha256": "38fab13c829f093969932e64e3ff09d3a9e7e4e886391117b2c7e90e38e0c3fd"
+      },
+      {
+        "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/baseline-link/numeric.lib",
+        "bytes": 41650,
+        "sha256": "a4721b3240b83fe2a136965b0482c98e82c2426e9650c81885ec652f213027f1"
+      }
+    ],
+    "policy": "Only these superseded private numeric consumer artifacts; preview then explicit -RemoveFixedChunkNumericBinaries -Apply via root test.ps1. All source/log/output/proof files and shared native/provider/Graph/cache artifacts are retained.",
+    "performed": true,
+    "receipt": {
+      "path": ".scratch/mtp-performance-convergence-20261025/attention-numeric-plan/cleanup-removed.json",
+      "bytes": 1836,
+      "sha256": "7ad7f0e3bb1cfe6b151eeb7f4b2571fecdf4e348246f6d9cfcb64f1049e8485f"
+    },
+    "physical_bytes_freed": "unknown; logical bytes do not account for hardlinks or shared blocks"
+  }
+}

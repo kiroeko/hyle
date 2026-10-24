@@ -243,6 +243,68 @@ TEST(VulkanTensor, UnaryBinaryAndCastUseIndependentFloatingOracles) {
   }
 }
 
+TEST(VulkanTensor, Int32ToFloat32RoundsBoundaryAndStridedValues) {
+  auto context = vulkan_test::context().value();
+  const std::array<std::int32_t, 16> edges{
+      INT32_MIN, -16777219, -16777217, -16777216, -1, 0, 1, 16777215,
+      16777216, 16777217, 16777219, INT32_MAX, 33554431, 33554433,
+      2147483583, 2147483584};
+  std::vector<std::uint64_t> raw;
+  for (const auto value : edges) raw.push_back(std::bit_cast<std::uint32_t>(value));
+  std::uint32_t cursor = 0x1294be37U;
+  for (unsigned i = 0; i < 256; ++i) {
+    cursor = cursor * 1664525U + 1013904223U;
+    raw.push_back(cursor);
+  }
+  const auto strided = c::TensorDesc::strided_bytes(
+      c::DataType::kInt32, std::array<std::int64_t, 2>{17, 16},
+      std::array<std::int64_t, 2>{83, 5}).value();
+  for (const auto desc : {dense(c::DataType::kInt32, {17, 16}), strided}) {
+    const auto source = context.upload(desc, payload(desc, raw)).value();
+    const auto transposed = source.view(c::View::permute(
+        std::array<std::int32_t, 2>{1, 0}).value()).value();
+    for (const auto input : {source, transposed}) {
+      const auto logical = bits(context, input);
+      auto result = execute(context, c::Operation(c::Cast{c::DataType::kFloat32}),
+                            std::array{input});
+      ASSERT_TRUE(result) << result.error().message();
+      EXPECT_EQ(result->description().data_type(), c::DataType::kFloat32);
+      const auto actual = bits(context, *result);
+      ASSERT_EQ(actual.size(), raw.size());
+      for (std::size_t i = 0; i < actual.size(); ++i) {
+        const auto value = std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(logical[i]));
+        EXPECT_EQ(actual[i], std::bit_cast<std::uint32_t>(static_cast<float>(value))) << i;
+      }
+      EXPECT_EQ(bits(context, input), logical);
+      EXPECT_FALSE(execute(context, c::Operation(c::Cast{c::DataType::kBFloat16}),
+                           std::array{input}));
+      EXPECT_FALSE(execute(context, c::Operation(c::Cast{c::DataType::kInt32}),
+                           std::array{*result}));
+    }
+    EXPECT_EQ(bits(context, source), raw);
+  }
+}
+
+TEST(VulkanTensor, CategoricalChoiceInt32Float32BoolAcceptanceChain) {
+  auto context = vulkan_test::context().value();
+  const auto desc = dense(c::DataType::kInt32, {2});
+  const std::array<std::uint64_t, 2> choices{0, 1};
+  const auto input = context.upload(desc, payload(desc, choices)).value();
+  auto widened = execute(context, c::Operation(c::Cast{c::DataType::kFloat32}),
+                         std::array{input});
+  ASSERT_TRUE(widened) << widened.error().message();
+  auto truth = execute(context, c::Operation(c::Cast{c::DataType::kBool}),
+                       std::array{*widened});
+  ASSERT_TRUE(truth) << truth.error().message();
+  const auto scalar = dense(c::DataType::kBool, {});
+  const auto no = context.upload(scalar, std::array<std::byte, 1>{std::byte{0}}).value();
+  const auto yes = context.upload(scalar, std::array<std::byte, 1>{std::byte{1}}).value();
+  auto accepted = execute(context, c::Operation(c::Select{}),
+                          std::array{*truth, no, yes});
+  ASSERT_TRUE(accepted) << accepted.error().message();
+  EXPECT_EQ(bits(context, *accepted), (std::vector<std::uint64_t>{1, 0}));
+}
+
 TEST(VulkanTensor, ScalarEmptyTailRankEightBroadcastAndColdRefusal) {
   auto context = vulkan_test::context().value();
   for (auto type :

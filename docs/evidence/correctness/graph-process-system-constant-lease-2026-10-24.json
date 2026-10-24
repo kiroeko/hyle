@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite process-lifetime exception for Graph ConstantBinding with ready ReadLease and no StorageOwner.",
+  "problem": "CPU memory_resource is the exact process-lifetime mem::system_resource. ReadLease owns the allocation, but Graph previously rejected it without a separate StorageOwner and again at queued materialization admission.",
+  "contract": {
+    "source_resource": "exact mem::system_resource identity",
+    "metadata_allocator": "all system_allocator alloc/free/realloc/state fields match",
+    "retention": "Borrow retains plan.constant_leases; queued Materialize retains the source ReadLease in ConstantCopyBatch through native retirement",
+    "unchanged": [
+      "existing owner requires lease and actual matching resource",
+      "view resource/native handle/offset/extent checks",
+      "queued destination and metadata owners and destination Context identity",
+      "resource-budget charges retire with actual allocation lifetime"
+    ]
+  },
+  "validation": {
+    "platform": "Windows x64, MSVC 14.50.35717, /O2 /W4 /WX",
+    "fresh_translation_units": 3,
+    "reused_dependencies": true,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "tests": 8,
+    "failures": 0,
+    "checks": [
+      "CPU Native RMS reads nonzero-offset ownerless constant after caller and Executable handles drop; Borrow and Materialize",
+      "Reject host-resource wrapper and every individual system allocator field mismatch",
+      "Reject wrong view handle/resource/lower offset/upper extent and owner without lease",
+      "Queued materialization with injected unknown preparation observation keeps ownerless source external charge=16 bytes after caller/failed compile release, then charge=0 after explicit native retirement",
+      "Existing real-owner physical roots, unknown retirement, raw queued-source rejection and readonly source-family contracts"
+    ]
+  },
+  "limits": [
+    "Queued completion-failure coverage uses the focused RegionProbe backend, not a CUDA hardware copy.",
+    "This records focused Graph functional checks, not full SDK build, full hybrid model execution or performance."
+  ],
+  "products": [
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 478793,
+      "sha256": "7cbb008081aa2aef55616d51864a638bd162ab68e91d6d7c63c8c145561e5347"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 50543,
+      "sha256": "688228a24d0e46bf79cbca188650c4ecbda1d97b6a8977240d796a067466ae0c"
+    },
+    {
+      "path": "tests/graph/executable_test.cc",
+      "bytes": 250472,
+      "sha256": "358a99c3e0047ad970f94e66c0c548dd47d5ed231255e7b3025a5e0d0cb37192"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "bytes": 608452,
+      "sha256": "2be97c32d1082493da1a1fcbc27fa3a6850dfb5c3d4172e8374fa335c5fa6b16"
+    }
+  ],
+  "executable_object": {
+    "path": ".scratch/graph-system-constant-lease-20261024/executable/executable.obj",
+    "bytes": 5131528,
+    "sha256": "25a1011922c00651e57e0defab10293bc168886a5cdf245839f95650b394419b"
+  },
+  "tests_result": {
+    "path": ".scratch/graph-system-constant-lease-20261024/tests.json",
+    "bytes": 3761,
+    "sha256": "e2377d8da27db9595498e159d12fd97c1495754b90cafd8facfeec6d149f57bc"
+  },
+  "logs": {
+    "path": "docs/evidence/correctness/graph-process-system-constant-lease-2026-10-24-logs.zip",
+    "bytes": 69885,
+    "sha256": "baaa1499cc9f914ef18288cfe59a86c6e18b57b23a00885eec2b352b13422376"
+  },
+  "reproduction": [
+    "python .scratch/graph-system-constant-lease-20261024/check.py all"
+  ],
+  "runtime_SHA256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+}

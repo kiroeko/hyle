@@ -1,0 +1,354 @@
+{
+  "date": "2026-10-24",
+  "status": "OFFLINE AUDIT COMPLETE; both identified pre-run blockers corrected; complete Q27 model execution remains pending",
+  "scope": "Actual original-header inventory, source geometry, finite role placement, cache/workspace arithmetic and explicit CPU/mixed image handoff. No Q27 inference, payload reading, SDK build or download in this audit.",
+  "HTTP": 0,
+  "models_started": 0,
+  "new_SDK_TUs": 0,
+  "audit": {
+    "kind": "Q27 bounded offline run-ready source audit",
+    "HTTP": 0,
+    "builds": 0,
+    "model_runs": 0,
+    "status": "offline_audit_complete_two_concrete_pre_run_issues_identified",
+    "header": {
+      "path": ".scratch/qwen-original-mtp-20261022/original-q27/header-prefix.bin",
+      "bytes": 12000000,
+      "sha256": "6286251a4c455bd3032e31f2f68ee9e037597200e9bc51aa2bbc79859e2ebbb0"
+    },
+    "parsed_structural_bytes": 10996640,
+    "roles": 866,
+    "selected_payload_bytes": 16453443584,
+    "codecs": {
+      "Q6_K": 30,
+      "F32": 360,
+      "Q4_K": 104,
+      "Q5_K": 131,
+      "IQ4_XS": 117,
+      "Q3_K": 7,
+      "Q8_0": 106,
+      "IQ4_NL": 7,
+      "IQ3_S": 4
+    },
+    "geometry": {
+      "hidden": 5120,
+      "intermediate": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "key_depth": 256,
+      "value_depth": 256,
+      "rotary": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_key_depth": 128,
+      "conv_kernel": 4,
+      "context_limit": 262144,
+      "vocabulary": 248320,
+      "gdn_value_depth": 128,
+      "mtp_layers": 1,
+      "tied_head": false,
+      "gdn_layout": "cyclic",
+      "layers": "GGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGA",
+      "rope_theta": 10000000.0,
+      "epsilon": 9.999999974752427e-07
+    },
+    "mixed": {
+      "cpu_target_ffn_layers": 64,
+      "host_roles": 256,
+      "host_weight_bytes": 9863290880,
+      "device_weight_bytes": 6590152704,
+      "ordinary_device_weight_bytes": 6239143936
+    },
+    "budgets": {
+      "ordinary": {
+        "cache_known_backing_bytes": 311033984,
+        "per_invocation_known_workspace_cap_bytes": 182341632,
+        "mixed_staging_cap_bytes": 69730304
+      },
+      "k1": {
+        "cache_known_backing_bytes": 465215619,
+        "per_invocation_known_workspace_cap_bytes": 297574400,
+        "mixed_staging_cap_bytes": 72351744
+      }
+    },
+    "issues": [
+      {
+        "kind": "scratch_preparation_bos_keyerror",
+        "status": "resolved_in_current_scratch_preparer",
+        "location": "prepare-ready.py:69-71",
+        "fact": "read_local_header omits tokenizer.* by default; the requested BOS key does not exist.",
+        "fix": "Current scratch preparer uses parse_header over authenticated exact original raw header with explicit retained_metadata for only BOS; validates type/range before creating complete-v2."
+      },
+      {
+        "kind": "old_mixed_image_constructor_unwind_order",
+        "status": "old_frozen_image_is_historical_new_current_source_image_supplied_by_parent",
+        "source": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/source/engine/models/qwen35/main.cc",
+        "fact": "Frozen resources_ precedes Backend execution; ctor exception destroys Backend before allocated payloads. Current product and pure CPU source are fixed.",
+        "action": "Parent supplied a fresh current-source CUDA consumer and new explicit runtime pins; immutable old image/plan remains historical."
+      }
+    ],
+    "nonblocking_notes": [
+      "Old frozen prepare_family reserves 76+38*(prefix_rows-1) state ports per request; actual Q27 needs 196+98*(prefix_rows-1). This is vector reserve/overflow precheck only; dynamic pushes remain valid for the bounded N1 journey.",
+      "Runner checks actual original weight bytes and cache limit, valid output domain, exit and route; it does not certify task quality or all per-layer numerics."
+    ],
+    "limits": [
+      "No body hashes or model runs in this audit; source finalization and complete V2 preparation remain required.",
+      "Workspace caps are per-invocation known workspace admission, shared execution budget is tracking, native CPU-private allocation size remains unknown.",
+      "Original device role bytes are not a physical VRAM peak/cap; actual graph compilation and native allocation may still fail honestly.",
+      "64 target FFNs on CPU is one explicit route. It does not certify arbitrary mixed placement or every backend/model configuration."
+    ]
+  },
+  "fixes": [
+    {
+      "issue": "scratch BOS scalar lookup was discarded by default header reader",
+      "status": "resolved",
+      "source": {
+        "path": ".scratch/mtp-metadata-offline-20261024/q27/prepare-ready.py",
+        "bytes": 4625,
+        "sha256": "e02a763b6bff93ad02cd5b65e8af266477bd995105829ba4a744588f1f2fb8c8"
+      },
+      "independent_reproduction": "Same authenticated original exact header omits BOS by default, explicit scalar retention returns248044; EOS scalar248046. No tokenizer array retained.",
+      "boundary": "No complete inputs are published before all866 original ranges and full original LFS are authenticated. This audit did not invoke prepare."
+    },
+    {
+      "issue": "old mixed frozen constructor unwind would destroy Backend before loaded resources",
+      "status": "resolved_by_new_explicit_current_image",
+      "old_main": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/source/engine/models/qwen35/main.cc",
+        "bytes": 408872,
+        "sha256": "3edf9a7ae4eb6b9db95b84ef4150d81e848e5d49da2da1ebe5713fc57868c48a"
+      },
+      "pure_CPU_main": {
+        "path": ".scratch/qwen-pure-cpu-deployment-20261024/source/engine/models/qwen35/main.cc",
+        "bytes": 410029,
+        "sha256": "b1f620ef9d8659569602355e981772e4b7b5a97cb6753c44e650bad878543527"
+      },
+      "new_main": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/main.cc",
+        "bytes": 410599,
+        "sha256": "662eeb74cd23bd06648bf92a1a68bab29ffbbf41db2297a17dcbec8dd1ebf491"
+      },
+      "current_image": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/recursive-probe.exe",
+        "bytes": 141278208,
+        "sha256": "f0c744b50d582cb2d1b3006cefdfce24947d3b27ec67e91767aef1bf5dd832c4"
+      },
+      "construction_unwind_order": {
+        "execution_declared_before_resources": true,
+        "execution_initialized_before_resources": true
+      },
+      "compiler_result": {
+        "exit": 0,
+        "seconds": 15.036676168441772
+      },
+      "linker_result": {
+        "exit": 0,
+        "seconds": 2.791956901550293
+      },
+      "qualification": "The producer compiled one application TU against retained SDK objects. This audit only checks source/metadata. Old plan/image and completed CT evidence remain immutable; no Q27 runtime claim."
+    }
+  ],
+  "new_explicit_plan": {
+    "path": ".scratch/qwen-multi-draft-20261024/current-image-plans/Q27.json",
+    "bytes": 8610,
+    "sha256": "850709561f3511d527ead00765fdabf4b032549953da0ed65d6c9b1d9b20c077"
+  },
+  "unchanged_CPU_plan_and_case_arguments": true,
+  "source_hashes": [
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/q27/audit-ready-offline.py",
+      "bytes": 5437,
+      "sha256": "865c9f47cb5e28f409568e51447ae585e12aa118222c2b7c6838128114c7adb9"
+    },
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/q27/prepare-ready.py",
+      "bytes": 4625,
+      "sha256": "e02a763b6bff93ad02cd5b65e8af266477bd995105829ba4a744588f1f2fb8c8"
+    },
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/q27/publish-ready-audit.py",
+      "bytes": 6891,
+      "sha256": "00e261217e6d1bd9052214974d82eb3b8b4a8cfe02bf7d49c88549141cdcd87e"
+    },
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/q27/run-ready.py",
+      "bytes": 9132,
+      "sha256": "2af8f65801e1998fbaeba3a3f1a42f414ff01b5973b648cce3f456535cd189e9"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/current-cuda-ready.py",
+      "bytes": 9259,
+      "sha256": "b09a7762cc4f8c8f69dfc71a1dfb8b38ede0d20cc5a7d71c0f9f7536a818f0d6"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check2/source/engine/models/qwen35/main.cc",
+      "bytes": 408872,
+      "sha256": "3edf9a7ae4eb6b9db95b84ef4150d81e848e5d49da2da1ebe5713fc57868c48a"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/inference/mtp_acceptance.h",
+      "bytes": 5397,
+      "sha256": "da971b0c12426f821c8e9850aab2e9f404a19d172b658576884bf4902f6d3f67"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/inference/sampling_cursor.h",
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/inference/sampling_graph.h",
+      "bytes": 17641,
+      "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/backend.h",
+      "bytes": 18451,
+      "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/batch_probe.cc",
+      "bytes": 26876,
+      "sha256": "33aadb707e545d0ea0f8ad5bff591acd5ef5e5a2504b119870bd10f492e6707c"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/driver.h",
+      "bytes": 166,
+      "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/host_predicates.h",
+      "bytes": 1486,
+      "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/main.cc",
+      "bytes": 410599,
+      "sha256": "662eeb74cd23bd06648bf92a1a68bab29ffbbf41db2297a17dcbec8dd1ebf491"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/mtp_schedule.h",
+      "bytes": 5912,
+      "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/mtp_session_probe.cc",
+      "bytes": 112361,
+      "sha256": "e688c1980f1c9064ce3b1deb01ccca19c63a2957e608d113466db2e4b3356905"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/native_gate.cc",
+      "bytes": 11023,
+      "sha256": "98c33aa414f733879482ae06a23aa85f357dbb3c862451f8e6f4aee358217506"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/native_gate.h",
+      "bytes": 1050,
+      "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/prefix_cache.h",
+      "bytes": 20952,
+      "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/prepared_roles.h",
+      "bytes": 18614,
+      "sha256": "c677c3f7d79dfeefd6d32f32b8f6aa4f87cee71d010caf733f5974da81ab0ca6"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/probe_geometry.h",
+      "bytes": 1099,
+      "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/retained_budget_probe.cc",
+      "bytes": 19739,
+      "sha256": "5cdbcdfb1f32da1576df64dc0a26bc3dc8ae1291c75d82dc069f819e0a844a02"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/retained_resources.h",
+      "bytes": 1932,
+      "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/retirement_probe.cc",
+      "bytes": 40236,
+      "sha256": "9202c1988f914f911fa490bfa78da562aab55a3aa574338b1cbf81cc0512df42"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/engine/models/qwen35/session_state.h",
+      "bytes": 12965,
+      "sha256": "80cae237ea8a58f468dd80b34c479ef08849574e954c80557648bbcfbfc7b814"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/source/probe.cc",
+      "bytes": 106,
+      "sha256": "6d9e7e30414006f363e2bd5bad0624a8c6784b7000ddf39ead2a277660c73986"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/source/engine/models/qwen35/main.cc",
+      "bytes": 410029,
+      "sha256": "b1f620ef9d8659569602355e981772e4b7b5a97cb6753c44e650bad878543527"
+    },
+    {
+      "path": "engine/models/qwen35/geometry.py",
+      "bytes": 8542,
+      "sha256": "43b93b3ee48902caba25657c4fc938ab31ef804ecb33b10a4b9cb63f7744ae7f"
+    },
+    {
+      "path": "engine/models/qwen35/gguf_header.py",
+      "bytes": 8746,
+      "sha256": "73fadc2e814dcc3871e4356f4fe801c931db615f082d4e1922b40f51f696fb02"
+    },
+    {
+      "path": "engine/models/qwen35/gguf_roles.py",
+      "bytes": 15555,
+      "sha256": "d8e645105d101c4b160a7c590fb4e4986f5af562c6e3ba7324ccf1b9f2daeeb5"
+    }
+  ],
+  "inherited_evidence": [
+    "docs/evidence/correctness/mtp-qwen-source-geometry-v2-preparation-2026-10-24.json",
+    "docs/evidence/correctness/mtp-qwen35-pure-cpu-deployment-2026-10-24.json"
+  ],
+  "archive": {
+    "path": "docs/evidence/research/mtp-qwen27-run-ready-offline-audit-2026-10-24.zip",
+    "bytes": 481766,
+    "sha256": "d5475c578f348692d2f84043ecb0b4d145eed6fdfc8bc208aebc6cf7969a95ea"
+  },
+  "archive_records": 63
+}

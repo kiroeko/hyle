@@ -378,6 +378,9 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
   // select a distinct backing without replacing the Run or its endpoint.
   slot.result.reset();
   if (slot.sealed) {
+    // Downstream Graph unbind can retire private imports without touching this
+    // upstream slot. Enter its next write epoch before comparing output owners.
+    HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_bindings(slot.invocation));
     bool refresh = false;
     HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_outputs(slot.invocation, &refresh));
     if (refresh) HYLE_RETURN_IF_ERROR(refresh_outputs(artifact, slot));

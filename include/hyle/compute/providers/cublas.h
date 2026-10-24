@@ -14,8 +14,10 @@ inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
 // Positive leading batch extents use the ordinary
 // right-aligned broadcast contract; batch strides must contain whole elements
 // and output matrix spans must not overlap. Storage bases are 16-byte aligned.
-// BFloatLinearF32 additionally accepts dense BF16 [T,K] activations and
-// stored BF16 [E,K] weights, producing dense F32 [T,E] scores. Its weight
+// DenseLinearF32 additionally accepts matching dense F16/BF16/F32 [T,K]
+// activations and stored [E,K] weights, producing dense F32 [T,E] scores,
+// including exact matching batch axes. Mixed input dtypes are declined.
+// Its weight
 // orientation is a native descriptor; no transpose or dtype copy is required.
 // Accumulation is FP32, without TF32 input
 // conversion. Affine batch runs, descriptors and algorithms are fixed in

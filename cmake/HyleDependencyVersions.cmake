@@ -48,6 +48,9 @@ if(NOT EXISTS "${HYLE_DEPENDENCY_LOCK_FILE}")
   message(FATAL_ERROR
     "HYLE dependency lock does not exist: ${HYLE_DEPENDENCY_LOCK_FILE}")
 endif()
+# Reading JSON does not make it a CMake regeneration input by itself.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${HYLE_DEPENDENCY_LOCK_FILE}")
 file(READ "${HYLE_DEPENDENCY_LOCK_FILE}" _hyle_dependency_lock_json)
 
 function(_hyle_dependency_json_get output)

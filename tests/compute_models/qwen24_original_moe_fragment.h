@@ -151,11 +151,11 @@ inline BFloatResult append_bfloat(sem::Fragment &f,Value input,const Parameters 
     return f.description(value).data_type()==type?value:f.one(c::Operation(c::Cast{.output_type=type}),{value});
   };
   const auto linear=[&](Value actual,Value weight) {
-    return cast(f.one(c::model_ops::bfloat_linear_f32(),{actual,weight}),c::DataType::kBFloat16);
+    return cast(f.one(c::model_ops::dense_linear_f32(),{actual,weight}),c::DataType::kBFloat16);
   };
   BFloatResult result;auto &ports=result.ports;auto &values=ports.values;
   values.input=input;values.map=parameters.map;
-  ports.router_raw=f.one(c::model_ops::bfloat_linear_f32(),{input,parameters.router});
+  ports.router_raw=f.one(c::model_ops::dense_linear_f32(),{input,parameters.router});
   values.logits=cast(ports.router_raw,c::DataType::kBFloat16);
   values.probabilities=f.one(c::Operation(c::Softmax{}),{cast(values.logits,c::DataType::kFloat32)});
   const auto top=f.append(c::Operation(c::TopK{.count=std::size_t(slots),.stable=true}),{values.probabilities},2);

@@ -1,0 +1,242 @@
+{
+  "date": "2026-10-24",
+  "scope": "Complete original Qwen3.5-2B BF16 target and NextN input, source-derived GeometryV2, Linux CPU endpoint.",
+  "system": "WSL Ubuntu24.04 x86_64, GCC14.2; i9-13900K; WSL33505357824B memory, not the entire Windows64GiB.",
+  "cases": [
+    {
+      "name": "ordinary",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "target_rows": 157,
+      "draft_frontier": null,
+      "draft_lag": null,
+      "sampling_draw_cursor": 0,
+      "host_weight_bytes": 3763655360,
+      "device_weight_bytes": 0,
+      "known_workspace": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 22920576,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "native_private_unknown": true,
+      "runtime": {
+        "pid": 903,
+        "peak_RSS_sampled_bytes": 5638533120,
+        "current_native_mapping_seen": true,
+        "selected_environment": {
+          "OMP_NUM_THREADS": "8",
+          "MKL_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "8",
+          "LD_LIBRARY_PATH": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024:/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib"
+        }
+      }
+    },
+    {
+      "name": "mtp-K1",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "target_rows": 157,
+      "draft_frontier": 157,
+      "draft_lag": 0,
+      "sampling_draw_cursor": 0,
+      "host_weight_bytes": 3885311680,
+      "device_weight_bytes": 0,
+      "known_workspace": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 22920576,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "native_private_unknown": true,
+      "runtime": {
+        "pid": 922,
+        "peak_RSS_sampled_bytes": 6033883136,
+        "current_native_mapping_seen": true,
+        "selected_environment": {
+          "OMP_NUM_THREADS": "8",
+          "MKL_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "8",
+          "LD_LIBRARY_PATH": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024:/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib"
+        }
+      }
+    },
+    {
+      "name": "mtp-K1-random",
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        727
+      ],
+      "target_rows": 157,
+      "draft_frontier": 157,
+      "draft_lag": 0,
+      "sampling_draw_cursor": 5,
+      "host_weight_bytes": 3885311680,
+      "device_weight_bytes": 0,
+      "known_workspace": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 22920616,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "native_private_unknown": true,
+      "runtime": {
+        "pid": 947,
+        "peak_RSS_sampled_bytes": 6149148672,
+        "current_native_mapping_seen": true,
+        "selected_environment": {
+          "OMP_NUM_THREADS": "8",
+          "MKL_NUM_THREADS": "8",
+          "OPENBLAS_NUM_THREADS": "8",
+          "LD_LIBRARY_PATH": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024:/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib"
+        }
+      }
+    }
+  ],
+  "checks": {
+    "passed": 3,
+    "failed": 0,
+    "actual_v3_native_mapping_each_case": true,
+    "CUDA_runtime_mappings": false,
+    "strict_compile_flags": [
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror"
+    ]
+  },
+  "source": {
+    "base": "geometry-cpu-check2",
+    "equivalent_GCC_fixes": [
+      {
+        "original": {
+          "path": "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/geometry-cpu-check2/source/engine/models/qwen35/main.cc",
+          "bytes": 405249,
+          "sha256": "5c45ae59de1e7aec60e3a650d171cc198dafc86d79637b38d7a20972239add28"
+        },
+        "modified": {
+          "path": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024/portable-source/engine/models/qwen35/main.cc",
+          "bytes": 399060,
+          "sha256": "509526296a2f820805d8e28d98faa0aa7fa43ef001dd26b1bf2e7b808b35095d"
+        },
+        "replacements": [
+          [
+            "  cache::SamplingCursor sampling;",
+            "  cache::SamplingCursor sampling{};"
+          ],
+          [
+            "  std::shared_ptr<cache::Snapshot> next;",
+            "  std::shared_ptr<cache::Snapshot> next{};"
+          ],
+          [
+            "  hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails;",
+            "  hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails{};"
+          ],
+          [
+            "  std::array<c::PagedPageAppender, 2> next_draft_tails;",
+            "  std::array<c::PagedPageAppender, 2> next_draft_tails{};"
+          ],
+          [
+            "  c::BatchLayoutVersion layout;",
+            "  c::BatchLayoutVersion layout{};"
+          ],
+          [
+            "  c::BatchLayoutVersion draft_layout;",
+            "  c::BatchLayoutVersion draft_layout{};"
+          ],
+          [
+            "  std::vector<std::int32_t> verification_inputs;",
+            "  std::vector<std::int32_t> verification_inputs{};"
+          ],
+          [
+            "  std::vector<c::ReadLease> carry_prefix;",
+            "  std::vector<c::ReadLease> carry_prefix{};"
+          ],
+          [
+            "  std::string_view probe_subdirectory;",
+            "  std::string_view probe_subdirectory{};"
+          ],
+          [
+            "  std::span<const c::ReadLease> draft_log_probabilities;",
+            "  std::span<const c::ReadLease> draft_log_probabilities{};"
+          ],
+          [
+            "    for (auto &tail : session.tails) tail = {}; session.draft_tails = {};",
+            "    for (auto &tail : session.tails) tail = {};\n    session.draft_tails = {};"
+          ]
+        ]
+      },
+      {
+        "original": {
+          "path": "/mnt/c/public/project-hyle/hyle/.scratch/qwen-multi-draft-20261024/geometry-cpu-check2/source/engine/models/qwen35/prepared_roles.h",
+          "bytes": 18412,
+          "sha256": "bfc957e5469b2a7a7211e1642a6ff764e0a6010c672fd1065bc17834c1bbc5ad"
+        },
+        "modified": {
+          "path": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024/portable-source/engine/models/qwen35/prepared_roles.h",
+          "bytes": 18080,
+          "sha256": "84667e5044149a1e087af9e9700de5612bb0d150f4d23d0ca120726fd8820988"
+        },
+        "replacements": [
+          [
+            "  ModelGeometry geometry;",
+            "  ModelGeometry geometry{};"
+          ]
+        ]
+      }
+    ],
+    "prepared_identity": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+    "native_family": "cached cpu,cuda SDK GGML456172ec CPU endpoint",
+    "native_image": {
+      "path": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024/libhyle_ggml_cpu_mtp_current_v3.so",
+      "bytes": 1808968,
+      "sha256": "8abd26e1e66196c97c7ca0b4fadbb3bf921d6a845c6719c0b59ad9cc9c4d2817"
+    },
+    "current_mixed_manifest": {
+      "path": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024/current-mixed-manifest.json",
+      "bytes": 99779,
+      "sha256": "0a503f3dd5a799a4b5b26942c9c58ba991a981c2e29aa54c83b39956543973ae"
+    },
+    "image": {
+      "path": "/root/hyle-scratch/compute-unified/qwen-v2-cpu-functional-20261024/hyle-linux-cpu",
+      "bytes": 46883008,
+      "sha256": "6776ef36a24c9310778f766d80a582072d6bdf507afc4518709eea4277878d58"
+    }
+  },
+  "build": {
+    "fresh_host_TUs": 115,
+    "borrowed_source_and_header_checked_objects": 20,
+    "fresh_IO_TUs": 12,
+    "fresh_native_TUs": 3,
+    "successful_model_TUs": 1,
+    "SDK_builds": 0,
+    "SDK_copies": 0,
+    "weight_copies": 0,
+    "HTTP": 0
+  },
+  "boundaries": [
+    "CPU-only executable and endpoint reuse a cpu,cuda SDK whose GGML peer is456172ec; this is not a pure-CPU ffa4 SDK proof.",
+    "Frozen geometry-cpu-check2 plus the listed equivalent GCC fixes; later MTP0 source preflight is not represented.",
+    "Only P154+4 C256 N1R1 ordinary greedy/K1 greedy/K1 random; not multi-K, multi-session, checkpoints, cancel/failure or all quantized models.",
+    "Functional checks, not repeated fair performance comparison or complete task quality.",
+    "Graph known workspace is finite, shared cache request limit and execution shared tracking are not capped here; native private memory remains unknown and no physical total-memory cap is claimed."
+  ],
+  "archive": {
+    "path": "/mnt/c/public/project-hyle/hyle/docs/evidence/correctness/mtp-qwen35-linux-cpu-v2-k1-complete-input-2026-10-24-logs.zip",
+    "bytes": 857950,
+    "sha256": "0897b7515876eba85ef40a9acb3250e8613a76207267c61630d1a514ebc0b62e"
+  }
+}

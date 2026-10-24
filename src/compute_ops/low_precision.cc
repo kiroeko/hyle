@@ -110,13 +110,13 @@ Result<TensorDesc> float8_description(std::int64_t rows, std::int64_t k,
 } // namespace
 
 Result<CacheStorage> CacheStorage::plain(DataType type) noexcept {
-  if (type != DataType::kFloat16 && type != DataType::kBFloat16)
-    return std::unexpected(Status::InvalidArgument("plain cache requires F16/BF16"));
+  if (type != DataType::kFloat16 && type != DataType::kBFloat16 && type != DataType::kFloat32)
+    return std::unexpected(Status::InvalidArgument("plain cache requires F16/BF16/F32"));
   return CacheStorage{type, 1.0F};
 }
 
 Result<CacheStorage> CacheStorage::q8_0() noexcept {
-  return CacheStorage{DataType::kFloat32, 1.0F};
+  return CacheStorage{DataType::kFloat32, 1.0F, Encoding::kQ8_0};
 }
 
 Result<CacheStorage> CacheStorage::float8(float scale) noexcept {
@@ -142,11 +142,11 @@ Status validate_cache_storage(const CacheStorage &storage) noexcept {
        storage.data_type() == DataType::kBFloat16 ||
        storage.data_type() == DataType::kFloat32) && storage.scale() == 1.0F)
     return Status::Ok();
-  return Status::InvalidArgument("cache requires plain F16/BF16, Q8_0 or scaled E4M3FN");
+  return Status::InvalidArgument("cache requires plain F16/BF16/F32, Q8_0 or scaled E4M3FN");
 }
 
 StorageFormat CacheStorage::format() const noexcept {
-  if (data_type_ != DataType::kFloat32)
+  if (data_type_ != DataType::kFloat32 || encoding_ != Encoding::kQ8_0)
     return {};
   const auto block = gguf_block(GgufQuantizedType::kQ8_0);
   // Private construction admits only this finite blocked format. Its fixed

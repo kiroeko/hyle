@@ -340,6 +340,126 @@ TEST(Float8QuantizeOutput, ContractRejectsInvalidDescriptionsAndParameters) {
   EXPECT_FALSE(c::infer_output_descriptions(op, good, std::span(output).first(1)).ok());
 }
 
+#if defined(HYLE_TEST_FP8_QUANT_CPU) || defined(HYLE_TEST_FP8_QUANT_CUDA)
+// The same declared F32 dynamic linear is executed by CPU and CUDA. Sparse
+// code-domain dots isolate scale layout/output precision from reduction order.
+template<class Compile>
+void run_f32_power2_linear(const c::StorageOwner &owner, c::Queue &queue, Compile compile) {
+  struct Shape { std::int64_t m, n, k; bool paired = false; };
+  unsigned successes = 0, failures = 0, checked_values = 0, f32_operand_witnesses = 0;
+  std::size_t paired_graph_steps = 0;
+  for (const auto shape : {Shape{3,3,128}, Shape{3,129,384}, Shape{5,65,256,true}}) {
+    SCOPED_TRACE(::testing::Message() << "M=" << shape.m << " N=" << shape.n << " K=" << shape.k);
+    const auto groups = shape.k / 128;
+    auto builder = take(g::GraphBuilder::create(), "F32 pow2 linear builder");
+    const auto ad = dense(Type::kFloat32, {shape.m, shape.k});
+    const auto a = take(builder.input(ad), "original F32 A");
+    std::vector<g::ValueId> ports;
+    std::vector<c::TensorDesc> outputs;
+    std::vector<std::vector<std::byte>> original_weights;
+    std::vector<c::ReadLease> weight_leases;
+    std::vector<g::ConstantBinding> constants;
+    const std::vector<std::int64_t> columns = shape.paired ? std::vector<std::int64_t>{shape.n,129} : std::vector<std::int64_t>{shape.n};
+    for (const auto n : columns) {
+      const auto wd = take(c::float8_weight_description(shape.k,n,c::Float8ScaleMode::kFloat32Block128), "encoded F32SF W");
+      auto &raw = original_weights.emplace_back(take(wd.required_bytes(), "encoded W extent"),std::byte{});
+      for (std::int64_t row = 0; row < n; ++row) for (std::int64_t group = 0; group < groups; ++group)
+        raw[std::size_t(row*shape.k+group*128+1)] = std::byte(row%2 ? 0xb8 : 0x38);
+      constexpr std::array<float,4> sw{1.00390625F,.625F,.03125F,3.25F};
+      for (std::int64_t block = 0; block < (n+127)/128; ++block) for (std::int64_t group = 0; group < groups; ++group) {
+        const auto value = sw[std::size_t(block+group)%sw.size()];
+        std::memcpy(raw.data()+n*shape.k+(block*groups+group)*4,&value,4);
+      }
+      auto backing = take(m::Buffer::create(owner.ref(),raw.size(),256), "encoded W backing");
+      check(backing.view().write(raw), "write original encoded W");
+      weight_leases.push_back(take(owner.adopt_buffer(std::move(backing)), "retain original W"));
+      const auto w = take(builder.constant(wd), "encoded W constant");
+      constants.push_back({w,take(weight_leases.back().tensor(wd), "typed original W"),g::ConstantPolicy::kBorrow,owner,weight_leases.back()});
+      const auto y = take(builder.add(c::model_ops::float8_block_linear(Policy::kPowerOfTwo,1.e-4F),a,w), "F32 power2 dynamic linear");
+      check(builder.publish(y), "publish F32 projection"); ports.push_back(y); outputs.push_back(dense(Type::kFloat32,{shape.m,n}));
+    }
+    auto graph = take(std::move(builder).finish(), "F32 dynamic linear graph");
+    auto compiled = take(compile(graph,g::CompileOptions{.constants=constants}), "compile F32 dynamic linear");
+    if(shape.paired)paired_graph_steps=compiled.report.step_count();
+    const std::array bindings{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
+    auto pool = take(c::LeasePool::create(owner.ref(),std::size_t(shape.m*129*4+256)*12,{.max_blocks=12}), "finite F32 outputs");
+    const auto input = [&](unsigned phase) {
+      std::vector<float> values(std::size_t(shape.m*shape.k));
+      for (std::int64_t row=0;row<shape.m;++row) for (std::int64_t group=0;group<groups;++group) {
+        const auto first=std::size_t(row*shape.k+group*128);
+        const auto maximum=std::ldexp(1.3F+float(row%3)*.137F,int(group-row)+int(phase));
+        const auto sf=scale(maximum,Policy::kPowerOfTwo,1.e-4F);
+        values[first]=maximum;
+        values[first+1]=std::nextafter(multiply(1.0625F,sf),std::numeric_limits<float>::infinity());
+        if ((row+group+phase)%2) values[first+1]=-values[first+1];
+      }
+      return values;
+    };
+    const auto oracle = [&](std::span<const float> values,std::size_t port,bool wrong_bf16=false) {
+      const auto n=columns[port];std::vector<float> expected(std::size_t(shape.m*n));
+      for (std::int64_t row=0;row<shape.m;++row) for (std::int64_t column=0;column<n;++column) {
+        float total=0;
+        for (std::int64_t group=0;group<groups;++group) {
+          const auto first=std::size_t(row*shape.k+group*128);float maximum=0;
+          for (std::size_t k=0;k<128;++k)maximum=(std::max)(maximum,std::abs(wrong_bf16?wide(bfloat(values[first+k])):values[first+k]));
+          const auto sf=scale(maximum,Policy::kPowerOfTwo,1.e-4F);
+          const auto source=wrong_bf16?wide(bfloat(values[first+1])):values[first+1];
+          const auto code=encode(f32(double(source)/double(sf)));
+          const auto decoded=(code&128 ? -1.F : 1.F)*e4(code&127);
+          float sw=0;std::memcpy(&sw,original_weights[port].data()+n*shape.k+((column/128)*groups+group)*4,4);
+          total=f32(double(total)+double(multiply(multiply(decoded,column%2?-1.F:1.F),sf))*double(sw));
+        }
+        expected[std::size_t(row*n+column)]=total;
+      }
+      return expected;
+    };
+    const auto read_output = [&](const g::GraphOutput &output) {
+      const auto tensor=take(output.tensor(), "retained F32 result");
+      std::vector<float> values(take(tensor.description().element_count(), "F32 result count"));
+      check(tensor.storage().read(std::as_writable_bytes(std::span(values))), "read F32 result");return values;
+    };
+    const auto execute = [&](unsigned phase,float bad) {
+      auto values=input(phase);if (!std::isfinite(bad)) values.back()=bad;
+      auto backing=take(m::Buffer::create(owner.ref(),values.size()*4,256), "independent F32 A backing");
+      check(backing.view().write(std::as_bytes(std::span(values))), "write F32 A");
+      const auto ready=take(owner.adopt_buffer(std::move(backing)), "retain F32 A");
+      auto invocation=take(compiled.executable.create_invocation(), "independent F32 linear invocation");
+      check(invocation.prepare_resources(), "prepare owned F32 linear bindings");
+      check(invocation.bind(a,ad,ready), "bind F32 A lease");
+      for (std::size_t port=0;port<ports.size();++port)
+        if(take(compiled.executable.output_ownership(port), "F32 output ownership")==g::OutputOwnership::kCaller)
+          check(invocation.bind(ports[port],outputs[port],take(pool.allocate(take(outputs[port].required_bytes(), "F32 output bytes")), "finite output writer")), "bind F32 output writer");
+      check(invocation.prepare_replay(bindings,{.mode=g::ReplayMode::kCommands}), "prepare F32 linear commands");
+      auto done=take(invocation.submit(bindings), "submit F32 dynamic linear");const auto status=done.wait();
+      std::vector<g::GraphOutput> retained;
+      if(!std::isfinite(bad)) {
+        EXPECT_FALSE(status.ok());for(auto port:ports)EXPECT_FALSE(invocation.result(port));++failures;return retained;
+      }
+      check(status, "F32 linear Completion");++successes;
+      for(std::size_t port=0;port<ports.size();++port) {
+        retained.push_back(take(invocation.result(ports[port]), "retain F32 linear result"));
+        const auto actual=read_output(retained.back()), expected=oracle(values,port), wrong=oracle(values,port,true);
+        if(actual.size()!=expected.size())throw std::runtime_error("F32 linear result extent differs");
+        for(std::size_t i=0;i<actual.size();++i){EXPECT_EQ(actual[i],expected[i])<<i;checked_values+=1;f32_operand_witnesses+=expected[i]!=wrong[i];}
+      }
+      return retained;
+    };
+    auto old=execute(0,0);std::vector<std::vector<float>> image;for(const auto &value:old)image.push_back(read_output(value));
+    (void)execute(0,std::numeric_limits<float>::quiet_NaN());
+    (void)execute(0,std::numeric_limits<float>::infinity());
+    auto recovered=execute(1,0);compiled={};
+    for(std::size_t port=0;port<old.size();++port)EXPECT_EQ(read_output(old[port]),image[port]);
+    EXPECT_FALSE(recovered.empty());
+  }
+  EXPECT_EQ(successes,6u);EXPECT_EQ(failures,6u);EXPECT_GT(f32_operand_witnesses,0u);
+  ::testing::Test::RecordProperty("successful_submissions",successes);
+  ::testing::Test::RecordProperty("nonfinite_failed_Completions",failures);
+  ::testing::Test::RecordProperty("checked_F32_values",checked_values);
+  ::testing::Test::RecordProperty("wrong_BF16_operand_witnesses",f32_operand_witnesses);
+  ::testing::Test::RecordProperty("paired_graph_steps",paired_graph_steps);
+}
+#endif
+
 #if defined(HYLE_TEST_FP8_QUANT_CPU)
 struct SystemResource final { m::MemoryResourceRef ref() noexcept { return m::system_resource(); } };
 TEST(Float8QuantizeOutput, CpuCodesScalesAndLifetimes) {
@@ -352,6 +472,12 @@ TEST(Float8QuantizeOutput, CpuCodesScalesAndLifetimes) {
       [](m::BufferView to, std::span<const std::byte> from) { return to.write(from); },
       [](m::ConstBufferView from, std::span<std::byte> to) { return from.read(to); },
       [](g::Invocation &invocation, std::span<const g::QueueBinding> bindings) { return invocation.prepare_replay(bindings); }, owner);
+}
+TEST(Float8QuantizeOutput, CpuF32Power2Linear) {
+  auto context=take(g::cpu::create_context(), "CPU F32 linear context");
+  auto owner=take(c::StorageOwner::adopt(context,SystemResource{}), "CPU F32 linear owner");
+  auto queue=take(context.create_queue(), "CPU F32 linear queue");
+  run_f32_power2_linear(owner,queue,[&](const g::Graph &graph,g::CompileOptions options){return g::cpu::compile(graph,context,options);});
 }
 #endif
 #if defined(HYLE_TEST_FP8_QUANT_CUDA)
@@ -366,6 +492,15 @@ TEST(Float8QuantizeOutput, CudaCodesScalesAndLifetimes) {
       [](m::BufferView to, std::span<const std::byte> from) { return to.write(from); },
       [](m::ConstBufferView from, std::span<std::byte> to) { return from.read(to); },
       [](g::Invocation &invocation, std::span<const g::QueueBinding> bindings) { return invocation.prepare_replay(bindings); }, owner);
+}
+TEST(Float8QuantizeOutput, CudaF32Power2Linear) {
+  auto context=take(g::cuda::create_context(), "CUDA F32 linear context");
+  const auto environment=take(c::cuda::environment(context), "CUDA F32 linear environment");
+  if(environment.sm_major!=8 || environment.sm_minor!=9)
+    GTEST_SKIP() << "The existing encoded FP8 GEMM AOT requires SM89";
+  auto owner=take(c::StorageOwner::adopt(context,take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice), "CUDA F32 linear memory")), "CUDA F32 linear owner");
+  auto queue=take(context.create_queue(), "CUDA F32 linear queue");
+  run_f32_power2_linear(owner,queue,[&](const g::Graph &graph,g::CompileOptions options){return g::cuda::compile(graph,context,owner,options);});
 }
 #endif
 #if defined(HYLE_TEST_FP8_QUANT_APPLE)

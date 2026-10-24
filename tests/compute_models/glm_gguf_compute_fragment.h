@@ -146,6 +146,6 @@ inline glm_target_verifier_fragment::Ports append_q8_f32_verifier(sem::Fragment 
     result.row_ids[row]=copy(f,reshape(f,slice(f,result.ids,0,std::int64_t(row),1),{1}));
   return result;
 }
-// Existing glm_target_verifier_fragment::decide_k1 and the existing accepted
-// checkpoint/repair/index-catchup workflow consume these same direct leases.
+// Common accepted-prefix selection and the model-local accepted checkpoint/
+// repair/index-catchup workflow consume these same direct leases.
 } // namespace glm_gguf_compute_fragment

@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "dspark_original_state_consumer.h"
+#include "dspark_stochastic_head.h"
 #include "dspark_bfloat_sidecar_parameters.h"
 #if __has_include("dspark_bfloat_sidecar_artifacts.h")
 #include "dspark_bfloat_sidecar_artifacts.h"
@@ -108,6 +109,24 @@ using dspark_native_consumer::Run;
 using dspark_native_consumer::Backend;
 using dspark_native_consumer::RoutedRun;
 using dspark_native_consumer::execute_draft;
+
+// A preparation wrapper around the same existing native Backend; no executor
+// or alternate model lifetime is introduced for the source-specific head.
+template<class Recipe> struct StochasticRun final {Recipe recipe;Run run;};
+template<class Recipe> StochasticRun<Recipe> prepare_stochastic(Backend &backend,Recipe recipe,std::uint32_t generations=4) {
+  const auto built=sem::make_graph(recipe.fragment);std::vector<g::ConstantBinding> constants;
+  for(std::size_t i=0;i<recipe.fragment.constants.size();++i) {
+    const auto value=recipe.fragment.constants[i];
+    const auto found=std::find_if(recipe.constants.begin(),recipe.constants.end(),[&](const auto &entry){return entry.value.ordinal()==value.ordinal();});
+    if(found!=recipe.constants.end())constants.push_back(take(found->role.binding(built.constants[i]),"original sampled Markov readonly bank"));
+    else {
+      const auto lease=upload(backend.owner,recipe.fragment.constant_bytes.at(i));
+      constants.push_back({.value=built.constants[i],.tensor=take(lease.tensor(recipe.fragment.description(value)),"sampled-head literal"),.owner=backend.owner,.lease=lease});
+    }
+  }
+  auto run=backend.prepare(built.graph,constants,generations);
+  return {std::move(recipe),std::move(run)};
+}
 std::string environment(const char *name) {
 #if defined(_WIN32)
   char *value=nullptr;std::size_t count=0;
@@ -1094,8 +1113,8 @@ void report_bfloat_projection(const Routed &draft,const x::Draft &logical,std::s
     const auto *matmul=operation.template get_if<c::MatMul>();
     if(!matmul||matmul->accumulation_type!=c::DataType::kFloat32||observed_type!=c::DataType::kBFloat16)
       throw std::runtime_error("S03 OA requires real BF16 MatMul output with F32 accumulation");
-  } else if(!operation.template custom_as<c::model_ops::BFloatLinearF32>()||observed_type!=c::DataType::kFloat32)
-    throw std::runtime_error("S03 stored projection requires BFloatLinearF32 raw output");
+  } else if(!operation.template custom_as<c::model_ops::DenseLinearF32>()||observed_type!=c::DataType::kFloat32)
+    throw std::runtime_error("S03 stored projection requires DenseLinearF32 raw output");
   const auto bank=take(run.graph.node_input(node,1),"S03 actual original BF16 bank");
   if(take(run.graph.value_description(bank),"S03 original bank dtype").data_type()!=c::DataType::kBFloat16||
       take(run.graph.value_description(take(run.graph.node_input(node,0),"S03 actual BF16 operand")),"S03 activation type").data_type()!=c::DataType::kBFloat16)
@@ -1191,13 +1210,14 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
                 ,const c::cuda::MemoryResource *expert_device=nullptr
 #endif
-                ,std::shared_ptr<const target_roles::Data> target_tail={}
+                ,std::shared_ptr<const target_roles::Data> target_tail={},bool stochastic=false
                 ) {
   constexpr bool use_bfloat=std::is_same_v<ExpertSource,bfloat_sidecar::Data>;
   if constexpr(use_bfloat) {
     if(!data.bfloat_source||data.bfloat_source.get()!=expert_source.get()||!vocabulary||!vocabulary->packed||!target_tail)
       throw std::runtime_error("S03 needs its distinct original source, actual Q8 vocabulary and formal target tail");
   }
+  if(stochastic&&(!target_tail||!vocabulary))throw std::runtime_error("stochastic sidecar requires its actual complete target and vocabulary");
   if(parameter_source&&!vocabulary)throw std::runtime_error("original HC journey requires its actual full shared vocabulary");
   if(shared_source&&!parameter_source)throw std::runtime_error("original shared FFN journey requires complete original HC roles");
   if(attention_source&&!shared_source)throw std::runtime_error("original attention journey requires the original shared FFN boundary");
@@ -1333,7 +1353,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
           fragment.outputs.push_back(fragment.one(c::Operation(c::Copy{}),{stored}));
         }
         found_embedding=true;
-      } else if((node.operation.template custom_as<c::model_ops::BFloatLinearF32>()||node.operation.template get_if<c::MatMul>())&&
+      } else if((node.operation.template custom_as<c::model_ops::DenseLinearF32>()||node.operation.template get_if<c::MatMul>())&&
           node.inputs.size()==2&&node.inputs[1].ordinal()==lm_weight->value.ordinal()&&
           fragment.description(node.outputs[0])==dense(c::DataType::kFloat32,{d::rows,d::vocabulary})) {
         const auto value=node.outputs[0];
@@ -1453,13 +1473,37 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
     head1.emplace(prepare_target_head(backend,1));head2.emplace(prepare_target_head(backend,2));
   }
   std::optional<TargetPrograms> trained_target;
-  std::optional<x::TargetVerifier> verifier6,verifier1;
-  std::optional<Run> verifier_run6,verifier_run1;
+  std::array<std::optional<x::TargetVerifier>,6> verifiers;
+  std::array<std::optional<Run>,6> verifier_runs;
+
+  namespace stochastic_head=dspark_stochastic_head;
+  std::array<std::optional<StochasticRun<stochastic_head::Proposal>>,6> sampled_heads;
+  std::array<std::optional<StochasticRun<stochastic_head::Verification>>,6> sampled_verification;
+  if(stochastic) {
+    stochastic_head::HeadSource source{d::hidden,d::vocabulary,fragment.description(named.hidden).data_type(),
+        use_bfloat?c::DataType::kBFloat16:c::DataType::kFloat32,{}};
+    constexpr std::array<std::string_view,3> names{"markov_w1.weight","markov_w2.weight","conf_proj.weight"};
+    if constexpr(use_bfloat) {
+      for(std::size_t i=0;i<names.size();++i) {
+        const auto &bank=bfloat_bound->at(names[i]);source.roles[i]={names[i],bank.description,bank.owner,bank.lease};
+      }
+    } else {
+      const std::array<std::span<const std::uint16_t>,3> head_values{data.heads.w1,data.heads.w2,data.heads.confidence};
+      for(std::size_t i=0;i<names.size();++i) {
+        const auto description=i<2?dense(c::DataType::kBFloat16,{d::vocabulary,d::rank}):dense(c::DataType::kBFloat16,{1,d::hidden+d::rank});
+        const auto bank=role(std::string(names[i]),description,owner,std::as_bytes(head_values[i]));
+        source.roles[i]={names[i],bank.description,bank.owner,bank.lease};
+      }
+    }
+    const auto *profile=fragment.profile;
+    for(std::size_t count=0;count<=5;++count) {
+      if(count)sampled_heads[count].emplace(prepare_stochastic(backend,stochastic_head::proposal(source,count,{},profile)));
+      sampled_verification[count].emplace(prepare_stochastic(backend,stochastic_head::verification(count,{},profile)));
+    }
+  }
   std::size_t declared_state_budget=64u<<20;
   if(target_tail) {
     trained_target.emplace(prepare_target_programs(backend,target_tail));
-    verifier6=take(x::target_verifier(shared.head,6),"actual full-V block5 target verifier");
-    verifier1=take(x::target_verifier(shared.head,1),"actual full-V continued target verifier");
     const auto prepare_verifier=[&](x::TargetVerifier &verifier,std::uint32_t generations) {
       auto &f=verifier.fragment;f.profile=&x::base::flash_profile;f.phase=c::WorkloadPhase::kDecode;
       const auto built=sem::make_graph(f);
@@ -1472,7 +1516,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
       const auto projected=take(run.graph.producer(result),"actual single full-V head node");
       const auto head_operation=take(run.graph.operation(projected),"actual target head operation");
       if(!(vocabulary->packed?head_operation.template get_if<c::MatMul>()!=nullptr:
-           bool(head_operation.template custom_as<c::model_ops::BFloatLinearF32>()))||
+           bool(head_operation.template custom_as<c::model_ops::DenseLinearF32>()))||
           take(run.graph.node_input(projected,1),"actual target head bank")!=built.constants[0]||
           take(run.graph.value_description(result),"actual target full-V result description")!=
               dense(c::DataType::kFloat32,{std::int64_t(verifier.inputs.size()),d::vocabulary}))
@@ -1490,18 +1534,24 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
         throw std::runtime_error("packed target vocabulary activation certificate does not cover selected provider");
       return run;
     };
-    verifier_run6.emplace(prepare_verifier(*verifier6,1));verifier_run1.emplace(prepare_verifier(*verifier1,4));
+    for(std::size_t rows=1;rows<=verifiers.size();++rows) {
+      verifiers[rows-1]=take(x::target_verifier(shared.head,std::int64_t(rows)),"actual bounded full-V target verifier");
+      verifier_runs[rows-1].emplace(prepare_verifier(*verifiers[rows-1],rows==1?4:1));
+    }
     const auto add_budget=[&](std::size_t amount) {
       if(amount>std::numeric_limits<std::size_t>::max()-declared_state_budget)
         throw std::runtime_error("complete target/draft backing budget overflows size_t");
       declared_state_budget+=amount;
     };
     declared_state_budget=0;
+    for(const auto &run:sampled_heads)if(run)add_budget(run->run.pool.stats().capacity_bytes);
+    for(const auto &run:sampled_verification)if(run)add_budget(run->run.pool.stats().capacity_bytes);
     // Each actual LeasePool root is charged once, including unused diagnostic
     // capacity. StateStore must not charge a small logical view as its root.
     for(const auto &part:proposal.phases)add_budget(part.pool.stats().capacity_bytes);
-    for(const auto *run:{&history_run1,&history_run2,&main_run1,&main_run2,&*verifier_run6,&*verifier_run1})
+    for(const auto *run:{&history_run1,&history_run2,&main_run1,&main_run2})
       add_budget(run->pool.stats().capacity_bytes);
+    for(const auto &run:verifier_runs)add_budget(run->pool.stats().capacity_bytes);
     for(const auto &step:trained_target->steps)for(const auto &part:step.run.phases)
       add_budget(part.pool.stats().capacity_bytes);
     const auto initial=[&](std::size_t amount) {
@@ -1515,7 +1565,8 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
     add_budget(256*((sizeof(x::Boundary)+63)&~std::size_t{63}));
   }
   const auto target_state=trained_target?std::span<const c::TensorDesc>(trained_target->state_descriptions):std::span<const c::TensorDesc>{};
-  auto state=take(x::State::create(actual_target,target_state,declared_state_budget),"whole encoded target/draft state schema");
+  if(stochastic)declared_state_budget+=32*64;
+  auto state=take(x::State::create(actual_target,target_state,declared_state_budget,stochastic),"whole encoded target/draft state schema");
   struct Verified {std::vector<c::ReadLease> captures,history;std::vector<std::int32_t> ids;};
   const auto verify=[&](const c::StateVersion &from,const b::CaptureFrame &frame,const c::ReadLease &actual_ids) {
     const auto placement=take(h::placement(frame),"actual verification positions");
@@ -1744,7 +1795,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
       const auto plan=target_math::Plan::make(position,TargetPrograms::capacity);
       for(std::size_t stage=0;stage<3;++stage)
         target_reference::observe_layer(*target_tail,stage,step.logical.layers[stage],
-            step.logical.state_inputs[stage],plan,get_float,get_bytes,observed_rows==0);
+            step.logical.state_inputs[stage],plan,get_float,get_bytes,observed_rows==0&&!stochastic);
       target_reference::observe_head(*target_tail,step.logical.head,get_float);
       if(::testing::Test::HasFailure())throw std::runtime_error("actual target arithmetic observer failed before any State publication");
       Row row;
@@ -1769,7 +1820,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
           for(const auto bits:mean)joined.push_back(std::bit_cast<float>(std::uint32_t(bits)<<16U));
         }
         const auto projected=values<float>(main.at(*projection1.raw_projection_port));
-        EXPECT_TRUE(bfloat_reference::expect_projection(projected,joined,expert_source->raw("fc.weight"),4096,12288,"S03 original fc",main_submissions==1));
+        EXPECT_TRUE(bfloat_reference::expect_projection(projected,joined,expert_source->raw("fc.weight"),4096,12288,"S03 original fc",main_submissions==1&&!stochastic));
         sem::oracle::expect_close(values<float>(main.at(0)),sem::oracle::rms_norm_rows(projected,data.main_norm,4096,1.0e-6F),8.e-5F,4.e-5F);
       }
       const auto placement=take(h::placement(frame),"actual accepted main ring placement");
@@ -1783,7 +1834,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
           if(!history1.raw_projection_ports[stage])throw std::runtime_error("S03 accepted wkv raw result missing");
           const auto projected=values<float>(history.at(*history1.raw_projection_ports[stage]));
           EXPECT_TRUE(bfloat_reference::expect_projection(projected,values<float>(main.at(0)),
-              expert_source->raw(bfloat_sidecar::stage_name(stage,"attn_kv.weight")),512,4096,"S03 accepted main wkv",history_submissions==1));
+              expert_source->raw(bfloat_sidecar::stage_name(stage,"attn_kv.weight")),512,4096,"S03 accepted main wkv",history_submissions==1&&!stochastic));
           sem::oracle::expect_close(values<float>(history.at(4+stage*3)),sem::oracle::rms_norm_rows(projected,data.norm[stage],512,1.0e-6F),8.e-5F,4.e-5F);
         }
         const auto entry=values<std::uint16_t>(history.at(4+stage*3+2));
@@ -1796,13 +1847,13 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
       ++observed_rows;++trained_target->completed_rows;return row;
     };
     const auto verify_head=[&](std::span<const Row> rows) {
-      if(rows.size()!=1&&rows.size()!=6)throw std::runtime_error("actual block5 verifier row count differs");
+      if(rows.empty()||rows.size()>6)throw std::runtime_error("actual block5 verifier needs one through six target rows");
       std::vector<c::ReadLease> normalized;std::vector<float> actual;
       for(const auto &row:rows) {
         normalized.push_back(row.normalized);const auto bf16=values<std::uint16_t>(row.normalized);
         for(const auto value:bf16)actual.push_back(std::bit_cast<float>(std::uint32_t(value)<<16u));
       }
-      auto output=backend.execute(rows.size()==6?*verifier_run6:*verifier_run1,normalized);
+      auto output=backend.execute(*verifier_runs.at(rows.size()-1),normalized);
       std::vector<std::int32_t> ids;
       for(std::size_t i=0;i<rows.size();++i) {
         const auto value=values<std::int32_t>(output[i]);
@@ -1812,10 +1863,10 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
       if(vocabulary->packed) {
         const auto logits=values<float>(output[rows.size()]);
         EXPECT_TRUE(packed_vocabulary_reference::expect_logits(logits,actual,
-            vocabulary->packed->raw(packed_vocabulary::Role::kHead),std::size_t(d::vocabulary),std::size_t(d::hidden),shared_codec,head_calls==0,ids));
+            vocabulary->packed->raw(packed_vocabulary::Role::kHead),std::size_t(d::vocabulary),std::size_t(d::hidden),shared_codec,head_calls==0&&!stochastic,ids));
         EXPECT_TRUE(glm_shared_vocabulary_reference::expect_greedy(logits,ids,std::size_t(d::vocabulary),values<float>(output[rows.size()+1])));
       } else dspark_target_tail_checks::head(vocabulary->head,actual,values<float>(output[rows.size()]),ids,
-          values<float>(output[rows.size()+1]),head_calls==0);
+          values<float>(output[rows.size()+1]),head_calls==0&&!stochastic);
       if(head_calls==0)full_target_lm_values=rows.size()*std::size_t(d::vocabulary);
       if(::testing::Test::HasFailure())throw std::runtime_error("actual target full-V verifier failed before publication");
       ++head_calls;return output;
@@ -1846,8 +1897,191 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
         }
       }
       members.push_back({*state.pending_entry,upload(owner,bytes<std::int32_t>(std::array<std::int32_t,1>{3}))});
+      const hyle::inference::SamplingCursor initial_random{123,7,0};
+      if(stochastic)members.push_back({*state.random_entry,{},std::as_bytes(std::span(&initial_random,1))});
       auto base=take(state.store.import(members),"complete finite target/draft frontier");members.clear();account();
       const auto old=image(state,base);
+      if(stochastic) {
+        using Cursor=hyle::inference::SamplingCursor;
+        std::size_t sampled_markov_rows=0;
+        const auto key_lease=[&](const Cursor &cursor,std::size_t count,bool proposal_keys) {
+          std::vector<std::uint32_t> words;
+          for(std::size_t row=0;row<(proposal_keys?count:count+1);++row) {
+            const auto address=proposal_keys?2*row:(row==count?2*count:2*row+1);
+            const auto key=cursor.identity(address);words.insert(words.end(),key.begin(),key.end());
+          }
+          return upload(owner,bytes<std::uint32_t>(words));
+        };
+        {
+          auto head=take(c::StateHead::create(state.store,base),"sidecar stochastic complete Head");
+          const auto round=[&](std::size_t maximum,std::uint64_t epoch,
+              x::Block5Limits bounds={.output_quota=6,.context_rows=6,.vocabulary=d::vocabulary}) {
+            const auto from=take(head.current(),"sidecar stochastic actual Head");
+            const auto facts=take(state.boundary(from),"sidecar stochastic frontier");
+            if(maximum>5)throw std::runtime_error("sidecar sampled maximum exceeds five trained draft rows");
+            if(bounds.draft.max_drafts>5)throw std::runtime_error("sampled sidecar policy exceeds five trained draft rows");
+            if(bounds.vocabulary!=d::vocabulary||facts.next_position<0||facts.next_position>TargetPrograms::capacity)
+              throw std::runtime_error("sampled sidecar limits differ from source vocabulary/context");
+            bounds.draft.max_drafts=static_cast<std::uint32_t>((std::min)(maximum,std::size_t(bounds.draft.max_drafts)));
+            bounds.context_rows=(std::min)(bounds.context_rows,std::size_t(TargetPrograms::capacity-facts.next_position));
+            const auto capacity=take(x::block5_verification_capacity(bounds),"sampled sidecar bounded row capacity");
+            if(!capacity||std::ranges::find(bounds.eos_tokens,facts.pending)!=bounds.eos_tokens.end())
+              throw std::runtime_error("sampled sidecar reached output/context/EOS boundary");
+            auto count=capacity-1;
+            const auto cursor=take(state.random(from),"sidecar committed random cursor");
+            std::vector<std::int32_t> ids{facts.pending};std::vector<c::ReadLease> sampled;
+            auto *sampled_head=count?&*sampled_heads[count]:nullptr;
+            if(count) {
+              auto original=draft(from);
+              const std::array input{original[lm_port],take(from.member(*state.pending_entry),"sidecar stochastic true pending"),
+                  key_lease(cursor,count,true),original[hidden_port]};
+              sampled=backend.execute(sampled_head->run,input);ids=values<std::int32_t>(sampled[sampled_head->recipe.ids]);
+              if(ids.size()!=count+1||ids[0]!=facts.pending)throw std::runtime_error("sidecar sampled prefix differs from actual pending");
+              for(std::size_t row=0;row<count;++row) {
+                if(values<std::uint8_t>(sampled[sampled_head->recipe.valid[row]])!=std::vector<std::uint8_t>{1})
+                  throw std::runtime_error("sidecar proposal q invalid before target consumption");
+                const auto expected=std::span(data.heads.w1).subspan(std::size_t(ids[row])*std::size_t(d::rank),std::size_t(d::rank));
+                EXPECT_EQ(read(sampled[sampled_head->recipe.markov[row]]),bytes<std::uint16_t>(expected));++sampled_markov_rows;
+              }
+              std::vector<float> confidence;
+              for(const auto port:sampled_head->recipe.confidence) {
+                const auto value=values<float>(sampled[port]);
+                if(value.size()!=1)throw std::runtime_error("sidecar sampled confidence is not scalar");
+                confidence.push_back(value[0]);
+              }
+              count=take(x::block5_sampled_verification_rows(bounds,confidence),"sidecar actual conditional-confidence prefix")-1;
+              ids.resize(count+1);
+              std::printf("DSpark sidecar random sampled pending=%d ids=",facts.pending);
+              for(const auto id:ids)std::printf("%d,",id);std::printf(" draw=%llu\n",static_cast<unsigned long long>(cursor.draw));std::fflush(stdout);
+            }
+            const auto next=cursor.advanced(2*count+1);
+            std::array<c::ReadLease,21> target_input;std::array<c::ReadLease,3> rings;
+            for(std::size_t i=0;i<target_input.size();++i)target_input[i]=take(from.member(state.target_entries[i]),"sidecar sampled target state");
+            for(std::size_t i=0;i<rings.size();++i)rings[i]=take(from.member(state.entries[i]),"sidecar sampled original rings");
+            std::vector<Row> rows;
+            for(std::size_t row=0;row<=count;++row) {
+              rows.push_back(run_row(facts.next_position+std::int64_t(row),ids.at(row),target_input,rings,epoch));
+              target_input=rows.back().target;
+              for(std::size_t stage=0;stage<rings.size();++stage)rings[stage]=rows.back().history[stage];
+            }
+            const auto verified=verify_head(rows);auto &program=*sampled_verification[count];
+            std::vector<c::ReadLease> input{verified[count+1],key_lease(cursor,count,false)};
+            if(count) {
+              input.push_back(upload(owner,bytes<std::int32_t>(std::span(ids).subspan(1))));
+              for(std::size_t row=0;row<count;++row)input.push_back(sampled[sampled_head->recipe.q[row]]);
+            }
+            const auto decisions=backend.execute(program.run,input);
+            for(const auto port:program.recipe.valid)if(values<std::uint8_t>(decisions[port])!=std::vector<std::uint8_t>{1})
+              throw std::runtime_error("sidecar speculative conditional invalid; Head and RNG unchanged");
+            std::size_t accepted=0;std::vector<std::uint8_t> accepts;
+            for(const auto port:program.recipe.accepted) {
+              const auto valid=values<std::uint8_t>(decisions[port]);if(valid.size()!=1||valid[0]>1)throw std::runtime_error("sidecar random accept not scalar Bool");
+              accepts.push_back(valid[0]);
+            }
+            while(accepted<accepts.size()&&accepts[accepted])++accepted;
+            std::vector<std::int32_t> final_ids,emitted;
+            for(const auto port:program.recipe.final_ids) {
+              const auto id=values<std::int32_t>(decisions[port]);if(id.size()!=1)throw std::runtime_error("sidecar final token is not I32 scalar");
+              final_ids.push_back(id[0]);
+            }
+            const auto choice=hyle::inference::mtp::select_sampled_prefix(ids,accepts,final_ids,bounds.output_quota,
+                bounds.eos_tokens,d::vocabulary,emitted);
+            const auto consumed=static_cast<std::uint32_t>(choice.consumed);const auto selected=choice.consumed-1;
+            const auto pending=selected<count&&accepts[selected]?
+                take(sampled[sampled_head->recipe.ids].subview((selected+1)*sizeof(std::int32_t),sizeof(std::int32_t)),"sidecar accepted terminal actual pending"):
+                decisions[program.recipe.final_ids[count?(std::min)(selected,count-1):0]];
+            EXPECT_EQ(values<std::int32_t>(pending),std::vector<std::int32_t>{choice.next_id});
+            const b::CaptureFrame frame{actual_target,5,7,epoch,facts.next_position,std::int64_t(consumed)};
+            auto candidate=take(state.select_verified(from,rows[selected].history,rows[selected].captures,rows[selected].target,
+                pending,frame,consumed,&next),"sidecar sampled complete prefix and RNG");
+            check(head.publish(from.identity(),candidate),"sidecar model/pending/RNG atomic commit");++publications;account();
+            EXPECT_EQ(take(state.random(candidate),"sidecar committed advanced cursor"),next);
+            EXPECT_EQ(take(state.random(from),"sidecar immutable old cursor"),cursor);
+            EXPECT_EQ(take(state.boundary(candidate),"sidecar consumed frontier").next_position,facts.next_position+consumed);
+            EXPECT_EQ(read(take(candidate.member(*state.pending_entry),"sidecar actual sampled pending lease")),read(pending));
+            EXPECT_TRUE(head.publish(from.identity(),candidate).IsUnavailable());
+            std::printf("DSpark sidecar random commit m=%zu accepted=%zu consumed=%u pending=%d draw=%llu\n",count,accepted,consumed,
+                take(state.boundary(candidate),"sidecar sampled committed token").pending,static_cast<unsigned long long>(next.draw));std::fflush(stdout);
+            return candidate;
+          };
+          auto selected=round(2,2);const auto pending=take(state.boundary(selected),"sidecar first random pending").pending;
+          auto continued=round(0,3);++continued_branches;
+          EXPECT_EQ(take(state.random(continued),"sidecar complete two-round RNG").draw,6u);
+          EXPECT_EQ(take(state.boundary(continued),"sidecar continuation consumed pending once").next_position,
+              take(state.boundary(selected),"sidecar selected position").next_position+1);
+          EXPECT_EQ(image(state,base),old);
+          ::testing::Test::RecordProperty("actual_random_pending_consumed_next",pending);
+        }
+        base={};check(state.store.collect(),"sidecar sampled old/candidate retirement");
+        EXPECT_EQ(state.store.stats().versions,0u);EXPECT_EQ(state.store.stats().drafts,0u);
+        ::testing::Test::RecordProperty("random_publications",int(publications));
+        ::testing::Test::RecordProperty("random_pending_continuations",int(continued_branches));
+        ::testing::Test::RecordProperty("sampled_markov_rows",int(sampled_markov_rows));
+        ::testing::Test::RecordProperty("state_members",int(state.schema.size()));
+        ::testing::Test::RecordProperty("actual_submissions",backend.submissions);
+        ::testing::Test::RecordProperty("state_backing_peak",std::to_string(peak_backing));
+        ::testing::Test::RecordProperty("state_backing_budget",std::to_string(declared_state_budget));
+        ::testing::Test::RecordProperty("head_storage",use_bfloat?"F32 hidden/Markov visible -> BF16 projection input; original BF16 W":"F32 hidden/Markov projection; original BF16 W, F32 product/accum");
+        ::testing::Test::RecordProperty("scope","Actual inventoried sidecar stem/base logits + sampled-predecessor Markov q -> original target40/41/42/head p -> shared stochastic prefix -> complete model/pending/RNG Head and one real pending continuation. Layer39 input/cacheprefix are finite fixtures; no full model, natural acceptance-rate, quality or TPS claim.");
+#if defined(HYLE_TEST_DSPARK_STATE_CUDA)
+        if(proposal.cuda_supply)check(proposal.cuda_supply->close(),"sampled sidecar actual expert upload drain");
+        if(cuda)check(trained_target->steps[0].run.cuda_supply->close(),"sampled target actual expert upload drain");
+#endif
+        return;
+      }
+
+      {
+        auto head=take(c::StateHead::create(state.store,base),"sidecar bounded strategy Head");
+        const auto round=[&](const c::StateVersion &from,x::DraftControl control,std::uint64_t epoch) {
+          const auto facts=take(state.boundary(from),"sidecar configured frontier");
+          x::Block5Limits bounds{.output_quota=7,.context_rows=std::size_t(TargetPrograms::capacity-facts.next_position),
+              .vocabulary=d::vocabulary,.confidence_domain=x::ConfidenceDomain::kRawLogit,.draft=control};
+          const auto maximum=take(x::block5_verification_capacity(bounds),"sidecar configured capacity");
+          if(!maximum)throw std::runtime_error("sidecar finite strategy has no target capacity");
+          auto ids=values<std::int32_t>(take(from.member(*state.pending_entry),"sidecar configured actual pending lease"));
+          if(ids!=std::vector<std::int32_t>{facts.pending})throw std::runtime_error("sidecar configured pending metadata/lease mismatch");
+          std::vector<float> confidence;
+          if(maximum>1) {
+            auto proposed=draft(from);ids=values<std::int32_t>(proposed[ids_port]);
+            // This original GGUF sidecar fragment publishes raw F32, not an
+            // implicitly sigmoided value selected from its file extension.
+            if(control.minimum_confidence && *control.minimum_confidence>0.F)
+              confidence=values<float>(proposed[confidence_port]);
+          }
+          const auto count=take(x::block5_verification_rows(bounds,confidence),"sidecar raw confidence prefix");
+          EXPECT_LE(count,std::size_t(control.max_drafts)+1);
+          std::array<c::ReadLease,21> target_input;std::array<c::ReadLease,3> rings;
+          for(std::size_t i=0;i<target_input.size();++i)target_input[i]=take(from.member(state.target_entries[i]),"sidecar configured target tuple");
+          for(std::size_t i=0;i<rings.size();++i)rings[i]=take(from.member(state.entries[i]),"sidecar configured main rings");
+          std::vector<Row> rows;
+          for(std::size_t i=0;i<count;++i) {
+            rows.push_back(run_row(facts.next_position+std::int64_t(i),ids.at(i),target_input,rings,epoch));
+            target_input=rows.back().target;
+            for(std::size_t stage=0;stage<rings.size();++stage)rings[stage]=rows.back().history[stage];
+          }
+          auto verified_rows=verify_head(rows);std::vector<std::int32_t> target_ids;
+          for(std::size_t i=0;i<count;++i)target_ids.push_back(values<std::int32_t>(verified_rows[i])[0]);
+          const auto decision=take(x::decide_block5(ids,target_ids,bounds,confidence),"sidecar configured exact verifier decision");
+          const auto selected=decision.pending_row;
+          const b::CaptureFrame frame{actual_target,5,7,epoch,facts.next_position,std::int64_t(decision.consumed)};
+          auto candidate=take(state.select_verified(from,rows[selected].history,rows[selected].captures,rows[selected].target,
+              verified_rows[selected],frame,decision.consumed),"sidecar configured complete state");
+          check(head.publish(from.identity(),candidate),"sidecar configured atomic publication");++publications;account();
+          EXPECT_EQ(read(take(candidate.member(*state.pending_entry),"sidecar configured pending")),read(verified_rows[selected]));
+          return candidate;
+        };
+        auto shortened=round(base,{.max_drafts=2,.minimum_confidence=.5F},2);
+        const auto before_disabled=proposal.completed_episodes;
+        auto ordinary=round(shortened,{.max_drafts=0,.minimum_confidence=.9F},3);
+        EXPECT_EQ(proposal.completed_episodes,before_disabled);
+        const auto facts=take(state.boundary(ordinary),"sidecar ordinary complete frontier");
+        EXPECT_EQ(facts.next_position,take(state.boundary(shortened),"sidecar shortened frontier").next_position+1);
+        auto resumed=draft(ordinary);
+        EXPECT_EQ(values<std::int32_t>(resumed[ids_port])[0],facts.pending);
+        EXPECT_EQ(image(state,base),old);
+        ::testing::Test::RecordProperty("bounded_draft_controls","max2/raw-confidence>=0.5; disabled0 target-only; reenabled5 from complete main-history");
+      }
+      check(state.store.collect(),"retire sidecar bounded strategy versions");
       auto proposed=draft(base);const auto proposal_image=read(proposed[ids_port]);
       const auto proposal_ids=values<std::int32_t>(proposed[ids_port]);
       if(proposal_ids.size()!=6)throw std::runtime_error("actual complete DSpark output must retain current plus five proposals");
@@ -1862,7 +2096,9 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
       }
       auto verified=verify_head(rows);std::vector<std::int32_t> target_ids;
       for(std::size_t i=0;i<6;++i)target_ids.push_back(values<std::int32_t>(verified[i])[0]);
-      const auto natural=take(x::decide_block5(proposal_ids,target_ids),"natural full block5 greedy acceptance");
+      const auto natural=take(x::decide_block5(proposal_ids,target_ids,
+          {.output_quota=7,.context_rows=std::size_t(TargetPrograms::capacity-TargetPrograms::first_position),.vocabulary=d::vocabulary}),
+          "natural full block5 greedy acceptance");
       const std::array<std::uint32_t,4> prefixes{natural.accepted_drafts,0,2,5};
       for(std::size_t scenario=0;scenario<prefixes.size();++scenario) {
         check(state.store.collect(),"retire the previous controlled prefix before the next branch");
@@ -2099,7 +2335,7 @@ void exercise(const Data &data,c::Context &context,const c::StorageOwner &owner,
     for(std::size_t stage=0;stage<3;++stage)for(std::int32_t global=0;global<256;++global)
       retained_experts+=data.bfloat_source->has_expert(stage,global);
     ::testing::Test::RecordProperty("retained_expert_source_bytes",std::to_string(retained_experts*13369344ULL));
-    ::testing::Test::RecordProperty("draft_activation_policy","explicit BF16 activation/storage; existing BFloatLinearF32 raw F32 result, original BF16 OA ordinary BMM result; actual BF16 predecessors before native MXFP4 activation AQ; no peer F32-A path equivalence claim");
+    ::testing::Test::RecordProperty("draft_activation_policy","explicit BF16 activation/storage; existing DenseLinearF32 raw F32 result, original BF16 OA ordinary BMM result; actual BF16 predecessors before native MXFP4 activation AQ; no peer F32-A path equivalence claim");
     ::testing::Test::RecordProperty("proposal_numerics","actual raw BF16-wkv/F32acc and original F32 learned norm at each episode; derived BF16-dot bound, exact BF16 stores/RoPE/row-cache bytes and reader; no Q8 reference certifies BF16 weights");
     ::testing::Test::RecordProperty("scope","Original S03 independent81-role BF16/F32/MXFP4 DSpark draft, matching S02 mainGGUF Q8 embedding/head, formal original Flash target40/41/42/finalHC/norm; same K5/full6row verifier/atomic30-member StateHead and real pending continuation. All72static original bytes plus actual selected expert slices are authenticated;9full expert-bank capacities are metadata, not all expert execution/acquisition. BF16-activation projection policy is explicit, no full-F32 weight shadow or equivalence to all peer GGUF dispatches. Layer39 and initial cacheprefix finite fixtures; no complete main model,quality,acceptance-rate or TPS claim.");
   }
@@ -2241,6 +2477,17 @@ TEST_F(DSparkOriginalState,CpuMainGgufQ8VocabularyAndOriginalTargetTailPublishes
 #endif
       ,target_data);
 }
+TEST_F(DSparkOriginalState,CpuRandomQ8MarkovPrefixAndPendingContinue) {
+  if(!require_gguf_vocabulary()||!require_parameters()||!require_shared_ffn()||!require_attention()||!require_experts()||!require_target_tail())
+    GTEST_SKIP()<<"Set authenticated complete original Q8 draft/target and vocabulary roles";
+  auto context=take(g::cpu::create_context(),"original Q8 sampled CPU Context");
+  auto owner=take(c::StorageOwner::adopt(context,System{}),"original Q8 sampled allocation owner");
+  exercise(*data,context,owner,false,gguf_vocabulary.get(),parameter_data,shared_data,attention_data,expert_data
+#if defined(HYLE_TEST_DSPARK_STATE_CUDA)
+      ,nullptr
+#endif
+      ,target_data,true);
+}
 #endif
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
 // Own the actual typed allocation domain once. Both the compiled ordinary IO
@@ -2339,6 +2586,16 @@ TEST_F(DSparkBfloatSidecarState,CpuOriginalBfloatSidecarAndTargetTailPublishesBl
 #endif
       ,target_data);
 }
+TEST_F(DSparkBfloatSidecarState,CpuRandomBfloatMarkovPrefixAndPendingContinue) {
+  auto context=take(g::cpu::create_context(),"S03 sampled CPU Context");
+  auto owner=take(c::StorageOwner::adopt(context,System{}),"S03 sampled original allocation owner");
+  exercise<bfloat_sidecar::Data>(*data,context,owner,false,vocabulary.get(),{},{},{},source
+#if defined(HYLE_TEST_DSPARK_STATE_CUDA)
+      ,nullptr
+#endif
+      ,target_data,true);
+}
+
 #endif
 #if defined(HYLE_TEST_DSPARK_STATE_CUDA)
 TEST_F(DSparkBfloatSidecarState,CudaOriginalBfloatSidecarAndTargetTailPublishesBlock5Prefix) {

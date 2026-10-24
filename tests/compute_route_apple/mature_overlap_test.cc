@@ -64,7 +64,7 @@ TEST(AppleMatureOverlap, BfloatLinearRealRouterDecodeAndMultiToken) {
     auto metal_context = a::Context::create().value();
     auto mlx_context = a::Context::create().value();
     const std::array specs{a::InputSpec{{rows, k}, mx::bfloat16}, a::InputSpec{{n, k}, mx::bfloat16}};
-    auto metal = metal_context.prepare(c::model_ops::bfloat_linear_f32(), specs).value();
+    auto metal = metal_context.prepare(c::model_ops::dense_linear_f32(), specs).value();
     auto mlx = mlx_linear(mlx_context, specs);
     std::optional<Lease> old_metal, old_mlx;
     std::vector<float> old_expected;
@@ -132,7 +132,7 @@ TEST(AppleMatureOverlap, BfloatLinearFullF32ExponentRange) {
     SCOPED_TRACE(native_mlx);
     auto context = a::Context::create().value();
     auto program = native_mlx ? mlx_linear(context, specs) :
-        context.prepare(c::model_ops::bfloat_linear_f32(), specs).value();
+        context.prepare(c::model_ops::dense_linear_f32(), specs).value();
     expect_source(execute(program, std::array{bfloat(x, {rows, k}), bfloat(weight, {n, k})}), expected);
   }
 }

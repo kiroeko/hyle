@@ -1,0 +1,647 @@
+{
+  "status": "PASS",
+  "date": "2026-10-24",
+  "scope": "Five finite complete original 27B GGUF CPU/mixed functional journeys. Not a whole-task quality or performance comparison.",
+  "source": {
+    "file": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "size": 16464440224,
+    "lfs_sha256": "322e194ff79741c7baa497c240f677f54b201b0efab44ca8e50f122b39123482",
+    "api_xet_hash": "76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473",
+    "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+    "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size",
+    "full_file_sha256_verified": true,
+    "repository": "unsloth/Qwen3.8-27B-GGUF",
+    "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "uri": "https://hf-mirror.net/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "header_bytes": 10996640,
+    "header_sha256": "ab8269365254d45b888f76452d2f49e894c9491ac854094cc2d57ab4e9105d44"
+  },
+  "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+  "original_roles": 866,
+  "original_payload_bytes": 16453443584,
+  "prepared": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/complete-v2/input.json",
+    "bytes": 3336,
+    "sha256": "7e295efd3c268e82e1b6f393502054886c6576e01d4885bc5149d9eb546da82c"
+  },
+  "manifest": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/complete-v2/weights.tsv",
+    "bytes": 201366,
+    "sha256": "82ff050a1f5c4715203487a12b4cb4d1e82ff208db12ed656179586b5a6172e5"
+  },
+  "geometry": {
+    "prompt_tokens": 1,
+    "bos": 248044,
+    "capacity": 32,
+    "cache_limit_bytes": 2147483648,
+    "ordinary_outputs": 4,
+    "k1_outputs": 4,
+    "random_k2_outputs": 6,
+    "full_GPU": false,
+    "reason": "Original 16.45GB encoded bank exceeds 12GiB VRAM; all64 FFN layers are explicitly host-resident in mixed cases."
+  },
+  "runtimes": {
+    "pure_cpu": {
+      "image": {
+        "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle.exe",
+        "bytes": 22689280,
+        "sha256": "b52a24da3d02047afef4d39e697702a3bf1c08a1eb83df24845d4e1a1998e8fa"
+      },
+      "native": {
+        "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "environment": {
+        "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/runtime-environment.json",
+        "bytes": 337,
+        "sha256": "5e3493317a84d3b4a352b77c60361817e5bb23c786443baad9596d14c343998b"
+      },
+      "source": {
+        "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/sources.json",
+        "bytes": 9677,
+        "sha256": "40e5c7cc1201120e240b5c99ded1af22e25a44f97b4a74eb50b54bb1833cb729"
+      }
+    },
+    "baseline_mixed": {
+      "image": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/recursive-probe.exe",
+        "bytes": 141278208,
+        "sha256": "f0c744b50d582cb2d1b3006cefdfce24947d3b27ec67e91767aef1bf5dd832c4"
+      },
+      "environment": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/engine-check/ready-cuda.json",
+        "bytes": 7425,
+        "sha256": "1204b5aa545f986d27c79f3bf7a32c3f2ca05ad41fc76d967ef801c4a1dd1c8d"
+      },
+      "native": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "source": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/sources.json",
+        "bytes": 3870,
+        "sha256": "157f0cab010763719d2c624885fce33f17b9b5792c1e1aa2eb534a3bc5e17254"
+      }
+    },
+    "fixed_mixed": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\hyle.exe",
+        "bytes": 141279232,
+        "sha256": "b60f1b03bc34cbdf1345a9e8a94a851556be4f605432232f2e36e18757281c3d"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multi-draft-20261024\\geometry-cuda-current1\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "compiled": [
+        {
+          "old": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-system-constant-lease-20261024\\executable\\executable.obj",
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\graph\\graph.obj",
+            "bytes": 5133350,
+            "sha256": "dfdc21fe8cb42c8c3f365bf54aae2f197026e0aef05c5ff9e3269fc3646f1832"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\graph\\executable.cc",
+            "bytes": 479069,
+            "sha256": "8652cbd963069623860074e3bf874bb8574a31e27b1f3f6a945f7b37484b95bc"
+          },
+          "canonical_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+            "bytes": 479069,
+            "sha256": "8652cbd963069623860074e3bf874bb8574a31e27b1f3f6a945f7b37484b95bc"
+          }
+        },
+        {
+          "old": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\graph_provider_ggml_cuda--ggml_cuda_region.obj",
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\region\\region.obj",
+            "bytes": 2396162,
+            "sha256": "9f8c8bc3c58c36faeb787271e60a0e07613514ff2fcca1ee3666e3dc946cd8ac"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\region\\ggml_cuda_region.cc",
+            "bytes": 70974,
+            "sha256": "6348b1504d2624a22d7ca9d63456eac5c778c57f044c0868625225c7371242c5"
+          },
+          "canonical_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+            "bytes": 70974,
+            "sha256": "6348b1504d2624a22d7ca9d63456eac5c778c57f044c0868625225c7371242c5"
+          }
+        }
+      ],
+      "HTTP": 0,
+      "SDK_builds": 0,
+      "math_changes": false,
+      "search_limits_unchanged": true
+    }
+  },
+  "results": [
+    {
+      "case": "cpu-ordinary",
+      "result": {
+        "profile": "Q27",
+        "case": "cpu-ordinary",
+        "native_exit": 0,
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "host_weight_bytes": 16102434816,
+        "device_weight_bytes": 0,
+        "cache_peak_requested_bytes": 311534516,
+        "image": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle.exe",
+          "bytes": 22689280,
+          "sha256": "b52a24da3d02047afef4d39e697702a3bf1c08a1eb83df24845d4e1a1998e8fa"
+        },
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 851,
+        "mtp_tensors": 0,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 12.49575662612915
+      },
+      "report": {
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "score_dtype": "F32",
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "mtp": false,
+        "weight_count_scope": "selected_physical_roles",
+        "mtp_tensors": 0,
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_acceptance_policy": "equal_greedy_ids",
+        "frontier_sampling_graph_calls": 0,
+        "mtp_max_drafts": 1,
+        "mtp_min_draft_probability": 0,
+        "draft_program_graph_calls": 0,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "original_host_weight_bytes": 16102434816,
+        "original_device_weight_bytes": 0,
+        "cache_shared_backing_bytes": 311033984,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_metadata_requested_bytes": 462840,
+        "cache_live_requested_bytes": 311496824,
+        "cache_peak_requested_bytes": 311534516,
+        "cache_requested_byte_limit": 2147483648,
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 0,
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "prefill_draft_rows": 0,
+        "actual_draft_rows": 0,
+        "draft_rows": 0,
+        "draft_rounds": 0,
+        "consumed_drafts": 0
+      }
+    },
+    {
+      "case": "cpu-k1",
+      "result": {
+        "profile": "Q27",
+        "case": "cpu-k1",
+        "native_exit": 0,
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "host_weight_bytes": 16453443584,
+        "device_weight_bytes": 0,
+        "cache_peak_requested_bytes": 465755515,
+        "image": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle.exe",
+          "bytes": 22689280,
+          "sha256": "b52a24da3d02047afef4d39e697702a3bf1c08a1eb83df24845d4e1a1998e8fa"
+        },
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 851,
+        "mtp_tensors": 15,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 14.678051948547363
+      },
+      "report": {
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "score_dtype": "F32",
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "mtp": true,
+        "weight_count_scope": "selected_physical_roles",
+        "mtp_tensors": 15,
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_acceptance_policy": "equal_greedy_ids",
+        "frontier_sampling_graph_calls": 0,
+        "mtp_max_drafts": 1,
+        "mtp_min_draft_probability": 0,
+        "draft_program_graph_calls": 0,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "original_host_weight_bytes": 16453443584,
+        "original_device_weight_bytes": 0,
+        "cache_shared_backing_bytes": 465215619,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_metadata_requested_bytes": 503232,
+        "cache_live_requested_bytes": 465718851,
+        "cache_peak_requested_bytes": 465755515,
+        "cache_requested_byte_limit": 2147483648,
+        "draft_frontier": 4,
+        "draft_lag": 0,
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "prefix_sampling_graph_calls": 0,
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 0,
+        "prefill_draft_rows": 1,
+        "actual_draft_rows": 4,
+        "draft_rows": 3,
+        "draft_rounds": 1,
+        "consumed_drafts": 1
+      }
+    },
+    {
+      "case": "mixed-ordinary",
+      "result": {
+        "profile": "Q27",
+        "case": "mixed-ordinary",
+        "native_exit": 0,
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "host_weight_bytes": 9863290880,
+        "device_weight_bytes": 6239143936,
+        "cache_peak_requested_bytes": 311033984,
+        "image": {
+          "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-current1/recursive-probe.exe",
+          "bytes": 141278208,
+          "sha256": "f0c744b50d582cb2d1b3006cefdfce24947d3b27ec67e91767aef1bf5dd832c4"
+        },
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 851,
+        "mtp_tensors": 0,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 9.807016849517822
+      },
+      "report": {
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "score_dtype": "F32",
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "mtp": false,
+        "weight_count_scope": "selected_physical_roles",
+        "mtp_tensors": 0,
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_acceptance_policy": "equal_greedy_ids",
+        "frontier_sampling_graph_calls": 0,
+        "mtp_max_drafts": 1,
+        "mtp_min_draft_probability": 0,
+        "draft_program_graph_calls": 0,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "original_host_weight_bytes": 9863290880,
+        "original_device_weight_bytes": 6239143936,
+        "cache_shared_backing_bytes": 311033984,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_metadata_requested_bytes": 0,
+        "cache_live_requested_bytes": 311033984,
+        "cache_peak_requested_bytes": 311033984,
+        "cache_requested_byte_limit": 2147483648,
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 0,
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "prefill_draft_rows": 0,
+        "actual_draft_rows": 0,
+        "draft_rows": 0,
+        "draft_rounds": 0,
+        "consumed_drafts": 0
+      }
+    },
+    {
+      "case": "mixed-k1",
+      "result": {
+        "case": "mixed-k1",
+        "native_exit": 0,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\hyle.exe",
+          "bytes": 141279232,
+          "sha256": "b60f1b03bc34cbdf1345a9e8a94a851556be4f605432232f2e36e18757281c3d"
+        },
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "cache_peak_requested_bytes": 465215619,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\hyle.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-metadata-offline-20261024\\q27\\complete-v2",
+          "--capacity",
+          "32",
+          "--steps",
+          "4",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--cache-bytes",
+          "2147483648",
+          "--prefix-cache",
+          "off",
+          "--replay",
+          "commands",
+          "--mtp",
+          "on",
+          "--cpu-ffn-layers",
+          "64"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792838542.2221174,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 6684,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792838556.6139696,
+        "process_wall_seconds": 14.391940900008194
+      },
+      "report": {
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "score_dtype": "F32",
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "mtp": true,
+        "weight_count_scope": "selected_physical_roles",
+        "mtp_tensors": 15,
+        "sampling": "greedy",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 0,
+        "sampling_top_p": 1,
+        "sampling_seed": 0,
+        "mtp_acceptance_policy": "equal_greedy_ids",
+        "frontier_sampling_graph_calls": 0,
+        "mtp_max_drafts": 1,
+        "mtp_min_draft_probability": 0,
+        "draft_program_graph_calls": 0,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "original_host_weight_bytes": 9863290880,
+        "original_device_weight_bytes": 6590152704,
+        "cache_shared_backing_bytes": 465215619,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_metadata_requested_bytes": 0,
+        "cache_live_requested_bytes": 465215619,
+        "cache_peak_requested_bytes": 465215619,
+        "cache_requested_byte_limit": 2147483648,
+        "draft_frontier": 4,
+        "draft_lag": 0,
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "prefix_sampling_graph_calls": 0,
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 0,
+        "prefill_draft_rows": 1,
+        "actual_draft_rows": 4,
+        "draft_rows": 3,
+        "draft_rounds": 1,
+        "consumed_drafts": 1
+      }
+    },
+    {
+      "case": "mixed-k2-random",
+      "result": {
+        "case": "mixed-k2-random",
+        "native_exit": 0,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\hyle.exe",
+          "bytes": 141279232,
+          "sha256": "b60f1b03bc34cbdf1345a9e8a94a851556be4f605432232f2e36e18757281c3d"
+        },
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "generated_ids": [
+          26076,
+          271,
+          26076,
+          271,
+          26076,
+          271
+        ],
+        "cache_peak_requested_bytes": 619169923,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\q27-cold-search-20261024\\fixed1\\hyle.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-metadata-offline-20261024\\q27\\complete-v2",
+          "--capacity",
+          "32",
+          "--steps",
+          "6",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--cache-bytes",
+          "2147483648",
+          "--prefix-cache",
+          "off",
+          "--replay",
+          "commands",
+          "--mtp",
+          "on",
+          "--cpu-ffn-layers",
+          "64",
+          "--mtp-max-drafts",
+          "2",
+          "--sampling",
+          "random",
+          "--temperature",
+          "1",
+          "--top-k",
+          "8",
+          "--top-p",
+          "0.9",
+          "--seed",
+          "123"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792838564.979367,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 36152,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792838582.4376829,
+        "process_wall_seconds": 17.457551200001035
+      },
+      "report": {
+        "source_id": "de81a441e6cdfdd81a2124594edd50bc15ca95ed504d6ddca7dba651d28815c1",
+        "score_dtype": "F32",
+        "score_policy": "gguf_encoded_weight_projection_f32_logits",
+        "mtp": true,
+        "weight_count_scope": "selected_physical_roles",
+        "mtp_tensors": 15,
+        "sampling": "random",
+        "sampling_policy_order": "temperature_top_k_top_p",
+        "sampling_temperature": 1,
+        "sampling_top_k": 8,
+        "sampling_top_p": 0.9,
+        "sampling_seed": 123,
+        "mtp_acceptance_policy": "min_one_p_over_q",
+        "frontier_sampling_graph_calls": 0,
+        "mtp_max_drafts": 2,
+        "mtp_min_draft_probability": 0,
+        "draft_program_graph_calls": 8,
+        "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+        "original_host_weight_bytes": 9863290880,
+        "original_device_weight_bytes": 6590152704,
+        "cache_shared_backing_bytes": 619169923,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_metadata_requested_bytes": 0,
+        "cache_live_requested_bytes": 619169923,
+        "cache_peak_requested_bytes": 619169923,
+        "cache_requested_byte_limit": 2147483648,
+        "draft_frontier": 5,
+        "draft_lag": 1,
+        "generated_ids": [
+          26076,
+          271,
+          26076,
+          271,
+          26076,
+          271
+        ],
+        "generated_tokens": 6,
+        "generated_decode_tokens": 5,
+        "prefix_sampling_graph_calls": 0,
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 14,
+        "prefill_draft_rows": 1,
+        "actual_draft_rows": 11,
+        "draft_rows": 10,
+        "draft_rounds": 3,
+        "consumed_drafts": 2
+      }
+    }
+  ],
+  "corrected_defect": {
+    "trigger": "Checked encoded embedding consumes target IDs produced internally by draft TopK/Concat; CUDA generic fusion incorrectly admitted an internal index while its native guard validates only region inputs.",
+    "diagnostic": {
+      "node": 84,
+      "proposal": 257,
+      "first_route_search_states": 5307,
+      "first_placement_attempts": 29,
+      "repeated_region_declines": 40,
+      "final_search_states": 65536,
+      "final_placement_attempts": 1160,
+      "reason": "ggml CUDA dynamic indices require a checked boundary"
+    },
+    "fix": "Reject the ineligible fusion in region qualification, before physical resource search. Ordinary checked Gather remains eligible. Preserve previous prepare rejection when a later search limit terminates compilation.",
+    "search_limits_unchanged": true,
+    "index_checks_preserved": true,
+    "arithmetic_unchanged": true,
+    "original_failure": {
+      "path": ".scratch/mtp-metadata-offline-20261024/q27/runs-current-runtime/mixed-k1/stderr.log",
+      "bytes": 1620,
+      "sha256": "0c32b3a2c3ca358b6c6763523a6a8bb9c7f0d5721cca4658d1632bdec0877370"
+    },
+    "instrumented_failure": {
+      "path": ".scratch/q27-cold-search-20261024/diagnostic1/run/stderr.log",
+      "bytes": 3244,
+      "sha256": "5d814cd66ed1fb155448f9f5b6afc049aae45e6497c8564973f8255e8a532040"
+    }
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen27-gguf-complete-input-2026-10-24.zip",
+    "bytes": 233268,
+    "sha256": "c911b61b54acffd3b9fb09ef47b519838b9acc7f2d3c7f3f7973c4614381d40d"
+  },
+  "HTTP_for_runs": 0,
+  "SDK_builds": 0,
+  "qualifications": [
+    "Original full-file LFS SHA was verified by streaming header plus authenticated contiguous pieces; no second full-file model was reconstructed.",
+    "All selected physical codecs remain encoded; mixed weights total9,863,290,880 host +6,590,152,704 device bytes with no original-weight duplication.",
+    "BOS-only short journeys establish complete loading/compilation/generation/state/cache/normal destruction. They do not establish natural-language task quality, full context capacity or TPS.",
+    "CPU ordinary, CPU K1 and mixed ordinary retain their previously frozen runtimes. Only mixed MTP uses the two-object provider/diagnostic fix; other sources and limits are unchanged."
+  ]
+}

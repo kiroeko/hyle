@@ -1,0 +1,720 @@
+{
+  "kind": "Q27 fixed-source disjoint four-worker necessary-payload pilot; private network research",
+  "captured_utc": "2026-10-24T07:33:53.300548+00:00",
+  "source": {
+    "repository": "unsloth/Qwen3.8-27B-GGUF",
+    "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "uri": "https://hf-mirror.net/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "file": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+    "size": 16464440224,
+    "lfs_sha256": "322e194ff79741c7baa497c240f677f54b201b0efab44ca8e50f122b39123482",
+    "api_xet_hash": "76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473",
+    "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+    "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+  },
+  "plan": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/pieces/plan.json",
+    "bytes": 305896,
+    "sha256": "000a4b66dd220b7fa2500b28064d7e58c7ef59cdc6688d50cbde83fad9efeddb"
+  },
+  "script": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/piece-fetch.py",
+    "bytes": 17034,
+    "sha256": "b21c243ff147c06ba22c5475e148c46d3e35b39aae46f6c51ce9f6ea17476cf4"
+  },
+  "adoption": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/ADOPTED.q27-four-pieces.json",
+    "bytes": 551,
+    "sha256": "11c5ff8e2699c4b111f3cd015bbdf54238f3283ba05e472356438cdfc5203260"
+  },
+  "old_receipt": {
+    "path": ".scratch/mtp-metadata-offline-20261024/q27/payload-acquisition.json",
+    "bytes": 110346,
+    "sha256": "3eba906995951efe0213dd558f91a19648b3c4015041a2de5bc3232766970607"
+  },
+  "old_prefix_verified_bytes": 1245708288,
+  "pilot": {
+    "summary": {
+      "path": ".scratch/mtp-metadata-offline-20261024/q27/pieces/batches/1792826786634615900/summary.json",
+      "bytes": 1240,
+      "sha256": "852d1995ddabef44ac91a9410f116b9a2624f950e8b30c68c4f8bb2a00925fe4"
+    },
+    "workers": 4,
+    "all_exit_zero": true,
+    "new_verified_bytes": 67108864,
+    "coordinator_wall_seconds": 83.73399999999674,
+    "HTTP_span_seconds": 82.0067138671875,
+    "aggregate_MiB_per_second": 0.7643251247999915,
+    "request_count": 16,
+    "all_exact_206_4MiB": true,
+    "all_actual_host_net": true,
+    "all_strong_ETag_match": true,
+    "all_body_hashes_rechecked": true,
+    "ranges_disjoint": true,
+    "no_retained_payload_redownload": true,
+    "old_receipt_unchanged": true,
+    "bindings": [
+      {
+        "piece": 0,
+        "authorized_piece_extent": [
+          1769122720,
+          6239706015
+        ],
+        "request_ids": [
+          11435,
+          11439,
+          11445,
+          11450
+        ]
+      },
+      {
+        "piece": 1,
+        "authorized_piece_extent": [
+          6239706016,
+          9447229983
+        ],
+        "request_ids": [
+          11432,
+          11442,
+          11447,
+          11451
+        ]
+      },
+      {
+        "piece": 2,
+        "authorized_piece_extent": [
+          9447229984,
+          12629192863
+        ],
+        "request_ids": [
+          11433,
+          11438,
+          11441,
+          11444
+        ]
+      },
+      {
+        "piece": 3,
+        "authorized_piece_extent": [
+          12629192864,
+          15831133087
+        ],
+        "request_ids": [
+          11434,
+          11440,
+          11446,
+          11452
+        ]
+      }
+    ],
+    "requests": [
+      {
+        "id": 11432,
+        "started": "2026-10-24T07:26:28.159686+00:00",
+        "updated": "2026-10-24T07:26:48.154014+00:00",
+        "range": [
+          6239706016,
+          6243900319
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "208f7c39fe492131819155be5b9d52df89d510828c8d73aba5725e801f035eff",
+        "response_range": "bytes 6239706016-6243900319/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11433,
+        "started": "2026-10-24T07:26:29.184949+00:00",
+        "updated": "2026-10-24T07:26:38.288782+00:00",
+        "range": [
+          9447229984,
+          9451424287
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "9dd7c5e4e337c82270fc535e708202e7a1961fcd8e5e2ad83ba82f307e88fcb5",
+        "response_range": "bytes 9447229984-9451424287/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11434,
+        "started": "2026-10-24T07:26:30.216511+00:00",
+        "updated": "2026-10-24T07:26:42.631290+00:00",
+        "range": [
+          12629192864,
+          12633387167
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "cea3b6b25034bebabf65e2b76a0d0147b861fd88bfca2e7fb0f36f64fb75d215",
+        "response_range": "bytes 12629192864-12633387167/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11435,
+        "started": "2026-10-24T07:26:31.020063+00:00",
+        "updated": "2026-10-24T07:26:41.139041+00:00",
+        "range": [
+          3014831008,
+          3019025311
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "f6f5707f0c3486a12b493f65a1c91abd4adef18bd8362386aadb479f9ab3c0ad",
+        "response_range": "bytes 3014831008-3019025311/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11438,
+        "started": "2026-10-24T07:26:38.575164+00:00",
+        "updated": "2026-10-24T07:26:47.041532+00:00",
+        "range": [
+          9451424288,
+          9455618591
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "07f60626524aa48718073585e49e48f51b916297fa67aec6a9984ac7ec3ca73a",
+        "response_range": "bytes 9451424288-9455618591/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11439,
+        "started": "2026-10-24T07:26:41.431224+00:00",
+        "updated": "2026-10-24T07:27:00.248397+00:00",
+        "range": [
+          3019025312,
+          3023219615
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "9fd993d81167d9e7d9df4bc2ccd3f65d1368b2ac1ddd1390b620365e80d0ef0d",
+        "response_range": "bytes 3019025312-3023219615/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11440,
+        "started": "2026-10-24T07:26:42.921640+00:00",
+        "updated": "2026-10-24T07:27:01.846672+00:00",
+        "range": [
+          12633387168,
+          12637581471
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "7e2a640807dc73fdf17cb879126ff9b17f5d46ef52d27796f8e6d261304ac098",
+        "response_range": "bytes 12633387168-12637581471/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11441,
+        "started": "2026-10-24T07:26:47.326385+00:00",
+        "updated": "2026-10-24T07:26:54.415000+00:00",
+        "range": [
+          9455618592,
+          9459812895
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "077946f74e2ad41ad2e945b5bc398e4783bd4cf993a4f21ca16831d8e03201cd",
+        "response_range": "bytes 9455618592-9459812895/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11442,
+        "started": "2026-10-24T07:26:48.442035+00:00",
+        "updated": "2026-10-24T07:27:04.310561+00:00",
+        "range": [
+          6243900320,
+          6248094623
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "f4270294f26ff1cd2ca80221419fb7b252831367a663b06563800d1da341feba",
+        "response_range": "bytes 6243900320-6248094623/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11444,
+        "started": "2026-10-24T07:26:54.697960+00:00",
+        "updated": "2026-10-24T07:27:16.284401+00:00",
+        "range": [
+          9459812896,
+          9464007199
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "038ecb5e1f6f2eb4f583fb5d62c262f7738e92cfc6a218a0fa6b2c1e6f8688aa",
+        "response_range": "bytes 9459812896-9464007199/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11445,
+        "started": "2026-10-24T07:27:00.540463+00:00",
+        "updated": "2026-10-24T07:27:17.969123+00:00",
+        "range": [
+          3023219616,
+          3027413919
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "44aa36a8af8f633b009d74e16753337cde768480e071207a28476921f7305a13",
+        "response_range": "bytes 3023219616-3027413919/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11446,
+        "started": "2026-10-24T07:27:02.135192+00:00",
+        "updated": "2026-10-24T07:27:22.221992+00:00",
+        "range": [
+          12637581472,
+          12641775775
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "30ff27c9552515a2f67de4f70e397e25b0fd617842acf3de8d72edd53882ab2f",
+        "response_range": "bytes 12637581472-12641775775/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11447,
+        "started": "2026-10-24T07:27:04.605124+00:00",
+        "updated": "2026-10-24T07:27:21.172392+00:00",
+        "range": [
+          6248094624,
+          6252288927
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "e4fcce597e58fdf0c582efc525c34ea1f8005a0d7b4a8e9db66d6f0c5a8e8990",
+        "response_range": "bytes 6248094624-6252288927/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11450,
+        "started": "2026-10-24T07:27:18.279634+00:00",
+        "updated": "2026-10-24T07:27:28.326640+00:00",
+        "range": [
+          3027413920,
+          3031608223
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "52c3131141595017950dc3bef18b784118b124f029269150cc69de21affc3812",
+        "response_range": "bytes 3027413920-3031608223/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11451,
+        "started": "2026-10-24T07:27:21.477354+00:00",
+        "updated": "2026-10-24T07:27:40.972479+00:00",
+        "range": [
+          6252288928,
+          6256483231
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "631a2702d0cc1d074d306f8d060d441065b6cb7e52e271a7820ab160772380e5",
+        "response_range": "bytes 6252288928-6256483231/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11452,
+        "started": "2026-10-24T07:27:22.513057+00:00",
+        "updated": "2026-10-24T07:27:50.166400+00:00",
+        "range": [
+          12641775776,
+          12645970079
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "33db086acfb386b058e38484d4c21010d064928e22ea79ca956b45ee379c1b5d",
+        "response_range": "bytes 12641775776-12645970079/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      }
+    ],
+    "ledger_script": ".scratch/mtp-metadata-offline-20261024/q27/piece-fetch.py"
+  },
+  "prior_serial_observation": {
+    "request_count": 16,
+    "verified_bytes": 67108864,
+    "window_start": "2026-10-24T07:14:20.343606+00:00",
+    "window_end": "2026-10-24T07:19:39.649448+00:00",
+    "wall_seconds": 319.30584192276,
+    "MiB_per_second": 0.20043479196813938,
+    "requests": [
+      {
+        "id": 11338,
+        "started": "2026-10-24T07:14:20.343606+00:00",
+        "updated": "2026-10-24T07:14:43.990836+00:00",
+        "range": [
+          2947722144,
+          2951916447
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "ebaffa6f553088669b9b1c810588b12359f6c08733d20fe0bf64caa4c559aaa5",
+        "response_range": "bytes 2947722144-2951916447/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11342,
+        "started": "2026-10-24T07:14:44.262031+00:00",
+        "updated": "2026-10-24T07:14:57.350960+00:00",
+        "range": [
+          2951916448,
+          2956110751
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "8edd37b90b6d1c2507ca122c02576153c6740342e80044a2c0a764890e80b26a",
+        "response_range": "bytes 2951916448-2956110751/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11344,
+        "started": "2026-10-24T07:14:57.646240+00:00",
+        "updated": "2026-10-24T07:15:11.885577+00:00",
+        "range": [
+          2956110752,
+          2960305055
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "fc0bbc64a49d28fe892f3dbf62cd2d955b37e753692ed1a0024883e3ce191892",
+        "response_range": "bytes 2956110752-2960305055/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11346,
+        "started": "2026-10-24T07:15:12.165304+00:00",
+        "updated": "2026-10-24T07:15:27.305238+00:00",
+        "range": [
+          2960305056,
+          2964499359
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "7426cc476a9e03ae2d427e78a4e5f2957251cd9f637664cc92df52a40798ea37",
+        "response_range": "bytes 2960305056-2964499359/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11347,
+        "started": "2026-10-24T07:15:27.584714+00:00",
+        "updated": "2026-10-24T07:15:47.053140+00:00",
+        "range": [
+          2964499360,
+          2968693663
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "5b1042aab1e8831ae945b1af603a8a8ab0dcdf058c66265337f6c13804b152cb",
+        "response_range": "bytes 2964499360-2968693663/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11350,
+        "started": "2026-10-24T07:15:47.329434+00:00",
+        "updated": "2026-10-24T07:15:59.001266+00:00",
+        "range": [
+          2968693664,
+          2972887967
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "9a9364729d547cfb779a94fec559553d4b7c4af83dd09ddb42cfcf23c4ec1b0f",
+        "response_range": "bytes 2968693664-2972887967/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11353,
+        "started": "2026-10-24T07:15:59.278019+00:00",
+        "updated": "2026-10-24T07:16:22.965085+00:00",
+        "range": [
+          2972887968,
+          2977082271
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "8453b7801411b88b471e27c58c7d31a5d7e954fa4bd28bd5712c49bf0d81e22a",
+        "response_range": "bytes 2972887968-2977082271/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11357,
+        "started": "2026-10-24T07:16:23.243308+00:00",
+        "updated": "2026-10-24T07:16:37.318374+00:00",
+        "range": [
+          2977082272,
+          2981276575
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "728fa2a67ae2cce2025092ecc7a312249da0fd5d255b1f217ccc0e746e3bc03a",
+        "response_range": "bytes 2977082272-2981276575/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11359,
+        "started": "2026-10-24T07:16:37.616524+00:00",
+        "updated": "2026-10-24T07:16:58.050494+00:00",
+        "range": [
+          2981276576,
+          2985470879
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "10e6f73cfab323c3130f9821d7e4e91c586e5a2137fff4abe6da276a9dec6383",
+        "response_range": "bytes 2981276576-2985470879/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11363,
+        "started": "2026-10-24T07:16:58.323467+00:00",
+        "updated": "2026-10-24T07:17:14.574968+00:00",
+        "range": [
+          2985470880,
+          2989665183
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "03737c6b7821e77941a04308bc4e948eef6289b748f7fdcc8e789c4f09a00b86",
+        "response_range": "bytes 2985470880-2989665183/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11366,
+        "started": "2026-10-24T07:17:14.847732+00:00",
+        "updated": "2026-10-24T07:17:59.544459+00:00",
+        "range": [
+          2989665184,
+          2993859487
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "0af8c4c5ada7adb58b0ddf93137317ef6ae5362ec93001385aca11109c9f26ee",
+        "response_range": "bytes 2989665184-2993859487/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11371,
+        "started": "2026-10-24T07:17:59.825054+00:00",
+        "updated": "2026-10-24T07:18:23.713758+00:00",
+        "range": [
+          2993859488,
+          2998053791
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "0149e7e5de9d8738a23229a8ee1ce5a7668957061d9ecca194556ecc4084f009",
+        "response_range": "bytes 2993859488-2998053791/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11374,
+        "started": "2026-10-24T07:18:24.062210+00:00",
+        "updated": "2026-10-24T07:18:40.007897+00:00",
+        "range": [
+          2998053792,
+          3002248095
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "f4e685d86605d18feb2b8b39ed9d5c37c8167ed383b694c58e7f686618414d2a",
+        "response_range": "bytes 2998053792-3002248095/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11375,
+        "started": "2026-10-24T07:18:40.285987+00:00",
+        "updated": "2026-10-24T07:18:53.949042+00:00",
+        "range": [
+          3002248096,
+          3006442399
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "15ec3c678af505aee326fd4a13941592103f77264b50f433dc7d87fbd5b7b034",
+        "response_range": "bytes 3002248096-3006442399/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11378,
+        "started": "2026-10-24T07:18:54.227432+00:00",
+        "updated": "2026-10-24T07:19:14.997317+00:00",
+        "range": [
+          3006442400,
+          3010636703
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "b2587507ef69df28cebef88f232ee37218e51dfd8f9d40bb23fccd19193eec15",
+        "response_range": "bytes 3006442400-3010636703/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      },
+      {
+        "id": 11382,
+        "started": "2026-10-24T07:19:15.274648+00:00",
+        "updated": "2026-10-24T07:19:39.649448+00:00",
+        "range": [
+          3010636704,
+          3014831007
+        ],
+        "bytes": 4194304,
+        "received_bytes": 4194304,
+        "outcome": "downloaded",
+        "status": 206,
+        "final_host": "hf-mirror.net",
+        "sha256": "5545a19627980cdc42a3a079a8a884c9f875f1ece800cb7386f7810cc501474c",
+        "response_range": "bytes 3010636704-3014831007/16464440224",
+        "response_ETag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\""
+      }
+    ],
+    "ledger_script": ".scratch/mtp-metadata-offline-20261024/q27/fetch-payload.py"
+  },
+  "observed_aggregate_ratio": 3.813335585577811,
+  "qualification": "Different-time network windows; concurrency, remote service and network conditions are uncontrolled. The3.81x ratio is an observation, not a simultaneous A/B or sustained bandwidth guarantee. Native inference speed/quality are not measured.",
+  "in_progress_followup": {
+    "batch": ".scratch/mtp-metadata-offline-20261024/q27/pieces/batches/1792827109669052900",
+    "max_new_bytes_per_worker": 1073741824,
+    "max_total_new_bytes": 4294967296,
+    "states": [
+      {
+        "piece": 0,
+        "verified_prefix_bytes": 1275068416,
+        "block_count": 304,
+        "complete": false,
+        "stderr_bytes": 0
+      },
+      {
+        "piece": 1,
+        "verified_prefix_bytes": 37748736,
+        "block_count": 9,
+        "complete": false,
+        "stderr_bytes": 0
+      },
+      {
+        "piece": 2,
+        "verified_prefix_bytes": 37748736,
+        "block_count": 9,
+        "complete": false,
+        "stderr_bytes": 0
+      },
+      {
+        "piece": 3,
+        "verified_prefix_bytes": 41943040,
+        "block_count": 10,
+        "complete": false,
+        "stderr_bytes": 0
+      }
+    ],
+    "all_worker_stderr_empty": true
+  },
+  "owner_snapshot": {
+    "marker_name": "PAUSED.q35-gguf-payload-held",
+    "marker_exists": true,
+    "PAUSED_exists": false,
+    "guard": "Every chunk checks the exact root owner and enabled budget. Budget wrapper verifies actualscript; original strong ETag/ContentRange/ContentLength and .net redirect checks retained. Legacy entry rejects ADOPTED before validation/truncation."
+  },
+  "reproducer": {
+    "offline_check": "python .scratch/mtp-metadata-offline-20261024/q27/piece-fetch.py check",
+    "activated_root_batch_command": "python .scratch/mtp-download-budget-20261023/budget.py run .scratch/mtp-metadata-offline-20261024/q27/piece-fetch.py fetch --owner-marker PAUSED.q35-gguf-payload-held --max-new-bytes 16777216",
+    "warning": "Do not execute another fetch while the accepted followup is running; this records the originalpilot command only."
+  },
+  "new_HTTP_by_auditor": 0,
+  "whole_payload_copy": false
+}

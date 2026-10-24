@@ -136,7 +136,7 @@ inline HcPorts hc_pre(sem::Fragment &f,Value residual,Value fn,Value scale,Value
                       ProjectionOrder order=ProjectionOrder::kScaleRawProjection) {
   const auto project=[](sem::Fragment &graph,Value actual_input,Value mixing) {
   if(graph.description(mixing).data_type()==c::DataType::kBFloat16) {
-    return graph.one(c::model_ops::bfloat_linear_f32(),{actual_input,mixing});
+    return graph.one(c::model_ops::dense_linear_f32(),{actual_input,mixing});
   } else {
     if(graph.description(mixing).data_type()!=c::DataType::kFloat32)
       throw std::runtime_error("GLM HC mixing coefficients must retain actual BF16 or F32 storage");

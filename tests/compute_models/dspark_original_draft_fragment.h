@@ -180,7 +180,7 @@ inline Result append(sem::Fragment &f,const Inputs &input,const Parameters &para
   std::array<Value,kRows+1> ids;ids[0]=input.pending;
   for(std::size_t row=0;row<std::size_t(kRows);++row) {
     result.head.markov[row]=math::gather(f,parameters.markov_w1,ids[row]);
-    result.head.bias[row]=f.one(c::model_ops::bfloat_linear_f32(),{result.head.markov[row],parameters.markov_w2});
+    result.head.bias[row]=f.one(c::model_ops::dense_linear_f32(),{result.head.markov[row],parameters.markov_w2});
     result.head.adjusted[row]=math::binary(f,c::BinaryKind::kAdd,
         ds::slice(f,result.head.base_logits,0,std::int64_t(row),1),result.head.bias[row]);
     const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{result.head.adjusted[row]},2);
@@ -189,7 +189,7 @@ inline Result append(sem::Fragment &f,const Inputs &input,const Parameters &para
   const auto concatenate=[&](const auto &values) {auto value=values[0];for(std::size_t i=1;i<values.size();++i)value=ds::concat(f,value,values[i],0);return value;};
   result.ids=concatenate(ids);result.markov=concatenate(result.head.markov);result.logits=concatenate(result.head.adjusted);
   result.head.confidence_input=ds::concat(f,result.hidden,result.markov,1);
-  result.confidence=f.one(c::model_ops::bfloat_linear_f32(),{result.head.confidence_input,parameters.confidence});
+  result.confidence=f.one(c::model_ops::dense_linear_f32(),{result.head.confidence_input,parameters.confidence});
   return result;
 }
 

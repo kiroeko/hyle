@@ -1,0 +1,185 @@
+{
+  "kind": "GGML CUDA produced checked-index boundary regression",
+  "date": "2026-10-24",
+  "result": "PASS fixed; original region reproduces the expected cold-search failure",
+  "scope": "One actual small original-encoding Graph on RTX4070; no model source, model quality, performance or full MTP goal certification.",
+  "graph": {
+    "nodes": 3,
+    "flow": "Concat(dynamic I32[1], dynamic I32[1]) -> checked Gather(Q8_0 logical F32[4,32]) -> Neg",
+    "original_encoding": "4 exact Q8_0 blocks, binary16 scale0.25 and signed codes0..127; independent decoded F32 oracle",
+    "published_outputs": [
+      "checked Gather F32[2,32]",
+      "Neg F32[2,32]"
+    ],
+    "storage_domains": [
+      "CUDA device",
+      "same-device host-visible managed"
+    ],
+    "max_route_search_states": 32,
+    "successful_compile_assertions": [
+      "route_search_limit_reached == false",
+      "route_search_states <32",
+      "placement_attempts <=3"
+    ]
+  },
+  "cause": {
+    "original": "A region swallowed Concat, so the checked reader index was no longer a recipe input; native prepare rejected the invariant boundary repeatedly over unrelated physical resource choices.",
+    "source": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc ordinary qualify only queried per-node native::supports before this fix.",
+    "fix": "Require GroupedMatMul or checked Gather/GatherElements indices to belong to request.inputs during resource qualification; retain native guard, actual checked bounds and ordinary leaf fallback.",
+    "terminal_diagnostic": "Graph budget termination also retains the last genuine candidate rejection; no budget limit was raised."
+  },
+  "contract": {
+    "checked_output": "All64 checked Gather caller-output values remain1337 on invalid produced ID4 for four rows; no partial indexed output write.",
+    "graph_result": "OutOfRange Completion; both Invocation::output ports reject access, and this failed slot rejects another submit.",
+    "downstream": "An independent later Neg caller buffer has no whole-Graph rollback promise. Its bytes are unusable after failure; no extra synchronization or whole-Graph transactional copy was added.",
+    "references": [
+      "docs/user/compute.md:205",
+      "docs/user/graph.md:135",
+      "docs/user/compute.md:135",
+      "include/hyle/graph/executable.h:992"
+    ],
+    "wording_change": "graph.md now says this Gather output instead of the whole output"
+  },
+  "success": {
+    "checked_values": 64,
+    "negative_values": 64,
+    "comparison": "exact independently decoded values",
+    "valid_indices": [
+      3,
+      1
+    ],
+    "invalid_indices": [
+      3,
+      4
+    ],
+    "invalid_checked_output_canary_values": 64,
+    "failed_slot_reuse": "FailedPrecondition"
+  },
+  "comparison": {
+    "same_test_object": {
+      "path": ".scratch/mtp-checked-index-boundary-20261024/attempt5/test.obj",
+      "bytes": 1164849,
+      "sha256": "dac9dd86f961b22f7a809c9f2a2cbbad1c1c8b1e478a0ba169ea3e34efe3d2a3"
+    },
+    "changed_only_region_object": true,
+    "original_region": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/host1/graph_provider_ggml_cuda--ggml_cuda_region.obj",
+      "bytes": 2395421,
+      "sha256": "a62e3888e88181ea93bf9e1ab45a91659135296fc9c95902e20ae8a326cbecc0"
+    },
+    "fixed_region": {
+      "path": ".scratch/q27-cold-search-20261024/fixed1/region/region.obj",
+      "bytes": 2396162,
+      "sha256": "9f8c8bc3c58c36faeb787271e60a0e07613514ff2fcca1ee3666e3dc946cd8ac"
+    },
+    "original_process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-checked-index-boundary-20261024\\attempt5\\old-control.exe",
+        "--gtest_filter=GgmlCudaGraph.ProducedCheckedIndicesKeepTheirNativeValidationBoundary",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\mtp-checked-index-boundary-20261024\\attempt5\\run-old-control\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792838754.7700891,
+      "timeout_seconds": 120,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 47272,
+      "exit": 1,
+      "timed_out": false,
+      "finished": 1792838755.2840679,
+      "process_wall_seconds": 0.5136473999882583
+    },
+    "fixed_process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-checked-index-boundary-20261024\\attempt5\\checks.exe",
+        "--gtest_filter=GgmlCudaGraph.ProducedCheckedIndicesKeepTheirNativeValidationBoundary",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\mtp-checked-index-boundary-20261024\\attempt5\\run\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792838757.8813546,
+      "timeout_seconds": 120,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 34640,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792838758.4425921,
+      "process_wall_seconds": 0.560644900018815
+    },
+    "original_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-checked-index-boundary-20261024\\attempt5\\old-control.exe",
+      "bytes": 140042240,
+      "sha256": "ce3689410f380facad220f6a0f0987597368b5f7185781f9d3260686923617d6"
+    },
+    "fixed_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-checked-index-boundary-20261024\\attempt5\\checks.exe",
+      "bytes": 140042752,
+      "sha256": "3a16c82ab35e46d26d4f58c77d1580412c918b6127342ad0786049120cdc028e"
+    }
+  },
+  "retained_failures": [
+    {
+      "attempt": 1,
+      "kind": "build recipe",
+      "result": "Compile failed because the reused consumer recipe omitted HYLE_COMPUTE_GGML_CUDA; no runtime."
+    },
+    {
+      "attempt": 2,
+      "kind": "build recipe",
+      "result": "Strict test compile passed; first link lacked the explicit temporary directory; link2 passed. This superseded test version was never executed."
+    },
+    {
+      "attempt": 3,
+      "kind": "test fixture",
+      "result": "Both old/fixed runtime attempts failed at discovery: plain F32 Gather table is outside this GGML CUDA domain. Replaced with real Q8_0 encoding."
+    },
+    {
+      "attempt": 4,
+      "kind": "overstrong test assertion",
+      "result": "Old region reproduced the boundary/search failure. Fixed compiled and computed valid values, and invalid Completion failed, but the assertion incorrectly required an independent Neg buffer to roll back. Public operation/Graph contracts were checked before correcting the test to protect the actual Gather output and reject failed Graph results."
+    }
+  ],
+  "sources": [
+    {
+      "path": "tests/graph_provider_ggml_cuda/checked_index_boundary_test.cc",
+      "bytes": 6903,
+      "sha256": "70ba9846dfe17aede16c4e906c805b30c6a4463b7e5a0eb64bb943a3c459c3ad"
+    },
+    {
+      "path": "tests/graph_provider_ggml_cuda/CMakeLists.txt",
+      "bytes": 744,
+      "sha256": "cf17186a0bc6f64eb896591016d36ac1501ed8fa93f121da8381cb0e41d9c086"
+    },
+    {
+      "path": "docs/user/graph.md",
+      "bytes": 90568,
+      "sha256": "7efc3fdc77ea832b9f6ecefdea6cdfdc992a93bd5f0ec302c78dd720b156b458"
+    },
+    {
+      "path": ".scratch/q27-cold-search-20261024/fixed1/region/ggml_cuda_region.cc",
+      "bytes": 70974,
+      "sha256": "6348b1504d2624a22d7ca9d63456eac5c778c57f044c0868625225c7371242c5"
+    }
+  ],
+  "work": {
+    "final_successful_test_translation_units": 1,
+    "total_test_compile_attempts": 5,
+    "successful_test_compiles": 4,
+    "total_tiny_runtime_attempts": 6,
+    "final_control_and_fixed_runs": 2,
+    "product_source_recompiled_here": 0,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "HTTP": 0,
+    "model_runs": 0
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/ggml-cuda-produced-checked-index-boundary-2026-10-24.zip",
+    "bytes": 162091,
+    "sha256": "a6af4dd9a83914a605e6d921b33dea02af5a57b315e1a5838aa1e0944d750bf1"
+  }
+}

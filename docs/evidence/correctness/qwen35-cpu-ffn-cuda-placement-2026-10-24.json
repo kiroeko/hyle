@@ -1,0 +1,336 @@
+{
+  "schema": "hyle-correctness-evidence-v1",
+  "date": "2026-10-24",
+  "task": "Complete BF16 Qwen3.5-2B model with first two target FFNs on CPU and attention/state/NextN on CUDA",
+  "scope": {
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "cpu_ffn_layers": 2,
+    "source_payload_bytes": 3885311680,
+    "new_download_bytes": 0,
+    "fresh_application_TUs": 2,
+    "shared_graph_TUs": 1,
+    "full_sdk_builds": 0
+  },
+  "implementation": [
+    "--cpu-ffn-layers N defaults0; nonzero requires a CPU+CUDA build and 0<=N<=target layer count. No implicit CPU route added to a CUDA-only build.",
+    "Only target post-attention norm, FFN and FFN residual are CPU; attention, target KV/conv/GDN state, NextN, sampler and caller input/output tensors remain GPU.",
+    "Original target FFN matrices/norms load directly through the existing CPU file endpoint. Sources group by original file and actual destination resource. No original FFN bank is first loaded to GPU or duplicated there.",
+    "All logical nodes including metadata Views receive cold required placement. Constant ownership follows its real lease resource; caller input/output resource contracts stay explicit.",
+    "Each exact compiled child derives its active queue bindings once from queue_required. The hot path reads that static span; GPU-only auxiliary graphs do not receive an unused CPU queue.",
+    "Compiled report checks CPU constants stay host-primary with zero canonical replicas, including physical constant aliases."
+  ],
+  "frozen_versions": [
+    {
+      "run": "hybrid-check1",
+      "main_sha256": "ca02f0cabcb7202cd2777696b015c0f589154e82993c92f215fab5a7eef8eda0",
+      "image_sha256": "fbecbe3c374e7d8bd919c85a94cca11d398c35866b020da485153fec1cd0e6de",
+      "scope": "ordinary and K1 passed; K4 exposed passing both configured queues to GPU-only auxiliary graph"
+    },
+    {
+      "run": "hybrid-check2",
+      "main_sha256": "a01c378e9b4a91c104f0234eb7ac6ecb4e5753b9e09885aa79449fa17d9564c8",
+      "image_sha256": "68214203225d268204d1f0872cfe8a023e23a317e7441b9cda8bc311219f2877",
+      "delta": "Static queue bindings selected once for each compiled child; mathematics and FFN placement unchanged"
+    }
+  ],
+  "validation": [
+    {
+      "run": "hybrid-check1",
+      "case": "ordinary-greedy",
+      "exit": 0,
+      "seconds": 3.214470624923706,
+      "output": {
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904
+        ],
+        "cpu_ffn_layers": 2,
+        "original_host_weight_bytes": 151003136,
+        "original_device_weight_bytes": 3612652224,
+        "active_sequences": null,
+        "max_sessions": null,
+        "session_count": null,
+        "turn_count": null,
+        "generated_tokens": 8,
+        "idle_evictions": null,
+        "cache_requested_byte_limit": 42418224,
+        "native_execution_private_bytes_unknown": true,
+        "workspace_domains": [
+          {
+            "domain": 0,
+            "known_peak_bytes": 30646528,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 1,
+            "known_peak_bytes": 11362304,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 2,
+            "known_peak_bytes": 630784,
+            "limit_bytes": 72155136
+          }
+        ]
+      }
+    },
+    {
+      "run": "hybrid-check1",
+      "case": "mtp-K1-greedy",
+      "exit": 0,
+      "seconds": 3.118835926055908,
+      "output": {
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904
+        ],
+        "cpu_ffn_layers": 2,
+        "original_host_weight_bytes": 151003136,
+        "original_device_weight_bytes": 3734308544,
+        "active_sequences": null,
+        "max_sessions": null,
+        "session_count": null,
+        "turn_count": null,
+        "generated_tokens": 8,
+        "idle_evictions": null,
+        "cache_requested_byte_limit": 62529587,
+        "native_execution_private_bytes_unknown": true,
+        "workspace_domains": [
+          {
+            "domain": 0,
+            "known_peak_bytes": 32711936,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 1,
+            "known_peak_bytes": 11362304,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 2,
+            "known_peak_bytes": 630784,
+            "limit_bytes": 72155136
+          }
+        ]
+      }
+    },
+    {
+      "run": "hybrid-check2",
+      "case": "mtp-K4-greedy",
+      "exit": 0,
+      "seconds": 4.9143853187561035,
+      "output": {
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904
+        ],
+        "cpu_ffn_layers": 2,
+        "original_host_weight_bytes": 151003136,
+        "original_device_weight_bytes": 3734308544,
+        "active_sequences": null,
+        "max_sessions": null,
+        "session_count": null,
+        "turn_count": null,
+        "generated_tokens": 8,
+        "idle_evictions": null,
+        "cache_requested_byte_limit": 121155635,
+        "native_execution_private_bytes_unknown": true,
+        "workspace_domains": [
+          {
+            "domain": 0,
+            "known_peak_bytes": 32711936,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 1,
+            "known_peak_bytes": 11362304,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 2,
+            "known_peak_bytes": 630784,
+            "limit_bytes": 72155136
+          }
+        ]
+      }
+    },
+    {
+      "run": "hybrid-check2",
+      "case": "mtp-K4-random",
+      "exit": 0,
+      "seconds": 3.667285680770874,
+      "output": {
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          1445,
+          18904,
+          1120,
+          36760,
+          11
+        ],
+        "cpu_ffn_layers": 2,
+        "original_host_weight_bytes": 151003136,
+        "original_device_weight_bytes": 3734308544,
+        "active_sequences": null,
+        "max_sessions": null,
+        "session_count": null,
+        "turn_count": null,
+        "generated_tokens": 8,
+        "idle_evictions": null,
+        "cache_requested_byte_limit": 121155635,
+        "native_execution_private_bytes_unknown": true,
+        "workspace_domains": [
+          {
+            "domain": 0,
+            "known_peak_bytes": 107637357,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 1,
+            "known_peak_bytes": 11362304,
+            "limit_bytes": 2795249664
+          },
+          {
+            "domain": 2,
+            "known_peak_bytes": 630784,
+            "limit_bytes": 72155136
+          }
+        ]
+      }
+    },
+    {
+      "run": "hybrid-check2",
+      "case": "gpu-only-default",
+      "exit": 0,
+      "seconds": 1.9158546924591064,
+      "output": {
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904
+        ],
+        "cpu_ffn_layers": 0,
+        "original_host_weight_bytes": 0,
+        "original_device_weight_bytes": 3763655360,
+        "active_sequences": null,
+        "max_sessions": null,
+        "session_count": null,
+        "turn_count": null,
+        "generated_tokens": 8,
+        "idle_evictions": null,
+        "cache_requested_byte_limit": 42418224,
+        "native_execution_private_bytes_unknown": false,
+        "workspace_domains": null
+      }
+    },
+    {
+      "run": "hybrid-check2",
+      "case": "strict-and-failure",
+      "exit": 0,
+      "seconds": 6.008112668991089,
+      "output": {
+        "strict_random_episodes": 4,
+        "strict_boundary_match": true,
+        "committed_rebuild_pending_rng_match": true,
+        "invalid_q_atomic_and_retry": true,
+        "min_probability": 0,
+        "exact_admissions": 2,
+        "exact_evictions": 1,
+        "draw": 28,
+        "length": 167,
+        "performance_claim": false,
+        "quality_claim": false
+      }
+    },
+    {
+      "run": "hybrid-check2",
+      "case": "mtp-random-sessions",
+      "exit": 0,
+      "seconds": 9.800647258758545,
+      "output": {
+        "generated_ids": null,
+        "cpu_ffn_layers": 2,
+        "original_host_weight_bytes": 151003136,
+        "original_device_weight_bytes": 3734308544,
+        "active_sequences": 2,
+        "max_sessions": 2,
+        "session_count": 3,
+        "turn_count": 6,
+        "generated_tokens": 24,
+        "idle_evictions": 3,
+        "cache_requested_byte_limit": 242311219,
+        "native_execution_private_bytes_unknown": true,
+        "workspace_domains": [
+          {
+            "domain": 0,
+            "known_peak_bytes": 146346388,
+            "limit_bytes": 5523390464
+          },
+          {
+            "domain": 1,
+            "known_peak_bytes": 22716416,
+            "limit_bytes": 5523390464
+          },
+          {
+            "domain": 2,
+            "known_peak_bytes": 1261568,
+            "limit_bytes": 77201408
+          }
+        ]
+      }
+    }
+  ],
+  "failures_and_corrections": [
+    "Initial ordinary run rejected a genuine process-system CPU ready lease because Graph required a StorageOwner pair. Common Graph contract was fixed and eight focused tests passed separately; no clearing of the source lease or GPU copy workaround.",
+    "Initial K4 run (raw failure log retained under hybrid-check1/mtp-K4-greedy) rejected surplus CPU queue for a GPU-only auxiliary graph. Frozen check2 uses cold static active queue bindings and passed K4 greedy/random and mixed sessions.",
+    "Negative and excessive --cpu-ffn-layers arguments rejected before opening input paths."
+  ],
+  "accounting": {
+    "original_host_weights_bytes": 151003136,
+    "ordinary_original_gpu_weights_bytes": 3612652224,
+    "mtp_original_gpu_weights_bytes": 3734308544,
+    "canonical_cpu_weight_replica_bytes": 0,
+    "cache_budget": "Existing strict GPU retained-cache backing scope is unchanged.",
+    "workspace_budget": "Finite known per-Invocation Graph workspace limits for actual GPU, host and pinned domains. Public report gives actual planned workspace; these are not physical memory limits.",
+    "shared_execution_budget": "Tracks requested allocations in the actual domains; shared total scope has no configured finite cap in this mode.",
+    "native_cpu_private_storage": "Unknown; explicitly reported true. No physical RSS/VRAM total fit claim."
+  },
+  "limits": [
+    "This qualifies one meaningful complete-model BF16 placement mode, not arbitrary CPU/GPU partitioning or every backend/codec.",
+    "Natural checks are short P154 generation and three sessions with two turns; they are not task-quality certification or aligned throughput benchmarks.",
+    "Graph/queue ownership focused tests are separate evidence. The model invalid-q failure check proves unchanged published head/RNG and successful retry; it is not a full device-OOM fault matrix.",
+    "Geometry V2 work was not used by these frozen images. Each image has its exact source/protocol and shared-object identity; product source is evolving independently."
+  ],
+  "related_graph_evidence": "graph-process-system-constant-lease-2026-10-24.json",
+  "artifact": {
+    "path": "qwen35-cpu-ffn-cuda-placement-2026-10-24.logs.zip",
+    "bytes": 479326,
+    "sha256": "0553a76ee4fa96c9022dcd111bd5c6305456153bada281777f76f884c1858b67",
+    "files": 138
+  }
+}

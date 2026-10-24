@@ -707,6 +707,8 @@ struct ConstantBinding final {
   ConstantPolicy policy = ConstantPolicy::kBorrow;
   // Optional ready immutable allocation and its actual resource/allocator.
   // The view must be contained in this lease and use this owner's resource.
+  // A lease may omit owner only for the exact process-lifetime system_resource
+  // and complete system_allocator identity. The lease still owns its bytes.
   compute::StorageOwner owner{};
   compute::ReadLease lease{};
 };

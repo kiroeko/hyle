@@ -166,7 +166,7 @@ inline Fragment projection(const in::Case &item,const Bank &bank,
   if(item.native==GGML_TYPE_BF16) {
     auto rounded=f.one(c::Operation(c::Cast{.output_type=c::DataType::kBFloat16}),{a});
     auto w=f.constant(dense({n,item.k},c::DataType::kBFloat16),bank.rows(n,first));
-    result=f.one(c::model_ops::bfloat_linear_f32(),{rounded,w});
+    result=f.one(c::model_ops::dense_linear_f32(),{rounded,w});
   } else if(item.native==GGML_TYPE_F16) {
     // Explicit cold conversion preserves original F16 multiplicands. The hot
     // activation takes its original F16 rounding before the mature F32 dot.

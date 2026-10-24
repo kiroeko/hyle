@@ -1,0 +1,68 @@
+{
+  "status": "PASS_MIXED_NEW_AND_RESTORED_HEAD_ADMISSION",
+  "date": "2026-10-24",
+  "runs": [
+    {
+      "name": "Q01-cuda-N1R1",
+      "source_id": "b41ca51625d8aeba5ec157c58466c182217ed2b087c261ca3f708a1009889bb1",
+      "max_sessions": 1,
+      "turn_count": 6,
+      "output_tokens": 24,
+      "pending_flushed_tokens": 3,
+      "idle_evictions": 3,
+      "restores": 3,
+      "peak_committed_versions": 1,
+      "actual_batch_widths": [
+        1
+      ],
+      "tokens_match_same_case_N1R1": true
+    },
+    {
+      "name": "Q01-cuda-N2R2",
+      "source_id": "b41ca51625d8aeba5ec157c58466c182217ed2b087c261ca3f708a1009889bb1",
+      "max_sessions": 2,
+      "turn_count": 6,
+      "output_tokens": 24,
+      "pending_flushed_tokens": 3,
+      "idle_evictions": 2,
+      "restores": 2,
+      "peak_committed_versions": 2,
+      "actual_batch_widths": [
+        1,
+        2
+      ],
+      "tokens_match_same_case_N1R1": true
+    },
+    {
+      "name": "BF16-cuda-N2R2",
+      "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+      "max_sessions": 2,
+      "turn_count": 6,
+      "output_tokens": 24,
+      "pending_flushed_tokens": 3,
+      "idle_evictions": 2,
+      "restores": 2,
+      "peak_committed_versions": 2,
+      "actual_batch_widths": [
+        1,
+        2
+      ],
+      "tokens_match_same_case_N1R1": null
+    }
+  ],
+  "problem": "A new active request has no Session until wave preparation; admitting another restored request counted only existing Sessions and omitted that reserved head. The wave could fill all N versions before preparing its earlier new member.",
+  "change": "Count active requests without a Session as reserved heads before admitting/restoring a peer; evict only existing idle owners, preserve generating owners and the original committed-version bound.",
+  "scope": "CUDA greedy K1, same P154 raw-token segment appended in two turns, three sessions, capacity512, shared model, original GPTQ and BF16 roles.",
+  "limits": [
+    "No stochastic sampling or K>1 coverage",
+    "IDs coincide in this case; no general cross-batch numerical parity or task-quality claim",
+    "No performance comparison or fault injection"
+  ],
+  "performance_claim": false,
+  "quality_claim": false,
+  "logs": {
+    "path": "docs/evidence/correctness/qwen-mtp-reserved-head-admission-2026-10-24.logs.zip",
+    "bytes": 26887,
+    "sha256": "004586176530aaf076b184533e273ba7a6160540c6f16ba13b6f63d11d04f844"
+  }
+}

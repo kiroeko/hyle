@@ -1,0 +1,598 @@
+{
+  "status": "PASS_QWEN35_K1_RANDOM_FUNCTIONAL_INTEGRATION",
+  "date": "2026-10-24",
+  "scope": "Existing prepared original BF16 Qwen3.5-2B, complete ordinary and K1 MTP engine path; CPU and CUDA functional checks, not throughput/quality evaluation.",
+  "policy": {
+    "order": [
+      "temperature",
+      "top-k",
+      "top-p"
+    ],
+    "default": "greedy",
+    "normalized_log_probabilities": "remain in original device Graph",
+    "acceptance": "min(1,p(y)/q(y))",
+    "reject": "normalized positive p-q, stable log-domain construction",
+    "accept": "proposal then independent target bonus",
+    "rng": "existing Categorical Philox; seed xor stable input-session ordinal, transactional Snapshot cursor",
+    "draws_per_step": {
+      "ordinary": 1,
+      "mtp_round": 3,
+      "mtp_tail": 1
+    }
+  },
+  "runtime": {
+    "cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-random-20261024\\engine-integration\\native-current\\hyle-cpu.exe",
+      "bytes": 141056512,
+      "sha256": "e5e1b452ec5e217d8a7da657d534c8c9257845b11a9f29298aa57a26fa5632b7"
+    },
+    "cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-random-20261024\\engine-integration\\native-current\\hyle-cuda.exe",
+      "bytes": 141071872,
+      "sha256": "908672cd87122f83aead7e412f783a75a751df9987c537d3638e5e9b5d9f80d8"
+    }
+  },
+  "compiled_model_sources": {
+    "cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 320410,
+      "sha256": "aa91e19d3fa9051b987c574488695582085f2bcc95e7e7444511846cb9f9394b"
+    },
+    "cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 320410,
+      "sha256": "aa91e19d3fa9051b987c574488695582085f2bcc95e7e7444511846cb9f9394b"
+    }
+  },
+  "regressions": {
+    "cpu": {
+      "runs": [
+        {
+          "label": "final-cpu-greedy-off",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            464
+          ],
+          "draw": 0,
+          "payload": 42418224,
+          "metadata": 232972
+        },
+        {
+          "label": "final-cpu-greedy-on",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            464
+          ],
+          "draw": 0,
+          "payload": 62529587,
+          "metadata": 267544
+        },
+        {
+          "label": "final-cpu-random-off",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            464
+          ],
+          "draw": 4,
+          "payload": 42426417,
+          "metadata": 236256
+        },
+        {
+          "label": "final-cpu-random-on",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            464
+          ],
+          "draw": 5,
+          "payload": 62529587,
+          "metadata": 267544
+        }
+      ],
+      "performance_claim": false,
+      "quality_claim": false,
+      "downloads": 0
+    },
+    "cuda": {
+      "runs": [
+        {
+          "label": "final-cuda-greedy-off",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            464
+          ],
+          "draw": 0,
+          "payload": 42418224,
+          "metadata": 0
+        },
+        {
+          "label": "final-cuda-greedy-on",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            464
+          ],
+          "draw": 0,
+          "payload": 62529587,
+          "metadata": 0
+        },
+        {
+          "label": "final-cuda-random-off",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            464
+          ],
+          "draw": 4,
+          "payload": 42426417,
+          "metadata": 0
+        },
+        {
+          "label": "final-cuda-random-on",
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "ids": [
+            71093,
+            12305,
+            198,
+            727
+          ],
+          "draw": 5,
+          "payload": 62529587,
+          "metadata": 0
+        }
+      ],
+      "performance_claim": false,
+      "quality_claim": false,
+      "downloads": 0
+    }
+  },
+  "prefix": {
+    "prefix-full": [
+      {
+        "generated_ids": [
+          34217
+        ],
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 0,
+        "prefix_full_hits": 0,
+        "prefix_sampling_graph_calls": 0,
+        "actual_target_rows": 15,
+        "cache_shared_backing_bytes": 59777075
+      },
+      {
+        "generated_ids": [
+          2047
+        ],
+        "sampling_stream": 1,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 15,
+        "prefix_full_hits": 1,
+        "prefix_sampling_graph_calls": 1,
+        "actual_target_rows": 0,
+        "cache_shared_backing_bytes": 59777075
+      }
+    ],
+    "prefix-partial": [
+      {
+        "generated_ids": [
+          34217
+        ],
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 0,
+        "prefix_full_hits": 0,
+        "prefix_sampling_graph_calls": 0,
+        "actual_target_rows": 15,
+        "cache_shared_backing_bytes": 59777075
+      },
+      {
+        "generated_ids": [
+          5187
+        ],
+        "sampling_stream": 1,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 15,
+        "prefix_full_hits": 0,
+        "prefix_sampling_graph_calls": 0,
+        "actual_target_rows": 8,
+        "cache_shared_backing_bytes": 59777075
+      }
+    ],
+    "cpu-prefix-full": [
+      {
+        "generated_ids": [
+          307
+        ],
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 0,
+        "prefix_full_hits": 0,
+        "prefix_sampling_graph_calls": 0,
+        "actual_target_rows": 15,
+        "cache_shared_backing_bytes": 59777075
+      },
+      {
+        "generated_ids": [
+          34217
+        ],
+        "sampling_stream": 1,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 15,
+        "prefix_full_hits": 1,
+        "prefix_sampling_graph_calls": 1,
+        "actual_target_rows": 0,
+        "cache_shared_backing_bytes": 59777075
+      }
+    ],
+    "cpu-prefix-partial": [
+      {
+        "generated_ids": [
+          307
+        ],
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 0,
+        "prefix_full_hits": 0,
+        "prefix_sampling_graph_calls": 0,
+        "actual_target_rows": 15,
+        "cache_shared_backing_bytes": 59777075
+      },
+      {
+        "generated_ids": [
+          248046
+        ],
+        "sampling_stream": 1,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 15,
+        "prefix_full_hits": 0,
+        "prefix_sampling_graph_calls": 0,
+        "actual_target_rows": 8,
+        "cache_shared_backing_bytes": 59777075
+      }
+    ],
+    "ordinary-prefix-full": [
+      {
+        "generated_ids": [
+          34217
+        ],
+        "sampling_stream": 0,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 0,
+        "prefix_full_hits": 0,
+        "prefix_sampling_graph_calls": 0,
+        "actual_target_rows": null,
+        "cache_shared_backing_bytes": 40067121
+      },
+      {
+        "generated_ids": [
+          2047
+        ],
+        "sampling_stream": 1,
+        "sampling_draw_cursor": 1,
+        "reused_tokens": 15,
+        "prefix_full_hits": 1,
+        "prefix_sampling_graph_calls": 1,
+        "actual_target_rows": null,
+        "cache_shared_backing_bytes": 40067121
+      }
+    ]
+  },
+  "multisession": {
+    "summary": {
+      "generated_tokens": 24,
+      "peak_committed_versions": 2,
+      "restore_count": 2,
+      "idle_evictions": 2,
+      "actual_graph_calls": 16,
+      "actual_target_rows": 1259,
+      "actual_draft_rows": 1259
+    },
+    "sessions": [
+      {
+        "id": "alice",
+        "ids": [
+          71093,
+          12305,
+          198,
+          727,
+          71093,
+          12305,
+          198,
+          727
+        ],
+        "stream": 0,
+        "draw": 10,
+        "ledger_draws": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            6,
+            9
+          ],
+          [
+            9,
+            10
+          ]
+        ]
+      },
+      {
+        "id": "bob",
+        "ids": [
+          727,
+          696,
+          18479,
+          2784,
+          12237,
+          198,
+          3223,
+          364
+        ],
+        "stream": 1,
+        "draw": 10,
+        "ledger_draws": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            6,
+            9
+          ],
+          [
+            9,
+            10
+          ]
+        ]
+      },
+      {
+        "id": "carol",
+        "ids": [
+          71093,
+          12305,
+          198,
+          464,
+          71093,
+          12305,
+          198,
+          727
+        ],
+        "stream": 2,
+        "draw": 10,
+        "ledger_draws": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            6,
+            9
+          ],
+          [
+            9,
+            10
+          ]
+        ]
+      }
+    ]
+  },
+  "transaction_probe": {
+    "result": {
+      "status": "PASS_RANDOM_MTP_TRANSACTION",
+      "backend": "cuda",
+      "strict_replay": true,
+      "failed_commit_retry": true,
+      "blocked_native_cancel": true,
+      "real_R2": true,
+      "cached_frontier_streams": true,
+      "performance_claim": false
+    },
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-random-20261024\\engine-integration\\probe\\probe.obj",
+      "bytes": 8913957,
+      "sha256": "76ec195cfe6bbae6ff15742df85c64eb2784cc84bdf0fbd450da8fd0bd420fa5"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_random_mtp_probe.cc",
+      "bytes": 8753,
+      "sha256": "a05eb4e837ab22d219c3eeca78b0b47d3989451729467a121182eeca6988c4ef"
+    },
+    "note": "Probe includes product main. This probe binary precedes final report-field-only edits; final engine images above cover the final reporting and policy paths."
+  },
+  "components": {
+    "cpu": {
+      "tests": 10,
+      "failures": 0
+    },
+    "cuda": {
+      "tests": 11,
+      "failures": 0
+    }
+  },
+  "metadata_unit": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\prefix-check1\\link2\\prefix-check.exe"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792815338.549847,
+      "timeout_seconds": 30,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 5880,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792815338.5988493,
+      "process_wall_seconds": 0.04872429999522865
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\prefix-check1\\link2\\prefix-check.exe",
+      "bytes": 248320,
+      "sha256": "e97acad77d48e66d15ed55deef1608bd3353a316b9a423e6a6b0d6f65c78e10e"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_prefix_cache_test.cc",
+      "bytes": 24699,
+      "sha256": "7956fb9424a1a6753a18795fe84407f182e103551072839bb6d2256d7dc77221"
+    },
+    "cases": 10,
+    "passed": true,
+    "model_executions": 0,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "negative": [
+    {
+      "name": "byte-cap",
+      "exit": 1,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-random-20261024\\engine-integration\\native-current\\hyle-cuda.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+        "--mtp",
+        "on",
+        "--steps",
+        "4",
+        "--capacity",
+        "256",
+        "--sampling",
+        "random",
+        "--cache-bytes",
+        "1"
+      ],
+      "stderr": "Qwen3.5 text consumer: --cache-bytes cannot hold the configured active sequences: requires 62529587 shared KV/RNN backing bytes",
+      "before_weight_load": true
+    },
+    {
+      "name": "temperature-nan",
+      "exit": 1,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-random-20261024\\engine-integration\\native-current\\hyle-cuda.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+        "--mtp",
+        "on",
+        "--steps",
+        "4",
+        "--capacity",
+        "256",
+        "--sampling",
+        "random",
+        "--temperature",
+        "nan"
+      ],
+      "stderr": "Qwen3.5 text consumer: --temperature requires a finite positive number",
+      "before_weight_load": true
+    },
+    {
+      "name": "nucleus-zero",
+      "exit": 1,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-random-20261024\\engine-integration\\native-current\\hyle-cuda.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+        "--mtp",
+        "on",
+        "--steps",
+        "4",
+        "--capacity",
+        "256",
+        "--sampling",
+        "random",
+        "--top-p",
+        "0"
+      ],
+      "stderr": "Qwen3.5 text consumer: --top-p requires a finite positive number at most one",
+      "before_weight_load": true
+    },
+    {
+      "name": "key-overflow",
+      "exit": 1,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-random-20261024\\engine-integration\\native-current\\hyle-cuda.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+        "--mtp",
+        "on",
+        "--steps",
+        "4",
+        "--capacity",
+        "256",
+        "--sampling",
+        "random",
+        "--seed",
+        "18446744073709551616"
+      ],
+      "stderr": "Qwen3.5 text consumer: --seed requires an unsigned integer",
+      "before_weight_load": true
+    }
+  ],
+  "limitations": [
+    "No claim of pathwise ID equality between CPU and CUDA, ordinary and speculative, or different batch geometries. Greedy baseline IDs remain unchanged; strict replay/retry assertions compare the same actual route and addresses.",
+    "Blocked native-queue cancellation uses existing scheduler/progress. A direct submit behind a gate on its own checked-operation queue is an invalid instrument: it blocks required Categorical host checks until watchdog release and was not treated as a production provider defect.",
+    "No performance optimization, quality benchmark, other-model stochastic integration or full CMake/SDK build in this evidence. All weights were already local; HTTP/download bytes zero."
+  ],
+  "downloads": 0,
+  "SDK_builds": 0,
+  "log_bundle": {
+    "path": "docs/evidence/correctness/qwen-mtp-random-integration-2026-10-24.logs.zip",
+    "bytes": 89916,
+    "sha256": "14bc78f1d0847f4b6fdbd6393cf24349cbf799b00e23dca1f23a5c0608af87f7"
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite original-role GLM Flash/Pro stochastic MTP consumer closure; not a complete GLM inference engine or whole-model quality result",
+  "result": "PASS bounded original-role CUDA component journeys and CPU-only strict syntax",
+  "changes": [
+    "Use one shared hyle::inference sampling Graph construction and SamplingCursor; fixed fragment-local IDs are statically adapted without forged Graph IDs, duplicated acceptance mathematics or new executor.",
+    "Retain actual original NextN full-vocabulary logits, categorical-sample q, bind its real I32 proposal lease into target row1, and use real p0/q/p1 common acceptance/residual/bonus outputs.",
+    "Append one optional Cursor HostMetadata member to each original model schema; complete prefix state, actual pending and advanced cursor publish through the existing expected-base StateHead atomically.",
+    "Keep original trained-state repair/catchup and finite pools/supplier. Cancelled/wrong-type/stale/pre-submit failures do not advance committed RNG.",
+    "Register separate CPU/CUDA stochastic tests in their existing CMake-discovered consumer sources. A CPU-only compile also caught and fixed an existing artifact-MoE helper unused-parameter/CUDA-unavailable guard."
+  ],
+  "flash": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-random-mtp-20261024\\checks.exe",
+        "--gtest_filter=GlmMtpStateConsumer.CudaOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-random-mtp-20261024\\run1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792826982.1960475,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 49808,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792827084.5009556,
+      "process_wall_seconds": 102.30395030000363
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-random-mtp-20261024\\checks.exe",
+      "bytes": 142264320,
+      "sha256": "06e719151a6f8a459c31bf8000b651b0318b4020ee12ca053958ff0be7f6ea56"
+    },
+    "test": {
+      "name": "CudaOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+      "line": "4990",
+      "status": "run",
+      "result": "completed",
+      "time": "101.735",
+      "timestamp": "2026-10-24T15:29:42.524",
+      "classname": "GlmMtpStateConsumer"
+    },
+    "properties": {
+      "original_moe_provider_router": "cublasLt",
+      "original_moe_provider_expert_gate": "sglang-cuda",
+      "original_moe_provider_shared_gate": "sglang-cuda",
+      "original_moe_provider_expert_up": "sglang-cuda",
+      "original_moe_provider_shared_up": "sglang-cuda",
+      "original_moe_provider_expert_down": "sglang-cuda",
+      "original_moe_provider_shared_down": "sglang-cuda",
+      "shared_lm_head_provider": "cublasLt",
+      "original_attention_provider_query_a": "sglang-cuda",
+      "original_attention_provider_query_b": "sglang-cuda",
+      "original_attention_provider_kv_a": "sglang-cuda",
+      "original_attention_provider_output": "sglang-cuda",
+      "original_attention_provider_key_bmm": "ggml-cuda",
+      "original_attention_provider_value_bmm": "ggml-cuda",
+      "target_verifier_head_provider": "cublasLt",
+      "random_default_schedule": "proposal0/accept1/final2; success advances3; cancellation and stale publish advance0",
+      "random_controlled_address_bound": "262144",
+      "random_actual_proposal": "100550",
+      "random_alpha": "0.065482",
+      "random_accepted": "1",
+      "random_rejected": "1",
+      "random_published_rounds": "4",
+      "random_opposite_branch_found": "1",
+      "scope": "Actual original NextN q/proposal and real two-row verifier p0/p1, shared common stochastic decision, same complete target/NextN StateHead plus original RNG metadata. Default three addresses and bounded independent controlled-address branch fixture are distinguished; no probability/logit changes or TopK substitution. Each selected branch consumes its actual residual/bonus and completes a second ordinary K1 round. Source component upstream/initial-history fixtures remain; not full-model task quality or natural acceptance-rate evidence."
+    },
+    "actual_transitions": [
+      "GLM RANDOM K1 proposal=100550 alpha=0.065481699432019286 accept_offset=1 reserved=3 accept=0 pending=144924 next_round_accept=0 next_pending=6739 cursor=6",
+      "GLM RANDOM K1 proposal=100550 alpha=0.065481699432019286 accept_offset=31 reserved=33 accept=1 pending=92526 next_round_accept=0 next_pending=12090 cursor=36"
+    ]
+  },
+  "pro": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-random-mtp-20261024\\pro\\checks.exe",
+        "--gtest_filter=GlmProMtpStateConsumer.CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-random-mtp-20261024\\pro\\run1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792827303.1301582,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "pid": 13792,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792827399.3136284,
+      "process_wall_seconds": 96.18301340000471
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-random-mtp-20261024\\pro\\checks.exe",
+      "bytes": 141288960,
+      "sha256": "dfe0a1a63a8d7e689075c3fee0fe5886a9351482cbf5f00e15fd7914832c9110"
+    },
+    "test": {
+      "name": "CudaOriginalTarget77AndNextNRandomVerifierContinuesAtomically",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+      "line": "2066",
+      "status": "run",
+      "result": "completed",
+      "time": "94.41",
+      "timestamp": "2026-10-24T15:35:03.476",
+      "classname": "GlmProMtpStateConsumer"
+    },
+    "properties": {
+      "head_provider": "cublasLt",
+      "original_target_roles": "1559",
+      "original_target_source_bytes": "9872042432",
+      "actual_target_calls": "4",
+      "actual_target_submissions": "8",
+      "actual_target_policy_submissions": "1",
+      "accepted_target_conditioned_repairs": "0",
+      "actual_accepted_kv_repair_submissions": "0",
+      "stochastic_policy": "Actual NextN q samples proposal at draw0; actual target p0/q/p1 consumes accept1/final2. Same complete StateHead publishes pending and Cursor. Cancellation/stale publish advances0, successful K1 advances3; real target-only continuation consumes actual residual/bonus, samples its target pending and atomically advances one additional draw.",
+      "random_accepted": "0",
+      "random_rejected": "1",
+      "random_actual_proposal": "42456",
+      "random_committed_draws": "4",
+      "actual_nextn_steps": "4",
+      "actual_catchups": "0",
+      "actual_target_conditioned_repairs": "0",
+      "state_budget_bytes": "446998016",
+      "peak_state_backing_bytes": "291742428",
+      "scope": "Finite original target77+NextN78 stochastic consumer and actual untied full vocabulary, ordinary existing two-phase Graphs/StateHead/supplier. Natural single trial only; no forced proposal, logits, p/q or branch. Previous layer input/residual/upstream74 index selection and initial history remain explicit fixtures. Not full-model generation, task quality, natural acceptance-rate measurement or other quantized source coverage."
+    },
+    "actual_transitions": [
+      "GLM Pro K1 stochastic=1 scenario=0 proposal=42456 target0=62398 target1=39202 accepted=0 frontier=2054 pending=16495 continued_pending=28122"
+    ]
+  },
+  "coverage": {
+    "flash": "Natural default proposal0/accept1/final2 rejects and consumes its true residual in the next K1 round; independent host Philox search finds accept address31 in [2,262144) for the identical real proposal/q/p0/p1, commits the full reserved range33, then consumes its true bonus in another ordinary K1 round. Four actual successful complete state publications, cancel/stale/retry/disabled-driver checks.",
+    "pro": "One natural default three-draw K1 rejection, real residual consumption by original target77+NextN78, then a one-draw target-only actual continuation and atomic final pending/cursor. Original complete StateStore resources and previous trained repair/catchup remain shared; no forced branch.",
+    "cpu": "MSVC /Zs /W4 /WX with HYLE_COMPUTE_CPU and CPU-only test macro passed separately for current Flash and Pro sources; stochastic CPU device runtime is not claimed by these syntax checks.",
+    "source": "Official selected original roles and exact bounded expert caches already present. No new HTTP or weight bytes, no new SDK/provider/native compilation; exactly one consumer TU per executed model."
+  },
+  "architecture_seams": {
+    "model_consumers_changed": 2,
+    "shared_math_copies_added": 0,
+    "unavoidable_model_parts": [
+      "Access to the real NextN logits port and each model original target verifier tap",
+      "Existing model-specific complete resource schema plus one optional metadata cursor",
+      "Original accepted-prefix state repair/catchup and target-only continuation"
+    ],
+    "common_parts": [
+      "Static local-Value fragment adapter",
+      "Shared cold distribution/acceptance/residual/bonus Graph mathematics",
+      "Shared overflow-checked SamplingCursor"
+    ],
+    "next_architecture_work": "Use these real boundaries to simplify model continuation/acceptance publication later; this functional patch does not introduce a universal model executor, a second state/cache manager, provider whitelist, dynamic dispatch or compatibility path."
+  },
+  "limitations": [
+    "Upstream previous-layer activations/residual, initial history and upstream shared-index selection remain explicit source-component fixtures. No complete trained target generation, task-quality, natural acceptance-rate, cross-provider bit equality or throughput/physical-memory claim.",
+    "Pro natural trial rejected. Pro stochastic acceptance is not claimed by that run; its original accepted state repair/catchup was covered by prior greedy trained-role evidence, while the new shared stochastic acceptance/bonus path ran on Flash.",
+    "No new stochastic run of GLM quantized derivatives. Their existing role/mathematics/state evidence is not silently upgraded by an official-source stochastic run.",
+    "Flash executed source predates only a CPU test registration and the non-CUDA artifact-MoE compile guard. Its exact compiled source is archived separately; current CPU-only source syntax is recorded and the precise post-run delta is included.",
+    "No legacy full greedy matrix was repeated; actual new source journeys exercise reused model producers, StateHead, typed pending and complete state boundaries."
+  ],
+  "inherited_evidence": [
+    "docs/evidence/correctness/mtp-glm-original-target43-2026-10-23.json",
+    "docs/evidence/correctness/mtp-glm-original-target44-2026-10-23.json",
+    "docs/evidence/correctness/mtp-glm-pro-target-verifier-2026-10-23.json"
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-glm-original-stochastic-state-2026-10-24.zip",
+    "bytes": 1338876,
+    "sha256": "c48f797b43462ce4b3df15a9834aac66ce7e71119d78aee07b38167bb0a75737"
+  },
+  "archive_records": 359
+}

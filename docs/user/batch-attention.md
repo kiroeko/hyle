@@ -29,6 +29,7 @@ auto output_desc = batch_output_description(capacity, capacity.max_query_rows).v
 Q/output类型、Dqk/Dv和两份cache表示分别固定在schema中。页面字节与有效前缀按对应
 key/value role计算；tensor描述不携带外部FP8 scale，frame绑定还校验其原cache解释。
 CacheStorage的plain/q8_0/float8 factory生成不可变值，format/data_type/scale用访问器读取。
+plain F32 与 Q8_0 是不同表示，即使逻辑 `data_type()` 都是 F32；不能仅按 dtype 推断缓存编码。
 Q8_0是末depth轴block32，34 bytes/block；copy producer使用真实U8 carrier，不能把
 blocked逻辑描述塞进原plain native result-source端口。FP8 E4M3FN使用固定正有限scale；
 改变scale需要新schema/cache身份，encoder与attention应使用同一spec。
@@ -43,6 +44,8 @@ Materialized参考保显式gather/mask费用，支持plain几何与窗口，明�
 F16/BF16/F32，输出描述通过 `infer_single_output` 得到。Q8输出是U8真实carrier，
 FP8输出是E4M3FN carrier；encoder只写所给的新行，页面的准确range和发布仍由批量搬运管理。
 CPU attention可直接读Q8_0或普通分页E4 K/V，保留原页权限、布局更新和队列。
+CPU 也支持同为 F32 的 Q／plain K／plain V／output，直接读取被引用的原页，不按 query 展开整套 K/V。
+Q27 的 24／4 heads、D256、跨页、partial tail、causal／非 causal 与窗口已有[独立数值检查](../evidence/correctness/mtp-f32-paged-cpu-2026-10-24.json)，不是完整 Q27 模型通过证明。
 Q8 K/V同格式、Q/output同F16或BF16；当前有限几何是(64,64)/(128,128)/(256,256)/(64,128)。
 编码输入与Q8 attention查询必须有限，Q8的absmax/127不得超过65504。
 Q8编码先把block scale舍入成F16；若其bits为零，整个34-byte block规范为全零。
@@ -82,6 +85,15 @@ plain 同类型 K/V 另支持512→512，scale须为正有限值。GQA要求两�
 原生整数索引范围、设备限制及planner/workspace容量约束。576→512 的普通内核超过当前SM89共享内存上限，仍明确拒绝。
 其它域返回具名 unsupported。FP8 的 KV payload 为 BF16 的一半，但读取转换、
 中间结果和 metadata 仍占资源；比较完整调用时要包含双方实际的展开、规划与等待成本。
+
+FlashInfer 的 F32 accumulation 不表示所有中间值都是 F32：QK 点积、在线统计和 PV 累加
+使用 F32，未归一化的指数权重 tile 则先舍入为 Q 的 F16/BF16 类型，再用于权重行求和与 PV。
+因此，同一 BF16 Q/K/V 的结果可能不同于保留 F32 概率的 CPU 路径；这与
+`allow_bf16_partials` 无关，后者只允许额外缩窄 split-KV partial 的存储。
+冷报告的 provider、query dtype 与 `BatchPlanReport::bf16_partials` 应分别解读，
+不能把该字段为 `false` 当作概率 tile 采用 F32 的证明。
+[Q03 的有界定位](../evidence/correctness/qwen35-nvfp4-attention-boundary-2026-10-24.json)
+使用完全相同的实际 Q/K/V，独立重现了这一边界；它不代替完整生成任务的质量检查。
 
 Apple原MLX入口可编码Q8_0／E4新行；Q8在paged/ragged、E4在普通paged attention中直接读取压缩carrier。
 Q/output为F16或BF16，支持上述有限几何、窗口与full noncausal；空输出仍按Dv给出形状。

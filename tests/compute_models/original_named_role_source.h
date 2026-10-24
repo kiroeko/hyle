@@ -98,6 +98,9 @@ inline ggml_type native_codec(c::GgufQuantizedType codec) {
   case c::GgufQuantizedType::kQ5K:return GGML_TYPE_Q5_K;
   case c::GgufQuantizedType::kQ6K:return GGML_TYPE_Q6_K;
   case c::GgufQuantizedType::kQ8_0:return GGML_TYPE_Q8_0;
+  case c::GgufQuantizedType::kIq3S:return GGML_TYPE_IQ3_S;
+  case c::GgufQuantizedType::kIq4Nl:return GGML_TYPE_IQ4_NL;
+  case c::GgufQuantizedType::kIq4Xs:return GGML_TYPE_IQ4_XS;
   case c::GgufQuantizedType::kNvfp4:return GGML_TYPE_NVFP4;
   default:throw std::runtime_error("unimplemented original named manifest codec metadata");
   }

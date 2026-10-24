@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-24",
+  "scope": "Two actual selected GGUF headers and engine-private typed input preparation",
+  "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+  "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe",
+  "headers": [
+    {
+      "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+      "original_file": {
+        "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+        "size": 1384902048,
+        "lfs_sha256": "9f7b15d04cf2d5878c8122a7c181dbc09f050cd66080ce3374576e734ccb0910",
+        "api_xet_hash": "f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb",
+        "etag": "\"f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb\"",
+        "etag_basis": "API xetHash",
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q4_K_XL.gguf"
+      },
+      "header": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q4_K_XL/header.bin",
+        "bytes": 10963104,
+        "sha256": "49b590f2fcfb258db2917af72c3cfebfcebaed4b7e86321eb040c0afe7feecb4"
+      },
+      "tensor_data_offset": 10963104,
+      "tensor_count": 335,
+      "metadata_count": 48
+    },
+    {
+      "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+      "original_file": {
+        "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+        "size": 2893114784,
+        "lfs_sha256": "1eb01bfc3fbb04323e03fe6123d1d396f531474985b5d06e851ddf0522192f52",
+        "api_xet_hash": "5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944",
+        "etag": "\"5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944\"",
+        "etag_basis": "API xetHash",
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q8_K_XL.gguf"
+      },
+      "header": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q8_K_XL/header.bin",
+        "bytes": 10963104,
+        "sha256": "f78b889f79f76f2632d20297119c51b08d64d2978f85789056184929b3b305b4"
+      },
+      "tensor_data_offset": 10963104,
+      "tensor_count": 335,
+      "metadata_count": 48
+    }
+  ],
+  "network": {
+    "requests": 130,
+    "reserved_bytes": 22057304,
+    "received_bytes": 21934123,
+    "hosts": [
+      "hf-mirror.net"
+    ],
+    "outcomes": {
+      "downloaded": 129,
+      "failed": 1
+    },
+    "tensor_payload_bytes": 0,
+    "PAUSED_restored": true,
+    "rejected_preflight": "One24B request stopped before body because LFS SHA is not the Xet entity ETag; both identities then pinned from the same fixed API."
+  },
+  "artifacts": [
+    {
+      "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+      "source": {
+        "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+        "size": 1384902048,
+        "lfs_sha256": "9f7b15d04cf2d5878c8122a7c181dbc09f050cd66080ce3374576e734ccb0910",
+        "api_xet_hash": "f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb",
+        "etag": "\"f6fb056cf714d996188c27977bc52f914221dd82602a6e27ac55d5133c3ae8eb\"",
+        "etag_basis": "API xetHash",
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q4_K_XL.gguf",
+        "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+        "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe",
+        "header_sha256": "49b590f2fcfb258db2917af72c3cfebfcebaed4b7e86321eb040c0afe7feecb4",
+        "header_bytes": 10963104
+      },
+      "missing_payload_bytes": 1373938944,
+      "nextn_only_bytes": 41961472,
+      "physical_codecs": {
+        "F32": 176,
+        "Q4_K": 75,
+        "Q5_K": 37,
+        "Q6_K": 28,
+        "Q8_0": 19
+      },
+      "physical_roles": 335,
+      "main_roles": 320,
+      "mtp_roles": 15,
+      "vision_roles": 0,
+      "shared_vocabulary": "token_embd.weight; no independent output.weight"
+    },
+    {
+      "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+      "source": {
+        "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+        "size": 2893114784,
+        "lfs_sha256": "1eb01bfc3fbb04323e03fe6123d1d396f531474985b5d06e851ddf0522192f52",
+        "api_xet_hash": "5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944",
+        "etag": "\"5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944\"",
+        "etag_basis": "API xetHash",
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q8_K_XL.gguf",
+        "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+        "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe",
+        "header_sha256": "f78b889f79f76f2632d20297119c51b08d64d2978f85789056184929b3b305b4",
+        "header_bytes": 10963104
+      },
+      "missing_payload_bytes": 2882151680,
+      "nextn_only_bytes": 64661504,
+      "physical_codecs": {
+        "F16": 56,
+        "F32": 176,
+        "Q8_0": 103
+      },
+      "physical_roles": 335,
+      "main_roles": 320,
+      "mtp_roles": 15,
+      "vision_roles": 0,
+      "shared_vocabulary": "token_embd.weight; no independent output.weight"
+    }
+  ],
+  "implementation": {
+    "structural_reader": "engine/models/qwen35/gguf_header.py",
+    "typed_preparer": "engine/models/qwen35/gguf_roles.py",
+    "signature": "HYLE_QWEN35_GGUF_HEADER_ROLES_V1",
+    "preserve": [
+      "source file/revision/LFS SHA/Xet ETag",
+      "all physical source names/ne/codecs/offsets/extents",
+      "packed storage and view-only logical layout",
+      "F32 effective norm gamma/negative-exp decay",
+      "Q8 fidelity variant F16 source matrices instead of assuming uniform Q8"
+    ],
+    "activation_precision_chosen": false,
+    "full_engine_loader_wired": false,
+    "main_session_sampling_files_modified": false
+  },
+  "checks": {
+    "host_tests": 6,
+    "passed": 6,
+    "python_optimized": true,
+    "actual_header_reparse_and_role_map": 2,
+    "downloaded_model_variants": 0,
+    "full_inference_runs": 0
+  },
+  "pending": [
+    "Retrieve necessary payloads only after implementation and bounded batch are selected",
+    "Connect the typed source to engine weight storage, original-codec projection/head/Gather and GGUF parameter semantics",
+    "Run ordinary/MTP quality, complete accepted state, recovery/batching/resource coverage"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-gguf-headers-2026-10-24-logs.zip",
+    "bytes": 89638,
+    "sha256": "808dde4e5b5eb50759e1327eb9d59d7f53b6de953964f39b132103f127e3bad8"
+  }
+}

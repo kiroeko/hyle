@@ -1,0 +1,234 @@
+{
+  "kind": "Original Qwen27 FP8 CPU finite ordinary/K1 journeys after one verified cached-object closure correction",
+  "state": "passed_finite_functional_scope",
+  "repository": "Qwen/Qwen3.8-27B-FP8",
+  "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+  "original_failure_preserved": {
+    "process": {
+      "path": ".scratch/mtp-q27-fp8-20261024/runs/cpu-ordinary/attempt-1/process.json",
+      "bytes": 49,
+      "sha256": "23b4480a89fcb0de7d3ddca45ca2bdf6f4fdf84b3ed3efae42c6cbe1331ddc9e"
+    },
+    "stderr": {
+      "path": ".scratch/mtp-q27-fp8-20261024/runs/cpu-ordinary/attempt-1/stderr.log",
+      "bytes": 216,
+      "sha256": "2ad45170235757d66848257107efcd86d0a048d55b2d970ea9a4fd144d643eeb"
+    },
+    "reason": "Verification closure omitted already-correct mapping-view.obj and used old cached hyle_mem_vm.lib mapping flags0x45 without canonical-host-identity0x80; failure preceded inference."
+  },
+  "correction": {
+    "original_frozen_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current1\\bin\\hyle.exe",
+      "bytes": 22721024,
+      "sha256": "b57ff968cb526b3ce969c79823167eac2ebf7344d1cd493b403a62b136031377"
+    },
+    "same_frozen_model_TU": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current1\\main.obj",
+      "bytes": 11471387,
+      "sha256": "7aebc0bbadda0ce0682df2faf37fbe382a4d0707df1a2b478a2d2a4543d87491"
+    },
+    "mapping_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\mem_vm\\mapping.cc",
+      "bytes": 3395,
+      "sha256": "725496e5d62a7798d93c2616c674e6f46181b26a1c44bfda1c4f9a56f606197c"
+    },
+    "mapping_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\compile3\\mapping-view\\mapping-view.obj",
+      "bytes": 74881,
+      "sha256": "d358aa12e1d24c3270360ba30051295d1782c2265bb773e55c65a906078d44e5"
+    },
+    "delta": "One explicit mapping-view.obj before unchanged cached libraries; all other exact frozen link inputs retained. Old mem_vm archive flags0x45 vs audited mapping flags0xc5.",
+    "all_mapping_transitive_self_dependencies_checked": true,
+    "product_source_changes": 0,
+    "product_TUs_compiled": 0,
+    "private_probe_TUs_compiled": 1,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "original_manifest_math_preparer_unchanged": true
+  },
+  "runtime": {
+    "kind": "Derivative frozen FP8 CPU engine with corrected Hyle mapping closure only",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle.exe",
+      "bytes": 22721024,
+      "sha256": "9594e62425b08b18de8166f7a2671e4beb0551a7d3bdf3cd38a70b33e2be94e9"
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\runtime-environment.json",
+      "bytes": 335,
+      "sha256": "d86264ae4032dad2c4573327119592bb1079a952b7c8f4882e40921acbda5661"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current1\\source-identities.json",
+      "bytes": 5483,
+      "sha256": "7f847effdfec32e763a0a0c0a49bd2b697eb8922e17c53e2ba611520dab5157e"
+    },
+    "pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\pinned-closure.json",
+      "bytes": 46355,
+      "sha256": "1c96dcc1e39b56fe38fe150865d94329f60244341b6fd69399c5b972d2e340f9"
+    },
+    "product_TUs_compiled": 0,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "plan": {
+    "path": ".scratch/mtp-q27-fp8-20261024/run-ready-v2-plan.json",
+    "bytes": 7272,
+    "sha256": "beaddac4f1597b1a28724935d1cbf4d64b6fb95381f2abd1b824bfcf59da6ab1"
+  },
+  "derivation": {
+    "path": ".scratch/mtp-q27-fp8-20261024/run-ready-v2-derivation.json",
+    "bytes": 1774,
+    "sha256": "0c68bf7b193ae866820211caf5f46837b031ba3f0021eb3e9495fbb2d2793c79"
+  },
+  "small_host_mapping_import": {
+    "passed": true,
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\host-mapping-import-v2.cc",
+      "bytes": 3116,
+      "sha256": "83e3cb4488bf1d709d4e4eb2e7f3b387f5cf1540910ccd098db880a40022be3b"
+    },
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\host-mapping-import\\probe.obj",
+      "bytes": 66258,
+      "sha256": "437cccb1c1938f87b0848955faa0366b51e081380b23975a8f4c845e4c2b5fe2"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\host-mapping-import\\probe.exe",
+      "bytes": 20535808,
+      "sha256": "18f3aab6b9dcdece5d26c7c1a9943e3fb68e57c518f73b873119d5c694323f44"
+    },
+    "mapping_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\compile3\\mapping-view\\mapping-view.obj",
+      "bytes": 74881,
+      "sha256": "d358aa12e1d24c3270360ba30051295d1782c2265bb773e55c65a906078d44e5"
+    },
+    "process": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\host-mapping-import\\run\\process.json",
+      "bytes": 595,
+      "sha256": "dda725789bf8d8ada6f19f13b17c0c4c35c05ad8ea591b72234a065ad941dc9a"
+    },
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "cases": [
+    {
+      "case": "cpu-ordinary",
+      "native_exit": 0,
+      "process_seconds": 71.315016746521,
+      "functional_audit": {
+        "coverage": "complete_finite_ordinary_journey",
+        "generated_ids": [
+          17,
+          15,
+          17,
+          15
+        ],
+        "emitted_pending": 15,
+        "actual_mtp_proposals": 0
+      },
+      "original_host_weight_bytes": 29468003328,
+      "canonical_weight_bytes": 29470972928,
+      "fp8_import_temporary_group_peak_bytes": 178312320,
+      "physical_text_roles": 1251,
+      "physical_mtp_roles": 0,
+      "canonical_weight_tensors": 851,
+      "fp8_groups": 400,
+      "cache_peak_requested_bytes": 311534516,
+      "cache_limit_bytes": 2147483648,
+      "source_id": "2c714c460972275bf2c76f2459d7108d39cb3002dee67593baf42123b0860d9d",
+      "committed_target_rows": 4,
+      "draft_frontier": null,
+      "draft_lag": null,
+      "sampling_draw_cursor": 0
+    },
+    {
+      "case": "cpu-k1-random",
+      "native_exit": 0,
+      "process_seconds": 72.99810814857483,
+      "functional_audit": {
+        "coverage": "complete_finite_K1_journey",
+        "generated_ids": [
+          17,
+          15,
+          16,
+          15
+        ],
+        "emitted_pending": 15,
+        "actual_mtp_proposals": 1,
+        "raw_accepts": 1,
+        "raw_rejections": 0,
+        "consumed_drafts": 1,
+        "unobserved_branches": [
+          "reject"
+        ],
+        "final_draft_lag": 0,
+        "final_sampling_draw_cursor": 5
+      },
+      "original_host_weight_bytes": 29945203072,
+      "canonical_weight_bytes": 29948218112,
+      "fp8_import_temporary_group_peak_bytes": 178312320,
+      "physical_text_roles": 1251,
+      "physical_mtp_roles": 22,
+      "canonical_weight_tensors": 866,
+      "fp8_groups": 407,
+      "cache_peak_requested_bytes": 465755515,
+      "cache_limit_bytes": 2147483648,
+      "source_id": "2c714c460972275bf2c76f2459d7108d39cb3002dee67593baf42123b0860d9d",
+      "committed_target_rows": 4,
+      "draft_frontier": 4,
+      "draft_lag": 0,
+      "sampling_draw_cursor": 5
+    }
+  ],
+  "postrun_audit": {
+    "path": ".scratch/mtp-q27-fp8-20261024/serial-v2/postrun-audit/stdout.log",
+    "bytes": 4621,
+    "sha256": "955518db730ee697c530c33c8dc685ee53c093017bd846e674f725c1e1d08f77"
+  },
+  "source_publication": {
+    "path": ".scratch/mtp-q27-fp8-20261024/body/published-validation.json",
+    "bytes": 1654,
+    "sha256": "aa909c3dc743a65ff222a9e2ea2855b444a155021716e0ffd7a337a83e52a49c"
+  },
+  "source_manifest": {
+    "path": ".scratch/mtp-q27-fp8-20261024/body/payload-role-files.json",
+    "bytes": 1223010,
+    "sha256": "a86d08d131b59979b96fb4523145d48afaed8a3ccc1573bf11ce1a16d4e12b0e"
+  },
+  "prepared_receipt": {
+    "path": ".scratch/mtp-q27-fp8-20261024/complete-v2/input.json",
+    "bytes": 341866,
+    "sha256": "d0a53895a2649748e37c545880769e31859ae73e5013c3da7c266363017cd3a3"
+  },
+  "prepared_manifest": {
+    "path": ".scratch/mtp-q27-fp8-20261024/complete-v2/weights.tsv",
+    "bytes": 214997,
+    "sha256": "5fb68f346565e52ff72027cb3144e797bad3dc5d5e231c8e723d8e5470ef9c46"
+  },
+  "limits": {
+    "P": 1,
+    "C": 32,
+    "max_outputs": 4,
+    "mtp_max_drafts": 1,
+    "max_sessions": 1,
+    "active_sequences": 1,
+    "cache_bytes": 2147483648,
+    "timeout_seconds_per_native_case": 600,
+    "serial": true,
+    "automatic_retry": false
+  },
+  "scope": "Actual complete original text+MTP source load and finite ordinary/K1 random acceptance journey. No task-quality, cross-engine numerical-equivalence, universal MTP-coverage or performance claim. Branches not observed in these four outputs remain explicit in the audit.",
+  "HTTP": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen27-fp8-complete-cpu-2026-10-24.zip",
+    "bytes": 195123,
+    "sha256": "bee331149ba06fab42a60cbc3fea0c985f812ef74a9e29f980d70cb011afb81b"
+  }
+}

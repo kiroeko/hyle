@@ -1,0 +1,1102 @@
+{
+  "date": "2026-10-24",
+  "scope": "Eight exact original MTP-source slices; source format and chosen public-reader numerical components, not complete models.",
+  "validation": {
+    "tests": 5,
+    "failures": 0,
+    "source_backend_combinations": 16,
+    "source_profiles": 26,
+    "checked_projection_outputs": 288,
+    "backends": [
+      "Windows CPU",
+      "NVIDIA RTX4070 CUDA SM89"
+    ],
+    "fresh_translation_units": 3,
+    "reused_kernel": true,
+    "SDK_builds": 0,
+    "HTTP_by_native_test": 0,
+    "source_new_original_bytes": 89704,
+    "observations": [
+      {
+        "backend": "Cpu",
+        "id": "q27-fp8-bf16-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 15360,
+        "original_scales": 80,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 11226,
+        "F32_vs_BF16_weight_output_witnesses": 8,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "q27-fp8-bf16-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 15360,
+        "original_scales": 80,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 11226,
+        "F32_vs_BF16_weight_output_witnesses": 2,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "q24-fp8-bf16-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 6144,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 4479,
+        "F32_vs_BF16_weight_output_witnesses": 8,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "q24-fp8-bf16-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 6144,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 4479,
+        "F32_vs_BF16_weight_output_witnesses": 2,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "inferact-f32-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 3072,
+        "original_scales": 768,
+        "checked_outputs": 18,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 6
+      },
+      {
+        "backend": "Cpu",
+        "id": "deepseek-25-fp4-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 10752,
+        "original_scales": 672,
+        "checked_outputs": 18,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 6
+      },
+      {
+        "backend": "Cpu",
+        "id": "deepseek-25-fp8-e8-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 21504,
+        "original_scales": 56,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "deepseek-25-fp8-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 21504,
+        "original_scales": 56,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "deepseek-26-fp4-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 6144,
+        "original_scales": 384,
+        "checked_outputs": 18,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 2
+      },
+      {
+        "backend": "Cpu",
+        "id": "deepseek-26-fp8-e8-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 12288,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "deepseek-26-fp8-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 12288,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "dspark-fp8-f32-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 12288,
+        "original_scales": 128,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cpu",
+        "id": "dspark-fp8-f32-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 12288,
+        "original_scales": 128,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "q27-fp8-bf16-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 15360,
+        "original_scales": 80,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 11226,
+        "F32_vs_BF16_weight_output_witnesses": 8,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "q27-fp8-bf16-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 15360,
+        "original_scales": 80,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 11226,
+        "F32_vs_BF16_weight_output_witnesses": 2,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "q24-fp8-bf16-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 6144,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 4479,
+        "F32_vs_BF16_weight_output_witnesses": 8,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "q24-fp8-bf16-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 6144,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 4479,
+        "F32_vs_BF16_weight_output_witnesses": 2,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "inferact-f32-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 3072,
+        "original_scales": 768,
+        "checked_outputs": 18,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 6
+      },
+      {
+        "backend": "Cuda",
+        "id": "deepseek-25-fp4-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 10752,
+        "original_scales": 672,
+        "checked_outputs": 18,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 6
+      },
+      {
+        "backend": "Cuda",
+        "id": "deepseek-25-fp8-e8-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 21504,
+        "original_scales": 56,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "deepseek-25-fp8-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 21504,
+        "original_scales": 56,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "deepseek-26-fp4-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 6144,
+        "original_scales": 384,
+        "checked_outputs": 18,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 2
+      },
+      {
+        "backend": "Cuda",
+        "id": "deepseek-26-fp8-e8-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 12288,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "deepseek-26-fp8-e8-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 12288,
+        "original_scales": 32,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "dspark-fp8-f32-sf",
+        "type": 6,
+        "encoded_A_boundary": 1,
+        "original_codes": 12288,
+        "original_scales": 128,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      },
+      {
+        "backend": "Cuda",
+        "id": "dspark-fp8-f32-sf",
+        "type": 5,
+        "encoded_A_boundary": 0,
+        "original_codes": 12288,
+        "original_scales": 128,
+        "checked_outputs": 9,
+        "weight_product_round_witnesses": 0,
+        "F32_vs_BF16_weight_output_witnesses": 0,
+        "wrong_activation_output_witnesses": 0
+      }
+    ]
+  },
+  "sources": [
+    {
+      "id": "q27-fp8-bf16-sf",
+      "catalog_index": 6,
+      "repository": "Qwen/Qwen3.8-27B-FP8",
+      "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+      "hf": "https://huggingface.co/Qwen/Qwen3.8-27B-FP8/tree/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+      "source": {
+        "file": "mtp.safetensors",
+        "size": 477202224,
+        "lfs_sha256": "e5e4464a3793cc261de536592830bca40e7f3af159ed038c358f5660917cf43b",
+        "api_xet_hash": "686b1381ae8675014c61c0bc004c18867e32584226869073b45999bc0f4a5ceb",
+        "etag": "\"686b1381ae8675014c61c0bc004c18867e32584226869073b45999bc0f4a5ceb\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 5120,
+      "reader": "Original BF16 scale numerically widens exactly to F32 before canonical import. Weight-product/activation/output rounding still require the source reader contract; compare F32 product versus BF16-before-F32 as independent different oracles.",
+      "ranges": [
+        {
+          "name": "mtp.layers.0.self_attn.k_proj.weight",
+          "original": {
+            "dtype": "F8_E4M3",
+            "shape": [
+              1024,
+              5120
+            ],
+            "data_offsets": [
+              372342144,
+              377585024
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            372344624,
+            372359983
+          ],
+          "bytes": 15360,
+          "local_SHA256": "3b79eb0ad86a3b1019a4316f95c6311e372d6990fe0ba28b8b97470d5f764e15"
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_proj.weight_scale_inv",
+          "original": {
+            "dtype": "BF16",
+            "shape": [
+              8,
+              40
+            ],
+            "data_offsets": [
+              104911232,
+              104911872
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 1,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            104913712,
+            104913791
+          ],
+          "bytes": 80,
+          "local_SHA256": "20a7e5f5eb4e5c25368b877dbb9d41e1775261935c09969e107c8bc01ffd1982"
+        }
+      ]
+    },
+    {
+      "id": "q24-fp8-bf16-sf",
+      "catalog_index": 15,
+      "repository": "Qwen/Qwen3.8-2.4T-A95B-FP8",
+      "revision": "d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+      "hf": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B-FP8/tree/d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+      "source": {
+        "file": "model-00186-of-00213.safetensors",
+        "size": 8591110256,
+        "lfs_sha256": "2ec89a62a6a8cc6a018801b801154cc621a2597b7ca170350416dfe92724dfc9",
+        "api_xet_hash": "fd5a0d377f00215342abaa204040b73eaa3f9d708baf611c0bfce12f4b743aee",
+        "etag": "\"fd5a0d377f00215342abaa204040b73eaa3f9d708baf611c0bfce12f4b743aee\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 2048,
+      "reader": "Same scale storage capability as cat6, but this source is a Qwen MoE expert with independent fixed identity/values. Do not substitute cat6 weights or infer activation policy from FP8 filename.",
+      "ranges": [
+        {
+          "name": "mtp.layers.0.mlp.experts.0.down_proj.weight",
+          "original": {
+            "dtype": "F8_E4M3",
+            "shape": [
+              8192,
+              2048
+            ],
+            "data_offsets": [
+              1048576,
+              17825792
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            1175664,
+            1181807
+          ],
+          "bytes": 6144,
+          "local_SHA256": "247d48b58c8838615789c6a24409d22d3fc638446666df18290253d6b82a1b65"
+        },
+        {
+          "name": "mtp.layers.0.mlp.experts.0.down_proj.weight_scale_inv",
+          "original": {
+            "dtype": "BF16",
+            "shape": [
+              64,
+              16
+            ],
+            "data_offsets": [
+              0,
+              2048
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 1,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            127088,
+            127119
+          ],
+          "bytes": 32,
+          "local_SHA256": "53e98a6e4dc4749bcca3729ed9cc472bb61bcfc911052c088c42a730d5092e0e"
+        }
+      ]
+    },
+    {
+      "id": "inferact-f32-sf",
+      "catalog_index": 19,
+      "repository": "Inferact/Qwen3.8-2.4T-A95B-MXFP4",
+      "revision": "98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f",
+      "hf": "https://huggingface.co/Inferact/Qwen3.8-2.4T-A95B-MXFP4/tree/98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f",
+      "source": {
+        "file": "mxfp4_experts_mtp-00001-of-00002.safetensors",
+        "size": 16106385752,
+        "lfs_sha256": "71fb07ed53596b5a01427a578e3624de8a94aa5bc43f5834a8426de832c73c7c",
+        "api_xet_hash": "6174e073ec96084a7fa5b819f9db81e6ba17acc48eb6144c5b8da883abb8157f",
+        "etag": "\"6174e073ec96084a7fa5b819f9db81e6ba17acc48eb6144c5b8da883abb8157f\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 2048,
+      "reader": "docs/evidence/research/inferact-micro32-contract-2026-10-21.json: fixed vLLM7b569ec reader cold F32SF->E8M0 GRS-RNE, then Mxfp4Linear(kBFloat16). Original publisher/OAS equivalence not established.",
+      "ranges": [
+        {
+          "name": "mtp.layers.0.mlp.experts.0.down_proj.weight",
+          "original": {
+            "dtype": "U8",
+            "shape": [
+              8192,
+              1024
+            ],
+            "data_offsets": [
+              3221225472,
+              3229614080
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            3221483864,
+            3221486935
+          ],
+          "bytes": 3072,
+          "local_SHA256": "4da3bfa8712fea7db692e0b34c0b1d5670388bd4cbdda79ab8bcbae676f673f5"
+        },
+        {
+          "name": "mtp.layers.0.mlp.experts.0.down_proj.weight_scale",
+          "original": {
+            "dtype": "F32",
+            "shape": [
+              8192,
+              64
+            ],
+            "data_offsets": [
+              0,
+              2097152
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            258392,
+            259159
+          ],
+          "bytes": 768,
+          "local_SHA256": "8ec911f1ddbb6dff9b53829e5aa0c6ff4c0a7cfcd07b307bbb80dd72f68cbd13"
+        }
+      ]
+    },
+    {
+      "id": "deepseek-25-fp4-e8-sf",
+      "catalog_index": 25,
+      "repository": "nvidia/DeepSeek-V4-Pro-0813-NVFP4",
+      "revision": "949138637e8e8fe190335be2396af62187dc8a83",
+      "hf": "https://huggingface.co/nvidia/DeepSeek-V4-Pro-0813-NVFP4/tree/949138637e8e8fe190335be2396af62187dc8a83",
+      "source": {
+        "file": "model-00064-of-00066.safetensors",
+        "size": 14007736096,
+        "lfs_sha256": "3869820fbd71ae92aa33de8fcf82b39b4535cf16a707ea640d5dacf5a5389103",
+        "api_xet_hash": "e2b85c88ab6b91aeaab1388a3ddd1a5cd4d40496ea124d698b2574c382d34faf",
+        "etag": "\"e2b85c88ab6b91aeaab1388a3ddd1a5cd4d40496ea124d698b2574c382d34faf\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 7168,
+      "reader": "Exact source inference/model.py114-143 and kernel.py442-535: I8 holds adjacent packed FP4 bytes; A->dynamicE4 group128, F32 group32 dot*actSF*weightSF, finalBF16. Existing GroupedFloat4Linear; not Mxfp4Linear W4A4/W4A16.",
+      "ranges": [
+        {
+          "name": "mtp.0.ffn.experts.0.w1.weight",
+          "original": {
+            "dtype": "I8",
+            "shape": [
+              3072,
+              3584
+            ],
+            "data_offsets": [
+              1323908312,
+              1334918360
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            1324160800,
+            1324171551
+          ],
+          "bytes": 10752,
+          "local_SHA256": "67d45fbf863b8af3390f6f5e7e0a83343503b4fdd000944cf3bee6cdaa96a902"
+        },
+        {
+          "name": "mtp.0.ffn.experts.0.w1.scale",
+          "original": {
+            "dtype": "F8_E8M0",
+            "shape": [
+              3072,
+              224
+            ],
+            "data_offsets": [
+              11077720,
+              11765848
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            11330208,
+            11330879
+          ],
+          "bytes": 672,
+          "local_SHA256": "4cd5d78817502a259983a7e2619936ce77bc0daebe1a036dcbeb5bd5c512145f"
+        }
+      ]
+    },
+    {
+      "id": "deepseek-25-fp8-e8-sf",
+      "catalog_index": 25,
+      "repository": "nvidia/DeepSeek-V4-Pro-0813-NVFP4",
+      "revision": "949138637e8e8fe190335be2396af62187dc8a83",
+      "hf": "https://huggingface.co/nvidia/DeepSeek-V4-Pro-0813-NVFP4/tree/949138637e8e8fe190335be2396af62187dc8a83",
+      "source": {
+        "file": "model-00064-of-00066.safetensors",
+        "size": 14007736096,
+        "lfs_sha256": "3869820fbd71ae92aa33de8fcf82b39b4535cf16a707ea640d5dacf5a5389103",
+        "api_xet_hash": "e2b85c88ab6b91aeaab1388a3ddd1a5cd4d40496ea124d698b2574c382d34faf",
+        "etag": "\"e2b85c88ab6b91aeaab1388a3ddd1a5cd4d40496ea124d698b2574c382d34faf\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 7168,
+      "reader": "Fixed same-revision linear/act_quant/fp8_gemm; source UE8M0 macroblock128 scales widen losslessly, explicit power2 activation scale profile from resolved reader. Existing import_float8_block128_weight/Float8BlockLinear.",
+      "ranges": [
+        {
+          "name": "mtp.0.attn.wkv.weight",
+          "original": {
+            "dtype": "F8_E4M3",
+            "shape": [
+              512,
+              7168
+            ],
+            "data_offsets": [
+              803814616,
+              807484632
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            804067104,
+            804088607
+          ],
+          "bytes": 21504,
+          "local_SHA256": "9bf54512ae8f9e8e44ceac31aee20255a2404ac4281cd5605d737453d7fd205a"
+        },
+        {
+          "name": "mtp.0.attn.wkv.scale",
+          "original": {
+            "dtype": "F8_E8M0",
+            "shape": [
+              4,
+              56
+            ],
+            "data_offsets": [
+              11059416,
+              11059640
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 1,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            11311904,
+            11311959
+          ],
+          "bytes": 56,
+          "local_SHA256": "8715318f741444913b0c10e87db38ad144fc37b5b9b07162516269d1c2c7deec"
+        }
+      ]
+    },
+    {
+      "id": "deepseek-26-fp4-e8-sf",
+      "catalog_index": 26,
+      "repository": "nvidia/DeepSeek-V4-Flash-0731-NVFP4",
+      "revision": "f1caa71142bd0be02f728c79f75042ac1e461579",
+      "hf": "https://huggingface.co/nvidia/DeepSeek-V4-Flash-0731-NVFP4/tree/f1caa71142bd0be02f728c79f75042ac1e461579",
+      "source": {
+        "file": "model-00046-of-00048.safetensors",
+        "size": 3610455184,
+        "lfs_sha256": "5db924ca907e0d93acd975bd5079c3662717f9ac709f23d079bd8f816d29d9dd",
+        "api_xet_hash": "4c095efeafc66d7015124bc510e79cd1175f3186d655833b06bfb7ac936e9b38",
+        "etag": "\"4c095efeafc66d7015124bc510e79cd1175f3186d655833b06bfb7ac936e9b38\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 4096,
+      "reader": "Exact source inference/model.py114-143 and kernel.py442-535: I8 holds adjacent packed FP4 bytes; A->dynamicE4 group128, F32 group32 dot*actSF*weightSF, finalBF16. Existing GroupedFloat4Linear; not Mxfp4Linear W4A4/W4A16.",
+      "ranges": [
+        {
+          "name": "mtp.0.ffn.experts.0.w1.weight",
+          "original": {
+            "dtype": "I8",
+            "shape": [
+              2048,
+              2048
+            ],
+            "data_offsets": [
+              389061976,
+              393256280
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            389229712,
+            389235855
+          ],
+          "bytes": 6144,
+          "local_SHA256": "d222d08aa67b60c3ac6988df6b4dad4d8c943c1ee7954508ed91c90b61e829a1"
+        },
+        {
+          "name": "mtp.0.ffn.experts.0.w1.scale",
+          "original": {
+            "dtype": "F8_E8M0",
+            "shape": [
+              2048,
+              128
+            ],
+            "data_offsets": [
+              5278552,
+              5540696
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            5446288,
+            5446671
+          ],
+          "bytes": 384,
+          "local_SHA256": "d9337687abb8ffdc72aa92b04516f335f714c9aeb120350e6754c6ebe373643a"
+        }
+      ]
+    },
+    {
+      "id": "deepseek-26-fp8-e8-sf",
+      "catalog_index": 26,
+      "repository": "nvidia/DeepSeek-V4-Flash-0731-NVFP4",
+      "revision": "f1caa71142bd0be02f728c79f75042ac1e461579",
+      "hf": "https://huggingface.co/nvidia/DeepSeek-V4-Flash-0731-NVFP4/tree/f1caa71142bd0be02f728c79f75042ac1e461579",
+      "source": {
+        "file": "model-00046-of-00048.safetensors",
+        "size": 3610455184,
+        "lfs_sha256": "5db924ca907e0d93acd975bd5079c3662717f9ac709f23d079bd8f816d29d9dd",
+        "api_xet_hash": "4c095efeafc66d7015124bc510e79cd1175f3186d655833b06bfb7ac936e9b38",
+        "etag": "\"4c095efeafc66d7015124bc510e79cd1175f3186d655833b06bfb7ac936e9b38\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 4096,
+      "reader": "Fixed same-revision linear/act_quant/fp8_gemm; source UE8M0 macroblock128 scales widen losslessly, explicit power2 activation scale profile from resolved reader. Existing import_float8_block128_weight/Float8BlockLinear.",
+      "ranges": [
+        {
+          "name": "mtp.0.attn.wkv.weight",
+          "original": {
+            "dtype": "F8_E4M3",
+            "shape": [
+              512,
+              4096
+            ],
+            "data_offsets": [
+              206609752,
+              208706904
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            206777488,
+            206789775
+          ],
+          "bytes": 12288,
+          "local_SHA256": "a11a16dbe3bcb5d72706093b8af1f8dd43b43b4c6e2dfb137f6eb7f17b14d740"
+        },
+        {
+          "name": "mtp.0.attn.wkv.scale",
+          "original": {
+            "dtype": "F8_E8M0",
+            "shape": [
+              4,
+              32
+            ],
+            "data_offsets": [
+              5272024,
+              5272152
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 1,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            5439760,
+            5439791
+          ],
+          "bytes": 32,
+          "local_SHA256": "cc1f590ae60f13da8b3c88dc0f626920c320810f4d0829dc6b608227d68256b6"
+        }
+      ]
+    },
+    {
+      "id": "dspark-fp8-f32-sf",
+      "catalog_index": 27,
+      "repository": "AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark",
+      "revision": "7eb21d27aee405755da5251f4458e9fff87c047b",
+      "hf": "https://huggingface.co/AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark/tree/7eb21d27aee405755da5251f4458e9fff87c047b",
+      "source": {
+        "file": "model-00054-of-00058.safetensors",
+        "size": 5366996492,
+        "lfs_sha256": "084a1b1152f010c73ca4f0d769d2b657bf3114cc5fea95a2c949c5e097b4c0f2",
+        "api_xet_hash": "5745fa70dd4b121c51a1c18b279d08dd53bf5032f48d231d71c7c2fccb069657",
+        "etag": "\"5745fa70dd4b121c51a1c18b279d08dd53bf5032f48d231d71c7c2fccb069657\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "selected_N": 3,
+      "full_reduction_K": 4096,
+      "reader": "Exact fixed DSpark reader scale_dtype/scale_fmt are explicit; original F32SF bits preserved, never re-encode to E8M0. Existing raw-F32 canonical FP8 import and activation profile.",
+      "ranges": [
+        {
+          "name": "mtp.0.attn.wkv.weight",
+          "original": {
+            "dtype": "F8_E4M3",
+            "shape": [
+              512,
+              4096
+            ],
+            "data_offsets": [
+              3280222188,
+              3282319340
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 3,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            3280330252,
+            3280342539
+          ],
+          "bytes": 12288,
+          "local_SHA256": "a11a16dbe3bcb5d72706093b8af1f8dd43b43b4c6e2dfb137f6eb7f17b14d740"
+        },
+        {
+          "name": "mtp.0.attn.wkv.scale",
+          "original": {
+            "dtype": "F32",
+            "shape": [
+              4,
+              32
+            ],
+            "data_offsets": [
+              3931628,
+              3932140
+            ]
+          },
+          "selection": {
+            "axis0_first": 0,
+            "axis0_count": 1,
+            "axis1_full": true
+          },
+          "absolute_inclusive": [
+            4039692,
+            4039819
+          ],
+          "bytes": 128,
+          "local_SHA256": "ff52c4005f3bc5b3a66598440500d1d57cc09ab3f901a5900c9ff16bcc9f058e"
+        }
+      ]
+    }
+  ],
+  "actual_source_value_facts": [
+    {
+      "id": "q27-fp8-bf16-sf",
+      "catalog_index": 6,
+      "source_dtype": "BF16",
+      "original_codes_bytes": 15360,
+      "original_scales_bytes": 80,
+      "scale_count": 40,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 39,
+      "minimum_scale": 0.00018215179443359375,
+      "maximum_scale": 0.000331878662109375,
+      "negative_signed_carrier_bytes": null,
+      "E4_reserved_values": 0,
+      "weight_product_BF16_rounding_witnesses": 11226,
+      "first_product_witness": {
+        "row": 0,
+        "k": 0,
+        "code": 231,
+        "scale": 0.0002460479736328125,
+        "F32": -0.01476287841796875,
+        "BF16": -0.0147705078125
+      },
+      "actual_weight_execution_verified": false
+    },
+    {
+      "id": "q24-fp8-bf16-sf",
+      "catalog_index": 15,
+      "source_dtype": "BF16",
+      "original_codes_bytes": 6144,
+      "original_scales_bytes": 32,
+      "scale_count": 16,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 16,
+      "minimum_scale": 8.630752563476562e-05,
+      "maximum_scale": 0.00011968612670898438,
+      "negative_signed_carrier_bytes": null,
+      "E4_reserved_values": 0,
+      "weight_product_BF16_rounding_witnesses": 4479,
+      "first_product_witness": {
+        "row": 0,
+        "k": 1,
+        "code": 233,
+        "scale": 8.916854858398438e-05,
+        "F32": -0.006420135498046875,
+        "BF16": -0.00640869140625
+      },
+      "actual_weight_execution_verified": false
+    },
+    {
+      "id": "inferact-f32-sf",
+      "catalog_index": 19,
+      "source_dtype": "F32",
+      "original_codes_bytes": 3072,
+      "original_scales_bytes": 768,
+      "scale_count": 192,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 0,
+      "minimum_scale": 0.001953125,
+      "maximum_scale": 0.0078125,
+      "negative_signed_carrier_bytes": null,
+      "E4_reserved_values": null,
+      "weight_product_BF16_rounding_witnesses": 0,
+      "first_product_witness": null,
+      "actual_weight_execution_verified": false
+    },
+    {
+      "id": "deepseek-25-fp4-e8-sf",
+      "catalog_index": 25,
+      "source_dtype": "F8_E8M0",
+      "original_codes_bytes": 10752,
+      "original_scales_bytes": 672,
+      "scale_count": 672,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 0,
+      "minimum_scale": 0.015625,
+      "maximum_scale": 0.0625,
+      "negative_signed_carrier_bytes": 5442,
+      "E4_reserved_values": null,
+      "weight_product_BF16_rounding_witnesses": 0,
+      "first_product_witness": null,
+      "actual_weight_execution_verified": false
+    },
+    {
+      "id": "deepseek-25-fp8-e8-sf",
+      "catalog_index": 25,
+      "source_dtype": "F8_E8M0",
+      "original_codes_bytes": 21504,
+      "original_scales_bytes": 56,
+      "scale_count": 56,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 0,
+      "minimum_scale": 0.0009765625,
+      "maximum_scale": 0.0009765625,
+      "negative_signed_carrier_bytes": null,
+      "E4_reserved_values": 0,
+      "weight_product_BF16_rounding_witnesses": 0,
+      "first_product_witness": null,
+      "actual_weight_execution_verified": false
+    },
+    {
+      "id": "deepseek-26-fp4-e8-sf",
+      "catalog_index": 26,
+      "source_dtype": "F8_E8M0",
+      "original_codes_bytes": 6144,
+      "original_scales_bytes": 384,
+      "scale_count": 384,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 0,
+      "minimum_scale": 0.015625,
+      "maximum_scale": 0.0625,
+      "negative_signed_carrier_bytes": 3040,
+      "E4_reserved_values": null,
+      "weight_product_BF16_rounding_witnesses": 0,
+      "first_product_witness": null,
+      "actual_weight_execution_verified": false
+    },
+    {
+      "id": "deepseek-26-fp8-e8-sf",
+      "catalog_index": 26,
+      "source_dtype": "F8_E8M0",
+      "original_codes_bytes": 12288,
+      "original_scales_bytes": 32,
+      "scale_count": 32,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 0,
+      "minimum_scale": 0.0009765625,
+      "maximum_scale": 0.0009765625,
+      "negative_signed_carrier_bytes": null,
+      "E4_reserved_values": 0,
+      "weight_product_BF16_rounding_witnesses": 0,
+      "first_product_witness": null,
+      "actual_weight_execution_verified": false
+    },
+    {
+      "id": "dspark-fp8-f32-sf",
+      "catalog_index": 27,
+      "source_dtype": "F32",
+      "original_codes_bytes": 12288,
+      "original_scales_bytes": 128,
+      "scale_count": 32,
+      "nonfinite_scales": 0,
+      "nonpositive_scales": 0,
+      "positive_non_power2_scales": 0,
+      "minimum_scale": 0.0009765625,
+      "maximum_scale": 0.0009765625,
+      "negative_signed_carrier_bytes": null,
+      "E4_reserved_values": 0,
+      "weight_product_BF16_rounding_witnesses": 0,
+      "first_product_witness": null,
+      "actual_weight_execution_verified": false
+    }
+  ],
+  "math_boundaries": [
+    "FP8 BF16 dynamic PowerOfTwo profile uses the actual original encoded E4 weights and exact original scale widening; encoded-A MatMul independently yields F32 output. Both CPU and CUDA use the same explicit boundaries.",
+    "Qwen6/15 actual code*BF16SF has11226/4479 non-BF16 products; each F32 projection profile distinguishes8/9 outputs from an incorrect early BF16 weight product. This proves the candidate public arithmetic, not the publisher chosen activation/weight-product policy.",
+    "DeepSeek25/26 I8 is retained bit-for-bit as adjacent two-nibble E2M1, with original E8M0 group32 widened exactly to F32; GroupedFloat4Linear executes dynamic group128 E4 activation and F32 dot/scale blocks. Omitting activation quantization changes6/18 and2/18 outputs respectively per backend.",
+    "Inferact19 follows the fixed vLLM reader: numeric F32->E8M0 RNE then BF16 unchanged activation. This selected tile has192 exact power2 scales, so it does not witness non-power2 import thresholds; existing independent generic import tests cover those boundaries. Wrongly inserting activation quantization changes6/18 outputs per backend.",
+    "Atlas27 original F32SF values in this tile happen to be exact2^-10; they are copied unchanged, never assumed/re-encoded from the quantization label."
+  ],
+  "product_fix": {
+    "problem": "CUDA grouped FP4 admission hardcoded four whole-model(N,K) shapes, even though its actual kernel masks arbitrary final N64 load/store tiles.",
+    "change": "Replace the four-shape whitelist with actual signedI32 argument/A-quantizer bounds, z-grid token-slot cap and PTRDIFF address extents. Keep public positive/K%128 format validation, real resource permissions/alignment and original numeric kernel unchanged.",
+    "width_proof": "Kernel weight/scale/output pointer products and N/K loop indices are unsigned64. The original activation quantizer is signedI32, so (tokens*activation_slots)*K<=INT32_MAX is checked by division before multiplication; tokens*slots<=65535. Every admitted ABI field is <=INT32_MAX. Public encoded descriptors prove checked physical extents, additionally <=PTRDIFF_MAX.",
+    "regression": "Actual N3/K128, odd65/K256,129/K384, old4096/K2048; shared/per-slot A and duplicate IDs. OversizeN/K/E, token/slot z-grid, flattenedA I32 overflow and host-resource negatives. Existing actual-down cancellation F32 precision remains passing."
+  },
+  "limits": [
+    "CUDA dynamic Float8BlockLinear PowerOfTwo currently genuinely declines F32 A; the F32 test explicitly supplies already encoded A to ordinary MatMul rather than claiming that dynamic variant.",
+    "BF16-scale Qwen6/15 producer/reader activation and weight rounding are still a source-binding decision. Lossless scale representation does not prove complete source arithmetic.",
+    "Original Inferact exporter/OAS equivalence, other undeclared hardware FP4 reductions, complete trained routing/state, full models, quality and throughput are not claimed.",
+    "The source expert tile is an explicitly supplied component ID0; no model router is claimed to select it. Original complete experts were not downloaded."
+  ],
+  "source_reader_evidence": [
+    "docs/evidence/research/inferact-micro32-contract-2026-10-21.json",
+    "docs/evidence/correctness/grouped-fp8-power2-reference-2026-10-21.json",
+    "docs/evidence/correctness/mxfp4-weight-only-reference-2026-10-21.json"
+  ],
+  "products": [
+    {
+      "path": "src/compute_provider_cuda/deepseek_grouped_fp4_provider.cc",
+      "bytes": 10936,
+      "sha256": "2ebb65d4738d09489a07a0e6db6f0faefaba4048ef51983d8da363cfe430f38e"
+    },
+    {
+      "path": "tests/compute_provider_cuda/cuda_provider_test.cc",
+      "bytes": 97142,
+      "sha256": "c1e49d75874785c3170549a63149023094a95eba0f006b4384374c235ec7ab57"
+    }
+  ],
+  "fresh_provider_object": {
+    "path": ".scratch/mtp-metadata-offline-20261024/source-components/fp4-provider/fp4-provider.obj",
+    "bytes": 627090,
+    "sha256": "39c22c5e51fdf580f3bf9cb9526eb1437d7898e25c99c914abbf88e22b4f2353"
+  },
+  "logs": {
+    "path": "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24-logs.zip",
+    "bytes": 90769,
+    "sha256": "3be13e1e8b67206cf9e0116db2101c1f755f283d3afdcd7cd218d4b4007163bd"
+  }
+}

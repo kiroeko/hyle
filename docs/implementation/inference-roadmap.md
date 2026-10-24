@@ -1,0 +1,164 @@
+# 推理工程范围与顺序
+
+HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、I/O 等模块继续独立交付。
+当前主阶段仍是底层推理支持，引擎应用是检验真实模型的驱动，随测试附带推进。
+目前完整真实文本路径以 Qwen3.5-2B 为基础，官方 BF16 以及固定 GPTQ 制品已有列明范围的检查，仍需 prepared inputs 和 token IDs。
+通用 loader、C++ tokenizer、服务入口和图片链路尚未完成，工程入口统一不代表这些能力已交付。
+
+以下区分底层功能、共享架构和性能，不用某项功能通过代替三者全部完成：
+
+| 部分 | 功能 | 架构 | 性能 |
+|---|---|---|---|
+| 多会话／多请求底层 | 独立状态、有界缓存、前缀复用、淘汰恢复、真实合批与失败退休已接通 | 请求窗口、typed 目录、版本查询和分桶已共用；Qwen 与有限原角色 StateHead 接线已运行，保留模型完整状态与容量适配 | 已有审查和有限测量，尚未收口 |
+| MTP | 约定本机功能范围已完成并复审；保留各制品有限运行与大模型硬件边界 | 与普通推理共用生成、请求与完成合同；模型保留完整状态和修复，本轮有限全局收敛已完成 | 本轮正式对照、定量归因与候选取舍完成；仍落后参考，不表示性能余差已消除 |
+| 图片多模态 | 完整图片投影链尚未开工 | 尚未收口 | 未作完整对照 |
+| 普通基础推理 | 真实模型主干已在所列 CPU／GPU／混合路径运行；整体模型／量化／算子功能未完成统一穷尽审查 | 后端装配、typed 投影与实际状态端口已共享；本轮有限全局收敛完成，保留模型数学与平台能力差异 | 有正式性能窗口和已知输项，最终优化未收口 |
+
+服务器 API 和连续服务应用属于后续方向；底层多会话、多请求、接纳、缓存与真实合批均纳入本轮全局架构，不能推给后续 server。
+
+| 顺序 | 工作 | 当前状态 |
+|---|---|---|
+| 1 | 统一工程与文档 | 工程组织已完成：引擎归入 `engine/`，默认选择 `HYLE_COMPONENTS=engine`，target `hyle_engine` 输出 `hyle`；保留独立模块构建，已通过配置／目标组织检查及 util 实际构建安装；CPU 运行报告余项见下文，不代签完整运行 |
+| 2 | 穷尽现有环境可做的 MTP 功能 | 已完成约定范围并复审：Qwen27 FP8 完整普通／K1 随机 CPU 已实际通过；量化、采样、多草稿、真实混合及状态边界保留各自证据 |
+| 3 | 收敛整个推理架构 | 本轮有限收敛完成：生成合同、请求窗口、typed 目录、turn 输入／额度／提交观察及同步入口 IO 已共用；Qwen／GLM Pro 原状态路径和有限扩展检查已核。模型保留真实阶段、完整状态和容量证明；范围见[整体设计](../architecture/inference-design.md) |
+| 4 | 架构收敛后优化性能 | 本轮有限调查完成：完整普通／MTP 四臂基线、分层归因和已有候选均已取舍；固定分块的 MTP decode 小窗 +1.40%，因收益与容量／数值边界代价未合入。未改产品，不重复相同源码的全窗；余差与后续优化仍见[性能资料](../developer/performance/decode.md) |
+
+**功能优先，架构随后收敛，最后优化性能；已验证公共代码的行为不变提取可与冻结基线的下载／验证并行。任务进度在 [MTP 进度看板](../developer/mtp-progress.md)更新。**
+本地元数据与缓存的[范围资料](mtp-local-scope.json)保留具体身份与缺失字节；旧的可选／延期标签不能替代本轮可行性调查。
+完成前重新独立审查：所有已发现且现有环境可实现的功能都须完成，新增缺口进入同一 goal。
+无法装载整个大模型时，仍须处理本机可运行的数学、状态、量化角色和组件缺项。
+
+通用 loader、C++ tokenizer、server、应用 API 和聊天体验属于后续应用方向，不是当前阶段的完成条件。
+准备输入接口不顺只记录其对真实模型驱动的影响；不为追求应用功能齐全阻塞底层支持。
+`util` 只是独立构建的例子；所有公开库产品均应按其依赖闭包构建，不能把模块化能力限定于某个示例。
+
+## 当前 MTP 功能范围
+
+| 项目 | 当前实现与有限检查 | 功能完成标准 |
+|---|---|---|
+| CPU 完整流程 | CPU 普通／MTP 数学路径及无 CUDA 运行依赖的独立闭包已通过 | 保留有限预算与状态寿命检查，完整正确执行相关新功能 |
+| 本机量化完整路径 | GPTQ／NVFP4 CPU 与 CUDA 短旅程已跑；NVFP4 差异已定位 attention 中间精度；Unsloth GGUF Q4 普通／K1／K4 随机、Q8 普通／K4 随机 CPU 与 CUDA 均已跑；CT 对称 INT4 已完成五条 CPU／CUDA 短旅程 | 全文本主干、原 MTP、词表及接受后续算真实执行；只取确实缺少的文本角色，不下载视觉 |
+| 随机采样 MTP | CPU／CUDA 已补多草稿、RNG、恢复与边界；Apple／Vulkan 均新增 K4 随机和真实双用户 K2 入口，Vulkan 有效质量误拒已修 | 明确温度／过滤后的真实分布；取消、重建与批次重排不混用会话 draw 身份，检查目标分布与边界 |
+| Qwen3.5 完整多草稿 | 共享机制与 CPU／CUDA／Apple／Vulkan 代表路径已完成；具体未运行制品见量化行，其它模型组件接线另列 | 任意接受长度均选取完整状态，正确处理拒绝修复、EOS 与剩余额度；不以提速作为功能成立条件 |
+| GLM／Qwen24 MoE 多草稿消费者 | GLM Flash／Pro 与 Qwen24 MoE 原组件真实 K2、完整接受前缀／续算均已通过代表 CUDA 旅程；Qwen24 target 主干逐行执行，词表 head 实际 M3 | 核实际递归合同，复用公共接受／前缀规则，补本机可执行的第二 proposal、target 验证、合法前缀完整状态与拒绝修复；不扩大逐发布者／后端矩阵 |
+| 草稿控制与块尾 | CPU／CUDA 完整 Qwen 已补长度／概率阈值／禁用回退；DeepSeek Pro／Flash 原组件已有 greedy 宽度 2～5 与尾部证据；GLM／DeepSeek 随机 EOS／额度／上下文组合缺口已补并完成实际有限状态旅程 | 尊重训练头与置信值合同，覆盖长度截短、全拒绝／全接受、EOS／bonus EOS、context／quota 尾部和继续运行；接纳后失败不能静默重做 |
+| 配置与输入边界 | 完整库存、普通／MTP 选择、真实容量及 token／量化 block 前置拒绝已完成 | 仅加载所选角色；按真实上下文与整数边界接纳，缺失角色／专家／codec 明确失败 |
+| CPU＋GPU 完整组合 | CPU＋CUDA 普通、K1／K4、随机、多会话及恢复已通过有限旅程；CPU＋Apple／Vulkan 的原 BF16 完整随机 K1、跨域数值及退休重绑也已通过；Vulkan copy 的解绑缺口已修并有旧对象负控 | 所选三类 GPU 的明确 CPU FFN 分置均实际装配，保真实搬运、状态、预算与失败语义；不要求任意自动放置 |
+| FP8 完整投影接线 | block128 已接完整角色、逐组导入与固定计算策略，27B 完整普通／K1 随机 CPU 旅程已通过；CT channel／token 与 local NVFP4 保留原片段和小型完整加载范围 | 分清 block128 与 channel／token 合同，按原值冷导入，保留实际激活与输出精度、物理角色统计及有界准备内存 |
+| 新路径的正确性覆盖 | 完整状态、条件分布及固定任务检查已有有限证据；跨系统、混合路径、原组件及 Qwen27 GGUF／FP8 完整入口已补齐，约定功能范围最终复审完成 | 按真实变更检查接受／拒绝、多轮、代表性 B2、多会话淘汰恢复、取消及数值／任务质量；复用旧机制，不重复全组合测试 |
+
+共享编排和本轮跨系统入口的有限证据已齐。Qwen27 FP8 文本＋MTP 约 27.9GiB，在当前主机实际完成普通与 K1 随机 CPU 旅程，见[完整原权重记录](../evidence/correctness/mtp-qwen27-fp8-complete-cpu-2026-10-24.json)。
+此前遗漏的完整入口已补齐，不能归入未来通用 loader。最终源码与证据复审未发现其它明确、本机可实现而未完成的 MTP 功能项；本轮全局架构已作有限收敛，性能也已完成正式对照、分层归因与有限候选取舍。仍有性能余差，不把本轮完成解释为已经追平参考。
+这一范围包含 MTP 必需的普通公共链路，不等于普通推理引擎全部功能已穷尽。
+完整 Qwen3.5 的 K2／K4 和共享接受规则，不能代替这些组件的第二 proposal、宽验证与状态提交。
+先按固定版本核齐原 header 和必要文本范围，不为重复同一数学合同自动获取其它发布者的整套权重。
+现有 RNG、采样、快照、分页和迁移原语继续复用，只有真实路径暴露缺少的底层能力时才新增原语。独立公共代码迁移保留冻结功能基线；数学、精度与性能改动仍待相关功能确认，
+也不把小模型能力提升、通用服务或任意 speculative 算法列为收口条件。
+
+## 本轮可用范围
+
+Windows 当前机器有约 64GiB RAM 和 RTX 4070 12GiB 显存，优先复用已有 Qwen3.5-2B 输入和 CUDA 构建。
+Apple 验证机为 MacBook Air `Mac16,12`、16GiB 统一内存、ARM64，复用已有缓存；CPU 路线单独记录实际结果。
+DGX Spark 不在当前可直接调试的环境中。不能以公司设备的预期容量安排本机完整大模型验证。
+
+本轮工程检查：7 项引擎组织、15 项路由、16 项 SDK 与 44 项脚本检查通过；`util` 离线配置、46 步构建及安装通过，未取得 GPU／推理依赖。CUDA 正式入口普通／MTP 各完成 P154＋4 输出，属于短工程检查，未刷新性能窗口。
+CPU 原失败根因已修：布局只读元数据原被归为 External，在相同 host 资源中混入缓存 payload。修复保留严格库存断言和真实有限预算／退休，30 项 BatchLayout 测试及普通两种清单／MTP 各 P154＋4 完整进程通过；结果与边界见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)。这不是长旅程、任务质量或性能窗口。
+本地命令与失败记录保留在 `.scratch/engine-product-20261024/`，不是新 MTP 能力或性能通过证明。
+
+大型 GLM、DeepSeek、Kimi 的完整推理受本机容量限制。已有原角色、尾层、MTP、专家供给、
+状态与量化组件结果继续保留；真实存在的缺口按其所属数学、状态或格式记录，不重新下载整模型凑覆盖数量。
+
+## MTP 的已完成项与边界
+
+[有限制品清单](../evidence/research/mtp-artifact-scope-2026-10-23.json)的 25 个已确认身份已完成有限原角色／词表／
+专家与完整状态流程；Qwen 有真实完整模型，GLM／DeepSeek 等仍有上游输入和初始历史 fixture 边界。
+这不表示全部模型、量化、后端、任务质量与吞吐已穷尽。
+
+本轮新增的 17 个固定制品已完成身份与角色盘点：14 个具有完整 MTP 结构，3 个完整 checkpoint 清单没有 MTP；未确认项为零。结构核查不等于整模型执行。
+新增已读原结构包括 Qwen3.5 CT INT4、Unsloth MTP GGUF、Qwen27 官方 FP8 与 Unsloth NVFP4 的独立 draft。
+Qwen27 FP8 的 draft 含 FP8 投影与 BF16 block scale，NVFP4 命名制品的 draft 实际全为 BF16；选定 BNB 制品没有 MTP 角色或独立文件。具体来源与未确认项以范围资料为准，旧目录数量不作为能力上限。
+先读缓存和固定 metadata；缺少真实角色后再汇总必要的有界获取，遵守 [AGENTS.md](../../AGENTS.md) 的下载限制。
+Kimi 当前固定来源未建立 MTP 需求，不因模型名字额外创建 MTP 实现任务。
+当前完整 Qwen 的 CPU／CUDA K1 已接随机采样、概率接受、拒绝残差和会话 RNG，并检查前缀重采样、取消与恢复。
+有界多草稿共享机制、GLM K1／K2、Qwen24 MoE K2 及 DeepSeek 随机控制组合已有有限证据；Qwen27 GGUF／FP8 完整有限旅程已补齐。各证据的实际接受／拒绝分支、制品与硬件边界不外推。
+新增范围分别见[多草稿与控制](../evidence/correctness/qwen35-mtp-multidraft-checkpoint-controls-2026-10-24.json)、
+[Apple K1](../evidence/correctness/mtp-qwen35-apple-k1-complete-input-2026-10-24.json)与
+[Vulkan K1](../evidence/correctness/mtp-qwen35-vulkan-k1-complete-input-2026-10-24.json)。
+[Linux CPU](../evidence/correctness/mtp-qwen35-linux-cpu-v2-k1-complete-input-2026-10-24.json)已运行普通 greedy、MTP K1 greedy／random 三条完整短入口，复用原权重与 CPU 原生缓存；不是性能测量。
+[macOS 纯 CPU](../evidence/correctness/mtp-qwen35-macos-pure-cpu-complete-input-2026-10-24.json)刷新必要的当前 CPU／原生对象后，普通 greedy 与 K1 随机两条原权重短旅程均正常退出；K1 实际到达 EOS，完整状态、pending 与 RNG 正常提交。原权重全部在 host，未链接 Apple／Metal／MLX 数学或 GPU 队列；保留首次参数错误和准备失败，不将有限缓存预算冒充物理内存上限。
+[Linux CUDA／混合](../evidence/correctness/mtp-qwen35-wsl-cuda-mixed-complete-input-2026-10-24.json)完成当前闭包的普通纯 CUDA 与 K1 随机 CPU FFN2 两条 P154＋4 入口；MTP 实际接受 proposal 并继续单行尾部，target／draft frontier 均为 157、lag 为 0。局部刷新真实 CUDA ABI 差异，修复一个 GCC 严格告警下的成员默认初始化遗漏；保留首次编链失败、有限预算及未知原生私有开销，未刷新性能基线。
+[DeepSeek 短验证](../evidence/correctness/deepseek-mtp-short-verifier-tails-2026-10-24.json)补齐 Pro／Flash 原组件宽度 2～5 的真实状态发布、拒绝后续算与尾部策略；不代替完整大模型生成。
+[接受前缀状态对照](../evidence/correctness/qwen35-mtp-prefix-state-values-2026-10-24.json)在 CPU／CUDA 各检查 17 个边界与 7 对未消费后缀扰动，完整状态、lag1 追赶和同 T1 续算均与同宽独立参考一致；不要求不同批宽逐字节相等。
+[多行随机采样](../evidence/correctness/qwen-mtp-multirow-sampling-2026-10-24.json)复用产品实际构图，CPU／CUDA 各检查 m0／K2／K4、逐行 p／q、拒绝残差、bonus 与坏输入恢复；独立 F64 与 RNG 参考一致。它保留供入 verifier 的过滤后条件分布，不承诺其它批宽计算出的分布或同 seed 输出相同。
+[新增原值组件](../evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json)与
+[Quark W4A4](../evidence/correctness/mtp-qwen24-quark-original-tile-2026-10-24.json)分别检查实际编码、scale 和计算合同，不从制品名称推断精度。
+Qwen27 原 GGUF 的 9 种压缩 codec 已具备 CPU 路由，64GiB 主机的压缩常驻路线可行；
+复用已有原角色，只获取缺失连续范围，不展开整套 BF16／F32 权重。
+[共用几何接线](../evidence/correctness/qwen-source-geometry-v2-execution-2026-10-24.json)已完成并通过 2B CPU／CUDA／混合检查。
+[27B GGUF 完整旅程](../evidence/correctness/mtp-qwen27-gguf-complete-input-2026-10-24.json)已通过 CPU 普通／K1、混合普通／K1／随机 K2；原 866 角色、完整文件哈希及有限缓存均已实际核对。
+混合 MTP 暴露 CUDA 融合缺少整段 checked-index 输入边界资格，已在放置前排除无效候选，保留单算子安全检查与原搜索上限；短旅程不冒充任务质量或吞吐对照。
+CPU＋CUDA 的代表 BF16 FFN 分置已完成，具体版本、原权重放置、静态队列、已知与未知内存范围见
+[完整分置记录](../evidence/correctness/qwen35-cpu-ffn-cuda-placement-2026-10-24.json)。其暴露的
+[process 常量租约缺口](../evidence/correctness/graph-process-system-constant-lease-2026-10-24.json)
+在 Graph 原有借用／异步复制流程内修复，未另建执行器或复制 GPU 权重银行。
+[CPU＋Apple／Vulkan 分置](../evidence/correctness/mtp-qwen35-cpu-native-placement-2026-10-24.json)各完成原 BF16 2B 随机 K1 短旅程，CPU FFN 分别为两层／一层；跨域 BF16、资源退休和重复重绑均有定点核查。Vulkan 原 copy 缺少解绑合同，现按原 Run／Completion 真实退休释放 VkBuffer；同一永久回归在新对象上通过、仅换回旧 copy 对象时准确失败。原生 replay DMA 的四字节对齐限制单列，不把未执行的 BF16[17] 冒充通过。
+输入边界补齐了[GGUF 无 NextN 的明确拒绝](../evidence/correctness/mtp-gguf-source-capability-2026-10-24.json)与
+[Linux 早读 CRLF 清单](../evidence/correctness/mtp-source-geometry-newlines-2026-10-24.json)；两项只用元数据检查，不为其重跑完整推理。
+
+[Apple／Vulkan 多草稿](../evidence/correctness/mtp-qwen35-native-multik-random-complete-input-2026-10-24.json)各补 K4 随机和真实双用户 K2；同时修复 Vulkan 的 F32 主机谓词读取及近似除法造成的合法概率质量误拒，保留坏输入拒绝。
+[压缩 head 与固定投影](../evidence/correctness/mtp-fixed-width-packed-head-2026-10-24.json)补 NVFP4 独立词表 head，CPU／CUDA 原值一致；固定激活下 T1／T3／T5 的 8 个差值符合既有数值合同。
+[GGUF Q4 CPU](../evidence/correctness/mtp-qwen35-original-gguf-q4-cpu-2026-10-24.json)与
+[CUDA](../evidence/correctness/mtp-qwen35-original-gguf-q4-cuda-2026-10-24.json)补齐完整原权重普通／K1／K4 随机入口；修复压缩 embedding 的 checked Gather 接线及新资源作用域的正常析构顺序。上述均为有限功能证据，不是性能对比或完整任务质量结论。
+Q8 已完成原文件 LFS 和 335 角色校验，[纯 CPU](../evidence/correctness/mtp-qwen35-q8-original-pure-cpu-complete-input-2026-10-24.json)与 [CUDA](../evidence/correctness/mtp-qwen35-q8-original-cuda-complete-input-2026-10-24.json)各运行普通／K4 随机两条完整短路径；K4 实际消费 4 个草稿、RNG 游标为 10，真实物理计数为 320／15。两后端此次 ID 相同，不外推跨后端数值或全部任务质量一致。
+
+[Apple 分配控制器](../evidence/correctness/apple-memory-allocation-controller-lifetime-2026-10-24.json)在原生包装器销毁后仍由真实分配保活；两项定向检查通过，不外推为未知在途 Model 的全部边界。
+CUDA 公共 `Float8BlockLinear` 的 F32 动态 Power2 组合缺项已复用既有 F32 量化和编码矩阵乘补齐；这与源制品采用何种激活精度分别记录。
+[原生退休与资源作用域](../evidence/correctness/mtp-native-retirement-resource-lifetime-2026-10-24.json)补齐部分提交、未知观察、应用对象先销毁和最后回调释放；5 项公共 Graph 与 2 项实际小 Model 检查通过，构造异常与快照逃逸另经源码／编译核对，未声称完整故障矩阵。
+[输入与角色错误边界](../evidence/correctness/qwen-mtp-input-role-error-boundaries-2026-10-24.json)在加载前按真实词表／容量及完整量化 block 拒绝坏输入；18 项实际输入函数检查与 303 项元数据检查通过。
+[共享控制与缓存复核](../evidence/research/mtp-controls-cache-completion-review-2026-10-24.json)将长度／阈值／禁用、EOS／尾部、多会话、初始及生成后前缀复用对应到实际实现与已有证据；这些共享机制已完成，余项落到具体制品、部署闭包、任务质量和最终复审。
+[CUDA F32 动态 Power2](../evidence/correctness/cuda-fp8-f32-power2-linear-2026-10-24.json)补线已通过 CPU／CUDA 定向检查，保留真实 F32 输入及输出，不插入 BF16 中间值；复用既有原生量化，不改变 kernel ABI。
+[FP8 原制品接线](../evidence/correctness/mtp-qwen-fp8-block128-prepared-binding-2026-10-24.json)补齐 block128 typed roles、明确 reader 数学身份、BF16 scale 精确扩展和逐组冷导入；CPU／CUDA 的 Qwen27／Qwen24 原小片段符合独立数值参考。[27B 完整 CPU 旅程](../evidence/correctness/mtp-qwen27-fp8-complete-cpu-2026-10-24.json)进一步实际加载 1273 角色，普通与 K1 随机均完成；保留旧缓存链接遗漏的首次失败及仅补正确 mapping 对象的修正，不改数学。本轮 MTP 实际提议并接受一次，拒绝未自然观察，不冒充质量或性能对照。F16／F32 词表 head 的精度报告同时纠正，保留旧冻结 Q8 的原报告及实际计算说明。
+[CT 混合制品接线](../evidence/correctness/mtp-qwen-ct-mixed-prepared-binding-2026-10-24.json)补齐 channel／token 的 BF16 QDQ、local NVFP4 原 global 乘数与 F32 量化前舍入、词表 head 和明确的 BF16 KV 辅助角色省略。CPU／CUDA 各三个原片段符合独立参考，CPU 普通／MTP 小型真实加载通过；原被省略角色的名字、形状和 hash 仍进入身份。未执行该制品整模型。
+[Apple 概率质量门禁](../evidence/correctness/mtp-apple-sampling-mass-validity-2026-10-24.json)另经真实 MLX 小图检查有限非整数质量及零质量／NaN／Inf，25 项谓词符合预期，不重跑完整模型。
+
+旧 CPU 完整运行只证明 CPU 数学路径，测试程序来自混合对象闭包并导入 CUDA 库。
+[纯 CPU 部署闭包](../evidence/correctness/mtp-qwen35-pure-cpu-deployment-2026-10-24.json)现按产品 CPU factor 解析复用缓存，刷新必要的原生与 ABI 边界对象；实际 Q4 普通／K1 运行及 PE／加载模块均无 CUDA 依赖，不声称全新安装或可重定位部署已经验证。
+[GPTQ／NVFP4 K4 随机](../evidence/correctness/qwen35-original-quantized-mtp-k4-random-2026-10-24.json)补齐两份完整原制品的多草稿短旅程。旧冻结程序的报告写死 BF16 张量数量，保留原日志并以真实清单计数；当前报告已改为实际加载的物理角色计数。
+[CT 完整量化入口](../evidence/correctness/qwen35-original-ct-mtp-2026-10-24.json)已取得 649 个原文本／MTP 角色，完成 CPU 普通／K1／K4 随机及 CUDA 普通／K4 随机五条短旅程；不获取视觉。[随机分叉定点归因](../evidence/correctness/qwen35-ct-categorical-backend-attribution-2026-10-24.json)用两行真实 q2 交叉重放 CPU CDF 与 CUDA Gumbel 抽样：两行均分别选 1445／464，重现首块接受长度与第五个输出分叉，且远离数值临界。该差异符合既有 Categorical 跨后端合同；两行分布本身仍有差异，本例不认证全部 CT 数学或任务质量。
+[固定完整任务](../evidence/correctness/qwen35-mtp-finite-task-check-2026-10-24.json)预先确定三个任务与判定器，普通／K1／K4 共九次均正常 EOS，同任务的完整输出 IDs 一致；JSON 抽取与 Python 执行检查通过，算术三臂共同答错。
+[同源 llama.cpp 对照](../evidence/correctness/qwen35-mtp-finite-task-reference-2026-10-24.json)在同一 47-token 算术输入也输出相同错误答案；该例不是 Hyle／MTP 特有失败，仍保留任务失败，不外推普遍质量或模型能力结论。
+[GLM Flash／Pro 随机组件](../evidence/correctness/mtp-glm-original-stochastic-state-2026-10-24.json)已将真实 NextN 的 q 提议接入 target 验证，完整状态、pending 与 RNG 在原 Head 原子发布，并实际消费 pending 续算；Flash 另实际执行接受后的 bonus，Pro 本轮自然试验为拒绝。
+[GLM 有界 K2](../evidence/correctness/mtp-glm-original-stochastic-k2-state-2026-10-24.json)现将真实递归第二 proposal 接入 T3 原词表投影；Flash／Pro 两条 CUDA 原角色旅程通过 mandatory-current 之后 0／1／2 枚已消费草稿的完整状态修复、两条 journal 顺序 catchup、EOS／额度、取消／stale 与 RNG 原子发布，并实际消费残差或 bonus 继续运行。固定 reader 支持递归，默认 K1 与较短尾部分流保留；全接受使用明确的合法受控 RNG 地址，保留初始历史和上游输入 fixture，不外推自然接受率或整模型质量。
+DeepSeek 官方 [Flash](../evidence/correctness/deepseek-mtp-source-stochastic-flash-2026-10-24.json) 与 [Pro](../evidence/correctness/deepseek-mtp-source-stochastic-pro-2026-10-24.json)已将真实采样的前驱 ID 接入原 Markov head，并用真实 p／q 选择残差或 bonus 后续算。[两种量化侧车](../evidence/correctness/deepseek-mtp-source-stochastic-sidecars-2026-10-24.json)已保留各自真实 F32／BF16 输入边界并实际续算。上述均为有限原角色组件，保留上游激活与初始历史 fixture 边界。
+[随机块尾与 confidence](../evidence/correctness/deepseek-mtp-stochastic-controls-tails-2026-10-24.json)补齐已发现的组合缺口：接受 EOS／额度末 proposal 保留原 lease 为 pending，按真实 consumed 状态与 RNG 原子发布；Flash 实际组件及 25 项策略／缓存检查通过，最终两类 DS 入口与 Qwen 编译通过，不外推逐制品运行。
+[GLM 随机输出边界](../evidence/correctness/mtp-glm-stochastic-output-boundaries-2026-10-24.json)在原 Flash／Pro 组件实际检查单行 target 抽样、接受／残差／bonus EOS 与额度提交；单行维护 mandatory-current 的完整 NextN 状态，不抽草稿、不执行 second。Qwen、GLM 与 DeepSeek 共用 `engine/inference/mtp_acceptance.h` 的纯前缀规则，继续复用原执行器和状态容器。
+Qwen27／Qwen24 原组件的共用控制器发现只接 greedy 的缺项，[Q24 原 GGUF MoE 随机续算](../evidence/correctness/mtp-qwen24-original-stochastic-state-2026-10-24.json)现已实际通过；[CPU 词表混合路线](../evidence/correctness/mtp-qwen24-mixed-stochastic-state-2026-10-24.json)取得实际触发的必要专家后，随机拒绝、残差 pending 及再次消费续算均通过，完整状态和 RNG 原子发布正常。[八种制品薄入口](../evidence/correctness/mtp-qwen-stochastic-wrapper-routing-2026-10-24.json)已透传随机选项并通过 CPU／CUDA 严格编译，不冒充逐制品实跑。[原组件随机尾部](../evidence/correctness/qwen-original-mtp-stochastic-controls-tails-2026-10-24.json)现已接共用 limits／前缀规则，实际 Q24 GGUF 单行 context／quota、真实残差 EOS、完整状态及消费 pending 续算通过；保留本次自然拒绝的分支边界，不冒称观测到自然接受 EOS。GLM [两代表量化随机入口](../evidence/correctness/mtp-glm-quantized-stochastic-entry-2026-10-24.json)Q30／B09 自然随机与消费 pending 后续算现均通过，保留前期所有缺源退出。[Q24 有界 K2](../evidence/correctness/mtp-qwen24-original-stochastic-k2-state-2026-10-24.json)现进一步接通真实递归两草稿与三个 target hidden 的原词表验证，原 GGUF CUDA 旅程通过完整 0／1／2 接受前缀修复、额度／EOS、pending 与 RNG 原子提交及真实残差续算；本轮自然接受为 0，1／2 前缀为明确的状态控制分支。MoE target body 仍逐行执行，不宣称 T3 body 并行或整台 2.4T 模型运行。
+[Q27 预运行审查](../evidence/research/mtp-qwen27-run-ready-offline-audit-2026-10-24.json)核对 866 个角色、9 种编码、几何、CPU／GPU 放置与已知预算，修复准备脚本未保留 BOS 元数据及旧 CUDA 映像构造异常时的释放顺序；新消费者仅单 TU 重链。该记录形成时正文未齐，离线结果不代表完整推理；后续完整旅程另见上文的新证据。
+
+## 架构和性能的实施边界
+
+实际接线提炼的职责与执行链见[推理编排设计](../architecture/inference-design.md)；设计约束与已实现范围分别记录。
+
+模型层声明权重、数学、target tap 与完整续算状态，并负责已消费输入、pending／RNG 的原状态发布事务；
+通用接受规则只返回合法前缀，请求窗口和缓存目录只处理各自的政策与索引。
+Compute／Graph 负责既有计算、页权限、依赖、资源与真实退休。优先收拢现有重复逻辑，
+不增加另一套执行器、模型白名单或每步动态 Provider 路由。
+
+功能接线优先；冻结未完成制品的验证基线后，并行提取已验证、行为不变的公共代码。按实际共同点处理以下架构任务：
+
+- 分离模型数学、权重角色和量化制品绑定；同一家族不同量化配置共用构图与执行流程，保留真实 norm／tap／精度差异。
+- 模型头产出 hidden／logits，调用方按实际策略生成选词图。避免先生成 greedy 节点、再用随机采样覆盖端口而留下无消费者的节点；本轮 Apple MTP 已暴露并修复这一接缝。
+- 冷建状态端口与合法接受前缀的输出映射；共用绑定、收集与一次提交，保留完整快照及页帧所有权。
+- 复用有界接受／尾部规则和完整发布约束；Qwen／GLM／DeepSeek 保留各自真实 draft／verify／repair 顺序、状态与 RNG 地址，不新增只转发回调的统一控制器。
+- 共用有限请求窗口及 typed 完整检查点目录；接纳依赖原容量与真实退休，命中仍由模型执行新请求 fork 或同请求恢复。
+- 完成事实以同步借用交给入口输出；不复制大结果或把观察完成当作设备退休。
+- 根据冷编译的逐端口资源事实绑定；新增后端不修改模型数学和提交循环，不让模型猜所有输出都在同一设备域。候选应在昂贵的原生准备前拒绝已知不支持的类型，并保留首个有效原因；本轮 Apple 缺少一个 I32→F32 Cast 曾触发 4096 次回溯，不能把调高上限作为修复。
+- 复用执行槽的准备期临时内存，明确配置、layout、permission 与捕获失效；维护原有预算和真实退休。
+
+用 Qwen／GLM／DeepSeek 的已有代表消费者及同家族两个量化配置检查这些边界。
+新增模型或配置不应修改共用执行循环；保持热路径静态，不增加分配、kernel 或搬运来换取抽象。
+
+功能阶段先补上述真实使用缺口，随后依据实际接线收敛架构；性能阶段再调查普通公共成本和 MTP 额外成本。
+每批完整对照同时记录 prefill、decode、内存／显存和真实多轮综合速度，普通／MTP 分账；
+结果与已拒绝候选只在[性能资料](../developer/performance/decode.md)维护。
+不把减少复制、kernel 数或单算子收益直接当作整引擎收益，也不为整理架构反复做全库验证。

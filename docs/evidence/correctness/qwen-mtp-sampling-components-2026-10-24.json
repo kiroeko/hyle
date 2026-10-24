@@ -1,0 +1,80 @@
+{
+  "status": "PASS_CPU_AND_CUDA_K1_POLICY_AND_DECISION_COMPONENT",
+  "date": "2026-10-24",
+  "scope": "Cold Graph component only; one request, fixed vocabulary, temperature -> top-k -> minimal-prefix top-p -> LogSoftmax; K1 acceptance, stable log residual and bonus. No full Q35 stochastic generation or RNG/session integration.",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/sampling_graph.h",
+      "bytes": 13214,
+      "sha256": "88988861b2d9bf064c4134adf538a21aba6369a6f384c450bf89b7a4a6e69769"
+    },
+    {
+      "path": "tests/graph_route_cpu/qwen_sampling_graph_test.cc",
+      "bytes": 21358,
+      "sha256": "d2268f6f5c117e86531ce9a2394b40662ad321b492adbc9cfab8a4297fc2a005"
+    }
+  ],
+  "routes": [
+    {
+      "route": "cpu",
+      "tests": 10,
+      "failures": 0,
+      "result": {
+        "path": ".scratch/mtp-random-20261024/component-check/result.json",
+        "bytes": 918,
+        "sha256": "b86cf994d11a643df650994dcc3f8374cc855d034a67d9fac714c0adeec68363"
+      },
+      "test_report": {
+        "path": ".scratch/mtp-random-20261024/component-check/tests.json",
+        "bytes": 4478,
+        "sha256": "8ad8804ba0bfed806de454a984dfe47108fad4726d0a92ba7750caa8256c6a83"
+      },
+      "compiled_TUs": 1,
+      "reused_closure": {
+        "path": ".scratch/mtp-random-20261024/component-check/link-plan.json",
+        "bytes": 33166,
+        "sha256": "4a11edf47aaed6debe0f97bfafb305877a506cd61800592c778988570c701400"
+      },
+      "invocation": "commands; zero Graph recorded/reused capture ranges asserted every submission",
+      "capture_qualification": "not requested"
+    },
+    {
+      "route": "cuda",
+      "tests": 11,
+      "failures": 0,
+      "result": {
+        "path": ".scratch/mtp-random-20261024/cuda-component-check/result.json",
+        "bytes": 921,
+        "sha256": "615a981d6142da450b1fb571d969ba406b6e20928769e55ba2b13dfb9a56e5c6"
+      },
+      "test_report": {
+        "path": ".scratch/mtp-random-20261024/cuda-component-check/tests.json",
+        "bytes": 4889,
+        "sha256": "1908d341a5474920beb544a5ab06e6474219fbda59988d28c41a80e258ea98f1"
+      },
+      "compiled_TUs": 1,
+      "reused_closure": {
+        "path": ".scratch/mtp-random-20261024/cuda-component-check/link-plan.json",
+        "bytes": 33186,
+        "sha256": "d73676b17e35447444b1698fd122b1061c32b49af480762899ff6ac485e32a32"
+      },
+      "invocation": "commands; zero Graph recorded/reused capture ranges asserted every submission",
+      "capture_qualification": "RequireCapture rejected, then commands success; inherited provider internal capture not overridden"
+    }
+  ],
+  "downloads": 0,
+  "SDK_builds": 0,
+  "full_CMake_build": false,
+  "performance_claim": false,
+  "limits": [
+    "Policy normalization and valid bits must join original session publication checks.",
+    "Ordinary prefill/token draws, proposal draw lifetime and session cursor transactions remain for main integration.",
+    "Fixed T->K->P policy is not interchangeable with arbitrary llama.cpp sampler chains.",
+    "top_p<1 and disabled top_k performs a full stable sort; no throughput claim."
+  ],
+  "retained_logs": {
+    "path": "docs/evidence/correctness/qwen-mtp-sampling-components-2026-10-24.logs.zip",
+    "bytes": 3050,
+    "sha256": "cc4739ac32a2d624112e9909b5cc7ffbf0d7b4611c8c309ef4b6a25484a0f888"
+  }
+}

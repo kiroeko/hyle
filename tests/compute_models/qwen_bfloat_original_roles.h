@@ -468,7 +468,7 @@ inline Prefix append_prefix(sem::Fragment &f,Value hidden,Value embedding,const 
       throw std::runtime_error("BF16 prefix norm lost its explicit raw/store boundary");
     result.pre_norm_raw[slot]=found->inputs[0];
   }
-  result.projection_raw=f.one(c::model_ops::bfloat_linear_f32(),{result.input.joined,parameters.projection});
+  result.projection_raw=f.one(c::model_ops::dense_linear_f32(),{result.input.joined,parameters.projection});
   result.projection_stored=cast(f,result.projection_raw,c::DataType::kBFloat16);
   result.input_gamma=effective_gamma(f,parameters.input_norm,width);
   result.input_norm_raw=f.one(c::Operation(c::RmsNorm{.epsilon=1.e-6F}),

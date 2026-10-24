@@ -1,0 +1,211 @@
+{
+  "status": "PASS_BOUNDED_ORIGINAL_FLASH_CPU_STOCHASTIC_STATE_JOURNEY",
+  "date": "2026-10-24",
+  "result": {
+    "original_role_case": "DSparkFlashFormalState.CpuRandomMarkovPrefixCommitsActualStateAndCursor",
+    "tests": 1,
+    "failures": 0,
+    "skips": 0,
+    "graph_submissions": 64,
+    "publications": 4,
+    "target_rows": 7,
+    "sampled_markov_rows": 3,
+    "original_expert_attachments": 54,
+    "missing_frontiers": 0,
+    "complete_state_members": 31,
+    "state_backing_peak_bytes": 99648096,
+    "state_backing_budget_bytes": 364702464,
+    "physical_RSS_or_VRAM_cap": false
+  },
+  "source_chain": [
+    "Authenticated original formal Flash three-stage draft and actual five-row base full-vocabulary logits.",
+    "Each retained q_i is constructed from original base_i plus original MarkovW2(Gather(MarkovW1,actual_sampled_previous_id)); original confidence consumes that same sampled Markov row.",
+    "The original target40/41/42 consumes the sampled proposal sequence through its declared finite upstream-input fixture; actual full-vocabulary target logits feed common speculative_prefix.",
+    "The actual first rejection selects residual; all accepted selects final bonus; neither is substituted by target Top1.",
+    "Original complete main-history/captures/target cache/hidden/frontier/pending and a new24-byte seed/stream/draw HostMetadata entry publish under the same expected-base StateHead."
+  ],
+  "journeys": [
+    {
+      "policy": {
+        "temperature": 1,
+        "top_k": 0,
+        "top_p": 1
+      },
+      "seed": 123,
+      "stream": 7,
+      "start_draw": 0,
+      "proposals": [
+        11482,
+        4844
+      ],
+      "accepted_drafts": 0,
+      "consumed_rows": 1,
+      "residual_pending": 26655,
+      "committed_draw": 5,
+      "next_actual_target_only": {
+        "consumed_token": 26655,
+        "pending": 103645,
+        "consumed_rows": 1,
+        "committed_draw": 6
+      }
+    },
+    {
+      "policy": {
+        "temperature": 8,
+        "top_k": 0,
+        "top_p": 1
+      },
+      "seed": 459315,
+      "stream": 7,
+      "start_draw": 0,
+      "proposal": 28326,
+      "accepted_drafts": 1,
+      "consumed_rows": 2,
+      "bonus_pending": 113328,
+      "committed_draw": 3,
+      "next_actual_target_only": {
+        "temperature": 8,
+        "consumed_token": 113328,
+        "pending": 97182,
+        "consumed_rows": 1,
+        "committed_draw": 4
+      },
+      "control": "Seed chosen by a bounded independent F64/Philox reference using actual source q0/p0. Actual Graph must independently sample that proposal and accept it; q/p/support/accepted outputs are not overwritten. This is branch coverage, not a natural acceptance-rate or task-quality claim."
+    }
+  ],
+  "failures": {
+    "invalid_q": "NaN in an unselected q column rejects validity without Head/cursor change, then actual same-cursor/same-q retry succeeds.",
+    "cancellation": "An unpublished pending+next_cursor StateDraft is cancelled; committed Head and cursor remain unchanged.",
+    "conflict": "A stale expected-base publication is rejected.",
+    "old_readers": "Old model state and original seed/stream/draw remain readable and unchanged."
+  },
+  "auxiliary": {
+    "final_metadata_tests": 2,
+    "final_metadata_failures": 0,
+    "checks": [
+      "Empty original source and count outside1..5 reject before role lookup.",
+      "Actual generic verifier cold forms for m0/1/2/5 retain matching target conditional rows/q inputs/I32 final outputs."
+    ],
+    "shared_cursor_original_transaction_and_overflow_checks": 6
+  },
+  "implementation": {
+    "current_sources": [
+      {
+        "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+        "bytes": 76684,
+        "sha256": "2b53d4469eb40c49c7cb732d5dec7fa13d68115ec95698b432eadd5bb3f8c0a0"
+      },
+      {
+        "path": "tests/compute_models/dspark_stochastic_head.h",
+        "bytes": 5417,
+        "sha256": "1a0f2e08c6b5bfc77099f78f6189964cf977550f2296b7a9ef5e09e67527396b"
+      },
+      {
+        "path": "tests/compute_models/model_sampling_fragment.h",
+        "bytes": 3286,
+        "sha256": "672f149c2e1e85ffc6ee4c2b4240a787f1765dd879ab612a23fcb8139538f669"
+      },
+      {
+        "path": "engine/inference/sampling_graph.h",
+        "bytes": 17641,
+        "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+      },
+      {
+        "path": "engine/inference/sampling_cursor.h",
+        "bytes": 1200,
+        "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+      },
+      {
+        "path": "engine/models/qwen35/session_state.h",
+        "bytes": 12965,
+        "sha256": "80cae237ea8a58f468dd80b34c479ef08849574e954c80557648bbcfbfc7b814"
+      }
+    ],
+    "runtime_sources": [
+      {
+        "sources": [
+          {
+            "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+            "sha256": "80ad6b470713c835a5f89865d95bf7ce648cbad3cb7274ccc4ccbc1cae301da7"
+          },
+          {
+            "path": "tests/compute_models/dspark_stochastic_head.h",
+            "sha256": "b6e1339f9d85667bf0d962362f19cb53ddb30b9fa3cf5b50de0f9d7760ffdb0d"
+          },
+          {
+            "path": "tests/compute_models/model_sampling_fragment.h",
+            "sha256": "672f149c2e1e85ffc6ee4c2b4240a787f1765dd879ab612a23fcb8139538f669"
+          },
+          {
+            "path": "engine/inference/sampling_graph.h",
+            "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+          },
+          {
+            "path": "engine/inference/sampling_cursor.h",
+            "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+          }
+        ],
+        "image_sha256": "36424e94d0a417d68223dd396f4b98cf8645fb041bea192438555985f8ebfcb0"
+      },
+      {
+        "sources": [
+          {
+            "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+            "sha256": "a9cc4cf50c60bb37af6e312f82f2766be2435a647d726d1d86b0eef1e59ecc87"
+          },
+          {
+            "path": "tests/compute_models/dspark_stochastic_head.h",
+            "sha256": "b6e1339f9d85667bf0d962362f19cb53ddb30b9fa3cf5b50de0f9d7760ffdb0d"
+          },
+          {
+            "path": "tests/compute_models/model_sampling_fragment.h",
+            "sha256": "672f149c2e1e85ffc6ee4c2b4240a787f1765dd879ab612a23fcb8139538f669"
+          },
+          {
+            "path": "engine/inference/sampling_graph.h",
+            "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+          },
+          {
+            "path": "engine/inference/sampling_cursor.h",
+            "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+          }
+        ],
+        "image_sha256": "80c98692e81eaf5f109a8f902d8116798039558d8d3a78312397735e86afd59d"
+      }
+    ],
+    "final_runtime_source_delta": "After the final valid original-role run, finite source admission rejects null Bound, enforces original BF16 Markov/confidence role geometry, and makes invalid proposal-q validity an immediate exception before target work. These guards and metadata negatives were strictly compiled and the2 metadata tests passed. No valid-path mathematical node or policy changed; the later guard version was not rerun through the full original-role journey.",
+    "fresh_consumer_TUs_per_revision": 1,
+    "SDK_builds": 0,
+    "native_rebuilds": 0,
+    "HTTP_bytes": 0,
+    "build": "Reused existing Windows CPU+CUDA product closure, actual new source journey executed only CPU. This does not certify a pure CPU-only distributable closure.",
+    "default_greedy": "Existing default consumers retain their original30-member schema; stochastic mode adds its optional RNG member."
+  },
+  "provenance": {
+    "first_temperature1_only_run": {
+      "exit": 0,
+      "seconds": 105.53100000001723
+    },
+    "final_original_role_run": {
+      "exit": 0,
+      "seconds": 91.96900000001187
+    },
+    "xml_seconds": 91.092,
+    "reference_scope": "Prior original-role full numerical reference evidence is reused; this finite new sampler path retains actual source boundaries and existing local reference samples, not a repeat full-model F64 quality oracle.",
+    "prior_role_proof": "docs/evidence/correctness/deepseek-mtp-block5-controls-2026-10-24.json",
+    "prior_short_tail_proof": "docs/evidence/correctness/deepseek-mtp-short-verifier-tails-2026-10-24.json"
+  },
+  "boundaries": [
+    "Upstream layer39 four-stream input and initial cache prefix remain explicit finite fixtures, not a complete43-layer trained prompt-to-output engine.",
+    "Actual new runtime source is formal Flash on Windows CPU. Pro shares the new source-derived head code but is not certified by this Flash run.",
+    "Existing GGUF/BF16 sidecar consumers are not claimed newly bound to this stochastic head merely because their greedy or common sampling math passed.",
+    "No new acceptance-rate, generation task-quality, TPS, physical-memory peak or cross-backend floating equality claim.",
+    "The original greedy diagnostic head still executes within the reused stem in this finite functional path; the new sampled Markov head recomputes its own conditionals from actual base logits. Removing redundant work belongs to later architecture/performance convergence.",
+    "Archive excludes weights, expert payloads, objects, images, PDBs, SDKs, shared libraries and full download ledger."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/deepseek-mtp-source-stochastic-flash-2026-10-24.logs.zip",
+    "bytes": 143367,
+    "sha256": "c648b99542dcbd8403a48a0ca9fc28baceb8d7e3e55ec6240e053c2918142696"
+  }
+}

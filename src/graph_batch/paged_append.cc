@@ -84,7 +84,8 @@ PagedAppendPages::~PagedAppendPages(){if(data_)data_->destroy();}
 c::BatchLayoutVersion PagedAppendPages::layout()const noexcept{return data_?data_->layout:c::BatchLayoutVersion{};}
 std::size_t PagedAppendPages::page_count()const noexcept{return data_?data_->writers.size():0;}
 Result<c::PagedPageWriter&> PagedAppendPages::page(std::size_t index)noexcept{
-  if(!data_ || index>=data_->writers.size())return std::unexpected(Status::OutOfRange("paged append dirty page index"));return data_->writers[index];
+  if(!data_ || index>=data_->writers.size())return std::unexpected(Status::OutOfRange("paged append dirty page index"));
+  return data_->writers[index];
 }
 std::size_t PagedAppendPages::appender_count()const noexcept{return data_?data_->appenders.size():0;}
 Result<c::PagedPageAppender&> PagedAppendPages::appender(std::size_t index)noexcept{
@@ -344,7 +345,9 @@ const ProviderRegionPreparedVTable table{
    bool accepted=false;const auto old=cd::PagedArenaAccess::pages(p->previous);
    for(const auto&range:p->ranges){auto target=append_target(*p,range);if(!target)return {accepted,target.error()};
      Result<mem::ConstBufferView> source=range.prefix?old[range.source].view():inputs[0].storage().subview(range.source,range.bytes);
-     if(!source)return {accepted,source.error()};if(range.prefix)source=source->subview(0,range.bytes);if(!source)return {accepted,source.error()};
+     if(!source)return {accepted,source.error()};
+     if(range.prefix)source=source->subview(0,range.bytes);
+     if(!source)return {accepted,source.error()};
      auto command=cd::TransferAccess::enqueue_copy(sequence,*target,*source);accepted|=command.accepted;
      if(!command.status.ok())return {accepted,std::move(command.status)};
    }return {accepted,Status::Ok()};
@@ -379,7 +382,8 @@ Status propose(void*,const RegionDiscoveryRequest&r,mem::AllocatorRef,RegionProp
     HYLE_ASSIGN_OR_RETURN(auto kind,r.graph.operation_kind(node));
     if(kind!=c::OperationKind::kCustom)continue;
     HYLE_ASSIGN_OR_RETURN(auto operation,r.graph.operation(node));
-    if(!operation.custom_as<PagedAppend>())continue;const std::array nodes{node};
+    if(!operation.custom_as<PagedAppend>())continue;
+    const std::array nodes{node};
     HYLE_ASSIGN_OR_RETURN(auto added,w.try_add({.nodes=nodes,.route=1,.replay_class=c::ProviderReplayClass::kPrepared,
         .implementation=c::ProviderImplementationId{0x5041474544415050ULL}}));if(!added)break;
   }return Status::Ok();
@@ -389,7 +393,8 @@ Status resources(void*opaque,const RegionCompileRequest&r,mem::AllocatorRef,std:
   if(!r.graph || r.nodes.size()!=1 || r.inputs.size()!=1 || inputs.size()!=1 || !outputs.empty() || !r.has_unknown_effects)
     return Status::Unimplemented("paged append needs its original external-write singleton");
   HYLE_ASSIGN_OR_RETURN(auto op,r.graph->operation(r.nodes[0]));const auto append=op.custom_as<PagedAppend>();
-  if(!append)return Status::Unimplemented("not paged append");HYLE_ASSIGN_OR_RETURN(auto rows,r.graph->value_description(r.inputs[0]));
+  if(!append)return Status::Unimplemented("not paged append");
+  HYLE_ASSIGN_OR_RETURN(auto rows,r.graph->value_description(r.inputs[0]));
   HYLE_RETURN_IF_ERROR(append->infer_output_descriptions(std::span(&rows,1),{}));
   const auto&a=*static_cast<AppendAdapter*>(opaque);
   inputs[0].resource.required_properties=a.device_class==c::DeviceClass::kCpu?mem::MemoryProperty::kHostAccessible:mem::MemoryProperty::kDeviceAccessible;
@@ -422,13 +427,13 @@ c::ProviderPrepareOutcome compile(void*opaque,const RegionCompileRequest&r,mem::
   return c::ProviderPrepareOutcome::prepared();
 }
 const RegionProviderVTable provider_table{&propose,&resources,&compile};
-struct Find final {NodeId node;Slot*slot=nullptr;Prepared*prepared=nullptr;gd::ProjectedWriter proof;ExecutionLaneId lane{};};
+struct Find final {NodeId node;Slot*slot=nullptr;Prepared*prepared=nullptr;gd::ProjectedWriter proof{};ExecutionLaneId lane{};};
 Status find(void*opaque,const gd::RegionAccessView&view)noexcept{
   auto&f=*static_cast<Find*>(opaque);if(view.prepared_vtable!=&table || view.node_ordinals.size()!=1 || static_cast<const Prepared*>(view.prepared)->node!=f.node)return Status::Ok();
   if(f.slot)return Status::InvalidArgument("duplicate selected paged append");
   f.slot=static_cast<Slot*>(view.invocation);f.prepared=static_cast<Prepared*>(view.prepared);f.proof={f.node,view.step,&table,view.prepared};f.lane=view.lane;return Status::Ok();
 }
-struct NativeFind final {NodeId node;NativeAppendRegionRef region;};
+struct NativeFind final {NodeId node;NativeAppendRegionRef region{};};
 Status find_native(void*opaque,const gd::RegionAccessView&view)noexcept{
   auto&f=*static_cast<NativeFind*>(opaque);const auto*api=native_table(view);
   if(!api)return Status::Ok();
@@ -596,7 +601,7 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
     ranges.reserve(p->ranges.size());
     for(const auto&range:p->ranges){
       HYLE_ASSIGN_OR_RETURN(auto destination,append_target(*p,range));
-      NativeAppendRange resolved{.destination=destination,.source_offset=range.source,
+      NativeAppendRange resolved{.destination=destination,.prefix={},.source_offset=range.source,
         .bytes=range.bytes,.from_rows=!range.prefix};
       if(range.prefix){
         if(range.source>=old.size())return Status::Internal("native paged append prefix ordinal changed");

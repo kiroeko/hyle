@@ -1,0 +1,896 @@
+{
+  "date": "2026-10-24",
+  "status": "FIXED_NINE_RUN_CHECK_COMPLETE_WITH_COMMON_ARITHMETIC_FAILURE",
+  "purpose": "A finite, predeclared executable task sample for ordinary/K1/K4 generation; neither readable prose nor equality alone is a task-success criterion.",
+  "predeclared_plan": {
+    "kind": "predeclared bounded task correctness probe",
+    "frozen_before_generation": true,
+    "maximum_model_runs": 9,
+    "model": "local original Qwen3.5-2B BF16 target plus its original MTP weights",
+    "tokenizer": "C:/Users/kiro/Downloads/Qwen3.5-2B",
+    "tokenizer_local_files_only": true,
+    "enable_thinking": false,
+    "system_message": "你是一个助手。请准确完成用户任务。",
+    "arms": [
+      "ordinary",
+      "k1",
+      "k4"
+    ],
+    "sampling": "greedy",
+    "capacity": 512,
+    "maximum_output_tokens": 128,
+    "cache_bytes": 268435456,
+    "replay": "commands",
+    "tasks": [
+      {
+        "id": "arithmetic",
+        "prompt": "计算 (17 * 3) + 8。请给出结果，可以只写数字。",
+        "rule": "The last Arabic integer or decimal number in the decoded reply equals exactly 59. Work/explanation, punctuation or a boxed number are allowed; no exact output string is required.",
+        "expected": 59
+      },
+      {
+        "id": "extraction",
+        "prompt": "从以下文字抽取信息：李明今年27岁，居住在杭州。请输出一个JSON对象，只包含name、age、city三个字段，age为整数，不添加其他字段。",
+        "rule": "Parse the first complete JSON object with no duplicate keys. It must have exactly name/age/city, name=李明, integer age=27, city=杭州. Key order, whitespace, JSON Markdown fence and surrounding explanation are allowed.",
+        "expected": {
+          "name": "李明",
+          "age": 27,
+          "city": "杭州"
+        }
+      },
+      {
+        "id": "python",
+        "prompt": "用Python实现函数sum_even(nums)，返回整数列表nums中所有偶数的和，不改变原列表。只给出代码；不需要导入库或编写调用示例。",
+        "rule": "Use the first fenced code block containing def sum_even, otherwise parse the complete plain source; if surrounding prose prevents parsing, use source starting at the first def sum_even line. Compile function definitions, harmless typing/future imports and top-level assignments; do not execute top-level examples. In a fixed restricted-builtin subprocess with a 2-second limit, the function must return an actual integer equal to every expected value and leave each input list unchanged. No external command, network or file access is available to generated code. No source-string matching is required.",
+        "cases": [
+          {
+            "input": [],
+            "expected": 0
+          },
+          {
+            "input": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "expected": 6
+          },
+          {
+            "input": [
+              -4,
+              -3,
+              -2,
+              0,
+              5,
+              8
+            ],
+            "expected": 2
+          },
+          {
+            "input": [
+              2,
+              2,
+              2
+            ],
+            "expected": 6
+          },
+          {
+            "input": [
+              11,
+              13,
+              15
+            ],
+            "expected": 0
+          }
+        ]
+      }
+    ],
+    "interpretation": "A finite task success/failure sample, not a model intelligence threshold or proof of bit-identical ordinary/MTP distributions. Report every arm including failures and EOS/quota. Never change questions or rules after generation; do not add runs to compensate for failures. Algorithm/state/sampling correctness relies on the separately recorded exact mathematical evidence."
+  },
+  "plan_identity": {
+    "path": ".scratch/mtp-quality-finite-20261024/plan.json",
+    "bytes": 2951,
+    "sha256": "c57fc21a17f361165f9779c9372636067cafd47a0bb7b4c8cdf9d4d229f5589b"
+  },
+  "pre_generation_freeze": {
+    "path": ".scratch/mtp-quality-finite-20261024/pre-generation-freeze.json",
+    "bytes": 4059,
+    "sha256": "d7ebb2c783a0e2beedabfc3fda2a625b14783d0d8f2e0ef57c366e3dde0f89af"
+  },
+  "judge_self_check": {
+    "pre_generation": true,
+    "checks": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "model_answers_read": false
+  },
+  "input_identity": {
+    "BF16_role_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "source_id": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+    "tokenizer_files": [
+      {
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\tokenizer.json",
+        "bytes": 12807982,
+        "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+      },
+      {
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\tokenizer_config.json",
+        "bytes": 16709,
+        "sha256": "49e2b6e395f959f077f1e992b338919c0d4a9732fc6e613995e06557f843500c"
+      },
+      {
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\chat_template.jinja",
+        "bytes": 7755,
+        "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+      }
+    ],
+    "actual_chat_template_sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "tokenizer_class": "TokenizersBackend",
+    "local_files_only": true,
+    "offline_environment": {
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "HF_DATASETS_OFFLINE": "1"
+    },
+    "enable_thinking": false,
+    "maximum_output_tokens": 128,
+    "capacity": 512,
+    "cache_byte_limit": 268435456,
+    "replay": "commands",
+    "sampling": "greedy",
+    "prompts": [
+      {
+        "id": "arithmetic",
+        "prompt_tokens": 47,
+        "inputs": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\arithmetic",
+        "prompt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\arithmetic\\prompt.ids",
+          "bytes": 245,
+          "sha256": "0d109bbcfcc204ca348f2eae80231b33cd3b52fc4af126558ae8d2d82b835cc5"
+        },
+        "rendered": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\arithmetic\\rendered-prompt.txt",
+          "bytes": 220,
+          "sha256": "26ee7c45b25fef7e6eba59456262c1b9735e41d73cf33b7040fca4a1c6cf1e38"
+        }
+      },
+      {
+        "id": "extraction",
+        "prompt_tokens": 66,
+        "inputs": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\extraction",
+        "prompt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\extraction\\prompt.ids",
+          "bytes": 372,
+          "sha256": "b82a29a9b083924ad140569a42bca81c5aa84870378fac62447a85fb55018e45"
+        },
+        "rendered": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\extraction\\rendered-prompt.txt",
+          "bytes": 335,
+          "sha256": "aa3bebf2dfdefd9a307642323b117c786589b46b26706504d2236c0a897adaec"
+        }
+      },
+      {
+        "id": "python",
+        "prompt_tokens": 61,
+        "inputs": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\python",
+        "prompt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\python\\prompt.ids",
+          "bytes": 363,
+          "sha256": "5a315c16161f3ace902e138269d49abfc306c5bfa33199d75c91310573601866"
+        },
+        "rendered": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\python\\rendered-prompt.txt",
+          "bytes": 324,
+          "sha256": "ad9afb3fbf3bdcf59e5b3026413d3b28ab6433e6eb401d8608c23ef056fa799b"
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "task": "arithmetic",
+      "prompt": "计算 (17 * 3) + 8。请给出结果，可以只写数字。",
+      "rule": "The last Arabic integer or decimal number in the decoded reply equals exactly 59. Work/explanation, punctuation or a boxed number are allowed; no exact output string is required.",
+      "expected": 59,
+      "all_arm_IDs_equal": true,
+      "arms": [
+        {
+          "arm": "ordinary",
+          "P": 47,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 3,
+          "generated_ids": [
+            21,
+            20,
+            248046
+          ],
+          "raw_decoded_text": "65<|im_end|>",
+          "judged_text": "65",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": false,
+          "judge": {
+            "passed": false,
+            "numbers": [
+              "65"
+            ]
+          }
+        },
+        {
+          "arm": "k1",
+          "P": 47,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 3,
+          "generated_ids": [
+            21,
+            20,
+            248046
+          ],
+          "raw_decoded_text": "65<|im_end|>",
+          "judged_text": "65",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": false,
+          "judge": {
+            "passed": false,
+            "numbers": [
+              "65"
+            ]
+          }
+        },
+        {
+          "arm": "k4",
+          "P": 47,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 3,
+          "generated_ids": [
+            21,
+            20,
+            248046
+          ],
+          "raw_decoded_text": "65<|im_end|>",
+          "judged_text": "65",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": false,
+          "judge": {
+            "passed": false,
+            "numbers": [
+              "65"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "task": "extraction",
+      "prompt": "从以下文字抽取信息：李明今年27岁，居住在杭州。请输出一个JSON对象，只包含name、age、city三个字段，age为整数，不添加其他字段。",
+      "rule": "Parse the first complete JSON object with no duplicate keys. It must have exactly name/age/city, name=李明, integer age=27, city=杭州. Key order, whitespace, JSON Markdown fence and surrounding explanation are allowed.",
+      "expected": {
+        "name": "李明",
+        "age": 27,
+        "city": "杭州"
+      },
+      "all_arm_IDs_equal": true,
+      "arms": [
+        {
+          "arm": "ordinary",
+          "P": 66,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 34,
+          "generated_ids": [
+            71093,
+            2164,
+            198,
+            90,
+            198,
+            220,
+            328,
+            591,
+            763,
+            328,
+            125273,
+            487,
+            198,
+            220,
+            328,
+            416,
+            763,
+            220,
+            17,
+            22,
+            11,
+            198,
+            220,
+            328,
+            8656,
+            763,
+            328,
+            103735,
+            1,
+            198,
+            92,
+            198,
+            71093,
+            248046
+          ],
+          "raw_decoded_text": "```json\n{\n  \"name\": \"李明\",\n  \"age\": 27,\n  \"city\": \"杭州\"\n}\n```<|im_end|>",
+          "judged_text": "```json\n{\n  \"name\": \"李明\",\n  \"age\": 27,\n  \"city\": \"杭州\"\n}\n```",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": true,
+          "judge": {
+            "passed": true,
+            "parsed": {
+              "name": "李明",
+              "age": 27,
+              "city": "杭州"
+            }
+          }
+        },
+        {
+          "arm": "k1",
+          "P": 66,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 34,
+          "generated_ids": [
+            71093,
+            2164,
+            198,
+            90,
+            198,
+            220,
+            328,
+            591,
+            763,
+            328,
+            125273,
+            487,
+            198,
+            220,
+            328,
+            416,
+            763,
+            220,
+            17,
+            22,
+            11,
+            198,
+            220,
+            328,
+            8656,
+            763,
+            328,
+            103735,
+            1,
+            198,
+            92,
+            198,
+            71093,
+            248046
+          ],
+          "raw_decoded_text": "```json\n{\n  \"name\": \"李明\",\n  \"age\": 27,\n  \"city\": \"杭州\"\n}\n```<|im_end|>",
+          "judged_text": "```json\n{\n  \"name\": \"李明\",\n  \"age\": 27,\n  \"city\": \"杭州\"\n}\n```",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": true,
+          "judge": {
+            "passed": true,
+            "parsed": {
+              "name": "李明",
+              "age": 27,
+              "city": "杭州"
+            }
+          }
+        },
+        {
+          "arm": "k4",
+          "P": 66,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 34,
+          "generated_ids": [
+            71093,
+            2164,
+            198,
+            90,
+            198,
+            220,
+            328,
+            591,
+            763,
+            328,
+            125273,
+            487,
+            198,
+            220,
+            328,
+            416,
+            763,
+            220,
+            17,
+            22,
+            11,
+            198,
+            220,
+            328,
+            8656,
+            763,
+            328,
+            103735,
+            1,
+            198,
+            92,
+            198,
+            71093,
+            248046
+          ],
+          "raw_decoded_text": "```json\n{\n  \"name\": \"李明\",\n  \"age\": 27,\n  \"city\": \"杭州\"\n}\n```<|im_end|>",
+          "judged_text": "```json\n{\n  \"name\": \"李明\",\n  \"age\": 27,\n  \"city\": \"杭州\"\n}\n```",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": true,
+          "judge": {
+            "passed": true,
+            "parsed": {
+              "name": "李明",
+              "age": 27,
+              "city": "杭州"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "task": "python",
+      "prompt": "用Python实现函数sum_even(nums)，返回整数列表nums中所有偶数的和，不改变原列表。只给出代码；不需要导入库或编写调用示例。",
+      "rule": "Use the first fenced code block containing def sum_even, otherwise parse the complete plain source; if surrounding prose prevents parsing, use source starting at the first def sum_even line. Compile function definitions, harmless typing/future imports and top-level assignments; do not execute top-level examples. In a fixed restricted-builtin subprocess with a 2-second limit, the function must return an actual integer equal to every expected value and leave each input list unchanged. No external command, network or file access is available to generated code. No source-string matching is required.",
+      "expected": [
+        {
+          "input": [],
+          "expected": 0
+        },
+        {
+          "input": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "expected": 6
+        },
+        {
+          "input": [
+            -4,
+            -3,
+            -2,
+            0,
+            5,
+            8
+          ],
+          "expected": 2
+        },
+        {
+          "input": [
+            2,
+            2,
+            2
+          ],
+          "expected": 6
+        },
+        {
+          "input": [
+            11,
+            13,
+            15
+          ],
+          "expected": 0
+        }
+      ],
+      "all_arm_IDs_equal": true,
+      "arms": [
+        {
+          "arm": "ordinary",
+          "P": 61,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 29,
+          "generated_ids": [
+            71093,
+            12305,
+            198,
+            727,
+            2542,
+            66034,
+            20449,
+            1590,
+            198,
+            262,
+            460,
+            2542,
+            2007,
+            364,
+            830,
+            303,
+            10001,
+            413,
+            830,
+            984,
+            220,
+            17,
+            606,
+            220,
+            15,
+            8,
+            198,
+            71093,
+            248046
+          ],
+          "raw_decoded_text": "```python\ndef sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n```<|im_end|>",
+          "judged_text": "```python\ndef sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n```",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": true,
+          "judge": {
+            "code": "def sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n",
+            "passed": true,
+            "cases": [
+              {
+                "input": [],
+                "result": 0,
+                "expected": 0,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "result": 6,
+                "expected": 6,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  -4,
+                  -3,
+                  -2,
+                  0,
+                  5,
+                  8
+                ],
+                "result": 2,
+                "expected": 2,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  2,
+                  2,
+                  2
+                ],
+                "result": 6,
+                "expected": 6,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  11,
+                  13,
+                  15
+                ],
+                "result": 0,
+                "expected": 0,
+                "unchanged": true,
+                "passed": true
+              }
+            ],
+            "child_exit": 0
+          }
+        },
+        {
+          "arm": "k1",
+          "P": 61,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 29,
+          "generated_ids": [
+            71093,
+            12305,
+            198,
+            727,
+            2542,
+            66034,
+            20449,
+            1590,
+            198,
+            262,
+            460,
+            2542,
+            2007,
+            364,
+            830,
+            303,
+            10001,
+            413,
+            830,
+            984,
+            220,
+            17,
+            606,
+            220,
+            15,
+            8,
+            198,
+            71093,
+            248046
+          ],
+          "raw_decoded_text": "```python\ndef sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n```<|im_end|>",
+          "judged_text": "```python\ndef sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n```",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": true,
+          "judge": {
+            "code": "def sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n",
+            "passed": true,
+            "cases": [
+              {
+                "input": [],
+                "result": 0,
+                "expected": 0,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "result": 6,
+                "expected": 6,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  -4,
+                  -3,
+                  -2,
+                  0,
+                  5,
+                  8
+                ],
+                "result": 2,
+                "expected": 2,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  2,
+                  2,
+                  2
+                ],
+                "result": 6,
+                "expected": 6,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  11,
+                  13,
+                  15
+                ],
+                "result": 0,
+                "expected": 0,
+                "unchanged": true,
+                "passed": true
+              }
+            ],
+            "child_exit": 0
+          }
+        },
+        {
+          "arm": "k4",
+          "P": 61,
+          "C": 512,
+          "max_output_tokens": 128,
+          "generated_tokens": 29,
+          "generated_ids": [
+            71093,
+            12305,
+            198,
+            727,
+            2542,
+            66034,
+            20449,
+            1590,
+            198,
+            262,
+            460,
+            2542,
+            2007,
+            364,
+            830,
+            303,
+            10001,
+            413,
+            830,
+            984,
+            220,
+            17,
+            606,
+            220,
+            15,
+            8,
+            198,
+            71093,
+            248046
+          ],
+          "raw_decoded_text": "```python\ndef sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n```<|im_end|>",
+          "judged_text": "```python\ndef sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n```",
+          "natural_EOS": true,
+          "EOS_id": 248046,
+          "stop_reason": "natural_EOS",
+          "task_passed": true,
+          "judge": {
+            "code": "def sum_even(nums):\n    return sum(x for x in nums if x % 2 == 0)\n",
+            "passed": true,
+            "cases": [
+              {
+                "input": [],
+                "result": 0,
+                "expected": 0,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "result": 6,
+                "expected": 6,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  -4,
+                  -3,
+                  -2,
+                  0,
+                  5,
+                  8
+                ],
+                "result": 2,
+                "expected": 2,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  2,
+                  2,
+                  2
+                ],
+                "result": 6,
+                "expected": 6,
+                "unchanged": true,
+                "passed": true
+              },
+              {
+                "input": [
+                  11,
+                  13,
+                  15
+                ],
+                "result": 0,
+                "expected": 0,
+                "unchanged": true,
+                "passed": true
+              }
+            ],
+            "child_exit": 0
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "native_processes_exit0": 9,
+    "natural_EOS": 9,
+    "output_quota_stops": 0,
+    "total_task_passes": 6,
+    "total_task_failures": 3,
+    "each_arm": {
+      "passed_tasks": 2,
+      "total_tasks": 3
+    },
+    "arithmetic": "All three arms naturally end with65, while the unchanged expected answer is59. These are actual task failures, not waived or treated as passing because output is readable.",
+    "extraction": "All three arms produce the exact requested name/age/city object. Key order/Markdown do not determine success.",
+    "python": "All three arms emit the same executable sum_even function and pass the fixed five cases, with an integer return and unchanged input lists.",
+    "comparison": "Complete generated IDs are equal across ordinary/K1/K4 for each fixed task; no MTP-specific task regression is observed in this sample."
+  },
+  "interpretation": [
+    "The shared arithmetic failure is also present in ordinary Hyle, so this nine-run check does not attribute it to MTP. It does not independently prove whether the trained model, ordinary numerical differences or task sensitivity is the ultimate cause.",
+    "No questions, answer rules, token limits or decoder settings changed after model generation. There were exactly9native runs, zero retries and no compensating extra tasks.",
+    "The frozen old four-arm coding failures remain unchanged and are not replaced with these easier tasks.",
+    "Finite task results are not a model-intelligence threshold and do not prove all workloads, all prompt lengths or equality across target execution widths."
+  ],
+  "algorithm_correctness_evidence": [
+    "docs/evidence/correctness/qwen35-mtp-prefix-state-values-2026-10-24.json",
+    "docs/evidence/correctness/qwen-mtp-multirow-sampling-2026-10-24.json",
+    "docs/evidence/correctness/mtp-fixed-width-packed-head-2026-10-24.json"
+  ],
+  "prior_task_evidence": "docs/evidence/correctness/qwen-mtp-quality-prefix-2026-10-22.json",
+  "model_runs": {
+    "attempts": 9,
+    "maximum": 9,
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multi-draft-20261024\\geometry-cuda-check2\\recursive-probe.exe",
+      "bytes": 141274624,
+      "sha256": "0286bc8733dfdbc061f41cc7f6730e9e62657af3bd3d3c2ecec545c0418f9c32"
+    },
+    "source_snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multi-draft-20261024\\geometry-cuda-check2\\sources.json",
+      "bytes": 3734,
+      "sha256": "e965086dcfdf3ce08be371e0533cc98ca89a51469cf620f4bddd5cc82804a259"
+    },
+    "HTTP": 0,
+    "SDK_builds": 0,
+    "new_model_downloads": 0,
+    "new_weight_copies": 0,
+    "source_note": "All nine runs used the same already built frozen CUDA consumer. A subsequent source-only move of the common sampling header was not recompiled or mixed into this window."
+  },
+  "limitations": [
+    "Only one local original BF16 Qwen3.5-2B and one CUDA GPU are exercised. No throughput measurement, hardware-memory peak, other model or broad benchmark suite is signed.",
+    "Python judgments execute only the predeclared code body in a fixed isolated2-second child with restricted builtins, optional typing/future imports and no external command/network/file APIs.",
+    "The archive contains complete IDs, raw/decoded text, EOS/quota, original reports, commands and frozen source. It contains no model weight, SDK, object, executable or full tokenizer vocabulary."
+  ],
+  "reproduction": {
+    "prepare": "python .scratch/mtp-quality-finite-20261024/prepare.py (only before a fresh explicit finite window)",
+    "run": "python .scratch/mtp-quality-finite-20261024/run.py (refuses an existing ledger; no automatic retry)",
+    "judge": "The archived judge.py/python_judge.py consume the original fixed plan without model-dependent rule changes."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/qwen35-mtp-finite-task-check-2026-10-24-logs.zip",
+    "bytes": 298510,
+    "sha256": "9e4090b16bfbd1bb3a2e1bf897d6355f8f888d1c2c0fcb221cdcf4dbc918266e"
+  },
+  "archived_files": 113
+}

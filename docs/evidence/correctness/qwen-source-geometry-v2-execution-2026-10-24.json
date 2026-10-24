@@ -1,0 +1,183 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS_BOUNDED_GEOMETRY_V2_AND_COMPLETE_2B_EXECUTION_Q27_BODY_PENDING",
+  "implementation": [
+    "One immutable original-source geometry drives ordinary, verifier and NextN graphs, original-role validation, independent output head, cache schema and retained state.",
+    "No V1 fallback. HF grouped and converted GGUF cyclic GDN head layouts are explicit source meanings, independent of model label, codec or provider.",
+    "Q27 independent H5120, GDN V6144/QKV10240, attention width6144, 48 recurrent and16 KV layers replace fixed2B values; 9 actual GGUF codecs stay encoded.",
+    "MTP prefill append ordering now depends on the actual last target append, not fixed bank11.",
+    "CPU known graph workspace has one finite real-host-domain per-Invocation cap; shared execution is separately tracked without a total limit, opaque native private bytes remain unknown."
+  ],
+  "checks": {
+    "prepared_original_roles_and_negative_geometry": {
+      "checks": 295,
+      "exit": 0,
+      "record": ".scratch/qwen-multi-draft-20261024/geometry-roles-check1/summary.json"
+    },
+    "cache_policy_and_state_metadata": {
+      "groups": 15,
+      "exit": 0,
+      "record": ".scratch/qwen-multi-draft-20261024/geometry-policy-check1/summary.json",
+      "q27_context64_N1_R1_boundaries2_expected_cache_bytes": 467443843
+    },
+    "source_preparation_and_python_cpp_roundtrip": {
+      "path": "docs/evidence/correctness/mtp-qwen-source-geometry-v2-preparation-2026-10-24.json",
+      "bytes": 13445,
+      "sha256": "1672f3cbb7dd3053ca6fed86e4cf9a1986c2a204255383509c91c8a5ef981b69"
+    },
+    "fixed2b_diagnostic_probes_syntax_only": [
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_session_probe.cc",
+          "bytes": 112361,
+          "sha256": "e688c1980f1c9064ce3b1deb01ccca19c63a2957e608d113466db2e4b3356905"
+        },
+        "exit": 0,
+        "scope": "MSVC CUDA+CPU configuration syntax only; no link or runtime claim"
+      },
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\batch_probe.cc",
+          "bytes": 26876,
+          "sha256": "33aadb707e545d0ea0f8ad5bff591acd5ef5e5a2504b119870bd10f492e6707c"
+        },
+        "exit": 0,
+        "scope": "MSVC CUDA+CPU configuration syntax only; no link or runtime claim"
+      },
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\retirement_probe.cc",
+          "bytes": 40236,
+          "sha256": "9202c1988f914f911fa490bfa78da562aab55a3aa574338b1cbf81cc0512df42"
+        },
+        "exit": 0,
+        "scope": "MSVC CUDA+CPU configuration syntax only; no link or runtime claim"
+      },
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\retained_budget_probe.cc",
+          "bytes": 19739,
+          "sha256": "5cdbcdfb1f32da1576df64dc0a26bc3dc8ae1291c75d82dc069f819e0a844a02"
+        },
+        "exit": 0,
+        "scope": "MSVC CUDA+CPU configuration syntax only; no link or runtime claim"
+      }
+    ],
+    "full_2b_v2_entrypoints": [
+      {
+        "backend": "cuda",
+        "case": "ordinary",
+        "exit": 0,
+        "seconds": 2.848665952682495
+      },
+      {
+        "backend": "cuda",
+        "case": "mtp-K4",
+        "exit": 0,
+        "seconds": 2.783827066421509
+      },
+      {
+        "backend": "cuda",
+        "case": "hybrid-K1-random",
+        "exit": 0,
+        "seconds": 3.4106647968292236
+      },
+      {
+        "backend": "cpu",
+        "case": "mtp-K1",
+        "exit": 0,
+        "seconds": 18.3736093044281
+      }
+    ],
+    "final_cpu_finite_cache_workspace": {
+      "generated_ids": [
+        71093,
+        12305
+      ],
+      "original_host_weight_bytes": 3885311680,
+      "original_device_weight_bytes": 0,
+      "cache_shared_backing_bytes": 62529587,
+      "cache_peak_requested_bytes": 62915043,
+      "cache_requested_byte_limit": 134217728,
+      "native_execution_private_bytes_unknown": true,
+      "workspace_limit_scope": "known_per_invocation_graph_workspace",
+      "workspace_domains": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 22920576,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "execution_shared_requested_byte_limit": null
+    }
+  },
+  "frozen_versions": [
+    {
+      "name": "geometry-cuda-check1",
+      "sources": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cuda-check1/sources.json",
+        "bytes": 3279,
+        "sha256": "45262f3a7167abfb17f9cf90d686af00be2af81d5471054839c917a4d07bf31e"
+      },
+      "image_identity": {
+        "image_sha256": "e32ef3a69beea0bb1c7ce29386704f5efc0aab75d69d521f7793cfab8035e67c",
+        "fresh_TUs": 1,
+        "downloads": 0,
+        "SDK_builds": 0
+      }
+    },
+    {
+      "name": "geometry-cpu-check1",
+      "sources": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cpu-check1/sources.json",
+        "bytes": 3279,
+        "sha256": "45262f3a7167abfb17f9cf90d686af00be2af81d5471054839c917a4d07bf31e"
+      },
+      "image_identity": {
+        "image_sha256": "52de787d2edb78a899846a5e456413c5aac88bc2a08516a3a4674b27811eef32",
+        "fresh_TUs": 1,
+        "downloads": 0,
+        "SDK_builds": 0
+      }
+    },
+    {
+      "name": "geometry-cpu-check2",
+      "sources": {
+        "path": ".scratch/qwen-multi-draft-20261024/geometry-cpu-check2/sources.json",
+        "bytes": 3429,
+        "sha256": "1d62240d175c3372606e8b1d056875394c56e2099bf57a89489688d14e634222"
+      },
+      "image_identity": {
+        "image_sha256": "e84f09e7cdcf82072fa126c4c641ef500284849a209d57e863856700e8a9e7bd",
+        "fresh_TUs": 1,
+        "downloads": 0,
+        "SDK_builds": 0
+      }
+    }
+  ],
+  "version_boundaries": [
+    "CUDA/CPU check1 entrypoints used their exact pre-final source snapshots. CPU check1 original_device_weight_bytes was a label bug: its real primary storage was host; final check2 correctly reports host3885311680 and device0.",
+    "Check2 adds finite CPU known-workspace admission, actual-last-target append dependency, GDN I32 expansion bounds and help/report corrections. Actual2B final check2 K1 P154/2 passed.",
+    "The 4 diagnostic probe syntax checks occurred before CPU finite-workspace/report delta. They deliberately reject non2B geometry because their old diagnostic vectors are fixed2B; this is not a completeQ27 probe claim.",
+    "The Python/C++ roundtrip evidence records its own earlier header hash. Final295 parser checks include subsequent I32 head-index bounds; identified source axes are unchanged."
+  ],
+  "not_completed_or_claimed": [
+    "Q27 complete execution waits for its exact necessary original body. Source inventory866, source geometry and cache arithmetic are validated; this is not runtime or generated-task quality certification.",
+    "V2 Q01/Q03 actual manifests are validated but full quantized2B runtime was not repeated by this batch. Prior frozen-image evidence has separate source/version identity.",
+    "No full Cartesian product of model/codec/OS/provider/multi-session/K and no task-quality, acceptance-rate, TPS or llama.cpp comparison in this evidence.",
+    "Known workspace admission and cache backing limits are not a physical-memory/VRAM cap. CPU native-private execution allocation remains unknown."
+  ],
+  "scope_cost": {
+    "full_consumer_TUs": 3,
+    "SDK_builds": 0,
+    "HTTP_bytes_by_this_execution_batch": 0,
+    "model_weight_copies": 0
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-source-geometry-v2-execution-2026-10-24.logs.zip",
+    "bytes": 656033,
+    "sha256": "ae36128d6dedbfb945bf2ef1673ff59b12278bdc6232e1673aae7bf2dce32ad2",
+    "members": 171,
+    "contents": "Commands, exact app source snapshots, logs, small output JSON, tests and source identities only; no tensor payloads, executable/object files or SDKs."
+  }
+}

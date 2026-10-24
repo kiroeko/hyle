@@ -1,0 +1,817 @@
+{
+  "date": "2026-10-25",
+  "status": "CLOSED_NOT_MERGED",
+  "decision": {
+    "status": "CLOSED_NOT_MERGED",
+    "decision_owner": "root",
+    "reason": "MTP-only short-context descriptive benefit is limited (+1.396% decode/+1.241% combined). A safe product implementation additionally needs an immutable bounded cold policy and conservative workspace bounds; ordinary continuation changes need quality consideration. This limited benefit does not justify expanding this candidate or its validation scope in this round.",
+    "not_claimed": [
+      "Not a demonstrated algorithm error: independent numeric tolerance passed and reduction partitioning changes rounding.",
+      "Not zero observed benefit, and not a generic requirement that all optimizations preserve greedy token identity.",
+      "Not a long-context GPU failure: capacity rejection is an offline source/formula review."
+    ],
+    "product_changes": 0,
+    "followup_candidate_work": "closed; no automatic further tests/candidates"
+  },
+  "archive": {
+    "path": "docs/evidence/performance/mtp-fixed-chunk-screen-2026-10-25.zip",
+    "bytes": 239323,
+    "sha256": "1f45d494bfafed0d988410d75b11ebd68015708db59db28b0e954f0d6c3af5cb"
+  },
+  "scope": "Private fixed512-logical-KV-row planning candidate; only C1024/N1/R1 two-turn greedy natural coding schedule. No product change.",
+  "chronology": [
+    {
+      "stage": "original12_process_value_screen",
+      "planned": 12,
+      "actual": 2,
+      "ordinary_processes": 2,
+      "MTP_processes": 0,
+      "result": "Stopped on candidate ordinary token divergence; remaining10 never started; no retry or samples silently removed."
+    },
+    {
+      "stage": "separately_authorized_MTP_only_screen",
+      "planned": 6,
+      "actual": 6,
+      "order": [
+        "B",
+        "C",
+        "C",
+        "B",
+        "B",
+        "C"
+      ],
+      "result": "All six native processes exit0; same128 IDs/work and every raw non-time field. Three fresh processes per image."
+    }
+  ],
+  "actual_timing_screen_processes": 8,
+  "actual_processes": [
+    {
+      "screen": "original12plan_stopped_ordinary",
+      "folder": ".scratch/mtp-fixed-chunk-screen-20261025/runs/01-baseline_plain",
+      "pid": 32700,
+      "exit": 0,
+      "started_unix_ns": 1792865702261720800,
+      "finished_unix_ns": 1792865705420828000,
+      "process_wall_seconds": 3.1577262,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-screen-20261025/runs/01-baseline_plain/result.json",
+        "bytes": 1360,
+        "sha256": "d1a92d593edd28a9ca27c86166e82ab2d1ecce872da177ff9ff0c8720428df6d"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+        "bytes": 141401600,
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+      }
+    },
+    {
+      "screen": "original12plan_stopped_ordinary",
+      "folder": ".scratch/mtp-fixed-chunk-screen-20261025/runs/02-candidate_plain",
+      "pid": 42224,
+      "exit": 0,
+      "started_unix_ns": 1792865705669457900,
+      "finished_unix_ns": 1792865709208500700,
+      "process_wall_seconds": 3.537246,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-screen-20261025/runs/02-candidate_plain/result.json",
+        "bytes": 1327,
+        "sha256": "cb81ad1171265c321f9d53fdf69a062bbb90e3651b986f2d00dcf9b0e0dbf364"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\clean-link\\hyle.exe",
+        "bytes": 141402112,
+        "sha256": "10bce5ec0b40d2b6181b072a83cd514aa2e36c63fb42f6a50b4d2001cb91366a"
+      }
+    },
+    {
+      "screen": "separately_authorized_MTP6",
+      "folder": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/01-baseline_mtp",
+      "pid": 23344,
+      "exit": 0,
+      "started_unix_ns": 1792865875538316600,
+      "finished_unix_ns": 1792865878965997700,
+      "process_wall_seconds": 3.4261783,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/01-baseline_mtp/result.json",
+        "bytes": 1392,
+        "sha256": "e79397b754b979ac1b092ec732ef9420e754829ff0597ff787af17fc62fd3880"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+        "bytes": 141401600,
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+      }
+    },
+    {
+      "screen": "separately_authorized_MTP6",
+      "folder": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/02-candidate_mtp",
+      "pid": 26832,
+      "exit": 0,
+      "started_unix_ns": 1792865879202054500,
+      "finished_unix_ns": 1792865882608904600,
+      "process_wall_seconds": 3.405722,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/02-candidate_mtp/result.json",
+        "bytes": 1359,
+        "sha256": "614029cd6d6b4455fe1a31f619b7a843c28fe21c29c43f9cd912af0ea874a482"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\clean-link\\hyle.exe",
+        "bytes": 141402112,
+        "sha256": "10bce5ec0b40d2b6181b072a83cd514aa2e36c63fb42f6a50b4d2001cb91366a"
+      }
+    },
+    {
+      "screen": "separately_authorized_MTP6",
+      "folder": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/03-candidate_mtp",
+      "pid": 34556,
+      "exit": 0,
+      "started_unix_ns": 1792865882840276100,
+      "finished_unix_ns": 1792865886238514400,
+      "process_wall_seconds": 3.3965016,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/03-candidate_mtp/result.json",
+        "bytes": 1360,
+        "sha256": "573f84b1ebcac484bef098d72b7c52cfd62c8fbc747905a30fd09a449e1ba972"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\clean-link\\hyle.exe",
+        "bytes": 141402112,
+        "sha256": "10bce5ec0b40d2b6181b072a83cd514aa2e36c63fb42f6a50b4d2001cb91366a"
+      }
+    },
+    {
+      "screen": "separately_authorized_MTP6",
+      "folder": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/04-baseline_mtp",
+      "pid": 21528,
+      "exit": 0,
+      "started_unix_ns": 1792865886473426600,
+      "finished_unix_ns": 1792865889869537400,
+      "process_wall_seconds": 3.3946311,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/04-baseline_mtp/result.json",
+        "bytes": 1392,
+        "sha256": "b1ef6f38f1dcfa8640a07e3a1c872664719a34707257cd7f5ab0914c57939734"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+        "bytes": 141401600,
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+      }
+    },
+    {
+      "screen": "separately_authorized_MTP6",
+      "folder": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/05-baseline_mtp",
+      "pid": 40896,
+      "exit": 0,
+      "started_unix_ns": 1792865890107056100,
+      "finished_unix_ns": 1792865893509225200,
+      "process_wall_seconds": 3.4005434,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/05-baseline_mtp/result.json",
+        "bytes": 1392,
+        "sha256": "bbe2faf86f9e9d6149a71bf7c70f16db7d6e3c79c0f33d5bb32158e5445678b5"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+        "bytes": 141401600,
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+      }
+    },
+    {
+      "screen": "separately_authorized_MTP6",
+      "folder": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/06-candidate_mtp",
+      "pid": 4884,
+      "exit": 0,
+      "started_unix_ns": 1792865893747086300,
+      "finished_unix_ns": 1792865897134324800,
+      "process_wall_seconds": 3.3864029,
+      "result": {
+        "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/runs/06-candidate_mtp/result.json",
+        "bytes": 1359,
+        "sha256": "331a8f5a1977d208622a51b4c556b6afa6390f08fc4d39eebee1db0a258cdf3f"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\clean-link\\hyle.exe",
+        "bytes": 141402112,
+        "sha256": "10bce5ec0b40d2b6181b072a83cd514aa2e36c63fb42f6a50b4d2001cb91366a"
+      }
+    }
+  ],
+  "GPU_released": true,
+  "process_scope": "Eight processes are the two performance screens only; prior one-shot native diagnostics and the separately linked numeric evidence are supporting phases, not pooled timing samples.",
+  "MTP": {
+    "groups": {
+      "baseline": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2856.8258723026574,
+          "min": 2798.3858113688725,
+          "max": 2902.2477862142287,
+          "samples": [
+            2902.2477862142287,
+            2798.3858113688725,
+            2856.8258723026574
+          ]
+        },
+        "new_user_prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2847.580481130157,
+          "min": 2789.329546607161,
+          "max": 2892.8553985565777,
+          "samples": [
+            2892.8553985565777,
+            2789.329546607161,
+            2847.580481130157
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 124.81151974666825,
+          "min": 124.49958085141111,
+          "max": 125.28189669632636,
+          "samples": [
+            125.28189669632636,
+            124.81151974666825,
+            124.49958085141111
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 114.29153090826945,
+          "min": 114.26392252334733,
+          "max": 115.08710070507932,
+          "samples": [
+            115.08710070507932,
+            114.29153090826945,
+            114.26392252334733
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 388.41262457107194,
+          "min": 388.3187992004382,
+          "max": 391.116318802418,
+          "samples": [
+            391.116318802418,
+            388.41262457107194,
+            388.3187992004382
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.108162,
+          "min": 0.10646920000000001,
+          "max": 0.1104208,
+          "samples": [
+            0.10646920000000001,
+            0.1104208,
+            0.108162
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.0095222000000001,
+          "min": 1.0057318999999998,
+          "max": 1.0120516000000002,
+          "samples": [
+            1.0057318999999998,
+            1.0095222000000001,
+            1.0120516000000002
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.119943,
+          "min": 1.1122011,
+          "max": 1.1202136,
+          "samples": [
+            1.1122011,
+            1.119943,
+            1.1202136
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.849215,
+          "min": 0.84698,
+          "max": 0.857623,
+          "samples": [
+            0.857623,
+            0.84698,
+            0.849215
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.7324153,
+          "min": 1.7295956,
+          "max": 1.771187,
+          "samples": [
+            1.771187,
+            1.7295956,
+            1.7324153
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.7996972,
+          "min": 1.7980995,
+          "max": 1.8373876,
+          "samples": [
+            1.8373876,
+            1.7980995,
+            1.7996972
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 2.8526862,
+          "min": 2.8495952,
+          "max": 2.8834458,
+          "samples": [
+            2.8834458,
+            2.8495952,
+            2.8526862
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 44.869989555808836,
+          "min": 44.391332065267186,
+          "max": 44.918660727671075,
+          "samples": [
+            44.391332065267186,
+            44.918660727671075,
+            44.869989555808836
+          ]
+        }
+      },
+      "candidate": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2813.53373463369,
+          "min": 2790.1458189800346,
+          "max": 2859.1335437433554,
+          "samples": [
+            2790.1458189800346,
+            2859.1335437433554,
+            2813.53373463369
+          ]
+        },
+        "new_user_prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2804.4284474665906,
+          "min": 2781.1162208603578,
+          "max": 2849.88068437849,
+          "samples": [
+            2781.1162208603578,
+            2849.88068437849,
+            2804.4284474665906
+          ]
+        },
+        "full_decode_tokens_per_second": {
+          "count": 3,
+          "median": 126.5542316018772,
+          "min": 126.45617801657694,
+          "max": 127.01788321068544,
+          "samples": [
+            126.5542316018772,
+            127.01788321068544,
+            126.45617801657694
+          ]
+        },
+        "session_output_tokens_per_second": {
+          "count": 3,
+          "median": 115.70946762887526,
+          "min": 115.69392629483423,
+          "max": 116.35718382889677,
+          "samples": [
+            115.69392629483423,
+            116.35718382889677,
+            115.70946762887526
+          ]
+        },
+        "session_processed_tokens_per_second": {
+          "count": 3,
+          "median": 393.2313938950058,
+          "min": 393.1785776426007,
+          "max": 395.4326169185164,
+          "samples": [
+            393.1785776426007,
+            395.4326169185164,
+            393.2313938950058
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.10982629999999999,
+          "min": 0.1080747,
+          "max": 0.11074690000000001,
+          "samples": [
+            0.11074690000000001,
+            0.1080747,
+            0.10982629999999999
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.9956206000000004,
+          "min": 0.9919863000000002,
+          "max": 0.9963926000000004,
+          "samples": [
+            0.9956206000000004,
+            0.9919863000000002,
+            0.9963926000000004
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.1062189,
+          "min": 1.100061,
+          "max": 1.1063675,
+          "samples": [
+            1.1063675,
+            1.100061,
+            1.1062189
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.854493,
+          "min": 0.851454,
+          "max": 0.86539,
+          "samples": [
+            0.851454,
+            0.86539,
+            0.854493
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.7442779,
+          "min": 1.7306711,
+          "max": 1.7479308,
+          "samples": [
+            1.7479308,
+            1.7442779,
+            1.7306711
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "median": 1.811585,
+          "min": 1.7987619,
+          "max": 1.8185327,
+          "samples": [
+            1.8185327,
+            1.811585,
+            1.7987619
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 2.8443924,
+          "min": 2.8369478,
+          "max": 2.8543641,
+          "samples": [
+            2.8543641,
+            2.8443924,
+            2.8369478
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "median": 45.00082337444018,
+          "min": 44.84361332879712,
+          "max": 45.11891265676443,
+          "samples": [
+            44.84361332879712,
+            45.00082337444018,
+            45.11891265676443
+          ]
+        }
+      }
+    },
+    "median_ratios": {
+      "prefill_tokens_per_second": {
+        "candidate_over_baseline": 0.9848460705677966,
+        "percent_change": -1.5153929432203395
+      },
+      "full_decode_tokens_per_second": {
+        "candidate_over_baseline": 1.0139627484606082,
+        "percent_change": 1.3962748460608188
+      },
+      "session_output_tokens_per_second": {
+        "candidate_over_baseline": 1.012406314880355,
+        "percent_change": 1.240631488035504
+      },
+      "prefill_seconds": {
+        "candidate_over_baseline": 1.0153871045283926,
+        "percent_change": 1.5387104528392648
+      },
+      "decode_seconds": {
+        "candidate_over_baseline": 0.986229525214998,
+        "percent_change": -1.377047478500204
+      },
+      "session_seconds": {
+        "candidate_over_baseline": 0.9877457156301706,
+        "percent_change": -1.225428436982945
+      }
+    },
+    "all_raw_non_time_equal": true,
+    "work": {
+      "outputs": 128,
+      "decode_outputs": 126,
+      "prefill_target_rows": 309,
+      "prefill_draft_rows": 310,
+      "actual_target_rows": 441,
+      "actual_draft_rows": 434,
+      "draft_rounds": 66,
+      "consumed_drafts": 60,
+      "graph_calls": 68
+    },
+    "endpoint_scope": "Original top-level continuous P+D=session. Prefill309 actual target input rows; decode126 emitted outputs; combined128 outputs/session. No warmup or endpoint work moved out.",
+    "evidence": {
+      "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/summary.json",
+      "bytes": 10761,
+      "sha256": "ba5d83c7fcc6532b6dd136ea7b0d992801b62411b9f54bfb7c7fe5aa8fc7d7a7"
+    }
+  },
+  "ordinary": {
+    "status": "FAILED_STRICT_NON_TIME_EQUIVALENCE_not_algorithm_error_certificate",
+    "native_exit_codes": [
+      0,
+      0
+    ],
+    "original_parser_both_passed": true,
+    "first_divergence": {
+      "zero_based_output_index": 18,
+      "one_based_output": 19,
+      "baseline_token": 271,
+      "candidate_token": 11,
+      "common_prefix_tokens": 18,
+      "changed_positions": 104,
+      "total_outputs_each": 128
+    },
+    "token_derived_difference_classification": {
+      "total": 1034,
+      "categories": {
+        "ledger/next_id": 104,
+        "ledger/target_first": 104,
+        "ledger/before_next_id": 103,
+        "ledger/committed_input_ids": 102,
+        "ledger/first_input": 103,
+        "ledger/input_hash": 103,
+        "ledger/verification_input_ids": 102,
+        "emitted_pending": 1,
+        "fresh_next_id": 1,
+        "generated_ids": 104,
+        "rounds/next_id": 104,
+        "rounds/pending": 102,
+        "turn2_pending_input": 1
+      },
+      "unclassified": [],
+      "all_other_non_time_fields_equal": true,
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-screen-20261025\\runs\\02-candidate_plain\\non-time-comparison.json",
+        "bytes": 125737,
+        "sha256": "51219d0d8e1b71a6a62655158073c05642b0d704cc70c950f76eda3f30974934"
+      },
+      "scope": "Exhaustive classification of the original failed equality comparison. Does not convert token divergence into equivalent-PASS or an algorithm-error claim; work/context/lengths/frontiers/lag/RNG/rows/calls/budgets have no differing paths.",
+      "original_proof_preserved": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-screen-20261025\\proof.zip",
+        "bytes": 143016,
+        "sha256": "27d93f11aec9155526b9358d5f3de8444f9c6d71e70962301fa9c7a6b65e1c12"
+      }
+    },
+    "work_context_rows_budgets_and_other_non_time_fields_equal": true,
+    "no_completed_ordinary_performance_comparison": true,
+    "first_failure": {
+      "path": ".scratch/mtp-fixed-chunk-screen-20261025/failure.json",
+      "bytes": 1037,
+      "sha256": "afc8368409cbdee7ebb325718765816046d5cff27d351167d917ed934d573892"
+    },
+    "actual_accounting": {
+      "requested_processes": 12,
+      "actual_started_processes": 2,
+      "actual_terminal_processes": 2,
+      "zero_exit_processes": 2,
+      "parser_passed_processes": 2,
+      "non_time_equivalent_processes": 1,
+      "non_time_failed_processes": 1,
+      "unstarted_processes": 10,
+      "GPU": "released",
+      "no_retry": true,
+      "original_terminal": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-screen-20261025\\terminal.json",
+        "bytes": 185,
+        "sha256": "51c98c65d74dfede73cfa80de4c8213e6b40a1997c535f6f7779e80133ebfdac"
+      },
+      "clarification": "Original terminal.completed_processes=1 and failure.completed_processes=1 count cases that passed equivalence; actual result.json files establish two completed native processes. Original records preserved."
+    },
+    "original_proof_unchanged": {
+      "path": ".scratch/mtp-fixed-chunk-screen-20261025/proof.zip",
+      "bytes": 143016,
+      "sha256": "27d93f11aec9155526b9358d5f3de8444f9c6d71e70962301fa9c7a6b65e1c12"
+    }
+  },
+  "numeric_evidence": {
+    "path": "docs/evidence/correctness/mtp-fixed-chunk-numeric-2026-10-25.json",
+    "archive": {
+      "path": "docs/evidence/correctness/mtp-fixed-chunk-numeric-2026-10-25.zip",
+      "bytes": 127021,
+      "sha256": "ddfd212429d0030d183e1df06f7bfbe555d20dbad19a6e2e967d2f4dde10369a"
+    },
+    "scope": "Independent original double oracle, bounded R1/H8/KV2/D256/page16 BF16 Q1/KV129 and Q2/KV257/385/513; not bit identity or whole-model task quality.",
+    "public_JSON_receipt": "Linked JSON may update cleanup receipts; frozen numeric ZIP bytes/SHA identify the numerical evidence. Pre-run plan and bundled JSON snapshot retain their original time-point pins."
+  },
+  "long_capacity_review": {
+    "identity": {
+      "path": ".scratch/mtp-fixed-chunk-20261025/cold-policy-review.json",
+      "bytes": 6757,
+      "sha256": "c4709aaa8696add24cfb6d9cc3268dce9bb4ff51a0b1435b51363af1347fa5bf"
+    },
+    "kind": "read_only_source_formula_review_not_GPU_run",
+    "example": {
+      "descriptor": {
+        "query_heads": 8,
+        "kv_heads": 2,
+        "head_dim": 256,
+        "page_size": 16,
+        "query_rows": [
+          1,
+          2
+        ],
+        "requests": 1,
+        "max_kv_rows": 262144
+      },
+      "chunks": 512,
+      "cta_tile_q": 16,
+      "v_bytes": 67108864,
+      "s_bytes": 262144,
+      "float_bytes": 67371008,
+      "default_float_cap": 67108864,
+      "excess_bytes": 262144,
+      "rejection": "compute_batch/batch_execution.cc:113-126 query_workspace rejects the report over the program hard cap before allocation/change.",
+      "cause": "scheduler.portable.cuh:637-654 uses fixed page chunks without the automatic SM-grid search; 672-673 padded size is actual qtiles times chunks in non-graph mode."
+    },
+    "design_status": "Optional capacity<=1024 immutable cold-policy/conservative-bound design was not implemented; candidate closed."
+  },
+  "sources": {
+    "clean_closure": {
+      "path": ".scratch/mtp-fixed-chunk-20261025/clean-closure-delta.json",
+      "bytes": 63654,
+      "sha256": "20e1328a8b06322aca248e235bf16e79d4fdb97f1cfb50201e2272c9bae2d98c"
+    },
+    "clean_image": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\clean-link\\hyle.exe",
+        "bytes": 141402112,
+        "sha256": "10bce5ec0b40d2b6181b072a83cd514aa2e36c63fb42f6a50b4d2001cb91366a"
+      },
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+        "bytes": 141401600,
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+      },
+      "closure": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\clean-closure-delta.json",
+        "bytes": 63654,
+        "sha256": "20e1328a8b06322aca248e235bf16e79d4fdb97f1cfb50201e2272c9bae2d98c"
+      },
+      "original_provider": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_provider_flashinfer--flashinfer_provider.obj",
+        "bytes": 818249,
+        "sha256": "4d69d0689714294b5c21dee97d1e9ca91ba6455bf0782b1ba26341a264d1660a"
+      },
+      "candidate_native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\compile\\native-batch.obj",
+        "bytes": 9300246,
+        "sha256": "616175eb968d22792d42df0d729c1c80a52cf7def3c2c57cf25bc24c0c2c5f6b"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\source-pins.json",
+        "bytes": 3383,
+        "sha256": "15743868fa67d1701c013dced0c999406b525bc731af8532826f1d34ed3a5901"
+      },
+      "diagnostic_provider_present": false,
+      "diagnostic_Graph_present": false,
+      "private_app_or_report_clocks": false,
+      "model_processes": 0,
+      "TPS_measured": false,
+      "CUDA_TUs_rebuilt": 0,
+      "SDK_builds": 0,
+      "HTTP": 0,
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\runtime.json",
+        "bytes": 7243,
+        "sha256": "3bbee028c2e179232f4fe1404b76bee51de857836b5be289c614d5f506095a51"
+      },
+      "dll": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-chunk-20261025\\clean-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    },
+    "candidate_source": {
+      "path": ".scratch/mtp-fixed-chunk-20261025/source-pins.json",
+      "bytes": 3383,
+      "sha256": "15743868fa67d1701c013dced0c999406b525bc731af8532826f1d34ed3a5901"
+    }
+  },
+  "cleanup": {
+    "performed": true,
+    "files": [
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/compile/native-batch.obj",
+        "bytes": 9300246,
+        "sha256": "616175eb968d22792d42df0d729c1c80a52cf7def3c2c57cf25bc24c0c2c5f6b"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/link/hyle.exe",
+        "bytes": 141409792,
+        "sha256": "3cc7d3510b5fa3ebdcca1a5b6efb2916c713a47224c840223fd5b7f5bad52d31"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/link/hyle.exp",
+        "bytes": 24967,
+        "sha256": "9a5968231dcb62a6108718fd22041a80950f4917ba8170cd0b60296bfb909007"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/link/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/clean-link/hyle.exe",
+        "bytes": 141402112,
+        "sha256": "10bce5ec0b40d2b6181b072a83cd514aa2e36c63fb42f6a50b4d2001cb91366a"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/clean-link/hyle.exp",
+        "bytes": 24973,
+        "sha256": "f6d5803a40f625c0c05e9016509008e47fa2afb5bf634bb8ab12877f29617f3e"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/clean-link/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-fixed-chunk-20261025/clean-link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "count": 9,
+    "logical_bytes": 294658426,
+    "scope": "Only prototype native CUDA OBJ, diagnostic-link and clean-link EXE/EXP/LIB/DLL outputs under .scratch/mtp-fixed-chunk-20261025. Removed by the root test.ps1 exact preview/Apply branch; receipt retained.",
+    "hardlink_note": "Two staged native DLLs are hardlinks to preserved baseline DLL; logical bytes are not exclusive physical storage.",
+    "excluded": [
+      "Old native-plan5 diagnostic binaries/provider diagnostic OBJ: separately inventoried and cleaned by root branch.",
+      "Independent numeric7 binaries: separate RemoveFixedChunkNumericBinaries branch.",
+      "Original canonical provider4d69, original native batch OBJ, clean c343 baseline, original Graph/app/report/SDK closure."
+    ],
+    "receipt": {
+      "path": ".scratch/mtp-fixed-chunk-20261025/cleanup-removed.json",
+      "bytes": 2015,
+      "sha256": "7fd562257b8c2da8eb6f0f43a6f7bc679722768bb4e6e0532d1b4d1f96669e42"
+    },
+    "physical_bytes_freed": "unknown; logical bytes do not account for hardlinks or shared blocks"
+  },
+  "timer": {
+    "parent_clock": "time.perf_counter_ns",
+    "implementation": "QueryPerformanceCounter()",
+    "advertised_resolution_seconds": 1e-07,
+    "monotonic": true,
+    "QueryPerformanceFrequency_Hz": 10000000,
+    "endpoint_scope": "Consumer high-resolution host endpoints determine TPS; parent QPC brackets process/received stderr only."
+  },
+  "limitations": [
+    "Only three samples per image: descriptive median/min/max and all raw samples; no statistical significance claim.",
+    "MTP-only C1024/N1/R1/K1/greedy identical continuation/work. No ordinary speed claim or all-model/all-context merge acceptance; ordinary token divergence and known long-context64MiB risk remain.",
+    "Original producer/runner clocks and default stderr preserved; no profiler/memory sampler, GPU fixed clocks or desktop/page-cache/thermal control.",
+    "Numeric F64 evidence is independent prior work; this window checks output/work equivalence and rates, not full task quality.",
+    "No historical timing pooling, peer measurements, candidate/algorithm changes or retries.",
+    "No VRAM/memory process window or peer comparison in these screens.",
+    "Performance was assessed only after independent numeric tolerance passed; ordinary divergence remains visible and is not reclassified as equivalent-PASS.",
+    "The source/helper descriptor domain is broader than the privately measured C1024 capacity; long-context safety is not inferred from this short window.",
+    "Prior clean-image/source receipts describe their creation-time process count; this publication chronology/process results are authoritative for actual screen counts.",
+    "Bundled numeric public JSON is an immutable publication-time snapshot, not a claim that its cleanup receipt remains the current public JSON SHA."
+  ],
+  "SDK_builds_in_screens": 0,
+  "HTTP": 0,
+  "product_edits": 0,
+  "archive_entries": 112,
+  "payload_manifest": {
+    "path": ".scratch/mtp-fixed-chunk-mtp-screen-20261025/publication-payloads.json",
+    "bytes": 23621,
+    "sha256": "5a8378ede5506e1bea010dd81dd0f49da05543ce98d55bb6be8dcd45df70d036"
+  }
+}

@@ -773,6 +773,8 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
           mx::concatenate(std::vector<mx::array>(inputs.begin(), inputs.end()),
                           concat->axis, stream)};
     if (operation.kind() == OperationKind::kCast) {
+      if (inputs[0].dtype() == mx::int32 && type == mx::float32)
+        return std::vector{mx::astype(inputs[0], type, stream)};
       if (floating(inputs[0].dtype()) && type == mx::bool_) {
         // Floating truth is an IEEE storage test: both signed zeros are
         // false; subnormals, infinities and NaNs are true even under FTZ.

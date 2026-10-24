@@ -719,7 +719,7 @@ TEST(CudaGraphQwen38_24T,
   const auto weight = builder.constant(weight_desc).value();
   const std::array ports{activation, weight};
   const auto node =
-      builder.add_node(c::model_ops::bfloat_linear_f32(), ports).value();
+      builder.add_node(c::model_ops::dense_linear_f32(), ports).value();
   const auto scores = builder.result(node).value();
   ASSERT_TRUE(builder.publish(scores).ok());
   auto logical = std::move(builder).finish().value();

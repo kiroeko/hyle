@@ -1,0 +1,2921 @@
+{
+  "kind": "One aligned independent ordinary llama.cpp arithmetic reference",
+  "date": "2026-10-24",
+  "original_nine_run_evidence": {
+    "path": "docs/evidence/correctness/qwen35-mtp-finite-task-check-2026-10-24.json",
+    "bytes": 29306,
+    "sha256": "5f440fa46afaf68a885e1e28aef5ef16fe22a470893dbe215cf623823ac39adc"
+  },
+  "original_nine_run_plan": {
+    "path": ".scratch/mtp-quality-finite-20261024/plan.json",
+    "bytes": 2951,
+    "sha256": "c57fc21a17f361165f9779c9372636067cafd47a0bb7b4c8cdf9d4d229f5589b"
+  },
+  "original_ledger": {
+    "path": ".scratch/mtp-quality-finite-20261024/generation-ledger.json",
+    "bytes": 7059,
+    "sha256": "99ebb260408022360dd01cfd6bc31ec59883e763a1aa228550c14dfbe3add0ea"
+  },
+  "alignment": {
+    "status": "VERIFIED_BEFORE_ONE_REFERENCE_GENERATION",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\peer-link1\\peer.exe",
+      "bytes": 35795456,
+      "sha256": "0bdb3b70f2198e88d6a3801387033196efcde78d2793526eeacd03a5a7943784"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\source\\peer_mtp.cc",
+      "bytes": 25057,
+      "sha256": "03099c5c8698d1ce4a079737c69b1f8366aef9941406dcc72b505dfbc7a7224f"
+    },
+    "model": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+      "bytes": 3775709152,
+      "sha256": "de719a790306b5bf9ab6bf99942da9c69e1b7d4b1f4a8869917afbe1bb7ae1f6"
+    },
+    "original_HF_checkpoint": {
+      "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+      "bytes": 4548221488,
+      "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d"
+    },
+    "text_tensor_comparison": [
+      {
+        "source": "model.language_model.layers.0.linear_attn.A_log",
+        "gguf": "blk.0.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.norm.weight",
+        "gguf": "blk.0.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.A_log",
+        "gguf": "blk.1.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.norm.weight",
+        "gguf": "blk.1.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.A_log",
+        "gguf": "blk.10.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.norm.weight",
+        "gguf": "blk.10.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.A_log",
+        "gguf": "blk.12.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.norm.weight",
+        "gguf": "blk.12.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.A_log",
+        "gguf": "blk.13.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.norm.weight",
+        "gguf": "blk.13.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.A_log",
+        "gguf": "blk.14.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.norm.weight",
+        "gguf": "blk.14.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.A_log",
+        "gguf": "blk.16.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.norm.weight",
+        "gguf": "blk.16.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.A_log",
+        "gguf": "blk.17.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.norm.weight",
+        "gguf": "blk.17.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.A_log",
+        "gguf": "blk.18.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.norm.weight",
+        "gguf": "blk.18.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.A_log",
+        "gguf": "blk.2.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.norm.weight",
+        "gguf": "blk.2.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.A_log",
+        "gguf": "blk.20.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.norm.weight",
+        "gguf": "blk.20.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.A_log",
+        "gguf": "blk.21.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.norm.weight",
+        "gguf": "blk.21.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.A_log",
+        "gguf": "blk.22.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.norm.weight",
+        "gguf": "blk.22.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.A_log",
+        "gguf": "blk.4.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.norm.weight",
+        "gguf": "blk.4.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.A_log",
+        "gguf": "blk.5.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.norm.weight",
+        "gguf": "blk.5.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.A_log",
+        "gguf": "blk.6.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.norm.weight",
+        "gguf": "blk.6.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.A_log",
+        "gguf": "blk.8.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.norm.weight",
+        "gguf": "blk.8.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.A_log",
+        "gguf": "blk.9.ssm_a",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 -exp(A_log)"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.norm.weight",
+        "gguf": "blk.9.ssm_norm.weight",
+        "codec": "F32",
+        "bytes": 512,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.embed_tokens.weight",
+        "gguf": "token_embd.weight",
+        "codec": "BF16",
+        "bytes": 1017118720,
+        "exact_bytes": true,
+        "sha256": "b222b11204158144e369ae8fca02cab9cb63b0a8cde1dd59dd4d0c60690824ed"
+      },
+      {
+        "source": "model.language_model.layers.0.input_layernorm.weight",
+        "gguf": "blk.0.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.conv1d.weight",
+        "gguf": "blk.0.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.dt_bias",
+        "gguf": "blk.0.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.in_proj_a.weight",
+        "gguf": "blk.0.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "14c322ad93e1e4973693f6a6c45fbab9c0db21ce017d9aaf1b7223b9eab30213"
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.in_proj_b.weight",
+        "gguf": "blk.0.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "f97c79e98e849443535310f89c19266801ae5724b319c2495265eae635c5053f"
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.0.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "46dffa9a1b42e089b4c0271a110ff7efe8a8574a390cfa45d399cb5e7a2ca3fa"
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.in_proj_z.weight",
+        "gguf": "blk.0.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "62d9c8a20dc8abfc55b21520805db7a280f385d3cc20e234348772d4f52275fa"
+      },
+      {
+        "source": "model.language_model.layers.0.linear_attn.out_proj.weight",
+        "gguf": "blk.0.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "e0f911be79a8903db2418e802c0bbb77a21b87e978b292dfb9a0c515fdc9e7cb"
+      },
+      {
+        "source": "model.language_model.layers.0.mlp.down_proj.weight",
+        "gguf": "blk.0.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "fbafb4be6b6a3e93fb969b1679f7430a824cd912db98a83a7c4b9658e511d766"
+      },
+      {
+        "source": "model.language_model.layers.0.mlp.gate_proj.weight",
+        "gguf": "blk.0.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42"
+      },
+      {
+        "source": "model.language_model.layers.0.mlp.up_proj.weight",
+        "gguf": "blk.0.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e"
+      },
+      {
+        "source": "model.language_model.layers.0.post_attention_layernorm.weight",
+        "gguf": "blk.0.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.1.input_layernorm.weight",
+        "gguf": "blk.1.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.conv1d.weight",
+        "gguf": "blk.1.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.dt_bias",
+        "gguf": "blk.1.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.in_proj_a.weight",
+        "gguf": "blk.1.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "b1774071cc86f325728991ffe515fce098820602df12a3da37e12bf4802a4083"
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.in_proj_b.weight",
+        "gguf": "blk.1.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "de883c013e08b04b4faf697f2cb583d33f0bbb16df1f22871d4108597b80c508"
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.1.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "b61eb16e1d856f9318ac43c2c6a0084a314f6d73984eae8e9d20fda6526f3343"
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.in_proj_z.weight",
+        "gguf": "blk.1.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "8c1f46b92610c092ced4b189f6aa32f96da61b2c4a5c07d940da186ab7929ca0"
+      },
+      {
+        "source": "model.language_model.layers.1.linear_attn.out_proj.weight",
+        "gguf": "blk.1.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "f2d6ce1bcd56b92224d2041d702061f0caf7c78da23837bb12ba95a21bf435fa"
+      },
+      {
+        "source": "model.language_model.layers.1.mlp.down_proj.weight",
+        "gguf": "blk.1.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "52c616f306ce21f3eb19f643b1cb47c1418e9df2b390cfa421958a3a6d7fff68"
+      },
+      {
+        "source": "model.language_model.layers.1.mlp.gate_proj.weight",
+        "gguf": "blk.1.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "b97bad2813fc8e411581dea9c66e8ae2609d839043221a8527599e3c42557491"
+      },
+      {
+        "source": "model.language_model.layers.1.mlp.up_proj.weight",
+        "gguf": "blk.1.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "6b972a1adb17f0c1dc3bc5b14c534279132a93e81635c00b1f1d07c86cf8ce34"
+      },
+      {
+        "source": "model.language_model.layers.1.post_attention_layernorm.weight",
+        "gguf": "blk.1.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.10.input_layernorm.weight",
+        "gguf": "blk.10.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.conv1d.weight",
+        "gguf": "blk.10.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.dt_bias",
+        "gguf": "blk.10.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.in_proj_a.weight",
+        "gguf": "blk.10.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "77704dba9f4121a34d12bcfb40cf4d42e3f05ca5365d6c3c973b568bab97415c"
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.in_proj_b.weight",
+        "gguf": "blk.10.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "0a142d106cbdd4177ffcce080dd529fa7d0f6ff484f1f0598feeec60ce52f9b1"
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.10.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "190f6552423a94c281e6a1509d909341c021f9f7268e0dd4dd8acaaa44db0883"
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.in_proj_z.weight",
+        "gguf": "blk.10.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "2d505044d24928b53ed9bd71caf2719ea2cecf0e30b28c4cdc7220ad7e1d92d0"
+      },
+      {
+        "source": "model.language_model.layers.10.linear_attn.out_proj.weight",
+        "gguf": "blk.10.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "7645434ae2d83b380fd76751f9cd39de00475f1e8182a63d6252b9e4712d6499"
+      },
+      {
+        "source": "model.language_model.layers.10.mlp.down_proj.weight",
+        "gguf": "blk.10.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "831990d65da684781263d1e8f115d38708b9ae3ae6ef692da30e0e955b665d66"
+      },
+      {
+        "source": "model.language_model.layers.10.mlp.gate_proj.weight",
+        "gguf": "blk.10.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "d3be353de057c4cffd295f0f7e4a875d181fc8d2443b0b8f61012547d99d4bcf"
+      },
+      {
+        "source": "model.language_model.layers.10.mlp.up_proj.weight",
+        "gguf": "blk.10.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "b077aebe691927110e12ebcad0faa3af7fe52b67a902e521261f229ebdb4cab7"
+      },
+      {
+        "source": "model.language_model.layers.10.post_attention_layernorm.weight",
+        "gguf": "blk.10.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.11.input_layernorm.weight",
+        "gguf": "blk.11.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.11.mlp.down_proj.weight",
+        "gguf": "blk.11.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "61b7d814a1cbaae6fcb82a1763cfb4e8b436efdd86bfc7c0c3a918618594a676"
+      },
+      {
+        "source": "model.language_model.layers.11.mlp.gate_proj.weight",
+        "gguf": "blk.11.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "af7cf7cc816c8945900bed793dc78c1285bb5479f9e0437ab1ae3c14620b32ef"
+      },
+      {
+        "source": "model.language_model.layers.11.mlp.up_proj.weight",
+        "gguf": "blk.11.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "3a8b12e4886ac6393ca9629ed3585ced72a60b9dd8c9f69e61bf85c92725caed"
+      },
+      {
+        "source": "model.language_model.layers.11.post_attention_layernorm.weight",
+        "gguf": "blk.11.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.11.self_attn.k_norm.weight",
+        "gguf": "blk.11.attn_k_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.11.self_attn.k_proj.weight",
+        "gguf": "blk.11.attn_k.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "c33d405b256196b9f83955bad81e26d123dd617592123d88add0b461898434cf"
+      },
+      {
+        "source": "model.language_model.layers.11.self_attn.o_proj.weight",
+        "gguf": "blk.11.attn_output.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "11c08cb4a2773aaf3953906e01adf3854c2fcffc1d37de8953d85f58c27b480d"
+      },
+      {
+        "source": "model.language_model.layers.11.self_attn.q_norm.weight",
+        "gguf": "blk.11.attn_q_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.11.self_attn.q_proj.weight",
+        "gguf": "blk.11.attn_q.weight",
+        "codec": "BF16",
+        "bytes": 16777216,
+        "exact_bytes": true,
+        "sha256": "893ee925e13e95dad166aaa9a40cd3e18fea7609b0c2f0bdbd9011687a2d5ef7"
+      },
+      {
+        "source": "model.language_model.layers.11.self_attn.v_proj.weight",
+        "gguf": "blk.11.attn_v.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "9e88de399f10a9b249888a36b767738f75e723507f5743a870e1a9c7a1c43c9b"
+      },
+      {
+        "source": "model.language_model.layers.12.input_layernorm.weight",
+        "gguf": "blk.12.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.conv1d.weight",
+        "gguf": "blk.12.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.dt_bias",
+        "gguf": "blk.12.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.in_proj_a.weight",
+        "gguf": "blk.12.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "1d6f61dcb404c19b31bed52765525c421f397ad875e9c9ad5267f8ce52474a25"
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.in_proj_b.weight",
+        "gguf": "blk.12.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "52f7cf08c6d4a2b5fb9971b34b9eea2b4dca4e39536c5630faef191aefa06b85"
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.12.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "a7ed0524c646a8ac14c9828a8fe7010e338acf191b5600fc1faa1542f62c4280"
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.in_proj_z.weight",
+        "gguf": "blk.12.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "f4731452f782d4cf0fce81756f5fb735a25c6dff1e66012ae7c7a67ea2db2b9c"
+      },
+      {
+        "source": "model.language_model.layers.12.linear_attn.out_proj.weight",
+        "gguf": "blk.12.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "440d65b53159e33d6affedaff31da28f02ebf57cd17978a17fa1c7dabb0153aa"
+      },
+      {
+        "source": "model.language_model.layers.12.mlp.down_proj.weight",
+        "gguf": "blk.12.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "5a8f0e5639246a5988929bb59b8f755d43466c8ff48bc31aa573b0dbd513b515"
+      },
+      {
+        "source": "model.language_model.layers.12.mlp.gate_proj.weight",
+        "gguf": "blk.12.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "5de0da4116d84e241475acaf4144559a3ba8a2685e90474658ebb800f0e98a64"
+      },
+      {
+        "source": "model.language_model.layers.12.mlp.up_proj.weight",
+        "gguf": "blk.12.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "1d45f814297e4b0db312ef09edf3b3009babb190a5f6719e9ad584b09eceec5e"
+      },
+      {
+        "source": "model.language_model.layers.12.post_attention_layernorm.weight",
+        "gguf": "blk.12.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.13.input_layernorm.weight",
+        "gguf": "blk.13.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.conv1d.weight",
+        "gguf": "blk.13.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.dt_bias",
+        "gguf": "blk.13.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.in_proj_a.weight",
+        "gguf": "blk.13.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "dc36a44628363f311d582d57c0eb240e621b0ade08a15c23c4897fa6be6b7629"
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.in_proj_b.weight",
+        "gguf": "blk.13.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "8da48cf67e78af75812ff4484e3f3461c1ab578d4e7a2fa420c6bb2c6343e8d1"
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.13.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "271510b3ff2aa1e484de7429f21a46c5c1f5b6451eda5dee5d9a5a13688c495b"
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.in_proj_z.weight",
+        "gguf": "blk.13.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "0c0050d27192d98baf5c8877769c0cc39df5b1cae3bcb798fc83556f425161e6"
+      },
+      {
+        "source": "model.language_model.layers.13.linear_attn.out_proj.weight",
+        "gguf": "blk.13.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "25c4f9d55868a0ec30838187438de1fa1d067e5e38ad91f01aa583eb7a82b5be"
+      },
+      {
+        "source": "model.language_model.layers.13.mlp.down_proj.weight",
+        "gguf": "blk.13.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "e76555d8e71d251bb9ef8470b9f9e93ad9a43c7804bd12508935eae157793784"
+      },
+      {
+        "source": "model.language_model.layers.13.mlp.gate_proj.weight",
+        "gguf": "blk.13.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "dc77fbc93f6e302ad76e29ce95122dbbd673d25bab801809cb1b96ed4f8a976c"
+      },
+      {
+        "source": "model.language_model.layers.13.mlp.up_proj.weight",
+        "gguf": "blk.13.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "3de2efbeca400d094cb7f4022b3315e8618bf74bcb0132690326af647e45d6ea"
+      },
+      {
+        "source": "model.language_model.layers.13.post_attention_layernorm.weight",
+        "gguf": "blk.13.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.14.input_layernorm.weight",
+        "gguf": "blk.14.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.conv1d.weight",
+        "gguf": "blk.14.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.dt_bias",
+        "gguf": "blk.14.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.in_proj_a.weight",
+        "gguf": "blk.14.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "f0af553826a1cef8f59e2d5d07ca887bbf02313671f71d206dd7c7e1d0193fa2"
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.in_proj_b.weight",
+        "gguf": "blk.14.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "ed7af3086549b043b248792a82f03ec06417101a423798aa4182d7c8f21bfe76"
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.14.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "12030386395a6fae19461ace56c9724b9b95a5e55b9e549069e5e7fed808290a"
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.in_proj_z.weight",
+        "gguf": "blk.14.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "ec4c7c98f67da0e38be959fe5537b10c80fec583ddef46f11e2481463953a546"
+      },
+      {
+        "source": "model.language_model.layers.14.linear_attn.out_proj.weight",
+        "gguf": "blk.14.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "e67f1263f175412013a5c18d3a748f0291bc359fbea2acce7b5b4b9073bdf1d4"
+      },
+      {
+        "source": "model.language_model.layers.14.mlp.down_proj.weight",
+        "gguf": "blk.14.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "940e90100facbeac9f5fc9e3d95174fa3aeeff515deb6b9a9d12a3b2c1d4e850"
+      },
+      {
+        "source": "model.language_model.layers.14.mlp.gate_proj.weight",
+        "gguf": "blk.14.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "88899ce0fe96b9bf380a34b20b93d834e80234af4f5f9803a3899e741850468c"
+      },
+      {
+        "source": "model.language_model.layers.14.mlp.up_proj.weight",
+        "gguf": "blk.14.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "73065a4e797b1f4977e655199518ec22fd6003eff5e92598dedf8f165e794265"
+      },
+      {
+        "source": "model.language_model.layers.14.post_attention_layernorm.weight",
+        "gguf": "blk.14.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.15.input_layernorm.weight",
+        "gguf": "blk.15.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.15.mlp.down_proj.weight",
+        "gguf": "blk.15.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "2a0740d602e774068b1b7ce94acf7040568951e6320d053cfb39beaf7013dd12"
+      },
+      {
+        "source": "model.language_model.layers.15.mlp.gate_proj.weight",
+        "gguf": "blk.15.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "6bd2e1cb929516090a3175e7e9d5e68e6b3ac6fa15717cfb719d10b5340e1e9c"
+      },
+      {
+        "source": "model.language_model.layers.15.mlp.up_proj.weight",
+        "gguf": "blk.15.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "e7cc2d3df9ce93449fbe4249033fa912e3cb2b0ba51acb7bcf8aa85b98f2deed"
+      },
+      {
+        "source": "model.language_model.layers.15.post_attention_layernorm.weight",
+        "gguf": "blk.15.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.15.self_attn.k_norm.weight",
+        "gguf": "blk.15.attn_k_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.15.self_attn.k_proj.weight",
+        "gguf": "blk.15.attn_k.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "90a9d8c07ea4d81cf7dc014e0810aa03d00028993b1cfdd658e02435fa7e453b"
+      },
+      {
+        "source": "model.language_model.layers.15.self_attn.o_proj.weight",
+        "gguf": "blk.15.attn_output.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "5fe3d59c88cce0ad7149d29a85eebf75b5595806b82a026d358037ed80cdeb86"
+      },
+      {
+        "source": "model.language_model.layers.15.self_attn.q_norm.weight",
+        "gguf": "blk.15.attn_q_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.15.self_attn.q_proj.weight",
+        "gguf": "blk.15.attn_q.weight",
+        "codec": "BF16",
+        "bytes": 16777216,
+        "exact_bytes": true,
+        "sha256": "98c2b7dfebd62ff39a53430815cad7426ef0a379e781ef4223b75b994b97e61b"
+      },
+      {
+        "source": "model.language_model.layers.15.self_attn.v_proj.weight",
+        "gguf": "blk.15.attn_v.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "7968920c391294da060de906b8a9aeda0cef1d23ecfb7e76933e0fbb46c1f1d2"
+      },
+      {
+        "source": "model.language_model.layers.16.input_layernorm.weight",
+        "gguf": "blk.16.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.conv1d.weight",
+        "gguf": "blk.16.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.dt_bias",
+        "gguf": "blk.16.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.in_proj_a.weight",
+        "gguf": "blk.16.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "67176b5165c1e83ced1008cd692aca72605fcc25c5a4d8dddee84f2dbd684e35"
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.in_proj_b.weight",
+        "gguf": "blk.16.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "4da221ca3895b7463848e86edcf66e95f7ad953072299e4265c45884b06ba30d"
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.16.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "bf13007d78878780a8c98ca02dda696ff5f7983d87c9125392e6119a012fac46"
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.in_proj_z.weight",
+        "gguf": "blk.16.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "21a2c3545b38981ea8c8f915408f68f6118aa58555cb3c42d92c13f1783b5eaf"
+      },
+      {
+        "source": "model.language_model.layers.16.linear_attn.out_proj.weight",
+        "gguf": "blk.16.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "e17faead406abeec5be4a72f5172a11874be36711d985098a12c049675b851de"
+      },
+      {
+        "source": "model.language_model.layers.16.mlp.down_proj.weight",
+        "gguf": "blk.16.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "ecec71d062a2bfee0db19c739425b1df9f8d4f08ace36e05c26ff24cf13c359a"
+      },
+      {
+        "source": "model.language_model.layers.16.mlp.gate_proj.weight",
+        "gguf": "blk.16.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "6968ace6ea211ae8254187d7b3715556e7667139defe84a457c2979c402e964a"
+      },
+      {
+        "source": "model.language_model.layers.16.mlp.up_proj.weight",
+        "gguf": "blk.16.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "ea55bbfd8808efc466bc9faff4c25f7e83b5aa67b79596f9b230f737cbb987c2"
+      },
+      {
+        "source": "model.language_model.layers.16.post_attention_layernorm.weight",
+        "gguf": "blk.16.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.17.input_layernorm.weight",
+        "gguf": "blk.17.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.conv1d.weight",
+        "gguf": "blk.17.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.dt_bias",
+        "gguf": "blk.17.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.in_proj_a.weight",
+        "gguf": "blk.17.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "8ef4219dc1fcaafd2c01aa413994ff0fac7b301b15d5f345002055846ab27304"
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.in_proj_b.weight",
+        "gguf": "blk.17.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "a796b6ca05d9b6247a072159defc7b81977665d556540fd673c82dd68f5726ac"
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.17.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "e6e52cb035cfcb5546ced86d56284bf9665dd23624ae237a8ee528154a667e0d"
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.in_proj_z.weight",
+        "gguf": "blk.17.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "a9378a8cc6f64d0c290d87b0a72de46cb3fd76427e5dde6793f02fd657804641"
+      },
+      {
+        "source": "model.language_model.layers.17.linear_attn.out_proj.weight",
+        "gguf": "blk.17.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "202f70a8280a453a7b1cc86bca2b49e5cc7d31fc85ca76ace3a9b8c992116cf5"
+      },
+      {
+        "source": "model.language_model.layers.17.mlp.down_proj.weight",
+        "gguf": "blk.17.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "b7526700b7a1dfc2a7b1590f13caf865e4719d98f93c9d34f6866562ab17bfb6"
+      },
+      {
+        "source": "model.language_model.layers.17.mlp.gate_proj.weight",
+        "gguf": "blk.17.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "3a15563c252737c0dd77364c991d762836ccc1770bbf28201c1a5acd0a05ecad"
+      },
+      {
+        "source": "model.language_model.layers.17.mlp.up_proj.weight",
+        "gguf": "blk.17.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "425d4447fde40f2999d60a00164824dcb4dedcbdbd111fad100149c91403fc99"
+      },
+      {
+        "source": "model.language_model.layers.17.post_attention_layernorm.weight",
+        "gguf": "blk.17.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.18.input_layernorm.weight",
+        "gguf": "blk.18.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.conv1d.weight",
+        "gguf": "blk.18.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.dt_bias",
+        "gguf": "blk.18.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.in_proj_a.weight",
+        "gguf": "blk.18.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "e2eb4341cccdb1e91fd353d7d62729b4ceaff6b8821802f5f1474bdd52a42945"
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.in_proj_b.weight",
+        "gguf": "blk.18.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "127ce42e88b0d6a66461336b4c9b021c852a06a7e6c954ad56f50f7ca17ac34f"
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.18.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "f78ef7215368f3b9c7d2f98c5843e59515e828cd639a463e4119413b3155f39f"
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.in_proj_z.weight",
+        "gguf": "blk.18.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "aa8d0fdd8093f4da3d62f852f0bb10e28f94b93bcbf43b5db69b70acf0aa73ed"
+      },
+      {
+        "source": "model.language_model.layers.18.linear_attn.out_proj.weight",
+        "gguf": "blk.18.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "99a565a65c37b9df6a1d7f4555988b20b645c2f872dd22f3283aafe42b1688a8"
+      },
+      {
+        "source": "model.language_model.layers.18.mlp.down_proj.weight",
+        "gguf": "blk.18.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "f25b8b89409f154d4d19a63c943a4de20b44e59f893ad8e5a389c4f1c286225b"
+      },
+      {
+        "source": "model.language_model.layers.18.mlp.gate_proj.weight",
+        "gguf": "blk.18.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "3c7f709da9a9c68a7ae4851da6ff958217fa50c1234d19abda42b44d80abf5e5"
+      },
+      {
+        "source": "model.language_model.layers.18.mlp.up_proj.weight",
+        "gguf": "blk.18.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "24dac7a2c51a0e7bdee210d89150de29af7bd9f7f9a3e8946d72fcd4a3621aca"
+      },
+      {
+        "source": "model.language_model.layers.18.post_attention_layernorm.weight",
+        "gguf": "blk.18.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.19.input_layernorm.weight",
+        "gguf": "blk.19.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.19.mlp.down_proj.weight",
+        "gguf": "blk.19.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "f97bad6786f6754457e242349c05202372833b3683acfde66ad2a8cc0dfd58bc"
+      },
+      {
+        "source": "model.language_model.layers.19.mlp.gate_proj.weight",
+        "gguf": "blk.19.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "611f7e8aafa9372345b83fa09bf3779b76e23e7053d8fc1196d66da341e99fc6"
+      },
+      {
+        "source": "model.language_model.layers.19.mlp.up_proj.weight",
+        "gguf": "blk.19.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "3e79c0077af2951d33d2f5ad87f66d48f38dfb7b69d78f9508b0a64ec402d38d"
+      },
+      {
+        "source": "model.language_model.layers.19.post_attention_layernorm.weight",
+        "gguf": "blk.19.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.19.self_attn.k_norm.weight",
+        "gguf": "blk.19.attn_k_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.19.self_attn.k_proj.weight",
+        "gguf": "blk.19.attn_k.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "58b7885afa1c4e35ed89efd0e113d77aa11f9968b7961fa81e812d95b2d3e25a"
+      },
+      {
+        "source": "model.language_model.layers.19.self_attn.o_proj.weight",
+        "gguf": "blk.19.attn_output.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "0badbcb1f87de67c021fd67ca689771bdb3973d271233af03312876b462e6b13"
+      },
+      {
+        "source": "model.language_model.layers.19.self_attn.q_norm.weight",
+        "gguf": "blk.19.attn_q_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.19.self_attn.q_proj.weight",
+        "gguf": "blk.19.attn_q.weight",
+        "codec": "BF16",
+        "bytes": 16777216,
+        "exact_bytes": true,
+        "sha256": "53ad82c202ac9255527e629730b8f43f62324beba4fb2aba202073dad95c901e"
+      },
+      {
+        "source": "model.language_model.layers.19.self_attn.v_proj.weight",
+        "gguf": "blk.19.attn_v.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "1b5b0f93c3415912070f13a57be0df3bc22edbea950ad73d47d4d0ddc34df54e"
+      },
+      {
+        "source": "model.language_model.layers.2.input_layernorm.weight",
+        "gguf": "blk.2.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.conv1d.weight",
+        "gguf": "blk.2.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.dt_bias",
+        "gguf": "blk.2.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.in_proj_a.weight",
+        "gguf": "blk.2.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "b2b3658dcdc3238beb7c63c6930f2a59571edbbcc280290b03985bdaa15ba5d3"
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.in_proj_b.weight",
+        "gguf": "blk.2.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "3cb8872125515b45bbe7a9794274226ff268c50b6a6c26184432f5622dc9783e"
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.2.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "0880d586bc3c443b53f50704f0d8d8101b698ccc37438e8de87a38e55e7435b9"
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.in_proj_z.weight",
+        "gguf": "blk.2.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "d766bff8f0c70876075651eddce2cbd46a859ff931fc5a2a50df3c51203459da"
+      },
+      {
+        "source": "model.language_model.layers.2.linear_attn.out_proj.weight",
+        "gguf": "blk.2.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "e86ca2312080932b7921bd04d47b43d2b6f9dc51a7eb4bb0e45e72f72a9e9e88"
+      },
+      {
+        "source": "model.language_model.layers.2.mlp.down_proj.weight",
+        "gguf": "blk.2.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "8d563be4c3b516977ce033a6fc05a74c366c0907e5e1774a4cf4b08aad4c5244"
+      },
+      {
+        "source": "model.language_model.layers.2.mlp.gate_proj.weight",
+        "gguf": "blk.2.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "2872f4e4d5e782e6d209ffa42c513b946e1304d80654a770d7536c6c2a39f117"
+      },
+      {
+        "source": "model.language_model.layers.2.mlp.up_proj.weight",
+        "gguf": "blk.2.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "4c72dd115d5b0aba4c374f26ad41377bcc471091991a1802f8fc1f4d79d0094e"
+      },
+      {
+        "source": "model.language_model.layers.2.post_attention_layernorm.weight",
+        "gguf": "blk.2.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.20.input_layernorm.weight",
+        "gguf": "blk.20.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.conv1d.weight",
+        "gguf": "blk.20.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.dt_bias",
+        "gguf": "blk.20.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.in_proj_a.weight",
+        "gguf": "blk.20.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "74ebd603b4375b2446588d34a44f4ad274b4a858e3c766d0d6cb214e2b72f9e6"
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.in_proj_b.weight",
+        "gguf": "blk.20.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "337c69cc143817cc14ca5a0cf15fe2aefdb171fbe852aee6f4a395b05e60c521"
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.20.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "829ce64450ca251881604c9997d81530718430b46d9af6331c480df395784117"
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.in_proj_z.weight",
+        "gguf": "blk.20.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "18facaaff0e268a9f66207ab851c14b7e70cc7d70a8900aed4c3cbce0f658308"
+      },
+      {
+        "source": "model.language_model.layers.20.linear_attn.out_proj.weight",
+        "gguf": "blk.20.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "f6bc192d2f6031400e656d6d278a95edc8b959bc534c72b71f7f92f4263d972c"
+      },
+      {
+        "source": "model.language_model.layers.20.mlp.down_proj.weight",
+        "gguf": "blk.20.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "9810c9f0d2ef0144bbb5ccfaed90a29cd8d310daa87769b83b5144693a5b8d0d"
+      },
+      {
+        "source": "model.language_model.layers.20.mlp.gate_proj.weight",
+        "gguf": "blk.20.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "f2a4c8834037a98948f5a3faeacd07ec69634fd2cbd67815acb61330cedf9260"
+      },
+      {
+        "source": "model.language_model.layers.20.mlp.up_proj.weight",
+        "gguf": "blk.20.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "9d1a4eeb16e759aecd0b6e0992bdf291deac389d8f4d58c538239cfc11125d11"
+      },
+      {
+        "source": "model.language_model.layers.20.post_attention_layernorm.weight",
+        "gguf": "blk.20.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.21.input_layernorm.weight",
+        "gguf": "blk.21.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.conv1d.weight",
+        "gguf": "blk.21.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.dt_bias",
+        "gguf": "blk.21.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.in_proj_a.weight",
+        "gguf": "blk.21.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "0cd79e27eaf70e189ddaf3d27085e1297a7e5d082832899d4a47536f2031b4e1"
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.in_proj_b.weight",
+        "gguf": "blk.21.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "cfe92b13b1adfcd48a2ab62ed00011d21286aaeb7cbb1a327487fd4ffc4fc88d"
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.21.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "4b5b63767e5ef1b5d6a254bbf0d0c2eec5a77cdaea460254c36632d7d40c1e0d"
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.in_proj_z.weight",
+        "gguf": "blk.21.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "51380289c187362c4624b6f59cc7a70497073efe9019a429c0f4b724c3e680e3"
+      },
+      {
+        "source": "model.language_model.layers.21.linear_attn.out_proj.weight",
+        "gguf": "blk.21.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "f3766e816dc71f2462fbe60a9b160749018d9d54ba40af32fa1ad4428d2cd546"
+      },
+      {
+        "source": "model.language_model.layers.21.mlp.down_proj.weight",
+        "gguf": "blk.21.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "d39a4e133fd6677a2e0a8e750e9a7de40c6522f670223b436b9ec62a98f27d3a"
+      },
+      {
+        "source": "model.language_model.layers.21.mlp.gate_proj.weight",
+        "gguf": "blk.21.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "1ef4cda836b8f59d124209666328ab250a68512ddc84c422468c340dd9a53876"
+      },
+      {
+        "source": "model.language_model.layers.21.mlp.up_proj.weight",
+        "gguf": "blk.21.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "164b4b2c748b53de877322bf13dd9b7ac79b945bd16823a1987759f33388b163"
+      },
+      {
+        "source": "model.language_model.layers.21.post_attention_layernorm.weight",
+        "gguf": "blk.21.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.22.input_layernorm.weight",
+        "gguf": "blk.22.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.conv1d.weight",
+        "gguf": "blk.22.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.dt_bias",
+        "gguf": "blk.22.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.in_proj_a.weight",
+        "gguf": "blk.22.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "6a1c2622b4c1b80552fabe488e55aa8b5b480b4219e933c98cf9c2d28a34875b"
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.in_proj_b.weight",
+        "gguf": "blk.22.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "4721d68db574022e1d74fc65f8c04b6ec57a9b9041c1d2dc3ea36948e264d214"
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.22.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "5247f1d6ce03d3734eed07115e813ddafb88fbc7cf10d742d0e3088fddf0012f"
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.in_proj_z.weight",
+        "gguf": "blk.22.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "9b456cc9abd48ed59e3259675609df503ed1e19231db604d2d9ac32ee67c77da"
+      },
+      {
+        "source": "model.language_model.layers.22.linear_attn.out_proj.weight",
+        "gguf": "blk.22.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "54889f324c27a4ba0bc95ed5d4ea90c78c662863937e6fd96361af8052b2edb2"
+      },
+      {
+        "source": "model.language_model.layers.22.mlp.down_proj.weight",
+        "gguf": "blk.22.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "e8e44d2dc77b8f8c295e68fe5ef45daea93fd811c8baff69fc89bbb9c800f646"
+      },
+      {
+        "source": "model.language_model.layers.22.mlp.gate_proj.weight",
+        "gguf": "blk.22.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "af96af626863d66052e54984b64d60d8597cd7485d6bad8c7a8874b89f9cb62c"
+      },
+      {
+        "source": "model.language_model.layers.22.mlp.up_proj.weight",
+        "gguf": "blk.22.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "a1a240256fa99ce03bc2ba7d4ee74607dc02b0d44d128460c20a85fe3d0e2446"
+      },
+      {
+        "source": "model.language_model.layers.22.post_attention_layernorm.weight",
+        "gguf": "blk.22.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.23.input_layernorm.weight",
+        "gguf": "blk.23.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.23.mlp.down_proj.weight",
+        "gguf": "blk.23.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "1706e50833fffb25da45ad958af043a688e5ef495d45f33fa4b1ab623c696719"
+      },
+      {
+        "source": "model.language_model.layers.23.mlp.gate_proj.weight",
+        "gguf": "blk.23.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "e81596bd42c14407a8cb01a6606d7497c7bc41fde5aa0d02bfe408e4886ec539"
+      },
+      {
+        "source": "model.language_model.layers.23.mlp.up_proj.weight",
+        "gguf": "blk.23.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "7ef2456a3a376e2d1a2223f8bbeb8d6d059b5822ae54abcc2957ba50968d61bc"
+      },
+      {
+        "source": "model.language_model.layers.23.post_attention_layernorm.weight",
+        "gguf": "blk.23.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.23.self_attn.k_norm.weight",
+        "gguf": "blk.23.attn_k_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.23.self_attn.k_proj.weight",
+        "gguf": "blk.23.attn_k.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "b5715481b0ae057107c6347c111a4e5f3e6f208026ab69c684a8b7ad98e7bcea"
+      },
+      {
+        "source": "model.language_model.layers.23.self_attn.o_proj.weight",
+        "gguf": "blk.23.attn_output.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "c029c09d7de1f3c8e6e6a2ba2ac2acc49dd7fdac25ea3d17e16955672a5c1420"
+      },
+      {
+        "source": "model.language_model.layers.23.self_attn.q_norm.weight",
+        "gguf": "blk.23.attn_q_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.23.self_attn.q_proj.weight",
+        "gguf": "blk.23.attn_q.weight",
+        "codec": "BF16",
+        "bytes": 16777216,
+        "exact_bytes": true,
+        "sha256": "564f38709761782757f8526db670ce280feb3a825c2ee0c7e3957da0ff669eab"
+      },
+      {
+        "source": "model.language_model.layers.23.self_attn.v_proj.weight",
+        "gguf": "blk.23.attn_v.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "fefe8d1ea50fdd010b85555616bf7e23ae1c9ec7d9f1bd20c49ff0aabdbc050a"
+      },
+      {
+        "source": "model.language_model.layers.3.input_layernorm.weight",
+        "gguf": "blk.3.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.3.mlp.down_proj.weight",
+        "gguf": "blk.3.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "a138c4ee2a138f4dbdc566b90b2a3f6b41885968d7f56152aaf17850948cb994"
+      },
+      {
+        "source": "model.language_model.layers.3.mlp.gate_proj.weight",
+        "gguf": "blk.3.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "4bc8463b2620b2ed63cd1645c8c7f3215dae965eaa29285614f2e452ea7eff93"
+      },
+      {
+        "source": "model.language_model.layers.3.mlp.up_proj.weight",
+        "gguf": "blk.3.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "42b97a0894f3bebf8cb2dd6b04fbe1265a3a9ad0d09689a3dc22adf68e536781"
+      },
+      {
+        "source": "model.language_model.layers.3.post_attention_layernorm.weight",
+        "gguf": "blk.3.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.3.self_attn.k_norm.weight",
+        "gguf": "blk.3.attn_k_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.3.self_attn.k_proj.weight",
+        "gguf": "blk.3.attn_k.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "15f30a4c354f9c5a13c0f5119137d777cc066ba8de4cc9a06279154b1d1b5040"
+      },
+      {
+        "source": "model.language_model.layers.3.self_attn.o_proj.weight",
+        "gguf": "blk.3.attn_output.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "12cb7bbe0aac40843d5e5a60cfb44ba2d33aa49538166a00f34fed862f457153"
+      },
+      {
+        "source": "model.language_model.layers.3.self_attn.q_norm.weight",
+        "gguf": "blk.3.attn_q_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.3.self_attn.q_proj.weight",
+        "gguf": "blk.3.attn_q.weight",
+        "codec": "BF16",
+        "bytes": 16777216,
+        "exact_bytes": true,
+        "sha256": "17bd3cd9059fbc52c07bbcbf23c01493e3ead9103d61f7de3744267ce2a9d664"
+      },
+      {
+        "source": "model.language_model.layers.3.self_attn.v_proj.weight",
+        "gguf": "blk.3.attn_v.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "ee3ca5d4f337e84bb8d758b337c5b0ba1d9b493f87a7c822f91efe32e1e87845"
+      },
+      {
+        "source": "model.language_model.layers.4.input_layernorm.weight",
+        "gguf": "blk.4.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.conv1d.weight",
+        "gguf": "blk.4.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.dt_bias",
+        "gguf": "blk.4.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.in_proj_a.weight",
+        "gguf": "blk.4.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "8e1bcc66cc350cc3b528d49e45db73f8aa64196c9186be7b96671602911de55d"
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.in_proj_b.weight",
+        "gguf": "blk.4.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "df1edf4c302648c1bc8d21e3254eabdb446eedddf4680fb94af0627b13d0fbae"
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.4.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "756b00fde299ad8cb89cc7e3bc2fefea55caa557c59577ee3e4dc597b4c22986"
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.in_proj_z.weight",
+        "gguf": "blk.4.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "a9069127346a27a60c44220816d00e88b2ebfd1e6b78f378630732fd813bee00"
+      },
+      {
+        "source": "model.language_model.layers.4.linear_attn.out_proj.weight",
+        "gguf": "blk.4.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "e129d8a847e81deec03a3172e35847e96fe36b65e493252d02a9975154a80765"
+      },
+      {
+        "source": "model.language_model.layers.4.mlp.down_proj.weight",
+        "gguf": "blk.4.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "3cb61e31712524a85150e137e50f147a119f6eeb5d4d08e01d1555235567e216"
+      },
+      {
+        "source": "model.language_model.layers.4.mlp.gate_proj.weight",
+        "gguf": "blk.4.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "cce2d092aac96501e8c1059320cf491529d230824bc128c1474cd90a73010cc6"
+      },
+      {
+        "source": "model.language_model.layers.4.mlp.up_proj.weight",
+        "gguf": "blk.4.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "5b2e8cf1a82340ca8c73ec32b3eba3c903bdfb822ac375fd321626599e70c4bd"
+      },
+      {
+        "source": "model.language_model.layers.4.post_attention_layernorm.weight",
+        "gguf": "blk.4.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.5.input_layernorm.weight",
+        "gguf": "blk.5.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.conv1d.weight",
+        "gguf": "blk.5.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.dt_bias",
+        "gguf": "blk.5.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.in_proj_a.weight",
+        "gguf": "blk.5.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "d5b54187f62d02a9ce5ce3f577d39fea6b3c34b9e2d7b26a17fa97711ff91b1e"
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.in_proj_b.weight",
+        "gguf": "blk.5.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "9d5889180c7110360a984a5aff4c9d2583c2bbb6302f4d8256aebbda105a6d45"
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.5.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "630bb4c0836035cd088dfe481c39bcba33408ce336cf6d86f9a5234b5a94b985"
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.in_proj_z.weight",
+        "gguf": "blk.5.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "4dededb063ef279d023a110824101ef881cd5fa7b8da3096663aedd15606315b"
+      },
+      {
+        "source": "model.language_model.layers.5.linear_attn.out_proj.weight",
+        "gguf": "blk.5.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "e6f7e89657a74e0875d57bad961970381ae8890cd8c1a31985f6873fb0e13db9"
+      },
+      {
+        "source": "model.language_model.layers.5.mlp.down_proj.weight",
+        "gguf": "blk.5.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "927f6a1ee56109d7628af07bb98aee5d9da206ec48c119a0ec3bd9229966af1a"
+      },
+      {
+        "source": "model.language_model.layers.5.mlp.gate_proj.weight",
+        "gguf": "blk.5.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "474480047a340d40b990ca327d6815959ebce5eae52bbb71a61300d838a897c1"
+      },
+      {
+        "source": "model.language_model.layers.5.mlp.up_proj.weight",
+        "gguf": "blk.5.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "eab1326f81bf7b42e89713341a908342a19a7b9b6344a975910cd5ce4461f67d"
+      },
+      {
+        "source": "model.language_model.layers.5.post_attention_layernorm.weight",
+        "gguf": "blk.5.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.6.input_layernorm.weight",
+        "gguf": "blk.6.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.conv1d.weight",
+        "gguf": "blk.6.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.dt_bias",
+        "gguf": "blk.6.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.in_proj_a.weight",
+        "gguf": "blk.6.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "52f14c73f4717f7dae16520f30fac7ff4d44ff04a5ecfc7c65fbe0eca401d483"
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.in_proj_b.weight",
+        "gguf": "blk.6.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "d447fc0d9b69df8cbfb9fc18dbb1ef09cf3a04f9b26b42b8133db40e4e5db3c1"
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.6.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "7f45dda9ed134ce3dfac66244e405c1a77d434813ed5e8d2a32ab2328008f93c"
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.in_proj_z.weight",
+        "gguf": "blk.6.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "caad2dcf88a042b143134665fded2abfec67201852191aa1e427425325ec2e6c"
+      },
+      {
+        "source": "model.language_model.layers.6.linear_attn.out_proj.weight",
+        "gguf": "blk.6.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "e95ee48c56c06fbaba0097f63051255aa03329f8bafaa7acd3a7b0682028d32e"
+      },
+      {
+        "source": "model.language_model.layers.6.mlp.down_proj.weight",
+        "gguf": "blk.6.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "eb996efac8daa7cfb82071ab089971815c6850880c773d668b56129bfd5ec97f"
+      },
+      {
+        "source": "model.language_model.layers.6.mlp.gate_proj.weight",
+        "gguf": "blk.6.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "1cc63fc0e88a613ec0ed2d88f4cf50eb2d3f49987279019028222550d39e27a9"
+      },
+      {
+        "source": "model.language_model.layers.6.mlp.up_proj.weight",
+        "gguf": "blk.6.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "81728fd9e73c3b37611c4da161563aca5b02959bb744ecd0ec4f2b733175ad7e"
+      },
+      {
+        "source": "model.language_model.layers.6.post_attention_layernorm.weight",
+        "gguf": "blk.6.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.7.input_layernorm.weight",
+        "gguf": "blk.7.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.7.mlp.down_proj.weight",
+        "gguf": "blk.7.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "cfada4d94cdf789368502214a885d43e868911085eafa8e910d0fe74685d2bb0"
+      },
+      {
+        "source": "model.language_model.layers.7.mlp.gate_proj.weight",
+        "gguf": "blk.7.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "9004eb6e93ebeb0bda99c0d1b8c16dbc8394270acdae560e15b953c00e28ca0e"
+      },
+      {
+        "source": "model.language_model.layers.7.mlp.up_proj.weight",
+        "gguf": "blk.7.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "ca466edd36a7ee66de9add5435c3a92b77d18f4f58bc53d375949a65513c198f"
+      },
+      {
+        "source": "model.language_model.layers.7.post_attention_layernorm.weight",
+        "gguf": "blk.7.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.7.self_attn.k_norm.weight",
+        "gguf": "blk.7.attn_k_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.7.self_attn.k_proj.weight",
+        "gguf": "blk.7.attn_k.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "891853407a35859f39f1fb6802731633785f362cddc13fbfa84b9644a1a0dd6f"
+      },
+      {
+        "source": "model.language_model.layers.7.self_attn.o_proj.weight",
+        "gguf": "blk.7.attn_output.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "5235de8f611a59b653a6b67f7a87679d2a2c706ad1ca97a5ab04fa08e77b31e7"
+      },
+      {
+        "source": "model.language_model.layers.7.self_attn.q_norm.weight",
+        "gguf": "blk.7.attn_q_norm.weight",
+        "codec": "F32",
+        "bytes": 1024,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.7.self_attn.q_proj.weight",
+        "gguf": "blk.7.attn_q.weight",
+        "codec": "BF16",
+        "bytes": 16777216,
+        "exact_bytes": true,
+        "sha256": "a32ab06743c3a8ddcb9066f6377049e3285b43abd2348b102128dd8781a6163c"
+      },
+      {
+        "source": "model.language_model.layers.7.self_attn.v_proj.weight",
+        "gguf": "blk.7.attn_v.weight",
+        "codec": "BF16",
+        "bytes": 2097152,
+        "exact_bytes": true,
+        "sha256": "cbd6bca33b68cc33c1035109c907dc4b0f9d938174853d1ec1af929b3610657f"
+      },
+      {
+        "source": "model.language_model.layers.8.input_layernorm.weight",
+        "gguf": "blk.8.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.conv1d.weight",
+        "gguf": "blk.8.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.dt_bias",
+        "gguf": "blk.8.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.in_proj_a.weight",
+        "gguf": "blk.8.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "982b66a7c4dc37e9d0f4a1455917b08232c5ca33babb27307e4100c1747089fa"
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.in_proj_b.weight",
+        "gguf": "blk.8.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "d64f1111835e0b78eebe805e689736af3422ab201e49255ef54ce840f5100242"
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.8.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "365cee4c374cea9680d23e09e992ad0ee5ea52079d798c9a3ee8ff7ddcb4b576"
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.in_proj_z.weight",
+        "gguf": "blk.8.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "d1dcd3b6cdb82af0e07e460549a65ee5ab6532f39a2001fd28e7cb3fac02ff55"
+      },
+      {
+        "source": "model.language_model.layers.8.linear_attn.out_proj.weight",
+        "gguf": "blk.8.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "3a34787f2fd3a8e3aa2af092a2fed6fd7bce4231614f14140fb25f472725691a"
+      },
+      {
+        "source": "model.language_model.layers.8.mlp.down_proj.weight",
+        "gguf": "blk.8.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "a529054373b69823fa95dec92871a26848c2df3ccf18b38ecb4e222c2c85cf31"
+      },
+      {
+        "source": "model.language_model.layers.8.mlp.gate_proj.weight",
+        "gguf": "blk.8.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "2cf8f52549b378feeebb396e203915c3d817e405d6b4cfeabe55f63d19e37af3"
+      },
+      {
+        "source": "model.language_model.layers.8.mlp.up_proj.weight",
+        "gguf": "blk.8.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "9e696beeb572962666038adad1317856251ebd7e1e4d32dcbbbbf5d45d407610"
+      },
+      {
+        "source": "model.language_model.layers.8.post_attention_layernorm.weight",
+        "gguf": "blk.8.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.9.input_layernorm.weight",
+        "gguf": "blk.9.attn_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.conv1d.weight",
+        "gguf": "blk.9.ssm_conv1d.weight",
+        "codec": "F32",
+        "bytes": 98304,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "squeeze singleton axis only"
+        ]
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.dt_bias",
+        "gguf": "blk.9.ssm_dt.bias",
+        "codec": "F32",
+        "bytes": 64,
+        "exact_transformed_bits": true,
+        "transforms": []
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.in_proj_a.weight",
+        "gguf": "blk.9.ssm_alpha.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "425a31fb0ab3cdc506204ee095af5bb01ac7838f35fde850344ec0f55d0d27b4"
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.in_proj_b.weight",
+        "gguf": "blk.9.ssm_beta.weight",
+        "codec": "BF16",
+        "bytes": 65536,
+        "exact_bytes": true,
+        "sha256": "253deb5df2903f9fcbecf6ed4b4fb968f06f7b3e52cc7eb5c725a8f918e52be5"
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.in_proj_qkv.weight",
+        "gguf": "blk.9.attn_qkv.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "a2af52e3eab1bfbab43c6959466630bf1af68bb303f83977e7367619e02fd962"
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.in_proj_z.weight",
+        "gguf": "blk.9.attn_gate.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "ef9ac0225762c432041a5433187f2b17d23bf0564e709125b447bd28fb4ca04a"
+      },
+      {
+        "source": "model.language_model.layers.9.linear_attn.out_proj.weight",
+        "gguf": "blk.9.ssm_out.weight",
+        "codec": "BF16",
+        "bytes": 8388608,
+        "exact_bytes": true,
+        "sha256": "d486f070bb4b9545c1ec968c5cfecd29cc21574aa9fb299e33ae3ad30d454189"
+      },
+      {
+        "source": "model.language_model.layers.9.mlp.down_proj.weight",
+        "gguf": "blk.9.ffn_down.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "6196ee5c7d96fe9c71d8adc0c9e87f752474f6819330fd92c5e74e597b510933"
+      },
+      {
+        "source": "model.language_model.layers.9.mlp.gate_proj.weight",
+        "gguf": "blk.9.ffn_gate.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "9c6d9f3a62999fc7807d327a0b81d4f47129ac97d44b4b2396ee863b7ba0da19"
+      },
+      {
+        "source": "model.language_model.layers.9.mlp.up_proj.weight",
+        "gguf": "blk.9.ffn_up.weight",
+        "codec": "BF16",
+        "bytes": 25165824,
+        "exact_bytes": true,
+        "sha256": "b47d4c93d3056bde74c3405c6236cf6e544771a6330faca412cd61a488facffa"
+      },
+      {
+        "source": "model.language_model.layers.9.post_attention_layernorm.weight",
+        "gguf": "blk.9.post_attention_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      },
+      {
+        "source": "model.language_model.norm.weight",
+        "gguf": "output_norm.weight",
+        "codec": "F32",
+        "bytes": 8192,
+        "exact_transformed_bits": true,
+        "transforms": [
+          "F32 checkpoint delta + 1"
+        ]
+      }
+    ],
+    "source_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "prompt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\inputs\\arithmetic\\prompt.ids",
+      "bytes": 245,
+      "sha256": "0d109bbcfcc204ca348f2eae80231b33cd3b52fc4af126558ae8d2d82b835cc5"
+    },
+    "prompt_ids": [
+      248045,
+      8678,
+      198,
+      133653,
+      110257,
+      1710,
+      96220,
+      98319,
+      97235,
+      97237,
+      97995,
+      1710,
+      248046,
+      198,
+      248045,
+      846,
+      198,
+      97792,
+      318,
+      16,
+      22,
+      348,
+      220,
+      18,
+      8,
+      478,
+      220,
+      23,
+      1710,
+      96220,
+      110334,
+      97989,
+      3709,
+      96050,
+      96227,
+      96674,
+      99129,
+      1710,
+      248046,
+      198,
+      248045,
+      74455,
+      198,
+      248068,
+      271,
+      248069,
+      271
+    ],
+    "input_policy": "Existing peer reads this exact prompt.ids directly; no tokenize, BOS, template, truncation or prefix-cache path.",
+    "P": 47,
+    "C": 512,
+    "max_outputs": 128,
+    "greedy": true,
+    "MTP": false,
+    "arithmetic_rule_frozen": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\judge.py",
+      "bytes": 1713,
+      "sha256": "d1ba78e0fbabd4027bd7b4fa9a95df21c531de3c649d5de4f5d59b0eea3423a3"
+    },
+    "original_nine_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-quality-finite-20261024\\plan.json",
+      "bytes": 2951,
+      "sha256": "c57fc21a17f361165f9779c9372636067cafd47a0bb7b4c8cdf9d4d229f5589b"
+    },
+    "new_reference_maximum_runs": 1,
+    "HTTP": 0,
+    "SDK_builds": 0,
+    "qualification": "Same original checkpoint tensor values after explicit GGUF F32 converter transforms. Original Hyle BF16 intermediates and llama F32 intermediates differ; comparison diagnoses common ordinary behavior, not MTP correctness or matched arithmetic paths."
+  },
+  "result": {
+    "task": "arithmetic",
+    "arm": "llama.cpp ordinary",
+    "P": 47,
+    "C": 512,
+    "max_outputs": 128,
+    "native_exit": 0,
+    "generated_ids": [
+      21,
+      20,
+      248046
+    ],
+    "decoded_text": "65<|im_end|>",
+    "judged_text": "65",
+    "natural_EOS": true,
+    "EOS_id": 248046,
+    "rule": {
+      "passed": false,
+      "numbers": [
+        "65"
+      ]
+    },
+    "Hyle_ordinary_generated_ids": [
+      21,
+      20,
+      248046
+    ],
+    "Hyle_ordinary_text": "65",
+    "same_ids_as_Hyle": true,
+    "interpretation": "This single aligned ordinary reference cannot isolate an internal operator cause or establish model-wide quality. A differing answer is a common ordinary-path clue, not an MTP-specific defect or automatic harmless precision conclusion.",
+    "performance_claim": false,
+    "new_HTTP": 0,
+    "SDK_builds": 0
+  },
+  "conclusion": "The one reference answers65 with exactly the same three generated IDs as Hyle ordinary/K1/K4. This failed arithmeticcase is common to both implementations under the aligned input; it neither identifies an MTP-specific defect nor proves intrinsic model capability or correctness of all ordinary arithmetic.",
+  "new_reference_runs": 1,
+  "HTTP": 0,
+  "SDK_builds": 0,
+  "performance_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/qwen35-mtp-finite-task-reference-2026-10-24-logs.zip",
+    "bytes": 40746,
+    "sha256": "0fe94165eb7f4dd441effd9d2360be8342b186bb5e5454fbe45453db47784a28"
+  }
+}

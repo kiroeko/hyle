@@ -26,6 +26,12 @@ _BOOL_TRUE = {"1", "ON", "YES", "TRUE", "Y"}
 _VERBOSE = False
 
 
+def _uses_compute(components) -> bool:
+    # CMake owns the dependency closure; only these public roots request a
+    # native route. Selecting a utility library must not probe a GPU toolkit.
+    return bool({"engine", "all", "compute", "graph", "compute_stream"}.intersection(components))
+
+
 class CommandError(SetupError):
     def __init__(self, code: int, message: str):
         super().__init__(message)
@@ -181,14 +187,16 @@ def _boolean(args: argparse.Namespace, name: str, cache: dict[str, str], key: st
 def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: str | None = None) -> dict:
     system, arch = _host()
     backend_value = args.backends if args.backends is not None else cache.get("HYLE_COMPUTE_ROUTES", "cpu")
-    components = args.components if args.components is not None else cache.get("HYLE_COMPONENTS", "all")
+    components = args.components if args.components is not None else cache.get("HYLE_COMPONENTS", "engine")
     products = [part.strip().lower() for part in re.split(r"[,;]", components)]
     if any(not re.fullmatch(r"[a-z][a-z0-9_]*", part) for part in products):
         raise SetupError("--components must be product names separated by commas, or all.")
     if "all" in products and products != ["all"]:
         raise SetupError("Use --components all alone, or list the products you need.")
     routes = parse_backends(backend_value, system, arch,
-                            complete_math=bool({"all", "compute", "graph"}.intersection(products)))
+                            complete_math=bool({"engine", "all", "compute", "graph"}.intersection(products)))
+    if not _uses_compute(products):
+        routes = ()
     configuration = args.config or cache.get("CMAKE_BUILD_TYPE") or saved_config or "Release"
     if configuration not in CONFIGURATIONS:
         # Existing multi-config/custom CMake trees remain consumable by build/test.
@@ -253,7 +261,8 @@ def _run(command: list[str], environment: Environment, log: Path | None = None) 
 
 def _display(directory: Path, selected: dict, environment: Environment, cache_dir: Path) -> None:
     routes = ",".join("metal" if route == "apple" else route for route in selected["routes"])
-    print(f"Hyle: {environment.system}/{environment.arch}; {routes}; {selected['config']}; "
+    print(f"Hyle: {environment.system}/{environment.arch}; components={','.join(selected['components'])}; "
+          f"backends={routes or 'not requested'}; {selected['config']}; "
           f"{'static' if selected['static'] else 'shared'}; tests={'ON' if selected['tests'] else 'OFF'}")
     print(f"Compiler: {environment.cxx}\nBuild directory: {directory}\nShared dependency cache: {cache_dir}")
 
@@ -287,7 +296,7 @@ def initialize(args: argparse.Namespace) -> int:
                 raise SetupError(f"{key} differs from this build's CUDA toolchain. Choose another --name or --build-dir.")
     environment = discover_environment(compiler=args.compiler or "auto", cache=dict(cache, **extra),
                                        backends=selected["routes"], generator=args.generator)
-    if cache.get("HYLE_VULKAN_GLSLANG"):
+    if "vulkan" in selected["routes"] and cache.get("HYLE_VULKAN_GLSLANG"):
         environment.definitions["HYLE_VULKAN_GLSLANG"] = cache["HYLE_VULKAN_GLSLANG"]
     environment.definitions.update(extra)
     if selected["tls"] and not (extra.get("OPENSSL_ROOT_DIR") or cache.get("OPENSSL_ROOT_DIR")):
@@ -299,7 +308,7 @@ def initialize(args: argparse.Namespace) -> int:
                         generator=environment.generator, system=environment.system,
                         arch=environment.arch, extra=extra, cache=str(cache_dir))
         digest = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:10]
-        label = "-".join("metal" if item == "apple" else item for item in selected["routes"])
+        label = "-".join("metal" if item == "apple" else item for item in selected["routes"]) or "library"
         directory = ROOT / ".scratch/build" / f"{label}-{selected['config'].lower()}-{digest}"
         cache = read_cache(directory)
         _check_source(cache)
@@ -324,7 +333,7 @@ def initialize(args: argparse.Namespace) -> int:
     })
     if not ("Visual Studio" in environment.generator or "Multi-Config" in environment.generator):
         definitions["CMAKE_BUILD_TYPE"] = selected["config"]
-    if {"all", "compute", "graph", "compute_stream"}.intersection(selected["components"]):
+    if _uses_compute(selected["components"]):
         definitions["HYLE_COMPUTE_ROUTES"] = ";".join(selected["routes"])
     if {"all", "io"}.intersection(selected["components"]):
         definitions["HYLE_IO_TLS"] = "ON" if selected["tls"] else "OFF"
@@ -372,7 +381,9 @@ def _configured(args: argparse.Namespace) -> tuple[Path, dict[str, str], str, En
                          f"Run init.py --config {configuration} with another --name to preserve both builds.")
     if cache.get("CMAKE_CONFIGURATION_TYPES") and configuration not in configurations:
         raise SetupError(f"Configuration '{configuration}' is unavailable; choose from {', '.join(configurations)}.")
-    routes = tuple(filter(None, cache.get("HYLE_COMPUTE_ROUTES", "").split(";")))
+    products = cache.get("HYLE_COMPONENTS", "engine").split(";")
+    routes = (tuple(filter(None, cache.get("HYLE_COMPUTE_ROUTES", "").split(";")))
+              if _uses_compute(products) else ())
     environment = discover_environment(cache=cache, backends=routes)
     return directory, cache, configuration, environment
 
@@ -382,7 +393,7 @@ def build(args: argparse.Namespace) -> int:
     prefix = None
     if args.install is not None:
         if args.target:
-            raise SetupError("--install builds and exports the complete selected SDK. Omit --target when installing.")
+            raise SetupError("--install builds and installs the complete selected project. Omit --target when installing.")
         prefix = (args.install if isinstance(args.install, Path)
                   else ROOT / ".scratch/install" / directory.name).expanduser().resolve()
         if cache.get("HYLE_TEST_INSTRUMENTATION", "OFF").upper() in _BOOL_TRUE:
@@ -409,7 +420,12 @@ def build(args: argparse.Namespace) -> int:
             print("+ " + _command(command))
         else:
             _run(command, environment, directory / "hyle-install.log")
-            print(f"Installed SDK: {prefix}\nConsumers: set CMAKE_PREFIX_PATH to this directory and find_package(Hyle).")
+            products = cache.get("HYLE_COMPONENTS", "engine").split(";")
+            if {"engine", "all"}.intersection(products):
+                print(f"Installed Hyle project: {prefix}\nEngine: {prefix / 'bin' / ('hyle.exe' if environment.system == 'Windows' else 'hyle')}")
+            else:
+                print(f"Installed SDK: {prefix}")
+            print("Library consumers: set CMAKE_PREFIX_PATH to this directory and find_package(Hyle).")
     return 0
 
 
@@ -439,7 +455,7 @@ def test(args: argparse.Namespace) -> int:
 def parser(action: str) -> argparse.ArgumentParser:
     descriptions = {
         "init": "Discover installed tools, prepare selected Hyle dependencies and configure a build.",
-        "build": "Build an initialized Hyle configuration and optionally install its SDK.",
+        "build": "Build an initialized Hyle configuration and optionally install the selected project.",
         "test": "Run tests from an initialized and built Hyle configuration; never builds implicitly.",
     }
     result = argparse.ArgumentParser(description=descriptions[action],
@@ -453,7 +469,7 @@ def parser(action: str) -> argparse.ArgumentParser:
     result.add_argument("--verbose", action="store_true", help="also print complete CMake commands")
     if action == "init":
         result.add_argument("--backends", help="comma-separated cpu,cuda,metal,vulkan or all; default: cpu")
-        result.add_argument("--components", help="optional product subset, comma-separated; default: all")
+        result.add_argument("--components", help="engine (new builds default), all, or comma-separated library products such as util or compute,graph; existing selection is preserved")
         result.add_argument("--compiler", choices=("auto", "msvc", "clang-cl", "gcc", "clang"), help="installed compiler family; default: auto")
         result.add_argument("--generator", help="advanced: CMake generator; defaults to available Ninja or platform make")
         result.add_argument("--cache-dir", type=Path, help="advanced: reuse a shared Hyle dependency source/SDK cache")
@@ -468,7 +484,7 @@ def parser(action: str) -> argparse.ArgumentParser:
         result.add_argument("-D", "--define", action="append", default=[], metavar="NAME=VALUE", help="advanced: additional CMake definition (repeatable)")
     elif action == "build":
         result.add_argument("--target", action="append", help="build a specific CMake target (repeatable)")
-        result.add_argument("--install", type=Path, nargs="?", const=False, help="also install SDK; optional prefix defaults to .scratch/install/<build-name>")
+        result.add_argument("--install", type=Path, nargs="?", const=False, help="also install the selected project; optional prefix defaults to .scratch/install/<build-name>")
     else:
         result.add_argument("--filter", help="CTest test-name regular expression")
         result.add_argument("--list", action="store_true", help="list selected tests without executing them")

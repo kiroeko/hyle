@@ -238,6 +238,38 @@ TEST(AppleTensor, FloatConversionsRespectIeeeStorageBoundaries) {
   }
 }
 
+TEST(AppleTensor, Int32ToFloat32RoundsBoundaryValuesWithoutNarrowing) {
+  auto context = a::Context::create().value();
+  const std::array<std::int32_t, 12> data{
+      INT32_MIN, -16777219, -16777217, -16777216, -1, 0,
+      1, 16777215, 16777216, 16777217, 16777219, INT32_MAX};
+  const auto packed = mx::array(data.data(), {3, 4}, mx::int32);
+  for (auto input : {packed, ready(mx::transpose(packed, stream()))}) {
+    auto result = execute(context, c::Cast{c::DataType::kFloat32}, std::array{input});
+    ASSERT_TRUE(result) << result.error().message();
+    EXPECT_EQ(result->dtype(), mx::float32);
+    const auto logical_values = values(input);
+    const auto actual = bits(*result);
+    ASSERT_EQ(actual.size(), data.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_EQ(actual[i], std::bit_cast<std::uint32_t>(static_cast<float>(logical_values[i]))) << i;
+  }
+}
+
+TEST(AppleTensor, CategoricalChoiceInt32Float32BoolAcceptanceChain) {
+  auto context = a::Context::create().value();
+  const std::array<std::int32_t, 2> choices{0, 1};
+  const auto input = mx::array(choices.data(), {2}, mx::int32);
+  auto widened = execute(context, c::Cast{c::DataType::kFloat32}, std::array{input});
+  ASSERT_TRUE(widened) << widened.error().message();
+  auto truth = execute(context, c::Cast{c::DataType::kBool}, std::array{*widened});
+  ASSERT_TRUE(truth) << truth.error().message();
+  const auto no = mx::array(false), yes = mx::array(true);
+  auto accepted = execute(context, c::Select{}, std::array{*truth, no, yes});
+  ASSERT_TRUE(accepted) << accepted.error().message();
+  EXPECT_EQ(bits(*accepted), (std::vector<std::uint64_t>{1, 0}));
+}
+
 TEST(AppleTensor, BFloatCastPreservesAllPayloadsAndRoundsMidpointNeighbors) {
   auto context = a::Context::create().value();
   std::vector<std::uint16_t> payloads(65536);

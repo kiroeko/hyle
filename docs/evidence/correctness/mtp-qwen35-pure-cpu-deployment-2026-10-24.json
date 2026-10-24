@@ -1,0 +1,217 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite current pure CPU runtime/deployment dependency closure",
+  "scope": "Current Qwen private engine ordinary and MTP K1 use original complete Q4 source, true pure-CPU GGML ffa4 family and CPU-only runtime libraries. This is a focused CMake cache-target closure proof, not a fresh top-level SDK/install/relocation qualification.",
+  "rationale": "Previous CPU consumer executed CPU math but its mixed whole-object link imported TorchCUDA/cuBLAS and embedded GPU fatbin. That proof did not establish CPU-only deployment.",
+  "organization": {
+    "selector": "HYLE_COMPONENTS=engine; HYLE_COMPUTE_ROUTES=cpu",
+    "resolver": "Unmodified product cmake/HyleComponents.cmake and HyleComputeRoutes.cmake; real CMake project, no SDK discovery or downloads.",
+    "factors": [
+      "core",
+      "container_intrusive",
+      "util_core",
+      "error",
+      "mem_reclaim",
+      "time",
+      "math",
+      "timer_queue",
+      "platform",
+      "platform_thread",
+      "platform_fs",
+      "mem",
+      "mem_vm",
+      "simd",
+      "container",
+      "container_queue",
+      "sched",
+      "io_core",
+      "compute_ops",
+      "compute",
+      "graph",
+      "graph_progress",
+      "compute_provider_onednn",
+      "compute_backend_cpu",
+      "compute_batch",
+      "compute_ggml_runtime",
+      "compute_provider_ggml",
+      "graph_provider_onednn",
+      "compute_provider_native",
+      "compute_route_cpu",
+      "graph_batch",
+      "graph_route_cpu",
+      "compute_stream",
+      "compute_stream_cpu",
+      "compute_state"
+    ],
+    "cached_cpu_and_generic_objects": 100,
+    "cache_target_assembly": "Each selected factor owns its imported object target. No unselected GPU/bridge factor is admitted from the previous mixed link plan. The real private Graph/Compute executors are unchanged.",
+    "source_family": "Pure CPU ffa4e8b80930029a35991f94e7c8a93cd67730ab; ten canonical patched files match the retained pure tree. Only changed ops.cpp and ggml-alloc.c are materialized separately from authenticated original cache bytes.",
+    "fresh_TUs": {
+      "native": 4,
+      "Hyle_GGML_header_boundary": 7,
+      "engine_entry_and_current_Model": 2
+    },
+    "header_boundary": "Every retained consumer of ggml_tensor internals in the Hyle CPU provider/runtime/region is rebuilt against the same pure ffa4 headers. CPU provider/native_batch use the real pure F32_FLASH and IQ1 capabilities, not mixed-family tensor layout assumptions.",
+    "immutable_cache": true,
+    "third_party_tree_copies": 0,
+    "HTTP": 0,
+    "whole_SDK_builds": 0,
+    "startup_configuration": "Native AVX module is an explicit hyle_cpu CMake build dependency; staged beside the executable. No product variable or provider selector was added."
+  },
+  "source": {
+    "evidence": {
+      "path": "docs\\evidence\\correctness\\mtp-qwen35-original-gguf-q4-cpu-2026-10-24.json",
+      "bytes": 5214,
+      "sha256": "046cb2bf3b8a20b5279a99b3879714ed6a67288fefb632c18a6e37ba21d5eabe"
+    },
+    "source_id": "39daef4a62aeef1437121f3ea2556a0a451255a5a78caa0a743c2df5fb6c5a40",
+    "original_roles": 335,
+    "original_selected_MTP_payload_bytes": 1373938944,
+    "prompt_tokens": 154,
+    "capacity": 256,
+    "requested_outputs": 4,
+    "cache_byte_limit": 268435456,
+    "no_model_weight_download": true
+  },
+  "images": [
+    {
+      "path": ".scratch\\qwen-pure-cpu-deployment-20261024\\build\\bin\\hyle.exe",
+      "bytes": 22687744,
+      "sha256": "4d5cdf71ff56b806cd943426e5ad6f2049af8809933599022eac5e742eddd7f6"
+    },
+    {
+      "path": ".scratch\\qwen-pure-cpu-deployment-20261024\\build\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    }
+  ],
+  "dependency_check": {
+    "recursive_PE_imports": {
+      "path": ".scratch\\qwen-pure-cpu-deployment-20261024\\imports\\closure.json",
+      "bytes": 5957,
+      "sha256": "cde8e2a565daaf7a999f2c9975461ead557586a5555e965e94138ba61c4a310e"
+    },
+    "CUDA": false,
+    "TorchCUDA": false,
+    "cuBLAS": false,
+    "CUDA_fatbin_sections": false,
+    "non_system_runtime": "torch_cpu.dll and c10.dll plus their CPU-only dependencies; new native CPU AVX module depends only on system/CRT libraries.",
+    "restricted_PATH": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\build\\bin;C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib;C:\\WINDOWS\\System32;C:\\WINDOWS",
+    "actual_process_module_sampling": "EnumProcessModulesEx on each running ordinary/K1 process; 32/31 unique modules, original new AVX module seen, no GPU library names. This supplements static PE imports and the restricted PATH."
+  },
+  "native_changes": [
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\src\\ggml-cpu\\ops.cpp",
+        "bytes": 428624,
+        "sha256": "18c32123603a0d461851757463cd4274bc6f7c4a7cd5d5b4e9ad675e00802c03"
+      },
+      "updated": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\native-source\\src\\ggml-cpu\\ops.cpp",
+        "bytes": 432257,
+        "sha256": "de388e5e9742b6833ac2e6100232a8446f8af72fb001c4af772d7886f548be0d"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\src\\ggml-alloc.c",
+        "bytes": 45068,
+        "sha256": "9664bda3e9c4223f5c94ebfeb3c0381f0065a5091ddae707c09a800f7e419a39"
+      },
+      "updated": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\native-source\\src\\ggml-alloc.c",
+        "bytes": 47024,
+        "sha256": "524417bab28d8afcfa91428a927aaa2fb3e14dd8608ec0c389a3443cf9f5eb25"
+      }
+    }
+  ],
+  "source_unchanged_during_build": true,
+  "tests": [
+    {
+      "mode": "ordinary",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "actual_loaded_modules": 32,
+      "CUDA_loaded": false,
+      "output": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\run-ordinary\\output.json",
+        "bytes": 2957,
+        "sha256": "d6dd38d8aad9a89d5a2be4717c3ae948fb72144178b669d8e9666cca8706828f"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\build\\bin\\hyle.exe",
+        "bytes": 22687744,
+        "sha256": "4d5cdf71ff56b806cd943426e5ad6f2049af8809933599022eac5e742eddd7f6"
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 5.702999999979511,
+        "pid": 47448
+      },
+      "original_host_weight_bytes": 1331977472,
+      "original_device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 42754632,
+      "cache_requested_byte_limit": 268435456,
+      "native_execution_private_bytes_unknown": true,
+      "loaded_module_record": {
+        "path": ".scratch\\qwen-pure-cpu-deployment-20261024\\run-ordinary\\loaded-modules.json",
+        "bytes": 2215,
+        "sha256": "7600ded684f85ab2163c9461c937a1d7eba52189d85e8caeabc785012c20150f"
+      }
+    },
+    {
+      "mode": "k1",
+      "exit": 0,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "actual_loaded_modules": 31,
+      "CUDA_loaded": false,
+      "output": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\run-k1\\output.json",
+        "bytes": 3453,
+        "sha256": "221380fe28f62675dc66b5f035e41c166f95c6442e9f336bc8d4ccc3e83ee8ca"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\build\\bin\\hyle.exe",
+        "bytes": 22687744,
+        "sha256": "4d5cdf71ff56b806cd943426e5ad6f2049af8809933599022eac5e742eddd7f6"
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 6.140999999974156,
+        "pid": 47872
+      },
+      "original_host_weight_bytes": 1373938944,
+      "original_device_weight_bytes": 0,
+      "cache_peak_requested_bytes": 62915043,
+      "cache_requested_byte_limit": 268435456,
+      "native_execution_private_bytes_unknown": true,
+      "loaded_module_record": {
+        "path": ".scratch\\qwen-pure-cpu-deployment-20261024\\run-k1\\loaded-modules.json",
+        "bytes": 2174,
+        "sha256": "1d878ec8cad812e52f6b85607a617e384268f424df05de1b25180b1d971ca79c"
+      }
+    }
+  ],
+  "result": "Both processes exit0, complete final JSON and normal destruction. Ordinary/K1 both emit [71093,12305,198,464], equal to prior short CPU/CUDA Q4 cases; no general numerical or task-quality equivalence is inferred.",
+  "limits": [
+    "No fresh top-level source configure/install/package/relocation run was performed; future engineering validation must cover that distribution path.",
+    "Only the requested ordinary/K1 finite CPU closure cases were run. MultiK, random sampling, long context and other artifact/hardware combinations are not re-signed by this proof.",
+    "Reported cache limit is a requested resource budget. Native opaque workspace remains explicitly unknown; no physical RAM peak or throughput comparison is claimed.",
+    "No GPU runtime was needed by either test. CPU Torch/oneDNN and platform runtime dependencies remain part of the ordinary complete CPU route."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-qwen35-pure-cpu-deployment-2026-10-24-logs.zip",
+    "bytes": 369649,
+    "sha256": "1f70051fe754dbb450339a879135f416abd91f4d2c4a47ff8c4129360cae3b1e"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-24",
+  "scope": "Real native runtime preparation for later bounded MTP/cancellation integration; no full-model pass",
+  "root_cause": "Dense-only tests selected older hand-linked SDK libraries. Correct isolated GDN-native objects already existed and are reused here; their source/object identities still match.",
+  "formal_cache": {
+    "source_id": "Existing code hashes locked patch trees and gated_delta_scale.h; a fresh configure selects a distinct patched source.",
+    "incremental_issue": "Central JSON lock and original base/Metal manifest were not all registered for CMake regeneration after composition.",
+    "fix": "Register the absolute central lock before file(READ), and original base/Metal manifests before generated composition. Existing CPU/Vulkan/CUDA tracking retained.",
+    "validation": "Actual central module included in compiler-free LANGUAGES NONE project; generated Ninja RERUN_CMAKE edge contains real lock JSON. Script include also passes."
+  },
+  "semantics": {
+    "metal": "Real host kargs output_scale plus presence tag; both actual GDN kernels select explicit scale or default 1/sqrt(S_v) at final attention output. Reuses patched native ops and matching GDN embedded source object.",
+    "vulkan": "Real host selects explicit/default F32 scale in existing push constants. Original shader uses attn_col*scale; no new SPIR-V required. Reuses patched native.cpp object and original shader bank."
+  },
+  "tests": {
+    "vulkan": {
+      "passed": 4,
+      "GDN": 2,
+      "Dense": 2,
+      "record": "vulkan-real/gtest-results.json"
+    },
+    "metal": {
+      "passed": 5,
+      "GDN": 3,
+      "Dense": 2,
+      "device": "Mac16,12 Apple M4 16GiB",
+      "record": "metal-real/results/gtest-results.json"
+    },
+    "absent_contract_probes": 0,
+    "new_native_translation_units": 0,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "model_weight_bytes": 0,
+    "performance_claim": false
+  },
+  "reusable_closures": {
+    "vulkan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\native-runtime-readiness\\vulkan-real\\link-plan.json",
+      "bytes": 5036,
+      "sha256": "c6ec11684bcd3a8a34926d3b9e5f01bee98328d6d9284ba063eae50bcb1fbf6f"
+    },
+    "metal": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\native-runtime-readiness\\metal-real\\commands.json",
+      "bytes": 4005,
+      "sha256": "ab99fc49ff02ccbceba82fd987a7af20aeb7516c99bc32ec0b09e38bfa26daba"
+    },
+    "windows_native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\native\\native.obj",
+      "bytes": 7728794,
+      "sha256": "3f0f8bf54ce8c0e6b3186630b723de6dc351ed4e453c249e62a40677076d786e"
+    },
+    "air_native": [
+      {
+        "object": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/metal-native-ops.o",
+          "bytes": 98352,
+          "sha256": "b325229d4023d64878d7ead97560e07254ea7e82b959ad754e93954408e3d48a"
+        },
+        "exit": 0,
+        "relevant": [
+          "0000000000000000 T _ggml_hyle_metal_gdn_output_scale_contract"
+        ]
+      },
+      {
+        "object": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/metal-gdn-embed.o",
+          "bytes": 40696,
+          "sha256": "a70f096e524984090dfcc45aaa58d2a96409683911e63e8ff87aad4fc93fda97"
+        },
+        "exit": 0,
+        "relevant": [
+          "0000000000009cd1 S _ggml_metallib_gated_delta_net_end",
+          "0000000000000000 S _ggml_metallib_gated_delta_net_start"
+        ]
+      }
+    ],
+    "caveat": "These finite GDN+Dense images are prepared native closures. Future engine integration must refresh affected host/Graph/model TUs against their actual headers; this does not attest a complete SDK or model."
+  },
+  "prior_evidence": [
+    "mtp-gdn-output-scale-apple-2026-10-24.json",
+    "mtp-gdn-output-scale-vulkan-2026-10-24.json",
+    "mtp-dense-linear-native-domains-2026-10-24.json"
+  ],
+  "history": "Earlier Dense-focused absent-contract=0 limitation remains historical and is not rewritten.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-native-runtime-readiness-2026-10-24-logs.zip",
+    "bytes": 155280,
+    "sha256": "0b75acf5e0806f538cc4eca3d64a64d142390362c937a2a78dcef1560d9d7e82"
+  }
+}

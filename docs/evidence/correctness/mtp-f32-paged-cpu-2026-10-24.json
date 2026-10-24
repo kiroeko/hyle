@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-24",
+  "scope": "F32 native paged attention and CacheStorage typing needed for feasible Q27 CPU MTP; focused lower-layer implementation only.",
+  "result": {
+    "tests": 51,
+    "passed": 51,
+    "failures": 0,
+    "errors": 0,
+    "suites": [
+      {
+        "name": "BatchLayout",
+        "tests": 30
+      },
+      {
+        "name": "NativePagedMetadata",
+        "tests": 9
+      },
+      {
+        "name": "GgmlCpuPaged",
+        "tests": 7
+      },
+      {
+        "name": "ComputeOpsCacheStorage",
+        "tests": 5
+      }
+    ],
+    "separate_oracle_subset": {
+      "tests": 7,
+      "passed": 7
+    },
+    "process_wall_seconds": 41.55510659998981
+  },
+  "covered": [
+    "Distinct plain F32 and Q8_0 cache descriptors, copy/assignment, correct extent, unchanged F16 default.",
+    "Batch schema and native page16 route admit F32; CPU provider admits it only when native F32 flash is enabled.",
+    "F32 Qwen27 attention geometry: 24 query heads / 4 KV heads / depth 256, 2 query rows, independent double-precision softmax oracle at tolerance 1e-6.",
+    "Nonzero Q/K, causal and noncausal execution, left windows -1/4/0, tails 1/15/16, scattered physical pages and NaN-poisoned inactive storage.",
+    "F32 decode reuses the native plan across page-tail and window changes; existing half/Q8 native tests pass.",
+    "Exported F32 native page indices remain Metadata budget allocations with retained owners and retire correctly.",
+    "Existing original-role test adapter maps IQ3_S/IQ4_NL/IQ4_XS to their native GGML codec identifiers; full-model validation remains pending."
+  ],
+  "abi": {
+    "CacheStorage_bytes": 8,
+    "new_tag": "Plain versus Q8_0",
+    "binary_compatible_with_previous_header": false,
+    "requirement": "Use matching rebuilt headers/libraries. Operation custom descriptors use inline byte copy, so unchanged sizeof is not an ABI proof."
+  },
+  "native_validation": {
+    "fresh_native_translation_units": 1,
+    "existing_attention_edits_applied": 26,
+    "old_DLL": {
+      "path": ".scratch/glm-gguf-selected-20261023/B10/cpu-native-avx2-corrected1/hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1204736,
+      "sha256": "fcb2b57d8aad1453c8dde3468986d4f0120edcd71ef3e6edfd86870c6c1914fa"
+    },
+    "new_DLL": {
+      "path": ".scratch/mtp-full-quant-20261024/f32-paged-check/attempt3/native-link/hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "new_source": {
+      "path": ".scratch/mtp-full-quant-20261024/f32-paged-check/native-paged-current/ops.cpp",
+      "bytes": 422659,
+      "sha256": "11b1fed7c511168e1b8991c8a38c84cebce4a49c1d78ef4526c770468b02b205"
+    },
+    "retained_GDN_and_Hadamard_math": true,
+    "stale_closure_diagnosis": "The manually reused generic v3 DLL lacked native page/window/causal parameter interpretation. It returned NaNs in both existing half and new F32 paged cases. Replacing that single native TU fixed all 51 cases.",
+    "formal_build_cache": {
+      "conclusion": "The standard project build fingerprints and stages the native page interpretation. The stale generic v3 DLL used by the manual validation closure does not prove a product cache invalidation bug.",
+      "inspection_only": true,
+      "fresh_project_configure_or_build_performed": false,
+      "in_tree_cpu_patch_files": 4,
+      "computed_normalized_tree_sha256": "697291fdd451dd785010f3d047714c060650d21b010b132043933c2a7f1a27ad",
+      "locked_normalized_tree_sha256": "697291fdd451dd785010f3d047714c060650d21b010b132043933c2a7f1a27ad",
+      "lock_matches": true,
+      "patch_manifest": {
+        "path": "third_party/ggml_cpu_runtime/patches.json",
+        "bytes": 100694,
+        "sha256": "28b38335779d6ae4c668117e02b3918f84756f391d309a5bc90a8214dc97fb6a"
+      },
+      "ops_result_sha256_for_locked_cpu_core": "de388e5e9742b6833ac2e6100232a8446f8af72fb001c4af772d7886f548be0d",
+      "page_window_causal_tags_present": {
+        "0x48595047": true,
+        "0x48594258": true,
+        "0x48594341": true
+      },
+      "gdn_scale_header": {
+        "path": "src/compute_ggml_runtime/gated_delta_scale.h",
+        "bytes": 1991,
+        "sha256": "53a26f36b92f63ed52f250e1e29c5173e541d6a4ad45bc3114dbc8c6a6f861d4"
+      },
+      "derived_cpu_only_source_id": "96495d93a3d70cd4",
+      "derived_cpu_only_program_basename": "hyle_ggml_cpu_avx2_ffa4e8b8_96495d93a3d70cd4",
+      "mixed_backend_source_id": "Also includes the owning GPU/resource patch tree, CPU patch tree, mixed-manifest tool, and backend-specific transforms; it is not the CPU-only source_id above.",
+      "source_evidence": [
+        {
+          "path": "scripts/hyle_support.py",
+          "lines": "357-363",
+          "fact": "init always runs CMake configuration after preparing selected prerequisites; the ready state is written afterwards."
+        },
+        {
+          "path": "cmake/HyleDependencyVersions.cmake",
+          "lines": "74-85,214-237,819-857",
+          "fact": "Hash all normalized in-tree patch files; compare actual tree to the lock before using its identity."
+        },
+        {
+          "path": "src/compute_ggml_runtime/CMakeLists.txt",
+          "lines": "44-54,60-87,178-201,364",
+          "fact": "Include CPU patch tree and transform inputs in source_id, prepare exact build-local source, derive the isolated program basename from commit and source_id."
+        },
+        {
+          "path": "src/compute_ggml_runtime/prepare_source.py",
+          "lines": "40-49,84-110",
+          "fact": "Check upstream and patched file SHA; reject an existing build-local source that differs or contains unexpected files."
+        },
+        {
+          "path": "src/compute_ggml_runtime/prepare_mixed_cpu_manifest.py",
+          "lines": "20-64",
+          "fact": "Mixed builds borrow the CPU manifest edits including page tags; only FWHT spelling is adapted."
+        },
+        {
+          "path": "src/compute_ggml_runtime/cpu_program.cmake",
+          "lines": "14-15,43-56",
+          "fact": "Build the fingerprinted DLL, embed that exact filename in the runtime loader, and stage/install the same target file."
+        },
+        {
+          "path": "src/compute_ggml_runtime/cpu_program.cc",
+          "lines": "29-42",
+          "fact": "Load the compile-time filename; the generic hand-linked v3 test filename is not a formal product cache key."
+        }
+      ]
+    }
+  },
+  "resource_limits": {
+    "HTTP_requests": 0,
+    "SDK_rebuilds": 0,
+    "full_model_runs": 0
+  },
+  "not_claimed": [
+    "Full Q27 text or MTP execution",
+    "Full Q27 encoded-weight quality",
+    "CPU+CUDA mixed full-model execution",
+    "Metal/CUDA/Vulkan F32 paged qualification",
+    "Performance or peak-memory measurement",
+    "Old-header binary compatibility"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-f32-paged-cpu-2026-10-24-logs.zip",
+    "bytes": 44844,
+    "sha256": "1cec2ba1234e6a8471ad04020b7019d44d5109d49f0cc509fd40967b34ee117c"
+  }
+}

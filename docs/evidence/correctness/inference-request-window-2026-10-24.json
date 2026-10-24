@@ -1,0 +1,146 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Shared index-only FIFO/active/whole-turn request window, used by Qwen natural ordinary and MTP paths. Model admission, complete state, version budgets, bucket execution and publication remain original.",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "sha256": "da27965d52d1e67897eb4e3af9c634be0dc454559e5317004353be968db641c1",
+      "bytes": 424758,
+      "crlf": 0
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "sha256": "37f3998cc2e13da1beb9729e1025ac1ece5928b28a494e99583b436c9a8eaf77",
+      "bytes": 3792,
+      "crlf": 0
+    },
+    {
+      "path": "tests/tools/inference_request_window_test.cc",
+      "sha256": "46e9dc56c2a01a11291bd1e7a6617e166022550c22d889683d47a3d22eea5b4c",
+      "bytes": 8005,
+      "crlf": 0
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "sha256": "c965875b22ff0878d45d0d7cc8b88bcbc54bd8ff2c13874442c6c0fff0aa602a",
+      "bytes": 13429,
+      "crlf": 0
+    }
+  ],
+  "source_assertions": {
+    "checks": {
+      "prefix_outside_queue_unchanged_except_include": true,
+      "reports_and_explicit_fixed_replay_suffix_unchanged": true,
+      "wave_prepare_bucket_budget_execute_mark_publish_unchanged": true,
+      "restore_fork_head_rng_begin_turn_unchanged": true,
+      "no_qwen_type_in_shared_header": true,
+      "new_target_registered_once": true,
+      "all_changed_files_lf": true,
+      "borrowed_wave_not_accessed_after_release": true,
+      "shared_state_is_only_index_vectors_and_counters": true
+    },
+    "compiled": false,
+    "tests_run": false,
+    "models_run": false,
+    "network": false,
+    "limits": [
+      "Source comparison only; root owns strict host compilation and existing finite integration regressions.",
+      "RequestWindow assumes single-owner synchronous use and cold prepare; it does not own or retire request/state payloads."
+    ]
+  },
+  "independent_review": {
+    "path": ".scratch/inference-request-window-20261024/independent-review.md",
+    "bytes": 4080,
+    "sha256": "13929e432a742cef815655febeb276da1b871e199b177298e9987662893dc711"
+  },
+  "host": {
+    "summary": {
+      "path": ".scratch/inference-request-window-20261024/host/summary.json",
+      "bytes": 975,
+      "sha256": "f9acb2551a328514a9a6c53914146f85c0b5e751f0f442a6b5a992bdb350005c"
+    },
+    "checks": 4,
+    "compile": {
+      "exit": 0,
+      "seconds": 0.4539999999979045,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.030999999988125637,
+      "timeout": false
+    },
+    "contracts": [
+      "N1 whole-turn FIFO and requeue order",
+      "N2 headless reservations and actual oldest-idle victim facts",
+      "Invalid transitions preserve waiting/active order",
+      "7 requests/21 turns/N5 valid operations have zero tracked operator-new allocations after prepare"
+    ],
+    "CTest_registration": "Source registered once; direct strict host run, no whole-project reconfigure."
+  },
+  "actual": {
+    "consumer_TUs": 1,
+    "reporting_TUs": 1,
+    "actual_processes": 1,
+    "old_runs": 0,
+    "report_count": 8,
+    "differences": [],
+    "added_fields": [],
+    "groups": {
+      "batch": 15,
+      "session": 28
+    },
+    "late_IO_failures": {
+      "expected_late_diagnostic_failure": 1,
+      "expected_fullhit_late_diagnostic_failure": 1
+    },
+    "process": {
+      "compile": {
+        "exit": 0,
+        "seconds": 17.280999999988126,
+        "timeout": false
+      },
+      "reporting_compile": {
+        "exit": 0,
+        "seconds": 1.3590000000258442,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.3440000000118744,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 1.8599999999860302,
+        "timeout": false
+      }
+    },
+    "summary": {
+      "path": ".scratch/inference-request-window-20261024/regression/proof-summary.json",
+      "bytes": 9401,
+      "sha256": "d5abed26579b4649c94220c4d06693a36cd66d88bd4bb8980dce9fa43619974e"
+    }
+  },
+  "limits": [
+    "Retained tiny A-only Vulkan fixture, existing multi-turn Text N2/R2 cache hit/evict/recovery and stochastic MTP K2/R2; fixed replay remains separate.",
+    "Window shares indices only; this does not prove an entire allocation-free generation loop or cross-model request/cache adaptation.",
+    "No new full-model, GDN, platform matrix, quality, throughput or memory-peak measurement."
+  ],
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "throughput_claim": false,
+  "cleanup": {
+    "exact_files": 8,
+    "logical_bytes": 83657060,
+    "contains_one_private_DLL_hardlink": true,
+    "original_caches_retained": true,
+    "performed": true
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-request-window-2026-10-24.zip",
+    "bytes": 261483,
+    "sha256": "5dfe497db011e29c495b5f85564b97d9b2b59eeff61c3f0f838193589bc1d5c5"
+  }
+}

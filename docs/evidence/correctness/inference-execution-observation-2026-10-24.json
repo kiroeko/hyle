@@ -1,0 +1,239 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Model-independent execution observation records and separate CLI formatters, shared by ordinary/MTP and fixed replay. Finite Windows CPU/Vulkan consumer regression.",
+  "changes": [
+    "StepObservation and PreparationObservation belong to hyle::inference with unchanged fields/defaults.",
+    "Two formatters live in a real separate reporting translation unit with explicit ostream; original commit/observation/trace ordering retained.",
+    "Existing target helper and registered include-main test build the small reporting TU; no new SDK module, registry or compatibility alias."
+  ],
+  "actual_consumer_regression": {
+    "state": "passed",
+    "scope": "One current existing A-only natural Text4x2 N2/R2 full/partial prefixes, greedy recovery/lateIO, stochastic MTP K2R2 and fixed CLI tape. Compare previous actual reports and real stderr formatter sequence/fields/non-timing values.",
+    "differences": [],
+    "added_report_fields": [],
+    "late_IO_failures_observed": {
+      "expected_late_diagnostic_failure": 1,
+      "expected_fullhit_late_diagnostic_failure": 1
+    },
+    "committed_math_ledgers_RNG_geometry_equal": true,
+    "compile": {
+      "exit": 0,
+      "seconds": 16.453000000008615,
+      "timeout": false
+    },
+    "reporting_compile": {
+      "exit": 0,
+      "seconds": 1.375,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.312000000005355,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 1.8289999999979045,
+      "timeout": false
+    },
+    "consumer_TUs": 1,
+    "reporting_TUs": 1,
+    "actual_processes": 1,
+    "old_runs": 0,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "full_models": 0,
+    "quality_claim": false,
+    "performance_claim": false,
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\source-pins.json",
+      "bytes": 16690,
+      "sha256": "746f1a2be76e5a6998600cc6cdbb9c01de64e748816758b9d44628d3f01d0a89"
+    },
+    "baseline": {
+      "previous": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-boundaries-20261024\\regression\\summary.json",
+        "bytes": 115555,
+        "sha256": "8ee89bc7c7e1f0841de3ebd106c24245c93a560e13291900d520a149bf912ab2"
+      },
+      "probe": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\probe.cc",
+        "bytes": 12286,
+        "sha256": "27167dbb69910d61626f508f215dfd155db99dcb227d74ce30d79c646b6fd132"
+      },
+      "reports": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\reference\\reports.json",
+        "bytes": 100048,
+        "sha256": "1a4e1c43b3852bb93745a1d60cbad03e1852d47e1a6ffdd78e3234d7eecd16c7"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\reference\\stderr.log",
+        "bytes": 27166,
+        "sha256": "1f24e6df4441ec1a39f4e381cace1097bb4b5ca7c6016855646a9d15b9ff1a8a"
+      },
+      "fixture": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "bytes": 206336,
+          "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\weights.tsv",
+          "bytes": 5308,
+          "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+        }
+      ],
+      "closure": {
+        "route": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-program-fixed\\archive\\route.lib",
+          "bytes": 28072348,
+          "sha256": "349091d9fca48d66730ce6316d80a85458f4c7b983ab3e21460b88bfdfc2cb0c"
+        },
+        "native_region": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-region-fixed2\\compile\\unit.obj",
+          "bytes": 2654635,
+          "sha256": "2fc293d76f54d7b4f7e4e3ac84f758d89acb2366acceb3e843d7ec50934ffcfb"
+        }
+      },
+      "scope": "One existing A-only current tiny consumer. No old rebuild/run, no new mixed/cold matrix.",
+      "SDK_builds": 0,
+      "HTTP": 0
+    },
+    "image": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\link\\probe.exe",
+        "bytes": 69522432,
+        "sha256": "20e7f035933e6dff6bc04902a38a1de8e101140e54f0e1b08a6e4f8e779aceb6"
+      },
+      "objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\compile\\unit.obj",
+          "bytes": 12534204,
+          "sha256": "46ce0807dac05f748f422338413eaf488b935a0be46c5b36fc57c8652314fed5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\reporting-compile\\unit.obj",
+          "bytes": 49446,
+          "sha256": "3b57f4f89ad6f8710241d8280d958294585f5f53d817fc758928f8570fc597c2"
+        }
+      ],
+      "baseline_link": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\reference\\link-command.json",
+        "bytes": 18384,
+        "sha256": "95e9d40a362641f701d32725c2ce2373ea279df1b34407ac775cd606c10f88f2"
+      },
+      "native": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        }
+      ],
+      "SDK_builds": 0
+    },
+    "formatter": {
+      "actual_line_counts": {
+        "prefix_hit": 0,
+        "request_prefix_hit": 2,
+        "prepared": 53,
+        "step": 53,
+        "preparation": 0,
+        "batch_plan": 0
+      },
+      "actual_field_sequences": {
+        "prefix_hit": [],
+        "request_prefix_hit": [
+          [
+            "name",
+            "reused_tokens",
+            "prompt_graph_calls",
+            "frontier_sampling_graph_calls",
+            "visible"
+          ]
+        ],
+        "prepared": [
+          [
+            "T",
+            "visible",
+            "replay",
+            "cold_batch_seconds",
+            "capture_recorded",
+            "capture_reused"
+          ]
+        ],
+        "step": [
+          [
+            "tokens",
+            "visible",
+            "seconds",
+            "submit_seconds",
+            "step_seconds",
+            "progress",
+            "next"
+          ]
+        ],
+        "preparation": [],
+        "batch_plan": []
+      },
+      "full_sequence_and_non_timing_values_equal": true,
+      "unexercised": [
+        "prefix_hit",
+        "preparation",
+        "batch_plan"
+      ]
+    },
+    "report_count": 8,
+    "excluded_fields": "Only seconds / *_seconds / *tokens_per_second*. No process identities required exclusion.",
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-observation-20261024\\regression\\summary.json",
+      "bytes": 163485,
+      "sha256": "e05145b8c081086a49cc07c4faa213927c3b885fb6f38c6645bca3277de055c8"
+    },
+    "boundary": "Tiny untrained A-only fixture, actual current execution and existing finite request/formatter contracts; no new GDN/mixed/full-model/quality/performance coverage."
+  },
+  "source_only": {
+    "scope": "source-only extraction checks; no compilation, linked test, model or download performed",
+    "normalization": "only extracted declarations/functions, explicit shared type references and stream-injected writer call names; whole remaining main/probe bytes preserved",
+    "checks": {
+      "shared_fields_and_defaults_identical": true,
+      "formatter_body_identical_except_names_namespace_output_stream": true,
+      "main_identical_after_exact_type_and_writer_migration_normalization": true,
+      "probe_identical_after_exact_3_type_changes": true,
+      "main_no_old_formatters": true,
+      "main_no_qwen_observation_alias": true
+    }
+  },
+  "build_configuration": {
+    "state": "passed",
+    "test": "Existing EngineComponentsTest.test_actual_application_target_is_default_and_probes_are_opt_in",
+    "scope": "Real application/probe CMake directory configured against tiny existing interface fixture, no SDK build.",
+    "process": {
+      "exit": 0,
+      "seconds": 2.6560000000172295,
+      "timeout": false
+    }
+  },
+  "limitations": [
+    "Actual runtime fixture is small untrained A-only; no whole-model quality, all-platform or performance claim.",
+    "Actual runtime reaches step/prepared writers; prefix/preparation/batch-plan writer branches have source-equivalence evidence only.",
+    "Model fallback printing, request JSON/trace separation and cross-model state/generation adaptation remain unfinished."
+  ],
+  "SDK_builds": 0,
+  "HTTP_requests": 0,
+  "downloads_bytes": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-execution-observation-2026-10-24.zip",
+    "bytes": 489126,
+    "sha256": "6d6424c1e26c5faa07c039a074f91392672c95062533f26f2c120c2f21d3b1ff"
+  },
+  "cleanup": {
+    "state": "completed",
+    "files": 6,
+    "logical_bytes": 83379335,
+    "private_DLL_hardlinks_removed": 1,
+    "physical_freed_bytes_measured": false,
+    "record": ".scratch/inference-execution-observation-20261024/regression/binary-cleanup-removed.json",
+    "preserved": "Source, commands, results, fixture and corrected production closure."
+  }
+}

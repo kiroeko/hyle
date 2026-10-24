@@ -1,0 +1,194 @@
+{
+  "kind": "Qwen FP8 block128 prepared source/import/Recipe functional binding",
+  "date": "2026-10-24",
+  "complete": true,
+  "scope": "Selected fixed SGLang reader contract, full original role schema, bounded cold import and CPU/CUDA original tiles. No complete 27B execution, model/task quality, throughput or universal publisher/reader claim.",
+  "policy": {
+    "reader": "sglang@06992c92ad4494fe9f9636e75be3e35040512447",
+    "activation_scale": "divide",
+    "activation_floor_f32_bits": "2edbe6ff",
+    "input_dtype": "BF16",
+    "accumulation_dtype": "F32",
+    "output_dtype": "BF16",
+    "weight_scale_conversion": "bf16_to_f32_exact",
+    "block_size": [
+      128,
+      128
+    ],
+    "selection": "prepare.py --fp8-reader sglang-06992c92; required only for these original FP8 block128 groups",
+    "identity": "All serialized fields are included in the source fingerprint; immutable Model/compiled-family identity retains the same policy."
+  },
+  "reader_evidence": {
+    "path": ".scratch\\mtp-q27-fp8-20261024\\cat06-reader-contract.json",
+    "bytes": 13613,
+    "sha256": "db7ca6882fb3cb9360f3fcbf98fe164a22c3b5bcb2dd36fd83cacecac55f1011"
+  },
+  "metadata": {
+    "actual_source": {
+      "scope": "All actual fixed original role metadata; payload authentication deliberately stubbed, not a usable prepared bank or body identity",
+      "original_plan_sha256": "4a8d7db3acb17ff61054f6c65e09870e8b639f9b9bf51f2b7cf07673fb8f3a1b",
+      "physical_roles": 1273,
+      "selected_weight_bytes": 29945203072,
+      "text_weight_bytes": 29468003328,
+      "mtp_weight_bytes": 477199744,
+      "groups": 407,
+      "policy": {
+        "reader": "sglang@06992c92ad4494fe9f9636e75be3e35040512447",
+        "activation_scale": "divide",
+        "activation_floor_f32_bits": "2edbe6ff",
+        "input_dtype": "BF16",
+        "accumulation_dtype": "F32",
+        "output_dtype": "BF16",
+        "weight_scale_conversion": "bf16_to_f32_exact",
+        "block_size": [
+          128,
+          128
+        ]
+      }
+    },
+    "cpp_checks": 312,
+    "python_hf_tests": 11,
+    "python_gguf_tests": 9,
+    "body_authentication": "Explicitly not performed for actual complete1273 schema; all fake body hashes/NOT_DOWNLOADED paths remain marked metadata-only."
+  },
+  "cold_load": {
+    "original_roles": "Physical original code and scale roles/bytes remain the source inventory, even when they form one canonical carrier.",
+    "canonical": "One encoded E4+F32-SF carrier per projection; original BF16 SF widened exactly.",
+    "lifetime": "Read-only exact role mappings + one F32 scale grid + one host carrier at a time; CPU retains that carrier directly, device target gets one copy before host temporary dies. No whole decoded weight or second original-code bank.",
+    "native_cpu": "Current torch_cpu_program.cc borrows encoded carrier via from_blob; each decoded weight temporary is a single K128 block. No whole encoded-bank clone.",
+    "os_memory": "Mapped source pages/file cache are OS managed and reclaimable, not a claimed physical-memory cap.",
+    "synthetic_loader": {
+      "bytes": 937990,
+      "ordinary": {
+        "original_roles": 14,
+        "canonical_tensors": 13,
+        "original_bytes": 476930,
+        "canonical_bytes": 476932,
+        "groups": 1
+      },
+      "mtp": {
+        "original_roles": 30,
+        "canonical_tensors": 28,
+        "original_bytes": 937990,
+        "canonical_bytes": 937996,
+        "groups": 2
+      },
+      "complete_original_role_validation": true,
+      "original_scale_not_retained_in_bank": true
+    }
+  },
+  "original_tiles": [
+    {
+      "source": "q27-fp8-bf16-sf",
+      "backends": [
+        "cpu",
+        "cuda"
+      ],
+      "code_bytes": 15360,
+      "original_BF16_scale_bytes": 80,
+      "canonical_bytes": 15520,
+      "outputs_per_backend": 9,
+      "original_non_BF16_product_witnesses": 11226,
+      "final_output_early_BF16_product_rounding_witnesses_per_backend": 3
+    },
+    {
+      "source": "q24-fp8-bf16-sf",
+      "backends": [
+        "cpu",
+        "cuda"
+      ],
+      "code_bytes": 6144,
+      "original_BF16_scale_bytes": 32,
+      "canonical_bytes": 6208,
+      "outputs_per_backend": 9,
+      "original_non_BF16_product_witnesses": 4479,
+      "final_output_early_BF16_product_rounding_witnesses_per_backend": 3
+    }
+  ],
+  "numerical_oracle": {
+    "method": "Independent scalar F32 rounding for absmax/448, A/scale, E4 nearest-even, F32 block dot/scale factors and final BF16 round; zero activation, non-unit amplitudes, source products not BF16 representable.",
+    "comparison": "Exact BF16 numeric equality for all36 outputs; signed-zero sign is not constrained. Canonical code/scale bytes are checked bit-exact.",
+    "not_claimed": "No equality among unrelated backend Categorical algorithms; no new stochastic/state or full model quality claim."
+  },
+  "failures": [
+    {
+      "attempt": "binding-cpu",
+      "exit": 1,
+      "kind": "private probe construction",
+      "reason": "No independent shape binding supplied before Invocation creation; no numeric execution"
+    },
+    {
+      "attempt": "binding-cpu2",
+      "exit": 1,
+      "kind": "private probe resource factory",
+      "reason": "Owned binds require ResourceOptions; no numeric execution"
+    }
+  ],
+  "results": [
+    {
+      "backend": "cpu",
+      "compile": 0,
+      "link": 0,
+      "run": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\binding-cpu3\\probe.exe",
+        "bytes": 139904512,
+        "sha256": "3aa4eb7e337c137b9ea05f3ac1a50cd1059931bc1538c1517677482c25a9dc85"
+      }
+    },
+    {
+      "backend": "cuda",
+      "compile": 0,
+      "link": 0,
+      "run": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\binding-cuda3\\probe.exe",
+        "bytes": 139920384,
+        "sha256": "4799de21835257f5f76573309b8115cd38bf3fc8915b16e06db1049f56fa1e1f"
+      }
+    }
+  ],
+  "followup_report_only": "After the frozen probes, projection_score_policy now distinguishes plain F16/F32 stored heads from the unchanged BF16 policy. Exact four-line source delta retained; no math change and no rerun Q8.",
+  "product_sources": [
+    {
+      "path": "engine\\models\\qwen35\\prepared_roles.h",
+      "bytes": 20527,
+      "sha256": "178911a359e557ee5a583527ba32b68b717a6ea8f26790bc7f2fec284d42b95a"
+    },
+    {
+      "path": "engine\\models\\qwen35\\prepare.py",
+      "bytes": 20211,
+      "sha256": "bc5fbd94f8c5698a8a2c8eb47741f337bdfac8b7780f1d85e8897f746f04f072"
+    },
+    {
+      "path": "engine\\models\\qwen35\\main.cc",
+      "bytes": 422504,
+      "sha256": "634ea794264950e87689698585a5711f885864ae5ebff57bed7a48e2c0bdb1b7"
+    },
+    {
+      "path": "engine\\models\\qwen35\\fp8_weight_import.h",
+      "bytes": 3765,
+      "sha256": "e5669f84d624635c641b06be264ae1889b4aed9760b23fa29b2227be2a91883d"
+    },
+    {
+      "path": "tests\\tooling\\qwen_hf_roles_test.py",
+      "bytes": 15514,
+      "sha256": "e4081ab7dd503bf2c6d71d56557730b22e3716e9dc131160ef878aae3cc9e381"
+    },
+    {
+      "path": "tests\\tools\\qwen_prepared_roles_test.cc",
+      "bytes": 33200,
+      "sha256": "b7a8899e442726e500f2339c7698c4dbf0896183d5bc655c77a3d311ad1e98d5"
+    }
+  ],
+  "downloads": 0,
+  "SDK_builds": 0,
+  "full_models_run": 0,
+  "remaining": "cat06 full original source body and CPU ordinary/K1 random journey pending; cat08 channel/token and LocalNVFP4 are independent codecs and excluded from this proof.",
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-qwen-fp8-block128-prepared-binding-2026-10-24-logs.zip",
+    "bytes": 307720,
+    "sha256": "472a2232f75c7fd9ffac2371e8b517d910dbe5bafd73a2d5afeef3d7977da53f",
+    "entries": 141
+  }
+}

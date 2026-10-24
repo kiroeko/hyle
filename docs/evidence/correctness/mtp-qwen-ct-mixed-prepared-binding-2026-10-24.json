@@ -1,0 +1,1202 @@
+{
+  "status": "PASS",
+  "date": "2026-10-24",
+  "scope": "Fixed CT0.17.2 channel/token FP8 plus local NVFP4 prepared-input binding and ordinary/MTP cold loader; original small projection components only, no complete27B generation.",
+  "source": {
+    "repository": "unsloth/Qwen3.8-27B-NVFP4",
+    "revision": "f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+    "original_target": {
+      "file": "model.safetensors",
+      "size": 22568192096,
+      "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+      "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+      "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+    },
+    "target_header": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/header.json",
+      "bytes": 251128,
+      "sha256": "4b84e0212253cc57dc5d3a6ac51fec8eb4775c7c0c35d1d59b375822be22f9e4"
+    },
+    "whole_target_body_acquired_or_LFS_verified": false,
+    "sidecar_header": {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat08/header.json",
+      "bytes": 1600,
+      "sha256": "4aa005d948a3fb3d6a3e135a24da2a76c894898b68b21296bfb88adc32524d7b"
+    },
+    "sidecar_original_identity": {
+      "file": "model_mtp.safetensors",
+      "size": 849400392,
+      "lfs_sha256": "1d8268aa85ace093a561e3e7b63b9d390dac1cd55a90cd55b5ec509c3c9da9fe",
+      "api_xet_hash": "f61c3c2897236c0c59db426286d377528473958fc46702a4e4d106d51601a9f1",
+      "etag": "\"f61c3c2897236c0c59db426286d377528473958fc46702a4e4d106d51601a9f1\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+    },
+    "whole_sidecar_body_acquired_or_LFS_verified": false
+  },
+  "source_geometry": {
+    "hidden": 5120,
+    "layers": 64,
+    "gdn_layers": 48,
+    "full_attention_layers": 16,
+    "independent_head": true
+  },
+  "binding": {
+    "channel": {
+      "groups": 233,
+      "codes": "original E4M3FN[N,K]",
+      "scales": "original BF16[N,1]",
+      "activation": "BF16 row absmax/448 typed divide; replace only exactly zero with1/128; BF16 normalize/clip\u2192E4M3\u2192BF16 dequant; original E4M3 W\u00d7BF16 SF rounds to BF16 before F32 dot and BF16 output"
+    },
+    "local": {
+      "groups": 168,
+      "operation": "LocalNvfp4Linear(Fp4InputRounding::kFloat32)",
+      "original_WG_IG": "Retained independent F32 quantization multipliers; passed unchanged, not reciprocated into ModelOpt fields"
+    },
+    "scores": "Reuse source projection BF16 result and widen to F32 logits",
+    "cache_omission": "Separate explicit BF16-KV omission manifest line; only geometry-derived full-attention original BF16[1] k_scale/v_scale pairs, retained names/shapes/hashes and reason in source identity/receipt; unknown roles reject",
+    "ordinary_and_MTP": "Same full-inventory validation and source identity; select only needed physical weights for IO",
+    "unrelated_sources": "No new policy line or identity field for unrelated dense/GPTQ/NVFP4/CTsym/block128 sources"
+  },
+  "metadata": {
+    "scope": "Only actual original headers and selected reader metadata; no original target or MTP body authentication claimed",
+    "metadata_only_identity": "a3c84a0cd8d0f5ed6aa2038cd013fd9dd657d43743cabbc6689bfe86a6ce7f27",
+    "target_and_sidecar_roles": 1635,
+    "channel_groups": 233,
+    "local_groups": 168,
+    "omitted_cache_calibration": 32,
+    "selected_with_mtp": 1603,
+    "selected_text": 1588,
+    "HTTP": 0,
+    "models_started": 0
+  },
+  "metadata_tests": {
+    "capture": "Observed tool results recorded without repeating checks solely to create logs",
+    "python": {
+      "command": [
+        "python",
+        "-B",
+        "tests/tooling/qwen_hf_roles_test.py"
+      ],
+      "exit": 0,
+      "tests": 12,
+      "status": "OK"
+    },
+    "actual_header_cpp": {
+      "command": [
+        ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/checks.exe",
+        ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/fixtures-original",
+        ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/original-headers.tsv"
+      ],
+      "exit": 0,
+      "checks": 321,
+      "stdout": "PASS 321 checks: dense335, pinned Q01/Q03/CT physical metadata, MTP selection, bounded inventory and malformed ranges"
+    },
+    "HTTP": 0,
+    "models_started": 0
+  },
+  "tiny_loader": {
+    "source": "Synthetic complete2-layer GA geometry, not trained model generation",
+    "source_id": "f7a2f4568790b9986a9a19d80b415ba254b5b2b6ed2c9c9d117e8a0f8beb1d76",
+    "source_payload_bytes": 13682,
+    "ordinary_selected_roles": 31,
+    "ordinary_selected_bytes": 8268,
+    "MTP_selected_roles": 46,
+    "MTP_selected_bytes": 13564,
+    "omitted_original_BF16_cache_roles": 2,
+    "omitted_bytes": 4,
+    "original_hashes_authenticated_by_product_preparer": true,
+    "actual_load_weight_bank_cpu": true,
+    "auxiliary_bank_allocations": 0,
+    "original_policy_and_identity_preserved": true,
+    "canonical_bank_bytes_equal_original_selected_bytes": true
+  },
+  "original_tile_bytes": 39380,
+  "original_tile_records": [
+    {
+      "tile": {
+        "kind": "channel_code_fullK",
+        "original_role": "model.language_model.layers.3.self_attn.k_proj.weight",
+        "original_dtype": "F8_E4M3",
+        "original_shape": [
+          1024,
+          5120
+        ],
+        "selected_shape": [
+          3,
+          5120
+        ],
+        "closed_inclusive_range": [
+          7793756256,
+          7793771615
+        ],
+        "bytes": 15360,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/00/payload.bin",
+        "bytes": 15360,
+        "sha256": "9900ca41579a0b71e2101fd3af463508ff0dffc9c8ebf56bef8e86c02ea68ca0"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/00/complete.json",
+        "bytes": 1513,
+        "sha256": "43ae1c9f247db91e8328f41ca656d6ac7f41794f1c5c2f345a505eee8ea76024"
+      }
+    },
+    {
+      "tile": {
+        "kind": "channel_BF16_scale",
+        "original_role": "model.language_model.layers.3.self_attn.k_proj.weight_scale",
+        "original_dtype": "BF16",
+        "original_shape": [
+          1024,
+          1
+        ],
+        "selected_shape": [
+          3,
+          1
+        ],
+        "closed_inclusive_range": [
+          2564189140,
+          2564189145
+        ],
+        "bytes": 6,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/01/payload.bin",
+        "bytes": 6,
+        "sha256": "b99acdb7d334fd00391044228b1a6706c1be5884ff592733a523f388bd9abe5d"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/01/complete.json",
+        "bytes": 1494,
+        "sha256": "9a383f77a55c3340dc19e6a2cb765223a52bbc13cf930343e22cdcc8e4bcadd2"
+      }
+    },
+    {
+      "tile": {
+        "kind": "channel_code_fullK",
+        "original_role": "lm_head.weight",
+        "original_dtype": "F8_E4M3",
+        "original_shape": [
+          248320,
+          5120
+        ],
+        "selected_shape": [
+          3,
+          5120
+        ],
+        "closed_inclusive_range": [
+          3520809056,
+          3520824415
+        ],
+        "bytes": 15360,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/02/payload.bin",
+        "bytes": 15360,
+        "sha256": "a0f3870cc662b61cd7f0f8c9381ba861b959247168aef79d68e1901fddf6cf49"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/02/complete.json",
+        "bytes": 1476,
+        "sha256": "b3a652234235ffb0a92711eed9f0be37178f1b145cca328ead00098b96461b9a"
+      }
+    },
+    {
+      "tile": {
+        "kind": "channel_BF16_scale",
+        "original_role": "lm_head.weight_scale",
+        "original_dtype": "BF16",
+        "original_shape": [
+          248320,
+          1
+        ],
+        "selected_shape": [
+          3,
+          1
+        ],
+        "closed_inclusive_range": [
+          252480,
+          252485
+        ],
+        "bytes": 6,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/03/payload.bin",
+        "bytes": 6,
+        "sha256": "0803e51b4a172f60ff0cafed450f63eef827e920a45e9a76d13665cef40e69e8"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/03/complete.json",
+        "bytes": 1441,
+        "sha256": "ea5f2a816b6f9f5e8f3fd240d32047b15c170804956d3279d02e1ed9b7d4a1cf"
+      }
+    },
+    {
+      "tile": {
+        "kind": "local_nvfp4_code_fullK",
+        "original_role": "model.language_model.layers.0.mlp.gate_proj.weight_packed",
+        "original_dtype": "U8",
+        "original_shape": [
+          17408,
+          2560
+        ],
+        "selected_shape": [
+          3,
+          2560
+        ],
+        "closed_inclusive_range": [
+          15125923936,
+          15125931615
+        ],
+        "bytes": 7680,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/04/payload.bin",
+        "bytes": 7680,
+        "sha256": "3ca2b494017ad438451256bec52861dcabfdab5947d3204d59ef8b1b92b28d35"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/04/complete.json",
+        "bytes": 1517,
+        "sha256": "da2049407ad5414cce1016158c80f5f6bcfde3ec675bc8f6a917f0e6651f6f0a"
+      }
+    },
+    {
+      "tile": {
+        "kind": "local_nvfp4_group_scale",
+        "original_role": "model.language_model.layers.0.mlp.gate_proj.weight_scale",
+        "original_dtype": "F8_E4M3",
+        "original_shape": [
+          17408,
+          320
+        ],
+        "selected_shape": [
+          3,
+          320
+        ],
+        "closed_inclusive_range": [
+          4913121376,
+          4913122335
+        ],
+        "bytes": 960,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/05/payload.bin",
+        "bytes": 960,
+        "sha256": "1f30789c798be8c455f9e8fcb227753411a78abe75e01e1c32d32434bd4f6f7d"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/05/complete.json",
+        "bytes": 1512,
+        "sha256": "a3b8384c02c16cc36e73bdb617b384adf6b02aba4897fb3574a291849bf2670c"
+      }
+    },
+    {
+      "tile": {
+        "kind": "local_nvfp4_original_WG",
+        "original_role": "model.language_model.layers.0.mlp.gate_proj.weight_global_scale",
+        "original_dtype": "F32",
+        "original_shape": [
+          1
+        ],
+        "selected_shape": [
+          1
+        ],
+        "closed_inclusive_range": [
+          251148,
+          251151
+        ],
+        "bytes": 4,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/06/payload.bin",
+        "bytes": 4,
+        "sha256": "b20fb26624278a797f9c1b8dff34cc4745ba943c1cc92bb90b7861ef1439df25"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/06/complete.json",
+        "bytes": 1465,
+        "sha256": "a41d097a32e5ba622eb792dce28513d622b7291dd0742f92c477124dafa9bdcb"
+      }
+    },
+    {
+      "tile": {
+        "kind": "local_nvfp4_original_IG",
+        "original_role": "model.language_model.layers.0.mlp.gate_proj.input_global_scale",
+        "original_dtype": "F32",
+        "original_shape": [
+          1
+        ],
+        "selected_shape": [
+          1
+        ],
+        "closed_inclusive_range": [
+          251144,
+          251147
+        ],
+        "bytes": 4,
+        "source": {
+          "file": "model.safetensors",
+          "size": 22568192096,
+          "lfs_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+          "api_xet_hash": "a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974",
+          "etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\""
+        },
+        "url": "https://hf-mirror.net/unsloth/Qwen3.8-27B-NVFP4/resolve/f0b7c9e722f5565102fff8481c99e4d86ae099c7/model.safetensors"
+      },
+      "payload": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/07/payload.bin",
+        "bytes": 4,
+        "sha256": "d4ec6bf0b6e87a4cfba056180c456adee0828bde1814470762795cf0b7a84d3f"
+      },
+      "receipt": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/07/complete.json",
+        "bytes": 1464,
+        "sha256": "15f424214d2f7e76e2df23294516abcc1cfc16f860cea1f68d6be005a9db2f40"
+      }
+    }
+  ],
+  "cases": [
+    {
+      "backend": "cpu",
+      "status": "PASS",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\cat08-binding-cpu2\\probe.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792836952.8506584,
+        "timeout_seconds": 120,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 37128,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792836954.6526806,
+        "process_wall_seconds": 1.80161369999405
+      },
+      "original_graphs": 3,
+      "original_output_values": 27,
+      "oracle": "Independent finite scalar F32/BF16/E4M3/E2M1 arithmetic; F64 dot over stored BF16 operands, then RNE BF16 output, widened exactly for logits",
+      "nonzero_BF16_results_equal": true,
+      "signed_zero": "Compared numerically; zero sign is unconstrained, so no general bitwise-equality claim",
+      "raw_log": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/run/stdout.log",
+        "bytes": 1213,
+        "sha256": "4a451156df8a502ea16b02623f3c7685ab95deb0d15fb1d3dc30e983bf963f1c"
+      },
+      "source": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/sources.json",
+        "bytes": 7049,
+        "sha256": "a6363c7e599ae8978fab0b5597f18b00d16d8a0a005229f0ace1893f4b63a600"
+      },
+      "fresh_consumer_TUs": 1,
+      "additional_SDK_builds": 0
+    },
+    {
+      "backend": "cuda",
+      "status": "PASS",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\cat08-binding-cuda2\\probe.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792836979.0268347,
+        "timeout_seconds": 120,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "pid": 22388,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792836980.2843022,
+        "process_wall_seconds": 1.2568599999940488
+      },
+      "original_graphs": 3,
+      "original_output_values": 27,
+      "oracle": "Independent finite scalar F32/BF16/E4M3/E2M1 arithmetic; F64 dot over stored BF16 operands, then RNE BF16 output, widened exactly for logits",
+      "nonzero_BF16_results_equal": true,
+      "signed_zero": "Compared numerically; zero sign is unconstrained, so no general bitwise-equality claim",
+      "raw_log": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/run/stdout.log",
+        "bytes": 833,
+        "sha256": "afc2798065a7881ab5723ba472ac5d0d61426f357e5d95ef64739211289651b6"
+      },
+      "source": {
+        "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/sources.json",
+        "bytes": 7076,
+        "sha256": "273f9d6f01b1a5e57aced5fc03d045cf311e76de6c032f86bedaa17790577d26"
+      },
+      "fresh_consumer_TUs": 1,
+      "additional_SDK_builds": 0
+    }
+  ],
+  "numerical_witnesses": {
+    "attention": {
+      "original_non_BF16_weight_products": 4401,
+      "final_weight_product_rounding": 2,
+      "final_zero_only_epsilon_vs_floor": 3
+    },
+    "head": {
+      "original_non_BF16_weight_products": 12501,
+      "final_weight_product_rounding": 2,
+      "final_zero_only_epsilon_vs_floor": 6
+    },
+    "local": {
+      "original_WG": 6400,
+      "original_IG": 836,
+      "final_F32_vs_BF16_preround": 3
+    }
+  },
+  "initial_setup_failures_preserved": [
+    "Synthetic scratch config first mismatched top-level/text tied flags; no payload or model IO occurred. Corrected both flags in a new fixture directory.",
+    "First private probe passed WeightSelection and Geometry to load_weight_bank in the wrong order; both compiler failures retained. Corrected probe argument order; product code did not change for this fix."
+  ],
+  "additional_HTTP_by_this_task": 0,
+  "additional_SDK_builds": 0,
+  "whole_model_runs": 0,
+  "performance_claim": false,
+  "limitations": [
+    "This source has only header/selected trained tiles, not all21.65GB target text weights or849MB BF16 sidecar body; complete27B generation remains unverified.",
+    "CPU component uses the actual CPU endpoint of the retained standard SDK closure, not a new pure-CPU deployment certification.",
+    "Only CPU/CUDA original-component routes were executed here; existing synthetic primitive coverage does not substitute for new Apple/Vulkan full-model evidence.",
+    "The real original headers drive1635 metadata roles,1603 selected with MTP and1588 text-only roles. Their metadata-only fixture identity is explicitly not a whole-payload source fingerprint.",
+    "Numerical equality is finite-value equality with zero sign unconstrained; this is not a complete task-quality guarantee.",
+    "No throughput or whole-model memory inference follows from these small correctness graphs."
+  ],
+  "files": [
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/publish-cat08-binding.py",
+      "bytes": 9256,
+      "sha256": "29d7fec7af75d871d9e25adf487726b557d91333cee538224f0f5ada945b595b"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-probe.cc",
+      "bytes": 11925,
+      "sha256": "4eb728330e039df7b0900ea1345d104516baca58192e50dfca04069b5cb7d049"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/build-cat08-binding.py",
+      "bytes": 2705,
+      "sha256": "02bd6deef98d4e8f3e5eb476d4393ed7b37ac551992fe64013177e51ec2e3f65"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/run-cat08-binding.py",
+      "bytes": 538,
+      "sha256": "7ed55c07a66e48742db599a8051b109d9d848417ebae7c81bf57d23634f600c5"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/check-cat08-metadata.py",
+      "bytes": 1057,
+      "sha256": "e8a4be1d697c1bfdfc43b60d63664772c69a6ea578c2938c32510144458a7bdd"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/prepare-cat08-tiny.py",
+      "bytes": 2776,
+      "sha256": "852778ce4982c9e437c9ad740ed1b67d196e0a57c54a49ad4bede088d2ba8162"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-cached-target-contract.json",
+      "bytes": 4754,
+      "sha256": "da34f110a193e56272adddee389caa708986e1c97cea41282508d2a9387c011e"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-minimal-tiles-plan.json",
+      "bytes": 8052,
+      "sha256": "f65288308cb626bac8b7c1cd5733b2aff2691fc0f373587c314ad7f97ff2a710"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-bf16-cache-auxiliary-roles.json",
+      "bytes": 7602,
+      "sha256": "9bc353bf86fdaf5effe2800a9bbe30ba2202510ccaca7f73646a7e9a7ad6c56c"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/header.json",
+      "bytes": 251128,
+      "sha256": "4b84e0212253cc57dc5d3a6ac51fec8eb4775c7c0c35d1d59b375822be22f9e4"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/length.bin",
+      "bytes": 8,
+      "sha256": "b256a82e688d8d7efa55b07155ed1453b41580894c3dfa7f419b9050198b6181"
+    },
+    {
+      "path": ".scratch/model-quantization-discovery-2026-10-19/qwen-kimi/unsloth--Qwen3.8-27B-NVFP4/config.json",
+      "bytes": 22564,
+      "sha256": "1b3c71868d1299e52df6fc907deb202d5132b1ef0f72aae0ef6d15185dd53a5c"
+    },
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat08/header.json",
+      "bytes": 1600,
+      "sha256": "4aa005d948a3fb3d6a3e135a24da2a76c894898b68b21296bfb88adc32524d7b"
+    },
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat08/header-length.bin",
+      "bytes": 8,
+      "sha256": "2a7f1a2a001663fa038c4083a642c0c139c6773fb278dc70eb04ea890104dfd7"
+    },
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat08/file-identity.json",
+      "bytes": 393,
+      "sha256": "95619501adbf65736952bf2f4b7055d371cb3a771649c5fe1ef67034308aa907"
+    },
+    {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat08/acquisition.json",
+      "bytes": 1930,
+      "sha256": "fb42f48a41b0c28aab092b02fda0ccf16e26487b618178b532731fe3b9af2fbd"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/observed-metadata-checks.json",
+      "bytes": 760,
+      "sha256": "f5c1527349abc4f207ae67f9b6f67c6e9a3c41630092fe82ec0b23092f65b35a"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/original-headers-result.json",
+      "bytes": 447,
+      "sha256": "9031d93beca61e84daae9230d4ca643200c2a14a4215a35130b21d7288b7c39d"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/original-headers.py",
+      "bytes": 2253,
+      "sha256": "b02f0ad8e0c6642cb8bb6bc9f4102f482c2b7f90c30c0b7d39e40e3185933d2d"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/original-headers.tsv",
+      "bytes": 427977,
+      "sha256": "47471eabee134cbf6c4973ab0567ca619acfafb6e4f7bee8b86080540b9610c2"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/compile/command.json",
+      "bytes": 954,
+      "sha256": "535f38923cd3494ab189e1070cb426e96835368541b56bde73db3e3c80f5f845"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/compile/live.json",
+      "bytes": 971,
+      "sha256": "58694626de54265f391bb988243328c2629e90df922d8bbc32d247f8b4a3d87d"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/compile/process.json",
+      "bytes": 1089,
+      "sha256": "ab74962629f28ec553f4b09329a9c33b4cfbd33fef1a88e3d9c7422e965a2a14"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/compile/stdout.log",
+      "bytes": 29,
+      "sha256": "4e9d3bdd7546b6b6446dc9c7322dd890b815fe8ba81a2aad77e78aef15f852b7"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/run/command.json",
+      "bytes": 390,
+      "sha256": "ec417ceeab21888b15be00b0b8806ec7996786845868f48bd8e25283faa91015"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/run/live.json",
+      "bytes": 407,
+      "sha256": "ff6a49e71a58f9db89116796bb4763543354ab7200d683b1003499ab49ed6680"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/run/process.json",
+      "bytes": 526,
+      "sha256": "c5def318a90083814be4086c75ffe92b6ea75c34b6f0bae6819875634b24097d"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-metadata1/run/stdout.log",
+      "bytes": 119,
+      "sha256": "60980db994fbf73ef8a531b2ad96f4ab88676498a95bbbe5cf05f894b4b0bb95"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiny-loader/preparation-failure.json",
+      "bytes": 373,
+      "sha256": "6de65cc4768b0768c854a5a43668ca21c5f33bd9ad3ec95cd31e4f9cb8db9f1c"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiny-loader2/config.json",
+      "bytes": 21415,
+      "sha256": "1807e90addc1bc96c073abbb9ba8770a8d10d9e3965be6a655acfc1e26366398"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiny-loader2/input.json",
+      "bytes": 14451,
+      "sha256": "58ba271e58205a1f0ffb7437d2bdd04f896f6e079b41b5356b75d88fb964dc57"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiny-loader2/original.bin",
+      "bytes": 13682,
+      "sha256": "554e43c8cddea1eaa7da1a76c2f55a42df61b4113d6fe50cce0ccc2eec5b87dd"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiny-loader2/roles.json",
+      "bytes": 19065,
+      "sha256": "c586c626e5e8d613c18586759d884c0f4299f047252f53742345abfb7b3a9e79"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiny-loader2/weights.tsv",
+      "bytes": 8004,
+      "sha256": "3e5e8fc60b920087ee82154e43c968969302528e9f7f0e904e709c62d53a9df6"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/ready.json",
+      "bytes": 7464,
+      "sha256": "21fcd11ae280ebd7c8a0b3ea86ea64a9e20101b552b12496dfc25ffcc7b93520"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/sources.json",
+      "bytes": 7049,
+      "sha256": "a6363c7e599ae8978fab0b5597f18b00d16d8a0a005229f0ace1893f4b63a600"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/link-plan.json",
+      "bytes": 32520,
+      "sha256": "b614acda96ac2442e7897c0a6ea7936d6eb6f23ab06cc17d71aa6d2e8b38a45f"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/dependencies.json",
+      "bytes": 38905,
+      "sha256": "0348f37d881ef2beb731cfcc5e73756774ca843a5edfb297825617d8c0386cc0"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/compile/command.json",
+      "bytes": 1567,
+      "sha256": "0b02bdd3f0c27080152953457a77705eac9411ca0b20c03c6bca1a467f807b23"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/compile/live.json",
+      "bytes": 1584,
+      "sha256": "1fc84895939146c9da627434bf0847500475406a7435037f4d2272461dfcb63c"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/compile/process.json",
+      "bytes": 1702,
+      "sha256": "a7e8d2a57bc4846acb6863573072fe8c5774100c988a72fcba9401fbdbf30079"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/compile/stdout.log",
+      "bytes": 10,
+      "sha256": "686b82818f387f67fc052a4eb4a5a49a5f45adbd3f3529c4790b719527476327"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/link/command.json",
+      "bytes": 32519,
+      "sha256": "0c9cbacb7e06045d4dad6510d66964b892d3d8e9fa05bd4ff0a48a1b4a1345fb"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/link/live.json",
+      "bytes": 32536,
+      "sha256": "48e18a06c781c980238f0062b80085ee9c014a16d33725ede6a39805fa551335"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/link/process.json",
+      "bytes": 32654,
+      "sha256": "2302918f238f4d4791a8919525e1433884b8e953ddcfb0ea31e06310b1dff7ee"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/link/stdout.log",
+      "bytes": 195,
+      "sha256": "aa6eb31a12f448682f036d322a818fa4ecc8d98189bf6ef1b15ae7e750449aa5"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/run/command.json",
+      "bytes": 366,
+      "sha256": "c0656f33ebad5b913b3e6de5849507c79b764486dfec7d64b750303db40a3fc1"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/run/live.json",
+      "bytes": 383,
+      "sha256": "d0d207c017a31a6a69ec8d746fe7427bb66e2c4a38ff1d13132c052246f6c8cb"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/run/process.json",
+      "bytes": 500,
+      "sha256": "ae98eefced2d2c6e82174e6591d46b3e9f6e44237c34eeb48c8d66f5af5e0963"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/run/stdout.log",
+      "bytes": 1213,
+      "sha256": "4a451156df8a502ea16b02623f3c7685ab95deb0d15fb1d3dc30e983bf963f1c"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu1/source/probe.cc",
+      "bytes": 11925,
+      "sha256": "ab5a77e8bedc5a29c07b2f79d1454ff22b7a1896d8f106f10780e2f76522ed98"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu1/compile/command.json",
+      "bytes": 1568,
+      "sha256": "9c657a288a5d02315006d3c0a354c1a03ab6d54af4c361b5c99513aecd4aa760"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu1/compile/live.json",
+      "bytes": 1585,
+      "sha256": "a5be55ba4cc15e94c99d15dedc2c5d2756ef44108b3f05b77c2e1ddd9127c512"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu1/compile/process.json",
+      "bytes": 1703,
+      "sha256": "4bb6e5a3d0917bde7d8b9d6a043ddcb3159f273e7e9d5dc123cdec8d86750107"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu1/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu1/compile/stdout.log",
+      "bytes": 1581,
+      "sha256": "624452f53a007e6e679ebcc57bd16d8016fb9dae464b7d3f5753e02d42e4c10a"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/ready.json",
+      "bytes": 7467,
+      "sha256": "1f1b403ae253fddcd642cd97fdd85e9861ec3c3233ea72483425d3facc01535a"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/sources.json",
+      "bytes": 7076,
+      "sha256": "273f9d6f01b1a5e57aced5fc03d045cf311e76de6c032f86bedaa17790577d26"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/link-plan.json",
+      "bytes": 32410,
+      "sha256": "930ce507913cc1257bd70a68996e59c6501de2ece89eab4e5f6ef21116677bf5"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/dependencies.json",
+      "bytes": 41272,
+      "sha256": "9523f14a6e2b644498f2690b4442a0ac284c1077be134bd6c8d214a607a955f8"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/compile/command.json",
+      "bytes": 2280,
+      "sha256": "6fcb29b0f3358df6f70279eec710eb24f4caf792336c9df0b5b4bc931a32404b"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/compile/live.json",
+      "bytes": 2297,
+      "sha256": "6fdc3333591947035637c79744f76b27388af5b3cc465bfab352926df21aa541"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/compile/process.json",
+      "bytes": 2415,
+      "sha256": "e4db6e9a194ae9e4b4ca6b06cc02d513bdde8d10007208b366bc252da3acb8e2"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/compile/stdout.log",
+      "bytes": 10,
+      "sha256": "686b82818f387f67fc052a4eb4a5a49a5f45adbd3f3529c4790b719527476327"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/link/command.json",
+      "bytes": 32406,
+      "sha256": "985f9ede28de1bf310d6c9564d232bf10c66c8d2b4b54a07ba5a79bd3ae14b76"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/link/live.json",
+      "bytes": 32423,
+      "sha256": "a8c9abadf239454225155ec680d1092df662bf5a63a0e0763dfe3efd7f817b9e"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/link/process.json",
+      "bytes": 32540,
+      "sha256": "e4ddbad9421ae555db0e921713f03b90a5004476e195b0c41bb943c116e8bbe3"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/link/stdout.log",
+      "bytes": 197,
+      "sha256": "89c9c2b9c5a5c64fe589f174fea91d116fa5746518d8489023f51bf25b13de2e"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/run/command.json",
+      "bytes": 367,
+      "sha256": "b51e74fc151aeb9ccfbbb19fc99da93b6d8cf8665894eaee94d49c008ae646b1"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/run/live.json",
+      "bytes": 384,
+      "sha256": "d685dee0dcff4a3d3f027f5513fa3db06367a828e2b07c6860f81d989b2faec6"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/run/process.json",
+      "bytes": 503,
+      "sha256": "00904097001c50843b26c03d4a858312e4ec8fcb2bfa443e72b0fb2dbc68c0a5"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/run/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda2/run/stdout.log",
+      "bytes": 833,
+      "sha256": "afc2798065a7881ab5723ba472ac5d0d61426f357e5d95ef64739211289651b6"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda1/source/probe.cc",
+      "bytes": 11925,
+      "sha256": "ab5a77e8bedc5a29c07b2f79d1454ff22b7a1896d8f106f10780e2f76522ed98"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda1/compile/command.json",
+      "bytes": 2280,
+      "sha256": "591fc400072ba5d483642cee17e76a9c85163a05fc58823d6af9441aa7f78b07"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda1/compile/live.json",
+      "bytes": 2297,
+      "sha256": "38cebb0830b3414295415a402b07d91cdea921a66f144821a890ec74ef834699"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda1/compile/process.json",
+      "bytes": 2412,
+      "sha256": "25eb0fb3149d8ae3e886e7bd99d3ea00f3ee1ca0c8a03abea4a72c14361fa03b"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda1/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cuda1/compile/stdout.log",
+      "bytes": 1586,
+      "sha256": "eea842e6be1b906520418ac0a2e5312100d9773d5516aab1958c8ac5cca92184"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/inference/mtp_acceptance.h",
+      "bytes": 5397,
+      "sha256": "33b0cb3a3dc91b6cb493937183fe3e598da44821b9fddb0292a1e7a6e151db50"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/inference/sampling_cursor.h",
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/inference/sampling_graph.h",
+      "bytes": 17641,
+      "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/backend.h",
+      "bytes": 18451,
+      "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/driver.h",
+      "bytes": 166,
+      "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/fp8_weight_import.h",
+      "bytes": 3765,
+      "sha256": "e5669f84d624635c641b06be264ae1889b4aed9760b23fa29b2227be2a91883d"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/host_predicates.h",
+      "bytes": 1486,
+      "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/main.cc",
+      "bytes": 426341,
+      "sha256": "5cda8a4a8d42be5481d10badcaa716fc36bf3689e3ba465377c82edbf0795c36"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/mtp_schedule.h",
+      "bytes": 5912,
+      "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/native_gate.h",
+      "bytes": 1050,
+      "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/prefix_cache.h",
+      "bytes": 20952,
+      "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/prepared_roles.h",
+      "bytes": 24777,
+      "sha256": "0ec8bbf4a66440dfd9a9cd8ea11415fa1d0ec97c5eb96044b13a6b62ca471c1b"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/probe_geometry.h",
+      "bytes": 1099,
+      "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/retained_resources.h",
+      "bytes": 1932,
+      "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/engine/models/qwen35/session_state.h",
+      "bytes": 12965,
+      "sha256": "80cae237ea8a58f468dd80b34c479ef08849574e954c80557648bbcfbfc7b814"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/probe.cc",
+      "bytes": 11925,
+      "sha256": "4eb728330e039df7b0900ea1345d104516baca58192e50dfca04069b5cb7d049"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/tests/compute_models/fp8_channel_token_qdq_fixture.h",
+      "bytes": 20907,
+      "sha256": "2feddfd34cd7904b3def4915b7ab1da2db7f29f13f2347278b256788d036ad67"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/tests/compute_models/local_nvfp4_reference_fixture.h",
+      "bytes": 18751,
+      "sha256": "6a44e8635da2e8b269a06e3fa472cfa91f24a417cc10845dd8dcfdf5ee4e6015"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-binding-cpu2/source/tests/tools/qwen_geometry_fixture.h",
+      "bytes": 1527,
+      "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/00/payload.bin",
+      "bytes": 15360,
+      "sha256": "9900ca41579a0b71e2101fd3af463508ff0dffc9c8ebf56bef8e86c02ea68ca0"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/00/complete.json",
+      "bytes": 1513,
+      "sha256": "43ae1c9f247db91e8328f41ca656d6ac7f41794f1c5c2f345a505eee8ea76024"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/01/payload.bin",
+      "bytes": 6,
+      "sha256": "b99acdb7d334fd00391044228b1a6706c1be5884ff592733a523f388bd9abe5d"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/01/complete.json",
+      "bytes": 1494,
+      "sha256": "9a383f77a55c3340dc19e6a2cb765223a52bbc13cf930343e22cdcc8e4bcadd2"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/02/payload.bin",
+      "bytes": 15360,
+      "sha256": "a0f3870cc662b61cd7f0f8c9381ba861b959247168aef79d68e1901fddf6cf49"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/02/complete.json",
+      "bytes": 1476,
+      "sha256": "b3a652234235ffb0a92711eed9f0be37178f1b145cca328ead00098b96461b9a"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/03/payload.bin",
+      "bytes": 6,
+      "sha256": "0803e51b4a172f60ff0cafed450f63eef827e920a45e9a76d13665cef40e69e8"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/03/complete.json",
+      "bytes": 1441,
+      "sha256": "ea5f2a816b6f9f5e8f3fd240d32047b15c170804956d3279d02e1ed9b7d4a1cf"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/04/payload.bin",
+      "bytes": 7680,
+      "sha256": "3ca2b494017ad438451256bec52861dcabfdab5947d3204d59ef8b1b92b28d35"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/04/complete.json",
+      "bytes": 1517,
+      "sha256": "da2049407ad5414cce1016158c80f5f6bcfde3ec675bc8f6a917f0e6651f6f0a"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/05/payload.bin",
+      "bytes": 960,
+      "sha256": "1f30789c798be8c455f9e8fcb227753411a78abe75e01e1c32d32434bd4f6f7d"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/05/complete.json",
+      "bytes": 1512,
+      "sha256": "a3b8384c02c16cc36e73bdb617b384adf6b02aba4897fb3574a291849bf2670c"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/06/payload.bin",
+      "bytes": 4,
+      "sha256": "b20fb26624278a797f9c1b8dff34cc4745ba943c1cc92bb90b7861ef1439df25"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/06/complete.json",
+      "bytes": 1465,
+      "sha256": "a41d097a32e5ba622eb792dce28513d622b7291dd0742f92c477124dafa9bdcb"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/07/payload.bin",
+      "bytes": 4,
+      "sha256": "d4ec6bf0b6e87a4cfba056180c456adee0828bde1814470762795cf0b7a84d3f"
+    },
+    {
+      "path": ".scratch/mtp-q27-fp8-20261024/cat08-tiles/07/complete.json",
+      "bytes": 1464,
+      "sha256": "15f424214d2f7e76e2df23294516abcc1cfc16f860cea1f68d6be005a9db2f40"
+    },
+    {
+      "path": "engine/models/qwen35/prepare.py",
+      "bytes": 27536,
+      "sha256": "5776597c99069272315c8860bfb5549d9df7b4e65b5affc37bdedd78cd863c75"
+    },
+    {
+      "path": "engine/models/qwen35/geometry.py",
+      "bytes": 8542,
+      "sha256": "43b93b3ee48902caba25657c4fc938ab31ef804ecb33b10a4b9cb63f7744ae7f"
+    },
+    {
+      "path": "tests/tooling/qwen_hf_roles_test.py",
+      "bytes": 19358,
+      "sha256": "86f9e86d4041549e85c06b3beb9f78d6f25e8df5ec9dd5dc3ab156e1d03370a0"
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "bytes": 36376,
+      "sha256": "ae25cf908a6a6aab65ec8607e57cdb5459dca8e5a1772b1a490aa807cec66e7d"
+    },
+    {
+      "path": "docs/user/inference.md",
+      "bytes": 7265,
+      "sha256": "6b6d7b95cc7a3fff555e4ef68a017af79f599af6ea2775e68168c4ada127add0"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen-ct-mixed-prepared-binding-2026-10-24.zip",
+    "bytes": 397860,
+    "sha256": "2d48b24ebe5e241717983a0b3ef88d9a614684595d3f41e5714eb7b56777eeda"
+  }
+}

@@ -11,24 +11,71 @@
 再根据实际热点争取反超。同时保持数值、状态、寿命和资源限制正确，检查 prefill、启动和内存是否退化。
 每批改动以真实 tokens/s 判断收益；kernel 数减少和微基准变快只用于解释。
 
-**当前优先项（2026-10-24）：用已完成的单轮／真实两轮窗口定位普通公共成本及MTP增量。** 当前源码、匹配原权重与原P154输入；单轮64输出，两轮在同一会话各追加P154并各生成64，保自然greedy／EOS。每种负载各12个交错新进程测速，另4个进程独立旁采内存，两窗和历史样本不合池。
+**2026-10-25：最新完整基线为全局架构收敛后的当前普通／MTP。** 单轮 P154＋64 输出；真实两轮在同一会话各追加 P154、各生成 64。每种负载各 12 个交错新进程测速，另 4 个进程独立旁采内存，共 32 个进程全部 exit0，臂内输出、实际工作和非时间决策稳定。保留自然 greedy／EOS、原计时端点和默认日志；没有新增时钟或 profiler。
 
-| 当前负载／模式 | Hyle prefill | Hyle decode | Hyle综合 | peer prefill | peer decode | peer综合 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 单轮普通 | 2285.823 | 98.093 | 90.373 | 1563.944 | 101.998 | 89.335 |
-| 单轮MTP | 2087.841 | 120.508 | 107.284 | 1461.629 | 135.747 | 112.387 |
-| 真实两轮普通 | 3301.684 | 98.082 | 92.967 | 2410.144 | 101.590 | 93.534 |
-| 真实两轮MTP | 2792.392 | 125.465 | 114.806 | 2245.021 | 139.519 | 123.383 |
+| 负载／模式 | Hyle prefill | Hyle decode | Hyle 综合 | llama.cpp prefill | llama.cpp decode | llama.cpp 综合 |
+|---|---:|---:|---:|---:|---:|---:|
+| 单轮普通 | 2172.809 | 97.427 | 89.136 | 1487.440 | 101.826 | 88.613 |
+| 单轮 MTP | 2233.768 | 120.148 | 108.141 | 1452.538 | 134.879 | 111.672 |
+| 真实两轮普通 | 2889.417 | 96.674 | 90.888 | 2485.773 | 101.784 | 93.964 |
+| 真实两轮 MTP | 2852.964 | 124.140 | 113.936 | 2349.233 | 140.101 | 123.820 |
 
-单位tok/s，中位数；全部samples、范围、加载和端点见[最新两窗证据](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)。单轮普通／MTP decode落后3.83%／11.23%，两轮落后3.45%／10.07%；两轮综合落后0.61%／6.95%。两轮Hyle自身MTP decode提升27.92%，参考自身提升37.34%；总余差不能都算作MTP逻辑或纯GPU问题。
+单位 tok/s，各臂 3 个独立进程的中位数。普通 decode 单轮／两轮落后 **4.32%／5.02%**，MTP 落后 **10.92%／11.39%**；两轮综合落后 **3.27%／7.98%**。Hyle 自身两轮 MTP decode 提升 **28.41%**，参考提升 **37.64%**。MTP 的额外差距需要继续定位，不能把全部余差都归于 MTP 算法。
 
-两轮prefill以309行实际target输入计速，另列308枚新增用户token；decode以126枚输出计速，综合128枚输出／连续会话时间，加载分列。只补前一pending及新输入，未重算历史；额外draft catchup不记用户token。Hyle MTP接受60／66，验证132行；peer接受61／64，另有一次无proposal尾步，共65次decode调用、验证129行。两边自然续文不同，不按每轮均摊把全部墙差归于接受率，也不要求强制同token。
+| 负载／模式 | dedicated 采样峰 Hyle／参考 | 进程 WS 采样峰 Hyle／参考 | private commit 采样峰 Hyle／参考 |
+|---|---:|---:|---:|
+| 单轮普通 | 3.888／3.728 | 1.053／4.071 | 5.512／4.651 |
+| 单轮 MTP | 4.048／3.896 | 1.152／4.220 | 5.800／5.082 |
+| 真实两轮普通 | 4.023／3.728 | 1.085／4.074 | 5.685／4.675 |
+| 真实两轮 MTP | 4.191／3.896 | 1.186／4.224 | 6.010／5.086 |
 
-单轮Hyle普通／MTP dedicated采样峰3.888／4.048GiB，两轮4.023／4.191GiB；peer两窗均3.728／3.896GiB。它们来自独立PSAPI／PDH旁采，是采样下界；ready基线均null，WS／commit／shared不相加为物理RAM。实际采样最大间隔24.72ms，不能按请求10ms解释为精确分配计费。
+单位 GiB。独立 PSAPI／PDH 旁采的峰值是采样下界；8 个 ready 基线均为 null，不补造精确阶段增量。实际最大采样间隔约 24.68ms；WS、commit、shared、dedicated 代表不同计量，不能相加成物理 RAM。完整样本、范围、加载、阶段旁采和源码身份见[本轮完整证据](../../evidence/performance/mtp-current-single-and-multiturn-2026-10-25.json)。
 
-本窗完成当前产品闭包与真实两轮驱动对照，不是隔离MMQ、capture或某个算子改动的收益实验；与AV的跨窗变化不作因果归因。[两轮有限功能与构建](../../evidence/correctness/mtp-qwen-natural-multiturn-2026-10-24.json)已保留实际pending／cursor／续算。后续优先依据少量当前热点决定改动，普通与MTP分开计账；不重开已拒绝的行拆、Top1或旧capture候选。
+两轮 prefill 以 309 行真实 target 输入计速，另列 308 枚新增用户 token；decode 以 126 枚输出计速，综合以 128 枚输出／连续会话时间计速，加载分列。未重算旧历史，额外 draft catchup 不记用户 token。Hyle MTP 接受 60／66、验证 132 行，总 target／draft 为 441／434 行；参考接受 61／64，另有一次无 proposal 尾步，总 65 次 decode、验证 129 行、总 target／draft 为 438／435 行。续文不同，不能按轮平均把全部墙差归于接受率。
 
-[当前MTP的CUDA节点诊断](../../evidence/performance/qwen-mtp-current-cuda-structure-2026-10-24.json)已各跑1个插桩进程。Hyle132次Graph launch对应66轮的draft／target两段；参考116次只覆盖部分调用，其余走eager，不能直接按launch数比较总工作。目标图738／727个kernel，草拟图37或41／34个；Hyle目标图另有135次D2D、载荷中位约39.73MB，拷贝活动中位约0.137ms。它是后续减少搬运的调查入口，尚未证明可删除，也不足以解释全部速度差。
+当前 CLI／report 与本 BF16 路径实际变化的 4 个 Graph／batch／CUDA region 对象已刷新，复用兼容的 native 数学；不是全 SDK 或其它量化组合的重新认证。V2 清单 335 个角色与旧窗口逐项匹配原 dtype、形状和源范围，普通仅选择 320 个文本角色。本窗是优化前同窗基线，与 [10 月 24 日窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)分开，不据跨日差值宣布架构收益或回归。
+
+**同日准备诊断另列，不能混入上面测速。** 普通／MTP 各一次短入口和一次真实两轮诊断通过；私有时钟数据在 run 返回后输出。
+
+| 末 24 次调用的诊断 | 普通 | MTP |
+|---|---:|---:|
+| prepare 中位，µs | 337.75 | 480.95 |
+| 其中 replay 中位，µs | 153.45 | 203.95 |
+| submit 中位，µs | 72.75 | 92.40 |
+| prepare＋submit 总量／调用墙时总量 | 4.191% | 4.238% |
+| capture recorded／reused 总计 | 0／24 | 1／47 |
+
+普通一次 decode 与 MTP 一次验证的工作不同；这些不是每 token 成本，子项中位不能相加。finish 含 GPU 等待与发布，该比例也不涵盖全部主机工作，不是可回收收益。当前 replay 源码窄审没有发现足以直接删除的重复准备：绑定／权限、只读 seal、队列、真实退休和失败事务仍需保留，warm qualification 和 record 已复用。准备失败及实际范围见[当前诊断](../../evidence/performance/mtp-current-prepare-diagnostics-2026-10-25.json)。
+
+**同日四臂 GPU 轨迹与默认 IO 诊断已完成。** 普通 captured target 的单图 GPU busy 中位约 Hyle 9.510ms、参考两种图 9.498／9.513ms；后 24 个 target 区间内，Hyle 无 GPU 活动的间隙较多。MTP 后 24 区间两边均含 24 target＋23 draft，未见 Hyle 有更大的稳态主机空洞。MTP target 图 busy 中位约 10.876／10.425ms，主要正文投影组约 6.734／6.387ms，head 约 2.331／2.346ms。它们只说明当前物理路线值得检查，不签同数学、因果瓶颈或可回收收益。
+
+Hyle 早期两次 target 间隔含真实 draft，约 12.02／9.57ms 没有 GPU 活动，并伴随录图／实例化；首个间隔的 `cuMemAlloc` 合计约 0.255ms，不能把整个间隙说成分配。参考首个录图前还有 eager target／draft，双方前 24 个录图区间的真实起点没有对齐，不能据该表比较冷启动胜负。四条轨迹另有 driver 13.4／工具 13.3 警告，MTP 原图身份查询报错；活动关联可读，完整性与图谱系没有认证。保留这些限制，不重采矩阵或用 profiler 时长替换前面的无插桩 TPS。
+
+仅逐步 formatter 的两次私有诊断保持原文本、顺序和工作量：普通 128 次合计 17.03ms、MTP 68 次 9.75ms，中位约 130／138µs。它不含入口日志，也不是全部主机成本。完整 trace、IO、源码窄审与口径纠正见[当前成本归因](../../evidence/performance/mtp-current-cost-attribution-2026-10-25.json)。
+
+metadata 候选已关闭：当前 CUDA 路线实际共享 source，5 个 follower 的冷期多余预留在完整 MTP 四个阶段合计仅 22,560B；不是每 token 上传或分配，保留原有准备和失败边界，不为此引入懒分配机制。
+
+[绑定诊断](../../evidence/performance/mtp-capture-binding-diagnostics-2026-10-25.json)进一步分开两种重录：132 次范围决策中录制 32、复用 100；58 个已记录的首不等端口全部只改变同 backing 的 offset，hidden 出现至少三种地址组合，两份变体遇到淘汰后回访。另有两次 prepare 之间明确失效后重新录制，不能据相同指纹删除该边界。首次诊断溢出及一次修正均保留，修正版零溢出、全部非时间工作与基线一致；只细记各 Invocation 前 20 次准备，不把首不等端口当作全部差异，也未观测 native GraphExecUpdate 结果。
+
+[本批候选筛选](../../evidence/performance/mtp-state-and-draft-candidate-screen-2026-10-25.json)已关闭倒序 hidden 分配：仅编译一个私有 app TU，原两轮的一次诊断结果和工作完全一致、零溢出，但重录 32→39，复用 100→93；不做 TPS 重复或合入。配对 hidden 父块现有别名 API 足以表达，但涉及独立请求的持有粒度、prefill／单行初始化及碎片、多 K 预算和诊断寿命，当前没有收益依据支持扩大改动，也不留下挂起的布局任务。原权限、预算、显式失效及两变体政策保持不变。
+
+另一次当前 clean image 的 K2 两轮探索保留 128 个相同输出，但验证调用 66→48、总 Graph 调用 68→193、draft 行 434→571。单次 prefill／decode／综合为 2879.81／123.44／113.47 tok/s，未见足够理由替换 K1；它不是交错统计窗口，参考仍 K1，不能称为同 K 性能胜负。
+
+[正文路线归因](../../evidence/performance/mtp-body-route-attribution-2026-10-25.json)已统一为两端各自末 24 个 captured T2 target：两组正文投影的活动均值 Hyle／参考为 6.665／6.470ms，其中 66 个 N6144、K2048 投影多 0.209ms，另一组抵消 0.014ms。target 全部活动的 busy union 均值为 10.800／10.495ms；kernel、copy、图内间隙和各组中位分别保留，不相加成可回收速度。此前仅取末单图得到相反方向，现已明确纠正；本窗也不与全程均值或中位混算。BF16 A／Y 与参考 F32 载体、不同续文及 eager／图身份限制仍在，不能据此解释全部完整 decode 余差。
+
+同形状 whole-M2 typed MMVF 的一次叶筛选已关闭：原 gate 输入首两行、四 bank、64 leaf 和固定数值门下，Lt／候选中位 58.800／58.240µs，仅差 0.95%，五次范围明显重叠；两者数值门通过，候选有 13 个 BF16 位差。未接完整消费者，也不继续补样或扩融合。归档 runtime 表另记录 13 次 GraphExecUpdate、19 次 Instantiate，API 返回码均为 0，区间合计分别 1.657／22.441ms；driver 表及 UpdateResult 输出未记录，不能与其它时长相减或声称这些 Update 报错后重建。
+
+[原生计划诊断](../../evidence/performance/mtp-native-plan-diagnostics-2026-10-25.json)已实测 474 次 query：427 次复用、26 次首次准备、21 次合法分块变化。第二轮首次 decode 的七个 slot 均因 KV 页数 13→24、128-row chunk 数 2→3 而重建；六个 target 的 query 仍为 2，draft 为 1，schema／generation 没有失效。另 14 次晚段拒绝的全程原因也是 chunk_count，未记录其具体序号，不补造。模型输出和所有非时间报告与基线一致，原权限、退休及 chunk 保护继续保留。
+
+固定分块候选已关闭、未合入：短 query、单请求 BF16 paged attention 在 query 与 plan 共用一个冷策略，尝试固定 512 个逻辑 KV 行（page16 时传 32 页），保持现有复用判定和所有权协议。[有限数值检查](../../evidence/correctness/mtp-fixed-chunk-numeric-2026-10-25.json)的四个场景均通过原 double oracle；新旧 BF16 输出有小差异，不保证位级相同，也未单独认证 capture。
+
+固定分块不能直接扩大到所有上下文：H8、D256、262144 行时将需要 64.25MiB 临时空间，超过默认 64MiB。候选若保留，须按冷期容量选择有限适用域，其余保持原自动规划；不能随当轮长度跳档、放宽预算或删除复用保护。不启用需要额外 mask／计划字段的 CUDA graph 规划模式，也不以减少重录次数冒充 tokens/s 收益。
+
+无插桩的普通完整运行已出现输出分叉：前 18 个相同，第 19 个 271→11，随后 104／128 位置不同；两端均正常结束，所有差异均为 token 派生字段，实际行数、调用、预算和其它非时间字段相同。原严格一致性筛查保留首失败，原 12 进程计划只运行 2 个，未继续普通重复。数值门通过不证明任务质量或相同续文。
+
+随后单独冻结的 [MTP 六进程窗口](../../evidence/performance/mtp-fixed-chunk-screen-2026-10-25.json)按 B,C,C,B,B,C 交错，全部输出与非时间工作相同。decode 中位 124.81→126.55 tok/s（+1.40%），综合 114.29→115.71（+1.24%）；prefill 2856.83→2813.53（−1.52%）。每臂只有三个样本，保留范围，不声称统计显著性；没有 peer 或内存采样，不替代上方正式四臂窗口。小幅短上下文收益不足以支持本轮增加冷容量政策及任务质量边界，候选明确关闭，不留作待验证项。当前产品继续使用原自动规划；候选的长上下文风险和续文分叉未进入产品。
+
+[10月24日MTP节点诊断](../../evidence/performance/qwen-mtp-current-cuda-structure-2026-10-24.json)已各跑1个插桩进程。Hyle132次Graph launch对应66轮的draft／target两段；参考116次只覆盖部分调用，其余走eager，不能直接按launch数比较总工作。目标图738／727个kernel，草拟图37或41／34个；Hyle目标图另有135次D2D、载荷中位约39.73MB，拷贝活动中位约0.137ms。它是后续减少搬运的调查入口，尚未证明可删除，也不足以解释全部速度差。
 
 该轨迹中Hyle的2458次`cuMemAlloc`有2357次在首次decode launch之前，余下101次集中在首次shape／slot及第二轮边界；最后24次decode没有新增分配或图实例化，未发现“每token重新分配”的事实。runtime与driver分配API可能嵌套，分别计数。两臂节点采样有额外开销，静态下载仍在后台，图内统计也不含eager工作；此诊断不替换上面的正式速度窗口，不把余差全部归于分配、capture或某个kernel。
 
@@ -40,7 +87,7 @@
 
 变体实现前的[每步诊断](../../evidence/performance/qwen-capture-recording-cost-2026-10-22.json)中，63步prepare总113.41ms，新record86.17ms，占75.98%；中位prepare／record／bindings／end为1.7801／1.3629／0.1677／0.2202ms。GGML当时未每步重建原生图或重分workspace；72份caller状态端口仅两组物理tuple交替，由此进一步核全参数和私有资源后实现本批变体。该历史比例不用于解释当前全部余差，带日志的4进程也不混入正式TPS。
 
-本轮热点调查、候选决策及最后B07原制品CPU／CUDA有限流程均已完成。Lt冷算法筛选与typed MMVF整消费者候选均已拒绝；当前没有挂起等待验证的候选。有限制品检查不代签完整模型，当前窗口也不表示GPU余差已全部定位。原稳态矩阵投影占累计kernel时长92.466%，该历史GPU占比不能解释当前完整wall差距。最新prefill、decode、启动、空间和完整边界统一见[最新完整窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)。
+此前热点候选调查及最后B07原制品CPU／CUDA有限流程已完成。Lt冷算法筛选与typed MMVF整消费者候选均已拒绝，没有在这些旧候选上挂起等待验证。当前普通／MTP余差继续按本页新窗口调查；有限制品检查不代签完整模型。原稳态矩阵投影占累计kernel时长92.466%，该历史GPU占比不能解释当前完整wall差距。最新prefill、decode、启动、空间和完整边界统一见[最新完整窗口](../../evidence/performance/mtp-current-single-and-multiturn-2026-10-25.json)。
 
 [早期carrier窗](../../evidence/performance/qwen-mtp-divergence-2026-10-22.json)仅懒建未使用的T1执行载体及prefill另一槽，family冷编与数学不变。修改前／后／原peer完整decode为123.01／122.50／140.68tok/s，综合109.33／108.32／117.07；前后范围重叠，不声明速度改善。ready中位1.644→1.613s、含启动总时长2.233→2.204s，dedicated采样峰4.120→4.069GiB；原peer仍生成不同续文。当时record／reuse两条Hyle均18／50；这些历史值保留在原证据，不混入后续四臂或单槽结论。
 
@@ -143,7 +190,7 @@ source、opaque/native owner、派生 alias 和投影等仍保守走完整准备
 本批没有新测显存／内存峰值、能耗或物理 kernel trace。
 `submit_seconds` 已包含在后续提交到结果可见的时间内，不能再相加。
 
-本轮沿[消费者 evaluate](../../../tools/qwen35_text/main.cc)分段，保持原调用和等待顺序：
+本轮沿[消费者 evaluate](../../../engine/models/qwen35/main.cc)分段，保持原调用和等待顺序：
 
 1. 既有输入写入，包括 token/position 两次 H2D；它们在 `cold_batch_seconds` 桶外，但在完整 step 内。
 2. layout 版本创建及六个 reader 的布局装配。
@@ -171,7 +218,7 @@ source、opaque/native owner、派生 alias 和投影等仍保守走完整准备
 - 实际带宽、cache 命中、launch 和完成等待中，哪部分解释了当前差异；由此选择现有 provider、
   融合候选或实现修复。一般机制留在底座，模型角色和生成策略留在测试消费者。
 
-当前总 kernel 是 **596 对 558**；395 是参考非投影部分，不能再用作总数。
+10月20日该窗口的总 kernel 是 **596 对 558**；395 是参考非投影部分，不能用作总数，也不代表后续普通／MTP的当前图。
 以前测过的整批 MMVF 替换、通用大投影替换、FFN 两行 CTA 未证实收益，
 只有新证据改变其前提时才重开。历史图内空隙、GraphLaunch 主机区间也不能直接承诺为可回收预算。
 [热点与计数](../../evidence/performance/decode-major-hotspots-2026-10-20.json)、

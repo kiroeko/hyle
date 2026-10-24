@@ -179,24 +179,27 @@ bool representable(const TensorDesc &description,
                       0;
          });
 }
-// A single native batched matvec reads BF16 W and original F32 A directly.
+// A single native batched matvec reads original floating W and F32 A directly.
+// Mixed F16/BF16 activations are widened exactly before this native carrier;
+// only the small activation is converted, never the full weight allocation.
 // [B,M,K] is contiguous [K,1,M,B] in ggml; W is [K,N,1,B] and the
 // output [N,1,M,B] is exactly row-major [B,M,N]. Rank2 has B=1.
 // No matrix/cublas fallback is
-// permitted here because it can expand the complete BF16 bank to F32.
-bool native_f32_bfloat_linear(const TensorDesc &a, const TensorDesc &w,
+// permitted here because it can expand the complete half/bfloat bank to F32.
+bool native_dense_linear(const TensorDesc &a, const TensorDesc &w,
                               const TensorDesc &output) noexcept {
   const auto rank=a.rank();
   if (!a.valid() || !w.valid() || !output.valid() || (rank != 2 && rank != 3) ||
       w.rank() != rank || output.rank() != rank ||
       !a.is_plain() || !w.is_plain() || !output.is_plain() ||
       !a.is_dense() || !w.is_dense() || !output.is_dense() ||
-      a.data_type() != DataType::kFloat32 || w.data_type() != DataType::kBFloat16 ||
+      !floating(a.data_type()) || !floating(w.data_type()) ||
       output.data_type() != DataType::kFloat32)
     return false;
   const auto ad=a.dimensions(),wd=w.dimensions(),od=output.dimensions();
   const auto batches=rank==3?ad[0]:1,rows=ad[rank-2],width=ad[rank-1],columns=wd[rank-2];
-  // MMVF dispatch is grid(N,M,B), with paired BF16 reads. The fixed NVIDIA
+  // MMVF dispatch is grid(N,M,B), with paired source and F32 activation reads.
+  // The fixed NVIDIA
   // selector also requires N<=512 when the original W has multiple batches.
   return batches>0 && batches<=65535 && rows>0 && rows<=65535 && width>0 && width%2==0 &&
       columns>0 && (batches==1 || columns<=512) && wd[rank-1]==width &&
@@ -567,9 +570,10 @@ bool tensor_operation_supports(Operation operation,
         return description.is_dense() && representable(description, integer_storage);
       }))
     return false;
-  const bool mixed_bfloat_rhs = operation.custom_as<model_ops::BFloatLinearF32>() &&
+  const bool direct_dense_rhs = operation.custom_as<model_ops::DenseLinearF32>() &&
       inputs.size() == 2 && outputs.size() == 1 &&
-      native_f32_bfloat_linear(inputs[0], inputs[1], outputs[0]);
+      (inputs[0].data_type() == DataType::kFloat32 || inputs[0].data_type() != inputs[1].data_type()) &&
+      native_dense_linear(inputs[0], inputs[1], outputs[0]);
   const auto *packed_matmul = operation.get_if<MatMul>();
   const bool packed_small_batch_rhs =
       packed_matmul && packed_matmul->accumulation_type == DataType::kFloat32 &&
@@ -579,7 +583,7 @@ bool tensor_operation_supports(Operation operation,
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (!representable(inputs[i], integer_storage,
             i == 0 && operation.get_if<Gather>() && native_embedding_table(inputs[i])) &&
-        !(i == 1 && (packed_small_batch_rhs || mixed_bfloat_rhs)) &&
+        !(i == 1 && (packed_small_batch_rhs || direct_dense_rhs)) &&
         !(i == 0 && operation.custom_as<model_ops::GroupedMatMul>() &&
           native_grouped_bank(inputs[i])) &&
         !(i == 1 && operation.custom_as<model_ops::GroupedMatMul>() &&
@@ -628,10 +632,11 @@ bool tensor_operation_supports(Operation operation,
            inputs[1].data_type() == DataType::kFloat32 &&
            inputs[2].data_type() == DataType::kInt32 &&
            outputs[0].data_type() == DataType::kFloat32;
-  if (operation.custom_as<model_ops::BFloatLinearF32>())
+  if (operation.custom_as<model_ops::DenseLinearF32>())
     return outputs.size() == 1 && inputs.size() == 2 &&
            output.data_type() == DataType::kFloat32 &&
-           (inputs[0].data_type() == DataType::kFloat32 ? mixed_bfloat_rhs : inputs[0].rank() == 2);
+           (inputs[0].data_type() == DataType::kFloat32 || inputs[0].data_type() != inputs[1].data_type()
+                ? direct_dense_rhs : inputs[0].rank() == 2);
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
@@ -1088,12 +1093,15 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
         context, values[node.inputs[0]], values[node.inputs[1]],
         values[node.inputs[2]], values[node.inputs[3]]);
   } else if (node.operation.get_if<MatMul>() ||
-             node.operation.custom_as<model_ops::BFloatLinearF32>()) {
+             node.operation.custom_as<model_ops::DenseLinearF32>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
     auto *right = values[node.inputs[1]];
-    if (node.operation.custom_as<model_ops::BFloatLinearF32>() &&
-        recipe.values[node.inputs[0]].data_type() == DataType::kFloat32) {
+    const bool direct_dense = node.operation.custom_as<model_ops::DenseLinearF32>() &&
+        (recipe.values[node.inputs[0]].data_type() == DataType::kFloat32 ||
+         recipe.values[node.inputs[0]].data_type() != recipe.values[node.inputs[1]].data_type());
+    if (direct_dense) {
+      if (left->type != GGML_TYPE_F32) left=ggml_cast(context,left,GGML_TYPE_F32);
       const bool batched=recipe.values[node.inputs[0]].rank()==3;
       const auto batches=batched?left->ne[2]:1;
       left=ggml_reshape_4d(context,left,left->ne[0],1,left->ne[1],batches);
@@ -1126,8 +1134,8 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       return {};
     // F32 accumulation alone does not forbid TF32 source arithmetic in cuBLAS.
     if ((node.operation.get_if<MatMul>() ||
-         node.operation.custom_as<model_ops::BFloatLinearF32>()) &&
-        recipe.values[node.inputs[0]].data_type() == DataType::kFloat32 &&
+         node.operation.custom_as<model_ops::DenseLinearF32>()) &&
+        (direct_dense || recipe.values[node.inputs[0]].data_type() == DataType::kFloat32) &&
         !native_quantized(recipe.values[node.inputs[1]]) &&
         !ggml_prec_set_src(result, GGML_PREC_F32, 1))
       return {};

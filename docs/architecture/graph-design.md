@@ -2,6 +2,8 @@
 
 Graph把模型无关的typed DAG编译为可重复执行的程序，拥有边界、依赖、放置和资源规划。
 Compute拥有直接计算与原生执行，Provider拥有片段内部程序；compiled plan不是第三个公开产品。
+项目内的引擎层负责把模型组成这份 DAG，并拥有 tokenizer、生成、会话与请求政策；
+Graph 不依赖引擎或模型名单，也可由独立 C++ 程序使用。
 实际用法见[用户Graph指南](../user/graph.md)，共同实现选择见[Compute冷路由](compute-design.md#冷路由)。
 
 ## 图、制品与运行状态

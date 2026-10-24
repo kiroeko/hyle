@@ -73,7 +73,7 @@ inline Projection projection(Fragment &f, ValueId input, std::int64_t n,
   }
   auto stored = f.constant(weight.description, std::move(weight.storage));
   auto output = f.one(storage == Storage::kBFloat16
-                         ? c::model_ops::bfloat_linear_f32()
+                         ? c::model_ops::dense_linear_f32()
                          : c::Operation(c::MatMul{}), {input, stored});
   return {std::move(weight), storage, output};
 }

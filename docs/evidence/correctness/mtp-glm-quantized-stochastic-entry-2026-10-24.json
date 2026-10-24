@@ -1,0 +1,950 @@
+{
+  "schema": "hyle.mtp.functional-entry-review.v1",
+  "updated": "2026-10-24T16:35:57",
+  "scope": {
+    "metadata_identity_count": 17,
+    "summary": {
+      "confirmed_present_complete_schema": 14,
+      "confirmed_absent_complete_checkpoint_inventory": 3,
+      "repository_identities_requiring_more_metadata": 0
+    },
+    "identity_facts": [
+      {
+        "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "unsloth/Qwen3.8-27B-NVFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "Inferact/Qwen3.8-2.4T-A95B-MXFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "cyankiwi/Qwen3.5-2B-AWQ-4bit",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "Freesolo-Co/Qwen3.5-2B-FP8",
+        "mtp_presence": "confirmed_absent_complete_checkpoint_inventory"
+      },
+      {
+        "repository": "Qwen/Qwen3.8-27B-FP8",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "nvidia/Qwen3.8-27B-NVFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+        "mtp_presence": "confirmed_absent_complete_checkpoint_inventory"
+      },
+      {
+        "repository": "Qwen/Qwen3.8-2.4T-A95B-FP8",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "amd/Qwen3.8-2.4T-A95B-Quark-MXFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "nvidia/Qwen3.8-2.4T-A95B-NVFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8",
+        "mtp_presence": "confirmed_absent_complete_checkpoint_inventory"
+      },
+      {
+        "repository": "nvidia/DeepSeek-V4-Pro-0813-NVFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "nvidia/DeepSeek-V4-Flash-0731-NVFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "nvidia/GLM-5.3-NVFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      },
+      {
+        "repository": "nvidia/GLM-5.3-Flash-NVFP4",
+        "mtp_presence": "confirmed_present_complete_schema"
+      }
+    ],
+    "meaning": "17 additional fixed source identities; complete schema or complete absence is not full-model execution certification."
+  },
+  "finding": {
+    "id": "glm-quantized-stochastic-entry",
+    "before": "Official GLM Flash/Pro shared samplers and atomic StateHead+SamplingCursor controller existed; Flash Q30/MLX/GGUF wrappers omitted stochastic, and no selected converted Pro random entry was registered.",
+    "fix": "Propagate the same stochastic boolean through the three Flash source wrappers. Reuse the existing Pro ConvertedRuntime stochastic controller and register representative B09 random entries. Quantized Flash uses the natural proposal0/accept1/final2 draw schedule without the optional opposite-address fixture search.",
+    "files": [
+      {
+        "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+        "lines": [
+          4132,
+          4346,
+          4801,
+          4845,
+          4865,
+          4912,
+          4928,
+          4938,
+          4986,
+          5114
+        ]
+      },
+      {
+        "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+        "lines": [
+          1486,
+          2086,
+          2127
+        ]
+      }
+    ],
+    "unchanged": "No duplicated probability mathematics, RNG, StateHead publication, runtime executor, provider routing, model format, or official controlled-address fixture default."
+  },
+  "builds": {
+    "Q30": {
+      "compile": {
+        "exit": 0,
+        "timed_out": false,
+        "seconds": 21.06598079999094,
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/compile/command.json",
+          "bytes": 2985,
+          "sha256": "691732535ebf36890a76ee55c7f78e9cbe58c8b3badbe6c80ab4e7206f2f0d17"
+        }
+      },
+      "link": {
+        "exit": 0,
+        "timed_out": false,
+        "seconds": 2.000881700019818,
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/link/command.json",
+          "bytes": 32680,
+          "sha256": "f08cb9998e31d503ffddf0f65d3d600adb23dad3e73b0cb833b46c0824f0d973"
+        }
+      },
+      "ready": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quantized-random-20261024\\Q30\\checks.exe",
+          "bytes": 142377472,
+          "sha256": "d1742ae8e19e79dec975153f0e0e467086065cfc61392d033d65f1de12e06f30"
+        },
+        "runtime_dll": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quantized-random-20261024\\Q30\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        "SDK_TUs": 0,
+        "consumer_TUs": 1
+      }
+    },
+    "B09": {
+      "compile": {
+        "exit": 0,
+        "timed_out": false,
+        "seconds": 22.54932180000469,
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/compile/command.json",
+          "bytes": 2597,
+          "sha256": "7fa5e1fc3d176941b480a34bb0ab206d962fe8868cbd2d7f71e061192f4992c6"
+        }
+      },
+      "link": {
+        "exit": 0,
+        "timed_out": false,
+        "seconds": 2.1057273000187706,
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/link/command.json",
+          "bytes": 32679,
+          "sha256": "f6ebf1fbe4b6cd31e60760f2dc305c172c29bae6e80ab36bc0be4ff6da7188c2"
+        }
+      },
+      "ready": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quantized-random-20261024\\B09\\checks.exe",
+          "bytes": 141312512,
+          "sha256": "f999b0b842e80ada48aab1f76d9536d829c8ec62468b1647faf8c0d263e7d230"
+        },
+        "runtime_dll": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quantized-random-20261024\\B09\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        "SDK_TUs": 0,
+        "consumer_TUs": 1
+      }
+    }
+  },
+  "actual_runs": {
+    "Q30": [
+      {
+        "attempt": "run",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 41.07254759999341,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmMtpStateConsumer.CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"actual original GLM experts missing; explicit supply required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "target43",
+          "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+          "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+          "layer_prefix": "model.language_model.layers.43.",
+          "stage": 0,
+          "source_plan_sha256": "c62da6b456bc0ca148d717b24bd5645ec4e50701b38c7f17c4393c45e5c07d34",
+          "global_ids": [
+            1,
+            55,
+            164,
+            276
+          ],
+          "missing_ids": [
+            55
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run/command.json",
+          "bytes": 527,
+          "sha256": "2fb7d4353d1f4bb4b1b39b095f24103223ddcf6658882830b3a7f820cf0cc1f1"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run/stdout.log",
+          "bytes": 14689,
+          "sha256": "098df04ae41e1b765596ac94c8a20b82a0edd1a3f3b83395ff1d19b7d23d9b8e"
+        }
+      },
+      {
+        "attempt": "run2",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 24.5744396999944,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmMtpStateConsumer.CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"actual original GLM experts missing; explicit supply required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "target44",
+          "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+          "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+          "layer_prefix": "model.language_model.layers.44.",
+          "stage": 0,
+          "source_plan_sha256": "c61018d5831bb4e6b9e931c4712f14c39ebbc00ba57277efee00a7ddfd11c76c",
+          "global_ids": [
+            2,
+            29,
+            52,
+            55,
+            79,
+            119,
+            200
+          ],
+          "missing_ids": [
+            2
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run2/command.json",
+          "bytes": 528,
+          "sha256": "453960c323df27b0ea6b56d415b972ea10f55c8a178ad24fe7e623f4af8009ea"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run2/stdout.log",
+          "bytes": 16459,
+          "sha256": "cd8484a67854acf46a73d1e922caa5d591dd48f45121bad4cc65af25d8b02730"
+        }
+      },
+      {
+        "attempt": "run3",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 27.9305029999814,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmMtpStateConsumer.CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"actual original GLM experts missing; explicit supply required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "nextn",
+          "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+          "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+          "layer_prefix": "model.language_model.layers.45.",
+          "stage": 0,
+          "source_plan_sha256": "6896583d1e52a281513e80d29185a68742d5bf5238862b4827dace4a0e72579c",
+          "global_ids": [
+            2,
+            122,
+            132,
+            152,
+            277,
+            281
+          ],
+          "missing_ids": [
+            2,
+            281
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run3/command.json",
+          "bytes": 528,
+          "sha256": "4fb46fdc7b975b3d2a6ee5770b767bcd75d8bc0602ab27f36ab2f1425e64e996"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run3/stdout.log",
+          "bytes": 26640,
+          "sha256": "71e51ea3cab07da274de093cf29b41076a0b4b9d80b79c2a6787aaace24e0b9b"
+        }
+      },
+      {
+        "attempt": "run4",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 28.766598400019575,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmMtpStateConsumer.CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"actual original GLM experts missing; explicit supply required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "target43",
+          "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+          "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+          "layer_prefix": "model.language_model.layers.43.",
+          "stage": 0,
+          "source_plan_sha256": "c62da6b456bc0ca148d717b24bd5645ec4e50701b38c7f17c4393c45e5c07d34",
+          "global_ids": [
+            216
+          ],
+          "missing_ids": [
+            216
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run4/command.json",
+          "bytes": 527,
+          "sha256": "700d92ddd823786c250f52358a971f630aacca098f03ced16e3067b741a2c0c8"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run4/stdout.log",
+          "bytes": 32106,
+          "sha256": "0dfe1000ad7c3d7d17c8c32db78875e68430449a592ca21c0da25a2d21bb25ef"
+        }
+      },
+      {
+        "attempt": "run5",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 29.35847300000023,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmMtpStateConsumer.CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"actual original GLM experts missing; explicit supply required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "target44",
+          "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+          "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+          "layer_prefix": "model.language_model.layers.44.",
+          "stage": 0,
+          "source_plan_sha256": "c61018d5831bb4e6b9e931c4712f14c39ebbc00ba57277efee00a7ddfd11c76c",
+          "global_ids": [
+            57,
+            249
+          ],
+          "missing_ids": [
+            249
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run5/command.json",
+          "bytes": 527,
+          "sha256": "6987e5f894d9f0e7fffd92116cfbece4791c287a56a2790c63ec4ab055aacb1b"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run5/stdout.log",
+          "bytes": 33875,
+          "sha256": "35ed4b7752971bbb33e48c10213ac3bf540be05eba18bcdf8b4a1732130e9d76"
+        }
+      },
+      {
+        "attempt": "run6",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 29.24224549997598,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmMtpStateConsumer.CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"actual original GLM experts missing; explicit supply required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "nextn",
+          "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+          "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+          "layer_prefix": "model.language_model.layers.45.",
+          "stage": 0,
+          "source_plan_sha256": "6896583d1e52a281513e80d29185a68742d5bf5238862b4827dace4a0e72579c",
+          "global_ids": [
+            18,
+            62,
+            107,
+            213
+          ],
+          "missing_ids": [
+            18,
+            62,
+            213
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run6/command.json",
+          "bytes": 528,
+          "sha256": "24a8d54c4de9ab5adb56a7bc5c93dc749ca28507d2792ce8ae6a89a886ca8d86"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run6/stdout.log",
+          "bytes": 35556,
+          "sha256": "32fb199c606fd1e9c7025858f16fee3a5a6a18f6311173df6306ff42f6f6143a"
+        }
+      },
+      {
+        "attempt": "run7",
+        "process_exit": 0,
+        "timed_out": false,
+        "seconds": 30.333924099977594,
+        "tests": 1,
+        "failures": 0,
+        "case": "GlmMtpStateConsumer.CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically",
+        "properties": {
+          "random_default_schedule": "proposal0/accept1/final2; success advances3; cancellation and stale publish advance0",
+          "random_controlled_address_bound": "0",
+          "random_actual_proposal": "100550",
+          "random_alpha": "0.036066",
+          "random_accepted": "0",
+          "random_rejected": "1",
+          "random_published_rounds": "2",
+          "random_opposite_branch_found": "0"
+        },
+        "all_properties_in_archived_results_xml": true,
+        "failure": [],
+        "missing_frontier": null,
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run7/command.json",
+          "bytes": 528,
+          "sha256": "6b3868b5bd0b5124e8f6d2c8ac27b7aa7558bacf44ccc90dd631036b7f26c3cf"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/Q30/run7/stdout.log",
+          "bytes": 40384,
+          "sha256": "7c4188a31124e899c4415d0c885c8c38f3be18a916e2b1195b95cda695445062"
+        }
+      }
+    ],
+    "B09": [
+      {
+        "attempt": "run",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 45.17395959998248,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmProMtpStateConsumer.CudaConvertedB09TargetAndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"B09 actual selected experts missing; explicit artifact supply is required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "draft",
+          "stage": 0,
+          "global_ids": [
+            26,
+            40,
+            65,
+            152,
+            211,
+            217,
+            232,
+            246
+          ],
+          "missing_ids": [
+            40,
+            65,
+            152,
+            246
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run/command.json",
+          "bytes": 522,
+          "sha256": "fe532e225a247fb8fac6112a9721bf64a8f88c9fff652c9207793070db258151"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run/stdout.log",
+          "bytes": 92016,
+          "sha256": "0711ed68745bac284aa4d892af8af689b74f219c4f6eb2ab998f7ea1d059e5bf"
+        }
+      },
+      {
+        "attempt": "run2",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 36.02461650001351,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmProMtpStateConsumer.CudaConvertedB09TargetAndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"B09 actual selected experts missing; explicit artifact supply is required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "draft",
+          "stage": 0,
+          "global_ids": [
+            36,
+            60,
+            79,
+            118,
+            166,
+            171,
+            243,
+            246
+          ],
+          "missing_ids": [
+            36,
+            60,
+            118,
+            166,
+            171,
+            243
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run2/command.json",
+          "bytes": 523,
+          "sha256": "9552cb6b1f5722b5211cba1daecf239b1958cfdafbbea7be399ac241d5f0e227"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run2/stdout.log",
+          "bytes": 152456,
+          "sha256": "05bbdd2a7d7ce66d5892aafe9808406fb9d9b82159ae31856a31fc6304c0428f"
+        }
+      },
+      {
+        "attempt": "run3",
+        "process_exit": 1,
+        "timed_out": false,
+        "seconds": 40.29132099999697,
+        "tests": 1,
+        "failures": 1,
+        "case": "GlmProMtpStateConsumer.CudaConvertedB09TargetAndNextNRandomVerifierContinuesAtomically",
+        "properties": {},
+        "all_properties_in_archived_results_xml": true,
+        "failure": [
+          "unknown file\nC++ exception with description \"B09 actual selected experts missing; explicit artifact supply is required\" thrown in the test body.\n"
+        ],
+        "missing_frontier": {
+          "section": "draft",
+          "stage": 0,
+          "global_ids": [
+            77,
+            88,
+            138,
+            155,
+            170,
+            212,
+            243,
+            246
+          ],
+          "missing_ids": [
+            138,
+            155,
+            170,
+            212
+          ]
+        },
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run3/command.json",
+          "bytes": 523,
+          "sha256": "be2e37db01d5cde19c64b723bd3b0d6a4087f37d8eca2e51f39cc13a86a422bc"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run3/stdout.log",
+          "bytes": 213074,
+          "sha256": "342c1ebd0c599aaaa87ad9e2439b08ec82fceee9c92d902eb9afc692477636d4"
+        }
+      },
+      {
+        "attempt": "run4",
+        "process_exit": 0,
+        "timed_out": false,
+        "seconds": 38.58421840000665,
+        "tests": 1,
+        "failures": 0,
+        "case": "GlmProMtpStateConsumer.CudaConvertedB09TargetAndNextNRandomVerifierContinuesAtomically",
+        "properties": {
+          "stochastic_policy": "Actual NextN q samples proposal at draw0; actual target p0/q/p1 consumes accept1/final2. Same complete StateHead publishes pending and Cursor. Cancellation/stale publish advances0, successful K1 advances3; real target-only continuation consumes actual residual/bonus, samples its target pending and atomically advances one additional draw.",
+          "random_accepted": "0",
+          "random_rejected": "1",
+          "random_actual_proposal": "42456",
+          "random_committed_draws": "4"
+        },
+        "all_properties_in_archived_results_xml": true,
+        "failure": [],
+        "missing_frontier": null,
+        "command": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run4/command.json",
+          "bytes": 523,
+          "sha256": "28989ddc6a7159ddb0e2cb636d57deeed8bb71afe4900a572f78c1a2fc9aea6c"
+        },
+        "stdout": {
+          "path": ".scratch/glm-quantized-random-20261024/B09/run4/stdout.log",
+          "bytes": 243034,
+          "sha256": "c667ca5d551c39e31d9e5ed013dd600f4a2d47a57a4240c11498d9e2e44bee27"
+        }
+      }
+    ]
+  },
+  "network": {
+    "http_requests_started_by_this_review": 0,
+    "model_bytes_downloaded_by_this_review": 0,
+    "implicit_supplier": false,
+    "wait_for_experts": false
+  },
+  "limits": [
+    "Both CPU and CUDA registrations compile in the dual-backend consumer TUs; this review executes only the two selected CUDA cases.",
+    "A missing selected original expert is an explicit unfinished source frontier, never a sampler correctness pass. Original failed attempts are retained.",
+    "Finite original GLM target-tail/NextN/full-vocabulary consumers exercise library functionality; they are not complete whole-GLM model serving engines.",
+    "Other in-progress work is independent: Q24 shared stochastic controller/mixed source, DS typed Markov sidecars, and root original Q8/CT/Q27 complete-model journeys.",
+    "Source-specific tiles plus complete schema can establish functional format reuse; other publisher complete trained banks have not all run end to end.",
+    "This is a functional review with no throughput benchmark or architectural completion claim."
+  ],
+  "new_boundary_review_gap": {
+    "scope": "Old frozen natural random consumers only",
+    "finding": "Flash manually chose accepted checkpoint and continued the next K1; Pro manually constructed K1Decision and continued target T1 without an EOS/output-quota/context selector.",
+    "locations": {
+      "Flash": [
+        4369,
+        4385,
+        4405
+      ],
+      "Pro": [
+        1754,
+        1764,
+        1772,
+        1839
+      ]
+    },
+    "follow_up": "Architecture agent owns the new common EOS/quota/context integration and separate new-image finite evidence. Old baseline source-frontier checks do not certify these boundaries."
+  },
+  "shared_boundary_follow_up": {
+    "status": "separate new-image official Flash/Pro boundary cases passed",
+    "proof": {
+      "path": "docs/evidence/correctness/mtp-glm-stochastic-output-boundaries-2026-10-24.json",
+      "bytes": 14527,
+      "sha256": "fd5feec81aecfc479714fa56d4595c5dbb1648a5bc9826f41595f5e3ec62fd9c"
+    },
+    "scope": "New common EOS/quota/context handling is separate from these retained quantized natural baselines; no claim that the old image contains the new boundary code."
+  },
+  "status": {
+    "wrapper_implementation": "compiled in both selected CUDA/CPU consumer TUs",
+    "runtime": {
+      "Q30": "passed",
+      "B09": "passed"
+    },
+    "overall_completion_claim": false
+  },
+  "parent_source_supply": {
+    "actor": "Root, using existing bounded budget acquisition; not implicit native consumer HTTP.",
+    "completed": [
+      {
+        "kind": "Q30",
+        "section": "target43",
+        "global_id": 55,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-target43/experts/expert055/acquisition.json",
+          "bytes": 13413,
+          "sha256": "9845765e3c87eb553c54543496280932eb236413209e367a529a37120ff8ad49"
+        },
+        "role_payload_bytes": 13369344
+      },
+      {
+        "kind": "Q30",
+        "section": "target44",
+        "global_id": 2,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-target44/experts/expert002/acquisition.json",
+          "bytes": 13329,
+          "sha256": "5e1e331eca426fd1e41920fbff03517bae51754a5f21b9f2bbdc2065edb36bba"
+        },
+        "role_payload_bytes": 13369344
+      },
+      {
+        "kind": "Q30",
+        "section": "nextn",
+        "global_id": 2,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-experts/expert002/acquisition.json",
+          "bytes": 13297,
+          "sha256": "d53b888f1add9ccbfd5b62b9a6cd7b665f58fe546d9c83e1f9c7c97fae58f598"
+        },
+        "role_payload_bytes": 25171968
+      },
+      {
+        "kind": "Q30",
+        "section": "nextn",
+        "global_id": 281,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-experts/expert281/acquisition.json",
+          "bytes": 13375,
+          "sha256": "dacfe652c40a48c5992940b660cd531e05576f9f95ed430854a94a5476a70d66"
+        },
+        "role_payload_bytes": 25171968
+      },
+      {
+        "kind": "Q30",
+        "section": "target43",
+        "global_id": 216,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-target43/experts/expert216/acquisition.json",
+          "bytes": 13437,
+          "sha256": "80a5fd97faf1edc95d37a7fc823cd4408a7f42856b3cc455578f05dfdb403dad"
+        },
+        "role_payload_bytes": 13369344
+      },
+      {
+        "kind": "Q30",
+        "section": "target44",
+        "global_id": 249,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-target44/experts/expert249/acquisition.json",
+          "bytes": 13437,
+          "sha256": "f4a550b9b10daa8e88ed4ec1fbdab59bdf7fa446f4f3416cad0102c9ada01a8b"
+        },
+        "role_payload_bytes": 13369344
+      },
+      {
+        "kind": "Q30",
+        "section": "nextn",
+        "global_id": 18,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-experts/expert018/acquisition.json",
+          "bytes": 14343,
+          "sha256": "e297d6a1daf3cc4084dd72836d7db253a59a65c045e0578c6a399e102e227b13"
+        },
+        "role_payload_bytes": 25171968
+      },
+      {
+        "kind": "Q30",
+        "section": "nextn",
+        "global_id": 62,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-experts/expert062/acquisition.json",
+          "bytes": 14585,
+          "sha256": "221c91e52ff59586e13a28640306482f607a4c39af3fe2796a93a05879f2a1a9"
+        },
+        "role_payload_bytes": 25171968
+      },
+      {
+        "kind": "Q30",
+        "section": "nextn",
+        "global_id": 213,
+        "receipt": {
+          "path": ".scratch/glm-quark-selected-20261024/Q30/original-experts/expert213/acquisition.json",
+          "bytes": 13375,
+          "sha256": "307c81c14c16385e1e2f4efe7490df3657af7fc876f4f29368cc658435ce4f30"
+        },
+        "role_payload_bytes": 25171968
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 40,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert040/acquisition.json",
+          "bytes": 7093,
+          "sha256": "922cbb31267522fb8ef355c4e929a038e3be6efb30497bea5d76336225827137"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 65,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert065/acquisition.json",
+          "bytes": 7093,
+          "sha256": "330f917b87027e6aea7c7f4428f846ecbb2d7d2083485dd5754ca4917d69d9f2"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 152,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert152/acquisition.json",
+          "bytes": 7094,
+          "sha256": "7ccf2a6cee6a588432c8d0bfd82681a391ceb95db0e506b2cd003e27098ae12f"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 246,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert246/acquisition.json",
+          "bytes": 7094,
+          "sha256": "7e3f6bfb6144d1f9d0ad0db79e7c97db964b10c60042d64086f4d6576f958cbb"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 36,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert036/acquisition.json",
+          "bytes": 7093,
+          "sha256": "818a525f7a9e998a27fdabc86965f02a6b37d3c6cef3d6a3afa5659ff8697e88"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 60,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert060/acquisition.json",
+          "bytes": 7093,
+          "sha256": "292eca47da54469008e21b9f10f8a1e9abd1ca222ec977e0f4aef1ea6a221238"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 118,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert118/acquisition.json",
+          "bytes": 7094,
+          "sha256": "c4f8d030a4489e82b244fc7bc8967700ae6240e2255de7c2316da5d2bf33d557"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 166,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert166/acquisition.json",
+          "bytes": 7094,
+          "sha256": "4a746a0016e8b7c8edd341065d4bc0c9b1f8df9e937be4b3facece560ce63a8a"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 171,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert171/acquisition.json",
+          "bytes": 7094,
+          "sha256": "ad4b5dae1d1fa37aef0fa728117c94dd48fc9a8a97af946f60a83de1837d8b1a"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 243,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert243/acquisition.json",
+          "bytes": 7094,
+          "sha256": "308b84defd686c3b6521f260570c3c74b48eaedc91f4f355ab9737f2e9ddb66a"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 138,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert138/acquisition.json",
+          "bytes": 7094,
+          "sha256": "ea190749afedcad6161e29604fe110a1f0421b74868fefd0c9adb9b77767d868"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 155,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert155/acquisition.json",
+          "bytes": 7288,
+          "sha256": "74a7365e59952d176b33e3bc0b587fd6174e9888f99fa8068ab7026b91c13f9b"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 170,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert170/acquisition.json",
+          "bytes": 7094,
+          "sha256": "03adb5cec5b9ebefd0899353dc3549bad0b7571c5f45c8ad66afd6fdf2ea0617"
+        },
+        "role_payload_bytes": 22806528
+      },
+      {
+        "kind": "B09",
+        "section": "draft",
+        "global_id": 212,
+        "receipt": {
+          "path": ".scratch/glm-gguf-selected-20261023/B09/original-experts/draft/stage0/expert212/acquisition.json",
+          "bytes": 7094,
+          "sha256": "3d246ecaedcb63a3b86d2783aeeaedc449ef7602a1b334902cca206c366f86b9"
+        },
+        "role_payload_bytes": 22806528
+      }
+    ]
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-glm-quantized-stochastic-entry-2026-10-24-logs.zip",
+    "bytes": 433682,
+    "sha256": "6e309fef7c06fa87ff4e753644740683e1b597714fe5e80b59ce80773ff73940"
+  }
+}

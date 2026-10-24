@@ -69,7 +69,7 @@ inline Result<d::SharedParameters> parameters(const Roles &roles,
     const auto input=bfloat_source(f,normalized);
     const auto weight=f.constant(roles.head.description,{});
     constants.push_back({weight,roles.head});
-    // Dense BF16 keeps BFloatLinearF32; encoded weights keep their native
+    // Dense BF16 keeps DenseLinearF32; encoded weights keep their native
     // packed RHS and quantize only the exact-widened actual activation.
     return dspark_vocabulary_fragment::append_head(f,input,weight,d::vocabulary,d::hidden);
   };

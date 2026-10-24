@@ -13,23 +13,31 @@ python scripts/test.py
 [Windows](windows.md)、[Linux / WSL](linux-wsl.md)、[macOS](macos.md)。
 初始化会发现已装工具、准备所选后端的依赖并运行 CMake；不会安装系统编译器、驱动或更改全局环境。
 
-默认配置为 **CPU、Release、共享库、全部公开组件、tests OFF**，TLS、HTTP/2、trace 均关闭。
+新配置默认为 **CPU、Release、共享库、推理引擎及其依赖、tests OFF**，TLS、HTTP/2、trace 均关闭。
 Provider 和第三方实现由 HYLE 自动装配，不需要用户选择。
+已有配置保留其明确选择；只构建基础模块时传 `--components util` 或所需模块集合。
 
 ## 常见用法
 
 ```text
-# CPU 产品构建
+# 默认引擎工程
 python scripts/init.py
 python scripts/build.py --jobs 2
 
-# 同时包含 CPU、CUDA 能力的 Compute/Graph，启用测试
-python scripts/init.py --backends cpu,cuda --components compute,graph --tests --name inference
-python scripts/build.py --target hyle_tests --jobs 2
-python scripts/test.py --filter compute --jobs 2
+# CUDA 引擎，启用测试环境
+python scripts/init.py --backends cuda --components engine --tests --name inference
+python scripts/build.py --target hyle_engine --jobs 2
 
-# 将当前构建安装到指定目录
-python scripts/build.py --install .scratch/install/hyle --jobs 2
+# 只构建工具模块，不准备 Compute/GPU 依赖
+python scripts/init.py --components util --name utility
+python scripts/build.py --jobs 2
+
+# 为上面已启用测试的配置构建并运行相关测试
+python scripts/build.py --name inference --target hyle_tests --jobs 2
+python scripts/test.py --name inference --filter compute --jobs 2
+
+# 将引擎配置安装到指定目录
+python scripts/build.py --name inference --install .scratch/install/hyle --jobs 2
 ```
 
 `init.py` 保存当前选中的初始化目录。`build.py` 和 `test.py` 无参使用当前配置；
@@ -49,7 +57,9 @@ python scripts/build.py --install .scratch/install/hyle --jobs 2
 |---|---|
 | `--backends cpu` | `cpu`、`cuda`、`metal`、`vulkan` 或逗号组合，默认 CPU |
 | `--backends all` | 本平台支持的全部完整后端；所需系统 SDK 缺少时明确失败 |
-| `--components compute,graph` | 选择公开产品，默认 `all` |
+| `--components engine` | 默认选择引擎，自动带出所需基础模块；可构建 `hyle_engine`，输出 `hyle` |
+| `--components util` | 只选择既有工具模块及其依赖；也可传 `mem,container`、`compute,graph` 等产品集合 |
+| `--components all` | 顶层完整项目，包含全部库与引擎 |
 | `--config Debug` | `Release`、`Debug`、`RelWithDebInfo` 或 `MinSizeRel` |
 | `--compiler clang` | `auto`、`gcc`、`clang`、`msvc` 或 `clang-cl` |
 | `--tests`、`--static` | 开启测试、选择静态库；均有对应 `--no-...` 形式 |
@@ -68,7 +78,9 @@ CPU、Metal、Vulkan。其它架构只接受实际支持的后端。`metal` 对�
 完整参数及默认值以各脚本 `--help` 为准。`build.py --target <name>` 可重复；
 `test.py --filter <regex>` 使用 CTest 名称过滤，`--list` 只列出测试。
 `build.py --install` 未指定 prefix 时写入 `.scratch/install/<build-name>`；
-安装会构建完整的所选 SDK，不能与 `--target` 混用。高级的额外 CMake 输入使用
+安装会构建完整的所选产品，不能与 `--target` 混用；选择引擎时还安装 `bin/hyle`（Windows 为 `hyle.exe`）。
+构建树内程序位于 `<build-dir>/bin/`，多配置生成器位于 `bin/<config>/`。
+引擎的模型输入准备和当前运行限制见[引擎指南](../../user/inference.md)。高级的额外 CMake 输入使用
 `init.py -D NAME=VALUE`，可重复；脚本已有的选项使用对应参数。
 普通日志保留 CMake 输出，`--verbose` 补充完整命令。安装入口使用标准 CMake 导出，
 不修改系统 PATH、Shell 配置或用户的 CMake 搜索环境。

@@ -268,7 +268,7 @@ inline AttentionResult append_attention(sem::Fragment &f,Value input,LayerState 
     ip.compressor=append_compressor(f,input,old_index.raw,old_index.score,old_index.pool,parameter.compressor,4,true,plan);
     result.state.index=IndexState{ip.compressor.raw_next,ip.compressor.score_next,ip.compressor.pool_next};
     require(f,parameter.weights,sem::dense({kIndexHeads,model.hidden},c::DataType::kBFloat16));
-    const auto weight_raw=f.one(c::model_ops::bfloat_linear_f32(),{input,parameter.weights});
+    const auto weight_raw=f.one(c::model_ops::dense_linear_f32(),{input,parameter.weights});
     ip.weights={input,weight_raw,stored(f,weight_raw)};
     ip.scaled_weights_raw=binary(f,c::BinaryKind::kMultiply,visible(f,ip.weights.stored),
         core::filled(f,sem::dense({1}),1.F/std::sqrt(float(kIndexHeads*kIndexDepth))));

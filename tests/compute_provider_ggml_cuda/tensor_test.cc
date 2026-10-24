@@ -1450,7 +1450,7 @@ TEST(GgmlCudaTensor, BfloatRouterMatMulRetainsNativeF32Score) {
   const auto weight_desc = dense(DataType::kBFloat16, {2, 2});
   const std::array descriptions{activation_desc, weight_desc};
   const auto output_desc =
-      infer_single_output(model_ops::bfloat_linear_f32(), descriptions).value();
+      infer_single_output(model_ops::dense_linear_f32(), descriptions).value();
   const std::array activations{half_test::encode<BF16>(1.0),
                                half_test::encode<BF16>(0.001953125)};
   const std::array weights{
@@ -1466,7 +1466,7 @@ TEST(GgmlCudaTensor, BfloatRouterMatMulRetainsNativeF32Score) {
       ConstTensorView::create(activation_desc, activation_buffer.view()).value(),
       ConstTensorView::create(weight_desc, weight_buffer.view()).value()};
   auto output_view = TensorView::create(output_desc, output.view()).value();
-  auto prepared = prepare(ctx, model_ops::bfloat_linear_f32(), inputs,
+  auto prepared = prepare(ctx, model_ops::dense_linear_f32(), inputs,
                           std::span(&output_view, 1));
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);

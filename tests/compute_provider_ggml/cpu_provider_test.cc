@@ -2009,7 +2009,7 @@ TEST(GgmlCpuProvider, BfloatWeightsPreserveFloat32ActivationCancellation) {
     auto output = output_buffer(yd);
     const std::array inputs{ConstTensorView::create(ad, activation.view()).value(),
                             ConstTensorView::create(wd, weights.view()).value()};
-    auto status = execute(context, model_ops::bfloat_linear_f32(), inputs,
+    auto status = execute(context, model_ops::dense_linear_f32(), inputs,
                           TensorView::create(yd, output.view()).value());
     ASSERT_TRUE(status.ok()) << status.message();
     const auto actual = half_test::read<float>(output);
@@ -2022,6 +2022,71 @@ TEST(GgmlCpuProvider, BfloatWeightsPreserveFloat32ActivationCancellation) {
     const std::array ordinary_inputs{ad, wd.transposed().value()};
     EXPECT_FALSE(infer_single_output(Operation(MatMul{}), ordinary_inputs));
   }
+}
+
+template<class A,class W> void dense_linear_original_precision() {
+  constexpr std::int64_t width=270,columns=3;
+  auto context=Context::create(cpu::device(),ggml_cpu::provider()).value();
+  for(const bool batched:{false,true}) for(const std::int64_t rows:{1,2,17}) {
+    SCOPED_TRACE(testing::Message()<<int(half_test::data_type<A>())<<"/"
+        <<int(half_test::data_type<W>())<<" batch="<<batched<<" rows="<<rows);
+    const std::int64_t batches=batched?2:1;
+    const auto ad=batched?dense(half_test::data_type<A>(),{batches,rows,width}):
+        dense(half_test::data_type<A>(),{rows,width});
+    const auto wd=batched?dense(half_test::data_type<W>(),{batches,columns,width}):
+        dense(half_test::data_type<W>(),{columns,width});
+    const std::array descriptions{ad,wd};
+    const auto yd=infer_single_output(model_ops::dense_linear_f32(),descriptions).value();
+    std::vector<A> a(std::size_t(batches*rows*width),half_test::encode<A>(0));
+    std::vector<W> w(std::size_t(batches*columns*width),half_test::encode<W>(0));
+    for(std::int64_t b=0;b<batches;++b) {
+      for(std::int64_t row=0;row<rows;++row) {
+        const auto first=std::size_t((b*rows+row)*width);
+        const double residual=std::is_same_v<A,float>?double(row%3+1)/262144.:0.;
+        a[first]=half_test::encode<A>(1.+residual);
+        a[first+1]=half_test::encode<A>(-1.);
+        // Exercise the bounded widening tile's tail, separately from cancellation.
+        a[first+268]=half_test::encode<A>(0.25);
+      }
+      for(std::int64_t n=0;n<columns;++n) {
+        const auto first=std::size_t((b*columns+n)*width);
+        const double coefficient=double((b+1)*(n+1));
+        w[first]=half_test::encode<W>(coefficient+(std::is_same_v<W,float>?1./262144.:0.));
+        w[first+1]=half_test::encode<W>(coefficient);
+        w[first+268]=half_test::encode<W>(0.5);
+      }
+    }
+    auto activation=half_test::buffer<A>(a),weights=half_test::buffer<W>(w);
+    auto output=output_buffer(yd);
+    const std::array inputs{ConstTensorView::create(ad,activation.view()).value(),
+                            ConstTensorView::create(wd,weights.view()).value()};
+    const auto status=execute(context,model_ops::dense_linear_f32(),inputs,
+        TensorView::create(yd,output.view()).value());
+    ASSERT_TRUE(status.ok())<<status.message();
+    const auto actual=half_test::read<float>(output);
+    for(std::int64_t b=0;b<batches;++b) for(std::int64_t row=0;row<rows;++row)
+      for(std::int64_t n=0;n<columns;++n) {
+        double expected=0.;
+        for(std::int64_t k=0;k<width;++k)
+          expected+=half_test::decode(a[std::size_t((b*rows+row)*width+k)])*
+                    half_test::decode(w[std::size_t((b*columns+n)*width+k)]);
+        EXPECT_NEAR(actual[std::size_t((b*rows+row)*columns+n)],float(expected),2.e-8F);
+      }
+  }
+}
+
+TEST(GgmlCpuProvider, DenseLinearRetainsOriginalHalfBfloatAndFloatSources) {
+  using F16=hyle::simd::float16_t;
+  using BF16=hyle::simd::bfloat16_t;
+  dense_linear_original_precision<F16,F16>();
+  dense_linear_original_precision<F16,BF16>();
+  dense_linear_original_precision<F16,float>();
+  dense_linear_original_precision<BF16,F16>();
+  dense_linear_original_precision<BF16,BF16>();
+  dense_linear_original_precision<BF16,float>();
+  dense_linear_original_precision<float,F16>();
+  dense_linear_original_precision<float,BF16>();
+  dense_linear_original_precision<float,float>();
 }
 
 TEST(GgmlCpuProvider, BatchedBfloatWeightsPreserveOriginalFloat32Rows) {
@@ -2049,7 +2114,7 @@ TEST(GgmlCpuProvider, BatchedBfloatWeightsPreserveOriginalFloat32Rows) {
     auto output=output_buffer(yd);
     const std::array inputs{ConstTensorView::create(ad,activation.view()).value(),
                             ConstTensorView::create(wd,weights.view()).value()};
-    const auto status=execute(context,model_ops::bfloat_linear_f32(),inputs,
+    const auto status=execute(context,model_ops::dense_linear_f32(),inputs,
         TensorView::create(yd,output.view()).value());
     ASSERT_TRUE(status.ok())<<status.message();
     const auto actual=half_test::read<float>(output);
@@ -2066,7 +2131,7 @@ TEST(GgmlCpuProvider, BfloatRouterMatMulRetainsNativeF32Score) {
   const auto weight_desc = dense(DataType::kBFloat16, {2, 2});
   const std::array descriptions{activation_desc, weight_desc};
   const auto output_desc =
-      infer_single_output(model_ops::bfloat_linear_f32(), descriptions).value();
+      infer_single_output(model_ops::dense_linear_f32(), descriptions).value();
   const std::array activation_values{half_test::encode<BF16>(1.0),
                                      half_test::encode<BF16>(0.001953125)};
   const std::array weight_values{
@@ -2080,7 +2145,7 @@ TEST(GgmlCpuProvider, BfloatRouterMatMulRetainsNativeF32Score) {
       ConstTensorView::create(weight_desc, weights.view()).value()};
   auto output_view = TensorView::create(output_desc, output.view()).value();
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
-  auto prepared = prepare(context, model_ops::bfloat_linear_f32(), inputs,
+  auto prepared = prepare(context, model_ops::dense_linear_f32(), inputs,
                           std::span(&output_view, 1));
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);

@@ -52,7 +52,7 @@ template<class T>void runtime_q1_case(bool encoded,unsigned depth,unsigned value
     }
     (role?value_pages:key_pages)[page]=writer.publish(16).value();
   }
-  auto pool=c::LeasePool::create(hyle::mem::system_resource(),2*8*depth*2+64).value();auto qw=pool.allocate(2*8*depth*2).value();
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),2*8*depth*sizeof(T)+64).value();auto qw=pool.allocate(2*8*depth*sizeof(T)).value();
   ASSERT_TRUE(qw.view()->fill(std::byte{0}).ok());auto query=qw.publish().value();
   auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=8u<<20,
     .max_int_workspace_bytes=4096,.scale=.125F,.causal=causal,.window_left=window,.allocator=fault.ref()}).value();
@@ -92,7 +92,7 @@ template<class T>void runtime_q1_case(bool encoded,unsigned depth,unsigned value
       for(unsigned head=0;head<8;++head){double expected=0;
         for(unsigned row=first;row<rows;++row)expected+=double(code(unsigned(ids[k[request]+row/16]),row%16,head/4))/64.;
         expected/=double(rows-first);
-        for(unsigned d=0;d<value_depth;++d)EXPECT_NEAR(half_test::decode(actual[(q[request]*8+head)*value_depth+d]),expected,type==c::DataType::kFloat16?.002:.008);
+        for(unsigned d=0;d<value_depth;++d)ASSERT_NEAR(half_test::decode(actual[(q[request]*8+head)*value_depth+d]),expected,type==c::DataType::kFloat16?.002:.008);
       }
     }
     auto untouched=keys.acquire(key_pages[4]);ASSERT_TRUE(untouched)<<untouched.error().message();key_pages[4]=untouched->publish(16).value();
@@ -108,6 +108,93 @@ TEST(GgmlCpuPaged, RuntimeQ1UsesOriginalDecodeSlotAcrossPagesAndTails){
   for(unsigned requests:{1U,2U})for(bool encoded:{false,true}){
     runtime_q1_case<hyle::simd::float16_t>(encoded,64,128,16,requests);runtime_q1_case<hyle::simd::bfloat16_t>(encoded,64,128,16,requests);
   }
+}
+TEST(GgmlCpuPaged, Float32DecodeKeepsNativePlanAcrossPageTailsAndWindowChanges){
+  runtime_q1_case<float>(false,256,256,-1,2);
+  runtime_q1_case<float>(false,256,256,16,1);
+}
+void f32_paged_prefill(bool causal,int window,unsigned tail){
+  constexpr unsigned heads=24,kv_heads=4,depth=256,queries=2;
+  const auto storage=c::CacheStorage::plain(c::DataType::kFloat32).value();
+  const c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,
+      .query_type=c::DataType::kFloat32,.output_type=c::DataType::kFloat32,
+      .key_storage=storage,.value_storage=storage,.max_requests=1,.max_query_rows=queries,
+      .max_kv_rows=32,.max_pages=3,.max_page_refs=2,.query_heads=heads,.kv_heads=kv_heads,
+      .qk_head_dim=depth,.value_head_dim=depth,.page_size=16};
+  auto schema=c::BatchSchema::create(cap).value();
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=2})).value();
+  auto queue=context.create_queue().value();
+  auto keys=c::PagedArena::create(schema,c::BatchCacheRole::kKey,hyle::mem::system_resource(),{.max_backing_bytes=1u<<20}).value();
+  auto values=c::PagedArena::create(schema,c::BatchCacheRole::kValue,hyle::mem::system_resource(),{.max_backing_bytes=1u<<20}).value();
+  const auto key=[](unsigned row,unsigned head,unsigned d){return float(int((row*11+head*7+d*3)%31)-15)*.0137F+.000021F;};
+  const auto value=[](unsigned row,unsigned head,unsigned d){return float(int((row*5+head*3+d*7)%29)-14)*.031F+.000013F;};
+  const auto query=[](unsigned row,unsigned head,unsigned d){return float(int((row*7+head*11+d*5)%23)-11)*.0193F+.000017F;};
+  std::array<c::ReadLease,2> key_pages,value_pages;
+  for(unsigned page=0;page<3;++page)for(unsigned role=0;role<2;++role){
+    auto writer=(role?values:keys).acquire(page).value();
+    std::vector<float> words(16*kv_heads*depth);
+    for(unsigned row=0;row<16;++row)for(unsigned head=0;head<kv_heads;++head)for(unsigned d=0;d<depth;++d){
+      const bool inactive=page==1 || (page==0 && row>=tail);
+      words[(row*kv_heads+head)*depth+d]=inactive?std::numeric_limits<float>::quiet_NaN():
+          role?value(page==2?row:16+row,head,d):key(page==2?row:16+row,head,d);
+    }
+    ASSERT_TRUE(writer.lease().view()->write(std::as_bytes(std::span(words))).ok());
+    auto ready=writer.publish(page==0?tail:16).value();
+    if(page!=1)(role?value_pages:key_pages)[page==2?0:1]=std::move(ready);
+  }
+  std::vector<float> query_words(queries*heads*depth);
+  for(unsigned row=0;row<queries;++row)for(unsigned head=0;head<heads;++head)for(unsigned d=0;d<depth;++d)
+    query_words[(row*heads+head)*depth+d]=query(row,head,d);
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),query_words.size()*sizeof(float)+64).value();
+  auto writer=pool.allocate(query_words.size()*sizeof(float)).value();
+  ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(query_words))).ok());
+  auto query_lease=writer.publish().value();
+  const std::array<std::int32_t,2> qp{0,queries},kp{0,2},pages{2,0};
+  const std::array<std::int32_t,1> tails{static_cast<std::int32_t>(tail)};
+  auto layout=schema.version({qp,kp,pages,tails}).value();
+  auto key_frame=keys.read(layout,key_pages).value(),value_frame=values.read(layout,value_pages).value();
+  auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
+      .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,
+      .scale=.0625F,.causal=causal,.window_left=window}).value();
+  auto slot=c::BatchInvocation::create(program,queue).value();
+  auto prepared=slot.prepare_batch(layout).value();
+  auto done=prepared.run(query_lease,key_frame,value_frame).value();
+  const auto status=done.wait();ASSERT_TRUE(status.ok())<<status.message();
+  auto output=slot.output().value();
+  EXPECT_EQ(schema.capacity().query_type,c::DataType::kFloat32);
+  EXPECT_EQ(output.size(),queries*heads*depth*sizeof(float));
+  std::vector<float> actual(queries*heads*depth);
+  ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  bool differs_from_bf16=false,differs_from_f16=false;
+  const unsigned length=16+tail;
+  for(unsigned row=0;row<queries;++row)for(unsigned head=0;head<heads;++head){
+    const unsigned end=causal?length-queries+row+1:length;
+    const unsigned begin=window<0?0:end>unsigned(window+1)?end-unsigned(window+1):0;
+    std::vector<double> scores(end-begin);double maximum=-std::numeric_limits<double>::infinity();
+    for(unsigned position=begin;position<end;++position){
+      double dot=0;
+      for(unsigned d=0;d<depth;++d)dot+=double(query(row,head,d))*double(key(position,head/(heads/kv_heads),d));
+      scores[position-begin]=dot*.0625;maximum=std::max(maximum,scores[position-begin]);
+    }
+    double sum=0;for(auto &score:scores){score=std::exp(score-maximum);sum+=score;}
+    for(unsigned d=0;d<depth;++d){
+      double expected=0;
+      for(unsigned position=begin;position<end;++position)expected+=scores[position-begin]*double(value(position,head/(heads/kv_heads),d));
+      expected/=sum;const auto got=actual[(row*heads+head)*depth+d];
+      ASSERT_NEAR(got,expected,1.e-6)<<"row="<<row<<" head="<<head<<" d="<<d;
+      differs_from_bf16|=std::abs(expected-half_test::decode(half_test::encode<hyle::simd::bfloat16_t>(expected)))>2.e-6;
+      differs_from_f16|=std::abs(expected-half_test::decode(half_test::encode<hyle::simd::float16_t>(expected)))>2.e-6;
+    }
+  }
+  EXPECT_TRUE(differs_from_bf16);EXPECT_TRUE(differs_from_f16);
+  output.reset();done={};prepared={};
+  ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
+}
+TEST(GgmlCpuPaged, Float32Qwen27GeometryPreservesDtypeCausalWindowsAndPartialPageMath){
+  f32_paged_prefill(true,-1,1);
+  f32_paged_prefill(true,4,15);
+  f32_paged_prefill(true,0,16);
+  f32_paged_prefill(false,-1,1);
 }
 hyle::Status encode_words(c::DataType type,c::CacheStorage storage,std::span<const float> values,
                           std::vector<std::uint8_t>& bytes,unsigned threads=3){

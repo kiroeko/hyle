@@ -23,7 +23,7 @@ Qwen3.5-2B官方BF16、全CUDA、单序列R1的已有实际编译报告中，普
 | 冷编译执行步骤数 | 1039 | 1105 |
 | 按粗算子名称序列归并的多节点region模式 | 14 | 13 |
 
-17族为Gather、Cast、Binary、RmsNorm、View、MatMul、Concat、Copy、CausalConv1D、Unary、Reduce、GatedDeltaNet、RoPE、PagedAppend、PagedAttention、BFloatLinearF32和TopK。Unary实际使用Exp／Neg／Rsqrt／Sigmoid／SiLU／Softplus，Binary使用Add／Multiply；23包含布局、搬运及缓存支撑项，不是23种独立CUDA kernel。
+17族为Gather、Cast、Binary、RmsNorm、View、MatMul、Concat、Copy、CausalConv1D、Unary、Reduce、GatedDeltaNet、RoPE、PagedAppend、PagedAttention、DenseLinearF32和TopK。Unary实际使用Exp／Neg／Rsqrt／Sigmoid／SiLU／Softplus，Binary使用Add／Multiply；23包含布局、搬运及缓存支撑项，不是23种独立CUDA kernel。
 
 普通decode实际选中4类具名专用融合：SiLU×Mul、双BF16 gate／up投影＋SiLU×Mul、保BF16舍入的Cast→SiLU、同输入双BF16投影；另有通用region lowering与其中的原生融合。专用融合是优化，不是功能正确性的必需算子，也不代表所有可做融合已经穷尽。一个region不保证只启动一个kernel，14／13种粗模式也不能解释为14／13种物理融合核。
 
@@ -231,7 +231,7 @@ DSA布局为528／656字节，另行承载。Hyle uniform compact E4已接四后
 | 模型 / 格式域 | 已核源码事实 | 最小下一步 |
 | --- | --- | --- |
 | 分立expert的有界工作集／同代Graph绑定 | `WeightSlots::upload_slices`在写前校验完整覆盖、dtype、范围及别名，沿原上传和Completion保留不可变bank；`graph::{cuda,apple,vulkan}::bind`一次原子替换同批W／SF／map。三GPU已运行512专家域取4的ModelOpt NVFP4合成角色（N2048/K8192），另核CT asymmetric group128／F16 scale／oddN7显式zero重打包，含多代双槽、旧结果及失败计数。[原资源旅程](../evidence/correctness/expert-working-set-reference-2026-10-21.json)之后，GA原encoded bank和GLM mixed MLX分别由上文有限消费者续验 | 通用bank装配／映射／lease与同代绑定已具备；引擎决定选择、驻留与淘汰政策，不是底座新增功能。精确publisher payload、其它codec的具体旅程、任意大bank、整制品、Linux、质量或吞吐仍不由代表用例代签 |
-| Qwen dense；F32/F16/BF16普通SiLU | [真实FFN](../../tools/qwen35_text/main.cc#L181)发普通SiLU再乘法。F32/BF16已有稳定SiLU→Mul，保留[stable-tail、`-Inf→+0`](../../third_party/sglang_activation/activation.cuh#L96)与SiLU输出RNE。CUDA BF16 单向量现另接 gate/up＋SiLU×Mul，直接读两份权重，保留 G/U/A/Y 四处RNE；真实Qwen decode每步24处物理命中 | F16、prefill/其他shape及其他精度的完整投影融合仍未接；F32点积归约树可不同于cuBLASLt，整模型差异与吞吐须单独判断 |
+| Qwen dense；F32/F16/BF16普通SiLU | [真实FFN](../../engine/models/qwen35/main.cc#L181)发普通SiLU再乘法。F32/BF16已有稳定SiLU→Mul，保留[stable-tail、`-Inf→+0`](../../third_party/sglang_activation/activation.cuh#L96)与SiLU输出RNE。CUDA BF16 单向量现另接 gate/up＋SiLU×Mul，直接读两份权重，保留 G/U/A/Y 四处RNE；真实Qwen decode每步24处物理命中 | F16、prefill/其他shape及其他精度的完整投影融合仍未接；F32点积归约树可不同于cuBLASLt，整模型差异与吞吐须单独判断 |
 | GDN z门控；BF16来源／F32 SiLU与乘法／BF16结果 | CUDA已接闭合Cast→稳定SiLU→Mul→Cast的typed输入／存储，保F32两处舍入和末BF16 RNE；外部精确metadata View及两Mul顺序可用。13项相关回归及完整64向量通过，当前Qwen每步18处物理命中、少36个转换核；[实际证据](../evidence/performance/typed-gating-suffix-2026-10-20.json) | 中间值逃逸保原分解；内部插入View、非连续／广播及其它dtype保持原路径。未融合前置投影，不代签其它平台、模型或长期吞吐 |
 | GDN单快照状态输出 | CUDA对闭合packed→score/state CONT段复用原GDN数学kernel，直接写独立状态输出；真实CONT可发布／多读，保原score拷贝、F32状态与BF16边界。13项CUDA及完整64向量通过；实际每步少18次、合计18MiB D2D，kernel仍596。[源码与实测](../evidence/performance/gdn-direct-state-output-2026-10-20.json) | 仅K=1且当前地址／owner／不重叠检查通过；私有中间值额外读者、其它snapshot或布局保原路径。packed分配保留，未证明吞吐或峰值改善 |
 | 同A小行BF16双投影；Qwen GDN a/b等 | CUDA已接两个普通MatMul的多输出冷候选，直接读原BF16权重、各自F32累加与末BF16 RNE，两个结果均可发布／多读；完整FFN优先。5项新CUDA与7项邻居、8项共同CPU回归、完整64向量通过，实际Qwen每步18处命中、614→596核。[源码与实测](../evidence/performance/paired-small-projections-2026-10-20.json) | 目前M1/evenK、转置dense W、等N，cached NVIDIA/MMVF几何且N不超过SM数；其它shape/精度保原叶。两窗波动大，未证明稳定decode提速；不把局部热cache微基准推广成整模型收益 |
@@ -421,14 +421,14 @@ DSpark三stage仅把已验证main_x写入各自128行、584B编码ring；五行p
 | [`SqrtSoftplusRouting`](../../include/hyle/compute/model_ops.h#L575) | 两GA E384/256、Top6、scale2.5/1.5仍需；[routing recipe](../../tests/compute_models/d5_moe_execution_fragments.h) | 保留；CUDA已核bias只选ID、无epsilon归一化、原生tie与零和；完整制品仍待核 |
 | [`SqrtSoftplusHashRouting`](../../include/hyle/compute/model_ops.h#L622) | 两GA首3层token-table hash；[SGLang接线](../../src/compute_provider_cuda/router_provider.cc) | 保留；已改按真实分数和归一化，含零和NaN、表序/重复ID/bounds回归；完整制品仍待核 |
 | [`SinkAttention`](../../include/hyle/compute/model_ops.h#L655) | GA learned sink/sparse attention；[状态消费者](../../tests/compute_state/deepseek_sparse_prefix_consumer.cc) | 保留；BF16逐节点转换、mask/sink分母和稀疏位置另核 |
-| [`CausalConv1d`](../../include/hyle/compute/model_ops.h#L706) | Q35/Q27/Q24 GDN、K/GF KDA；[真实Qwen消费者](../../tools/qwen35_text/main.cc) | 共享通用conv/history能力保留；GA无需conv不构成删除理由 |
+| [`CausalConv1d`](../../include/hyle/compute/model_ops.h#L706) | Q35/Q27/Q24 GDN、K/GF KDA；[真实Qwen消费者](../../engine/models/qwen35/main.cc) | 共享通用conv/history能力保留；GA无需conv不构成删除理由 |
 | [`RecurrentGatedDeltaNet`](../../include/hyle/compute/model_ops.h#L765) | 参数化scalar-gated GDN；[GDN recipe](../../tests/compute_models/d5_qwen38_24t_semantic_fragments.h) | 普通GDN推导QKV/状态/快照，backend另核真实能力；Kimi/GLM KDA的channel raw gate是另外合同，不能由宽family映射等同 |
 | [`GroupedMatMul`](../../include/hyle/compute/model_ops.h#L817) | Q24/K/G/GF routed专家、GA分组投影；[Q24完整router](../../tests/compute_models/d5_qwen38_24t_full_router.h) | 通用stored-bank/ID能力保留；格式、A=1/S、累加/输出逐role核 |
 | [`HyperConnectionCombine`](../../include/hyle/compute/model_ops.h#L863) | [GLM Flash](../../tests/compute_models/d5_glm_remaining_fragments.h#L211)实际接入共享HC core；[正式GA mHC](../evidence/correctness/ga-mhc-reference-2026-10-21.json)已四端验证HC4／Sinkhorn20的独立来源参考及同代状态旅程 | 共享GF与GA，保留；有限B2／S3和S1、D128参考保F32／BF16边界与epsilon，不代签其它profile或整模型 |
 | [`HyperConnectionPre`](../../include/hyle/compute/model_ops.h#L904) | GLM Flash共享core与[正式GA collapse／head](../evidence/correctness/ga-mhc-reference-2026-10-21.json)有限消费者 | 共享能力保留；已核数学／寿命与完整attention／expert分开，旧单层MTP与DSpark角色仍不同 |
 | [`HyperConnectionPost`](../../include/hyle/compute/model_ops.h#L939) | GLM Flash共享core与[正式GA expansion／residual](../evidence/correctness/ga-mhc-reference-2026-10-21.json)两代反馈 | 共享能力保留；已核有限combination方向、残差及转换边界，不外推所有profile |
 | [`LightningIndexer`](../../include/hyle/compute/model_ops.h#L988) | 原[稀疏fixture](../../tests/sparse_fragment_test_support.h)是F32/F16-mask端口；正式GA三处BF16 score边界已沿[四端普通图](../evidence/correctness/ga-bf16-indexer-state-reference-2026-10-21.json)与CUDA复合承载执行 | 保留旧F32能力，不将其描述符改签为GA BF16 producer或GLM H32；完整模型仍未验 |
-| [`BFloatLinearF32`](../../include/hyle/compute/model_ops.h#L1039) | [Q24 BF16 router near-tie](../../tests/compute_models/d5_qwen38_24t_full_router.h)及KDA投影；GA router也有F32 score需求 | 共享能力保留；BF16权重/F32分数合同不等同普通BF16 MatMul输出 |
+| [`DenseLinearF32`](../../include/hyle/compute/model_ops.h) | [Q24 BF16 router near-tie](../../tests/compute_models/d5_qwen38_24t_full_router.h)、KDA投影与 GGUF F16 词表；GA router也有F32 score需求 | 原浮点权重与 F32 分数合同，不等同普通低精度 MatMul 输出；Provider 按实际组合接纳 |
 
 派生关系也必须保留在反向核对中：[detail::RowCachePagedIndexerScores](../../src/compute_batch/row_cache_map.h#L67) 与 [Graph PagedRowCacheIndexer](../../include/hyle/graph/batch.h#L81)依赖上述H64 scorer，另有页权限/metadata/empty-history合同；它们不是新增的公开custom描述符。不能只删schema而漏掉CUDA/Apple/Vulkan/CPU接线，也不能顺带删除generic row-cache map/gather/decode与typed paging能力。
 

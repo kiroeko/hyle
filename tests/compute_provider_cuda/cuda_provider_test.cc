@@ -908,11 +908,76 @@ TEST(DeepSeekFp4, ColdShapeDomainAndHostMemory) {
         std::array{w, a, ids}, std::array{c}, target);
     ASSERT_FALSE(result);
   };
-  check(2, 1, 6, 128, 128, resource.ref());
+  check(2, 1, 6, std::int64_t(INT32_MAX) + 1, 128, resource.ref());
+  check(2, 1, 6, 3, std::int64_t(INT32_MAX) + 1, resource.ref());
   check(std::int64_t(INT32_MAX) + 1, 1, 6, 4096, 2048, resource.ref());
   check(2, 65536, 1, 4096, 2048, resource.ref());
   check(2, 1, 65536, 4096, 2048, resource.ref());
+  check(2, 32768, 1, 3, 65536, resource.ref());
   check(2, 1, 6, 4096, 2048, mem::system_resource());
+}
+
+TEST(DeepSeekFp4, NaturalGeometryKeepsPartialTilesAndDuplicateSlots) {
+  struct Case final { std::int64_t n, k, activation_slots; };
+  const std::array cases{Case{3, 128, 1}, Case{65, 256, 3},
+                         Case{129, 384, 1}, Case{4096, 2048, 1}};
+  auto owner = context(compute::cuda_native::deepseek_provider());
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  constexpr std::int64_t experts = 2, tokens = 2, slots = 3;
+  const std::array<std::int32_t, tokens * slots> selected{0, 1, 0, 1, 0, 1};
+  for (const auto shape : cases) {
+    SCOPED_TRACE(::testing::Message() << "N=" << shape.n << " K=" << shape.k);
+    const auto ad = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+        std::array{tokens, shape.activation_slots, shape.k}).value();
+    const auto wd = compute::float4_grouped_weight_description(experts, shape.n, shape.k).value();
+    const auto id = matrix(compute::DataType::kInt32, tokens, slots);
+    const auto cd = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+        std::array{tokens, slots, shape.n}).value();
+    Tensor input(ad, resource.ref()), weight(wd, resource.ref());
+    Tensor ids(id, resource.ref()), output(cd, resource.ref());
+    std::vector<__nv_bfloat16> activation(static_cast<std::size_t>(
+        tokens * shape.activation_slots * shape.k));
+    for (std::int64_t t = 0; t < tokens; ++t)
+      for (std::int64_t slot = 0; slot < shape.activation_slots; ++slot)
+        for (std::int64_t k = 0; k < shape.k; ++k)
+          activation[static_cast<std::size_t>((t * shape.activation_slots + slot) * shape.k + k)] =
+              __float2bfloat16(float(slot + 1));
+    ASSERT_TRUE(input.storage.view().write(std::as_bytes(std::span(activation))).ok());
+    ASSERT_TRUE(ids.storage.view().write(std::as_bytes(std::span(selected))).ok());
+    const auto code_bytes = static_cast<std::size_t>(experts * shape.n * (shape.k / 2));
+    std::vector<std::byte> bank(wd.required_bytes().value(), std::byte{0x22});
+    for (std::int64_t e = 0; e < experts; ++e)
+      for (std::int64_t row = 0; row < shape.n; ++row)
+        for (std::int64_t block = 0; block < shape.k / 32; ++block) {
+          const float scale = e == 0 ? 1.F : 2.F;
+          const auto index = static_cast<std::size_t>((e * shape.n + row) * (shape.k / 32) + block);
+          std::memcpy(bank.data() + code_bytes + index * sizeof(float), &scale, sizeof(float));
+        }
+    ASSERT_TRUE(weight.storage.view().write(bank).ok());
+    auto prepared = compute::prepare(owner, compute::model_ops::grouped_float4_linear(),
+        std::array{weight.view.as_const(), input.view.as_const(), ids.view.as_const()},
+        std::array{output.view});
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto workspace = mem::Buffer::create(resource.ref(),
+        prepared->workspace_requirement().size, prepared->workspace_requirement().alignment).value();
+    auto invocation = prepared->create_invocation(workspace.view()).value();
+    auto done = invocation.submit(queue,
+        std::array{weight.view.as_const(), input.view.as_const(), ids.view.as_const()},
+        std::array{output.view});
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    std::vector<__nv_bfloat16> actual(static_cast<std::size_t>(tokens * slots * shape.n));
+    ASSERT_TRUE(output.storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    for (std::int64_t t = 0; t < tokens; ++t)
+      for (std::int64_t slot = 0; slot < slots; ++slot)
+        for (std::int64_t row = 0; row < shape.n; ++row) {
+          const auto a = shape.activation_slots == 1 ? 1 : slot + 1;
+          const auto e = selected[static_cast<std::size_t>(t * slots + slot)];
+          EXPECT_EQ(__bfloat162float(actual[static_cast<std::size_t>((t * slots + slot) * shape.n + row)]),
+                    float(shape.k * a * (e == 0 ? 1 : 2)));
+        }
+  }
 }
 
 TEST(DeepSeekFp4, ActualDownProjectionCancellationRetainsF32Precision) {

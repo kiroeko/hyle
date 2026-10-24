@@ -1,0 +1,666 @@
+{
+  "status": "PASS",
+  "date": "2026-10-24",
+  "scope": "Complete original Qwen3.5-2B UD-Q8_K_XL input, current frozen pure CPU engine, one ordinary greedy and one K4 random MTP journey.",
+  "source": {
+    "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+    "size": 2893114784,
+    "lfs_sha256": "1eb01bfc3fbb04323e03fe6123d1d396f531474985b5d06e851ddf0522192f52",
+    "api_xet_hash": "5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944",
+    "etag": "\"5dddec0fb84fd727607332cee31bd7d11c99f333484d585c6a52585f0e94b944\"",
+    "etag_basis": "API xetHash",
+    "uri": "https://hf-mirror.net/unsloth/Qwen3.5-2B-MTP-GGUF/resolve/e05864f8066d874d5f85aaff007ae57a2a7d1efe/Qwen3.5-2B-UD-Q8_K_XL.gguf",
+    "repository": "unsloth/Qwen3.5-2B-MTP-GGUF",
+    "revision": "e05864f8066d874d5f85aaff007ae57a2a7d1efe",
+    "header_sha256": "f78b889f79f76f2632d20297119c51b08d64d2978f85789056184929b3b305b4",
+    "header_bytes": 10963104,
+    "full_file_sha256_verified": true
+  },
+  "original_role_count": 335,
+  "original_payload_bytes": 2882151680,
+  "prepared": {
+    "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/input.json",
+    "bytes": 3053,
+    "sha256": "161a38c6011c963755e0c0521c7bdb2f2c9c408e0cdeb6942fd95c094cd5af7f"
+  },
+  "manifest": {
+    "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/weights.tsv",
+    "bytes": 79944,
+    "sha256": "7123d4298acb89339a5c94357b59bd5a2c4f33154ab1390cf812921551b88358"
+  },
+  "runtime": {
+    "image": {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle.exe",
+      "bytes": 22689280,
+      "sha256": "b52a24da3d02047afef4d39e697702a3bf1c08a1eb83df24845d4e1a1998e8fa"
+    },
+    "native": {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "environment": {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/runtime-environment.json",
+      "bytes": 337,
+      "sha256": "5e3493317a84d3b4a352b77c60361817e5bb23c786443baad9596d14c343998b"
+    },
+    "source": {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/sources.json",
+      "bytes": 9677,
+      "sha256": "40e5c7cc1201120e240b5c99ded1af22e25a44f97b4a74eb50b54bb1833cb729"
+    }
+  },
+  "pure_cpu_dependency_audit": {
+    "record": {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/pe-dependencies.json",
+      "bytes": 7724,
+      "sha256": "fe5136c867241a41742320e715363eea5ae02ed686a71a4f3cca2b2fd39fcffc"
+    },
+    "status": "PASS static recursive CPU import closure",
+    "CUDA": false,
+    "TorchCUDA": false,
+    "cuBLAS": false,
+    "CUDA_fatbin_sections": false
+  },
+  "retained_cpu_closure_evidence": {
+    "path": "docs/evidence/correctness/mtp-qwen35-pure-cpu-deployment-2026-10-24.json",
+    "bytes": 10015,
+    "sha256": "89dfc4a500e4b430709fc84579700ac7e009ea204324196923155c25fc6837b6"
+  },
+  "geometry": {
+    "prompt_tokens": 154,
+    "context_capacity": 256,
+    "cache_requested_byte_limit": 268435456,
+    "ordinary_maximum_outputs": 4,
+    "mtp_maximum_outputs": 6,
+    "mtp_maximum_drafts": 4,
+    "random_top_k": 8,
+    "random_top_p": 0.9,
+    "random_seed": 123
+  },
+  "wait_segments": [
+    {
+      "name": "initial30minutes",
+      "window": {
+        "started_utc": "2026-10-24T09:12:41.956898+00:00",
+        "task_first_observation_utc": "2026-10-24T09:11:24.550040+00:00",
+        "deadline_utc": "2026-10-24T09:41:24.550040+00:00",
+        "interval_seconds": 45,
+        "HTTP": 0,
+        "models_started": 0,
+        "builds": 0
+      },
+      "result": "not_ready_at_explicit_30_minute_deadline"
+    },
+    {
+      "name": "explicit_extension1",
+      "window": {
+        "started_utc": "2026-10-24T09:42:15.512451+00:00",
+        "deadline_utc": "2026-10-24T09:57:15.512451+00:00",
+        "parent_authorized_additional_seconds": 900,
+        "interval_seconds": 45,
+        "HTTP": 0,
+        "models_started": 0,
+        "builds": 0
+      },
+      "result": "not_ready_at_extension1_deadline"
+    },
+    {
+      "name": "explicit_extension2",
+      "window": {
+        "started_utc": "2026-10-24T09:57:22.111809+00:00",
+        "deadline_utc": "2026-10-24T10:12:15.512451+00:00",
+        "parent_authorized_additional_seconds": 900,
+        "interval_seconds": 45,
+        "HTTP": 0,
+        "models_started": 0,
+        "builds": 0
+      },
+      "result": "ready",
+      "ready_utc": "2026-10-24T09:58:52.132468+00:00"
+    }
+  ],
+  "prepare": {
+    "process": {
+      "exit": 0,
+      "started_utc": "2026-10-24T09:59:13.162916+00:00",
+      "seconds": 2.687002420425415
+    },
+    "roles": 335,
+    "original_weight_bytes": 2882151680,
+    "HTTP": 0
+  },
+  "cases": [
+    {
+      "case": "cpu-ordinary",
+      "status": "PASS",
+      "process": {
+        "exit": 0,
+        "seconds": 17.536808490753174
+      },
+      "functional_result": {
+        "profile": "Q8",
+        "case": "cpu-ordinary",
+        "native_exit": 0,
+        "source_id": "40b1c3d6fee71020f28d69e4b651877dc589db44630543ecf724f35755cdcda9",
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          464
+        ],
+        "score_policy": "bf16_inputs_f32_output",
+        "host_weight_bytes": 2817490176,
+        "device_weight_bytes": 0,
+        "cache_peak_requested_bytes": 42754632,
+        "image": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle.exe",
+          "bytes": 22689280,
+          "sha256": "b52a24da3d02047afef4d39e697702a3bf1c08a1eb83df24845d4e1a1998e8fa"
+        },
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 320,
+        "mtp_tensors": 0,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "committed_target_rows": 157,
+      "sampling_draw_cursor": 0,
+      "draft_frontier": null,
+      "draft_lag": null,
+      "consumed_drafts": 0,
+      "known_workspace_domains": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 26812864,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "workspace_limit_scope": "known_per_invocation_graph_workspace",
+      "execution_shared_requested_byte_limit": null,
+      "native_execution_private_bytes_unknown": true,
+      "actual_report": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-ordinary/stdout.log",
+        "bytes": 2608,
+        "sha256": "643e96354486effd896c5ff6452f2d6894a17d2a49a4d3b16caa33ddef65a734"
+      }
+    },
+    {
+      "case": "cpu-k4-random",
+      "status": "PASS",
+      "process": {
+        "exit": 0,
+        "seconds": 18.976232051849365
+      },
+      "functional_result": {
+        "profile": "Q8",
+        "case": "cpu-k4-random",
+        "native_exit": 0,
+        "source_id": "40b1c3d6fee71020f28d69e4b651877dc589db44630543ecf724f35755cdcda9",
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          1445,
+          18904,
+          1120
+        ],
+        "score_policy": "bf16_inputs_f32_output",
+        "host_weight_bytes": 2882151680,
+        "device_weight_bytes": 0,
+        "cache_peak_requested_bytes": 121566567,
+        "image": {
+          "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/bin/hyle.exe",
+          "bytes": 22689280,
+          "sha256": "b52a24da3d02047afef4d39e697702a3bf1c08a1eb83df24845d4e1a1998e8fa"
+        },
+        "weight_count_scope": "selected_physical_roles",
+        "text_tensors": 320,
+        "mtp_tensors": 15,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "performance_claim": false
+      },
+      "committed_target_rows": 159,
+      "sampling_draw_cursor": 10,
+      "draft_frontier": 158,
+      "draft_lag": 1,
+      "consumed_drafts": 4,
+      "known_workspace_domains": [
+        {
+          "domain": 0,
+          "known_peak_bytes": 26812872,
+          "limit_bytes": 2795249664
+        }
+      ],
+      "workspace_limit_scope": "known_per_invocation_graph_workspace",
+      "execution_shared_requested_byte_limit": null,
+      "native_execution_private_bytes_unknown": true,
+      "actual_report": {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-k4-random/stdout.log",
+        "bytes": 2705,
+        "sha256": "44cdcfcf7576b1fe198ce1224c3a7364133a98586a0f6ecd2c906f6707fda24d"
+      }
+    }
+  ],
+  "additional_HTTP_by_this_task": 0,
+  "additional_SDK_builds_by_this_task": 0,
+  "model_runs": 2,
+  "automatic_model_retry": false,
+  "performance_claim": false,
+  "limitations": [
+    "Two finite functional journeys do not establish full task quality, speed, long-context or multi-session performance.",
+    "The current application image reuses the previously audited pure CPU object closure; this is not a fresh full top-level install build.",
+    "The cache requested-byte cap and known per-invocation workspace cap are distinct; shared execution accounting is unlimited and native execution private bytes remain unknown.",
+    "Original data were acquired by the root-controlled bounded downloader; this consumer task only observed local metadata, prepared role references and ran the two authorized CPU cases.",
+    "GPU cases are published separately by the root agent."
+  ],
+  "files": [
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/final-readiness.json",
+      "bytes": 2317,
+      "sha256": "a24dc969af8ee13ad105611dec18151b7cbeff96db4adb17304de3a33176f275"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/observe-extension1.py",
+      "bytes": 2074,
+      "sha256": "81e34ab10aa8c4e5ec41242ddc3467f76bf56d5f1e70da72c5ba520b8e34318b"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/observe-extension2.py",
+      "bytes": 2217,
+      "sha256": "385e11f5d39ab062138aa991fdde3659198d630bee3841532e9ecceb72cdc347"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/publish-cpu.py",
+      "bytes": 6755,
+      "sha256": "911218312823628ac7da04dc03a3b40789a592d2855ee32f2f6ccbac3669f92d"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/run-once.py",
+      "bytes": 1542,
+      "sha256": "6d302fe38bc516e8a3316e057912a6a9c1cfd4db1c8fd67e2a20de039f56d9c8"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/wait-observations.jsonl",
+      "bytes": 9600,
+      "sha256": "ee73240a27196bf830739877662ecc135a377231b17af04f8dcb178c53031147"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/wait-ready.py",
+      "bytes": 2157,
+      "sha256": "319b88cfa9a4c2e2d7f6d2a45b5fb6dce759cb6862300254ad8684bdfa88b5a6"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/wait-window.json",
+      "bytes": 262,
+      "sha256": "ab289d7f416d11798de51247066a22955dab6ae9815734e814d0ba6d68387eea"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension1/final-readiness.json",
+      "bytes": 714,
+      "sha256": "0d369c2095ad2333ed37ef65c6089946f77610cd92e4d8097f3f27be20166d35"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension1/wait-observations.jsonl",
+      "bytes": 5040,
+      "sha256": "775d606e64cd259a180833a53e7b157ccf578fe963720d171e4f55352d025a08"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension1/wait-window.json",
+      "bytes": 241,
+      "sha256": "b771ba9177859899d548a8942a55dd3dd98c707209307e0e170e830760210380"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/final-readiness.json",
+      "bytes": 773,
+      "sha256": "31d1b8c972d0d2d2572856f49b47e79de4f86b1883fe32428d75ca9b02a98001"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/wait-observations.jsonl",
+      "bytes": 801,
+      "sha256": "ca26488487b8e11986735233ed7e20790135f3221cf602f6727dad8c92d5d930"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/wait-window.json",
+      "bytes": 241,
+      "sha256": "ddf4da588f063612cf259391194584d58b582812b6d7e76713fa40706ceca3c4"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/prepare/command.json",
+      "bytes": 319,
+      "sha256": "69c8b9e4301af81b34e274d6f3ac491e5e257c0eb054f6e0bc76c7bc5020fb2b"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/prepare/process.json",
+      "bytes": 104,
+      "sha256": "a4d50f5b357481d533d8aae8a35ded83688e86d0516a8441075bd87b3942579a"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/prepare/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/prepare/stdout.log",
+      "bytes": 90,
+      "sha256": "e9468ff2a15dd3e3c8e66c2188d46326ea00f1e52ba7a262bb73a7d234ba7eae"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-ordinary/command.json",
+      "bytes": 352,
+      "sha256": "d2a246f91022d8ef42c924c3aa6a08ce6af043bcc6ddc7504ee2c068246ddf57"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-ordinary/process.json",
+      "bytes": 105,
+      "sha256": "c4803875f91095ca08a69e8bfc2350b0dc7e07bdfc1e045b0fe0b34b0d6f63f6"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-ordinary/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-ordinary/stdout.log",
+      "bytes": 654,
+      "sha256": "99e15c2a3ab3cb6ecb3f0a7ca97349fa2afa45c106ffb234af4dcc4dbaa99461"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-k4-random/command.json",
+      "bytes": 353,
+      "sha256": "606effc337aefa2b7ecf3165bc59875cd669b881cede73e9439bc6d1c0916695"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-k4-random/process.json",
+      "bytes": 105,
+      "sha256": "f1655104c677d43cd763b2599a5c969004176e8d46f2b1444609ff1c178d4f2b"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-k4-random/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-q8-cpu-complete-20261024/extension2/steps/cpu-k4-random/stdout.log",
+      "bytes": 671,
+      "sha256": "9169dda8e7e43d56d59c72ce7ea22279d1785870b3930cc67ef5a35860442a95"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q8_K_XL/payload-role-files.json",
+      "bytes": 108458,
+      "sha256": "414e95aa6666d55f7ca9babe568454d4022a0b033f62cf59fecf25c8c51921ac"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q8_K_XL/payload-acquisition.json",
+      "bytes": 255275,
+      "sha256": "117ba580be9ffb286f30ed5b72d99e3c527a4fd5ebfa9bcaf0cc6b82ed9bc73d"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/input.json",
+      "bytes": 3053,
+      "sha256": "161a38c6011c963755e0c0521c7bdb2f2c9c408e0cdeb6942fd95c094cd5af7f"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/weights.tsv",
+      "bytes": 79944,
+      "sha256": "7123d4298acb89339a5c94357b59bd5a2c4f33154ab1390cf812921551b88358"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-ordinary/command.json",
+      "bytes": 1336,
+      "sha256": "19e6a26f5dd7bbaf2492932c4187bf0d44003da6282bbb38e3af2681d594258b"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-ordinary/process.json",
+      "bytes": 53,
+      "sha256": "25dca22dbb5d05cc4d7a9c8dafe149c3cc137c8bc9e6994cac8125f95c3f722a"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-ordinary/stdout.log",
+      "bytes": 2608,
+      "sha256": "643e96354486effd896c5ff6452f2d6894a17d2a49a4d3b16caa33ddef65a734"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-ordinary/stderr.log",
+      "bytes": 3073,
+      "sha256": "2b91d865a84d6c0e811f190aa65fca2b9527da94c749d98e8ed0e3558512ae77"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-ordinary/functional-result.json",
+      "bytes": 750,
+      "sha256": "7404df065fea6bff0acc646c3989e41482d6f8b1938a431d53ae31746fbc7980"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-k4-random/command.json",
+      "bytes": 1503,
+      "sha256": "f045065038290248c42981d4d069a07a3a5f90cd55dff02d73c529fa80c755db"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-k4-random/process.json",
+      "bytes": 53,
+      "sha256": "42dde693ee0afe78c269e87833a8ac50a7a41a16591850b3998e9a8857210b55"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-k4-random/stdout.log",
+      "bytes": 2705,
+      "sha256": "44cdcfcf7576b1fe198ce1224c3a7364133a98586a0f6ecd2c906f6707fda24d"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-k4-random/stderr.log",
+      "bytes": 7570,
+      "sha256": "9d9033627344ea09f575be7689975a03e297a7e35cea13c8ad25e228bf380459"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/complete-v2/Q8/current-runtime-runs/cpu-k4-random/functional-result.json",
+      "bytes": 777,
+      "sha256": "2a1acbda49b934c2b62793958602d6f83a056df4c016e3736071ec10838a49d1"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/current-image.json",
+      "bytes": 2607,
+      "sha256": "2349a2802af3e6cd50503d113cc5d1f62466f79729cbc11cfb910b47600344d5"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/pe-dependencies.json",
+      "bytes": 7724,
+      "sha256": "fe5136c867241a41742320e715363eea5ae02ed686a71a4f3cca2b2fd39fcffc"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/closure-audit.json",
+      "bytes": 42520,
+      "sha256": "0eac5d921aa3f9965b9063ed47a04ff80521d531af7442450c351037be2e263e"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/retained-link-inputs.json",
+      "bytes": 30050,
+      "sha256": "1fed4dbc7dfc46022b5330d0250f9eb0ec8ebc0089eca6b9828e255b73ca8735"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/sources.json",
+      "bytes": 9677,
+      "sha256": "40e5c7cc1201120e240b5c99ded1af22e25a44f97b4a74eb50b54bb1833cb729"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/compile-command.json",
+      "bytes": 2087,
+      "sha256": "32423b69d4a39ee25529cddb063a97d71999c93ecc2fbe36c46a327811ac4e75"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/compile-process.json",
+      "bytes": 53,
+      "sha256": "fa9c44a7771616ae79f55e5a32df092b96131ec147fd01b5ddbadc63236070ed"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/link-command.json",
+      "bytes": 19731,
+      "sha256": "1c2d3809b1e64925f3a0dd8fd79e4870f0bb4b0e02b81528230f2393cd0e1223"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/link-process.json",
+      "bytes": 53,
+      "sha256": "efc46cf7167eb42513a6301e3d55c87992fa73a71423ce33104f2282d63721b3"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/runtime-environment.json",
+      "bytes": 337,
+      "sha256": "5e3493317a84d3b4a352b77c60361817e5bb23c786443baad9596d14c343998b"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/report-count-offline-checks.json",
+      "bytes": 1750,
+      "sha256": "0fcf3af2b82ae670330bbdd436e64ac26a4840891a2733432932da1d8d882e23"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/inference/mtp_acceptance.h",
+      "bytes": 5397,
+      "sha256": "33b0cb3a3dc91b6cb493937183fe3e598da44821b9fddb0292a1e7a6e151db50"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/inference/sampling_cursor.h",
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/inference/sampling_graph.h",
+      "bytes": 17641,
+      "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/main.cc",
+      "bytes": 105,
+      "sha256": "1d6bb08fe752d10c69ae9e65e16843470757482117072dba61db92132075f40c"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/backend.h",
+      "bytes": 18451,
+      "sha256": "e71ac7062bd9509101bdaa9b0718ef76d018f30907b82763b8d0f724ddd6fa8f"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/driver.h",
+      "bytes": 166,
+      "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/host_predicates.h",
+      "bytes": 1486,
+      "sha256": "037fd476c2bf70ee03aadec99e48d5b2d6506745674d52c7fb626faba64e8343"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/main.cc",
+      "bytes": 410599,
+      "sha256": "662eeb74cd23bd06648bf92a1a68bab29ffbbf41db2297a17dcbec8dd1ebf491"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/mtp_schedule.h",
+      "bytes": 5912,
+      "sha256": "d176f7041affe1021a0d23d049c402460c98ea5f1bbb464b05a4c08365cf6321"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/native_gate.h",
+      "bytes": 1050,
+      "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/prefix_cache.h",
+      "bytes": 20952,
+      "sha256": "ad9c58e6dcd0443101849e753ae664a915406e14df881cbda1af4d1ed701c796"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/prepared_roles.h",
+      "bytes": 18614,
+      "sha256": "c677c3f7d79dfeefd6d32f32b8f6aa4f87cee71d010caf733f5974da81ab0ca6"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/probe_geometry.h",
+      "bytes": 1099,
+      "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/retained_resources.h",
+      "bytes": 1932,
+      "sha256": "1bc7d39f61b61bbd8cd1fb0be161f48303334020d265e68b60a5fd5207f2df57"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": ".scratch/qwen-pure-cpu-deployment-20261024/current1/source/engine/models/qwen35/session_state.h",
+      "bytes": 12965,
+      "sha256": "80cae237ea8a58f468dd80b34c479ef08849574e954c80557648bbcfbfc7b814"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/current-runtime-plans/Q8.json",
+      "bytes": 11064,
+      "sha256": "defaab6d9d44a176c896031a4cdaf6096b606fe522d4053671ab31c73b19e054"
+    },
+    {
+      "path": ".scratch/qwen-multi-draft-20261024/current-runtime-ready.py",
+      "bytes": 12202,
+      "sha256": "161b3a237f7edac165d1d12148a305bec63225af2230a200d6de748f4f1f0e58"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/run-original-ready.py",
+      "bytes": 11363,
+      "sha256": "9d8aac1d0abe1a7dc8ad57bc84f4dc7c4af29705d6c9245f1ad5df715074c39e"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/run-ready-v2.py",
+      "bytes": 5332,
+      "sha256": "1e14969e1b255cbe12c2fb6865cad469bfb8a42c363703bb79c525642044a339"
+    },
+    {
+      "path": ".scratch/qwen35-unsloth-mtp-20261024/Qwen3.5-2B-UD-Q8_K_XL/typed-role-inventory.json",
+      "bytes": 246160,
+      "sha256": "8877b426d28c6e00d3d1430694af0ae83fe2095ea62b1e3164e5a9702e2a3736"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-qwen35-pure-cpu-deployment-2026-10-24.json",
+      "bytes": 10015,
+      "sha256": "89dfc4a500e4b430709fc84579700ac7e009ea204324196923155c25fc6837b6"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-q8-original-pure-cpu-complete-input-2026-10-24.zip",
+    "bytes": 308445,
+    "sha256": "f82532ca5c920acd4b897ad4442f7969c60420cb4a7d240147fa98c2839161b9"
+  }
+}

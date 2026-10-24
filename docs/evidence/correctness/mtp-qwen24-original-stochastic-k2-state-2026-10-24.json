@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "status": "PASS_finite_original_Q24_CUDA_K2_component",
+  "source": {
+    "repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF",
+    "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+    "variant": "UD-IQ4_XS",
+    "source_role_pins": [
+      "tests/compute_models/qwen_original_mtp_roles.h",
+      "tests/compute_models/qwen24_original_nextn_roles.h",
+      "tests/compute_models/qwen24_original_target_roles.h"
+    ]
+  },
+  "fixed_reader_contract": {
+    "scope": "One NextN module is recursively invoked by the fixed reader. This is not a universal bitwise numerical contract for all readers.",
+    "sources": [
+      {
+        "commit": "06992c92ad4494fe9f9636e75be3e35040512447",
+        "path": "python/sglang/srt/models/qwen3_5_mtp.py",
+        "git_blob": "31d066a58a2e05f78eebf968ada5f282e919cf34",
+        "sha256": "1ebc9643333046d5621ad8b1bd6bd005686988c0104576bd1ea6c3d5e51acf24",
+        "excerpts": [
+          {
+            "line": 121,
+            "text": "        )"
+          },
+          {
+            "line": 122,
+            "text": "        self.pre_fc_norm_hidden = RMSNorm_cls(config.hidden_size, config.rms_norm_eps)"
+          },
+          {
+            "line": 123,
+            "text": "        mtp_config = copy.deepcopy(config)"
+          },
+          {
+            "line": 124,
+            "text": "        mtp_config.num_hidden_layers = 1"
+          },
+          {
+            "line": 125,
+            "text": "        mtp_config.full_attention_interval = 1"
+          },
+          {
+            "line": 126,
+            "text": "        self.model = Qwen3_5ForCausalLM("
+          },
+          {
+            "line": 127,
+            "text": "            mtp_config,"
+          },
+          {
+            "line": 213,
+            "text": "            if input_embeds is None:"
+          },
+          {
+            "line": 214,
+            "text": "                input_embeds = self.model.embed_tokens(input_ids)"
+          },
+          {
+            "line": 215,
+            "text": ""
+          },
+          {
+            "line": 216,
+            "text": "            hidden_states = forward_batch.spec_info.hidden_states"
+          },
+          {
+            "line": 217,
+            "text": ""
+          },
+          {
+            "line": 218,
+            "text": "            if not forward_batch.forward_mode.is_idle():"
+          },
+          {
+            "line": 219,
+            "text": "                input_embeds = self.pre_fc_norm_embedding(input_embeds)"
+          }
+        ]
+      },
+      {
+        "commit": "06992c92ad4494fe9f9636e75be3e35040512447",
+        "path": "python/sglang/srt/speculative/eagle_worker_v2.py",
+        "git_blob": "539b96eb0b41a65e8dfc61c95a97caf727e98a08",
+        "sha256": "8fc9285c458d746874c96da7b16bef2733509dea3d1170cbad9e787bcde67754",
+        "excerpts": [
+          {
+            "line": 716,
+            "text": "            enabled=self.index_share_for_mtp_iteration,"
+          },
+          {
+            "line": 717,
+            "text": "            keep_carry_seed=self.seed_dsa_topk_from_draft_extend,"
+          },
+          {
+            "line": 718,
+            "text": "        ):"
+          },
+          {
+            "line": 719,
+            "text": "            for i in range(self.speculative_num_steps):"
+          },
+          {
+            "line": 720,
+            "text": "                if draft_tokens_topk1 is not None:"
+          },
+          {
+            "line": 721,
+            "text": "                    input_ids = topk_index.flatten()"
+          },
+          {
+            "line": 722,
+            "text": "                else:"
+          },
+          {
+            "line": 739,
+            "text": "                ):"
+          },
+          {
+            "line": 740,
+            "text": "                    out_cache_loc = out_cache_loc.contiguous()"
+          },
+          {
+            "line": 741,
+            "text": "                forward_batch.out_cache_loc = out_cache_loc[i]"
+          },
+          {
+            "line": 742,
+            "text": "                spec_info.hidden_states = hidden_states"
+          },
+          {
+            "line": 743,
+            "text": ""
+          },
+          {
+            "line": 744,
+            "text": "                canary_index_ctx = ("
+          },
+          {
+            "line": 745,
+            "text": "                    c.with_active_single_forward_manager(i)"
+          },
+          {
+            "line": 842,
+            "text": "        for i in range(self.speculative_num_steps - 1):"
+          },
+          {
+            "line": 843,
+            "text": "            forward_batch.input_ids = input_ids"
+          },
+          {
+            "line": 844,
+            "text": "            forward_batch.out_cache_loc = out_cache_loc"
+          },
+          {
+            "line": 845,
+            "text": "            spec_info.hidden_states = hidden_states"
+          },
+          {
+            "line": 846,
+            "text": "            canary_index_ctx = ("
+          },
+          {
+            "line": 847,
+            "text": "                c.with_active_single_forward_manager(i)"
+          },
+          {
+            "line": 848,
+            "text": "                if (c := self.draft_runner.canary_manager) is not None"
+          }
+        ]
+      }
+    ]
+  },
+  "implementation": {
+    "consumer": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+    "entry": "QwenMtpStateConsumer.CudaQ24OriginalTargetAndNextNK2RandomVerifierContinuesAtomically",
+    "default": "K1 remains the default; the existing named GGUF and BF16/Mixed MoE adapters forward the optional bounded draft count.",
+    "real_flow": [
+      "Actual original NextN q0 -> categorical proposal84 -> actual original target/NextN row1 -> actual q1 -> categorical proposal40.",
+      "Actual original target91 rows advance sequentially; one M3 complete original packed vocabulary head evaluates their three genuine hidden taps.",
+      "Shared sampling::speculative_prefix evaluates p0/q0 and p1/q1; p2 supplies the all-accepted bonus; shared host selector chooses the consumed prefix.",
+      "Both accepted NextN rows are teacher-forced from the repaired previous prefix and true target tap; state-only controls inspect complete prefix0/1/2.",
+      "The natural rejected prefix publishes residual10424 plus all12 state members and RNG atomically, then genuinely consumes pending and samples1264."
+    ],
+    "no_new_executor": true,
+    "SDK_TUs_built": 0,
+    "consumer_TUs_built": 1,
+    "new_HTTP_requests": 0,
+    "new_weight_bytes": 0
+  },
+  "actual_run": {
+    "process": {
+      "path": ".scratch/qwen-multik-moe-20261024/run1/process.json",
+      "bytes": 639,
+      "sha256": "c39ea2085c7788f719a2d892f8c189cd1062866ad7f1158c16d4e45a7b1eaefe"
+    },
+    "exit": 0,
+    "process_wall_seconds_including_source_authentication_and_oracles": 144.33939550002106,
+    "gtest_total_seconds": 143.86,
+    "test_seconds": 140.87,
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multik-moe-20261024\\checks1.exe",
+      "bytes": 141591040,
+      "sha256": "0c741f067e53f8a257f643302033e813370200031ee1b5730f8be6e4e3e9619a"
+    },
+    "hardware": {
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,driver_version,memory.total",
+        "--format=csv,noheader"
+      ],
+      "exit": 0,
+      "stdout": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB\n",
+      "stderr": "",
+      "throughput_evidence": false
+    },
+    "max_drafts": 2,
+    "proposals": [
+      84,
+      40
+    ],
+    "natural_consumed_drafts": 0,
+    "natural_pending": 10424,
+    "continuation_pending": 1264,
+    "verifier_head_rows": 3,
+    "target_body_execution": "sequential_true_original_rows_not_parallel_T3_body",
+    "q_and_p_full_vocabulary": 248320,
+    "random_addresses": {
+      "proposal": [
+        0,
+        1
+      ],
+      "accept": [
+        2,
+        3
+      ],
+      "shared_final": 4,
+      "committed_episode_cursor": 5,
+      "actual_pending_continuation_cursor": 6
+    },
+    "complete_target_conditioned_repair_controls": [
+      0,
+      1,
+      2
+    ],
+    "state_budget_bytes": 58361600,
+    "peak_state_backing_bytes": 52247116,
+    "retirement": "All StateVersions, state drafts, output blocks and active output uses returned to zero; selected expert supplies closed; native process exited0.",
+    "selected_properties": {
+      "original24_provider_blk.92.nextn.eh_proj.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_q.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_k.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_v.weight": "ggml-cuda",
+      "original24_provider_blk.92.attn_output.weight": "ggml-cuda",
+      "original24_provider_output.weight": "ggml-cuda",
+      "full_head_provider": "ggml-cuda",
+      "original24_provider_blk.92.ffn_gate_inp.weight": "cublasLt",
+      "original24_provider_blk.92.ffn_gate_inp_shexp.weight": "cublasLt",
+      "original24_provider_blk.92.ffn_gate_shexp.weight": "ggml-cuda",
+      "original24_provider_blk.92.ffn_up_shexp.weight": "ggml-cuda",
+      "original24_provider_blk.92.ffn_down_shexp.weight": "ggml-cuda",
+      "original24_provider_expert_0": "ggml-cuda",
+      "original24_provider_expert_1": "ggml-cuda",
+      "original24_provider_expert_2": "ggml-cuda",
+      "full_head_encoded_bytes": "1144258560",
+      "target_provider_blk.91.attn_q.weight": "ggml-cuda",
+      "target_provider_blk.91.attn_k.weight": "ggml-cuda",
+      "target_provider_blk.91.attn_v.weight": "ggml-cuda",
+      "target_provider_blk.91.attn_output.weight": "ggml-cuda",
+      "target_provider_blk.91.ffn_gate_inp.weight": "cublasLt",
+      "target_provider_blk.91.ffn_gate_inp_shexp.weight": "cublasLt",
+      "target_provider_blk.91.ffn_gate_shexp.weight": "ggml-cuda",
+      "target_provider_blk.91.ffn_up_shexp.weight": "ggml-cuda",
+      "target_provider_blk.91.ffn_down_shexp.weight": "ggml-cuda",
+      "target_expert_provider_0": "ggml-cuda",
+      "target_expert_provider_1": "ggml-cuda",
+      "target_expert_provider_2": "ggml-cuda",
+      "sampling_q_input_host": "0",
+      "sampling_target_logits_input_host": "0",
+      "sampling_q_log_output_host": "0",
+      "sampling_pending_output_host": "0",
+      "sampling_next_target_logits_host": "0",
+      "random_max_drafts": "2",
+      "random_actual_drafts": "2",
+      "random_accepted_prefix": "0",
+      "repaired_prefixes": "2",
+      "target_head_rows": "3",
+      "actual_episode_draws": "5",
+      "state_budget_bytes": "58361600",
+      "peak_state_backing_bytes": "52247116",
+      "scope": "Natural recursive original MoE NextN proposals and true per-row target MoE states; one M3 original vocabulary head, common p/q prefix decisions, complete0/1/2 target-conditioned repair and atomic pending/RNG; upstream layer fixture remains external, target body is sequential, no full-model quality/TPS/parallel-target claim."
+    },
+    "control_log": [
+      "QWEN MULTI PREFIX prefix=0 committed_cursor=3 actual_draws=5 controlled_state_only=1",
+      "QWEN MULTI PREFIX prefix=1 committed_cursor=4 actual_draws=5 controlled_state_only=1",
+      "QWEN MULTI PREFIX prefix=2 committed_cursor=5 actual_draws=5 controlled_state_only=1",
+      "QWEN MULTI BOUNDARY name=quota emitted=1 consumed=1 pending=10424 stopped=0 actual_draws=5",
+      "QWEN MULTI BOUNDARY name=quota emitted=1 consumed=1 pending=10424 stopped=0 actual_draws=5",
+      "QWEN MULTI BOUNDARY name=quota emitted=1 consumed=1 pending=10424 stopped=0 actual_draws=5",
+      "QWEN MULTI BOUNDARY name=proposal_EOS emitted=1 consumed=1 pending=10424 stopped=0 actual_draws=5",
+      "QWEN MULTI BOUNDARY name=proposal_EOS emitted=1 consumed=1 pending=10424 stopped=0 actual_draws=5",
+      "QWEN MULTI BOUNDARY name=final_EOS emitted=1 consumed=1 pending=10424 stopped=1 actual_draws=5",
+      "QWEN RANDOM MULTI K=2 q1=84 q2=40 accepted=0 pending=10424 continued=1264 draw=6 head_rows=3 target_body=sequential_true_rows"
+    ]
+  },
+  "post_run_review": {
+    "finding": "Independent review found that state-only prefix controls must not commit a prefix that has already consumed configured EOS. The natural selector already kept EOS pending.",
+    "minimal_fix": "Skip only the state-control Head for prefixes containing consumed EOS; documentation comments updated. No sampler/state mathematical changes.",
+    "current_source": {
+      "path": ".scratch/qwen-multik-moe-20261024/final-syntax/source.cc",
+      "bytes": 326469,
+      "sha256": "de1d7ba915fa5448b2468936be653e17c72aa355650949e1fc2656e0d0190f3f"
+    },
+    "delta_from_run_image": {
+      "path": ".scratch/qwen-multik-moe-20261024/final-syntax/after-run-control-only.patch",
+      "bytes": 2178,
+      "sha256": "f90415a7c0b0877b3c4dc729bc3cf6753184b8d8d85d18b11a60069adda26037"
+    },
+    "strict_CPU_CUDA_consumer_syntax": {
+      "path": ".scratch/qwen-multik-moe-20261024/final-syntax/process.json",
+      "bytes": 2504,
+      "sha256": "c52c5833227089d6cf8b42ed48af87bb201112751fce90a90e953d5eee24fbe2"
+    },
+    "syntax_exit": 0,
+    "runtime_boundary": "The sole actual run has empty configured EOS, so this diagnostic-control gate does not alter that executed branch. The new nonempty-EOS control skip was not separately model-run."
+  },
+  "reused_evidence": [
+    "docs/evidence/correctness/mtp-qwen24-original-stochastic-state-2026-10-24.json",
+    "docs/evidence/correctness/mtp-qwen24-mixed-stochastic-state-2026-10-24.json",
+    "docs/evidence/correctness/qwen-original-mtp-stochastic-controls-tails-2026-10-24.json",
+    "docs/evidence/correctness/qwen-mtp-multirow-sampling-2026-10-24.json"
+  ],
+  "limits": [
+    "This is a finite original target91/NextN92 MoE component journey, with explicit previous-layer input and initial history fixtures; not a complete2.4T model generation.",
+    "Natural acceptance was zero. Prefix1/2 repair Heads are explicit state controls; this run does not observe a natural accepted bonus, accepted EOS or acceptance-rate.",
+    "Quota1/2/3 and EOS controls reuse the actual K2 decision and draw reservation; default max-drafts2-to-request-tail planning is not claimed newly runtime-tested. Existing K1/m0 tail evidence is reused.",
+    "The supplied M3 verifier conditionals are respected; no bitwise cross-width equivalence or task-quality claim.",
+    "No all-publisher/backend matrix, throughput, VRAM or speedup claim. Source authentication/oracle wall time is not inference performance."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen24-original-stochastic-k2-state-2026-10-24-logs.zip",
+    "bytes": 341988,
+    "sha256": "f86c3f7e00b48a0090210dff7c8b229f7c0b428e9705f61e429b33d1f2f4cab4"
+  }
+}

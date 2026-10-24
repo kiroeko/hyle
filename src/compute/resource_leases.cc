@@ -543,7 +543,8 @@ Result<mem::BufferView> LeaseAccess::ordered_view(const WriteLease &lease) noexc
 }
 
 Result<LeaseDomain *> prepare_lease_domain(mem::MemoryResourceRef resource,
-    std::size_t capacity, std::size_t alignment, LeasePoolOptions options) noexcept {
+    std::size_t capacity, std::size_t alignment, LeasePoolOptions options,
+    ResourceBudgetCategory category = ResourceBudgetCategory::kExternal) noexcept {
   if (!resource.valid() || capacity == 0 || options.max_blocks == 0 ||
       options.max_blocks == UINT32_MAX || !options.allocator.valid() ||
       alignment == 0 || (alignment & (alignment - 1)) != 0)
@@ -563,7 +564,7 @@ Result<LeaseDomain *> prepare_lease_domain(mem::MemoryResourceRef resource,
   }
   state->ranges = std::move(ranges);
   if (options.resource_budget.valid()) {
-    auto charge = options.resource_budget.reserve(resource, capacity, ResourceBudgetCategory::kExternal);
+    auto charge = options.resource_budget.reserve(resource, capacity, category);
     if (!charge) {
       state->decref();
       return std::unexpected(std::move(charge).error());
@@ -645,11 +646,22 @@ Result<ReadLease> detail::LeaseAccess::publish_after_writes(WriteLease &lease) n
 }
 
 Result<ReadLease> ReadLease::adopt(mem::Buffer &&backing, LeaseImportOptions options) noexcept {
+  return detail::LeaseAccess::adopt_readonly(std::move(backing), std::move(options),
+                                           ResourceBudgetCategory::kExternal);
+}
+
+Result<ReadLease> detail::LeaseAccess::adopt_metadata(mem::Buffer &&backing,
+    LeaseImportOptions options) noexcept {
+  return adopt_readonly(std::move(backing), std::move(options), ResourceBudgetCategory::kMetadata);
+}
+
+Result<ReadLease> detail::LeaseAccess::adopt_readonly(mem::Buffer &&backing,
+    LeaseImportOptions options, ResourceBudgetCategory category) noexcept {
   if (!backing.valid()) return std::unexpected(Status::InvalidArgument("lease backing is empty"));
   const auto bytes = backing.size();
   HYLE_ASSIGN_OR_RETURN(auto *state, detail::prepare_lease_domain(backing.resource(), bytes,
       backing.alignment(), {.max_blocks = 1, .allocator = options.allocator,
-                            .resource_budget = options.resource_budget}));
+                            .resource_budget = options.resource_budget}, category));
   LeasePool candidate(state);
   auto *storage = state->blocks.allocate();
   if (!storage) return std::unexpected(Status::ResourceExhausted("readonly lease block metadata"));

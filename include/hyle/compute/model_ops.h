@@ -1418,17 +1418,18 @@ struct LightningIndexer final {
 inline Operation grouped_matmul() noexcept {
   return Operation::custom(GroupedMatMul{});
 }
-// Model linear projection: BF16 or F32 activations [T,K], stored output-major
-// BF16 weights [E,K] -> F32 [T,E]. Exact batched [B,T,K] x [B,E,K]
+// Dense floating projection: F16/BF16/F32 activations [T,K], stored
+// output-major F16/BF16/F32 weights [E,K] -> F32 [T,E]. Input types may differ.
+// Exact batched [B,T,K] x [B,E,K]
 // additionally produces [B,T,E], without implicit batch broadcasting.
 // Products and accumulation use F32; F32
-// activations must not be implicitly narrowed. BF16 weights remain in their
+// activations must not be implicitly narrowed. Weights remain in their
 // original storage and may be widened on load, without a full F32 weight bank.
 // Ordinary MatMul retains its same-dtype contract.
-struct BFloatLinearF32 final {
+struct DenseLinearF32 final {
   static constexpr OperationId operation_id{0x48594c454d4f444cULL,
                                              0x4d41544d554c4633ULL};
-  static constexpr std::string_view operation_name = "bfloat-linear-f32";
+  static constexpr std::string_view operation_name = "dense-linear-f32";
 
   constexpr OperationTraits operation_traits() const noexcept {
     return {{2, 2}, 1, AliasPolicy::kNone, EffectKind::kPure,
@@ -1443,18 +1444,21 @@ struct BFloatLinearF32 final {
         inputs[1].rank() != inputs[0].rank() || !inputs[0].is_plain() ||
         !inputs[1].is_plain() || !inputs[0].is_dense() ||
         !inputs[1].is_dense() ||
-        (inputs[0].data_type() != DataType::kBFloat16 &&
+        (inputs[0].data_type() != DataType::kFloat16 &&
+         inputs[0].data_type() != DataType::kBFloat16 &&
          inputs[0].data_type() != DataType::kFloat32) ||
-        inputs[1].data_type() != DataType::kBFloat16)
+        (inputs[1].data_type() != DataType::kFloat16 &&
+         inputs[1].data_type() != DataType::kBFloat16 &&
+         inputs[1].data_type() != DataType::kFloat32))
       return Status::InvalidArgument(
-          "BFloatLinearF32 requires dense BF16/F32 [T,K]/[B,T,K] and aligned BF16 weights");
+          "DenseLinearF32 requires dense F16/BF16/F32 [T,K]/[B,T,K] and aligned F16/BF16/F32 weights");
     const auto lhs = inputs[0].dimensions();
     const auto rhs = inputs[1].dimensions();
     const auto rank = inputs[0].rank();
     if (lhs[rank-2] <= 0 || lhs[rank-1] <= 0 || rhs[rank-2] <= 0 ||
         rhs[rank-1] != lhs[rank-1] ||
         (rank == 3 && (lhs[0] <= 0 || rhs[0] != lhs[0])))
-      return Status::InvalidArgument("BFloatLinearF32 dimensions do not match");
+      return Status::InvalidArgument("DenseLinearF32 dimensions do not match");
     std::array<std::int64_t,3> shape{};
     for (std::size_t axis=0;axis<rank;++axis) shape[axis]=lhs[axis];
     shape[rank-1]=rhs[rank-2];
@@ -1466,8 +1470,8 @@ struct BFloatLinearF32 final {
   }
 };
 
-inline Operation bfloat_linear_f32() noexcept {
-  return Operation::custom(BFloatLinearF32{});
+inline Operation dense_linear_f32() noexcept {
+  return Operation::custom(DenseLinearF32{});
 }
 inline Operation hyper_connection_combine(float epsilon = 1.0e-6F,
                                            std::int32_t iterations = 20) noexcept {

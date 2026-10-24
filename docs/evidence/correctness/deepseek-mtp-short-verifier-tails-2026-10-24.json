@@ -1,0 +1,262 @@
+{
+  "status": "PASS_BOUNDED_ORIGINAL_PRO_AND_FLASH_CUDA_SHORT_VERIFIER_STATE_JOURNEYS",
+  "date": "2026-10-24",
+  "changes": [
+    "Add dedicated short-tail component journeys to the existing ordinary CTest/CUDA consumer target. Keep the trained five-row draft unchanged.",
+    "Execute verifier widths2/3/4/5 on actual original target-tail rows; every selected main-history/capture/target-cache/pending resource is checked against its original lease, then published atomically as one30-member StateHead.",
+    "Continue each first rejection from its actual correction lease and complete selected target/main-history state. EOS/bonusEOS/quota/context use actual head IDs/leases under explicitly controlled policies.",
+    "Reuse prior full-role numerical oracles; the short-tail journey keeps sampled primitive checks and a complete independentF64 interval check of the first two-row full-vocabulary head, plus exact full-vocabulary greedy checks for every width."
+  ],
+  "results": [
+    {
+      "source": "pro",
+      "process": {
+        "case": "pro",
+        "exit": 0,
+        "seconds": 109.86292505264282,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "waiting_for_experts": false
+      },
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "disabled": "0"
+      },
+      "properties": {
+        "target_fullV1_provider": "cublasLt",
+        "target_fullV2_provider": "cublasLt",
+        "target_fullV3_provider": "cublasLt",
+        "target_fullV4_provider": "cublasLt",
+        "target_fullV5_provider": "cublasLt",
+        "target_fullV6_provider": "cublasLt",
+        "short_verifier_targets_2": "296,16976",
+        "short_verifier_targets_3": "296,16976,20",
+        "short_verifier_targets_4": "296,16976,20,1051",
+        "short_verifier_targets_5": "296,16976,20,1051,119784",
+        "actual_short_verifier_widths": "2,3,4,5",
+        "actual_short_state_publications": "20",
+        "actual_short_rejection_continuations": "4",
+        "actual_lease_policy_tails": "16",
+        "actual_lease_unique_bonus_eos_tails": "4",
+        "tail_policy_scope": "accepted EOS/bonus EOS/quota/context with actual head IDs and leases; explicitly controlled decisions, not natural EOS or acceptance-rate evidence",
+        "actual_submissions": "86",
+        "dense_original_roles": "216",
+        "dense_original_source_bytes": "6504119672",
+        "actual_draft_episodes": "1",
+        "actual_target_rows": "9",
+        "actual_main_projection_submissions": "18",
+        "actual_main_history_submissions": "18",
+        "actual_verifier_submissions": "8",
+        "first_target_fullV_values": "258560",
+        "first_draft_fullV_values": "646400",
+        "actual_pending_feedback": "1",
+        "state_members": "30",
+        "state_backing_budget": "606836864",
+        "state_backing_peak": "283939704",
+        "target_resident_slot_bytes": "247727616",
+        "draft_resident_slot_bytes": "1238631936",
+        "actual_expert_attachments": "159",
+        "actual_missing_frontiers": "0",
+        "scope": "Original Pro0813 target58/59/60+distinctfinalHC/norm and formal mtp.0/1/2+independent BF16 vocabulary, all384 global expert IDs with actual selected E2M1/UE8 experts, explicit PowerOfTwo/floor1e-4 A128, fullV K5 and atomic30member state. Natural once and labelled controlled0/2/5 prefix policies; actual pending continuation, immutable old readers and bounded backing. Layer57 input and initial valid cacheprefix are finite synthetic fixtures; no complete61-layer target, quality, natural acceptance-rate or TPS claim. Missing original experts fail; external acquisition wait is explicit fixture mode."
+      },
+      "environment": {
+        "HYLE_DSPARK_PRO_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-pro-target-draft-20261023\\original-dense",
+        "HYLE_DSPARK_PRO_EXPERT_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-pro-target-draft-20261023\\original-experts",
+        "HYLE_DSPARK_PRO_WAIT_FOR_EXPERTS": "0",
+        "HYLE_DSPARK_PRO_FRONTIER_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\pro-focused\\missing-frontier.json"
+      },
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\checks.exe",
+        "--gtest_color=no",
+        "--gtest_filter=DSparkProOriginalState.CudaShortVerifierTailsPreserveActualStateAndContinue",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\pro-focused\\results.xml"
+      ]
+    },
+    {
+      "source": "flash",
+      "process": {
+        "case": "flash",
+        "exit": 0,
+        "seconds": 59.277119398117065,
+        "HTTP": 0,
+        "SDK_builds": 0,
+        "waiting_for_experts": false
+      },
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "disabled": "0"
+      },
+      "properties": {
+        "target_fullV1_provider": "cublasLt",
+        "target_fullV2_provider": "cublasLt",
+        "target_fullV3_provider": "cublasLt",
+        "target_fullV4_provider": "cublasLt",
+        "target_fullV5_provider": "cublasLt",
+        "target_fullV6_provider": "cublasLt",
+        "short_verifier_targets_2": "28326,73857",
+        "short_verifier_targets_3": "28326,73857,35778",
+        "short_verifier_targets_4": "28326,73857,35778,25804",
+        "short_verifier_targets_5": "28326,73857,35778,25804,0",
+        "actual_short_verifier_widths": "2,3,4,5",
+        "actual_short_state_publications": "20",
+        "actual_short_rejection_continuations": "4",
+        "actual_lease_policy_tails": "16",
+        "actual_lease_unique_bonus_eos_tails": "4",
+        "tail_policy_scope": "accepted EOS/bonus EOS/quota/context with actual head IDs and leases; explicitly controlled decisions, not natural EOS or acceptance-rate evidence",
+        "actual_submissions": "86",
+        "dense_original_roles": "216",
+        "dense_original_source_bytes": "3194218552",
+        "actual_draft_episodes": "1",
+        "actual_target_rows": "9",
+        "actual_main_projection_submissions": "18",
+        "actual_main_history_submissions": "18",
+        "actual_verifier_submissions": "8",
+        "first_target_fullV_values": "258560",
+        "first_draft_fullV_values": "646400",
+        "actual_pending_feedback": "1",
+        "state_members": "30",
+        "state_backing_budget": "364701056",
+        "state_backing_peak": "166256000",
+        "target_resident_slot_bytes": "94372864",
+        "draft_resident_slot_bytes": "471860224",
+        "actual_expert_attachments": "53",
+        "actual_missing_frontiers": "0",
+        "scope": "Original Flash0731 target40/41/42 and distinct finalHC/norm borrowed from their authenticated original source, formal mtp.0/1/2 from the independent97-role E4/BF16 bundle, and the two independent original BF16 vocabulary mappings. Full256 global expert domain with actual selected original E2M1/UE8 experts; target experts borrowed without reacquisition, draft missing experts fail or await explicit external supply. Same fullV K5/atomic30member state and actual pending continuation. Natural once and labelled controlled0/2/5 prefix policies. Layer39 input and initial valid cacheprefix are finite synthetic fixtures; no complete43-layer target, quality, acceptance-rate or TPS claim."
+      },
+      "environment": {
+        "HYLE_DSPARK_FORMAL_FLASH_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-pro-target-draft-20261023\\formal-flash\\original-dense",
+        "HYLE_DSPARK_FLASH_EXPERT_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-pro-target-draft-20261023\\formal-flash\\original-experts",
+        "HYLE_DSPARK_FLASH_WAIT_FOR_EXPERTS": "0",
+        "HYLE_DSPARK_FLASH_FRONTIER_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\flash-focused\\missing-frontier.json",
+        "HYLE_DSPARK_ORIGINAL_TARGET_TAIL_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\original-target",
+        "HYLE_DSPARK_SHARED_VOCAB_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\original-dspark-vocabulary"
+      },
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\checks.exe",
+        "--gtest_color=no",
+        "--gtest_filter=DSparkFlashFormalState.CudaShortVerifierTailsPreserveActualStateAndContinue",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-block5-tail-20261024\\short-verifier\\flash-focused\\results.xml"
+      ]
+    }
+  ],
+  "final_product_source_syntax": {
+    "exit": 0,
+    "seconds": 5.328290224075317,
+    "scope": "MSVC /Zs /W4 /WX CPU+CUDA definitions; no link/model"
+  },
+  "totals": {
+    "actual_cuda_components": 2,
+    "actual_short_verifier_widths_per_source": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "complete_state_publications": 40,
+    "actual_rejection_continuations": 8,
+    "controlled_actual_lease_tails": 32,
+    "unique_final_row_bonus_eos_tails": 8,
+    "missing_expert_frontiers": 0,
+    "HTTP_bytes": 0,
+    "SDK_builds": 0
+  },
+  "reused_checks": {
+    "policy_and_real_StateHead": {
+      "evidence": {
+        "path": "docs/evidence/correctness/deepseek-mtp-block5-controls-2026-10-24.json",
+        "bytes": 32929,
+        "sha256": "9917904874039cf4c32d34c73fe4d64de772779b09fb9a2f0bb42ad23f6a0396"
+      },
+      "current_tests": 13,
+      "policy_header_unchanged": true
+    },
+    "complete_original_Pro_CPU_CUDA": {
+      "path": "docs/evidence/correctness/mtp-dspark-pro-target-verifier-2026-10-23.json",
+      "bytes": 584249,
+      "sha256": "3fae85a21636cb2d3e34dacd10b63189964f76e88bc5bc50dd2b0a4808b73ca1"
+    },
+    "packed_Q8_vocabulary_and_complete_state": {
+      "path": "docs/evidence/correctness/mtp-dspark-main-gguf-q8-vocabulary-2026-10-23.json",
+      "bytes": 291942,
+      "sha256": "5fbf4287490eacce7ac603f12e99a6b122821ed939af9d650ef3556e23c60607"
+    },
+    "original_BF16_sidecar_and_complete_state": {
+      "path": "docs/evidence/correctness/mtp-dspark-bfloat-sidecar-target-verifier-2026-10-23.json",
+      "bytes": 250732,
+      "sha256": "f75bd857ee21765ca6c918024c72785372b3266796f4a4d8f49ad08ffc28618c"
+    }
+  },
+  "source_and_format_audit": [
+    "Original Pro/Flash and current GGUF/BF16 sidecar producers return F32 raw confidence projection logits; source quantization does not imply probability domain or an extra sigmoid. Formal projection source: dspark_original_draft_fragment.h:191-192.",
+    "Sidecar controls use the same block5 capacity/clipping/decision helpers with explicit raw domain, then State::select_verified; the physical source codec changes actual numerical IDs, not output quota/context/pending semantics. Call chain dspark_original_state_consumer_test.cc:1854-1902.",
+    "The policy header is byte-identical to the prior13 policy/real-StateHead checks, including invalid control/confidence, max0..5, EOS, bonusEOS, tails, failed publication and disable/re-enable.",
+    "Formal Flash actual max2/rawconfidence0.5 -> target-only0 -> draft re-enable5 was already executed in the referenced controls evidence. This batch adds Pro/Flash short verifier runtime, rather than rerunning every source identity against an unchanged state policy.",
+    "VerifiedPrefix.accepted_drafts currently means consumed accepted drafts (consumed-1), excluding a final accepted EOS/quota token left pending. It is not an emitted acceptance-rate counter; this evidence makes no acceptance-rate claim."
+  ],
+  "boundaries": [
+    "Pro target58/59/60 and formal three-stage draft use original trained values; Flash target40/41/42 and formal three-stage draft likewise. Their upstream layer57/layer39 input and initial valid cache prefix are finite synthetic fixtures.",
+    "This is not complete61-layerPro or43-layerFlash text generation, whole-model task quality, stochasticp/q, acceptance-rate or TPS evidence.",
+    "Only these two original-role CUDA short-tail journeys were newly run. CPU/quantized sidecar complete-state journeys and policy checks are referenced at their exact older scopes; no fresh Cartesian product or whole expert bank acquisition.",
+    "EOS/bonusEOS cases deliberately select policies using actual IDs and leases. They do not claim that the trained model naturally generated EOS or naturally accepted every controlled proposal.",
+    "State backing figures bound explicit retained backing only; they do not include all original weight memory/native-private execution allocations or imply physicalVRAM/RSS caps."
+  ],
+  "provenance": {
+    "tested_source": [
+      {
+        "path": "tests\\compute_models\\dspark_pro_mtp_state_consumer_test.cc",
+        "bytes": 59541,
+        "sha256": "80fc5f61c350954004a78a8691adc89a11d5128f726952af7c867baa49316851"
+      },
+      {
+        "path": "tests\\compute_models\\dspark_original_state_consumer.h",
+        "bytes": 25595,
+        "sha256": "78b9f344ef19ad061f42822c51fc913a08bd2715383b4515e4d04f606c0bdc4b"
+      },
+      {
+        "path": "tests\\compute_models\\dspark_block5_policy.h",
+        "bytes": 7216,
+        "sha256": "50e92d78b500c84c5770304fa921f0f3a217d01e20f923ba89ebfd74f22d71c9"
+      }
+    ],
+    "tested_source_copies": [
+      {
+        "path": ".scratch/dspark-block5-tail-20261024/short-verifier/source-tested/dspark_block5_policy.h",
+        "bytes": 7216,
+        "sha256": "50e92d78b500c84c5770304fa921f0f3a217d01e20f923ba89ebfd74f22d71c9"
+      },
+      {
+        "path": ".scratch/dspark-block5-tail-20261024/short-verifier/source-tested/dspark_original_state_consumer.h",
+        "bytes": 25595,
+        "sha256": "78b9f344ef19ad061f42822c51fc913a08bd2715383b4515e4d04f606c0bdc4b"
+      },
+      {
+        "path": ".scratch/dspark-block5-tail-20261024/short-verifier/source-tested/dspark_pro_mtp_state_consumer_test.cc",
+        "bytes": 59541,
+        "sha256": "80fc5f61c350954004a78a8691adc89a11d5128f726952af7c867baa49316851"
+      }
+    ],
+    "image": {
+      "path": ".scratch\\dspark-block5-tail-20261024\\short-verifier\\checks.exe",
+      "bytes": 140982784,
+      "sha256": "01dceeb27a3ca7ac42880cc4a60ce57e331217cf2793c21f7554dea2d2184b8f"
+    },
+    "current_product_source": {
+      "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+      "bytes": 59966,
+      "sha256": "16c16d7e06daf534f08f64cc1ed90c1971970d033391dfc65289c676e23dcc13"
+    },
+    "post_run_change": "Only replace legacy shared fixture.scope output with an accurate short-tail report string; no math, control, state, provider or ABI change. Exact diff included.",
+    "first_attempt": "Stopped before the new short-verifier checks because it repeated already-covered full primitive oracles. Its source/log and explicit stop record are preserved; it is not counted as pass/failure coverage and its rebuilt binary is not retained."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/deepseek-mtp-short-verifier-tails-2026-10-24.logs.zip",
+    "bytes": 110972,
+    "sha256": "9e73dae54e9072e4447d65ea891bdc87284c3285e7dd925539c85e8a43fc152e",
+    "members": 37,
+    "contents": "Commands, logs, XML, exact tested source and small metadata only. No weights, expert bodies, executables, objects, SDK or complete ledger."
+  }
+}

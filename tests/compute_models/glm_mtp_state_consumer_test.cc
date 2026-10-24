@@ -77,11 +77,15 @@
 #include "model_resident_fragment.h"
 #include "model_graph_run.h"
 #include "glm_target_verifier_fragment.h"
+#include "../../engine/inference/mtp_acceptance.h"
+#include "glm_stochastic_prefix_fragment.h"
 #include "glm_original_target44_fragment.h"
 #include "glm_original_target44_reference.h"
 #include "glm_original_target43_fragment.h"
 #include "glm_original_target43_roles.h"
 #include "glm_original_target43_reference.h"
+#include "../../engine/inference/sampling_cursor.h"
+#include "sampling_fixture.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -390,7 +394,7 @@ struct Recipe final {
   bool fresh = false;
   bool draft_extend = false;
   bool catchup = false, direct_catchup = false, cuda = false;
-  std::int32_t position = kBasePosition, selected_tail = 0;
+  std::int32_t position = kBasePosition, selected_tail = 0, journal_slot = 0;
   glm::InputReference input_reference;
   Reference query_reference, absorbed_query_reference, latent_reference, key_reference, gate_reference;
   Reference index_query_reference, score_weight_reference, output_reference;
@@ -451,7 +455,7 @@ EncodedPool append_history(Recipe &r, const SparseState13 &state,
     // only distinguishes the generated fixtures in the branch below.
     const auto rounded_nx = codec::cast(f, nx, c::DataType::kBFloat16);
     const auto &roles = r.sparse->indexer_roles;
-    const auto wk = f.one(c::model_ops::bfloat_linear_f32(), {rounded_nx, external(r, roles[original_index::kKey])});
+    const auto wk = f.one(c::model_ops::dense_linear_f32(), {rounded_nx, external(r, roles[original_index::kKey])});
     r.wk_accum = expose(r, wk);
     const auto stored_wk = codec::cast(f, wk, c::DataType::kBFloat16); r.wk_stored = expose(r, stored_wk);
     key = f.one(c::Operation(c::LayerNorm{.epsilon = 1.0e-6F}),
@@ -459,7 +463,7 @@ EncodedPool append_history(Recipe &r, const SparseState13 &state,
          external(r, roles[original_index::kBias])});
     r.key = expose(r, key);
     raw_key = codec::cast(f, key, c::DataType::kBFloat16); r.raw_key = expose(r, raw_key);
-    const auto gate_projection = f.one(c::model_ops::bfloat_linear_f32(),
+    const auto gate_projection = f.one(c::model_ops::dense_linear_f32(),
         {rounded_nx, external(r, roles[original_index::kGate])});
     r.gate_projection = expose(r, gate_projection);
     raw_gate = codec::cast(f, gate_projection, c::DataType::kBFloat16); r.raw_gate = expose(r, raw_gate);
@@ -588,7 +592,7 @@ Value append_sparse_attention(Recipe &r, const SparseState13 &state, Value nx,
     Value iq, weights;
     if (r.sparse) {
       const auto &roles = r.sparse->indexer_roles;
-      const auto wq = f.one(c::model_ops::bfloat_linear_f32(),
+      const auto wq = f.one(c::model_ops::dense_linear_f32(),
           {codec::cast(f, qr, c::DataType::kBFloat16), external(r, roles[original_index::kQuery])});
       r.index_query_accum = publish(wq);
       const auto stored = codec::cast(f, wq, c::DataType::kBFloat16); r.index_query_stored = publish(stored);
@@ -784,13 +788,13 @@ Recipe build_mlx(bool fresh,std::int32_t position,std::int32_t carried_tail,std:
   r.lm_combined=port(result.combined);r.lm_norm_raw=port(result.shared_norm.output);r.lm_pending_input=expose(r,state[kPending],true);
   return r;
 }
-Recipe build_mlx_catchup(bool direct,std::int32_t position,std::shared_ptr<const OriginalNextn> original) {
+Recipe build_mlx_catchup(bool direct,std::int32_t position,std::shared_ptr<const OriginalNextn> original,std::int32_t journal_slot=0) {
   Recipe r;r.original=std::move(original);r.mlx=r.original->mlx;r.catchup=true;r.direct_catchup=direct;r.position=position;
-  r.state_entries=state_resources(true);r.state_ports.fill(std::numeric_limits<std::size_t>::max());auto &f=r.fragment;
+  r.journal_slot=journal_slot;r.state_entries=state_resources(true);r.state_ports.fill(std::numeric_limits<std::size_t>::max());auto &f=r.fragment;
   f.profile=&mlx_runtime::kProfile;f.region=0x514d4c5843415443ULL;f.quantized=true;
   const auto desc=descriptions(true);std::array<Value,kResources> values;for(const auto e:r.state_entries)values[e]=f.input(desc[e]);
   auto state=mlx_state(values);r.mlx_parameters=mlx_parameters(r);
-  const auto nx=direct?f.input(sem::dense({1,kHidden})):f.one(c::Operation(c::Gather{}),{state.journal,f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{0}))});
+  const auto nx=direct?f.input(sem::dense({1,kHidden})):f.one(c::Operation(c::Gather{}),{state.journal,f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{journal_slot}))});
   r.nx=expose(r,nx,true);r.mlx_history=mlx_model::append_history(f,state,nx,*r.mlx_parameters,position);
   state.lag=mlx_model::inc(f,state.lag,-1);mlx_changes(r,state,true);
   r.mlx_history->visit_values([&](Value &v){mlx_expose(r,v);});return r;
@@ -861,13 +865,13 @@ Recipe build_converted(bool fresh,std::int32_t position,std::int32_t carried_tai
   r.lm_logits=port(v.logits);r.lm_top_values=port(v.top_values);r.lm_ids=r.state_ports[kPending];r.lm_combined=port(v.combined);
   r.lm_norm_raw=port(v.shared_norm.output);r.lm_pending_input=expose(r,state[kPending],true);return r;
 }
-Recipe build_converted_catchup(bool direct,std::int32_t position,std::shared_ptr<const OriginalNextn> original) {
+Recipe build_converted_catchup(bool direct,std::int32_t position,std::shared_ptr<const OriginalNextn> original,std::int32_t journal_slot=0) {
   Recipe r;r.original=std::move(original);r.converted=r.original->converted;r.profile_owner=r.original;r.catchup=true;r.direct_catchup=direct;r.position=position;
-  r.state_entries=state_resources(true);r.state_ports.fill(std::numeric_limits<std::size_t>::max());auto &f=r.fragment;
+  r.journal_slot=journal_slot;r.state_entries=state_resources(true);r.state_ports.fill(std::numeric_limits<std::size_t>::max());auto &f=r.fragment;
   f.profile=r.converted->profile;f.region=0x4747464c43415443ULL;f.quantized=true;
   const auto desc=descriptions(true);std::array<Value,kResources> values;for(const auto e:r.state_entries)values[e]=f.input(desc[e]);
   auto state=mlx_state(values);r.pooled_before=state;r.converted_parameters=converted_parameters(r);
-  const auto nx=direct?f.input(sem::dense({1,kHidden})):f.one(c::Operation(c::Gather{}),{state.journal,f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{0}))});
+  const auto nx=direct?f.input(sem::dense({1,kHidden})):f.one(c::Operation(c::Gather{}),{state.journal,f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{journal_slot}))});
   r.nx=expose(r,nx,true);r.mlx_history=gguf_flash::append_history(f,state,nx,*r.converted_parameters,position);
   state.lag=mlx_model::inc(f,state.lag,-1);r.pooled_after=state;mlx_changes(r,state,true);r.mlx_history->visit_values([&](Value &v){mlx_expose(r,v);});return r;
 }
@@ -996,7 +1000,7 @@ Recipe build(bool fresh, std::int32_t position = kBasePosition, std::int32_t car
     const auto stored=codec::cast(f,normalized,c::DataType::kBFloat16);
     r.lm_combined=publish(combined,true);r.lm_norm_raw=publish(normalized,true);r.lm_norm_stored=publish(stored,true);
     changed(kHiddenState,codec::cast(f,stored,c::DataType::kFloat32));
-    const auto logits=f.one(c::model_ops::bfloat_linear_f32(),{stored,external(r,vocabulary.at(shared_lm::Role::kHead))});
+    const auto logits=f.one(c::model_ops::dense_linear_f32(),{stored,external(r,vocabulary.at(shared_lm::Role::kHead))});
     r.lm_logits=publish(logits,true);
     const auto top=f.append(c::Operation(c::TopK{.count=1}),{logits},2);
     r.lm_top_values=publish(top[0],true);
@@ -1011,11 +1015,12 @@ Recipe build(bool fresh, std::int32_t position = kBasePosition, std::int32_t car
 }
 
 Recipe build_catchup(bool direct_reference = false, std::int32_t position = 2055,
-                     std::shared_ptr<const OriginalNextn> original = {}) {
-  if(original&&original->converted)return build_converted_catchup(direct_reference,position,std::move(original));
-  if(original&&original->mlx)return build_mlx_catchup(direct_reference,position,std::move(original));
+                     std::shared_ptr<const OriginalNextn> original = {},std::int32_t journal_slot=0) {
+  if(journal_slot<0||journal_slot>=kJournalRows)throw std::runtime_error("GLM catchup journal slot outside the finite state schema");
+  if(original&&original->converted)return build_converted_catchup(direct_reference,position,std::move(original),journal_slot);
+  if(original&&original->mlx)return build_mlx_catchup(direct_reference,position,std::move(original),journal_slot);
   Recipe r;
-  r.catchup = true; r.direct_catchup = direct_reference; r.position = position;
+  r.catchup = true; r.direct_catchup = direct_reference; r.position = position;r.journal_slot=journal_slot;
   r.original = std::move(original);
   if(r.original)r.sparse=r.original->sparse;
   r.state_ports.fill(std::numeric_limits<std::size_t>::max());
@@ -1033,7 +1038,7 @@ Recipe build_catchup(bool direct_reference = false, std::int32_t position = 2055
     nx = f.input(sem::dense({1, kHidden}));
     r.nx = expose(r, nx, true);
   } else {
-    const auto first = f.constant(sem::dense({1}, c::DataType::kInt32), sem::bytes(std::vector<std::int32_t>{0}));
+    const auto first = f.constant(sem::dense({1}, c::DataType::kInt32), sem::bytes(std::vector<std::int32_t>{journal_slot}));
     nx = f.one(c::Operation(c::Gather{}), {state[kJournal], first});
     r.nx = expose(r, nx);
   }
@@ -1114,7 +1119,8 @@ struct ReportGraph final {
 struct Program final {
   Recipe recipe;
   sem::GraphCase logical;
-  std::vector<model_graph_run::Port> input_ports,output_ports;
+  std::vector<model_graph_run::Port> input_ports;
+  std::vector<model_graph_run::OutputPort> output_ports;
   std::vector<c::ReadLease> parameters;
   std::vector<std::size_t> parameter_slots;
   g::CompiledGraph compiled;
@@ -1219,9 +1225,9 @@ struct Program final {
         take(graph.node_input(gather,1),"actual shared embedding IDs")!=original_input(kPending,embedded)||
         take(graph.value_description(embedded),"actual shared embedding type")!=sem::dense({1,kHidden},c::DataType::kBFloat16))
       throw std::runtime_error("original full-V BF16 Gather must consume the actual StateVersion pending input");
-    const auto raw=actual(recipe.lm_logits);const auto projection=take(graph.producer(raw),"actual full-V BFloatLinearF32");
+    const auto raw=actual(recipe.lm_logits);const auto projection=take(graph.producer(raw),"actual full-V DenseLinearF32");
     const auto stored=actual(recipe.lm_norm_stored);
-    if(!take(graph.operation(projection),"actual shared LM operation").custom_as<c::model_ops::BFloatLinearF32>()||
+    if(!take(graph.operation(projection),"actual shared LM operation").custom_as<c::model_ops::DenseLinearF32>()||
         take(graph.node_input(projection,0),"shared LM actual BF16 input")!=stored||
         take(graph.node_input(projection,1),"shared LM original BF16 head")!=bank(shared_lm::Role::kHead,raw)||
         take(graph.value_description(stored),"actual LM input description")!=sem::dense({1,kHidden},c::DataType::kBFloat16)||
@@ -1418,7 +1424,7 @@ struct Program final {
       ::testing::Test::RecordProperty(std::string("original_moe_provider_")+role,selected);
     };
     const auto logits=actual(values.logits);const auto router=take(graph.producer(logits),"actual original router");
-    if(!take(graph.operation(router),"actual router operation").custom_as<c::model_ops::BFloatLinearF32>()||
+    if(!take(graph.operation(router),"actual router operation").custom_as<c::model_ops::DenseLinearF32>()||
         take(graph.node_input(router,0),"actual BF16 router input")!=actual(values.input)||
         take(graph.node_input(router,1),"original BF16 router bank")!=bank(source.router,logits))
       throw std::runtime_error("original router must use actual BF16 postnorm and original full288 bank with F32 output");
@@ -1617,10 +1623,8 @@ struct Program final {
       p.input_ports.push_back({p.logical.inputs[i],p.recipe.fragment.description(p.recipe.fragment.inputs[i])});
     std::size_t footprint = 0;
     for (std::size_t i = 0; i < p.logical.outputs.size(); ++i) {
-      if (take(p.compiled.executable.output_ownership(i), "NextN output ownership") != g::OutputOwnership::kCaller)
-        throw std::runtime_error("NextN consumer requires caller-owned result storage");
       const auto &description=p.recipe.fragment.description(p.recipe.fragment.outputs[i]);
-      p.output_ports.push_back({p.logical.outputs[i],description});
+      p.output_ports.push_back(model_graph_run::prepare_output(p.compiled,{p.logical.outputs[i],description}));
       const auto extent = take(description.required_bytes(), "NextN output extent");
       footprint += (extent + 255u) / 256u * 256u;
     }
@@ -1838,6 +1842,10 @@ inline std::shared_ptr<OriginalMoe> prepare_artifact_moe(std::shared_ptr<origina
     ,const c::cuda::MemoryResource *device=nullptr
 #endif
     ) {
+#if !defined(HYLE_TEST_GLM_STATE_CUDA)
+  (void)context;
+  if(cuda)throw std::runtime_error("artifact MoE CUDA supply was not built");
+#endif
   if(!data)throw std::runtime_error("actual artifact MoE Data is absent");
   arithmetic.require();auto result=std::make_shared<OriginalMoe>();result->arithmetic=arithmetic;
   result->roles=original_moe::bind(data,owner);
@@ -2600,7 +2608,8 @@ c::StateVersion execute(State &s, Program &p, c::Queue &queue, const c::StorageO
                         const c::StateVersion &from, std::int32_t pending,
                         c::ReadLease *retained_nx = nullptr,
                         std::span<const c::StateMember> extra_members = {},
-                        const c::ReadLease &hidden_input = {}) {
+                        const c::ReadLease &hidden_input = {},
+                        c::ReadLease *retained_logits = nullptr) {
   if (p.recipe.catchup) throw std::runtime_error("catchup requires its explicit between-iteration consumer");
   if (!s.enabled || (!p.recipe.fresh && !s.qualifies(from)))
     throw std::runtime_error("consumer refused index carry outside its iteration before prepare");
@@ -2621,6 +2630,10 @@ c::StateVersion execute(State &s, Program &p, c::Queue &queue, const c::StorageO
   const auto before = image(s, from);
   auto outputs = p.execute(queue, arguments);
   if (retained_nx) *retained_nx = outputs[p.recipe.nx];
+  if (retained_logits) {
+    if (!has_shared_lm(p.recipe)) throw std::runtime_error("random proposal requires the actual full NextN logits");
+    *retained_logits = outputs[p.recipe.lm_logits];
+  }
   auto next = s.stage(from, p.recipe, outputs, extra_members);
   observe(s, from, next, p.recipe, outputs, hidden_input);
   EXPECT_EQ(image(s, from), before);
@@ -2640,7 +2653,8 @@ c::StateVersion catch_up(State &s, Program &p, c::Queue &queue,
   if (!p.recipe.catchup || s.enabled || s.facts(from).epoch != s.epoch)
     throw std::runtime_error("catchup requires the sealed accepted epoch before a new iteration");
   const auto position = p.recipe.position;
-  if (s.scalar(from, kLagCount) != 1 || s.scalar(from, kMlaCursor) != position + 1 ||
+  const auto lag=s.scalar(from,kLagCount);
+  if (lag<1 || lag>kJournalRows || s.facts(from).reuse_count!=std::uint64_t(lag+p.recipe.journal_slot) || s.scalar(from, kMlaCursor) != position + lag ||
       s.scalar(from, kIndexCursor) != position || s.scalar(from, kPoolCount) != position / 4 ||
       s.scalar(from, kRingOffset) != position % std::int32_t(kRing) || s.scalar(from, kTailValid) != position % 4 ||
       s.scalar(from, kTailStart) != position - position % 4)
@@ -2655,10 +2669,10 @@ c::StateVersion catch_up(State &s, Program &p, c::Queue &queue,
   auto next = s.stage(from, p.recipe, outputs);
   const auto actual_nx = typed<float>(outputs[p.recipe.nx]);
   const auto journal = typed<float>(s.member(from, kJournal));
-  EXPECT_TRUE(std::equal(actual_nx.begin(), actual_nx.end(), journal.begin()));
+  EXPECT_TRUE(std::equal(actual_nx.begin(), actual_nx.end(), journal.begin()+std::ptrdiff_t(p.recipe.journal_slot*kHidden)));
   if (direct_nx.valid()) EXPECT_EQ(actual_nx, typed<float>(direct_nx));
   observe_history(s, from, next, p.recipe, outputs, actual_nx);
-  EXPECT_EQ(s.scalar(next, kLagCount), 0);
+  EXPECT_EQ(s.scalar(next, kLagCount), lag-1);
   EXPECT_EQ(read(s.member(next, kEpoch)), read(s.member(from, kEpoch))) << "catchup does not publish a new seed";
   for(const auto i:s.resources) {
     if(p.recipe.state_ports[i] == std::numeric_limits<std::size_t>::max())
@@ -2980,7 +2994,7 @@ void run_seed_handoff(c::Context &context, const c::StorageOwner &owner, bool cu
       ::testing::Test::RecordProperty("shared_lm_greedy_scores_observed",std::to_string(observed.head_calls*154880));
       ::testing::Test::RecordProperty("shared_lm_prediction_to_pending_checks",std::to_string(observed.head_calls));
       ::testing::Test::RecordProperty("shared_lm_pending_embedding_checks",std::to_string(observed.pending_checks));
-      if(!original->sparse->attention)::testing::Test::RecordProperty("scope","official GLM-5.3-Flash eb9eb208 original14 prefix/indexer plus untied fullV154880 BF16 embedding/head and original BF16 sharednorm; actual generated residualF32+FFN_F32 add -> originalgamma exactwiden RMS eps1e-5 -> BF16store -> fullV BFloatLinearF32 -> stableTop1 actualI32pending -> next fullV embedding Gather. Shared three banks uploaded once per Context/owner, capacity not measured peak. Firsthead independent fullV F64 bound, subsequent actualTop4/selectedrow dots and allV strictgreedy everyhead, exact BF16stores/embedding/feedback. Acceptance0/1/2, explicit targetbonus, originalseed/skip/journal/directcatchup/epoch8 and atomicStateHead/oldleases remain. Targethidden,remaining MLA/MoE stay generated F32 boundaries; not original BF16 decoder/fullmodel,quality,naturalacceptance or throughput.");
+      if(!original->sparse->attention)::testing::Test::RecordProperty("scope","official GLM-5.3-Flash eb9eb208 original14 prefix/indexer plus untied fullV154880 BF16 embedding/head and original BF16 sharednorm; actual generated residualF32+FFN_F32 add -> originalgamma exactwiden RMS eps1e-5 -> BF16store -> fullV DenseLinearF32 -> stableTop1 actualI32pending -> next fullV embedding Gather. Shared three banks uploaded once per Context/owner, capacity not measured peak. Firsthead independent fullV F64 bound, subsequent actualTop4/selectedrow dots and allV strictgreedy everyhead, exact BF16stores/embedding/feedback. Acceptance0/1/2, explicit targetbonus, originalseed/skip/journal/directcatchup/epoch8 and atomicStateHead/oldleases remain. Targethidden,remaining MLA/MoE stay generated F32 boundaries; not original BF16 decoder/fullmodel,quality,naturalacceptance or throughput.");
       if(original->sparse->attention) {
         const auto &attention_source=*original->sparse->attention;
         EXPECT_TRUE(attention_source.full_checked);EXPECT_EQ(attention_source.projection_values,70144u);
@@ -3921,51 +3935,67 @@ void run_target43(c::Context &context, const c::StorageOwner &owner, bool cuda) 
 }
 
 struct TargetVerifierPorts final {
-  std::array<std::size_t,2> taps{},row_ids{};
+  std::vector<std::size_t> taps=std::vector<std::size_t>(2),row_ids=std::vector<std::size_t>(2);
   std::size_t stacked=0,logits=0,scores=0,ids=0;
 };
 struct TargetVerifierRecipe final { Recipe recipe;TargetVerifierPorts ports; };
-TargetVerifierRecipe build_target_verifier(const std::shared_ptr<const OriginalNextn> &original) {
+TargetVerifierRecipe build_target_verifier(const std::shared_ptr<const OriginalNextn> &original,bool single_row=false,std::size_t requested_rows=2) {
+  const auto rows=single_row?1u:requested_rows;
+  if(rows<1||rows>3)throw std::runtime_error("GLM finite verifier supports one to three actual target taps");
+  const auto join=[&](sem::Fragment &f,std::span<const Value> values) {
+    auto result=values[0];for(std::size_t i=1;i<values.size();++i)result=f.one(c::Operation(c::Concat{.axis=0}),{result,values[i]});return result;
+  };
   if(original&&original->converted) {
     TargetVerifierRecipe result;auto &r=result.recipe;r.original=original;r.profile_owner=original;r.converted=original->converted;r.state_ports.fill(std::numeric_limits<std::size_t>::max());
-    auto &f=r.fragment;f.profile=r.converted->profile;f.region=0x4747464c56523248ULL;f.quantized=true;std::array<Value,2> taps;
-    for(std::size_t i=0;i<2;++i){taps[i]=f.input(sem::dense({1,kHidden}));result.ports.taps[i]=expose(r,taps[i],true);}
-    const auto joined=f.one(c::Operation(c::Concat{.axis=0}),{taps[0],taps[1]});result.ports.stacked=expose(r,joined,true);
+    result.ports.taps.resize(rows);result.ports.row_ids.resize(rows);
+    auto &f=r.fragment;f.profile=r.converted->profile;f.region=0x4747464c56523248ULL;f.quantized=true;std::vector<Value> taps(rows);
+    for(std::size_t i=0;i<rows;++i){taps[i]=f.input(sem::dense({1,kHidden}));result.ports.taps[i]=expose(r,taps[i],true);}
+    const auto joined=join(f,taps);result.ports.stacked=expose(r,joined,true);
     const auto &bank=r.converted->parameters.at("output.weight");const auto head=external(r,original_index::ReadonlyRole{bank.name,bank.description,bank.owner,bank.lease});
     const auto logits=glm_gguf_projection_fragment::linear(f,joined,head).output;
     const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{logits},2);result.ports.logits=expose(r,logits,true);result.ports.scores=expose(r,top[0],true);result.ports.ids=expose(r,top[1],true);
-    for(std::size_t row=0;row<2;++row)result.ports.row_ids[row]=expose(r,mlx_model::fp::reshape(f,mlx_model::fp::slice(f,top[1],0,std::int64_t(row),1),{1}),true);return result;
+    for(std::size_t row=0;row<rows;++row)result.ports.row_ids[row]=expose(r,mlx_model::fp::reshape(f,mlx_model::fp::slice(f,top[1],0,std::int64_t(row),1),{1}),true);return result;
   }
   if(original&&original->mlx) {
     TargetVerifierRecipe result;auto &r=result.recipe;r.profile_owner=original;r.mlx=original->mlx;r.state_ports.fill(std::numeric_limits<std::size_t>::max());
-    auto &f=r.fragment;f.profile=&mlx_runtime::kProfile;f.region=0x514d4c5856523248ULL;std::array<Value,2> taps;
-    for(std::size_t i=0;i<2;++i){taps[i]=f.input(sem::dense({1,kHidden}));result.ports.taps[i]=expose(r,taps[i],true);}
-    const auto joined=f.one(c::Operation(c::Concat{.axis=0}),{taps[0],taps[1]});result.ports.stacked=expose(r,joined,true);
-    const auto head=external(r,original->mlx->parameters.at("lm_head.weight"));const auto logits=f.one(c::model_ops::bfloat_linear_f32(),{joined,head});
+    result.ports.taps.resize(rows);result.ports.row_ids.resize(rows);
+    auto &f=r.fragment;f.profile=&mlx_runtime::kProfile;f.region=0x514d4c5856523248ULL;std::vector<Value> taps(rows);
+    for(std::size_t i=0;i<rows;++i){taps[i]=f.input(sem::dense({1,kHidden}));result.ports.taps[i]=expose(r,taps[i],true);}
+    const auto joined=join(f,taps);result.ports.stacked=expose(r,joined,true);
+    const auto head=external(r,original->mlx->parameters.at("lm_head.weight"));const auto logits=f.one(c::model_ops::dense_linear_f32(),{joined,head});
     const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{logits},2);result.ports.logits=expose(r,logits,true);result.ports.scores=expose(r,top[0],true);result.ports.ids=expose(r,top[1],true);
-    for(std::size_t row=0;row<2;++row)result.ports.row_ids[row]=expose(r,mlx_model::fp::reshape(f,mlx_model::fp::slice(f,top[1],0,std::int64_t(row),1),{1}),true);return result;
+    for(std::size_t row=0;row<rows;++row)result.ports.row_ids[row]=expose(r,mlx_model::fp::reshape(f,mlx_model::fp::slice(f,top[1],0,std::int64_t(row),1),{1}),true);return result;
   }
   if(!original||!original->vocabulary)throw std::runtime_error("verifier requires its actual same-source vocabulary");
   const auto &vocabulary=*original->vocabulary;
   TargetVerifierRecipe result;auto &r=result.recipe;auto &f=r.fragment;
+  result.ports.taps.resize(rows);result.ports.row_ids.resize(rows);
   r.profile_owner=original;
   r.state_ports.fill(std::numeric_limits<std::size_t>::max());
   f.profile=&original->profile_description;f.region=0x474c4d5645524946ULL;
-  std::array<Value,2> stored;
-  for(std::size_t row=0;row<stored.size();++row) {
+  std::vector<Value> stored(rows);
+  for(std::size_t row=0;row<rows;++row) {
     const auto actual=f.input(sem::dense({1,kHidden}));
     stored[row]=codec::cast(f,actual,c::DataType::kBFloat16);
     result.ports.taps[row]=expose(r,stored[row],true);
   }
-  const auto joined=f.one(c::Operation(c::Concat{.axis=0}),{stored[0],stored[1]});
+  const auto joined=join(f,stored);
   result.ports.stacked=expose(r,joined,true);
   const auto head=external(r,vocabulary.at(shared_lm::Role::kHead));
-  const auto verifier=target_verifier::append(f,joined,head);
-  result.ports.logits=expose(r,verifier.logits,true);
-  result.ports.scores=expose(r,verifier.scores,true);
-  result.ports.ids=expose(r,verifier.ids,true);
-  for(std::size_t row=0;row<verifier.row_ids.size();++row)
-    result.ports.row_ids[row]=expose(r,verifier.row_ids[row]);
+  if(rows!=2) {
+    const auto logits=f.one(c::model_ops::dense_linear_f32(),{joined,head});
+    const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{logits},2);
+    result.ports.logits=expose(r,logits,true);result.ports.scores=expose(r,top[0],true);result.ports.ids=expose(r,top[1],true);
+    for(std::size_t row=0;row<rows;++row)result.ports.row_ids[row]=expose(r,
+        mlx_model::fp::reshape(f,mlx_model::fp::slice(f,top[1],0,std::int64_t(row),1),{1}),true);
+  } else {
+    const auto verifier=target_verifier::append(f,joined,head);
+    result.ports.logits=expose(r,verifier.logits,true);
+    result.ports.scores=expose(r,verifier.scores,true);
+    result.ports.ids=expose(r,verifier.ids,true);
+    for(std::size_t row=0;row<verifier.row_ids.size();++row)
+      result.ports.row_ids[row]=expose(r,verifier.row_ids[row]);
+  }
   return result;
 }
 void report_target_verifier(const Program &program,const TargetVerifierPorts &ports,
@@ -3985,7 +4015,7 @@ void report_target_verifier(const Program &program,const TargetVerifierPorts &po
       program.recipe.external[0].role.owner.ref()!=owner.ref())
     throw std::runtime_error("target verifier must share the original NextN vocabulary head bank");
   same_storage(program.recipe.external[0].role.lease,bank.lease);
-  if(!operation.custom_as<c::model_ops::BFloatLinearF32>()||
+  if(!operation.custom_as<c::model_ops::DenseLinearF32>()||
       take(graph.node_input(projection,0),"target head actual normalized BF16 taps")!=input||
       take(graph.node_input(projection,1),"target head same readonly original constant")!=program.logical.constants.at(program.recipe.external[0].constant)||
       take(graph.value_description(input),"target normalized tap shape")!=sem::dense({2,kHidden},c::DataType::kBFloat16)||
@@ -4033,7 +4063,7 @@ void report_plain_target_verifier(const Program &program,const TargetVerifierPor
       program.recipe.external[0].role.owner.ref()!=owner.ref())
     throw std::runtime_error("target verifier must share the original NextN vocabulary head bank");
   same_storage(program.recipe.external[0].role.lease,bank.lease);
-  if((packed?!operation.get_if<c::MatMul>():!operation.custom_as<c::model_ops::BFloatLinearF32>())||
+  if((packed?!operation.get_if<c::MatMul>():!operation.custom_as<c::model_ops::DenseLinearF32>())||
       take(graph.node_input(projection,0),"target head actual normalized F32 taps")!=input||
       take(graph.node_input(projection,1),"target head same readonly original constant")!=program.logical.constants.at(program.recipe.external[0].constant)||
       take(graph.value_description(input),"target normalized tap shape")!=sem::dense({2,kHidden})||
@@ -4075,9 +4105,54 @@ void report_target_verifier(const Program &p,const TargetVerifierPorts &ports,co
 // each bind their own authenticated parameters and bounded expert supply.
 // Mandatory current t0 is present in BOTH checkpoints; zero accepted drafts
 // selects first, never the state before consuming t0.
+Recipe random_proposal_recipe(const c::ModelArtifactProfileDescription *profile) {
+  Recipe result;result.state_ports.fill(std::numeric_limits<std::size_t>::max());
+  auto &f=result.fragment;f.profile=profile;f.region=0x474c4d52414e4451ULL;
+  const auto logits=f.input(sem::dense({1,target_verifier::kVocabulary}));
+  const auto identity=f.input(sem::dense({1,4},c::DataType::kUInt32));
+  const auto ports=model_sampling_fragment::append_proposal(f,logits,identity);
+  f.outputs={ports.log_probabilities,ports.proposal,ports.valid};return result;
+}
+Recipe random_decision_recipe(const c::ModelArtifactProfileDescription *profile) {
+  Recipe result;result.state_ports.fill(std::numeric_limits<std::size_t>::max());
+  auto &f=result.fragment;f.profile=profile;f.region=0x474c4d52414e4450ULL;
+  const auto target=f.input(sem::dense({2,target_verifier::kVocabulary}));
+  const auto q=f.input(sem::dense({1,target_verifier::kVocabulary}));
+  const auto proposal=f.input(sem::dense({1},c::DataType::kInt32));
+  const auto accept=f.input(sem::dense({1,4},c::DataType::kUInt32));
+  const auto final=f.input(sem::dense({1,4},c::DataType::kUInt32));
+  const auto ports=model_sampling_fragment::append_decision(f,target,q,proposal,accept,final);
+  f.outputs={ports.accepted,ports.pending,ports.valid,ports.target_log,ports.bonus_log};return result;
+}
+bool random_flag(const c::ReadLease &flag) {
+  const auto value=typed<std::uint8_t>(flag);
+  if(value.size()!=1||value[0]>1)throw std::runtime_error("actual sampling Bool scalar is invalid");
+  return value[0]!=0;
+}
+// Independent KAT-qualified Philox and scalar F64 draw equations. This only
+// chooses finite test addresses; no value is supplied to the native decision.
+bool reference_random_accept(double log_alpha,std::array<std::uint32_t,4> identity,bool cuda) {
+  const auto bits=sampling_test::philox({0,0,identity[2],identity[3]},{identity[0],identity[1]});
+  if(!cuda) {
+    const auto u=(double(bits[0])*0x1p20+double(bits[1]>>12)+.5)*0x1p-52;
+    return u<std::exp(log_alpha);
+  }
+  const auto gumbel=[&](std::uint32_t hi,std::uint32_t lo) {
+    const bool upper=(hi&0x80000000u)!=0;if(upper){hi=~hi;lo=~lo;}
+    const auto lower_tail=std::ldexp(double(hi),-32)+std::ldexp(double(lo)+.5,-64);
+    return -std::log(upper?-std::log1p(-lower_tail):-std::log(lower_tail));
+  };
+  const auto log_reject=std::log(-std::expm1(log_alpha));
+  return log_alpha+gumbel(bits[0],bits[1])>log_reject+gumbel(bits[2],bits[3]);
+}
+
 void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool cuda,
                          std::shared_ptr<const OriginalNextn> original,std::shared_ptr<OriginalTarget44> target44={},
-                         std::shared_ptr<OriginalTarget43> target43={}) {
+                         std::shared_ptr<OriginalTarget43> target43={},bool stochastic=false,bool controlled_random_branches=true,
+                         hyle::inference::mtp::SamplingLimits limits={},std::size_t maximum_drafts=1) {
+  if(maximum_drafts<1||maximum_drafts>2||(!stochastic&&maximum_drafts!=1))
+    throw std::runtime_error("finite GLM random component supports one or two configured drafts");
+  if(stochastic)limits.validate(target_verifier::kVocabulary);
   const bool converted=original&&bool(original->converted);
   const bool plain=original&&(bool(original->mlx)||converted);
   if(target43&&!target44)throw std::runtime_error("original target43 verifier requires its actual original target44 successor");
@@ -4117,9 +4192,31 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
   else if(plain)report_target_verifier(verifier,verifier_ports,*original->mlx,owner,cuda);else report_target_verifier(verifier,verifier_ports,*original->vocabulary,owner,cuda);
   Recipe policy_recipe;policy_recipe.fragment=pending_policy();if(plain)policy_recipe.fragment.profile=converted?original->converted->profile:&mlx_runtime::kProfile;
   auto &policy=*prepared_programs.emplace_back(Program::create(std::move(policy_recipe),context,owner,cuda,1));
+  Program *random_q=nullptr,*random_decision=nullptr,*single_verifier=nullptr;
+  TargetVerifierPorts single_ports;
+  if(stochastic) {
+    random_q=prepared_programs.emplace_back(Program::create(random_proposal_recipe(verifier.recipe.fragment.profile),context,owner,cuda,3)).get();
+    random_decision=prepared_programs.emplace_back(Program::create(random_decision_recipe(verifier.recipe.fragment.profile),context,owner,cuda,3)).get();
+    auto single=build_target_verifier(original,true);single_ports=single.ports;
+    single_verifier=prepared_programs.emplace_back(Program::create(std::move(single.recipe),context,owner,cuda,1)).get();
+  }
+  Program *recursive_decision=nullptr,*recursive_verifier=nullptr,*recursive_repair=nullptr,*recursive_catchup=nullptr,*recursive_fresh=nullptr;
+  TargetVerifierPorts recursive_ports;
+  if(maximum_drafts==2) {
+    auto recipe=build_target_verifier(original,false,3);recursive_ports=recipe.ports;
+    recursive_verifier=prepared_programs.emplace_back(Program::create(std::move(recipe.recipe),context,owner,cuda,1)).get();
+    Recipe decision;decision.state_ports.fill(std::numeric_limits<std::size_t>::max());decision.fragment.profile=verifier.recipe.fragment.profile;
+    decision.fragment.region=0x474c4d52414e4432ULL;glm_stochastic_prefix_fragment::append(decision.fragment,target_verifier::kVocabulary);
+    recursive_decision=prepared_programs.emplace_back(Program::create(std::move(decision),context,owner,cuda,2)).get();
+    recursive_repair=prepared_programs.emplace_back(Program::create(build(false,0,3,original),context,owner,cuda,2)).get();
+    recursive_catchup=prepared_programs.emplace_back(Program::create(build_catchup(false,2056,original,1),context,owner,cuda,2)).get();
+    recursive_fresh=prepared_programs.emplace_back(Program::create(extend_recipe(2057),context,owner,cuda,2)).get();
+  }
   auto queue=take(context.create_queue(),"joint target full-V verification queue");
-  const std::array programs{&target_plan,&first_plan,&next_after_zero,&next_after_one,&skip,&journal,&warm43_plan,
+  std::vector<Program*> programs{&target_plan,&first_plan,&next_after_zero,&next_after_one,&skip,&journal,&warm43_plan,
       &token43_a,&token43_b,&token43_c,&token43_d,&handoff_zero,&handoff_one,&initializer,&verifier,&policy};
+  if(stochastic){programs.push_back(random_q);programs.push_back(random_decision);programs.push_back(single_verifier);}
+  if(maximum_drafts==2)for(auto *program:{recursive_decision,recursive_verifier,recursive_repair,recursive_catchup,recursive_fresh})programs.push_back(program);
   const auto add=[](std::size_t &total,std::size_t amount) {
     if(amount>std::numeric_limits<std::size_t>::max()-total)throw std::runtime_error("target verifier state backing bound overflow");total+=amount;
   };
@@ -4198,23 +4295,13 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
     if(plain&&::testing::Test::HasFailure())throw std::runtime_error("plain fullV target reference failed before accepted publication");
     return result;
   };
-  c::ReadLease natural_target0;std::int32_t natural_proposal=-1;std::uint32_t natural_accepted=0;
-  std::array<std::size_t,2> branch_counts{};
-  for(const int scenario:{0,1,2}) {
-    SCOPED_TRACE(scenario); // 0 natural; 1 controlled match; 2 controlled reject.
-    auto state=State::create(owner,extra_specs,state_budget,plain);
-    {
-      const auto target_members=[&](std::span<const c::ReadLease> output,const SparseSnapshot &sparse) {
+  const auto target_members=[&](State &state,std::span<const c::ReadLease> output,const SparseSnapshot &sparse) {
         std::vector<c::StateMember> members{{state.entries[kTargetHistory],output[target_ports.history]},
             {state.entries[kTargetState],output[target_ports.state]},{state.entries[kTargetTap],output[target_ports.tap]},
             {state.entries[kTargetCursor],output[cursor_port]}};
         for(std::size_t i=0;i<target_entries.size();++i)members.push_back({state.entries[kTarget43Begin+i],sparse[target_entries[i]]});return members;
       };
-      const auto initial_members=target_members(warmup,warm43.state);
-      const auto base=state.initial(owner,initializer,queue,2054,initial_members,warmup[target_ports.tap]);
-      const auto base_image=image(state,base);same_storage(state.member(base,kHiddenState),state.member(base,kTargetTap));
-      auto head=take(c::StateHead::create(state.store,base),"one whole target/NextN K1 accepted Head");
-      const auto combined=[&](Program &plan,const c::StateVersion &from,bool target_seed) {
+  const auto combined=[&](State &state,Program &plan,const c::StateVersion &from,bool target_seed,c::ReadLease *sample_logits=nullptr) {
         if(!state.enabled||(!plan.recipe.fresh&&!state.qualifies(from)))throw std::runtime_error("target K1 refused stale draft epoch before prepare");
         const auto position=state.scalar(from,kMlaCursor);
         if(typed<std::int32_t>(state.member(from,kTargetCursor)).at(0)!=position||target_seed!=plan.recipe.fresh)
@@ -4223,9 +4310,9 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
         if(consumed<0||consumed>=target_verifier::kVocabulary)throw std::runtime_error("actual pending token outside the shared full vocabulary");
         auto produced43=execute_target43(choose43(position),queue,target43_snapshot(state,from),upload(owner,sem::bytes(target_residual_values(consumed))));++target43_calls;
         const std::array target_inputs{produced43.mhc,state.member(from,kTargetHistory),state.member(from,kTargetState),state.member(from,kTargetCursor)};
-        auto produced=target_run(target_inputs);const auto members=target_members(produced,produced43.state);
+        auto produced=target_run(target_inputs);const auto members=target_members(state,produced,produced43.state);
         const auto seed=target_seed?state.member(from,kTargetTap):c::ReadLease{};
-        auto next=execute(state,plan,queue,owner,from,0,nullptr,members,seed);
+        auto next=execute(state,plan,queue,owner,from,0,nullptr,members,seed,sample_logits);
         for(const auto &member:members)same_storage(take(next.member(member.entry),"same full K1 target producer member"),member.resource);
         EXPECT_EQ(state.scalar(next,kMlaCursor),position+1);
         EXPECT_EQ(typed<std::int32_t>(state.member(next,kTargetCursor)).at(0),position+1);
@@ -4234,7 +4321,331 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
         EXPECT_EQ(SparseAccess{}.scalar(target43_state,kIndexCursor),position+1);
         EXPECT_EQ(image(state,from),before);++feedback_checks;peak_backing=std::max(peak_backing,state.store.stats().backing_bytes);return next;
       };
-      const auto first=combined(first_plan,base,true);const auto first_image=image(state,first);
+
+  if(stochastic) {
+    using Cursor=hyle::inference::SamplingCursor;
+    const auto sampling_entry=kEntries+extra_specs.size();
+    const auto target_end=sampling_entry;
+    extra_specs.push_back({.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(Cursor)});
+    auto state=State::create(owner,extra_specs,state_budget,plain);
+    const Cursor initial_cursor{0x474c4d35ULL,13,0};
+    const auto cursor=[&](const c::StateVersion &version) {
+      const auto bytes=read(state.member(version,sampling_entry));
+      if(bytes.size()!=sizeof(Cursor))throw std::runtime_error("GLM sampling cursor metadata extent");
+      Cursor result;std::memcpy(&result,bytes.data(),sizeof(result));return result;
+    };
+    const auto identity=[&](Cursor at,std::uint64_t offset) {
+      const auto words=at.identity(offset);
+      return upload(owner,sem::bytes(std::vector<std::uint32_t>(words.begin(),words.end())));
+    };
+    const auto proposal=[&](const c::ReadLease &logits,Cursor at) {
+      const std::array input{logits,identity(at,0)};
+      auto output=random_q->execute(queue,input);
+      if(!random_flag(output[2]))throw std::runtime_error("actual original NextN q distribution is invalid");
+      const auto id=typed<std::int32_t>(output[1]);
+      if(id.size()!=1||id[0]<0||id[0]>=target_verifier::kVocabulary)
+        throw std::runtime_error("actual sampled GLM proposal is outside its original vocabulary");
+      return output;
+    };
+    const auto decide=[&](const Verified &target,const std::vector<c::ReadLease> &draft,
+                          Cursor at,std::uint64_t accept_offset) {
+      const std::array input{target.output[verifier_ports.logits],draft[0],draft[1],
+          identity(at,accept_offset),identity(at,accept_offset+1)};
+      auto output=random_decision->execute(queue,input);
+      if(!random_flag(output[2]))throw std::runtime_error("actual GLM p/q/bonus decision is invalid");
+      const auto next=typed<std::int32_t>(output[1]);
+      if(next.size()!=1||next[0]<0||next[0]>=target_verifier::kVocabulary)
+        throw std::runtime_error("actual GLM residual/bonus pending is outside its vocabulary");
+      return output;
+    };
+    auto initial=target_members(state,warmup,warm43.state);
+    initial.push_back({state.entries[sampling_entry],{},std::as_bytes(std::span(&initial_cursor,1))});
+    const auto base=state.initial(owner,initializer,queue,2054,initial,warmup[target_ports.tap]);
+    c::ReadLease logits;
+    const auto current_id=state.scalar(base,kPending);
+    if(std::ranges::find(limits.eos,current_id)!=limits.eos.end())
+      throw std::runtime_error("GLM cannot consume an EOS pending token");
+    const auto first=combined(state,first_plan,base,true,&logits);
+    const auto first_image=image(state,first);
+    // Target-only emission still keeps the mandatory-current NextN state in
+    // sync. No q draw, proposed token or speculative second row is submitted.
+    const auto single=[&](hyle::inference::mtp::SamplingLimits boundary,bool terminal_control) {
+      boundary.validate(target_verifier::kVocabulary);
+      const auto before_target=target_calls,before_nextn=first_plan.native_submissions(),before_second=skip.native_submissions();
+      const std::array input{state.member(first,kTargetTap)};
+      const auto target=single_verifier->execute(queue,input);
+      const auto sampled=proposal(target[single_ports.logits],initial_cursor);
+      const auto id=typed<std::int32_t>(sampled[1]).at(0);
+      const std::array terminal{id};if(terminal_control)boundary.eos=terminal;
+      const std::array inputs{current_id},finals{id};std::vector<std::int32_t> emitted;
+      const auto selection=hyle::inference::mtp::select_sampled_prefix(inputs,{},finals,
+          boundary.quota,boundary.eos,std::int32_t(target_verifier::kVocabulary),emitted);
+      auto head=take(c::StateHead::create(state.store,base),"GLM single-row bounded Head");
+      auto draft=take(state.store.begin(first),"same complete single-row target/NextN prefix");
+      check(draft.replace(state.entries[kPending],sampled[1]),"single target p0 pending lease");
+      const auto rng=initial_cursor.advanced(1);
+      check(draft.replace_metadata(state.entries[sampling_entry],std::as_bytes(std::span(&rng,1))),"single target draw commits with state");
+      const auto selected=take(draft.finalize(),"single target complete checkpoint");
+      EXPECT_FALSE(head.publish(first.identity(),selected).ok());EXPECT_EQ(cursor(take(head.current(),"single stale Head")),initial_cursor);
+      check(head.publish(base.identity(),selected),"single bounded result publishes once");
+      EXPECT_EQ(selection.consumed,1u);EXPECT_EQ(selection.consumed_drafts,0u);EXPECT_EQ(selection.stopped,terminal_control||std::ranges::find(boundary.eos,id)!=boundary.eos.end());
+      same_storage(state.member(selected,kPending),sampled[1]);EXPECT_EQ(cursor(selected),rng);
+      EXPECT_EQ(state.scalar(selected,kMlaCursor),2055);EXPECT_EQ(typed<std::int32_t>(state.member(selected,kTargetCursor)).at(0),2055);
+      for(std::size_t entry=0;entry<state.entries.size();++entry)
+        if(state.present(entry)&&entry!=kPending&&entry!=sampling_entry)same_storage(state.member(selected,entry),state.member(first,entry));
+      EXPECT_EQ(target_calls,before_target);EXPECT_EQ(first_plan.native_submissions(),before_nextn);EXPECT_EQ(skip.native_submissions(),before_second);
+      EXPECT_EQ(image(state,first),first_image);
+      std::printf("GLM RANDOM TAIL context=%zu quota=%zu emitted=%d stopped=%d consumed=1 draw=1 second_submissions=0\n",boundary.remaining_context,boundary.quota,id,int(selection.stopped));
+    };
+    if(limits.single_row()) {
+      single(limits,false);
+      ::testing::Test::RecordProperty("random_tail_target_rows",1);::testing::Test::RecordProperty("random_tail_draws",1);
+      ::testing::Test::RecordProperty("scope","Finite one-row target-only emission with mandatory-current NextN maintenance; no q sample or proposed second-row execution. Complete same-prefix resources/pending/RNG publish once. Not a request scheduler.");
+      return;
+    }
+    // Independent boundary Heads reuse the same authentic first-prefix
+    // resources; these do not change the ordinary branch's RNG cursor.
+    if(controlled_random_branches){single({1,1,{}},false);check(state.store.collect(),"retire independent single target Head");single({1,1,{}},true);check(state.store.collect(),"retire independent terminal target Head");}
+    const auto q=proposal(logits,initial_cursor);
+    const auto with_proposal=[&](const c::StateVersion &from,const c::ReadLease &id) {
+      auto draft=take(state.store.begin(from),"retain actual sampled original NextN proposal");
+      check(draft.replace(state.entries[kPending],id),"sampled I32 proposal enters target row1");
+      return take(draft.finalize(),"all original draft and target resources retain sampled proposal");
+    };
+    const auto proposed=with_proposal(first,q[1]);
+    c::ReadLease second_logits;
+    const auto second=combined(state,skip,proposed,false,maximum_drafts==2?&second_logits:nullptr);
+    const auto first_proposal_id=typed<std::int32_t>(q[1]).at(0);
+    const bool can_recurse=maximum_drafts==2&&limits.quota>2&&limits.remaining_context>2&&
+        std::ranges::find(limits.eos,first_proposal_id)==limits.eos.end();
+    if(can_recurse) {
+      const auto q1=proposal(second_logits,initial_cursor.advanced(1));
+      const auto second_proposal_id=typed<std::int32_t>(q1[1]).at(0);
+      const auto next_proposed=with_proposal(second,q1[1]);
+      const auto third=combined(state,skip,next_proposed,false);
+      const std::array taps{state.member(first,kTargetTap),state.member(second,kTargetTap),state.member(third,kTargetTap)};
+      const auto projected=recursive_verifier->execute(queue,taps);
+      const auto target_logits=typed<float>(projected[recursive_ports.logits]);
+      EXPECT_EQ(target_logits.size(),3u*std::size_t(target_verifier::kVocabulary));
+      std::vector<std::uint16_t> stored;std::vector<float> wide;
+      for(std::size_t row=0;row<3;++row) {
+        if(plain){const auto values=typed<float>(projected[recursive_ports.taps[row]]);wide.insert(wide.end(),values.begin(),values.end());}
+        else {const auto values=typed<std::uint16_t>(projected[recursive_ports.taps[row]]);stored.insert(stored.end(),values.begin(),values.end());}
+      }
+      const auto actual_ids=typed<std::int32_t>(projected[recursive_ports.ids]);
+      if(!plain)EXPECT_TRUE(lm_reference::expect_logits(target_logits,stored,original->vocabulary->source->bytes(shared_lm::Role::kHead),154880,4096,false,actual_ids));
+      else if(!converted)EXPECT_TRUE(mlx_reference::expect_projection(target_logits,wide,3,154880,4096,
+          mlx_reference::BFloat{original->mlx->parameters.source->bytes("lm_head.weight"),154880,4096},false,actual_ids));
+      const std::array proposal_ids{first_proposal_id,second_proposal_id};
+      const auto proposal_input=upload(owner,sem::bytes(std::vector(proposal_ids.begin(),proposal_ids.end())));
+      const auto decide_prefix=[&](std::array<std::uint64_t,3> offsets) {
+        std::vector<std::uint32_t> words;for(const auto offset:offsets){const auto key=initial_cursor.identity(offset);words.insert(words.end(),key.begin(),key.end());}
+        const std::array input{projected[recursive_ports.logits],upload(owner,sem::bytes(words)),proposal_input,q[0],q1[0]};
+        const auto output=recursive_decision->execute(queue,input);glm_stochastic_prefix_fragment::Decision result;
+        for(std::size_t row=0;row<2;++row) {
+          if(!random_flag(output[row*3+2]))throw std::runtime_error("actual GLM K2 p/q decision invalid");
+          result.accepts[row]=std::uint8_t(random_flag(output[row*3]));result.final_leases[row]=output[row*3+1];
+          result.final_ids[row]=typed<std::int32_t>(result.final_leases[row]).at(0);
+        }return result;
+      };
+      std::array<c::StateVersion,3> repaired{first,{},{}};
+      const auto repair=[&](std::size_t count) {
+        state.epoch=7;state.enabled=true;
+        for(std::size_t row=1;row<=count;++row)if(!repaired[row].valid()) {
+          const auto input=with_proposal(repaired[row-1],row==1?q[1]:q1[1]);
+          const auto &target=row==1?second:third;std::vector<c::StateMember> members;
+          for(std::size_t entry=kTargetHistory;entry<target_end;++entry)members.push_back({state.entries[entry],state.member(target,entry)});
+          repaired[row]=execute(state,*recursive_repair,queue,owner,input,0,nullptr,members,state.member(row==1?first:second,kTargetTap));
+          ++accepted_repairs;
+        }return repaired[count];
+      };
+      const auto observe=[&](const c::StateVersion &selected,const c::StateVersion &checkpoint,
+          const hyle::inference::mtp::AcceptedPrefix &selection,Cursor rng) {
+        EXPECT_EQ(cursor(selected),rng);EXPECT_EQ(state.scalar(selected,kPending),selection.next_id);
+        EXPECT_EQ(state.scalar(selected,kMlaCursor),2054+std::int32_t(selection.consumed));
+        EXPECT_EQ(typed<std::int32_t>(state.member(selected,kTargetCursor)).at(0),state.scalar(selected,kMlaCursor));
+        EXPECT_EQ(state.scalar(selected,kLagCount),std::int32_t(selection.consumed_drafts));
+        for(std::size_t entry=0;entry<state.entries.size();++entry)if(state.present(entry)&&entry!=kPending&&entry!=sampling_entry)
+          same_storage(state.member(selected,entry),state.member(checkpoint,entry));
+      };
+      const auto continued=[&](c::StateHead &head,const c::StateVersion &selected,std::size_t consumed,Cursor rng) {
+        state.epoch=7;state.enabled=false;auto caught=selected;
+        for(std::size_t slot=0;slot<consumed;++slot) {
+          auto next=catch_up(state,slot==0?journal:*recursive_catchup,queue,head);
+          check(head.publish(caught.identity(),next),"GLM K2 accepted journal slot publication");caught=std::move(next);
+        }
+        EXPECT_EQ(state.scalar(caught,kLagCount),0);EXPECT_EQ(state.scalar(caught,kMlaCursor),state.scalar(caught,kIndexCursor));
+        state.epoch=8;state.enabled=true;auto &fresh=consumed==0?next_after_zero:consumed==1?next_after_one:*recursive_fresh;
+        const auto next=combined(state,fresh,caught,true);
+        const std::array input{state.member(next,kTargetTap)};const auto p=single_verifier->execute(queue,input);
+        const auto draw=proposal(p[single_ports.logits],rng);auto draft=take(state.store.begin(next),"GLM K2 real pending continuation");
+        check(draft.replace(state.entries[kPending],draw[1]),"GLM K2 next target categorical lease");const auto advanced=rng.advanced(1);
+        check(draft.replace_metadata(state.entries[sampling_entry],std::as_bytes(std::span(&advanced,1))),"GLM K2 continuation draw same complete Head");
+        const auto version=take(draft.finalize(),"GLM K2 complete actual continuation");check(head.publish(caught.identity(),version),"GLM K2 actual pending is consumed next epoch");
+        EXPECT_EQ(cursor(version),advanced);EXPECT_EQ(state.scalar(version,kMlaCursor),2056+std::int32_t(consumed));
+        std::printf("GLM K2 CONTINUED consumed_drafts=%zu consumed_pending=%d next_pending=%d cursor=%llu\n",consumed,state.scalar(caught,kPending),state.scalar(version,kPending),static_cast<unsigned long long>(advanced.draw));
+      };
+      const auto log_q0=typed<float>(q[0]),log_q1=typed<float>(q1[0]);const auto vocabulary=std::size_t(target_verifier::kVocabulary);
+      const std::array alpha{glm_stochastic_prefix_fragment::log_alpha(std::span(target_logits).first(vocabulary),log_q0,first_proposal_id),
+          glm_stochastic_prefix_fragment::log_alpha(std::span(target_logits).subspan(vocabulary,vocabulary),log_q1,second_proposal_id)};
+      glm_stochastic_prefix_fragment::exercise(state.store,base,state.entries[kPending],state.entries[sampling_entry],current_id,proposal_ids,
+          std::array{q[1],q1[1]},state.member(first,kTargetTap),initial_cursor,std::int32_t(target_verifier::kVocabulary),cuda,alpha,limits,
+          decide_prefix,repair,observe,continued);
+      EXPECT_EQ(image(state,first),first_image);return;
+    }
+    const auto checked=verify(state.member(first,kTargetTap),state.member(second,kTargetTap));
+    const auto natural=decide(checked,q,initial_cursor,1);
+    const auto proposal_id=typed<std::int32_t>(q[1]).at(0);
+    const auto log_p=typed<float>(natural[3]),log_q=typed<float>(q[0]);
+    const auto log_alpha=std::min(0.,double(log_p.at(proposal_id))-double(log_q.at(proposal_id)));
+    const bool natural_accept=random_flag(natural[0]);
+    EXPECT_EQ(reference_random_accept(log_alpha,initial_cursor.identity(1),cuda),natural_accept);
+    std::vector<std::uint64_t> offsets{1};
+    // Explicit branch fixture only. Default consumers use offsets0/1/2 and
+    // advance3. Never change p, q, logits or the actual proposal to force a
+    // branch; search only a bounded independent Philox address interval.
+    const std::uint64_t address_bound=controlled_random_branches?262144:0;
+    for(std::uint64_t offset=2;offset<address_bound;++offset)
+      if(reference_random_accept(log_alpha,initial_cursor.identity(offset),cuda)!=natural_accept) {
+        offsets.push_back(offset);break;
+      }
+    std::array<std::size_t,2> random_branches{};
+    std::size_t published_rounds=0;
+    for(const auto offset:offsets) {
+      state.epoch=7;state.enabled=true;
+      const auto decision=offset==1?natural:decide(checked,q,initial_cursor,offset);
+      const auto sampled_accept=random_flag(decision[0]);
+      const std::array inputs{current_id,proposal_id};
+      const std::array flags{std::uint8_t(sampled_accept)};
+      const std::array finals{typed<std::int32_t>(decision[1]).at(0)};std::vector<std::int32_t> emitted;
+      const auto selection=hyle::inference::mtp::select_sampled_prefix(inputs,flags,finals,
+          limits.quota,limits.eos,std::int32_t(target_verifier::kVocabulary),emitted);
+      const bool accepted=selection.consumed_drafts!=0;++random_branches[sampled_accept?1:0];
+      const auto pending=sampled_accept&&selection.consumed==1?q[1]:decision[1];
+      EXPECT_EQ(typed<std::int32_t>(pending).at(0),selection.next_id);
+      EXPECT_EQ(reference_random_accept(log_alpha,initial_cursor.identity(offset),cuda),sampled_accept);
+      auto head=take(c::StateHead::create(state.store,base),"random GLM expected-base Head");
+      const auto base_image=image(state,base);
+      const auto next_cursor=initial_cursor.advanced(offset+2);
+      c::StateVersion repaired;
+      if(accepted) {
+        std::vector<c::StateMember> members;
+        for(std::size_t entry=kTargetHistory;entry<target_end;++entry)
+          members.push_back({state.entries[entry],state.member(second,entry)});
+        repaired=execute(state,skip,queue,owner,proposed,0,nullptr,members,state.member(first,kTargetTap));
+        ++accepted_repairs;
+      }
+      const auto checkpoint=accepted?repaired:first;
+      {
+        auto abandoned=take(state.store.begin(checkpoint),"cancel sampled pending and cursor together");
+        check(abandoned.replace(state.entries[kPending],pending),"stage actual random result before injected failure");
+        check(abandoned.replace_metadata(state.entries[sampling_entry],std::as_bytes(std::span(&next_cursor,1))),"stage uncommitted random cursor");
+        EXPECT_FALSE(abandoned.replace(state.entries[kPending],state.member(first,kTargetTap)).ok());
+        check(abandoned.cancel(),"failure cancels pending/cursor publication");
+      }
+      EXPECT_EQ(image(state,take(head.current(),"unchanged random Head after cancel")),base_image);
+      EXPECT_EQ(cursor(take(head.current(),"unadvanced random cursor after cancel")),initial_cursor);
+      auto publish=[&](const c::StateVersion &from,const c::ReadLease &pending,Cursor rng) {
+        auto draft=take(state.store.begin(from),"one all-resource random K1 transaction");
+        check(draft.replace(state.entries[kPending],pending),"real residual/bonus I32 lease");
+        check(draft.replace_metadata(state.entries[sampling_entry],std::as_bytes(std::span(&rng,1))),"same transaction RNG cursor");
+        return take(draft.finalize(),"complete random target/NextN prefix and RNG");
+      };
+      const auto selected=publish(checkpoint,pending,next_cursor);
+      EXPECT_FALSE(head.publish(second.identity(),selected).ok());
+      EXPECT_EQ(cursor(take(head.current(),"stale publication cannot advance RNG")),initial_cursor);
+      check(head.publish(base.identity(),selected),"retry the same original random decision without resampling");++published_rounds;
+      EXPECT_EQ(cursor(take(head.current(),"published random cursor")),next_cursor);
+      same_storage(state.member(selected,kPending),pending);
+      EXPECT_EQ(state.scalar(selected,kMlaCursor),2055+std::int32_t(accepted));
+      EXPECT_EQ(typed<std::int32_t>(state.member(selected,kTargetCursor)).at(0),state.scalar(selected,kMlaCursor));
+      if(controlled_random_branches&&limits.quota==std::numeric_limits<std::size_t>::max()&&limits.remaining_context==std::numeric_limits<std::size_t>::max()&&limits.eos.empty()) {
+        const auto boundary=[&](std::size_t quota,std::span<const std::int32_t> eos,const char *name) {
+          std::vector<std::int32_t> tokens;
+          const auto policy=hyle::inference::mtp::select_sampled_prefix(inputs,flags,finals,quota,eos,
+              std::int32_t(target_verifier::kVocabulary),tokens);
+          const auto lease=sampled_accept&&policy.consumed==1?q[1]:decision[1];
+          const auto from=policy.consumed_drafts?repaired:first;
+          auto branch=take(c::StateHead::create(state.store,base),"independent GLM bounded-policy Head");
+          const auto bounded=publish(from,lease,next_cursor);
+          check(branch.publish(base.identity(),bounded),"bounded actual lease/state/RNG publication");
+          same_storage(state.member(bounded,kPending),lease);EXPECT_EQ(state.scalar(bounded,kPending),policy.next_id);
+          EXPECT_EQ(state.scalar(bounded,kMlaCursor),2054+std::int32_t(policy.consumed));
+          EXPECT_EQ(typed<std::int32_t>(state.member(bounded,kTargetCursor)).at(0),2054+std::int32_t(policy.consumed));EXPECT_EQ(cursor(bounded),next_cursor);
+          for(std::size_t entry=0;entry<state.entries.size();++entry)
+            if(state.present(entry)&&entry!=kPending&&entry!=sampling_entry)same_storage(state.member(bounded,entry),state.member(from,entry));
+          std::printf("GLM RANDOM BOUNDARY name=%s accept=%d emitted=%zu consumed=%zu pending=%d stopped=%d draw=%llu\n",name,int(sampled_accept),tokens.size(),policy.consumed,policy.next_id,int(policy.stopped),static_cast<unsigned long long>(next_cursor.draw));
+        };
+        boundary(1,{},"quota1");check(state.store.collect(),"retire independent quota Head");
+        if(sampled_accept&&proposal_id!=current_id){const std::array eos{proposal_id};boundary(2,eos,"accepted_proposal_EOS");check(state.store.collect(),"retire independent accepted EOS Head");}
+        if(finals[0]!=current_id&&(!sampled_accept||finals[0]!=proposal_id)){const std::array eos{finals[0]};boundary(2,eos,sampled_accept?"bonus_EOS":"residual_EOS");check(state.store.collect(),"retire independent final EOS Head");}
+      }
+      // Explicit finite limits describe one verifier episode. They do not
+      // turn this component fixture into a complete request scheduler.
+      if(limits.quota!=std::numeric_limits<std::size_t>::max()||limits.remaining_context!=std::numeric_limits<std::size_t>::max()||!limits.eos.empty())continue;
+      state.enabled=false;
+      EXPECT_THROW((void)combined(state,skip,selected,false),std::runtime_error);
+      EXPECT_EQ(cursor(take(head.current(),"pre-submit failure keeps RNG")),next_cursor);
+      auto caught=selected;
+      if(accepted) {
+        caught=catch_up(state,journal,queue,head);
+        check(head.publish(selected.identity(),caught),"random accepted prefix journal catchup");
+      } else (void)activate_extend_seed(state,head,first,2054);
+      EXPECT_EQ(cursor(take(head.current(),"catchup does not draw randomness")),next_cursor);
+      state.epoch=8;state.enabled=true;
+      auto &fresh=accepted?next_after_one:next_after_zero;
+      c::ReadLease next_logits;
+      const auto next_first=combined(state,fresh,take(head.current(),"real random pending for next round"),true,&next_logits);
+      const auto next_q=proposal(next_logits,next_cursor);
+      const auto next_proposed=with_proposal(next_first,next_q[1]);
+      auto &step=accepted?handoff_one:handoff_zero;
+      const auto next_second=combined(state,step,next_proposed,false);
+      const auto next_checked=verify(state.member(next_first,kTargetTap),state.member(next_second,kTargetTap));
+      const auto next_decision=decide(next_checked,next_q,next_cursor,1);
+      const auto next_accept=random_flag(next_decision[0]);
+      c::StateVersion next_repaired;
+      if(next_accept) {
+        std::vector<c::StateMember> members;
+        for(std::size_t entry=kTargetHistory;entry<target_end;++entry)
+          members.push_back({state.entries[entry],state.member(next_second,entry)});
+        next_repaired=execute(state,step,queue,owner,next_proposed,0,nullptr,members,state.member(next_first,kTargetTap));
+        ++accepted_repairs;
+      }
+      const auto next_selected=publish(next_accept?next_repaired:next_first,next_decision[1],next_cursor.advanced(3));
+      check(head.publish(caught.identity(),next_selected),"next ordinary three-draw K1 round atomically continues");++published_rounds;
+      EXPECT_EQ(cursor(take(head.current(),"second committed random cursor")),next_cursor.advanced(3));
+      same_storage(state.member(next_selected,kPending),next_decision[1]);
+      EXPECT_EQ(state.scalar(next_selected,kMlaCursor),2056+std::int32_t(accepted)+std::int32_t(next_accept));
+      EXPECT_EQ(typed<std::int32_t>(state.member(next_selected,kTargetCursor)).at(0),state.scalar(next_selected,kMlaCursor));
+      EXPECT_EQ(state.scalar(next_selected,kLagCount),std::int32_t(next_accept));
+      std::printf("GLM RANDOM K1 proposal=%d alpha=%.17g accept_offset=%llu reserved=%llu accept=%d pending=%d next_round_accept=%d next_pending=%d cursor=%llu\n",
+          proposal_id,std::exp(log_alpha),static_cast<unsigned long long>(offset),static_cast<unsigned long long>(offset+2),
+          int(accepted),typed<std::int32_t>(decision[1]).at(0),int(next_accept),state.scalar(next_selected,kPending),
+          static_cast<unsigned long long>(cursor(next_selected).draw));
+    }
+    ::testing::Test::RecordProperty("random_default_schedule","proposal0/accept1/final2; success advances3; cancellation and stale publish advance0");
+    ::testing::Test::RecordProperty("random_controlled_address_bound",std::to_string(address_bound));
+    ::testing::Test::RecordProperty("random_actual_proposal",proposal_id);
+    ::testing::Test::RecordProperty("random_alpha",std::to_string(std::exp(log_alpha)));
+    ::testing::Test::RecordProperty("random_accepted",int(random_branches[1]));
+    ::testing::Test::RecordProperty("random_rejected",int(random_branches[0]));
+    ::testing::Test::RecordProperty("random_published_rounds",int(published_rounds));
+    ::testing::Test::RecordProperty("random_opposite_branch_found",offsets.size()==2?1:0);
+    ::testing::Test::RecordProperty("scope","Actual original NextN q/proposal and real two-row verifier p0/p1, shared common stochastic decision, same complete target/NextN StateHead plus original RNG metadata. Default three addresses and bounded independent controlled-address branch fixture are distinguished; no probability/logit changes or TopK substitution. Each selected branch consumes its actual residual/bonus and completes a second ordinary K1 round. Source component upstream/initial-history fixtures remain; not full-model task quality or natural acceptance-rate evidence.");
+    return;
+  }
+  c::ReadLease natural_target0;std::int32_t natural_proposal=-1;std::uint32_t natural_accepted=0;
+  std::array<std::size_t,2> branch_counts{};
+  std::vector<std::int32_t> emitted;emitted.reserve(2);
+  for(const int scenario:{0,1,2}) {
+    SCOPED_TRACE(scenario); // 0 natural; 1 controlled match; 2 controlled reject.
+    auto state=State::create(owner,extra_specs,state_budget,plain);
+    {
+      const auto initial_members=target_members(state,warmup,warm43.state);
+      const auto base=state.initial(owner,initializer,queue,2054,initial_members,warmup[target_ports.tap]);
+      const auto base_image=image(state,base);same_storage(state.member(base,kHiddenState),state.member(base,kTargetTap));
+      auto head=take(c::StateHead::create(state.store,base),"one whole target/NextN K1 accepted Head");
+      const auto first=combined(state,first_plan,base,true);const auto first_image=image(state,first);
       EXPECT_EQ(state.facts(first).producer_position,2054u);EXPECT_EQ(state.facts(first).reuse_count,0u);
       EXPECT_EQ(state.scalar(first,kIndexCursor),2055);EXPECT_EQ(state.scalar(first,kLagCount),0);
       c::StateVersion proposal_source=first;
@@ -4255,35 +4666,38 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
         for(std::size_t entry=0;entry<state.entries.size();++entry)if(state.present(entry)&&entry!=kPending)same_storage(state.member(proposal_source,entry),state.member(first,entry));
       }
       const auto proposal=state.scalar(proposal_source,kPending);
-      const auto second=combined(skip,proposal_source,false);const auto second_image=image(state,second);
+      const auto second=combined(state,skip,proposal_source,false);const auto second_image=image(state,second);
       EXPECT_EQ(state.facts(second).producer_position,2054u);EXPECT_EQ(state.facts(second).reuse_count,1u);
       EXPECT_EQ(state.scalar(second,kIndexCursor),2055);EXPECT_EQ(state.scalar(second,kLagCount),1);
       const auto checked=verify(state.member(first,kTargetTap),state.member(second,kTargetTap));
-      const auto decision=target_verifier::decide_k1(proposal,checked.ids);
+      const std::array inputs{state.scalar(base,kPending),proposal};
+      // The original greedy K1 fixture has two outputs and no EOS policy.
+      const auto decision=hyle::inference::mtp::select_greedy_prefix(inputs,checked.ids,2,{},
+          std::int32_t(target_verifier::kVocabulary),emitted);
       if(scenario==0) {
-        natural_target0=checked.output[verifier_ports.row_ids[0]];natural_proposal=proposal;natural_accepted=decision.accepted_drafts;
+        natural_target0=checked.output[verifier_ports.row_ids[0]];natural_proposal=proposal;natural_accepted=std::uint32_t(decision.consumed_drafts);
       } else {
         EXPECT_EQ(typed<std::int32_t>(natural_target0).at(0),checked.ids.at(0));
-        EXPECT_EQ(decision.accepted_drafts,scenario==1?1u:0u);
+        EXPECT_EQ(decision.consumed_drafts,scenario==1?1u:0u);
       }
-      ++branch_counts.at(decision.accepted_drafts);
+      ++branch_counts.at(decision.consumed_drafts);
       c::StateVersion repaired;
-      if(plain&&decision.accepted_drafts) {
+      if(plain&&decision.consumed_drafts) {
         std::vector<c::StateMember> members;for(std::size_t entry=kTargetHistory;entry<state.entries.size();++entry)members.push_back({state.entries[entry],state.member(second,entry)});
         repaired=execute(state,skip,queue,owner,proposal_source,0,nullptr,members,state.member(first,kTargetTap));
         ++accepted_repairs;
         for(std::size_t entry=kTargetHistory;entry<state.entries.size();++entry)same_storage(state.member(repaired,entry),state.member(second,entry));
       }
-      const auto &checkpoint=decision.checkpoint==target_verifier::Checkpoint::kAfterCurrent?first:(repaired.valid()?repaired:second);
-      EXPECT_EQ(decision.next_pending_row,std::size_t(decision.accepted_drafts));
+      const auto &checkpoint=decision.consumed_drafts?(repaired.valid()?repaired:second):first;
+      EXPECT_EQ(decision.consumed,1+decision.consumed_drafts);
       auto accepted_draft=take(state.store.begin(checkpoint),"one actual verified K1 prefix and target pending");
-      const auto pending=checked.output[verifier_ports.row_ids.at(decision.next_pending_row)];
+      const auto pending=checked.output[verifier_ports.row_ids.at(decision.consumed_drafts)];
       check(accepted_draft.replace(state.entries[kPending],pending),"bind the actual selected full-V target I32[1] output lease");
       const auto accepted=take(accepted_draft.finalize(),"atomic34-resource verified target/NextN checkpoint");
       for(std::size_t entry=0;entry<state.entries.size();++entry)if(state.present(entry)&&entry!=kPending)same_storage(state.member(accepted,entry),state.member(checkpoint,entry));
       same_storage(state.member(accepted,kPending),pending);
-      EXPECT_EQ(state.scalar(accepted,kPending),decision.next_pending);
-      EXPECT_EQ(state.scalar(accepted,kMlaCursor),2055+std::int32_t(decision.accepted_drafts));
+      EXPECT_EQ(state.scalar(accepted,kPending),decision.next_id);
+      EXPECT_EQ(state.scalar(accepted,kMlaCursor),2055+std::int32_t(decision.consumed_drafts));
       EXPECT_EQ(typed<std::int32_t>(state.member(accepted,kTargetCursor)).at(0),state.scalar(accepted,kMlaCursor));
       check(head.publish(base.identity(),accepted),"publish verified target and draft under the same expected-base Head");
       EXPECT_FALSE(head.publish(base.identity(),second).ok());
@@ -4299,7 +4713,7 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
       EXPECT_THROW((void)execute(state,skip,queue,owner,accepted,0),std::runtime_error);
       EXPECT_EQ(image(state,take(head.current(),"Head after pre-submit failure")),accepted_image);
       c::StateVersion caught=accepted;
-      if(decision.accepted_drafts) {
+      if(decision.consumed_drafts) {
         caught=catch_up(state,journal,queue,head);
         check(head.publish(accepted.identity(),caught),"publish only accepted nx journal catchup");
       } else {
@@ -4316,18 +4730,18 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
       EXPECT_EQ(state.scalar(caught,kMlaCursor),state.scalar(caught,kIndexCursor));
       EXPECT_EQ(state.scalar(caught,kLagCount),0);
       state.epoch=8;state.enabled=true;
-      auto &fresh=decision.accepted_drafts?next_after_one:next_after_zero;
-      const auto continued=combined(fresh,take(head.current(),"actual accepted target tap for fresh epoch8"),true);
+      auto &fresh=decision.consumed_drafts?next_after_one:next_after_zero;
+      const auto continued=combined(state,fresh,take(head.current(),"actual accepted target tap for fresh epoch8"),true);
       check(head.publish(caught.identity(),continued),"publish epoch8 with actual previous accepted target tap and target bonus consumed");
       EXPECT_EQ(state.facts(continued).epoch,8u);EXPECT_EQ(state.facts(continued).reuse_count,0u);
       EXPECT_EQ(state.facts(continued).producer_position,std::uint64_t(state.scalar(caught,kMlaCursor)));
-      EXPECT_EQ(state.scalar(continued,kMlaCursor),2056+std::int32_t(decision.accepted_drafts));
+      EXPECT_EQ(state.scalar(continued,kMlaCursor),2056+std::int32_t(decision.consumed_drafts));
       const auto continued_image=image(state,continued);
       state.enabled=false;
       const auto accepted_seed=activate_extend_seed(state,head,continued,std::int32_t(state.facts(continued).producer_position));
       for(std::size_t entry=0;entry<state.entries.size();++entry)if(state.present(entry))same_storage(state.member(accepted_seed,entry),state.member(continued,entry));
-      auto &step_zero=decision.accepted_drafts?handoff_one:handoff_zero;
-      const auto skipped=combined(step_zero,accepted_seed,false);
+      auto &step_zero=decision.consumed_drafts?handoff_one:handoff_zero;
+      const auto skipped=combined(state,step_zero,accepted_seed,false);
       EXPECT_EQ(state.facts(skipped).epoch,8u);EXPECT_EQ(state.facts(skipped).reuse_count,1u);
       EXPECT_EQ(state.facts(skipped).producer_position,state.facts(continued).producer_position);
       // Skip materializes the original I32 IDs through its own real Copy;
@@ -4344,7 +4758,7 @@ void run_target_verifier(c::Context &context,const c::StorageOwner &owner,bool c
       EXPECT_FALSE(state.member(accepted,kPending).try_write());EXPECT_FALSE(state.member(second,kTargetTap).try_write());
       EXPECT_LE(state.peak_backing_bytes,state_budget);peak_backing=std::max(peak_backing,state.peak_backing_bytes);
       std::printf("GLM full-V verifier scenario=%d proposal=%d target0=%d target1=%d accepted_drafts=%u retained_cursor=%d next_pending=%d; mandatory current already consumed\n",
-          scenario,proposal,checked.ids[0],checked.ids[1],decision.accepted_drafts,state.scalar(accepted,kMlaCursor),decision.next_pending);
+          scenario,proposal,checked.ids[0],checked.ids[1],std::uint32_t(decision.consumed_drafts),state.scalar(accepted,kMlaCursor),decision.next_id);
     }
     check(state.store.collect(),"retire complete verified scenario versions");
     EXPECT_EQ(state.store.stats().versions,0u);EXPECT_EQ(state.store.stats().drafts,0u);
@@ -4503,7 +4917,7 @@ void run_original_target_verifier(c::Context &context,const c::StorageOwner &own
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
     ,const c::cuda::MemoryResource *device=nullptr
 #endif
-    ,bool use_target44=false,bool use_target43=false) {
+    ,bool use_target44=false,bool use_target43=false,bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={},std::size_t maximum_drafts=1) {
   if(use_target43&&!use_target44)throw std::runtime_error("original target43 requires original target44 in the verifier chain");
   const auto input=original_directory("HYLE_GLM_MTP_INPUT_DIR"),query=original_directory("HYLE_GLM_MTP_QUERY_DIR");
   const auto indexer=original_directory("HYLE_GLM_MTP_INDEXER_DIR"),lm=original_directory("HYLE_GLM_MTP_SHARED_LM_DIR");
@@ -4567,7 +4981,7 @@ void run_original_target_verifier(c::Context &context,const c::StorageOwner &own
 #endif
     target43->moe->cpu_supply=std::make_unique<resident_moe::CpuSupply>(take(resident_moe::CpuSupply::create(owner),"same original target43 CPU expert supply"));
   }
-  run_target_verifier(context,owner,cuda,original_nextn(input,query,indexer,owner,std::move(vocabulary),std::move(prepared),moe),target44,target43);
+  run_target_verifier(context,owner,cuda,original_nextn(input,query,indexer,owner,std::move(vocabulary),std::move(prepared),moe),target44,target43,stochastic,true,limits,maximum_drafts);
   for(const auto &source:{moe,target44?target44->moe:std::shared_ptr<OriginalMoe>{},target43?target43->moe:std::shared_ptr<OriginalMoe>{}}) {
     if(!source)continue;
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
@@ -4585,7 +4999,7 @@ void run_quark_target_verifier(c::Context &context,const c::StorageOwner &owner,
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
     ,const c::cuda::MemoryResource *device=nullptr
 #endif
-    ) {
+    ,bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={},std::size_t maximum_drafts=1) {
   namespace nextn_pins=glm_original_artifacts::q30::nextn_static;
   namespace pins43=glm_original_artifacts::q30::target43_static;
   namespace pins44=glm_original_artifacts::q30::target44_static;
@@ -4625,7 +5039,7 @@ void run_quark_target_verifier(c::Context &context,const c::StorageOwner &owner,
       ,device
 #endif
       );
-  run_target_verifier(context,owner,cuda,nextn,targets.target44,targets.target43);
+  run_target_verifier(context,owner,cuda,nextn,targets.target44,targets.target43,stochastic,false,limits,maximum_drafts);
   for(const auto &moe:{nextn->moe,targets.target43->moe,targets.target44->moe}) {
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
     if(moe->cuda_supply)check(moe->cuda_supply->close(),"close actual artifact expert uploads after all original readers retire");
@@ -4649,7 +5063,7 @@ void run_mlx_target_verifier(c::Context &context,const c::StorageOwner &owner,bo
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
     ,const c::cuda::MemoryResource *device=nullptr
 #endif
-    ) {
+    ,bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={},std::size_t maximum_drafts=1) {
   namespace pin=glm_mlx_original_artifacts;namespace target_pin=glm_mlx_target_artifacts;
   const auto nextn_dir=original_directory("HYLE_GLM_MLX_NEXTN_DIR"),target_dir=original_directory("HYLE_GLM_MLX_TARGET_DIR"),
       expert_dir=original_directory("HYLE_GLM_MLX_EXPERT_DIR");
@@ -4692,7 +5106,7 @@ void run_mlx_target_verifier(c::Context &context,const c::StorageOwner &owner,bo
     source->before_upload=[frontier](std::shared_ptr<mlx_roles::Data> data,std::span<const std::int32_t> ids){
       if(data!=frontier->selected)throw std::runtime_error("MLX frontier source owner differs");frontier->ensure(ids);};
   }
-  run_target_verifier(context,owner,cuda,nextn,target44,target43);
+  run_target_verifier(context,owner,cuda,nextn,target44,target43,stochastic,false,limits,maximum_drafts);
   std::size_t selected_experts=0;
   for(const auto &source:{nextn->mlx,target43->mlx,target44->mlx}) {
     std::set<std::int32_t> selected;for(const auto &selection:source->selections)selected.insert(selection.globals.begin(),selection.globals.end());selected_experts+=selected.size();
@@ -4709,7 +5123,7 @@ void run_mlx_target_verifier(c::Context &context,const c::StorageOwner &owner,bo
 #endif
 
 void run_gguf_flash_target_verifier(c::Context &context,const c::StorageOwner &owner,bool cuda,
-    const gguf_source::Fixture &artifact,const char *static_env,const char *expert_env) {
+    const gguf_source::Fixture &artifact,const char *static_env,const char *expert_env,bool stochastic=false,hyle::inference::mtp::SamplingLimits limits={},std::size_t maximum_drafts=1) {
   const auto directory=original_directory(static_env),experts=original_directory(expert_env);
   if(directory.empty()||experts.empty())throw std::runtime_error("requested converted Flash case requires its own actual static/expert directories");
   const auto data=gguf_source::load(directory,artifact);auto bound=original_named_role_source::bind(data,owner);
@@ -4718,7 +5132,7 @@ void run_gguf_flash_target_verifier(c::Context &context,const c::StorageOwner &o
   nextn->converted=gguf_source::prepare(bound,artifact,2,owner,experts,request,wait);
   auto target43=std::make_shared<OriginalTarget43>();target43->artifact_owner=nextn;target43->converted=gguf_source::prepare(bound,artifact,0,owner,experts,request,wait);
   auto target44=std::make_shared<OriginalTarget44>();target44->artifact_owner=nextn;target44->converted=gguf_source::prepare(std::move(bound),artifact,1,owner,experts,request,wait);
-  run_target_verifier(context,owner,cuda,nextn,target44,target43);
+  run_target_verifier(context,owner,cuda,nextn,target44,target43,stochastic,false,limits,maximum_drafts);
   std::size_t selected=0,selected_bytes=0;
   for(const auto &source:{target43->converted,target44->converted,nextn->converted}) {
     EXPECT_TRUE(source->full_checked);EXPECT_GT(source->episodes,0u);std::set<std::int32_t> ids;
@@ -4766,6 +5180,13 @@ TEST(GlmMtpStateConsumer,CudaQuarkOriginalTarget43And44AndNextNFullVocabularyVer
   const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"Q30 shared original source/Graph/expert owner");
   run_quark_target_verifier(context,owner,true,device.get());
 }
+TEST(GlmMtpStateConsumer,CudaQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically) {
+  auto context=take(g::cuda::create_context(),"Q30 actual original target/NextN CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(
+      context,c::cuda::MemoryKind::kDevice),"Q30 same actual CUDA allocation domain"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"Q30 shared original source/Graph/expert owner");
+  run_quark_target_verifier(context,owner,true,device.get(),true);
+}
 #endif
 TEST(GlmMtpStateConsumer,CudaOriginalTarget43And44AndNextNFullVocabularyVerifier) {
   auto context=take(g::cuda::create_context(),"original target43/44/NextN verifier CUDA Context");
@@ -4773,6 +5194,20 @@ TEST(GlmMtpStateConsumer,CudaOriginalTarget43And44AndNextNFullVocabularyVerifier
       context,c::cuda::MemoryKind::kDevice),"same actual original target43/44/NextN allocation domain"));
   const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"shared original target43/44/NextN owner");
   run_original_target_verifier(context,owner,true,device.get(),true,true);
+}
+TEST(GlmMtpStateConsumer,CudaOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically) {
+  auto context=take(g::cuda::create_context(),"original random target43/44/NextN CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(
+      context,c::cuda::MemoryKind::kDevice),"actual random GLM source allocation domain"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"shared random GLM source/Graph/expert owner");
+  run_original_target_verifier(context,owner,true,device.get(),true,true,true);
+}
+TEST(GlmMtpStateConsumer,CudaOriginalTarget43And44AndNextNRandomK2PublishesCompletePrefixes) {
+  auto context=take(g::cuda::create_context(),"original K2 target43/44/NextN CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(
+      context,c::cuda::MemoryKind::kDevice),"actual K2 GLM source allocation domain"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"shared K2 GLM source/Graph/expert owner");
+  run_original_target_verifier(context,owner,true,device.get(),true,true,true,{},2);
 }
 TEST(GlmMtpStateConsumer,CudaOriginalTarget44AndNextNFullVocabularyVerifier) {
   auto context=take(g::cuda::create_context(),"original target44/NextN verifier CUDA Context");
@@ -4880,6 +5315,15 @@ TEST(GlmMtpStateConsumer,CpuQuarkOriginalTarget43And44AndNextNFullVocabularyVeri
 #endif
       );
 }
+TEST(GlmMtpStateConsumer,CpuQuarkOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically) {
+  auto context=take(g::cpu::create_context(),"Q30 actual original target/NextN CPU Context");
+  const auto owner=take(c::StorageOwner::adopt(context,SystemResource{}),"Q30 shared original source/Graph/expert CPU owner");
+  run_quark_target_verifier(context,owner,false
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      ,nullptr
+#endif
+      ,true);
+}
 #endif
 TEST(GlmMtpStateConsumer,CpuOriginalTarget43And44AndNextNFullVocabularyVerifier) {
   auto context=take(g::cpu::create_context(),"original target43/44/NextN verifier CPU Context");
@@ -4889,6 +5333,15 @@ TEST(GlmMtpStateConsumer,CpuOriginalTarget43And44AndNextNFullVocabularyVerifier)
       ,nullptr
 #endif
       ,true,true);
+}
+TEST(GlmMtpStateConsumer,CpuOriginalTarget43And44AndNextNRandomVerifierContinuesAtomically) {
+  auto context=take(g::cpu::create_context(),"original random target43/44/NextN CPU Context");
+  const auto owner=take(c::StorageOwner::adopt(context,SystemResource{}),"shared original random GLM CPU owner");
+  run_original_target_verifier(context,owner,false
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      ,nullptr
+#endif
+      ,true,true,true);
 }
 TEST(GlmMtpStateConsumer,CpuOriginalTarget44AndNextNFullVocabularyVerifier) {
   auto context=take(g::cpu::create_context(),"original target44/NextN verifier CPU Context");

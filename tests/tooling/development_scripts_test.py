@@ -144,6 +144,51 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.assertEqual(cache["HYLE_STATIC"], "OFF")
         self.assertEqual(cache["HYLE_BUILD_TESTS"], "OFF")
 
+    def test_new_configuration_defaults_to_engine_and_builds_selected_project(self):
+        self.succeeds("init")
+        cache = support.read_cache(self.selected())
+        self.assertEqual(cache["HYLE_COMPONENTS"], "engine")
+        self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cpu")
+        self.commands.clear()
+        self.succeeds("build")
+        self.assertIn("--build", self.commands[-1])
+        self.assertNotIn("--target", self.commands[-1])
+        self.succeeds("build", "--target", "hyle_engine")
+        self.assertEqual(self.commands[-1][-2:], ["--target", "hyle_engine"])
+
+    def test_engine_prepares_selected_route_and_debug_test_configuration(self):
+        self.succeeds("init", "--name", "engine-debug", "--backends", "vulkan",
+                      "--config", "Debug", "--tests")
+        cache = support.read_cache(self.selected())
+        self.assertEqual(cache["HYLE_COMPONENTS"], "engine")
+        self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "vulkan")
+        self.assertEqual(cache["CMAKE_BUILD_TYPE"], "Debug")
+        self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
+        self.resources.assert_called_once()
+        self.succeeds("test", "--list")
+        self.assertEqual(self.commands[-1][0], "mock-ctest")
+        with patch.object(support, "_host", return_value=("Linux", "aarch64")):
+            self.assertNotEqual(self.invoke("init", "--name", "invalid-engine", "--backends", "cuda")[0], 0)
+
+    def test_library_selection_does_not_probe_or_prepare_unused_gpu_routes(self):
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            self.succeeds("init", "--name", "utility", "--components", "util", "--backends", "vulkan")
+            self.assertEqual(discovery.call_args.kwargs["backends"], ())
+            self.resources.assert_not_called()
+            directory = self.selected()
+            cache = support.read_cache(directory)
+            self.assertEqual(cache["HYLE_COMPONENTS"], "util")
+            self.assertNotIn("HYLE_COMPUTE_ROUTES", cache)
+            # An old route cache entry is not an instruction to enable Compute
+            # after explicitly narrowing the selected products to a library.
+            self.write_cache(directory, **dict(cache, HYLE_COMPUTE_ROUTES="cuda;vulkan"))
+            self.succeeds("init", "--name", "utility")
+            self.assertEqual(discovery.call_args.kwargs["backends"], ())
+            self.succeeds("build", "--name", "utility")
+            self.assertEqual(discovery.call_args.kwargs["backends"], ())
+            self.resources.assert_not_called()
+            self.assertEqual(support.read_cache(directory)["HYLE_COMPONENTS"], "util")
+
     def test_named_configurations_remain_independently_selectable(self):
         self.succeeds("init", "--name", "debug", "--components", "core", "--config", "Debug", "--tests")
         self.succeeds("init", "--name", "release", "--components", "core", "--no-tests")

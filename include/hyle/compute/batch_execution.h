@@ -30,6 +30,9 @@ struct BatchPlanReport final {
   // For Graph, capture_compatible reports the actual prepared slot's cold
   // recording qualification, not creation/replay of a physical graph artifact.
   bool split_kv = false, native_metadata_unknown = true, capture_compatible = false;
+  // Only the optional split-KV partial/merge storage; false does not promise
+  // F32 probability tiles. FlashInfer's F16/BF16 probability tile follows Q,
+  // independently of this flag, while dot/row-sum accumulation remains F32.
   bool bf16_partials = false;
   bool reused_native_plan = false;
   std::uint32_t host_waits = 0;

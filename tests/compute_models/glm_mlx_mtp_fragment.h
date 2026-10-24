@@ -7,7 +7,7 @@
 
 // Original MLX affine/F16 metadata path, with an explicit F32 activation and
 // plain F32 pooled-state contract. No quantizer, BF16 intermediate store,
-// provider choice, loader or executor. Ordinary public mixed BFloatLinearF32
+// provider choice, loader or executor. Ordinary public mixed DenseLinearF32
 // rank3 support is a prerequisite for the two original BF16 KV_b head banks.
 namespace glm_mlx_mtp_fragment {
 namespace sem=d5_qwen38_24t_semantic_fragments;namespace c=hyle::compute;
@@ -35,7 +35,7 @@ struct Projects final {
       const auto y=affine::linear(f,actual,p);return {actual,weight,y.output};
     }
     if(f.description(weight).data_type()==c::DataType::kBFloat16)
-      return {actual,weight,f.one(c::model_ops::bfloat_linear_f32(),{actual,weight})};
+      return {actual,weight,f.one(c::model_ops::dense_linear_f32(),{actual,weight})};
     if(f.description(weight).data_type()==c::DataType::kFloat32)return glm_gguf_projection_fragment::f32_linear(f,actual,weight);
     throw std::runtime_error("MLX source projection has neither original BF16 nor a complete U32/F16/F16 triple");
   }
@@ -45,7 +45,7 @@ struct Projects final {
         w.rank()!=3||w.dimensions()[0]!=64||w.data_type()!=c::DataType::kBFloat16||
         a.dimensions()[2]!=w.dimensions()[2])throw std::runtime_error("MLX mixed KV_b requires actual F32 A and original64-head BF16 W");
     const auto batches=fp::copy(f,permute(f,input,{1,0,2}));
-    const auto raw=f.one(c::model_ops::bfloat_linear_f32(),{batches,weight});
+    const auto raw=f.one(c::model_ops::dense_linear_f32(),{batches,weight});
     return {input,weight,fp::copy(f,permute(f,raw,{1,0,2}))};
   }
 };

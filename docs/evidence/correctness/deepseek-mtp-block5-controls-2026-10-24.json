@@ -1,0 +1,746 @@
+{
+  "status": "PASS_BOUNDED_DSPARK_POLICY_AND_FLASH_CUDA_CONTROLS",
+  "date": "2026-10-24",
+  "changes": [
+    "EOS/quota/context tails select the actual correction or bonus lease and leave the final output unconsumed.",
+    "max_drafts0..5 bounds target verification, without changing the trained five-row draft.",
+    "Confidence has an explicit producer domain; user policy contains only max_drafts and a probability threshold.",
+    "Capacity validates the complete policy before draft submission; zero threshold and max_drafts0 need no confidence read.",
+    "Ordinary target steps update the complete main-history before a later draft re-enable."
+  ],
+  "checks": {
+    "initial_policy_and_real_state_head": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "name": "PlansOnlyActualOneThroughSixTargetRows",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "32",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "EveryGreedyPrefixKeepsItsActualCorrectionOrBonusRow",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "43",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "MatchedEosAndBonusEosAreEmittedButRemainUnconsumed",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "56",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "QuotaAndContextTailsNeverConsumeTheirFinalOutput",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "74",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "MaximumDraftsKeepsFiveRowTrainingAndAllowsTargetOnlyWithoutConfidence",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "94",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "ConfidenceStopsAtTheFirstLowRowInItsExplicitDomain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "116",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "InvalidConfidenceFailsBeforeSubmittingTargetRows",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "149",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "InvalidInputsAndAlreadyFinishedRoundsAreRejected",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "171",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "EosQuotaAndContextPublishOnlyTheirCompleteSelectedPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "243",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.238",
+          "classname": "DSparkBlock5State"
+        },
+        {
+          "name": "RejectionContinuesWithTheOriginalPendingLeaseAndProtectsOldState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "278",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.239",
+          "classname": "DSparkBlock5State"
+        },
+        {
+          "name": "DisableThenReenablePublishesTheTargetOnlyHistoryAndActualPending",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "311",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T11:42:25.239",
+          "classname": "DSparkBlock5State"
+        }
+      ]
+    },
+    "current_policy_and_real_state_head": {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "name": "PlansOnlyActualOneThroughSixTargetRows",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "32",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "EveryGreedyPrefixKeepsItsActualCorrectionOrBonusRow",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "43",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "MatchedEosAndBonusEosAreEmittedButRemainUnconsumed",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "56",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "QuotaAndContextTailsNeverConsumeTheirFinalOutput",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "74",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "MaximumDraftsKeepsFiveRowTrainingAndAllowsTargetOnlyWithoutConfidence",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "94",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "ConfidenceStopsAtTheFirstLowRowInItsExplicitDomain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "116",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "InvalidConfidenceFailsBeforeSubmittingTargetRows",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "149",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "CapacityValidatesPolicyBeforeRequestingTheTrainedDraft",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "171",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "InvalidInputsAndAlreadyFinishedRoundsAreRejected",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "189",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5Policy"
+        },
+        {
+          "name": "EosQuotaAndContextPublishOnlyTheirCompleteSelectedPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "261",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5State"
+        },
+        {
+          "name": "RejectionContinuesWithTheOriginalPendingLeaseAndProtectsOldState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "296",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5State"
+        },
+        {
+          "name": "DisableThenReenablePublishesTheTargetOnlyHistoryAndActualPending",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "329",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5State"
+        },
+        {
+          "name": "InvalidConfidenceOrDecisionCannotPublishAnyPartialRound",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_block5_policy_test.cc",
+          "line": "361",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-24T12:13:38.384",
+          "classname": "DSparkBlock5State"
+        }
+      ]
+    },
+    "final_flash_cuda": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "name": "CudaOriginalTargetTailAndFormalDraftPublishesBlock5Prefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_pro_mtp_state_consumer_test.cc",
+          "line": "670",
+          "status": "run",
+          "result": "completed",
+          "time": "53.631",
+          "timestamp": "2026-10-24T12:14:51.944",
+          "classname": "DSparkFlashFormalState"
+        }
+      ]
+    },
+    "external_supply_wait_resume": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "name": "CudaOriginalTargetTailAndFormalDraftPublishesBlock5Prefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_pro_mtp_state_consumer_test.cc",
+          "line": "671",
+          "status": "run",
+          "result": "completed",
+          "time": "117.802",
+          "timestamp": "2026-10-24T12:07:55.695",
+          "classname": "DSparkFlashFormalState"
+        }
+      ]
+    },
+    "final_runtime_process": {
+      "exit": 0,
+      "seconds": 94.97633957862854,
+      "downloads": 0,
+      "sdk_builds": 0
+    },
+    "actual_properties": {
+      "target_fullV1_provider": "cublasLt",
+      "target_fullV2_provider": "cublasLt",
+      "target_fullV3_provider": "cublasLt",
+      "target_fullV4_provider": "cublasLt",
+      "target_fullV5_provider": "cublasLt",
+      "target_fullV6_provider": "cublasLt",
+      "bounded_draft_controls": "max2/raw-confidence>=0.5; disabled0 target-only; reenabled5 from complete main-history",
+      "natural_accepted_drafts": "0",
+      "controlled_prefixes": "0,2,5; prefix policy only, not natural acceptance",
+      "natural_proposal1": "128822",
+      "natural_target0": "28326",
+      "actual_submissions": "67",
+      "dense_original_roles": "216",
+      "dense_original_source_bytes": "3194218552",
+      "actual_draft_episodes": "4",
+      "actual_target_rows": "9",
+      "actual_main_projection_submissions": "4",
+      "actual_main_history_submissions": "4",
+      "actual_verifier_submissions": "4",
+      "first_target_fullV_values": "129280",
+      "first_draft_fullV_values": "646400",
+      "actual_pending_feedback": "4",
+      "state_members": "30",
+      "state_backing_budget": "364701056",
+      "state_backing_peak": "141501864",
+      "target_resident_slot_bytes": "94372864",
+      "draft_resident_slot_bytes": "471860224",
+      "actual_expert_attachments": "98",
+      "actual_missing_frontiers": "0",
+      "scope": "Original Flash0731 target40/41/42 and distinct finalHC/norm borrowed from their authenticated original source, formal mtp.0/1/2 from the independent97-role E4/BF16 bundle, and the two independent original BF16 vocabulary mappings. Full256 global expert domain with actual selected original E2M1/UE8 experts; target experts borrowed without reacquisition, draft missing experts fail or await explicit external supply. Same fullV K5/atomic30member state and actual pending continuation. Natural once and labelled controlled0/2/5 prefix policies. Layer39 input and initial valid cacheprefix are finite synthetic fixtures; no complete43-layer target, quality, acceptance-rate or TPS claim."
+    },
+    "cpu_and_cuda_consumer_syntax": "Both large consumer TUs passed /Zs /W4 /WX with CPU and CUDA definitions; not runtime model coverage."
+  },
+  "actual_model_scope": {
+    "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+    "target_layers": [
+      40,
+      41,
+      42
+    ],
+    "draft_layers": [
+      0,
+      1,
+      2
+    ],
+    "original_target_final_hc_and_norm": true,
+    "original_full_vocabulary": 129280,
+    "atomic_state_members": 30,
+    "actual_draft_control": "max2/raw-confidence>=0.5; disabled0; reenabled5",
+    "actual_verifier_rows": [
+      1,
+      6
+    ],
+    "cold_prepared_verifier_rows": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "finite_synthetic_boundaries": "Layer39 upstream input and initial valid cacheprefix are finite fixtures."
+  },
+  "downloads": {
+    "batches": [
+      {
+        "stage": 0,
+        "missing_ids": [
+          14,
+          47,
+          72,
+          114,
+          147
+        ],
+        "original_roles": 30,
+        "necessary_unique_bytes": 66846720,
+        "reserved_bytes": 66846720,
+        "reserved_retry_bytes": 0,
+        "hf_reserved_bytes": 0,
+        "range_attempts": 30,
+        "successful_206_ranges": 30,
+        "paused_after": true,
+        "caches": [
+          {
+            "id": 14,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert014/acquisition.json",
+              "bytes": 7913,
+              "sha256": "f8e77b2a26255f26ae0d907af3b51808ed4e2876209f089e7378da765ebdd6ff"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert014/roles.bin",
+              "bytes": 13369344,
+              "sha256": "b794bd849fed27528d4095a60054160eb95270888995765b575183a5d87ceb9f"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert014/catalog.bin",
+              "bytes": 160,
+              "sha256": "fb51e7b669ed8ef291b7907fe0a00c4abe060b4a3a1814adbe0feba58e727da0"
+            }
+          },
+          {
+            "id": 47,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert047/acquisition.json",
+              "bytes": 7961,
+              "sha256": "69dd71b30ad5027b99d7e6670a942adbd58189d24b572e005967854460229764"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert047/roles.bin",
+              "bytes": 13369344,
+              "sha256": "1e4acca1b29b6fb0d3fb339d30beac86e31a708f09e3624d4648aecddf9c1262"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert047/catalog.bin",
+              "bytes": 160,
+              "sha256": "a8e5d44a6774e357929a72842d74fd9e65acbbff19a2a79b5715a2cf9f5fcb9c"
+            }
+          },
+          {
+            "id": 72,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert072/acquisition.json",
+              "bytes": 7961,
+              "sha256": "a531e768823094915fed9f2dbcc91c1dbf8312be6b450396e419a9b3f235bd45"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert072/roles.bin",
+              "bytes": 13369344,
+              "sha256": "e72df68b18528c6429a0a418b7a76664d3791bd18c4b3c65f348590c4918c013"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert072/catalog.bin",
+              "bytes": 160,
+              "sha256": "920bb8abf295e59726991d23ee8157405e7669637affd3ab3e6b3b839dcd5509"
+            }
+          },
+          {
+            "id": 114,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert114/acquisition.json",
+              "bytes": 7914,
+              "sha256": "054b063d7b599b127113885aee7833d08e22102a89d42e5397ad6ae1cbc0633c"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert114/roles.bin",
+              "bytes": 13369344,
+              "sha256": "032bb04824c7eafbcf575731f88748cdea1e89636ed785541088b2a91aaecb50"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert114/catalog.bin",
+              "bytes": 160,
+              "sha256": "d98f8b864b1b6d29fb83a85bef283cd6bc63ce5cc193eab4e64b35c1172c9c04"
+            }
+          },
+          {
+            "id": 147,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert147/acquisition.json",
+              "bytes": 7938,
+              "sha256": "dc0380e7ff36c8471dc5aa74d3efd0137d7f8ceccb6f2001c37d5ae72d12abc6"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert147/roles.bin",
+              "bytes": 13369344,
+              "sha256": "99cd5209ee23a584c2397f9b8c9e60436f450a35793fd0eceda4225091a1e052"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage0/expert147/catalog.bin",
+              "bytes": 160,
+              "sha256": "0db72432c247fc599f549da8c6818e8ed41a45483add820049e07346eeaa3310"
+            }
+          }
+        ]
+      },
+      {
+        "stage": 1,
+        "missing_ids": [
+          42,
+          84,
+          91,
+          239
+        ],
+        "original_roles": 24,
+        "necessary_unique_bytes": 53477376,
+        "reserved_bytes": 53477376,
+        "reserved_retry_bytes": 0,
+        "hf_reserved_bytes": 0,
+        "range_attempts": 24,
+        "successful_206_ranges": 24,
+        "paused_after": true,
+        "caches": [
+          {
+            "id": 42,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert042/acquisition.json",
+              "bytes": 7961,
+              "sha256": "b0afce39362b34644b922aea83e0ddc5d7fcebf68c03908d48a0a635d48f7c36"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert042/roles.bin",
+              "bytes": 13369344,
+              "sha256": "3a16ddcff6643e36c74df0bba1b8a96e1bbf02ce3a8d7e6f00b85b62055bf5a7"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert042/catalog.bin",
+              "bytes": 160,
+              "sha256": "403beb8b9465aa0905f1197b605a21c10dfeafc9e22a4d72e587cd162d53b5ef"
+            }
+          },
+          {
+            "id": 84,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert084/acquisition.json",
+              "bytes": 7961,
+              "sha256": "0b9bb79675db2255840003c944e4b2fe287dda344a5dd3d68034b895d4a85621"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert084/roles.bin",
+              "bytes": 13369344,
+              "sha256": "9c0959aa35743cb256125059db48f60f93f52bd9f49a82cfa312347242f6421a"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert084/catalog.bin",
+              "bytes": 160,
+              "sha256": "c33e4d011cf52f9ec759f7031554aa674b198babc76677b05261fc0f7e74a805"
+            }
+          },
+          {
+            "id": 91,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert091/acquisition.json",
+              "bytes": 7961,
+              "sha256": "d9e3d7809908922f0b3114a9362c8379b964b808dec9b7f98c011f8d2acb630e"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert091/roles.bin",
+              "bytes": 13369344,
+              "sha256": "ec1bc9d3b4f07a4fb2a775b955439f0ab278e716fd9a704836338b22ce7671f7"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert091/catalog.bin",
+              "bytes": 160,
+              "sha256": "b12fb533276107ce4925a96671a03a0c8abd0cb77c3c70532831589364c020e5"
+            }
+          },
+          {
+            "id": 239,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert239/acquisition.json",
+              "bytes": 7962,
+              "sha256": "37be120ab93a9eb9a5025e5674ae5b671a31e143ff99dfb2c268f4ee795c244d"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert239/roles.bin",
+              "bytes": 13369344,
+              "sha256": "d001fb5f79e34e48b5e0c4d053d5e05f57107203c7c6c85e67e155ec3269a88b"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage1/expert239/catalog.bin",
+              "bytes": 160,
+              "sha256": "305ef977f0672e94bfd5a15ebb934418e82be42e8c2c9a81d8777c04e60eefc5"
+            }
+          }
+        ]
+      },
+      {
+        "stage": 2,
+        "missing_ids": [
+          96,
+          107,
+          132,
+          198,
+          204
+        ],
+        "original_roles": 30,
+        "necessary_unique_bytes": 66846720,
+        "reserved_bytes": 71041024,
+        "reserved_retry_bytes": 4194304,
+        "hf_reserved_bytes": 0,
+        "range_attempts": 31,
+        "successful_206_ranges": 30,
+        "paused_after": true,
+        "caches": [
+          {
+            "id": 96,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert096/acquisition.json",
+              "bytes": 7961,
+              "sha256": "4f05998bdfd0da5f88434918cb5773482ec8d4217e15dce6b4f10e2f57ff94e7"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert096/roles.bin",
+              "bytes": 13369344,
+              "sha256": "30205cdf3476323eca1e36157061b7715e185693993a75e80443787184db501d"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert096/catalog.bin",
+              "bytes": 160,
+              "sha256": "5249d4f260b0515e87bf55edf65344d897af3233871d131b2801d1b6baadb2e8"
+            }
+          },
+          {
+            "id": 107,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert107/acquisition.json",
+              "bytes": 7938,
+              "sha256": "7a26c86df890573aa75c38e3288f93fee08a1cfbbd672c36fe0eeff2809e76f3"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert107/roles.bin",
+              "bytes": 13369344,
+              "sha256": "81993ebe0491616c8cb08d5831c7e7096db9234fad2e7eb895cf5245893850bb"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert107/catalog.bin",
+              "bytes": 160,
+              "sha256": "771532e2381515913c2597a430fd59affaeede51bfc25386c20372fe34079faa"
+            }
+          },
+          {
+            "id": 132,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert132/acquisition.json",
+              "bytes": 7938,
+              "sha256": "0a2a829d57637f45dda360859ee6b6fe90b0c4738f2b34d8f4abb7443d157d44"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert132/roles.bin",
+              "bytes": 13369344,
+              "sha256": "74f63e19bd51fae78025aca26f0323e942ba5894c8079e5d66901c333a189241"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert132/catalog.bin",
+              "bytes": 160,
+              "sha256": "2d7672ee7594f23ea686251a0f57340b88bda714e2fe0215a97fc35b98a60144"
+            }
+          },
+          {
+            "id": 198,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert198/acquisition.json",
+              "bytes": 8227,
+              "sha256": "7c43053ea75124cfd393390ae7876d10334cb50fbc5ff0b6432cf3f6aea07bca"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert198/roles.bin",
+              "bytes": 13369344,
+              "sha256": "a228917e73d52711224b3d7cc14d1d5ba9c536aef80c5c29b6db5e14ca086cc7"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert198/catalog.bin",
+              "bytes": 160,
+              "sha256": "dff30e9a8e3c48303fa217413857472821152e1dfa8e34270a228a388ffa8c31"
+            }
+          },
+          {
+            "id": 204,
+            "acquisition": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert204/acquisition.json",
+              "bytes": 7962,
+              "sha256": "c6c1bcc8a610b5c7c97857517ac0363a657efa9c118c8302e8da4860440c357a"
+            },
+            "bundle": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert204/roles.bin",
+              "bytes": 13369344,
+              "sha256": "0ae2f5fc20d61290e072189059ee549bdfc0d2608a27e956cc9a575ed89cbcb0"
+            },
+            "typed_catalog": {
+              "path": ".scratch/dspark-pro-target-draft-20261023/formal-flash/original-experts/draft/stage2/expert204/catalog.bin",
+              "bytes": 160,
+              "sha256": "0fb8713f23974616a101a28adac77642b35599376419284871f0951a43b730e2"
+            }
+          }
+        ]
+      }
+    ],
+    "necessary_unique_bytes": 187170816,
+    "reserved_request_bytes": 191365120,
+    "reserved_retry_bytes": 4194304,
+    "hf_cas_reserved_bytes": 0,
+    "exclusive_client_host": "hf-mirror.net",
+    "whole_models_or_expert_banks": false,
+    "implicit_fetch": false,
+    "external_supply_wait": "One native process waited for its actual stage2 frontier; an explicit precise batch filled it, then that same process resumed.",
+    "paused_restored_after_each_batch": true
+  },
+  "coverage_boundaries": [
+    "This is not a complete43-layer DeepSeek engine or task-quality/acceptance-rate/TPS benchmark.",
+    "Pro shares the code and compiled CPU/CUDA branches; this final runtime did not execute Pro.",
+    "The new controls in GGUF/BF16 sidecar-derived consumers were syntax checked, not substituted by the formal Flash runtime.",
+    "max_drafts0..5, all EOS/quota/context tail positions, invalid values and failed publication have small policy/real StateHead tests.",
+    "The trained runtime executed verifier widths1 and6; widths2..5 were prepared and policy/state tested, not trained-runtime-certified.",
+    "CPU full-role execution, other selected quantizations, stochasticp/q and full-model quality/performance are outside this evidence.",
+    "State backing budget/peak properties measure explicit retained backing, not physicalVRAM/RSS or complete model memory."
+  ],
+  "source_snapshots": [
+    {
+      "path": "tests/compute_models/dspark_block5_policy.h",
+      "bytes": 7216,
+      "sha256": "50e92d78b500c84c5770304fa921f0f3a217d01e20f923ba89ebfd74f22d71c9"
+    },
+    {
+      "path": "tests/compute_models/dspark_block5_policy_test.cc",
+      "bytes": 20891,
+      "sha256": "3924edcdaf0a385243ba6188684bb953d8cff26da6f2cf414d1fca0afecd21e4"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_state_consumer.h",
+      "bytes": 25595,
+      "sha256": "78b9f344ef19ad061f42822c51fc913a08bd2715383b4515e4d04f606c0bdc4b"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_state_consumer_test.cc",
+      "bytes": 180197,
+      "sha256": "a500f600b92dcb9c17831daa9e9e65b566c6001e0139c344c4e460bba86464fe"
+    },
+    {
+      "path": "tests/compute_models/dspark_pro_mtp_state_consumer_test.cc",
+      "bytes": 51253,
+      "sha256": "278c2475d69efd58bf10efde2fe5624a4f5489fe0eeb2e53923b6022cc7a55e4"
+    }
+  ],
+  "artifact_contains": "Commands, logs, small source/metadata, XML and only this batch ledger subset; excludes weights, executables, objects, SDKs and full ledger.",
+  "archive": {
+    "path": "docs/evidence/correctness/deepseek-mtp-block5-controls-2026-10-24.logs.zip",
+    "bytes": 263688,
+    "sha256": "ec91196309e8187d4c9253a54f130f83bfcc3d10e595b5000c674da719d43f64",
+    "members": 117
+  }
+}

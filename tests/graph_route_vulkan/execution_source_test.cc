@@ -4,6 +4,7 @@
 #include <bit>
 
 #include "hyle/graph/vulkan.h"
+#include "hyle/graph/executable.h"
 #include "hyle/compute/vulkan_memory.h"
 #include "../../src/graph/execution_source_internal.h"
 #include "../../src/graph_route_vulkan/vulkan_source.h"
@@ -120,5 +121,56 @@ TEST(VulkanExecutionSource, ActualOwnerResourceAdmissionAndStableBacking) {
   std::array<float, 4> observed{};
   EXPECT_TRUE(context.download(backing, std::as_writable_bytes(std::span(observed))).ok());
   EXPECT_TRUE(source.same_owner(again));
+}
+
+TEST(VulkanExecutionSource, RetiredCrossDomainCopyUnbindsAndUsesNewBacking) {
+  auto context = v::Context::create().value();
+  auto device = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+  auto staging = v::MemoryResource::create(context, v::MemoryKind::kStaging).value();
+  const auto source = g::vulkan::execution_source(context).value();
+  const auto description = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{4}).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(description).value();
+  const auto output = builder.add(c::Unary{c::UnaryKind::kNeg}, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  const std::array domains{g::StorageDomain{staging.ref()}, g::StorageDomain{device.ref()}};
+  const std::array targets{g::ExecutionTarget{source, g::StorageDomainId{1}}};
+  const std::array external{g::ExternalResourceContract{input, g::StorageDomainId{0}}};
+  auto compiled = g::compile(graph, {.storage_domains = domains, .targets = targets},
+      {.external_resources = external});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.prepare_resources().ok());
+  const std::array<std::array<float, 4>, 2> values{{
+      {0.25f, -1.5f, 3.75f, -0.0f}, {2.5f, -8.0f, 0.0f, 9.0f}}};
+  std::array<hyle::mem::Buffer, 2> backings;
+  for (auto &backing : backings)
+    backing = hyle::mem::Buffer::create(staging.ref(), sizeof(values[0]), 64).value();
+  ASSERT_NE(backings[0].view().native_handle(), backings[1].view().native_handle());
+  for (std::size_t episode = 0; episode < values.size(); ++episode) {
+    SCOPED_TRACE(episode);
+    ASSERT_TRUE(backings[episode].view().write(std::as_bytes(std::span(values[episode]))).ok());
+    const auto binding = c::ConstTensorView::create(description, backings[episode].view()).value();
+    ASSERT_TRUE(invocation.bind(input, binding).ok());
+    ASSERT_TRUE(invocation.prepare_replay({}).ok());
+    {
+      auto done = invocation.submit();
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      auto result = invocation.result(output).value();
+      auto native = device.binding(result.storage_lease().value(), description).value();
+      std::array<float, 4> actual{};
+      ASSERT_TRUE(context.download(native, std::as_writable_bytes(std::span(actual))).ok());
+      for (std::size_t index = 0; index < actual.size(); ++index)
+        EXPECT_EQ(std::bit_cast<std::uint32_t>(actual[index]),
+            std::bit_cast<std::uint32_t>(-values[episode][index]));
+    }
+    // This must release the native copy's actual VkBuffer pins. The second
+    // episode reuses this slot with another backing, without reset or drain.
+    const auto released = invocation.unbind(input);
+    ASSERT_TRUE(released.ok()) << released.message();
+  }
 }
 } // namespace

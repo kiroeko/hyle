@@ -713,10 +713,17 @@ bool region_supports(const Operation &operation,
            outputs[0].is_plain() && outputs[0].is_dense() &&
            outputs[0].data_type() == DataType::kFloat32;
   }
-  if (operation.custom_as<model_ops::BFloatLinearF32>())
-    return inputs.size() == 2 && outputs.size() == 1 &&
-           outputs[0].data_type() == DataType::kFloat32 &&
-           (inputs[0].rank()==2 || inputs[0].data_type()==DataType::kFloat32);
+  if (operation.custom_as<model_ops::DenseLinearF32>()) {
+    const auto dense_float=[](const TensorDesc &d) {
+      return d.is_plain() && d.is_dense() &&
+          (d.data_type()==DataType::kFloat16 || d.data_type()==DataType::kBFloat16 ||
+           d.data_type()==DataType::kFloat32);
+    };
+    return inputs.size()==2 && outputs.size()==1 && dense_float(inputs[0]) &&
+        dense_float(inputs[1]) && inputs[0].rank()==inputs[1].rank() &&
+        (inputs[0].rank()==2 || inputs[0].rank()==3) && outputs[0].is_plain() &&
+        outputs[0].is_dense() && outputs[0].data_type()==DataType::kFloat32;
+  }
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
@@ -1240,14 +1247,20 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_lightning_indexer(context, arguments[0], arguments[1],
                                         arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>() ||
-                 node.operation.custom_as<model_ops::BFloatLinearF32>()) {
-        const bool mixed_bfloat=node.operation.custom_as<model_ops::BFloatLinearF32>() &&
-            recipe.values[node.inputs[0]].data_type()==DataType::kFloat32;
-        const bool aligned_batch=mixed_bfloat && recipe.values[node.inputs[0]].rank()==3;
+                 node.operation.custom_as<model_ops::DenseLinearF32>()) {
+        const bool dense_matvec=node.operation.custom_as<model_ops::DenseLinearF32>() &&
+            !(recipe.values[node.inputs[0]].rank()==2 &&
+              recipe.values[node.inputs[0]].data_type()==DataType::kBFloat16 &&
+              recipe.values[node.inputs[1]].data_type()==DataType::kBFloat16);
+        const bool aligned_batch=dense_matvec && recipe.values[node.inputs[0]].rank()==3;
         const auto batches=aligned_batch?left->ne[2]:1;
-        if(mixed_bfloat)
+        if(dense_matvec) {
+          // Exact widening of only A selects the native F32-A matvec and
+          // retains the actual F16/BF16/F32 weight bank without conversion.
+          if(left->type!=GGML_TYPE_F32)left=ggml_cast(context,left,GGML_TYPE_F32);
           // One native matvec program: [K,1,M,B] A and [K,N,1,B] W.
           left=ggml_reshape_4d(context,left,left->ne[0],1,left->ne[1],batches);
+        }
         // The fixed upstream Vulkan small-matvec selector admits a BF16
         // activation for up to eight rows (or one native row per batch), but
         // its selected pipeline

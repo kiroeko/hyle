@@ -15,10 +15,12 @@
 
 namespace hyle::compute::vulkan {
 namespace detail {
+struct MemoryState;
 struct AllocationToken final {
   std::shared_ptr<Buffer> buffer;
   mem::AllocatorRef allocator;
   std::size_t logical_bytes = 0;
+  MemoryState *controller = nullptr;
 };
 namespace { const unsigned retained_buffer_authority = 0; }
 struct LeaseViewOwner final {
@@ -34,6 +36,19 @@ struct DeviceIO;
 enum class DeviceIOKind : std::uint8_t { kRead, kWrite, kFill };
 struct MemoryState final : mem::MemoryResource {
   ~MemoryState() noexcept override;
+  // A public wrapper owns one reference. Real allocation/import tokens keep
+  // this exact controller alive through late lease/Run destruction as well.
+  // Internal synchronous DeviceIO scratch stays owned by its unique scope.
+  mutable std::atomic<std::size_t> references{1};
+  bool retain_tokens = false;
+  MemoryState *retain_controller() const noexcept {
+    if (!retain_tokens) return nullptr;
+    references.fetch_add(1, std::memory_order_relaxed);
+    return const_cast<MemoryState *>(this);
+  }
+  void release_controller() noexcept {
+    if (references.fetch_sub(1, std::memory_order_acq_rel) == 1) delete this;
+  }
   std::shared_ptr<Runtime> runtime;
   MemoryKind kind;
   mem::AllocatorRef allocator;
@@ -60,7 +75,10 @@ struct MemoryState final : mem::MemoryResource {
   Result<mem::ResourceAllocation> allocate(std::size_t bytes, std::size_t alignment) noexcept override {
     if (alignment == 0 || (alignment & (alignment - 1)) != 0)
       return std::unexpected(Status::InvalidArgument("invalid Vulkan memory alignment"));
-    if (bytes == 0) return mem::ResourceAllocation{nullptr, 0, alignment};
+    if (bytes == 0) {
+      (void)retain_controller();
+      return mem::ResourceAllocation{nullptr, 0, alignment};
+    }
     std::lock_guard lock(runtime->mutex);
     if (runtime->closed) return std::unexpected(Status::FailedPrecondition("Vulkan context is closed"));
     if (!runtime->failure.ok()) return std::unexpected(runtime->failure);
@@ -70,15 +88,20 @@ struct MemoryState final : mem::MemoryResource {
       return std::unexpected(Status::InvalidArgument("Vulkan staging cannot satisfy host alignment"));
     auto *storage = allocator.allocate(sizeof(AllocationToken), alignof(AllocationToken));
     if (storage == nullptr) return std::unexpected(Status::ResourceExhausted("Vulkan resource token metadata"));
-    auto *token = std::construct_at(static_cast<AllocationToken *>(storage), std::move(buffer), allocator, bytes);
+    auto *token = std::construct_at(static_cast<AllocationToken *>(storage), std::move(buffer), allocator, bytes, retain_controller());
     return mem::ResourceAllocation{token, bytes, alignment};
   }
   void deallocate(mem::ResourceAllocation allocation) noexcept override {
-    if (allocation.native_handle == nullptr) return;
+    if (allocation.native_handle == nullptr) {
+      if (retain_tokens) release_controller();
+      return;
+    }
     auto *token = static_cast<AllocationToken *>(allocation.native_handle);
     const auto selected = token->allocator;
+    auto *controller = token->controller;
     std::destroy_at(token);
     selected.deallocate(token, sizeof(AllocationToken), alignof(AllocationToken));
+    if (controller) controller->release_controller(); // May destroy this; no later access.
   }
   Result<mem::ResourceHostMapping> map_host(void *handle, std::size_t offset,
                                            std::size_t bytes, mem::HostAccess) noexcept override {
@@ -250,7 +273,15 @@ Status MemoryState::device_io(void *handle, std::size_t offset, std::size_t byte
         runtime->failure.Update(cleared);
       }
       status.Update(cleared);
-      if (!status.ok()) { io->failure = status; return status; }
+      if (!status.ok()) {
+        io->failure = status;
+        // The failed cache will never replay. Relinquish its recording root:
+        // the original pending Run already owns both actual native buffers.
+        // Keeping recording->Buffer->controller here would create a permanent
+        // controller->DeviceIO cycle even after a later real native drain.
+        if (!cleared.ok()) io->recording.reset();
+        return status;
+      }
       if (operation == DeviceIOKind::kRead) {
         status = payload.read(std::span(destination + done, count));
         if (!status.ok()) { io->failure = status; return status; }
@@ -478,11 +509,13 @@ Result<mem::Buffer> MemoryAccess::export_storage(
   auto *memory = allocator.allocate(sizeof(AllocationToken), alignof(AllocationToken));
   if (!memory)
     return std::unexpected(Status::ResourceExhausted("Vulkan backing export metadata"));
-  auto *token = std::construct_at(static_cast<AllocationToken *>(memory), native, allocator, authorized_bytes);
+  auto *token = std::construct_at(static_cast<AllocationToken *>(memory), native, allocator, authorized_bytes, state.retain_controller());
   auto adopted = mem::Buffer::adopt(resource, {token, static_cast<std::size_t>(bytes), 1});
   if (!adopted) {
+    auto *controller = token->controller;
     std::destroy_at(token);
     allocator.deallocate(token, sizeof(AllocationToken), alignof(AllocationToken));
+    if (controller) controller->release_controller();
   }
   return adopted;
 }
@@ -616,14 +649,23 @@ Result<CopySpan> MemoryAccess::copy_span(const std::shared_ptr<Runtime> &runtime
 MemoryResource::MemoryResource() noexcept = default;
 MemoryResource::MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept : state_(std::move(state)) {}
 MemoryResource::MemoryResource(MemoryResource &&) noexcept = default;
-MemoryResource &MemoryResource::operator=(MemoryResource &&) noexcept = default;
-MemoryResource::~MemoryResource() = default;
+MemoryResource &MemoryResource::operator=(MemoryResource &&other) noexcept {
+  if (this != &other) {
+    if (auto *previous = state_.release()) previous->release_controller();
+    state_ = std::move(other.state_);
+  }
+  return *this;
+}
+MemoryResource::~MemoryResource() {
+  if (auto *state = state_.release()) state->release_controller();
+}
 Result<MemoryResource> MemoryResource::create(const Context &context, MemoryKind kind,
                                              mem::AllocatorRef allocator) noexcept {
   if (!context.valid() || !allocator.valid() || (kind != MemoryKind::kDevice && kind != MemoryKind::kStaging))
     return std::unexpected(Status::InvalidArgument("invalid Vulkan memory resource creation"));
   try {
     auto state = std::make_unique<detail::MemoryState>();
+    state->retain_tokens = true;
     state->runtime = detail::Access::runtime(context);
     state->kind = kind;
     state->allocator = allocator;
@@ -646,6 +688,14 @@ Result<Tensor> MemoryResource::allocate(const TensorDesc &description, Allocatio
       state_->kind == MemoryKind::kStaging, true,
       {.budget = options.resource_budget, .resource = ref(), .category = options.category, .allocator = state_->allocator,
        .transfer_access = true}));
+  auto *controller = state_->retain_controller();
+  const auto retained = detail::retain_buffer_controller(*buffer, controller,
+      +[](void *owner) noexcept { static_cast<detail::MemoryState *>(owner)->release_controller(); },
+      state_->allocator);
+  if (!retained.ok()) {
+    controller->release_controller();
+    return std::unexpected(retained);
+  }
   return detail::Access::tensor(description, std::move(buffer));
 }
 Result<Tensor> MemoryResource::binding(ReadLease source, const TensorDesc &description,
@@ -776,11 +826,13 @@ Result<ReadLease> MemoryResource::import_readonly(const Tensor &source, LeaseImp
   HYLE_ASSIGN_OR_RETURN(auto authorized_bytes, source.description().required_bytes());
   auto *storage = allocator.allocate(sizeof(detail::AllocationToken), alignof(detail::AllocationToken));
   if (!storage) return std::unexpected(Status::ResourceExhausted("Vulkan import token metadata"));
-  auto *token = std::construct_at(static_cast<detail::AllocationToken *>(storage), native, allocator, authorized_bytes);
+  auto *token = std::construct_at(static_cast<detail::AllocationToken *>(storage), native, allocator, authorized_bytes, state_->retain_controller());
   auto adopted = mem::Buffer::adopt(ref(), {token, static_cast<std::size_t>(native->bytes), 1});
   if (!adopted) {
+    auto *controller = token->controller;
     std::destroy_at(token);
     allocator.deallocate(token, sizeof(detail::AllocationToken), alignof(detail::AllocationToken));
+    if (controller) controller->release_controller();
     return std::unexpected(std::move(adopted).error());
   }
   return ReadLease::adopt(std::move(*adopted), {.allocator = allocator});

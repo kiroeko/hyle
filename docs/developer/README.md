@@ -7,6 +7,8 @@
 | 要做的事 | 说明 |
 |---|---|
 | 初始化、切换配置、构建、测试、安装 | [环境与构建](setup/README.md) |
+| 查看 MTP 任务进度与正在做事项 | [MTP 进度](mtp-progress.md) |
+| 查看引擎现状与后续工作 | [推理工程计划](../implementation/inference-roadmap.md) |
 | 维护依赖、共享缓存或离线介质 | [依赖](setup/dependencies.md)、[离线构建](setup/offline.md) |
 | 定位崩溃、挂起、数值或测量异常 | [排障](debugging/README.md) |
 | 比较性能、定位慢项 | [性能测量](performance/README.md) |
@@ -22,6 +24,8 @@
 
 - 公开头放在 `include/hyle/<module>/`，实现放在 `src/<module>/`。头应自包含，
   不引用 `src/`，不意外暴露第三方类型。类型用 `PascalCase`，函数与变量用 `snake_case`，宏用 `HYLE_*`。
+- 引擎入口和模型接入放在 `engine/`，模型数学与生成／会话政策依赖公共基础模块；
+  Compute／Graph 不反向依赖模型，也不为引擎增加第二套执行与退休机制。
 - 使用 C++23、RAII、明确的 owner/view 和 `std::span`。较重实现放 compiled core，
   避免每个消费者重复实例化。一个机制有一个所属模块，不复制 error、platform、mem、time 等现有能力。
 - 可恢复失败使用所属层的 `Status`/`Result`，保留 OS/backend 错误信息。第三方异常在适配边界转换；

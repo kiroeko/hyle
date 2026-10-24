@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-24",
+  "scope": "Engine-private explicit CPU-resident file input for CPU+CUDA assembly; complete mixed Qwen/MTP model still pending",
+  "interface": {
+    "factory": "Backend::create_host_file_pipeline(io, targets, FileStreamOptions={})",
+    "endpoint": "Borrows the original create_cpu_cuda CPU Context/Queue and host resource; delegates to compute::cpu::create_file_pipeline, with ordinary CPU staging.",
+    "absence": "Default CUDA-only create() fails with FailedPrecondition; SDK without CPU route fails with Unimplemented. A non-host target fails with InvalidArgument.",
+    "unchanged": "Default create_file_pipeline still directly delegates to its original backend endpoint. No second runtime, implicit GPU fallback, Provider selection or CLI option."
+  },
+  "tests": {
+    "passed": 4,
+    "host_input": "68 original file bytes, three positional chunks through32-byte ordinary host staging. Output ReadLease matches independent17-F32 fixture after the whole IO runtime is destroyed.",
+    "resources": "Output is the exact Backend host domain, with empty process-lifetime CPU StorageOwner. Device and pinned-domain budgets stay at their initial baseline.",
+    "retirement": "Read complete and retirement_proven; explicit collect/drain, then dropping the exported lease restores every requested-byte budget to its initial live-control baseline.",
+    "unchanged": "The prior three tests rerun: default single CUDA endpoint, actual CPU-CUDA numeric graph/owners/move/replica/retirement, zero pinned workspace rejection."
+  },
+  "build": {
+    "new_test_translation_units": 1,
+    "SDK_builds": 0,
+    "native_builds": 0,
+    "HTTP": 0,
+    "model_weight_bytes": 0
+  },
+  "actual_runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\backend-host-loader-check2\\link\\backend-check.exe",
+    "bytes": 142183424,
+    "sha256": "04cff74ba0f879a61a4fc2c73eb57044b994f8d29876c80bf2714235dbc218f3"
+  },
+  "pending": [
+    "Per-role host/device weight routing",
+    "Actual-resource ConstantBinding owner in Recipe",
+    "Mixed target/draft graph placements and cache domains",
+    "Complete mixed ordinary/MTP state, quality and performance"
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-backend-host-input-2026-10-24-logs.zip",
+    "bytes": 48606,
+    "sha256": "fe43d54cbef23d0826c58395b1379259c69b069608b489dbd2769fc50486b4a2"
+  }
+}

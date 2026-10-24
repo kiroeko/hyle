@@ -1,0 +1,444 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "Finite Windows CPU pool/parser checks and Vulkan untrained A-only natural Text/MTP request lifecycle; global architecture remains in progress.",
+  "changes": [
+    "One natural Text/MTP request/turn/admission/batch/cache/rebuild lifecycle; genuine Text loading, plans and Graph role, no draft resources.",
+    "Shared atomic consumed-input/pending/RNG journal and ordinal postcommit observer; explicit fixed-token replay remains distinct.",
+    "New-request frontier versus same-request historical pending restored separately, including greedy canonical-root output.",
+    "State-pool capacities include 256-byte alignment gaps; actual allocations and backing alignment explicit; aligned Q35/Q27 budgets unchanged.",
+    "Vulkan generic sealed binding enters the next output epoch. Constants, input aliases and owned output writers retain distinct original ownership rules."
+  ],
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 425818,
+      "sha256": "1616e8c85571a60b35c3b6f0368f1345d6421e439f9a2b56812df398cc86aa5b"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_region.cc",
+      "bytes": 53838,
+      "sha256": "a61e34433492e0faac7f9dca390414ba0c321469ca0ed4633b6b2992adc3bfe8"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 71599,
+      "sha256": "decf99a01020e2a957eaf63068f0683aec8a02248fd37737f00afc796930d64d"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 14335,
+      "sha256": "2ebcc76d89fbeba6943b2c245f8102241f6ec7d48aedab098777b6b9955fd5e3"
+    }
+  ],
+  "parser": {
+    "state": "passed",
+    "kind": "standard-library-only parser regression",
+    "canonical_header_tested": true,
+    "compile": {
+      "exit": 0,
+      "seconds": 1.360000000015134,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.15599999998812564,
+      "timeout": false
+    },
+    "source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_schedule_test.cc",
+        "bytes": 10390,
+        "sha256": "94962754dd71ef64a04b8a00e3421073e78d9a51f5207108d51f8518fca87004"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\generation_schedule.h",
+        "bytes": 9600,
+        "sha256": "435361e614870c722402222fa39be22bb4d167b94a3233b5953bdc405f10066d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_schedule.h",
+        "bytes": 4134,
+        "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\schedule.h",
+        "bytes": 4762,
+        "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+        "bytes": 11798,
+        "sha256": "cb3a56ff142f2d7ab68af85e4b61bbe149173da6bad4f62f8e8a1abedd950ff0"
+      }
+    ],
+    "source_sha_unchanged": true,
+    "sdk_builds": 0,
+    "model_runs": 0,
+    "http_requests": 0,
+    "cmake_registration_edited_not_configured": true,
+    "cases": [
+      "explicit/default 129 and exact context bounds",
+      "multi-turn pending counted once and session error context",
+      "SIZE_MAX quota/parse overflow and I32 position bounds",
+      "invalid quota and fixed-input rejection by generation parser",
+      "whole-file directive preflight including late mix/unknown/incomplete turns",
+      "neutral prompt-only plus natural/fixed peers",
+      "cross-session mixed grammar rejected before token-file reads",
+      "quoted relative input path and CRLF"
+    ]
+  },
+  "CPU_state_capacity": {
+    "status": "PASS",
+    "test": "canonical qwen prefix/cache capacity tests including real aligned state pools",
+    "source": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+        "bytes": 14335,
+        "sha256": "2ebcc76d89fbeba6943b2c245f8102241f6ec7d48aedab098777b6b9955fd5e3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_prefix_cache_test.cc",
+        "bytes": 42091,
+        "sha256": "c8b583365be849726160090bb8a42301a73e35201a188f10def2a432fa22d0be"
+      }
+    ],
+    "commands": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\alignment\\compile\\command.json",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\alignment\\link\\command.json",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\alignment\\run2\\command.json"
+    ],
+    "failed_attempt": "run: private launcher omitted retained runtime PATH; image failed before main, preserved; corrected launcher only, same image",
+    "models_downloaded": 0,
+    "model_execution": false,
+    "gpu_execution": false
+  },
+  "Vulkan_existing_alias_and_owner_case": {
+    "state": "passed",
+    "test": "VulkanNativeRegion.UnifiedInvocationKeepsGeneratedViewsSlotsAndOwners",
+    "scope": "Actual native two-slot generated outputs, computed and input alias views, escaped readonly lease gate and post-owner lifetime",
+    "test_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\native_region_test.cc",
+      "bytes": 56659,
+      "sha256": "96e7ab64752862f87802ed3446bb62cb630ce3043c81e22408792c086ada64d5"
+    },
+    "product_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\native_region.cc",
+      "bytes": 53838,
+      "sha256": "a61e34433492e0faac7f9dca390414ba0c321469ca0ed4633b6b2992adc3bfe8"
+    },
+    "link_basis": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\current4\\link\\command.json",
+      "bytes": 18384,
+      "sha256": "95e9d40a362641f701d32725c2ce2373ea279df1b34407ac775cd606c10f88f2"
+    },
+    "performance_claim": false,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "natural_requests": {
+    "state": "passed",
+    "scope": "Untrained A-only, Windows Vulkan, finite shared natural Text/MTP lifecycle. No trained-model quality, throughput or all-engine claim.",
+    "final_app_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\current3\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 425818,
+      "sha256": "1616e8c85571a60b35c3b6f0368f1345d6421e439f9a2b56812df398cc86aa5b"
+    },
+    "final_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\current4\\link\\probe.exe",
+      "bytes": 69376512,
+      "sha256": "d33c6ac6dd5520df40039265a1680c4a7c073befe400f80f67a57588f60f43b8"
+    },
+    "final_native_region": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-region-fixed2\\source\\native_region.cc",
+      "bytes": 53838,
+      "sha256": "a61e34433492e0faac7f9dca390414ba0c321469ca0ed4633b6b2992adc3bfe8"
+    },
+    "final_native_program": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\native-program-fixed\\source\\vulkan_program.cc",
+      "bytes": 71599,
+      "sha256": "decf99a01020e2a957eaf63068f0683aec8a02248fd37737f00afc796930d64d"
+    },
+    "exact_source_and_object_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\current4\\link\\pins.json",
+      "bytes": 1687,
+      "sha256": "8bd155396947f96ee37f2de229e1ece8489eadb1ed501f0fdd160f8f04aad0f1"
+    },
+    "postrun_audit": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\summary.json",
+      "bytes": 94448,
+      "sha256": "0133767464805cf6f261765fef368bf5296b09feac1d8a305f00094f3d53f156"
+    },
+    "old_reference": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\old-mtp-reference.json",
+      "bytes": 27853,
+      "sha256": "d9f6454f613939805ae30c47baca0b8e6e279c500939a740ed0b785d2954a9be"
+    },
+    "old_reference_qualification": "Original old24c7d459 failed on second initial128B hidden row (257B pool vs256B allocate alignment). Oldcontrol changes only three pool capacity expressions and adds the same alignment helper; old math/lifecycle/roles/shapes/N2/R2/16MiB remain original. Original failure preserved; do not call this an unchanged old binary.",
+    "capacity_only_diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\oldcontrol\\capacity-only.diff",
+      "bytes": 2675,
+      "sha256": "d74826a88e71f5a221ab2f3c00cddeeb64032925f99f7351554f2cd4877b43d9"
+    },
+    "capacity_only_proof": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\oldcontrol\\capacity-only-proof.json",
+      "bytes": 2424,
+      "sha256": "284eade2796bce6d97ed4f6273361a3812957f0e6e872d8943c91c3716e62637"
+    },
+    "Text": {
+      "N": 2,
+      "R": 2,
+      "user_count": 4,
+      "turns": 8,
+      "outputs": 20,
+      "quota": [
+        3,
+        2
+      ],
+      "seed": 123,
+      "streams": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "draws": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "actual_R2_batches": 9,
+      "all_actual_Graph_roles_text": true,
+      "mtp_weights": 0,
+      "draft_arenas": 0,
+      "draft_programs": 0,
+      "peak_resident": 2,
+      "peak_committed_versions": 2,
+      "idle_evictions": 4,
+      "rebuilds": 4,
+      "restored_target_rows": 21,
+      "new_request_full_hits": 1,
+      "new_request_partial_hits": 1,
+      "reused_rows": 8,
+      "full_hit_new_stream": 2,
+      "full_hit_actual_categorical_graph_calls": 1,
+      "first_wave_peer_prefix_hits": 0,
+      "full_hit_token_note": "u2 fresh random first token39 happens to equal u0 historical last token39; real categorical graph call1 and independent stream2/draw5 establish re-sampling, rather than claiming token inequality.",
+      "all_consumed_journal_hashes_lengths_and_RNG_checked": true,
+      "final_pending_excluded_from_consumed_journal": true,
+      "users": [
+        {
+          "id": "u0",
+          "generated": [
+            36,
+            8,
+            39,
+            40,
+            31
+          ],
+          "draw": 5,
+          "length": 7,
+          "records": 5
+        },
+        {
+          "id": "u1",
+          "generated": [
+            42,
+            11,
+            45,
+            6,
+            40
+          ],
+          "draw": 5,
+          "length": 7,
+          "records": 5
+        },
+        {
+          "id": "u2",
+          "generated": [
+            39,
+            42,
+            11,
+            43,
+            40
+          ],
+          "draw": 5,
+          "length": 9,
+          "records": 7
+        },
+        {
+          "id": "u3",
+          "generated": [
+            48,
+            45,
+            45,
+            43,
+            9
+          ],
+          "draw": 5,
+          "length": 10,
+          "records": 8
+        }
+      ]
+    },
+    "greedy_and_late_IO": {
+      "private_facts": "greedy-recovery-and-late-io",
+      "late_diagnostic_failure_observed": true,
+      "committed_records": 1,
+      "observed_outputs": 1,
+      "observer_repetitions": 2,
+      "duplicate_outputs": 0,
+      "fresh_top1": 39,
+      "historical_pending": 40,
+      "same_state_identity": true,
+      "cursor_unchanged": true,
+      "old_snapshot_unchanged": true,
+      "fullhit_late_diagnostic_failure_observed": true,
+      "fullhit_repeat_calls": 2,
+      "fullhit_duplicate_outputs": 0,
+      "natural_generation_claim": false
+    },
+    "MTP": {
+      "N": 2,
+      "R": 2,
+      "user_count": 2,
+      "outputs": 8,
+      "quota": 4,
+      "K": 2,
+      "actual_R2": true,
+      "actual_K2": true,
+      "exact_old_ledger_equal": true,
+      "exact_old_math_fields": [
+        "generated_ids",
+        "sampling_draw_cursor",
+        "sampling_stream",
+        "visible_tokens",
+        "draft_frontier",
+        "draft_lag",
+        "rounds",
+        "prefill_target_rows",
+        "prefill_draft_rows",
+        "draft_rows",
+        "draft_rounds",
+        "agreements",
+        "consumed_drafts"
+      ],
+      "exact_old_batch_dispatch_equal": true,
+      "users": [
+        {
+          "id": "m0",
+          "generated": [
+            36,
+            42,
+            2,
+            2
+          ],
+          "draw": 10,
+          "records": 4
+        },
+        {
+          "id": "m1",
+          "generated": [
+            42,
+            8,
+            8,
+            8
+          ],
+          "draw": 10,
+          "records": 4
+        }
+      ]
+    },
+    "actual_processes": [
+      {
+        "version": "old",
+        "exit": 1,
+        "seconds": 0.9370000000053551,
+        "timeout": false
+      },
+      {
+        "version": "oldcontrol",
+        "exit": 0,
+        "seconds": 3.7030000000086147,
+        "timeout": false
+      },
+      {
+        "version": "current2",
+        "exit": 1,
+        "seconds": 0.75,
+        "timeout": false
+      },
+      {
+        "version": "current4",
+        "exit": 0,
+        "seconds": 1.6719999999913853,
+        "timeout": false
+      }
+    ],
+    "known_bad_source_not_run": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\current\\not-run.json",
+        "bytes": 402,
+        "sha256": "3b7f971a49899ea9e74d748a28df17ce5b4534e0efb61af11a6dd4a9aeb4536d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-request-unification-20261024\\regression\\current3\\not-run.json",
+        "bytes": 577,
+        "sha256": "23cab8edb93a272590fe7a64255b3d05fa6a5fa97e3a173869b8763f98d6945b"
+      }
+    ],
+    "private_compile_failure": "native-region-fixed/compile: missing native_region.h after moving source into isolated folder; no GPU executed. Preserved, corrected only by adding explicit original source include directory in fixed2.",
+    "builds": {
+      "app_strict_compilations": 5,
+      "native_region_compilations": 2,
+      "native_region_first_private_include_failure": true,
+      "native_program_compilations": 1,
+      "new_route_archives": 1,
+      "app_links": 6,
+      "SDK_builds": 0,
+      "current4_app_object_reused": true
+    },
+    "final_process": {
+      "exit": 0,
+      "seconds": 1.6719999999913853,
+      "timeout": false
+    },
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "model_downloads": 0,
+    "weights_duplicated": false,
+    "quality_claim": false,
+    "performance_claim": false
+  },
+  "preserved_failures": [
+    "Unmodified old baseline fails its second 128-byte initial hidden allocation; capacity-only old control is explicitly qualified, not an unchanged old pass.",
+    "Early source-only draft guard/known Text cold preparation omissions fixed before actual current integration.",
+    "current2 actual Text second R2/T1 reuse failed private owner gate; current3 known alias limitation was not run as an app.",
+    "Existing native alias case actually rejected naive output-epoch gate; final same existing case passes with exact reader guards retained.",
+    "Private parser wrong language flag, CPU launcher missing retained runtime PATH and native leaf missing implicit include path preserved; fixes affect private launcher only."
+  ],
+  "not_claimed": [
+    "trained-model task quality",
+    "full-model TPS/memory improvements",
+    "complete multi-platform regression",
+    "complete cross-model architecture",
+    "all ordinary-engine functions"
+  ],
+  "SDK_builds": 0,
+  "downloads_bytes": 0,
+  "HTTP_requests": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-natural-requests-2026-10-24.zip",
+    "bytes": 1189334,
+    "sha256": "95d099d495a4c9ba9ed7ac97818a40c854c3e7493a8be825c8ddf69ede10538d"
+  },
+  "cleanup": {
+    "state": "removed",
+    "files": 36,
+    "bytes": 641202090,
+    "receipt": ".scratch/mtp-request-unification-20261024/binary-cleanup-removed.json",
+    "retained": "Source, original failures, commands, logs, fixtures and three patched production Vulkan cache files for the next consumer",
+    "script": "test.ps1 -RemoveNaturalRequestCheckBinaries -Apply"
+  }
+}

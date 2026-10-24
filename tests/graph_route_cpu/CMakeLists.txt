@@ -115,6 +115,12 @@ hyle_add_test(graph_route_cpu NAME sampling_consumer
 target_compile_definitions(hyle_graph_route_cpu_sampling_consumer_test PRIVATE HYLE_G08_GRAPH=1)
 hyle_stage_runtime(hyle_graph_route_cpu_sampling_consumer_test)
 
+hyle_add_test(graph_route_cpu NAME qwen_sampling_graph
+  SOURCES qwen_sampling_graph_test.cc
+  DEPS hyle_compute_provider_native hyle_compute_provider_ggml
+       hyle_compute_provider_onednn hyle_graph_provider_onednn)
+hyle_stage_runtime(hyle_graph_route_cpu_qwen_sampling_graph_test)
+
 hyle_add_test(graph_route_cpu NAME gguf_nvfp4
   SOURCES ../compute_route_cpu/gguf_nvfp4_test.cc
   DEPS hyle_compute_provider_native hyle_compute_provider_onednn

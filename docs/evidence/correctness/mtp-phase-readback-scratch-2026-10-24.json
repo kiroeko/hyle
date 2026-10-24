@@ -1,0 +1,157 @@
+{
+  "date": "2026-10-24",
+  "status": "PASS finite main-Phase readback and prepared host scratch",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 421343,
+      "sha256": "b021078bd6845b8b38afdb3154a11db278060159e023e82c6aab99a17e2f8648"
+    },
+    {
+      "path": "engine/inference/readback.h",
+      "bytes": 4778,
+      "sha256": "8dc117a67d9915e6dcf1762d3f2701644fe613f8fbfb46949cd7057c1e7fc10c"
+    },
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 20328,
+      "sha256": "12b7222b3bdf03eb327796e5a6619a98db17c392196dd3c28814b7458f733b89"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 3465,
+      "sha256": "ba89b36c9eaf993ac36b073343f28922590b725aceee7a0450ccb77349f93870"
+    },
+    {
+      "path": "tests/tools/qwen_resource_retirement_test.cc",
+      "bytes": 12858,
+      "sha256": "089399d8dee882a74ffdc4c2e68877fa6c7f85c937ca7ff888d20286bc422cd0"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 11707,
+      "sha256": "685d63cf9ae2759099b9786c91cccd17e7dcce7a61e7dc8e1f35348a1a6a0e70"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-phase-readback-scratch-2026-10-24.zip",
+    "bytes": 246167,
+    "sha256": "5ef844d9fcfaf3b4ceb0938c8d386ddaf1572e7d361ded6e82d996a1274eace0"
+  },
+  "archive_entries": 61,
+  "previous": {
+    "path": "docs/evidence/correctness/mtp-shared-draft-readback-2026-10-24.json",
+    "bytes": 5193,
+    "sha256": "ed8efdd44fe933780965bb6df0b36185f34605fc685f90c2cd35c210f045ab44"
+  },
+  "changes": [
+    "Prepare next-ID, draft-ID, valid and accept outputs using actual compiled facts",
+    "Decode Bool/F32 arrays with caller-prepared scratch and exact dense byte/count checks",
+    "Keep valid/accept/draft-ID/prefix-candidate host arrays in the original finite Phase",
+    "Remove the unused old macro decoder and its standalone test target",
+    "Move real invalid-value and bounds coverage into the original native retirement/readback test target"
+  ],
+  "checks": {
+    "processes": {
+      "cpu-syntax": {
+        "exit": 0,
+        "seconds": 5.2810000000172295,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 2.437999999994645,
+        "timeout": false
+      },
+      "retirement-run": {
+        "exit": 0,
+        "seconds": 0.7969999999913853,
+        "timeout": false
+      }
+    },
+    "tiny_vulkan_journey": {
+      "status": "PASS_TINY_PHASE_READBACK",
+      "backend": "vulkan",
+      "fixture_bytes": 206336,
+      "head_true_calls": 2,
+      "head_false_calls": 1,
+      "id_caller_owned": 0,
+      "valid_caller_owned": 0,
+      "probability_caller_owned": 0,
+      "proposals": [
+        31,
+        39
+      ],
+      "consumed": 1,
+      "pending": 42,
+      "cursor": 6,
+      "draft_lag": 0,
+      "classic_R2": true,
+      "classic_cursors": [
+        4,
+        4
+      ],
+      "classic_pending": [
+        39,
+        2
+      ],
+      "classic_consumed": [
+        1,
+        1
+      ],
+      "classic_valid_caller_owned": 0,
+      "classic_accept_caller_owned": 0,
+      "classic_draft_ids_caller_owned": 0,
+      "classic_next_ids_caller_owned": 0,
+      "sampling": "random",
+      "sampling_policy_order": "temperature_top_k_top_p",
+      "sampling_temperature": 1,
+      "sampling_top_k": 8,
+      "sampling_top_p": 0.9,
+      "sampling_seed": 123,
+      "mtp_acceptance_policy": "min_one_p_over_q",
+      "frontier_sampling_graph_calls": 2,
+      "mtp_max_drafts": 2,
+      "mtp_min_draft_probability": 0.0001,
+      "draft_program_graph_calls": 3,
+      "prefix_decision_graph_calls": 1,
+      "cold_exact_admissions": 0,
+      "cold_exact_evictions": 0,
+      "cache_budget_scope": "shared_pools_retained_outputs_and_resource_metadata",
+      "cpu_ffn_layers": 0,
+      "original_host_weight_bytes": 0,
+      "original_device_weight_bytes": 206336,
+      "cache_shared_backing_bytes": 49669,
+      "cache_retained_output_backing_bytes": 2432,
+      "cache_metadata_requested_bytes": 0,
+      "cache_live_requested_bytes": 52101,
+      "cache_peak_requested_bytes": 52101,
+      "cache_requested_byte_limit": 16777216,
+      "native_execution_private_bytes_unknown": true,
+      "physical_vram_limit_known": false,
+      "quality_claim": false,
+      "performance_claim": false
+    },
+    "native_regression_cases": 4,
+    "guarded_inputs": [
+      "Bool2",
+      "F32 nonbinary/Inf/NaN",
+      "short scratch",
+      "wrong count",
+      "range canaries"
+    ],
+    "source_review": "Actual phase cardinalities and serial carrier ownership preserve prepared host-array lifetime"
+  },
+  "limits": [
+    "One 206336-byte untrained fixture; no trained-model quality or throughput claim",
+    "Host-array preparation was verified in source and real R2 execution; entire-loop allocation count was not measured",
+    "No backend or quantization matrix was rerun",
+    "The runtime BackendSelection candidate is separate and is not part of this checked product source",
+    "Persistent logits/hidden/state leases keep their original lifecycle"
+  ],
+  "full_trained_model_runs": 0,
+  "untrained_tiny_model_journeys": 1,
+  "SDK_builds": 0,
+  "HTTP_requests": 0,
+  "model_download_bytes": 0
+}

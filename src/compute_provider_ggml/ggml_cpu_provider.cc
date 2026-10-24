@@ -18,6 +18,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "ggml-alloc.h"
@@ -31,6 +32,7 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/simd/dtype.h"
+#include "hyle/simd/dtype_ops.h"
 #include "hyle/simd/ops.h"
 #include "../compute/operation_cold.h"
 
@@ -754,27 +756,56 @@ bool valid_softmax_row(const float *values, std::int64_t width) noexcept {
   return finite;
 }
 
-// Preserve the public mixed source precision. Native ggml's BF16 vec_dot
-// converts a F32 activation row to BF16; SIMD already provides the required
-// direct mixed dot, with register-only widening of original BF16 weights.
-void f32_bfloat_linear(ggml_tensor *output, int ith, int nth, void *) noexcept {
+template<class A,class W>
+float dense_dot(const std::byte *activation,const std::byte *weights,std::size_t width) noexcept {
+  const auto *a=reinterpret_cast<const A *>(activation);
+  const auto *w=reinterpret_cast<const W *>(weights);
+  if constexpr (requires { simd::dot(a,w,width); }) return simd::dot(a,w,width);
+  else {
+    // Only an unsupported mixed F16 boundary needs temporary widening. Its
+    // finite row tile never becomes a converted activation or weight bank.
+    std::array<float,256> widened;
+    float sum=0;
+    for (std::size_t first=0;first<width;first+=widened.size()) {
+      const auto count=(std::min)(widened.size(),width-first);
+      if constexpr (std::is_same_v<A,simd::float16_t>) {
+        simd::convert(a+first,widened.data(),count);
+        sum+=simd::dot(widened.data(),w+first,count);
+      } else {
+        simd::convert(w+first,widened.data(),count);
+        sum+=simd::dot(a+first,widened.data(),count);
+      }
+    }
+    return sum;
+  }
+}
+using DenseDot=float (*)(const std::byte *,const std::byte *,std::size_t) noexcept;
+template<class A> DenseDot dense_weight_dot(ggml_type type) noexcept {
+  if(type==GGML_TYPE_F16)return &dense_dot<A,simd::float16_t>;
+  if(type==GGML_TYPE_BF16)return &dense_dot<A,simd::bfloat16_t>;
+  if(type==GGML_TYPE_F32)return &dense_dot<A,float>;
+  return nullptr;
+}
+// Native half vec_dot can narrow a F32 row before multiplication. Keep each
+// source's real precision, including the original mixed BF16 SIMD fast path.
+void f32_dense_linear(ggml_tensor *output, int ith, int nth, void *) noexcept {
   const auto &activation = *output->src[0];
   const auto &weights = *output->src[1];
   const auto width = static_cast<std::size_t>(activation.ne[0]);
   const auto output_width = output->ne[0];
   const auto count = ggml_nelements(output);
   auto *target = static_cast<float *>(output->data);
+  const auto dot=activation.type==GGML_TYPE_F16?dense_weight_dot<simd::float16_t>(weights.type):
+      activation.type==GGML_TYPE_BF16?dense_weight_dot<simd::bfloat16_t>(weights.type):dense_weight_dot<float>(weights.type);
   for (auto index = std::int64_t{ith}; index < count; index += nth) {
     const auto row = index / output_width, column = index % output_width;
-    const auto *a = reinterpret_cast<const float *>(
-        static_cast<const std::byte *>(activation.data) + std::size_t(row) * activation.nb[1]);
+    const auto *a = static_cast<const std::byte *>(activation.data) + std::size_t(row) * activation.nb[1];
     // Public dense [B,M,K]/[B,N,K] retain their actual native batch pitch.
     // A rank2 source has one batch; no repeated W or expanded F32 bank.
     const auto batch = row / activation.ne[1];
-    const auto *w = reinterpret_cast<const simd::bfloat16_t *>(
-        static_cast<const std::byte *>(weights.data) + std::size_t(batch) * weights.nb[2] +
-        std::size_t(column) * weights.nb[1]);
-    target[index] = simd::dot(a, w, width);
+    const auto *w = static_cast<const std::byte *>(weights.data) + std::size_t(batch) * weights.nb[2] +
+        std::size_t(column) * weights.nb[1];
+    target[index] = dot(a,w,width);
   }
 }
 
@@ -1171,7 +1202,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                     invocation.values[node.inputs[2]],
                                     invocation.values[node.inputs[3]]);
   } else if (const auto *matmul = node.operation.get_if<MatMul>();
-             matmul || node.operation.custom_as<model_ops::BFloatLinearF32>()) {
+             matmul || node.operation.custom_as<model_ops::DenseLinearF32>()) {
     if (matmul && columns(recipe.values[node.inputs[0]]) == 0) {
       auto *identity = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
       identity->data = &program.zero;
@@ -1179,10 +1210,11 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                               1, 1);
       return {as_output(context, result, output)};
     }
-    if (!matmul && recipe.values[node.inputs[0]].data_type() == DataType::kFloat32) {
+    if (!matmul && (recipe.values[node.inputs[0]].data_type() != DataType::kBFloat16 ||
+                   recipe.values[node.inputs[1]].data_type() != DataType::kBFloat16)) {
       std::array operands{invocation.values[node.inputs[0]], invocation.values[node.inputs[1]]};
       result = ggml_custom_4d(context, GGML_TYPE_F32, columns(output), rows(output), 1, 1,
-          operands.data(), int(operands.size()), &f32_bfloat_linear, GGML_N_TASKS_MAX, nullptr);
+          operands.data(), int(operands.size()), &f32_dense_linear, GGML_N_TASKS_MAX, nullptr);
       return {as_output(context, result, output)};
     }
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
@@ -2066,7 +2098,7 @@ bool supports(void *context, Operation operation,
   if(const auto paged=operation.custom_as<PagedRead>()){
     if(inputs.size()!=3 || outputs.size()!=1 || !paged->page_size ||
        !paged->logical_rows || inputs[0].rank()!=4 ||
-       (inputs[0].data_type()!=DataType::kFloat16 && inputs[0].data_type()!=DataType::kBFloat16))
+       !native_flash(inputs[0].data_type()))
       return false;
     const auto depth=inputs[0].dimensions().back();
     const bool highdim_plain=(depth==512 || depth==576) &&
@@ -2166,9 +2198,14 @@ bool supports(void *context, Operation operation,
            inputs[2].data_type() == DataType::kInt32 &&
            outputs[0].data_type() == DataType::kFloat32;
   }
-  if (operation.custom_as<model_ops::BFloatLinearF32>())
+  if (operation.custom_as<model_ops::DenseLinearF32>()) {
+    const auto floating=[](const TensorDesc &d){return d.is_plain()&&d.is_dense()&&
+        (d.data_type()==DataType::kFloat16||d.data_type()==DataType::kBFloat16||d.data_type()==DataType::kFloat32);};
     return outputs.size() == 1 && inputs.size() == 2 &&
-           output.data_type() == DataType::kFloat32;
+           floating(inputs[0])&&floating(inputs[1])&&
+           (inputs[0].rank()==2||inputs[0].rank()==3)&&inputs[0].rank()==inputs[1].rank()&&
+           output.is_plain()&&output.is_dense()&&output.data_type() == DataType::kFloat32;
+  }
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
@@ -2381,7 +2418,7 @@ bool region_operation(Operation operation) noexcept {
          operation.custom_as<model_ops::Clamp>().has_value() ||
          operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::GroupedMatMul>().has_value() ||
-         operation.custom_as<model_ops::BFloatLinearF32>().has_value() ||
+         operation.custom_as<model_ops::DenseLinearF32>().has_value() ||
          operation.custom_as<model_ops::CacheEncode>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionCombine>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionPre>().has_value() ||

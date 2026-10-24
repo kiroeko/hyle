@@ -1,0 +1,113 @@
+{
+  "state": "passed",
+  "date": "2026-10-24",
+  "scope": "LoadedWeight uniquely owns original Tensor plus source codec/group annotations; generic activation/state/literal Tensor has no source metadata. No new format, model or backend capability.",
+  "changes": [
+    "Stable loaded map nodes preserve Tensor child addresses borrowed by typed projection bindings.",
+    "Physical TensorDesc/storage_format, source-role identity, pools, ready leases, graph equations and precision remain unchanged.",
+    "The two Backend freeze calls remain at their original loader/GraphAssembly positions.",
+    "The only direct external custom-bank probe now uses the same explicit LoadedWeight node."
+  ],
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 424882,
+      "sha256": "3e4769564eb250c1d74f1b48abfb5efcd51683ad36a37f3ead1c26652ce435c9"
+    },
+    {
+      "path": "engine/models/qwen35/projection_binding.h",
+      "bytes": 2571,
+      "sha256": "798135ab8161cf44b23a6317e2043863832952a1c24ef2784e073734e5b476b2"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_projection_width_probe.cc",
+      "bytes": 11898,
+      "sha256": "a953b953488707a0b9b214a1430ce1819248928d64a02b9df8422921dd78e18e"
+    }
+  ],
+  "source_assertions": {
+    "scope": "source-only assertions; no build/runtime/model/download",
+    "checks": {
+      "main_exact_after_only_storage_metadata_binding_normalization": true,
+      "probe_exact_after_only_bank_and_tensor_child_normalization": true,
+      "all_typed_projection_variants_unchanged": true,
+      "Tensor_has_no_artifact_codec_or_Backend": true,
+      "unique_loaded_weight_node": true,
+      "bindings_still_borrow_Tensor": true,
+      "only_original_two_freeze_calls": true,
+      "source_role_metadata_untouched": true
+    },
+    "change": "One loaded map node now owns Tensor plus source annotations. Bindings retain Tensor child addresses and original typed equations. Backend freeze occurs at the original two call sites. All other main/probe code matches baseline under explicit metadata/storage member normalization.",
+    "risk": "Internal bank type is a deliberate source API change; direct probe adapted. Map node/tensor child references remain valid only while the original loaded bank is neither erased nor replaced, as before. Source/physical role counts, FP8 canonical count, loader IO/retirement and ColdResources field destruction order are unchanged."
+  },
+  "source_review": {
+    "path": ".scratch/inference-loaded-weights-20261024/review.md",
+    "bytes": 4228,
+    "sha256": "593b1a08c278c8dedaa84c9f11a4a6022915f22bc36cca711fffdd9d8c926346"
+  },
+  "actual": {
+    "consumer_TUs": 1,
+    "reporting_TUs": 1,
+    "strict_CPU_probe_syntax_TUs": 1,
+    "actual_processes": 1,
+    "old_runs": 0,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "full_models": 0,
+    "report_count": 8,
+    "report_differences": [],
+    "added_report_fields": [],
+    "grouping": {
+      "batch": 15,
+      "session": 28
+    },
+    "late_IO_failures": {
+      "expected_late_diagnostic_failure": 1,
+      "expected_fullhit_late_diagnostic_failure": 1
+    },
+    "process": {
+      "compile": {
+        "exit": 0,
+        "seconds": 16.53200000000652,
+        "timeout": false
+      },
+      "reporting_compile": {
+        "exit": 0,
+        "seconds": 1.375,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.389999999984866,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 1.8589999999967404,
+        "timeout": false
+      }
+    },
+    "summary": {
+      "path": ".scratch/inference-loaded-weights-20261024/regression/proof-summary.json",
+      "bytes": 9371,
+      "sha256": "ac42ac8bced751d99327bb5f7f7bfc1c56c866d2db6e1b8aab135dfc5774bf23"
+    }
+  },
+  "limits": [
+    "The actual run uses the retained tiny A-only fixture and existing ordinary/MTP/multi-turn/N2-R2/cache/recovery/fixed-replay contracts.",
+    "Packed codecs were source-reviewed and the direct packed/dense projection probe strictly compiled; no new packed-codec math run.",
+    "No new GDN, mixed-platform, full-model quality, allocator-volume, throughput or memory-peak claim."
+  ],
+  "cleanup": {
+    "exact_files": 6,
+    "logical_bytes": 83422872,
+    "contains_one_private_DLL_hardlink": true,
+    "original_cache_and_native_closure_retained": true,
+    "performed": true
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-loaded-weights-2026-10-24.zip",
+    "bytes": 353467,
+    "sha256": "796ac375ad9f11a764850df015793d1e1b987f7c10940120fabb3edf9ace4648"
+  }
+}

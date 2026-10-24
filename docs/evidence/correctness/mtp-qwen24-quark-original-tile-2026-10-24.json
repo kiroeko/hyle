@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-24",
+  "scope": "Independent cat16 original-code/scale source binding followup; original eight-source89704B/26profile evidence is unchanged.",
+  "source": {
+    "catalog_index": 16,
+    "repository": "amd/Qwen3.8-2.4T-A95B-Quark-MXFP4",
+    "revision": "13dc9676cdd9e2374c3efb50389d3392b975acae",
+    "uri": "https://hf-mirror.net/amd/Qwen3.8-2.4T-A95B-Quark-MXFP4/resolve/13dc9676cdd9e2374c3efb50389d3392b975acae/model-00186-of-00213.safetensors",
+    "source": {
+      "file": "model-00186-of-00213.safetensors",
+      "size": 4563529016,
+      "lfs_sha256": "027d43803f556e858b80f22cb9a41df67e16fa040556ac7fc54b00a638725d9f",
+      "api_xet_hash": "7000e9d786553b96f8606aff01ac086f3b080b15610599ed14f48903f7db26cb",
+      "etag": "\"7000e9d786553b96f8606aff01ac086f3b080b15610599ed14f48903f7db26cb\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+    },
+    "header": {
+      "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/mtp-headers/model-00186-of-00213.safetensors/header.json",
+      "bytes": 126256,
+      "sha256": "206a714f1e28f6039334f430cfe965aa937ca801fa59c8b69cc51ae0ae8b12f0"
+    },
+    "header_acquisition": {
+      "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/mtp-headers/model-00186-of-00213.safetensors/acquisition.json",
+      "bytes": 2085,
+      "sha256": "f3a16a76ff440f4035f3396cd10d0777bd2b70f8e7d5174b16f087a9e1899425"
+    },
+    "ranges": [
+      {
+        "name": "mtp.layers.0.mlp.experts.0.down_proj.weight",
+        "kind": "codes",
+        "original": {
+          "dtype": "U8",
+          "shape": [
+            8192,
+            1024
+          ],
+          "data_offsets": [
+            0,
+            8388608
+          ]
+        },
+        "selection": {
+          "axis0_first": 0,
+          "axis0_count": 3,
+          "axis1_full": true
+        },
+        "selected_shape": [
+          3,
+          1024
+        ],
+        "absolute_inclusive": [
+          126264,
+          129335
+        ],
+        "bytes": 3072,
+        "output": ".scratch/mtp-metadata-offline-20261024/components/q24-quark-mxfp4-original/codes.bin"
+      },
+      {
+        "name": "mtp.layers.0.mlp.experts.0.down_proj.weight_scale",
+        "kind": "scales",
+        "original": {
+          "dtype": "U8",
+          "shape": [
+            8192,
+            64
+          ],
+          "data_offsets": [
+            8388608,
+            8912896
+          ]
+        },
+        "selection": {
+          "axis0_first": 0,
+          "axis0_count": 3,
+          "axis1_full": true
+        },
+        "selected_shape": [
+          3,
+          64
+        ],
+        "absolute_inclusive": [
+          8514872,
+          8515063
+        ],
+        "bytes": 192,
+        "output": ".scratch/mtp-metadata-offline-20261024/components/q24-quark-mxfp4-original/scales.bin"
+      }
+    ]
+  },
+  "acquisition": {
+    "path": ".scratch/mtp-metadata-offline-20261024/cat16-component-results.json",
+    "bytes": 2434,
+    "sha256": "40ba10f1b3fe4ee6dd5036e3daa8150f3c2ad1555b8183e317321dc89212fbc4"
+  },
+  "actual_new_source_bytes": 3264,
+  "actual_HTTP_requests": 2,
+  "actual_hosts": [
+    "hf-mirror.net"
+  ],
+  "reader_contract": "Fixed Quark0.12.post1 portable BF16 group32 W4A4: Mxfp4ActivationMode::kFloat4Group32. Adjacent even-K low/odd-K high E2M1 nibble, unchanged original U8 E8M0 group32 scales, BF16 A quantization/reconstruction and BF16 W reconstruction before F32 dot and final BF16.",
+  "reader_correction": "The acquisition plan/result reader tail mistakenly named kBFloat16 (Inferact W4A16). Original transport receipts are preserved. Corrected plan and actual source consumer explicitly use kFloat4Group32, and16/18 output witnesses on each backend distinguish incorrect unquantized W4A16 activation.",
+  "producer_evidence": "docs/evidence/research/quark-mxfp4-contract-2026-10-20.json",
+  "existing_four_backend_math_evidence": "docs/evidence/correctness/quark-mxfp4-reference-2026-10-20.json",
+  "validation": {
+    "tests": 2,
+    "failures": 0,
+    "profiles": 2,
+    "exact_checked_outputs": 36,
+    "backends": [
+      {
+        "backend": "cpu",
+        "tests": 1,
+        "failures": 0,
+        "original_codes_bytes": 3072,
+        "original_E8M0_scales_bytes": 192,
+        "logical_W": [
+          3,
+          2048
+        ],
+        "checked_outputs": 18,
+        "wrong_W4A16_output_witnesses": 16,
+        "process": {
+          "path": ".scratch/mtp-metadata-offline-20261024/cat16-component-check/run-cpu/process.json",
+          "bytes": 575,
+          "sha256": "a7b55b2536e904bf853c36ce72eedb9b1d7c60243c50512a5f28656e0d597ba8"
+        },
+        "test_result": {
+          "path": ".scratch/mtp-metadata-offline-20261024/cat16-component-check/tests-cpu.json",
+          "bytes": 802,
+          "sha256": "01546a86d032bd82f0991894f6883ece1fad2ba9bb3fa295dd63550353089533"
+        }
+      },
+      {
+        "backend": "cuda",
+        "tests": 1,
+        "failures": 0,
+        "original_codes_bytes": 3072,
+        "original_E8M0_scales_bytes": 192,
+        "logical_W": [
+          3,
+          2048
+        ],
+        "checked_outputs": 18,
+        "wrong_W4A16_output_witnesses": 16,
+        "process": {
+          "path": ".scratch/mtp-metadata-offline-20261024/cat16-component-check/run-cuda/process.json",
+          "bytes": 577,
+          "sha256": "27e6dd9168fd9627a2ce98e6fa76cf956434350e9d7f10e65414a9bd78136617"
+        },
+        "test_result": {
+          "path": ".scratch/mtp-metadata-offline-20261024/cat16-component-check/tests-cuda.json",
+          "bytes": 803,
+          "sha256": "ba68979a0738a2b80dd6e996660420a5866c55bcef41d92de526de48752f0c3e"
+        }
+      }
+    ],
+    "fresh_consumer_TUs": 1,
+    "SDK_builds": 0,
+    "provider_changes": 0,
+    "numeric_kernel_changes": 0,
+    "HTTP_in_tests": 0
+  },
+  "limitations": [
+    "Only original expert0 down first3 rows with fullK2048; explicit duplicate selected expert IDs are component inputs, not an observed model router decision.",
+    "Independent sparse activation isolates source packing/E8M0/BF16 operand boundaries from reduction-order differences; all36 actual CPU/CUDA output values checked exactly.",
+    "No whole expert/trained NextN/target inference/state, native AMD hardware bit identity, model task quality or throughput qualification."
+  ],
+  "log_bundle": {
+    "path": "docs/evidence/correctness/mtp-qwen24-quark-original-tile-2026-10-24-logs.zip",
+    "bytes": 55796,
+    "sha256": "30e2d763b937adfc87c92358228118ddea5d2dbfa20e4a6b43616010309bfb96"
+  }
+}

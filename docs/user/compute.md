@@ -71,14 +71,19 @@ HYLE_RETURN_IF_ERROR(output.view().read(std::as_writable_bytes(std::span(result)
 CPU 数学依赖自动装配，按实际请求选择合法实现；不要求传性能 profile 或排列 Provider。
 模型加载与 tensor 角色、scale/codebook/zero 的解析由引擎完成，HYLE 不根据模型文件名或“Q4”标签猜格式。
 
-`model_ops::bfloat_linear_f32()` 接受 BF16 或 F32 激活 `[T,K]` 和按输出行存储的 BF16 权重
-`[N,K]`，输出 F32 `[T,N]`。F32 激活保持来源精度，权重可在读取时扩宽；具体形状由冷准备检查。
+`model_ops::dense_linear_f32()` 接受 F16／BF16／F32 激活 `[T,K]` 和按输出行存储的
+F16／BF16／F32 权重 `[N,K]`，以 F32 乘积、累加与输出产生 `[T,N]`。
+F32 激活保持来源精度，权重在读取时扩宽，不展开整份 F32 权重；具体类型组合与形状由各 Provider 冷准备检查。
 它也接受同批数的 `[B,T,K]`、`[B,N,K]`，输出 `[B,T,N]`，不隐式广播批维。
 CPU／CUDA 已检查批量 F32 激活路径，[Mac CPU与Metal下沉检查](../evidence/correctness/mtp-batched-f32-bfloat-apple-2026-10-24.json)也已通过；
-权重保原BF16而不展开整份F32副本。CUDA多批权重目前要求`N<=512`、偶数`K`。
+这些既有记录覆盖 BF16 权重而不展开整份 F32 副本。CUDA多批权重目前要求`N<=512`、偶数`K`。
 [Vulkan批量检查](../evidence/correctness/mtp-batched-f32-bfloat-vulkan-2026-10-24.json)已核F32低位、批权重偏移、输入保持及冷描述符；
 ggml设备路径暂不承载新批量BF16激活域，Vulkan会在prepare时明确拒绝该域，
 其它Provider仍以各自冷准备结果为准。
+
+扩展后的 F16／BF16／F32 组合分别有[CPU／Metal／Vulkan](../evidence/correctness/mtp-dense-linear-native-domains-2026-10-24.json)和
+[CUDA／cuBLAS](../evidence/correctness/mtp-dense-linear-cuda-2026-10-24.json)检查。
+cuBLAS 接受相同输入类型；混合类型由其它实际支持的 Provider 承接。
 普通 `MatMul` 继续遵守其原有类型规则。
 
 - 普通张量算子见下方能力表；GGUF 原编码使用[原生压缩权重](#ggufggml-原生压缩权重)，
@@ -92,8 +97,9 @@ ggml设备路径暂不承载新批量BF16激活域，Vulkan会在prepare时明�
   [依赖准备](../developer/setup/dependencies.md)。静态 HYLE 仍可能依赖 shared CPU runtime，部署见
   [交付说明](distribution.md#compute--graph-后端)。
 
-算子和状态接口可用于 MTP、MoE 或模型片段，但 HYLE 不提供完整模型 loader、tokenizer、视觉模型管线、
-草稿接受策略或请求循环。片段可执行不意味着整个模型能在当前内存中常驻，也不意味着全部新制品编码自动兼容。
+算子和状态接口可用于 MTP、MoE 或模型片段；模型 loader、tokenizer、视觉管线、
+草稿接受策略和请求循环归项目内的引擎层，当前实现范围见[推理指南](inference.md)。
+片段可执行不意味着整个模型能在当前内存中常驻，也不意味着全部新制品编码自动兼容。
 
 ## 当前能力
 

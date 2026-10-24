@@ -206,7 +206,7 @@ inline Layout official_layout() {
       routed_weight_desc, routed_down_desc, shared_weight_desc,
       shared_weight_desc, shared_down_desc, shared_gate_input_desc,
       shared_ids_desc};
-  return {activation_desc, constant_descs, c::model_ops::bfloat_linear_f32()};
+  return {activation_desc, constant_descs, c::model_ops::dense_linear_f32()};
 }
 
 struct GraphCase final {

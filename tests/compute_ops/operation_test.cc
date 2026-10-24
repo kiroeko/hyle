@@ -1559,17 +1559,28 @@ TEST(OperationModelOps, RecurrentRegionReusesParameterizedGdnAndAtomicInference)
     }
 }
 
-TEST(OperationModelOps, BFloatLinearF32KeepsNativeScorePrecision) {
+TEST(OperationModelOps, DenseLinearF32KeepsNativeScorePrecision) {
   const auto bf16 = DataType::kBFloat16;
   const auto f32 = DataType::kFloat32;
   const auto stored_weight = tensor(bf16, 512, 8192);
   const std::array inputs{tensor(bf16, 1, 8192), stored_weight};
-  const auto operation = model_ops::bfloat_linear_f32();
-  EXPECT_EQ(operation_name(operation), "bfloat-linear-f32");
+  const auto operation = model_ops::dense_linear_f32();
+  EXPECT_EQ(operation_name(operation), "dense-linear-f32");
   EXPECT_EQ(infer_one(operation, inputs), tensor(f32, 1, 512));
 
   auto invalid = inputs;
   invalid[0] = tensor(f32, 1, 8192);
+  EXPECT_EQ(infer_one(operation, invalid), tensor(f32, 1, 512));
+  for (const auto a : {DataType::kFloat16, bf16, f32})
+    for (const auto w : {DataType::kFloat16, bf16, f32}) {
+      const std::array matrix{tensor(a, 3, 65), tensor(w, 7, 65)};
+      EXPECT_EQ(infer_one(operation, matrix), tensor(f32, 3, 7));
+      const std::array batched{tensor(a, 2, 3, 65), tensor(w, 2, 7, 65)};
+      EXPECT_EQ(infer_one(operation, batched), tensor(f32, 2, 3, 7));
+      auto wrong = batched; wrong[1] = tensor(w, 1, 7, 65);
+      EXPECT_FALSE(infer_single_output(operation, wrong));
+    }
+  invalid[0] = tensor(DataType::kInt32, 1, 8192);
   EXPECT_FALSE(infer_single_output(operation, invalid));
   invalid = inputs;
   invalid[1] = stored_weight.transposed().value();
