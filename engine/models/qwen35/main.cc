@@ -1325,6 +1325,8 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
     throw std::runtime_error("invalid weight selection");
   const auto roles = read_weight_roles(manifest, selection == WeightSelection::kTextAndMtp);
   if (roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
+  if (roles.nf4_policy.enabled)
+    throw std::runtime_error("NF4 metadata is supported; F16 weight import and activation execution are not implemented");
   if (roles.selected.empty() || roles.selected.size() > UINT32_MAX)
     throw std::runtime_error("invalid prepared physical role count");
   // Source groups borrow existing checkpoint/cache/run files. No stitched
@@ -4466,33 +4468,6 @@ hyle::Status Session::drain() noexcept {
 }
 Session::~Session() { drain().IgnoreError(); }
 
-std::vector<std::int32_t> read_ids(const std::filesystem::path &path, std::int64_t vocabulary = INT32_MAX,
-                                   std::size_t maximum_tokens = SIZE_MAX) {
-  std::ifstream stream(path); if (!stream) throw std::runtime_error("cannot open token IDs");
-  stream.imbue(std::locale::classic());
-  if (vocabulary <= 0 || vocabulary > INT32_MAX) throw std::runtime_error("invalid token vocabulary");
-  std::vector<std::int32_t> ids;
-  // Every supported token ID fits in eleven characters including a sign.
-  // Bound lexical input too; do not allocate for an arbitrarily long word.
-  std::string word;
-  while (stream >> std::setw(31) >> word) {
-    const auto next = stream.peek();
-    if (next != std::char_traits<char>::eof() &&
-        std::string_view(" \t\r\n\f\v").find(static_cast<char>(next)) == std::string_view::npos)
-      throw std::runtime_error("input token length exceeds 31 characters");
-    if (ids.size() == maximum_tokens)
-      throw std::runtime_error("input token count exceeds configured capacity");
-    std::int64_t value = 0;
-    const auto end = word.data() + word.size();
-    const auto parsed = std::from_chars(word.data(), end, value);
-    if (parsed.ec != std::errc{} || parsed.ptr != end) throw std::runtime_error("malformed input IDs");
-    if (value < 0 || value >= vocabulary) throw std::runtime_error("input token outside vocabulary");
-    ids.push_back(static_cast<std::int32_t>(value));
-  }
-  if (stream.bad() || !stream.eof()) throw std::runtime_error("malformed input IDs");
-  return ids;
-}
-
 struct GenerationRestoreStats final {
   std::size_t graph_calls = 0, target_rows = 0, draft_rows = 0;
   std::size_t normalized_lag_rows = 0;
@@ -4508,6 +4483,7 @@ struct GenerationRequest {
   std::span<const std::int32_t> prompt;
   std::filesystem::path trace;
   inference::RequestProgress progress;
+  inference::RequestKey request_key{};
   std::shared_ptr<Session> session;
   cache::TokenPlanRef input;
   cache::Checkpoint completed_checkpoint;
@@ -5094,7 +5070,9 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
     else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
     for (std::size_t j = 0; j < calls.size(); ++j) {
-      if (generation && role == GraphRole::kText) {
+      // Ledger-backed requests observe the committed record below. Only the
+      // legacy no-ledger caller consumes this separate ordinary result.
+      if (generation && role == GraphRole::kText && !calls[j].request->ledger) {
         auto &result = results[j];
         result.pending = calls[j].pending; result.target_first = next[j]; result.next_id = next[j];
         result.processed_target = 1; result.verified_rows = 1;
@@ -5297,10 +5275,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   std::size_t total_turns = 0, requested_outputs = 0, decode_bound = 0, restore_bound = 0;
   for (const auto &schedule : schedules) {
     if (schedule.turns.empty()) throw std::runtime_error("natural request requires a nonempty turn list");
+    if (schedule.turns.front().prompt.empty())
+      throw std::runtime_error("natural request requires a nonempty initial prompt");
     std::size_t outputs = 0;
     for (const auto &turn : schedule.turns) {
-      if (turn.prompt.empty() || !turn.max_outputs)
-        throw std::runtime_error("natural turns require nonempty input and positive output quota");
+      if (!turn.max_outputs)
+        throw std::runtime_error("natural turns require positive output quota");
       outputs = cache::add(outputs, turn.max_outputs);
     }
     const auto &first = schedule.turns.front().prompt;
@@ -5398,7 +5378,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   if (mtp && decode_bound && model.max_drafts() == 1 && !model.recursive_mtp()) for (auto role : roles) if (drafts_token(role)) model.prepare_execution(pair, 1, role);
   inference::RequestWindow window;
-  window.prepare(requests.size(), total_turns, model.cache_plan.resident_sessions);
+  window.prepare(requests.size(), model.cache_plan.resident_sessions);
+  for (std::size_t index = 0; index < requests.size(); ++index)
+    requests[index].request_key = window.enqueue(index);
   std::vector<std::size_t> dispatch, dispatch_turns;
   dispatch.reserve(requested_outputs); dispatch_turns.reserve(requested_outputs);
   std::vector<std::size_t> evictions; evictions.reserve(total_turns);
@@ -5421,14 +5403,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   double prefill_seconds = 0, decode_seconds = 0;
   while (completed != requests.size()) {
     while (const auto next = window.waiting_front()) {
-      const auto index = *next; auto &request = requests[index];
+      const auto index = next->slot; auto &request = requests[index];
       request.admission_start = Clock::now();
       if (!request.session) {
         // Earlier new requests in this wave have no head until prepare below.
         // Their reserved slots still count when admitting/restoring a peer.
         const auto active = window.active();
         const auto reserved_heads = static_cast<std::size_t>(std::count_if(active.begin(), active.end(),
-            [&](auto member) { return !requests[member].session; }));
+            [&](auto member) { return !requests[member.slot].session; }));
         while (cache::add(resident_count(), reserved_heads) >= model.cache_plan.resident_sessions) {
           const auto victim = window.idle_victim([&](auto member) { return bool(requests[member].session); },
               [&](auto member) { return requests[member].last_idle; });
@@ -5462,7 +5444,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       request.prompt = request.progress.begin_turn(*request.warm_inputs[request.progress.turn_index],
           request.progress.turn_index ? std::optional<std::int32_t>(request.session->head->next_id) : std::nullopt);
       request.turn_observations[request.progress.turn_index].output_begin = request.progress.turn_output_begin;
-      window.admitted(index); ++admitted;
+      window.admitted(*next); ++admitted;
     }
     const auto active = window.active();
     if (active.empty()) throw std::runtime_error("MTP admission has no runnable resident request");
@@ -5470,8 +5452,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     // published. A same-wave prompt cannot observe another member's new head.
     hyle::container::SmallVector<PreparedGenerationCall, 2> calls;
     if (!calls.try_reserve(active.size())) throw std::bad_alloc{};
-    for (auto index : active) {
-      auto &request = requests[index];
+    for (auto key : active) {
+      auto &request = requests[key.slot];
       std::cerr << "generation_session id=" << request.id << " turn=" << request.progress.turn_index + 1 << " episode=" << request.rounds.size() << '\n';
       calls.push_back(prepare_generation_call(model, request, request.progress.output_limit(), prefix.get(), requests));
     }
@@ -5499,7 +5481,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       if (!members.try_reserve(bucket.size())) throw std::bad_alloc{};
       batch_indices.mark_selected(bucket.size());
       for (std::size_t j = 0; j < bucket.size(); ++j) {
-        const auto index = active[selected[j]];
+        const auto index = active[selected[j]].slot;
         dispatch.push_back(index); dispatch_turns.push_back(requests[index].progress.turn_index); members.push_back(index);
         finished = (std::max)(finished, requests[index].endpoint);
       }
@@ -5516,12 +5498,16 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     for (auto &call : calls) publish_generation_prompt(model, call, prefix.get());
     for (std::size_t at = 0; at < window.active().size();) {
-      const auto index = window.active()[at]; auto &request = requests[index];
+      const auto index = window.active()[at].slot; auto &request = requests[index];
       if (!request.progress.turn_done) { ++at; continue; }
       publish_generation_completed(model, request, prefix.get());
       const auto more = request.progress.more_turns();
-      const auto idle_order = window.release_turn(index, more);
-      if (!more) { retire_generation_request(request); ++completed; }
+      const auto idle_order = window.release_turn(request.request_key, more);
+      if (!more) {
+        retire_generation_request(request);
+        window.release(request.request_key);
+        ++completed;
+      }
       else { request.last_idle = idle_order; request.progress.advance_turn(); }
     }
   }

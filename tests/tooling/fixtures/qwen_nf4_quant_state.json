@@ -1,0 +1,1 @@
+{"quant_type": "nf4", "blocksize": 64, "dtype": "float16", "shape": [1024, 5120], "nested_blocksize": 256, "nested_dtype": "float32", "nested_offset": 0.04292804002761841}

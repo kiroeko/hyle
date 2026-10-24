@@ -1,0 +1,248 @@
+{
+  "status": "METADATA_ONLY",
+  "date": "2026-10-25",
+  "source": {
+    "repository": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "revision": "8aa5f05d26b7205477066e1449e0af13f762a299",
+    "file": "model.safetensors",
+    "size": 22344833801,
+    "lfs_sha256": "d5ced71fee428687bca87ed1b62a1518e936e8698b180fbba35431ebd31e1a25",
+    "api_xet_hash": "88fa9db8893864a95b1499026c93b2784fa63c98e878688f05069524e2d42752",
+    "etag": "\"88fa9db8893864a95b1499026c93b2784fa63c98e878688f05069524e2d42752\"",
+    "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+  },
+  "acquisition": {
+    "actual_payload_bytes": 9183,
+    "HTTP_requests": 5,
+    "all_status_206": true,
+    "all_actual_hosts": "hf-mirror.net",
+    "ranges": [
+      {
+        "kind": "original_quant_state",
+        "range": [
+          15264695436,
+          15264695606
+        ],
+        "bytes": 171,
+        "sha256": "9210c25c0ca8632c7166cc3a92dc0cc43ffe528a45a11e3b8dde08941ed9d6c1",
+        "budget_request_id": 14385,
+        "status": 206,
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/resolve/8aa5f05d26b7205477066e1449e0af13f762a299/model.safetensors"
+      },
+      {
+        "kind": "weight.bin",
+        "range": [
+          15261992076,
+          15261999755
+        ],
+        "bytes": 7680,
+        "sha256": "cbe6e709c20b76eef516b2e8bf2893c319e2621d7b5dc0f3ddf4f8d0bb00fa0a",
+        "budget_request_id": 14386,
+        "status": 206,
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/resolve/8aa5f05d26b7205477066e1449e0af13f762a299/model.safetensors"
+      },
+      {
+        "kind": "absmax.bin",
+        "range": [
+          15264613516,
+          15264613755
+        ],
+        "bytes": 240,
+        "sha256": "214115a8d7b2f306d036502a1bece2440c314d6e024a47099124670e71646a3f",
+        "budget_request_id": 14387,
+        "status": 206,
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/resolve/8aa5f05d26b7205477066e1449e0af13f762a299/model.safetensors"
+      },
+      {
+        "kind": "nested_absmax.bin",
+        "range": [
+          2502816,
+          2502819
+        ],
+        "bytes": 4,
+        "sha256": "5399407b8dc0c00401a5b15f2bf8f6bc0f60b93ef32c1e81e907344525c02d12",
+        "budget_request_id": 14388,
+        "status": 206,
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/resolve/8aa5f05d26b7205477066e1449e0af13f762a299/model.safetensors"
+      },
+      {
+        "kind": "codebooks.bin",
+        "range": [
+          2504096,
+          2505183
+        ],
+        "bytes": 1088,
+        "sha256": "9bec262dd7ad4b9a4a3a8ffb16eb4769b7f69ec89c45eae4383ffee97b888385",
+        "budget_request_id": 14389,
+        "status": 206,
+        "uri": "https://hf-mirror.net/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/resolve/8aa5f05d26b7205477066e1449e0af13f762a299/model.safetensors"
+      }
+    ],
+    "full_source_LFS_verified": false,
+    "PAUSED_restored_by_root": true,
+    "source_roles_are_partial_component_views": true
+  },
+  "original_state": {
+    "quant_type": "nf4",
+    "blocksize": 64,
+    "decode_dtype": "F16",
+    "original_logical_shape": [
+      1024,
+      5120
+    ],
+    "nested_blocksize": 256,
+    "nested_dtype": "F32",
+    "nested_offset": 0.04292804002761841,
+    "offset_f32_bits": "3d2fd550",
+    "original_json_bytes": 171,
+    "original_json_sha256": "9210c25c0ca8632c7166cc3a92dc0cc43ffe528a45a11e3b8dde08941ed9d6c1"
+  },
+  "prepared_binding": {
+    "signature": "HYLE_QWEN_ROLE_FILES_V2",
+    "codec": "kNf4DoubleQuant",
+    "physical_roles_per_group": 6,
+    "selected_reader": "bitsandbytes-default@833649043474794b8fe7a4136e0c40faf077b2e0",
+    "compute_dtype": "F16",
+    "decode_dtype": "F16",
+    "per_group_original_JSON_SHA_and_offset_bits_required": true,
+    "all_groups_metadata_checked_before_selection": true,
+    "original_flattened_codes_preserved": true,
+    "Unknown_output_dtype_default_used": false,
+    "config_geometry_preserved_when_artifact_omits_NextN": true,
+    "explicit_MTP_without_original_NextN_rejected": true,
+    "partial_NextN_inventory_rejected_even_for_ordinary": true,
+    "non_NF4_dense_and_CT_before_after_comparisons": [
+      {
+        "source": "ct",
+        "mtp": false,
+        "lines_and_receipt_byte_equivalent": true
+      },
+      {
+        "source": "ct",
+        "mtp": true,
+        "lines_and_receipt_byte_equivalent": true
+      },
+      {
+        "source": "dense",
+        "mtp": false,
+        "lines_and_receipt_byte_equivalent": true
+      },
+      {
+        "source": "dense",
+        "mtp": true,
+        "lines_and_receipt_byte_equivalent": true
+      }
+    ]
+  },
+  "cached_full_header_schema": {
+    "physical_roles": 2611,
+    "logical_roles": 851,
+    "NF4_groups": 352,
+    "unquantized_F16_roles": 499,
+    "original_text_bytes": 21422981257,
+    "actual_original_quant_states_checked": 1,
+    "unread_original_quant_states": 351,
+    "canonical_full_prepare_complete": false,
+    "source_header": {
+      "path": ".scratch/mtp-metadata-offline-20261024/cat13/header.json",
+      "bytes": 392344,
+      "sha256": "52d32f2375dfd5849315506fbf97d2776cabfab06576580a82dc23b77d586c11"
+    }
+  },
+  "checks": {
+    "CPP_strict_compile_exit": 0,
+    "CPP_warning_flags": [
+      "/W4",
+      "/WX"
+    ],
+    "CPP_checks": 342,
+    "Python_tests": 14,
+    "Python_exit": 0,
+    "original171B_fixture_SHA_verified": true,
+    "nonempty_typed_shape_mismatch_rejected": true,
+    "metadata_parse_bytes_limit": 512,
+    "duplicate_unknown_fields_rejected": true,
+    "nonfinite_offset_rejected": true,
+    "separate_full_model_execution_test": false,
+    "SDK_rebuilt": false,
+    "GPU_used": false
+  },
+  "remaining": [
+    "Validate each of the other351 original QuantState payloads before full artifact preparation.",
+    "Original N3 raw values are now cached; decode/projection/reader numerical checks are a separate next component task.",
+    "Complete F16 activation/compute engine path is not implemented; current loader explicitly rejects NF4 metadata before weight IO/allocation.",
+    "No full27B execution, compressed NF4 resident-GEMM support, memory-fit proof, performance or quality claim."
+  ],
+  "scope_notes": [
+    "The N3x5120 component is a prefix view of original1024x5120; it is not an authenticated full1024-row role.",
+    "F16 original QuantState decode dtype is separate from config-requested F16 compute dtype; neither silently becomes BF16.",
+    "The raw171B identity does not certify all352 groups. The full header check certifies only physical schema.",
+    "Strict C++/Python checks are metadata tests; available source payload bytes do not themselves prove arithmetic correctness."
+  ],
+  "private_summary": {
+    "path": ".scratch/inference-system-review-20261025/nf4-metadata/summary.json",
+    "bytes": 2073,
+    "sha256": "098b05a65a723f0b03c82df90df40efbc90cfe219c372ab422ea2a7b49e14774"
+  },
+  "source_pins": {
+    "engine/models/qwen35/prepare.py": {
+      "bytes": 29767,
+      "sha256": "e2ba205ebf0bcdb9dda676f301f6c2ceebcaa024e98c98e6877e2d239fb88aad"
+    },
+    "engine/models/qwen35/prepared_roles.h": {
+      "bytes": 28953,
+      "sha256": "067d7ed330a93b2afbd1e6a0d0a041b7a4925d6e21d029a100364ffa96f836a9"
+    },
+    "engine/models/qwen35/nf4_state.py": {
+      "bytes": 5365,
+      "sha256": "318c164936a1e4d79bd0ff14b97f4c753c4b21faac63a22fbb155e7d2ba60653"
+    },
+    "engine/models/qwen35/nf4_state.h": {
+      "bytes": 5375,
+      "sha256": "93d74bbfce17d9dc314fc951536b261d72e9f42d7422ebf56903c67814cc9a5f"
+    },
+    "tests/tooling/qwen_hf_roles_test.py": {
+      "bytes": 24825,
+      "sha256": "8b8ac867bd1aff0d0ace717a8c2fca7a3dd1a9153737c851593310272933ed92"
+    },
+    "tests/tools/qwen_prepared_roles_test.cc": {
+      "bytes": 41186,
+      "sha256": "05eb786da3e6b085ee976d5e6ab3d609f5b86b2e1120719e6a4975f12626de30"
+    },
+    "tests/tooling/fixtures/qwen_nf4_quant_state.json": {
+      "bytes": 171,
+      "sha256": "9210c25c0ca8632c7166cc3a92dc0cc43ffe528a45a11e3b8dde08941ed9d6c1"
+    }
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/nf4-original-cold-metadata-2026-10-25.zip",
+    "bytes": 153827,
+    "sha256": "b494fe76a733f973544ac86fae20808b1e74254b27748ee082d7856cb8387e90"
+  },
+  "cleanup": {
+    "files": [
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-metadata\\host1\\checks.exe",
+        "bytes": 298496,
+        "sha256": "3e45cbbcf7eee28dff3f10c2f1ec550fc42d2f341f091a3ffa5ff17be9db8590"
+      },
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-metadata\\host1\\checks.obj",
+        "bytes": 2900896,
+        "sha256": "2f6466b0d206d8c2ff69ce61e550145c2684113e64592aa5222f9fcf36f85f01"
+      },
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-metadata\\host2\\checks.exe",
+        "bytes": 300032,
+        "sha256": "af470ac9f35a8cd1ca663a7e8b24e4a432420da68d96f861c2ba2a13acae38a0"
+      },
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-metadata\\host2\\checks.obj",
+        "bytes": 2914852,
+        "sha256": "d608615eab7840dccbc50df232b520748332304fb660e738c98be9e2fb9c9a44"
+      }
+    ],
+    "logical_bytes": 6414276,
+    "deleted": false
+  }
+}

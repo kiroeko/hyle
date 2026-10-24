@@ -53,6 +53,8 @@ Hyle 早期两次 target 间隔含真实 draft，约 12.02／9.57ms 没有 GPU �
 
 仅逐步 formatter 的两次私有诊断保持原文本、顺序和工作量：普通 128 次合计 17.03ms、MTP 68 次 9.75ms，中位约 130／138µs。它不含入口日志，也不是全部主机成本。完整 trace、IO、源码窄审与口径纠正见[当前成本归因](../../evidence/performance/mtp-current-cost-attribution-2026-10-25.json)。
 
+[控制传输复算](../../evidence/performance/inference-control-transfer-2026-10-25.json)直接复用上述四条轨迹，无新模型或 profiler 进程。Runtime 表的 `eventClass=1` 实际记录了可见 Driver API，不能因没有独立 Driver 表就认为这些上传不可观测。普通／MTP warm 窗中，直接 H2D＋显式流同步 API 的区间 union 为 1.385／1.875ms，占各自窗口 0.528%／0.531%；参考同窗的 H2D 次数及字节反而更多。逐端口同步值得简化，但目前不能列作约 10% MTP 差距的主因或承诺收益。窗口排除首 target 前上传与末 target 后读回，保留原工具诊断和实际工作差异；API 等待、GPU 活动与图内复制分别计量。
+
 metadata 候选已关闭：当前 CUDA 路线实际共享 source，5 个 follower 的冷期多余预留在完整 MTP 四个阶段合计仅 22,560B；不是每 token 上传或分配，保留原有准备和失败边界，不为此引入懒分配机制。
 
 [绑定诊断](../../evidence/performance/mtp-capture-binding-diagnostics-2026-10-25.json)进一步分开两种重录：132 次范围决策中录制 32、复用 100；58 个已记录的首不等端口全部只改变同 backing 的 offset，hidden 出现至少三种地址组合，两份变体遇到淘汰后回访。另有两次 prepare 之间明确失效后重新录制，不能据相同指纹删除该边界。首次诊断溢出及一次修正均保留，修正版零溢出、全部非时间工作与基线一致；只细记各 Invocation 前 20 次准备，不把首不等端口当作全部差异，也未观测 native GraphExecUpdate 结果。

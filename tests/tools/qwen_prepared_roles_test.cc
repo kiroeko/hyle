@@ -452,10 +452,76 @@ void malformed_input_and_shared_entrypoint_are_bounded(const fs::path &directory
   write(path, prefix + "x BF16 0 \"" + std::string(p::maximum_manifest_path_bytes + 1, 'x') + "\" 0 2\n");
   rejects([&] { (void)p::read_roles(path, false); }, "source path length limit");
   std::string oversized = prefix;
-  for (std::size_t i = 0; i <= (p::parameter_inventory(true, geometry).size()*4); ++i)
+  for (std::size_t i = 0; i <= (p::parameter_inventory(true, geometry).size()*p::maximum_physical_components); ++i)
     oversized += "extra" + std::to_string(i) + " BF16 0 \"never-opened.bin\" 0 2\n";
   write(path, oversized);
   rejects([&] { (void)p::read_roles(path, false); }, "role count exceeds model limit");
+}
+void nf4_original_state_and_six_role_contract(const fs::path &directory) {
+  // Original171B: unsloth/Qwen3.8-27B-unsloth-bnb-4bit
+  // @8aa5f05d26b7205477066e1449e0af13f762a299/model.safetensors,
+  // bytes15264695436..15264695606; SHA2569210c25c...ed9d6c1.
+  const auto fixture = fs::path(__FILE__).parent_path().parent_path() / "tooling/fixtures/qwen_nf4_quant_state.json";
+  std::ifstream original(fixture, std::ios::binary);
+  const std::string raw((std::istreambuf_iterator<char>(original)), {});
+  auto actual = p::parse_nf4_state(raw);
+  require(raw.size() == 171 && actual.logical_shape == std::array<std::int64_t,2>{1024,5120} &&
+      actual.offset_f32_bits == 0x3d2fd550 && actual.decode_dtype == "F16" && actual.compute_dtype == "F16",
+      "original NF4 JSON must preserve source decode type, original shape and F32 offset bits");
+  p::validate_nf4_state_values(raw, actual);
+  actual.logical_shape[0] = 3;
+  rejects([&]{p::validate_nf4_state_values(raw,actual);},"values differ");
+  for (const auto &bad : {raw + std::string(512,' '), raw + "x", std::string("{}"),
+      std::string("{\"quant_type\":\"nf4\",\"quant_type\":\"nf4\"}")})
+    rejects([&]{(void)p::parse_nf4_state(bad);},"invalid original NF4");
+  for (const auto replacement : {"float32", "bfloat16"}) {
+    auto bad = raw; bad.replace(bad.find("float16"),7,replacement);
+    rejects([&]{(void)p::parse_nf4_state(bad);},"invalid original NF4");
+  }
+  auto all = dense();
+  for (auto &[name,role] : all) { (void)name; role.dtype = "F16"; }
+  const std::array<std::string,2> names{"model.language_model.layers.3.self_attn.k_proj.weight",
+                                      "mtp.layers.0.self_attn.k_proj.weight"};
+  std::map<std::string,p::Nf4State> states;
+  for (const auto &name : names) {
+    const auto shape = all.at(name).shape; all.erase(name);
+    const auto count = shape[0]*shape[1], groups = count/64;
+    add(all,name,"U8",{count/2,1}); add(all,name+".absmax","U8",{groups});
+    add(all,name+".nested_absmax","F32",{groups/256+(groups%256!=0)});
+    add(all,name+".nested_quant_map","F32",{256}); add(all,name+".quant_map","F32",{16});
+    add(all,name+std::string(p::nf4_state_suffix),"U8",{171});
+    states.emplace(name,p::Nf4State{{shape[0],shape[1]},0x3d2fd550,std::string(64,'b')});
+  }
+  const auto select = [&](const Inventory &inventory,const auto &metadata,bool mtp=false) {
+    return p::select_roles(inventory,identity,mtp,geometry,{},{},{},{true},metadata);
+  };
+  const auto text=select(all,states),full=select(all,states,true);
+  require(text.nf4_policy.enabled && text.selected.size()==325 && full.selected.size()==345,
+      "NF4 ordinary/MTP selection must validate both complete six-role groups");
+  const auto codes=std::ranges::find_if(text.selected,[&](const auto &r){return r.name==names[0];});
+  require(codes!=text.selected.end() && codes->projection_codec==p::ProjectionCodec::kNf4DoubleQuant &&
+      codes->projection_group_size==64 && codes->nf4_state.logical_shape==std::array<std::int64_t,2>{512,2048},
+      "NF4 principal must keep source physical axes separate from logical decode shape");
+  for (const auto suffix : {"", ".absmax", ".nested_absmax", ".nested_quant_map", ".quant_map", ".quant_state.bitsandbytes__nf4"}) {
+    auto bad=all;bad.erase(names[1]+suffix);
+    rejects([&]{(void)select(bad,states);},suffix==std::string_view(".quant_state.bitsandbytes__nf4")?"byte limit":"missing prepared role");
+  }
+  auto bad=all;bad.at("model.language_model.norm.weight").dtype="BF16";
+  rejects([&]{(void)select(bad,states);},"type/shape differs");
+  auto fewer=states;fewer.erase(names[1]);
+  rejects([&]{(void)select(all,fewer);},"per-group original state");
+  auto wrong_shape=states;wrong_shape.at(names[1]).logical_shape[0]=3;
+  rejects([&]{(void)select(all,wrong_shape);},"typed logical shape differs");
+  auto extra=states;extra.emplace("unknown.weight",actual);
+  rejects([&]{(void)select(all,extra);},"per-group state inventory");
+  const auto path=directory/"nf4.tsv";
+  auto serialized=std::string(p::role_signature)+'\n'+identity+'\n'+qwen_test::geometry_line(geometry)+'\n'+std::string(p::nf4_policy_line)+'\n';
+  for (const auto &[name,state]:states) serialized+="nf4_state\t"+name+'\t'+state.original_json_sha256+"\t3d2fd550\n";
+  for (const auto &[name,role]:all) { (void)name;serialized+=row(role); }
+  write(path,serialized);
+  require(p::read_roles(path,false).selected.size()==325,"NF4 V2 policy and per-group state must roundtrip");
+  write(path,serialized+"nf4_state\tunknown.weight\t"+std::string(64,'a')+"\t3d2fd550\n");
+  rejects([&]{(void)p::read_roles(path,false);},"misplaced prepared NF4 state");
 }
 
 void gguf_inventory_and_source_semantics(const fs::path &directory) {
@@ -596,6 +662,7 @@ int main(int argc, char **argv) {
     source_geometry_drives_role_layout();
     fp8_blocks_and_policy(directory);
     ct_mixed_and_cache_policy(directory);
+    nf4_original_state_and_six_role_contract(directory);
     for (int i=2;i<argc;++i) {
       const auto all=p::read_roles(argv[i],true),text=p::read_roles(argv[i],false);
       require(all.geometry == text.geometry && !all.geometry.layers.empty() &&

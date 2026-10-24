@@ -131,17 +131,18 @@ void finite_fifo_hot_transitions_allocate_nothing() {
   const std::array turns{GenerationTurn{{2}, 1}, GenerationTurn{{}, 1}};
   std::array progress{RequestProgress(2), RequestProgress(2)};
   for (auto &request : progress) request.bind_turns(turns);
-  RequestWindow window; window.prepare(2, 4, 1);
+  RequestWindow window; window.prepare(2, 1);
+  const std::array keys{window.enqueue(0), window.enqueue(1)};
   std::array<std::array<std::array<std::int32_t, 1>, 2>, 2> inputs{};
   for (auto &request : inputs) request[0][0] = 2;
   const std::array<std::size_t, 4> order{0, 1, 0, 1};
   allocation_count = 0; track_allocations = true;
   for (const auto index : order) {
     auto &request = progress[index];
-    require(window.waiting_front() == index, "finite turn FIFO changed");
+    require(window.waiting_front() == keys[index], "finite turn FIFO changed");
     const auto turn = request.turn_index;
     request.begin_turn(inputs[index][turn], turn ? std::optional(request.generated.back()) : std::nullopt);
-    window.admitted(index);
+    window.admitted(keys[index]);
     const std::array emitted{static_cast<std::int32_t>(10 + 100 * index + turn)};
     if (index == 1 && turn == 0) {
       request.adopt_committed_history(7);
@@ -149,7 +150,8 @@ void finite_fifo_hot_transitions_allocate_nothing() {
     } else request.observe_commit(request.observed_commits(), emitted, true, true, false);
     const auto more = request.more_turns();
     require(request.turn_done, "bounded turn was not complete at its actual output quota");
-    window.release_turn(index, more);
+    window.release_turn(keys[index], more);
+    if (!more) window.release(keys[index]);
     if (more) request.advance_turn();
   }
   track_allocations = false;

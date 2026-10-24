@@ -2,6 +2,8 @@
 // This is consumer input handling, not a Compute/Graph execution interface.
 #pragma once
 
+#include "token_ids.h"
+
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -29,26 +31,14 @@ struct Phase {
 // Both schedule grammars use the same bounded token-file contract. The
 // caller adds its manifest line/phase context to these input diagnostics.
 inline std::vector<std::int32_t> read_schedule_ids(const std::filesystem::path &path,
-    std::int64_t vocabulary, std::size_t max_rows) {
-  if (vocabulary <= 0 || vocabulary > (std::numeric_limits<std::int32_t>::max)())
-    throw std::runtime_error("token IDs require a positive vocabulary within I32");
-  if (path.native().find(std::filesystem::path::value_type{}) != std::filesystem::path::string_type::npos)
-    throw std::runtime_error("token IDs path contains a null byte");
-  std::ifstream input(path);
-  if (!input) throw std::runtime_error("cannot open token IDs: " + path.string());
+    std::int64_t vocabulary, std::size_t max_rows, bool allow_empty = false) {
   std::vector<std::int32_t> ids;
-  std::string token;
-  while (input >> token) {
-    std::int64_t id = 0;
-    const auto converted = std::from_chars(token.data(), token.data() + token.size(), id);
-    if (converted.ec != std::errc{} || converted.ptr != token.data() + token.size() || id < 0 || id >= vocabulary)
-      throw std::runtime_error("token ID outside vocabulary or malformed: " + path.string());
-    if (ids.size() == max_rows)
-      throw std::runtime_error("token IDs exceed context capacity: " + path.string());
-    ids.push_back(static_cast<std::int32_t>(id));
+  try { ids = qwen35::read_ids(path, vocabulary, max_rows); }
+  catch (const std::runtime_error &exception) {
+    throw std::runtime_error(std::string(exception.what()) + ": " + path.string());
   }
-  if (!input.eof()) throw std::runtime_error("failed reading token IDs: " + path.string());
-  if (ids.empty()) throw std::runtime_error("phase requires nonempty token IDs: " + path.string());
+  if (ids.empty() && !allow_empty)
+    throw std::runtime_error("phase requires nonempty token IDs: " + path.string());
   return ids;
 }
 

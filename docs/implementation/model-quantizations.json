@@ -9,7 +9,7 @@
     "Most derivative cards name a base repository without a base commit; exact derivation from the existing baseline revision remains unknown. The custom Kimi K512 card explicitly pins f831ab6.",
     "Physical GEMM accumulation, activation rounding and kernel fusion remain unverified for these publisher artifacts; provider_coverage records distinguish source contracts and any subsequent operation regressions.",
     "Initial snapshot four configs exceeded200k; fixed-source follow-ups in provider_coverage record expanded bounded metadata reads. Original collection limits are historical, not current missing-file verdicts.",
-    "Initial publisher discovery metadata is preserved; follow-up provider_coverage entries state their own header/operator checks. None establishes end-to-end execution of a publisher artifact.",
+    "Initial publisher discovery metadata is preserved; follow-up provider_coverage entries and their evidence state the actual header, operator or end-to-end scope. An initial static review is not a current blanket support verdict.",
     "Repository discovery and metadata inspection are incomplete; the initial baseline and these rows do not cap support scope.",
     "A null provider_coverage or unknown codec is unreviewed, not proof of rejection, support or removable implementation.",
     "Published base-model names do not generally pin the exact source-weight revision."
@@ -2380,11 +2380,25 @@
       "config_url": "https://huggingface.co/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/blob/8aa5f05d26b7205477066e1449e0af13f762a299/config.json",
       "notes": "do not equate NF4 to INT4/E2M1; ignored module list is part of artifact",
       "provider_coverage": {
-        "review": "static_contract_review",
+        "review": "original_header_and_one_group_metadata_review",
         "artifact_execution_verified": false,
-        "review_scope": "Local source/config inspection only; no artifact tensor-header binding, execution, build or numerical verification",
-        "mapping_status": "Conditional six-port cold decode exists; packed NF4 GEMM and full FP16 compute fidelity are not established",
-        "required_format_domain": "bitsandbytes NF4 double-quant, U8 packed storage; configured compute_dtype=float16; source quant_state group size, codebooks, offset and dequantized dtype not present in saved config",
+        "review_scope": "2026-10-25: full original header schema and one original QuantState read; cold metadata implementation passed host checks. No original-value arithmetic or full model execution is established by this metadata evidence.",
+        "mapping_status": "Typed six-role cold metadata is implemented; explicit F16 weight import, full F16 activation execution and packed NF4 GEMM remain unimplemented in the model consumer",
+        "required_format_domain": "Original first QuantState declares group64, nested256, F16 decode and nested F32; configured compute is independently F16. Other 351 original QuantStates remain unread.",
+        "ordinary_metadata_followup": {
+          "evidence": "../evidence/correctness/nf4-original-cold-metadata-2026-10-25.json",
+          "status": "METADATA_ONLY",
+          "text_physical_roles": 2611,
+          "text_logical_roles": 851,
+          "nf4_groups": 352,
+          "unquantized_f16_roles": 499,
+          "original_quant_states_read": 1,
+          "original_component_payload_bytes": 9183,
+          "original_role_shape": [1024, 5120],
+          "component_view_shape": [3, 5120],
+          "full_artifact_prepared": false,
+          "original_value_arithmetic_verified": false
+        },
         "reachable_entry_points": [
           {
             "provider": "CPU native ATen",
@@ -2416,7 +2430,7 @@
           }
         ],
         "artifact_unaligned_or_unverified": [
-          "Read quant_state: main block/group size, original high-first nibble packing, first/second-level codebooks, absmax arrays, scalar offset and source dtype",
+          "First original QuantState and N3/fullK component bytes are acquired; verify original-value arithmetic and read each additional QuantState when binding those roles, rather than certifying all 352 groups from one state",
           "The nested scale block is exactly 256 in the existing operator; main group size must come from the artifact",
           "Unknown output_type defaults NF4 decode to BF16; do not select this default or infer quant_state output dtype solely from configured compute_dtype=float16",
           "Dense dequantization followed by MatMul is a distinct execution choice; FP16 compute metadata does not prove its accumulation/rounding matches bitsandbytes",

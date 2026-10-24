@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "model_geometry.h"
+#include "nf4_state.h"
 
 // The prepared input describes original physical storage, including disjoint
 // cached source ranges. It does not prescribe an executor or a Provider.
@@ -28,7 +29,8 @@ inline constexpr std::string_view role_signature = "HYLE_QWEN_ROLE_FILES_V2";
 inline constexpr std::string_view gguf_role_signature = "HYLE_QWEN_GGUF_ROLE_FILES_V2";
 inline constexpr std::size_t maximum_manifest_line_bytes = 64u << 10;
 inline constexpr std::size_t maximum_manifest_path_bytes = 32u << 10;
-// A logical parameter has at most the four original GPTQ/NVFP4 components.
+// A logical parameter has at most six original NF4 double-quant components.
+inline constexpr std::size_t maximum_physical_components = 6;
 inline bool read_manifest_line(std::istream &input, std::string &line,
                                std::size_t limit = maximum_manifest_line_bytes) {
   line.clear();
@@ -50,7 +52,7 @@ enum class ParameterMeaning {
 // GGUF conversion retains its independent storage descriptor and parameter
 // meaning; this discriminator describes original HF projection groups.
 enum class ProjectionCodec { kUnspecified, kDense, kGptqV1Int4, kNvfp4, kCtSymmetric4, kFloat8Block128,
-                             kCtFloat8ChannelToken, kCtLocalNvfp4 };
+                             kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant };
 // This is an explicit selected-reader arithmetic contract, not a claim that
 // every reader of the HF config chooses the same activation quantization.
 inline constexpr std::string_view fp8_reader = "sglang@06992c92ad4494fe9f9636e75be3e35040512447";
@@ -80,6 +82,7 @@ struct Role final {
   std::uint64_t original_offset = 0;
   ProjectionCodec projection_codec = ProjectionCodec::kUnspecified;
   std::uint32_t projection_group_size = 0;
+  Nf4State nf4_state{};
 };
 struct Parameter final {
   std::vector<std::int64_t> shape;
@@ -146,6 +149,7 @@ struct Roles final {
   Float8BlockPolicy float8_policy{};
   CtMixedPolicy ct_mixed_policy{};
   std::vector<Role> omitted_cache_calibration{};
+  Nf4Policy nf4_policy{};
 };
 inline Roles read_gguf_roles(const std::filesystem::path &path, bool include_mtp);
 inline bool is_role_signature(std::string_view signature) noexcept {
@@ -205,16 +209,21 @@ inline void validate_ct_shape_values(const Role &codes, std::span<const std::byt
 // Validation covers the entire inventory even when MTP is not selected for IO.
 inline Roles select_roles(const std::map<std::string, Role> &all, std::string identity, bool include_mtp, const ModelGeometry &geometry,
                           Float8BlockPolicy float8_policy = {}, CtMixedPolicy ct_mixed_policy = {},
-                          Bf16CachePolicy bf16_cache_policy = {}) {
+                          Bf16CachePolicy bf16_cache_policy = {}, Nf4Policy nf4_policy = {},
+                          const std::map<std::string, Nf4State> &nf4_states = {}) {
   geometry.validate();
   if (geometry.gdn_layout != GdnHeadLayout::kGrouped) throw std::runtime_error("HF roles require their original grouped GDN layout");
-  const auto maximum_hf_physical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size() * 4;
+  const auto maximum_hf_physical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size() * maximum_physical_components;
   validate_identity(identity);
   if (all.size() > maximum_hf_physical_roles)
     throw std::runtime_error("prepared physical role count exceeds model limit");
   Roles result{std::move(identity), {}, 0}; result.geometry = geometry;
   result.float8_policy = float8_policy;
   result.ct_mixed_policy = ct_mixed_policy;
+  result.nf4_policy = nf4_policy;
+  if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration))
+    throw std::runtime_error("prepared NF4 reader cannot mix unrelated precision policies");
+  if (nf4_policy.enabled != !nf4_states.empty()) throw std::runtime_error("prepared NF4 policy/state inventory differs");
   bool has_float8_block = false;
   bool has_ct_mixed = false;
   for (const auto &[name, role] : all) {
@@ -231,12 +240,13 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   if (include_mtp && !has_mtp) throw std::runtime_error("MTP requires prepared MTP roles");
   const auto inventory = parameter_inventory(has_mtp, geometry);
   std::set<std::string> consumed;
+  std::size_t nf4_groups = 0;
   for (const auto &[name, parameter] : inventory) {
     const bool selected = include_mtp || !name.starts_with("mtp.");
     const auto take = [&](const std::string &physical, std::string_view dtype,
                           std::vector<std::int64_t> shape,
                           ProjectionCodec codec = ProjectionCodec::kUnspecified,
-                          std::uint32_t group_size = 0) {
+                          std::uint32_t group_size = 0, const Nf4State *nf4 = nullptr) {
       const auto found = all.find(physical);
       if (found == all.end()) throw std::runtime_error("missing prepared role: " + physical);
       const auto &role = found->second;
@@ -250,11 +260,36 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
         auto derived = role;
         derived.projection_codec = codec;
         derived.projection_group_size = group_size;
+        if (nf4) derived.nf4_state = *nf4;
         result.selected.push_back(std::move(derived));
       }
     };
     const auto base = name.ends_with(".weight") ? name.substr(0, name.size() - 7) : name;
-    if (parameter.linear && all.contains(base + ".weight_packed") &&
+    if (parameter.linear && (all.contains(name + std::string(nf4_state_suffix)) || nf4_states.contains(name))) {
+      if (!nf4_policy.enabled || !nf4_states.contains(name))
+        throw std::runtime_error("prepared NF4 requires its per-group original state and F16 policy: " + name);
+      const auto n = parameter.shape[0], k = parameter.shape[1];
+      if (n > INT64_MAX/k || (n*k)%2) throw std::runtime_error("prepared NF4 packed extent overflows: " + name);
+      const auto count = n*k, groups = count/64 + (count%64 != 0);
+      auto state = nf4_states.at(name);
+      validate_identity(state.original_json_sha256);
+      if (state.logical_shape != std::array<std::int64_t,2>{} && state.logical_shape != std::array<std::int64_t,2>{n,k})
+        throw std::runtime_error("prepared NF4 typed logical shape differs: " + name);
+      if (!std::isfinite(std::bit_cast<float>(state.offset_f32_bits)))
+        throw std::runtime_error("prepared NF4 offset is not finite F32");
+      state.logical_shape = {n,k};
+      const auto json = all.find(name + std::string(nf4_state_suffix));
+      if (json == all.end() || json->second.shape.size() != 1 || json->second.shape[0] <= 0 ||
+          json->second.shape[0] > static_cast<std::int64_t>(maximum_nf4_state_bytes))
+        throw std::runtime_error("prepared NF4 quant_state byte limit differs: " + name);
+      ++nf4_groups;
+      take(name, "U8", {count/2,1}, ProjectionCodec::kNf4DoubleQuant, 64, &state);
+      take(name + ".absmax", "U8", {groups});
+      take(name + ".nested_absmax", "F32", {groups/256 + (groups%256 != 0)});
+      take(name + ".nested_quant_map", "F32", {256});
+      take(name + ".quant_map", "F32", {16});
+      take(name + std::string(nf4_state_suffix), "U8", json->second.shape);
+    } else if (parameter.linear && all.contains(base + ".weight_packed") &&
         (all.at(base + ".weight_packed").dtype == "U8" ||
          all.contains(base + ".weight_global_scale") || all.contains(base + ".input_global_scale"))) {
       if (!ct_mixed_policy.enabled) throw std::runtime_error("prepared CT local NVFP4 requires its fixed reader policy");
@@ -326,7 +361,8 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
       take(base + ".weight_scale_inv", "BF16", {(n + 127) / 128, k / 128});
     } else {
       const auto found = all.find(name);
-      const auto dtype = found != all.end() && parameter.allow_f32 && found->second.dtype == "F32" ? "F32" : "BF16";
+      const auto dtype = nf4_policy.enabled ? "F16" :
+          found != all.end() && parameter.allow_f32 && found->second.dtype == "F32" ? "F32" : "BF16";
       take(name, dtype, parameter.shape,
           parameter.linear ? ProjectionCodec::kDense : ProjectionCodec::kUnspecified);
     }
@@ -348,6 +384,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   }
   if (float8_policy.enabled && !has_float8_block) throw std::runtime_error("prepared FP8 policy has no block128 weights");
   if (ct_mixed_policy.enabled && !has_ct_mixed) throw std::runtime_error("prepared CT reader policy has no matching weights");
+  if (nf4_groups != nf4_states.size()) throw std::runtime_error("prepared NF4 per-group state inventory differs");
   if (bf16_cache_policy.omit_calibration && result.omitted_cache_calibration.empty())
     throw std::runtime_error("prepared BF16 cache omission has no calibration roles");
   if (consumed.size() != all.size()) throw std::runtime_error("unclaimed prepared physical role");
@@ -365,14 +402,35 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
   validate_identity(identity);
   std::string geometry_line; read_manifest_line(input, geometry_line);
   const auto geometry = read_model_geometry(geometry_line);
-  const auto maximum_hf_physical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size() * 4;
+  const auto maximum_logical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size();
+  const auto maximum_hf_physical_roles = maximum_logical_roles * maximum_physical_components;
   std::map<std::string, Role> all;
   Float8BlockPolicy float8_policy;
   CtMixedPolicy ct_mixed_policy;
   Bf16CachePolicy bf16_cache_policy;
+  Nf4Policy nf4_policy;
+  std::map<std::string, Nf4State> nf4_states;
   std::string line;
   while (read_manifest_line(input, line)) {
     if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
+    if (line.starts_with("nf4_double_quant")) {
+      if (line.ends_with('\r')) line.pop_back();
+      if (nf4_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled || !all.empty() || line != nf4_policy_line)
+        throw std::runtime_error("invalid or misplaced prepared NF4 F16 policy");
+      nf4_policy.enabled = true; continue;
+    }
+    if (line.starts_with("nf4_state")) {
+      std::istringstream fields(line); std::string tag, name, sha, bits, extra;
+      if (!nf4_policy.enabled || !all.empty() || nf4_states.size() == maximum_logical_roles ||
+          !(fields >> tag >> name >> sha >> bits) || tag != "nf4_state" || (fields >> extra) || bits.size() != 8)
+        throw std::runtime_error("invalid or misplaced prepared NF4 state");
+      validate_identity(sha); std::uint32_t offset = 0;
+      const auto parsed = std::from_chars(bits.data(), bits.data()+bits.size(), offset, 16);
+      if (parsed.ec != std::errc{} || parsed.ptr != bits.data()+bits.size() || !std::isfinite(std::bit_cast<float>(offset)) ||
+          !nf4_states.emplace(name, Nf4State{{},offset,std::move(sha)}).second)
+        throw std::runtime_error("invalid or duplicate prepared NF4 state");
+      continue;
+    }
     if (line.starts_with("kv_cache")) {
       if (line.ends_with('\r')) line.pop_back();
       if (bf16_cache_policy.omit_calibration || !ct_mixed_policy.enabled || !all.empty() || line != bf16_cache_policy_line)
@@ -381,13 +439,13 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
     }
     if (line.starts_with("ct_mixed")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (ct_mixed_policy.enabled || float8_policy.enabled || !all.empty() || line != ct_mixed_policy_line)
+      if (ct_mixed_policy.enabled || float8_policy.enabled || nf4_policy.enabled || !all.empty() || line != ct_mixed_policy_line)
         throw std::runtime_error("invalid or misplaced prepared CT reader/cache policy");
       ct_mixed_policy.enabled = true; continue;
     }
     if (line.starts_with("fp8_block128")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (float8_policy.enabled || ct_mixed_policy.enabled || !all.empty() || line != fp8_policy_line)
+      if (float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled || !all.empty() || line != fp8_policy_line)
         throw std::runtime_error("invalid or misplaced prepared FP8 reader policy");
       float8_policy.enabled = true; continue;
     }
@@ -421,7 +479,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
       throw std::runtime_error("duplicate prepared role");
   }
   if (!input.eof()) throw std::runtime_error("failed reading prepared role manifest");
-  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy);
+  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states);
 }
 } // namespace qwen35::prepared
 

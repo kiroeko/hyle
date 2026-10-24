@@ -1748,6 +1748,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
       const auto base=take(state.store.import(initial),"import complete original Pro continuation");
       const auto base_image=image(state,base);
       hyle::inference::RequestWindow request_window;
+      std::array<hyle::inference::RequestKey,2> request_keys;
       std::array<std::size_t,4> request_order{};
       std::size_t request_turns=0;
       std::array<hyle::inference::GenerationTurn,2> progress_turns;
@@ -1770,9 +1771,10 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
           progress_inputs[index][0]=state.scalar(base,kPending);
           progress_storage[index]=progress.generated.data();progress_capacity[index]=progress.generated.capacity();
         }
-        request_window.prepare(2,4,1);
-        EXPECT_EQ(request_window.waiting_front(),std::optional<std::size_t>{0});
-        request_window.admitted(0);request_order[request_turns++]=0;
+        request_window.prepare(2,1);
+        for(std::size_t index=0;index<request_keys.size();++index)request_keys[index]=request_window.enqueue(index);
+        EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[0]});
+        request_window.admitted(request_keys[0]);request_order[request_turns++]=0;
         const auto input=request_progress[0]->begin_turn(progress_inputs[0]);
         EXPECT_EQ(input.size(),1u);EXPECT_EQ(input[0],state.scalar(base,kPending));
       }
@@ -2130,9 +2132,9 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
                 GlmCheckpoint{caught,length,state.scalar(caught,kCursor)}));
             EXPECT_TRUE(checkpoints->retains([&](const GlmCheckpoint &entry){return entry.version.identity()==caught.identity();}));
             EXPECT_TRUE(progress.more_turns());
-            EXPECT_EQ(request_window.release_turn(0,progress.more_turns()),1u);head={};progress.advance_turn();
-            EXPECT_EQ(request_window.waiting_front(),std::optional<std::size_t>{1});
-            request_window.admitted(1);request_order[request_turns++]=1;
+            EXPECT_EQ(request_window.release_turn(request_keys[0],progress.more_turns()),1u);head={};progress.advance_turn();
+            EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[1]});
+            request_window.admitted(request_keys[1]);request_order[request_turns++]=1;
             const auto second_request_input=request_progress[1]->begin_turn(progress_inputs[1]);
             EXPECT_EQ(second_request_input.size(),1u);EXPECT_EQ(second_request_input[0],state.scalar(base,kPending));
             auto hit=checkpoints->lookup(domain,*input,length,length);
@@ -2156,7 +2158,8 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
                   "cancel cache-hit sampling cursor");
               check(cancelled_hit.cancel(),"discard whole cache-hit fork");
               EXPECT_EQ(image(state,take(head.current(),"cancelled cache fork Head")),hit_image);
-              EXPECT_EQ(request_window.active().size(),1u);EXPECT_EQ(request_window.active()[0],1u);
+              EXPECT_EQ(request_window.active().size(),1u);EXPECT_EQ(request_window.active()[0].slot,1u);
+              EXPECT_EQ(request_window.active()[0],request_keys[1]);
               EXPECT_FALSE(request_window.waiting_front());EXPECT_EQ(request_turns,2u);
               EXPECT_TRUE(request_progress[1]->generated.empty());EXPECT_EQ(request_progress[1]->observed_commits(),0u);
             }
@@ -2167,7 +2170,8 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             auto version=take(fork.finalize(),"complete new GLM request cache fork");
             EXPECT_FALSE(head.publish(base.identity(),version).ok());
             EXPECT_EQ(image(state,take(head.current(),"stale cache fork leaves Head unchanged")),hit_image);
-            EXPECT_EQ(request_window.active().size(),1u);EXPECT_EQ(request_window.active()[0],1u);
+            EXPECT_EQ(request_window.active().size(),1u);EXPECT_EQ(request_window.active()[0].slot,1u);
+            EXPECT_EQ(request_window.active()[0],request_keys[1]);
             EXPECT_FALSE(request_window.waiting_front());EXPECT_EQ(request_turns,2u);
             EXPECT_TRUE(request_progress[1]->generated.empty());EXPECT_EQ(request_progress[1]->observed_commits(),0u);
             const std::array fork_output{state.scalar(version,kPending)};
@@ -2188,9 +2192,9 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             second_request_image=image(state,second_request.version);
             hit.reset();
             EXPECT_TRUE(request_progress[1]->more_turns());
-            EXPECT_EQ(request_window.release_turn(1,request_progress[1]->more_turns()),2u);head={};request_progress[1]->advance_turn();
-            EXPECT_EQ(request_window.waiting_front(),std::optional<std::size_t>{0});
-            request_window.admitted(0);request_order[request_turns++]=0;
+            EXPECT_EQ(request_window.release_turn(request_keys[1],request_progress[1]->more_turns()),2u);head={};request_progress[1]->advance_turn();
+            EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[0]});
+            request_window.admitted(request_keys[0]);request_order[request_turns++]=0;
             const auto sampling_submissions=random_q->submissions;
             const auto projection_submissions=policy_program->submissions;
             head=take(c::StateHead::create(state.store,caught),"restore original request's historical complete boundary");
@@ -2266,15 +2270,16 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
           std::printf("GLM Pro K1 stochastic=%d scenario=%d proposal=%d target0=%d target1=%d accepted=%u frontier=%d pending=%d continued_pending=%d\n",
               int(stochastic),scenario,proposal,target_ids[0],target_ids[1],std::uint32_t(decision.consumed_drafts),state.scalar(published,kCursor),decision.next_id,state.scalar(continued,kPending));
           if(request_directory_demo) {
-            EXPECT_EQ(request_window.release_turn(0,request_progress[0]->more_turns()),0u);head={};
+            EXPECT_EQ(request_window.release_turn(request_keys[0],request_progress[0]->more_turns()),0u);head={};
             ::testing::Test::RecordProperty("request_directory_r0_pending",state.scalar(continued,kPending));
             ::testing::Test::RecordProperty("request_directory_r0_committed_draws",int(random_cursor(continued).draw));
           }
           } // Retire request0 continuation/skip readers before reusing its pools.
           if(request_directory_demo) {
             check(state.store.collect(),"retire inactive request0 backing before request1 reuses the bounded pools");
-            EXPECT_EQ(request_window.waiting_front(),std::optional<std::size_t>{1});
-            request_window.admitted(1);request_order[request_turns++]=1;
+            request_window.release(request_keys[0]);
+            EXPECT_EQ(request_window.waiting_front(),std::optional{request_keys[1]});
+            request_window.admitted(request_keys[1]);request_order[request_turns++]=1;
             head=take(c::StateHead::create(state.store,second_request.version),"restore second request's own complete boundary");
             EXPECT_EQ(image(state,take(head.current(),"second request restores pending and RNG")),second_request_image);
             EXPECT_EQ(random_cursor(second_request.version),second_random.advanced(1));
@@ -2316,7 +2321,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
             EXPECT_EQ(state.scalar(continued,kCursor),second_request.cursor+1);
             EXPECT_EQ(image(state,second_request.version),second_request_image);
             EXPECT_EQ(image(state,caught),caught_image);
-            EXPECT_EQ(request_window.release_turn(1,request_progress[1]->more_turns()),0u);head={};
+            EXPECT_EQ(request_window.release_turn(request_keys[1],request_progress[1]->more_turns()),0u);head={};
             EXPECT_EQ(request_order,(std::array<std::size_t,4>{0,1,0,1}));EXPECT_EQ(request_turns,4u);
             EXPECT_TRUE(request_window.active().empty());EXPECT_FALSE(request_window.waiting_front());
             EXPECT_TRUE(checkpoints->evict_one());EXPECT_EQ(checkpoints->size(),0u);EXPECT_EQ(checkpoints->evictions,1u);
@@ -2349,6 +2354,7 @@ void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_tar
           }
         }
         check(state.store.collect(),"retire finite Pro scenario while retaining base/first readers");
+        if(request_directory_demo)request_window.release(request_keys[1]);
         EXPECT_EQ(state.store.stats().versions,2u);EXPECT_EQ(state.store.stats().drafts,0u);
       }
     }

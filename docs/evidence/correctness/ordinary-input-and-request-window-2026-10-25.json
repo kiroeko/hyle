@@ -1,0 +1,432 @@
+{
+  "schema": "hyle.correctness.ordinary-input-and-request-window.v1",
+  "date": "2026-10-25",
+  "status": "PASS_bounded_host_and_two_actual_ordinary_cuda_consumers",
+  "scope": "Bounded token-file lexemes; first prompt nonempty and later pending-only user suffix; bounded RequestWindow identities/FIFO/queued cancellation; actual ordinary Text request/turn and R2 generated-prefix integration.",
+  "changes": [
+    "Extract the existing direct read_ids 31-character parser into model-side token_ids.h and use it for direct, natural-schedule and fixed-schedule inputs; retain vocabulary/count checks and schedule file/line diagnostics.",
+    "Natural generation allows an empty user suffix only after the initial nonempty prompt. The existing caller-owned one-token warm input and RequestProgress::begin_turn consume its real historical pending once; no fabricated token, graph, math, dtype, RNG or state protocol change.",
+    "RequestWindow uses bounded live slots and generation-checked keys, single FIFO, queued cancellation, explicit post-retirement release and slot reuse. Main stores the key in GenerationRequest and preserves original ordinary/MTP batch execution/commit chain.",
+    "The final consumer also includes root-owned ordinary ledger no-unused-emitted guard and NF4 pre-I/O metadata rejection. This evidence makes no throughput or NF4 decoding claim."
+  ],
+  "sources": [
+    {
+      "path": "engine/models/qwen35/token_ids.h",
+      "bytes": 2200,
+      "sha256": "d696a78d7db5cd8438d793ce63514e19bac68913716de9a4bc65ab532bee920a"
+    },
+    {
+      "path": "engine/models/qwen35/schedule.h",
+      "bytes": 3938,
+      "sha256": "da54254636fde3febe92315b5b9459264e003ed07a1a12e32e92ca409d77f2ca"
+    },
+    {
+      "path": "engine/models/qwen35/generation_schedule.h",
+      "bytes": 9702,
+      "sha256": "ef99737c5e6714e570a269c8d96979de31da86584b7d4d679cb26d3ae721da4f"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 429061,
+      "sha256": "7731ae84cad717a84a33e02acf9cc9dd123fbac8474be410a19078e481a6e590"
+    },
+    {
+      "path": "tests/tools/qwen_generation_schedule_test.cc",
+      "bytes": 17108,
+      "sha256": "0d224edf8d83b777278d19edd2561f973706d128095749d9d3896e39f355f85d"
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "bytes": 7929,
+      "sha256": "651407bcca12f91c02027129644731bb1b9c37dbb27940a3a3307621be92f828"
+    },
+    {
+      "path": "engine/inference/request_progress.h",
+      "bytes": 8465,
+      "sha256": "a06699ce15e6db0a8847bd26f7a322d01e97389bbfeab3d87a8b748793e537e3"
+    },
+    {
+      "path": "tests/tools/inference_request_window_test.cc",
+      "bytes": 10166,
+      "sha256": "b71ed1c4454f904990757607076eba993a5239835e72533a21be7f36f423c69f"
+    },
+    {
+      "path": "tests/tools/inference_request_progress_test.cc",
+      "bytes": 9776,
+      "sha256": "6b6300be2c7a9e0e1b5fdbbd3e65b06ab0562d02896fff6f8bffb0928ffe035f"
+    }
+  ],
+  "actual_compile": {
+    "translation_units": 1,
+    "sdk_or_backend_translation_units": 0,
+    "compile": {
+      "exit": 0,
+      "seconds": 17.35999999998603,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.687999999994645,
+      "timeout": false
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\schedule-inputs\\link\\hyle.exe",
+      "bytes": 141411328,
+      "sha256": "62f309775771c6c97bdec9600025ed6a730f0b3f7c03476d1c75e9b11b3d6d08"
+    },
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\schedule-inputs\\compile\\unit.obj",
+      "bytes": 13884280,
+      "sha256": "ebf128187a69af3a4d47d05ef71b6097483e9e21f9fd8c431249f200ce20b086"
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\schedule-inputs\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "reused_closure_only_app_object_replaced": true,
+    "previous_link_recipe": {
+      "path": ".scratch/inference-system-review-20261025/text-r2-suffix/link/command.json",
+      "bytes": 32459,
+      "sha256": "5a8273f05c0f4f43464ce82cedf1967f17cf849dbb51cfaa4998877e8c819e54"
+    },
+    "actual_source_pins": {
+      "path": ".scratch/inference-system-review-20261025/schedule-inputs/compile/actual-source-pins.json",
+      "bytes": 6614,
+      "sha256": "501d464ff168e3cad9d17d041398f5b89664c3664a446434a7f1c7b6e0a62d51"
+    }
+  },
+  "final_host_checks": {
+    "schedule": {
+      "record": {
+        "path": ".scratch/inference-system-review-20261025/schedule-inputs/host2/summary.json",
+        "bytes": 3318,
+        "sha256": "8bf3fc35733a809c80cc32ce8ecdadf2edb32db0fab273becd1421d356636f15"
+      },
+      "compile": {
+        "exit": 0,
+        "seconds": 1.437000000005355,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.07800000000861473,
+        "timeout": false
+      },
+      "checks": [
+        "31-character EOF word accepted; 32-character and 1MiB leading-zero word rejected consistently across direct/natural/fixed readers",
+        "ASCII whitespace, actual token-count limit, I32 vocabulary bound, malformed/out-of-range values",
+        "later empty suffix parsed with exact context6; context5 rejected; first empty natural prompt and any empty fixed phase rejected",
+        "unchanged RequestProgress borrows one actual pending slot and emits the exact per-turn quotas",
+        "existing grammar/session/default quotas, full preflight and overflow regressions retained"
+      ],
+      "prior_passing_draft_host_record": {
+        "path": ".scratch/inference-system-review-20261025/schedule-inputs/host/summary.json",
+        "bytes": 3319,
+        "sha256": "5b3b8cc24b78f6c5f3657c27b24198ceb46db1c0e48949c72eeb796c41eeef28"
+      }
+    },
+    "request_lifecycle": {
+      "status": "passed_two_existing_std_only_consumers",
+      "sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_window.h",
+          "bytes": 7929,
+          "sha256": "651407bcca12f91c02027129644731bb1b9c37dbb27940a3a3307621be92f828"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_window_test.cc",
+          "bytes": 10166,
+          "sha256": "b71ed1c4454f904990757607076eba993a5239835e72533a21be7f36f423c69f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_progress_test.cc",
+          "bytes": 9776,
+          "sha256": "6b6300be2c7a9e0e1b5fdbbd3e65b06ab0562d02896fff6f8bffb0928ffe035f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_progress.h",
+          "bytes": 8465,
+          "sha256": "a06699ce15e6db0a8847bd26f7a322d01e97389bbfeab3d87a8b748793e537e3"
+        }
+      ],
+      "results": {
+        "window": {
+          "compile": {
+            "exit": 0,
+            "seconds": 0.46899999998277053,
+            "timeout": false
+          },
+          "run": {
+            "exit": 0,
+            "seconds": 0.8589999999967404,
+            "timeout": false
+          },
+          "stdout": "request window: 5 checks passed\n"
+        },
+        "progress": {
+          "compile": {
+            "exit": 0,
+            "seconds": 0.5940000000118744,
+            "timeout": false
+          },
+          "run": {
+            "exit": 0,
+            "seconds": 0.030999999988125637,
+            "timeout": false
+          },
+          "stdout": "PASS ordinary/batched outputs, quota/stop and pending-only turn continuation\nPASS gap/duplicate/quota/begin failures and side-effect-free retry\nPASS imported history, no-Graph output and authoritative commit counts\nPASS mixed two-user FIFO turns and allocation-free prepared transitions\n"
+        }
+      },
+      "scope": "Bounded FIFO slots/generation/queued cancellation and explicit caller retirement release; no active device cancellation or output backpressure integration claimed.",
+      "model_processes": 0,
+      "GPU_processes": 0,
+      "SDK_builds": 0,
+      "HTTP": 0
+    }
+  },
+  "actual_models": {
+    "count": 2,
+    "automatic_retries": 0,
+    "backend": "cuda",
+    "ordinary": true,
+    "selected_text_roles": 320,
+    "selected_mtp_roles": 0,
+    "input_source_id": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+    "original_device_weight_bytes": 3763655360,
+    "pending_only": {
+      "process": {
+        "exit": 0,
+        "seconds": 2.25,
+        "timeout": false
+      },
+      "assertions": {
+        "path": ".scratch/inference-system-review-20261025/schedule-inputs/run/assertions.json",
+        "bytes": 8581,
+        "sha256": "6a01068a3051a8e90dee5d85b073df9b490dadd0817cf5efa3b660754da913cc"
+      },
+      "full_result": {
+        "path": ".scratch/inference-system-review-20261025/schedule-inputs/run/consumer-result.json",
+        "bytes": 18441,
+        "sha256": "eb66c6873e10e2cbc192475d67f6124636ccfe1e29354cf61c3e8974cb966ca5"
+      },
+      "new_user_tokens": [
+        154,
+        0
+      ],
+      "requested_outputs": [
+        3,
+        2
+      ],
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        19298
+      ],
+      "second_input": [
+        198
+      ],
+      "committed_lengths": [
+        154,
+        155,
+        156,
+        157,
+        158
+      ],
+      "graph_calls": 5,
+      "prefill_graph_calls": 2,
+      "decode_graph_calls": 3,
+      "actual_target_rows": 158,
+      "sampling_draw_cursor": 0,
+      "draft_graph_calls": 0,
+      "cache_peak_bytes": 41238576,
+      "cache_limit_bytes": 536870912,
+      "retired_requests": 1
+    },
+    "r2_prefix_control": {
+      "process": {
+        "exit": 0,
+        "timeout": false,
+        "wall_seconds": 2.327999999979511
+      },
+      "assertions": {
+        "status": "PASS",
+        "actual_suffix_batch": {
+          "index": 3,
+          "requests": 2,
+          "tokens": 3,
+          "role": 0,
+          "generation": false,
+          "session_ids": [
+            "B",
+            "C"
+          ]
+        },
+        "partial_hits": 2,
+        "key_rows": 156,
+        "generated_ids": {
+          "A": [
+            71093,
+            12305,
+            198
+          ],
+          "D": [
+            71093,
+            12305,
+            198
+          ],
+          "B": [
+            464,
+            19298
+          ],
+          "C": [
+            464,
+            19298
+          ]
+        },
+        "retired_requests": 4,
+        "draft_resources": false,
+        "cache_budget_passed": true,
+        "throughput_claim": false
+      },
+      "full_result": {
+        "path": ".scratch/inference-system-review-20261025/schedule-inputs/r2-control/consumer-result.json",
+        "bytes": 53101,
+        "sha256": "6fb845d1afeafc090e622d1ae39a9177702a218ef23f72f92d55d3b87d95014d"
+      },
+      "session_count": 4,
+      "N": 2,
+      "R": 2,
+      "partial_hits": 2,
+      "full_hits": 0,
+      "reused_tokens": 312,
+      "actual_graph_calls": 5,
+      "actual_target_rows": 320,
+      "retired_requests": 4,
+      "cache_peak_bytes": 82870320,
+      "cache_limit_bytes": 536870912,
+      "calibration_reused_no_prepare_process": true,
+      "prior_calibration_and_failure_evidence": "docs/evidence/correctness/ordinary-text-r2-prefix-suffix-2026-10-25.json"
+    }
+  },
+  "invariants": [
+    "First empty prompt and invalid lexemes fail in host parsing before model construction/weight I/O.",
+    "The later empty suffix reuses one real pending input, while the final emitted pending remains outside committed KV.",
+    "Actual current app source includes Window and prepared/NF4 headers; source hashes reflect what was compiled. No whole model or binary is placed in the archive."
+  ],
+  "limits": [
+    "The RequestWindow cancel/slot-reuse checks are std-only host checks. No native active cancellation, dynamic online input service, output backpressure, or failure retirement extension is certified.",
+    "The two model runs use existing original BF16 2B text weights on one CUDA device and fixed finite schedules; no all-model/all-backend claim.",
+    "Greedy cursor remains zero. No new stochastic/MTP, numerical precision, quality or performance claim. Raw elapsed fields are correctness-run observations only.",
+    "One earlier passing schedule host draft remains in scratch; host2 is the final-source host run. NF4 metadata tests are separately owned and excluded."
+  ],
+  "acquisition": {
+    "HTTP": 0,
+    "weight_copies": 0,
+    "SDK_builds": 0,
+    "model_processes": 2
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/ordinary-input-and-request-window-2026-10-25.zip",
+    "bytes": 481893,
+    "sha256": "c552f87fbfb84e31caaf0f35ec12e627675c109d68833e9bbc375699383ba310",
+    "members": 130,
+    "payload_manifest_entries": 129,
+    "all_member_sha256_verified": true,
+    "CRC_verified": true,
+    "binaries_included": false,
+    "model_weights_included": false
+  },
+  "retention": "Keep the new app object/image as current reusable cache. No cleanup was executed by this task.",
+  "additional_consumer_migration": {
+    "glm_original_state_consumer": {
+      "status": "strict_syntax_passed",
+      "sources": [
+        {
+          "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+          "bytes": 191424,
+          "sha256": "e5c12183a9bb0fd35468a16ff154548abb76de624e34590690739e09f78cc635"
+        },
+        {
+          "path": "engine/inference/request_window.h",
+          "bytes": 7929,
+          "sha256": "651407bcca12f91c02027129644731bb1b9c37dbb27940a3a3307621be92f828"
+        }
+      ],
+      "process": {
+        "exit": 0,
+        "seconds": 6.172000000020489,
+        "timeout": false
+      },
+      "source_reference": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-progress-20261025\\verification\\glm\\attempt1\\compile\\command.json",
+        "bytes": 2570,
+        "sha256": "fef2a95cdc0bb87c6f5aad59f20c08f398496ef23f198ea6e385dc15ff3d223b"
+      },
+      "scope": "Original GLM consumer RequestKey/FIFO mechanical migration; terminal release after existing real reader retirement/collect. No new model or mathematical behavior claimed.",
+      "generated_objects": 0,
+      "SDK_builds": 0,
+      "GPU_processes": 0,
+      "model_processes": 0,
+      "HTTP": 0,
+      "command": {
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+          "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/wd4702",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/DGGML_USE_CUDA",
+          "/DHYLE_COMPUTE_CUDA=1",
+          "/DHYLE_COMPUTE_GGML_CUDA=1",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/external:W0",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+          "/DHYLE_TEST_GLM_STATE_CPU=1",
+          "/DHYLE_TEST_GLM_STATE_CUDA=1",
+          "/IC:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B09\\generated",
+          "/Zs",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\request-lifecycle\\glm-syntax\\dependencies.json",
+          "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 60
+      },
+      "stdout": "glm_pro_mtp_state_consumer_test.cc\n",
+      "stderr": ""
+    }
+  }
+}

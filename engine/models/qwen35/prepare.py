@@ -15,9 +15,10 @@ import struct
 ROOT = Path(__file__).resolve().parents[3]
 
 if __package__:
-    from . import geometry
+    from . import geometry, nf4_state
 else:
     import geometry
+    import nf4_state
 
 
 FP8_READER = "sglang-06992c92"
@@ -173,7 +174,7 @@ def validate_ct_shape_values(raw: bytes, geometry: dict, name: str) -> None:
 
 
 def logical_roles(names, omitted_cache_calibration=()) -> set[str]:
-    auxiliary = (".qzeros", ".scales", ".g_idx", ".input_scale", ".weight_scale", ".weight_scale_2", ".weight_scale_inv", ".weight_shape", ".weight_global_scale", ".input_global_scale")
+    auxiliary = (".qzeros", ".scales", ".g_idx", ".input_scale", ".weight_scale", ".weight_scale_2", ".weight_scale_inv", ".weight_shape", ".weight_global_scale", ".input_global_scale", *nf4_state.SUFFIXES[1:])
     result = set()
     for name in names:
         if name in omitted_cache_calibration or name.endswith(auxiliary):
@@ -185,12 +186,16 @@ def logical_roles(names, omitted_cache_calibration=()) -> set[str]:
     return result
 
 
-def validate_role_geometry(roles: dict[str, dict], model_geometry: dict, omitted_cache_calibration=()) -> None:
-    expected = geometry.role_shapes(model_geometry)
+def validate_role_geometry(roles: dict[str, dict], model_geometry: dict, omitted_cache_calibration=(), nf4_groups=None) -> None:
+    # Config can declare a trained NextN layer omitted by this artifact. Keep
+    # that original geometry identity; validate all NextN roles if any exist.
+    expected = geometry.role_shapes(model_geometry, include_mtp=any(name.startswith('mtp.') for name in roles))
     if logical_roles(roles, omitted_cache_calibration) != set(expected):
         raise ValueError("complete original text/MTP logical role inventory differs from source geometry")
     for name, shape in expected.items():
-        if name in roles:
+        if nf4_groups and name in nf4_groups:
+            actual = nf4_groups[name]['logical_shape']
+        elif name in roles:
             row = roles[name]
             actual = list(row['shape'])
             if row['dtype'] == 'U8' and len(actual) == 2 and name[:-7]+'.weight_scale_2' in roles:
@@ -210,13 +215,16 @@ def validate_role_geometry(roles: dict[str, dict], model_geometry: dict, omitted
 
 
 def _read_role_source(role: dict) -> tuple[Path, bytes | None, str]:
-    """Read one borrowed range once; retain only16-byte CT shape values."""
+    """Hash one borrowed range; retain only bounded CT/NF4 source metadata."""
     name, count, offset = role["name"], role["bytes"], role["offset"]
     source = (ROOT / role["path"]).resolve()
     if type(offset) is not int or offset < 0 or offset + count > source.stat().st_size:
         raise ValueError(f"short original role source: {name}")
     received, remaining = hashlib.sha256(), count
-    shape_value = bytearray() if name.endswith(".weight_shape") else None
+    is_nf4_state = name.endswith(nf4_state.STATE_SUFFIX)
+    if (is_nf4_state and not 0 < count <= nf4_state.MAX_STATE_BYTES) or (name.endswith('.weight_shape') and count != 16):
+        raise ValueError("original CT/NF4 metadata byte limit differs: " + name)
+    shape_value = bytearray() if name.endswith(".weight_shape") or is_nf4_state else None
     with source.open("rb") as stream:
         stream.seek(offset)
         while remaining:
@@ -271,9 +279,12 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         if type(role["bytes"]) is not int or count != role["bytes"]:
             raise ValueError(f"original role byte extent differs: {name}")
         all_roles[name] = role
+    if mtp and not any(name.startswith('mtp.') for name in all_roles):
+        raise ValueError('source has no original NextN roles')
     mixed = ct_mixed_groups(all_roles, config, model_geometry, fp8_reader, kv_cache_dtype)
     omitted = set(mixed["omitted_cache_calibration"])
-    validate_role_geometry(all_roles, model_geometry, omitted)
+    nf4_groups = nf4_state.groups(all_roles, config, geometry.role_shapes(model_geometry))
+    validate_role_geometry(all_roles, model_geometry, omitted, nf4_groups)
     channel_physical = {base+suffix for base in mixed['channel'] for suffix in ('.weight','.weight_scale')}
     fp8_groups = float8_block_groups({name:role for name,role in all_roles.items() if name not in channel_physical},
         config, fp8_reader if fp8_reader == FP8_READER else None)
@@ -284,6 +295,14 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         source, raw = authenticate(all_roles[name])
         validate_ct_shape_values(raw, group_geometry, name)
         checked_shapes[name] = source
+    for name, group_geometry in nf4_groups.items():
+        state_name = name + nf4_state.STATE_SUFFIX
+        source, raw = authenticate(all_roles[state_name])
+        state = nf4_state.parse(raw, group_geometry['logical_shape'])
+        if state['original_json_sha256'] != all_roles[state_name]['sha256']:
+            raise ValueError("original NF4 quant_state SHA differs: " + name)
+        group_geometry.update(state)
+        checked_shapes[state_name] = source
     lines, identities = [], []
     for role in original["roles"]:
         name, dtype, shape = role["name"], role["dtype"], role["shape"]
@@ -298,6 +317,9 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
                     geometry=model_geometry, roles=sorted(identities, key=lambda item: item["name"]))
     if fp8_groups:
         identity["fp8_block128_policy"] = dict(FP8_POLICY)
+    if nf4_groups:
+        identity['nf4_double_quant_policy'] = dict(nf4_state.POLICY)
+        identity['nf4_states'] = nf4_groups
     has_mixed = bool(mixed['channel'] or mixed['local'])
     if has_mixed:
         identity["ct_mixed_policy"] = dict(CT_MIXED_POLICY)
@@ -306,6 +328,10 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     chosen = [item for item in identities if item['name'] not in omitted and (mtp or not item['name'].startswith('mtp.'))]
     policy_lines = [FP8_POLICY_LINE] if fp8_groups else []
+    if nf4_groups:
+        policy_lines.append(nf4_state.POLICY_LINE)
+        policy_lines.extend('\t'.join(('nf4_state', name, state['original_json_sha256'], state['offset_f32_bits']))
+                            for name,state in sorted(nf4_groups.items()))
     if has_mixed:
         policy_lines.append(CT_MIXED_POLICY_LINE)
     if omitted:
@@ -322,6 +348,12 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         receipt["fp8_block128_policy"] = dict(FP8_POLICY)
         receipt["fp8_block128_groups"] = sum(mtp or not name.startswith("mtp.") for name in fp8_groups)
         receipt["metadata_fp8_block128_groups"] = len(fp8_groups)
+    if nf4_groups:
+        receipt['nf4_double_quant_policy'] = dict(nf4_state.POLICY)
+        receipt['nf4_states'] = nf4_groups
+        receipt['nf4_double_quant_groups'] = sum(mtp or not name.startswith('mtp.') for name in nf4_groups)
+        receipt['metadata_nf4_double_quant_groups'] = len(nf4_groups)
+        receipt['nf4_execution_scope'] = 'cold metadata only; full F16 activation/compute engine path not yet implemented'
     if has_mixed:
         receipt['ct_mixed_policy'] = dict(CT_MIXED_POLICY)
         receipt['ct_channel_token_groups'] = len(mixed['channel'])

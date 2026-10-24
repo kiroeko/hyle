@@ -977,7 +977,7 @@
           "config_claim_is_not_tensor_presence": true
         },
         "target_codec_claim": "BNB-NF4-doublequant",
-        "remaining": "No MTP runtime binding task follows for this pinned BNB artifact. Ordinary NF4 quant_state payload/quality is separate and was not read.",
+        "remaining": "No MTP runtime binding task follows for this pinned BNB artifact. At completion of that stage ordinary NF4 quant_state payload/quality was separate and unread; the subsequent ordinary work has read one state and records its current scope in nf4-original-cold-metadata-2026-10-25.json.",
         "metadata_requests": [],
         "metadata_acquisition": {
           "state": "complete_fixed_original_header_verified",

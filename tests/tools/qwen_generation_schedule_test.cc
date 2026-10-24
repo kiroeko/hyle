@@ -65,6 +65,80 @@ void rejects(Read &&read, std::string_view diagnostic) {
   throw std::runtime_error("invalid schedule was accepted");
 }
 
+void token_files_share_bounded_lexical_and_count_limits(const fs::path &directory) {
+  const auto ids = directory / "bounded.ids";
+  const auto natural = directory / "bounded.turns";
+  const auto fixed = directory / "bounded.fixed";
+  write(natural, "prompt bounded.ids\ngenerate 1\n");
+  write(fixed, "prompt bounded.ids\ndecode one.ids\n");
+  write(ids, std::string(31, '0')); // The exact lexical limit, at EOF.
+  require(qwen35::read_ids(ids, 10, 1) == std::vector<std::int32_t>{0} &&
+      b::read_generation_schedule(natural, 10, 2, 1)[0].prompt == std::vector<std::int32_t>{0} &&
+      b::read_schedule(fixed, 10, 2)[0].ids == std::vector<std::int32_t>{0},
+      "direct/natural/fixed token readers disagree at the exact lexical limit");
+  for (const auto length : {std::size_t{32}, std::size_t{1024 * 1024}}) {
+    write(ids, std::string(length, '0') + "\n");
+    rejects([&] { (void)qwen35::read_ids(ids, 10, 1); }, "length exceeds 31");
+    rejects([&] { (void)b::read_generation_schedule(natural, 10, 2, 1); }, "bounded.turns:1:");
+    rejects([&] { (void)b::read_schedule(fixed, 10, 2); }, "length exceeds 31");
+  }
+  write(ids, "0\t1\r\n2\f3\v");
+  require(qwen35::read_ids(ids, 4, 4) == std::vector<std::int32_t>{0, 1, 2, 3} &&
+      b::read_schedule_ids(ids, 4, 4) == qwen35::read_ids(ids, 4, 4),
+      "the shared token reader changed ASCII whitespace or exact capacity");
+  rejects([&] { (void)b::read_schedule_ids(ids, 4, 3); }, "count exceeds configured capacity");
+  write(ids, "0\n");
+  rejects([&] { (void)qwen35::read_ids(ids, 4, 0); }, "count exceeds configured capacity");
+  write(ids, "2147483646\n");
+  require(b::read_schedule_ids(ids, INT32_MAX, 1)[0] == INT32_MAX - 1,
+      "the shared reader rejected the last valid I32 vocabulary token");
+  for (const auto word : {"-1", "4", "9223372036854775808", "1x", "+1"}) {
+    write(ids, word);
+    rejects([&] { (void)b::read_schedule_ids(ids, 4, 1); }, "input");
+  }
+}
+
+void later_empty_suffix_consumes_only_the_actual_pending(const fs::path &directory) {
+  const auto empty = directory / "empty.ids";
+  const auto path = directory / "pending-only.turns";
+  write(empty, " \t\r\n");
+  write(path, "prompt two.ids\ngenerate 3\nprompt empty.ids\ngenerate 2\n");
+  // P2 + two ordinary decode rows, then the pending row + one decode row.
+  const auto turns = b::read_generation_schedule(path, 10, 6, 4);
+  require(turns.size() == 2 && turns[0].prompt == std::vector<std::int32_t>{1, 2} &&
+      turns[1].prompt.empty() && turns[1].max_outputs == 2,
+      "later empty suffix changed the natural turn or its quota");
+  rejects([&] { (void)b::read_generation_schedule(path, 10, 5, 4); }, "exceed context capacity");
+  inference::RequestProgress progress(5);
+  progress.bind_turns(turns);
+  std::array<std::int32_t, 2> initial{1, 2};
+  progress.begin_turn(initial);
+  const std::array<std::int32_t, 3> first_output{3, 4, 5};
+  progress.observe_commit(0, first_output, true, true, false);
+  progress.advance_turn();
+  std::array<std::int32_t, 1> pending{-1};
+  const auto prepared = progress.begin_turn(pending, 5);
+  require(prepared.size() == 1 && prepared[0] == 5 && progress.remaining_outputs() == 2,
+      "empty suffix did not borrow exactly one actual pending token");
+  const std::array<std::int32_t, 2> second_output{6, 7};
+  progress.observe_commit(1, second_output, true, true, false);
+  require(progress.generated == std::vector<std::int32_t>{3, 4, 5, 6, 7} && progress.turn_done,
+      "pending-only continuation duplicated output or missed its quota");
+  const auto sessions = directory / "pending-only.sessions";
+  write(sessions, "continued pending-only.turns\n");
+  require(b::read_generation_session_schedules(sessions, 10, 6, 1, 4)[0].turns[1].prompt.empty(),
+      "session wrapper rejected a later empty suffix");
+
+  write(path, "prompt empty.ids\ngenerate 1\n");
+  rejects([&] { (void)b::read_generation_schedule(path, 10, 6, 4); }, "nonempty token IDs");
+  write(path, "prompt empty.ids\n");
+  rejects([&] { (void)b::read_generation_schedule(path, 10, 6, 4); }, "nonempty token IDs");
+  write(path, "prompt two.ids\ndecode one.ids\nprompt empty.ids\ndecode one.ids\n");
+  rejects([&] { (void)b::read_schedule(path, 10, 6); }, "nonempty token IDs");
+  write(path, "prompt two.ids\ndecode empty.ids\n");
+  rejects([&] { (void)b::read_schedule(path, 10, 6); }, "nonempty token IDs");
+}
+
 void positive_quotas_use_the_real_context(const fs::path &directory) {
   const auto explicit_turn = directory / "explicit.turns";
   write(explicit_turn, "prompt two.ids\ngenerate 129\n");
@@ -199,13 +273,15 @@ int main(int argc, char **argv) {
     write(directory / "two.ids", "1 2\n");
     write(directory / "two tokens.ids", "1 2\n");
     host_progress_keeps_reserved_outputs_and_borrowed_turns();
+    token_files_share_bounded_lexical_and_count_limits(directory);
+    later_empty_suffix_consumes_only_the_actual_pending(directory);
     positive_quotas_use_the_real_context(directory);
     multiturn_and_session_bounds_count_pending_once(directory);
     quota_and_position_overflow_is_rejected(directory);
     invalid_quota_syntax_still_fails_before_execution(directory);
     whole_grammar_is_checked_before_selection(directory);
     session_grammar_and_neutral_prompts(directory);
-    std::puts("PASS host progress/capacity/turn ownership, generation quotas/context/pending, size/I32 limits, full grammar/session preflight, neutral prompts, fixed tape separation");
+    std::puts("PASS bounded token lexemes/counts, later pending-only turns, host progress/capacity/turn ownership, generation quotas/context/pending, size/I32 limits, full grammar/session preflight, neutral prompts, fixed tape separation");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "%s\n", error.what());

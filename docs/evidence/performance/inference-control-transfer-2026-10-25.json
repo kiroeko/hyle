@@ -1,0 +1,704 @@
+{
+  "schema": "hyle.offline.control-transfer-attribution.v1",
+  "profiler_processes_started": 0,
+  "model_processes_started": 0,
+  "source_archive": {
+    "path": "docs/evidence/performance/mtp-current-cost-attribution-2026-10-25.zip",
+    "bytes": 9692222,
+    "sha256": "e076c0d141b4bd219372051b299c4c0100d0a72d3488b0da73f859ee4bc92f62"
+  },
+  "body_archive": {
+    "path": "docs/evidence/performance/mtp-body-route-attribution-2026-10-25.zip",
+    "bytes": 44652,
+    "sha256": "16ed6ad9e9fac6a2f37489a81767ec0efa4c71b4e73e80ff63807c45f2b2a6b2"
+  },
+  "SQL": {
+    "apis": "SELECT r.start,r.end,r.correlationId,s.value,r.eventClass,r.returnValue\n FROM CUPTI_ACTIVITY_KIND_RUNTIME r JOIN StringIds s ON s.id=r.nameId ORDER BY r.start",
+    "copies": "SELECT start,end,correlationId,bytes,copyKind,COALESCE(graphNodeId,0)\n FROM CUPTI_ACTIVITY_KIND_MEMCPY WHERE start>=? AND end<=? ORDER BY start"
+  },
+  "arms": {
+    "hyle_plain": {
+      "sqlite": {
+        "member": ".scratch/mtp-performance-convergence-20261025/current-structure/hyle_plain/trace.sqlite",
+        "bytes": 10518528,
+        "sha256": "2ec0e79687c4eca8ce49cd364d8b44ca0c3e659f58a376db10c1f1f241ac2401"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+        "bytes": 141401600,
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+      },
+      "actual_work": {
+        "generated_tokens": 128,
+        "generated_decode_tokens": 126,
+        "turn_count": 2,
+        "prefill_target_rows": 309,
+        "prefill_draft_rows": null,
+        "verified_target_rows": 126,
+        "actual_target_rows": 435,
+        "actual_draft_rows": null,
+        "committed_target_rows": 435,
+        "draft_rows": null,
+        "draft_decode_rows": null,
+        "draft_rounds": null,
+        "agreements": null,
+        "consumed_drafts": null,
+        "accepted_drafts": null,
+        "proposals": null,
+        "target_decode_calls": null,
+        "draft_decode_calls": null
+      },
+      "logical_decode_calls": {
+        "target": 126,
+        "draft": 0
+      },
+      "window": {
+        "start_ns": 3070026230,
+        "end_ns": 3332314019,
+        "span_ns": 262287789,
+        "captured_roles": {
+          "target": 24
+        },
+        "definition": "last24_captured_target_launch_envelope_not_equal_complete_decode_calls"
+      },
+      "driver_table_present": false,
+      "api_event_classes": {
+        "0": 328,
+        "1": 233
+      },
+      "copies": {
+        "Host-to-Device": {
+          "count": 92,
+          "bytes": 2600,
+          "gpu_activity_ns": 71903,
+          "gpu_union_ns": 71903,
+          "bytes_histogram": {
+            "4": 46,
+            "24": 21,
+            "80": 23,
+            "36": 2
+          },
+          "captured_count": 0,
+          "matched_api_count": 92,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cuMemcpyHtoD_v2": 46,
+            "cuMemcpyBatchAsync_v2": 23,
+            "cudaMemcpyAsync_v3020": 23
+          },
+          "matched_full_api_activity_ns": 1071521
+        },
+        "Device-to-Host": {
+          "count": 23,
+          "bytes": 92,
+          "gpu_activity_ns": 23328,
+          "gpu_union_ns": 23328,
+          "bytes_histogram": {
+            "4": 23
+          },
+          "captured_count": 0,
+          "matched_api_count": 23,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cuMemcpyDtoH_v2": 23
+          },
+          "matched_full_api_activity_ns": 726037
+        }
+      },
+      "apis": {
+        "cuMemcpyBatchAsync_v2": {
+          "count": 23,
+          "clipped_activity_ns": 366899,
+          "clipped_union_ns": 366899,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cuMemcpyDtoH_v2": {
+          "count": 23,
+          "clipped_activity_ns": 726037,
+          "clipped_union_ns": 726037,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cuMemcpyHtoD_v2": {
+          "count": 46,
+          "clipped_activity_ns": 496467,
+          "clipped_union_ns": 496467,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cuStreamSynchronize": {
+          "count": 46,
+          "clipped_activity_ns": 888261,
+          "clipped_union_ns": 888261,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cudaEventSynchronize_v3020": {
+          "count": 70,
+          "clipped_activity_ns": 231770227,
+          "clipped_union_ns": 231770227,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaGraphLaunch_v10000": {
+          "count": 23,
+          "clipped_activity_ns": 13523797,
+          "clipped_union_ns": 13523797,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaMemcpyAsync_v3020": {
+          "count": 23,
+          "clipped_activity_ns": 208155,
+          "clipped_union_ns": 208155,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        }
+      },
+      "direct_H2D_and_explicit_stream_sync": {
+        "api_names": [
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 1384728,
+        "fraction_of_profiled_envelope": 0.005279422291367137
+      },
+      "direct_H2D_sync_and_D2H": {
+        "api_names": [
+          "cuMemcpyDtoH_v2",
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 2110765,
+        "fraction_of_profiled_envelope": 0.00804751531913672
+      },
+      "diagnostics": [
+        {
+          "severity": 2,
+          "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+          "count": 1
+        }
+      ]
+    },
+    "hyle_mtp": {
+      "sqlite": {
+        "member": ".scratch/mtp-performance-convergence-20261025/current-structure/hyle_mtp/trace.sqlite",
+        "bytes": 11612160,
+        "sha256": "ad5aa59bce3f3b13175a19b7dcabb8e5bfe1cf484c737c602fa134c262f79fed"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+        "bytes": 141401600,
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+      },
+      "actual_work": {
+        "generated_tokens": 128,
+        "generated_decode_tokens": 126,
+        "turn_count": 2,
+        "prefill_target_rows": 309,
+        "prefill_draft_rows": 310,
+        "verified_target_rows": 132,
+        "actual_target_rows": 441,
+        "actual_draft_rows": 434,
+        "committed_target_rows": 435,
+        "draft_rows": 124,
+        "draft_decode_rows": null,
+        "draft_rounds": 66,
+        "agreements": 60,
+        "consumed_drafts": 60,
+        "accepted_drafts": null,
+        "proposals": null,
+        "target_decode_calls": null,
+        "draft_decode_calls": null
+      },
+      "logical_decode_calls": {
+        "target": 66,
+        "draft": 66
+      },
+      "window": {
+        "start_ns": 3212369152,
+        "end_ns": 3565285787,
+        "span_ns": 352916635,
+        "captured_roles": {
+          "target": 24,
+          "draft": 23
+        },
+        "definition": "last24_captured_target_launch_envelope_not_equal_complete_decode_calls"
+      },
+      "driver_table_present": false,
+      "api_event_classes": {
+        "0": 461,
+        "1": 368
+      },
+      "copies": {
+        "Host-to-Device": {
+          "count": 184,
+          "bytes": 6880,
+          "gpu_activity_ns": 140925,
+          "gpu_union_ns": 140925,
+          "bytes_histogram": {
+            "4": 46,
+            "8": 46,
+            "24": 40,
+            "112": 46,
+            "36": 6
+          },
+          "captured_count": 0,
+          "matched_api_count": 184,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cuMemcpyHtoD_v2": 92,
+            "cuMemcpyBatchAsync_v2": 46,
+            "cudaMemcpyAsync_v3020": 46
+          },
+          "matched_full_api_activity_ns": 1980414
+        },
+        "Device-to-Host": {
+          "count": 46,
+          "bytes": 276,
+          "gpu_activity_ns": 50879,
+          "gpu_union_ns": 50879,
+          "bytes_histogram": {
+            "4": 23,
+            "8": 23
+          },
+          "captured_count": 0,
+          "matched_api_count": 46,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cuMemcpyDtoH_v2": 46
+          },
+          "matched_full_api_activity_ns": 1289930
+        }
+      },
+      "apis": {
+        "cuMemcpyBatchAsync_v2": {
+          "count": 46,
+          "clipped_activity_ns": 631184,
+          "clipped_union_ns": 631184,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cuMemcpyDtoH_v2": {
+          "count": 46,
+          "clipped_activity_ns": 1289930,
+          "clipped_union_ns": 1289930,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cuMemcpyHtoD_v2": {
+          "count": 92,
+          "clipped_activity_ns": 842993,
+          "clipped_union_ns": 842993,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cuStreamSynchronize": {
+          "count": 92,
+          "clipped_activity_ns": 1032254,
+          "clipped_union_ns": 1032254,
+          "event_classes": [
+            1
+          ],
+          "failed": 0
+        },
+        "cudaEventSynchronize_v3020": {
+          "count": 116,
+          "clipped_activity_ns": 307535207,
+          "clipped_union_ns": 307535207,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaGraphLaunch_v10000": {
+          "count": 46,
+          "clipped_activity_ns": 21548167,
+          "clipped_union_ns": 21548167,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaMemcpyAsync_v3020": {
+          "count": 46,
+          "clipped_activity_ns": 506237,
+          "clipped_union_ns": 506237,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        }
+      },
+      "direct_H2D_and_explicit_stream_sync": {
+        "api_names": [
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 1875247,
+        "fraction_of_profiled_envelope": 0.005313569307947187
+      },
+      "direct_H2D_sync_and_D2H": {
+        "api_names": [
+          "cuMemcpyDtoH_v2",
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 3165177,
+        "fraction_of_profiled_envelope": 0.008968625125874274
+      },
+      "diagnostics": [
+        {
+          "severity": 2,
+          "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+          "count": 1
+        },
+        {
+          "severity": 3,
+          "text": "GetGraphId(data.originalGraph, &originalGraphId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+          "count": 250
+        },
+        {
+          "severity": 3,
+          "text": "GetGraphNodeId(data.originalNode, &originalNodeId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+          "count": 250
+        }
+      ]
+    },
+    "peer_plain": {
+      "sqlite": {
+        "member": ".scratch/mtp-performance-convergence-20261025/current-structure/peer_plain/trace.sqlite",
+        "bytes": 8470528,
+        "sha256": "1b56e6b636dcb44e95f6aa199c2e12831db761c8f85ac47e66d178b60825632b"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+        "bytes": 35830272,
+        "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+      },
+      "actual_work": {
+        "generated_tokens": 128,
+        "generated_decode_tokens": 126,
+        "turn_count": 2,
+        "prefill_target_rows": 309,
+        "prefill_draft_rows": 0,
+        "verified_target_rows": 126,
+        "actual_target_rows": 435,
+        "actual_draft_rows": 0,
+        "committed_target_rows": 435,
+        "draft_rows": null,
+        "draft_decode_rows": 0,
+        "draft_rounds": null,
+        "agreements": 0,
+        "consumed_drafts": null,
+        "accepted_drafts": 0,
+        "proposals": 0,
+        "target_decode_calls": 126,
+        "draft_decode_calls": 0
+      },
+      "logical_decode_calls": {
+        "target": 126,
+        "draft": 0
+      },
+      "window": {
+        "start_ns": 3145032496,
+        "end_ns": 3396551250,
+        "span_ns": 251518754,
+        "captured_roles": {
+          "target": 24
+        },
+        "definition": "last24_captured_target_launch_envelope_not_equal_complete_decode_calls"
+      },
+      "driver_table_present": false,
+      "api_event_classes": {
+        "0": 760
+      },
+      "copies": {
+        "Host-to-Device": {
+          "count": 161,
+          "bytes": 24564,
+          "gpu_activity_ns": 197376,
+          "gpu_union_ns": 197376,
+          "bytes_histogram": {
+            "4": 69,
+            "16": 23,
+            "8": 46,
+            "1024": 23
+          },
+          "captured_count": 0,
+          "matched_api_count": 161,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cudaMemcpyAsync_v3020": 161
+          },
+          "matched_full_api_activity_ns": 1503748
+        },
+        "Device-to-Host": {
+          "count": 46,
+          "bytes": 22845532,
+          "gpu_activity_ns": 931640,
+          "gpu_union_ns": 931640,
+          "bytes_histogram": {
+            "4": 23,
+            "993280": 23
+          },
+          "captured_count": 0,
+          "matched_api_count": 46,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cudaMemcpyAsync_v3020": 46
+          },
+          "matched_full_api_activity_ns": 532324
+        }
+      },
+      "apis": {
+        "cudaGraphLaunch_v10000": {
+          "count": 23,
+          "clipped_activity_ns": 10690775,
+          "clipped_union_ns": 10690775,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaMemcpyAsync_v3020": {
+          "count": 207,
+          "clipped_activity_ns": 2043297,
+          "clipped_union_ns": 2043297,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaStreamSynchronize_v3020": {
+          "count": 530,
+          "clipped_activity_ns": 235639698,
+          "clipped_union_ns": 235639698,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        }
+      },
+      "direct_H2D_and_explicit_stream_sync": {
+        "api_names": [
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 0,
+        "fraction_of_profiled_envelope": 0.0
+      },
+      "direct_H2D_sync_and_D2H": {
+        "api_names": [
+          "cuMemcpyDtoH_v2",
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 0,
+        "fraction_of_profiled_envelope": 0.0
+      },
+      "diagnostics": [
+        {
+          "severity": 2,
+          "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+          "count": 1
+        }
+      ]
+    },
+    "peer_mtp": {
+      "sqlite": {
+        "member": ".scratch/mtp-performance-convergence-20261025/current-structure/peer_mtp/trace.sqlite",
+        "bytes": 6770688,
+        "sha256": "ea8810426d35ce23e4a7d49248bd2270855eef8bd30e980aa9974947b3d84efb"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+        "bytes": 35830272,
+        "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+      },
+      "actual_work": {
+        "generated_tokens": 128,
+        "generated_decode_tokens": 126,
+        "turn_count": 2,
+        "prefill_target_rows": 309,
+        "prefill_draft_rows": 310,
+        "verified_target_rows": 129,
+        "actual_target_rows": 438,
+        "actual_draft_rows": 435,
+        "committed_target_rows": 435,
+        "draft_rows": null,
+        "draft_decode_rows": 125,
+        "draft_rounds": null,
+        "agreements": 61,
+        "consumed_drafts": null,
+        "accepted_drafts": 61,
+        "proposals": 64,
+        "target_decode_calls": 65,
+        "draft_decode_calls": 65
+      },
+      "logical_decode_calls": {
+        "target": 65,
+        "draft": 65
+      },
+      "window": {
+        "start_ns": 2758619006,
+        "end_ns": 3107516193,
+        "span_ns": 348897187,
+        "captured_roles": {
+          "target": 24,
+          "draft": 23
+        },
+        "definition": "last24_captured_target_launch_envelope_not_equal_complete_decode_calls"
+      },
+      "driver_table_present": false,
+      "api_event_classes": {
+        "0": 1681
+      },
+      "copies": {
+        "Host-to-Device": {
+          "count": 322,
+          "bytes": 474720,
+          "gpu_activity_ns": 413401,
+          "gpu_union_ns": 413401,
+          "bytes_histogram": {
+            "8": 69,
+            "16384": 23,
+            "32": 46,
+            "16": 92,
+            "2048": 46,
+            "4": 46
+          },
+          "captured_count": 0,
+          "matched_api_count": 322,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cudaMemcpyAsync_v3020": 322
+          },
+          "matched_full_api_activity_ns": 2783194
+        },
+        "Device-to-Host": {
+          "count": 161,
+          "bytes": 68913428,
+          "gpu_activity_ns": 2835464,
+          "gpu_union_ns": 2835464,
+          "bytes_histogram": {
+            "16384": 23,
+            "4": 69,
+            "993280": 69
+          },
+          "captured_count": 0,
+          "matched_api_count": 161,
+          "unmatched_copies": 0,
+          "matched_api_names": {
+            "cudaMemcpyAsync_v3020": 161
+          },
+          "matched_full_api_activity_ns": 1385059
+        }
+      },
+      "apis": {
+        "cudaGraphLaunch_v10000": {
+          "count": 46,
+          "clipped_activity_ns": 15495302,
+          "clipped_union_ns": 15495302,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaMemcpyAsync_v3020": {
+          "count": 484,
+          "clipped_activity_ns": 4172935,
+          "clipped_union_ns": 4172935,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        },
+        "cudaStreamSynchronize_v3020": {
+          "count": 1151,
+          "clipped_activity_ns": 322677205,
+          "clipped_union_ns": 322677205,
+          "event_classes": [
+            0
+          ],
+          "failed": 0
+        }
+      },
+      "direct_H2D_and_explicit_stream_sync": {
+        "api_names": [
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 0,
+        "fraction_of_profiled_envelope": 0.0
+      },
+      "direct_H2D_sync_and_D2H": {
+        "api_names": [
+          "cuMemcpyDtoH_v2",
+          "cuMemcpyHtoD_v2",
+          "cuStreamSynchronize"
+        ],
+        "union_ns": 0,
+        "fraction_of_profiled_envelope": 0.0
+      },
+      "diagnostics": [
+        {
+          "severity": 2,
+          "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+          "count": 1
+        },
+        {
+          "severity": 3,
+          "text": "GetGraphId(data.originalGraph, &originalGraphId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+          "count": 692
+        },
+        {
+          "severity": 3,
+          "text": "GetGraphNodeId(data.originalNode, &originalNodeId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+          "count": 692
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Runtime export includes visible driver APIs in eventClass1 despite no separate DRIVER table; not proof of every CUDA API coverage.",
+    "Own-process last24 captured-target envelope, not complete decode or aligned cold start; input before first target and readback after last target are excluded.",
+    "GPU activities, CPU APIs, sync activity and nested intervals must not be added together or called recoverable time.",
+    "Original image c343 and greedy policy; no random-identity traffic or current01e timing is measured here.",
+    "MTP target/draft counts and continuations differ; retain actual work instead of equalizing by output count.",
+    "Driver13.4/tool13.3 compatibility warning and MTP GraphId/GraphNodeId diagnostics retained."
+  ],
+  "conclusion": "Direct control H2D plus explicit stream sync occupies about0.53% of either Hyle warm profiled envelope; real but not an established explanation of about10% throughput gap. No new profile is needed for these counts.",
+  "analysis_source": {
+    "path": ".scratch/inference-system-review-20261025/control-transfer-attribution.py",
+    "bytes": 6788,
+    "sha256": "6664c4cc16613810edaeabc74d188d6f4ca44a08f15d2438dbf82b7788625136"
+  },
+  "archive": {
+    "path": "docs/evidence/performance/inference-control-transfer-2026-10-25.zip",
+    "bytes": 22878,
+    "sha256": "17e1213ca9d2e05ec071b425f849285c3ee346731a4861f8daaab3379e497aae"
+  },
+  "scope": "New offline analysis of previously captured traces; no new throughput measurements or model runs."
+}

@@ -116,7 +116,9 @@ inline std::vector<hyle::inference::GenerationTurn> read_generation_schedule(con
       if (value.find('\0') != std::string::npos) throw error("prompt path contains a null byte");
       const auto input_path = path.parent_path() / std::filesystem::path(value);
       hyle::inference::GenerationTurn turn;
-      try { turn.prompt = read_schedule_ids(input_path, vocabulary, capacity); }
+      // A later turn consumes its actual preceding pending token even when
+      // the user supplies no new suffix. The initial prompt remains nonempty.
+      try { turn.prompt = read_schedule_ids(input_path, vocabulary, capacity, !turns.empty()); }
       catch (const std::runtime_error &exception) { throw error(exception.what()); }
       turns.push_back(std::move(turn)); needs_generate = true;
     } else if (kind == "generate" && needs_generate) {

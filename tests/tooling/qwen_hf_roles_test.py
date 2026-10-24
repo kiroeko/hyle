@@ -57,6 +57,71 @@ def source_fixture():
 
 
 class OriginalHfRolesTest(unittest.TestCase):
+    def test_original_nf4_json_is_f16_bounded_and_not_a_smaller_component_shape(self):
+        # unsloth/Qwen3.8-27B-unsloth-bnb-4bit@8aa5f05d26b7205477066e1449e0af13f762a299
+        # model.safetensors bytes15264695436..15264695606; exact original171B.
+        raw=(Path(__file__).parent/'fixtures/qwen_nf4_quant_state.json').read_bytes()
+        state=roles.nf4_state.parse(raw,[1024,5120])
+        self.assertEqual((len(raw),state['offset_f32_bits']),(171,'3d2fd550'))
+        self.assertEqual(state['original_json_sha256'],'9210c25c0ca8632c7166cc3a92dc0cc43ffe528a45a11e3b8dde08941ed9d6c1')
+        for bad in (raw+b' '*512,raw.replace(b'float16',b'bfloat16'),
+                    raw.replace(b'"blocksize": 64',b'"blocksize": true'),
+                    raw.replace(b'0.04292804002761841',b'NaN'),
+                    raw.replace(b'"quant_type": "nf4"',b'"quant_type": "nf4", "quant_type": "nf4"')):
+            with self.subTest(raw=bad[:60]),self.assertRaises(ValueError):roles.nf4_state.parse(bad)
+        with self.assertRaisesRegex(ValueError,'logical shape'):roles.nf4_state.parse(raw,[3,5120])
+
+    def test_nf4_all_six_roles_and_each_original_state_are_required_before_selection(self):
+        config=source_config();config['text_config']['dtype']='float16'
+        config['quantization_config']=dict(quant_method='bitsandbytes',bnb_4bit_quant_type='nf4',
+            bnb_4bit_use_double_quant=True,bnb_4bit_quant_storage='uint8',bnb_4bit_compute_dtype='float16')
+        shapes=roles.geometry.role_shapes(roles.geometry.from_hf(config))
+        selected={'model.language_model.layers.3.self_attn.k_proj.weight','mtp.layers.0.self_attn.k_proj.weight'}
+        original=dict(complete=True,repository='test/nf4',revision='f'*40,roles=[]);raw_states={}
+        def add(name,dtype,shape,raw=None):
+            count=roles.ROLE_SIZES[dtype]
+            for dim in shape:count*=dim
+            original['roles'].append(dict(name=name,dtype=dtype,shape=list(shape),bytes=count,path='original.bin',offset=0,
+                sha256=hashlib.sha256(raw).hexdigest()if raw is not None else '1'*64))
+            if raw is not None:raw_states[name]=raw
+        for name,shape in shapes.items():
+            if name not in selected:add(name,'F16',shape);continue
+            n,k=shape;g=(n*k+63)//64
+            for suffix,dtype,dims in (('','U8',[n*k//2,1]),('.absmax','U8',[g]),
+                    ('.nested_absmax','F32',[(g+255)//256]),('.nested_quant_map','F32',[256]),('.quant_map','F32',[16])):
+                add(name+suffix,dtype,dims)
+            raw=json.dumps(dict(quant_type='nf4',blocksize=64,dtype='float16',shape=list(shape),nested_blocksize=256,
+                nested_dtype='float32',nested_offset=.04292804002761841)).encode()
+            add(name+roles.nf4_state.STATE_SUFFIX,'U8',[len(raw)],raw)
+        seen=[]
+        def authenticate(role):
+            seen.append(role['name']);return Path(role['path']),raw_states.get(role['name'])
+        lines,receipt=roles._prepare_role_records(original,False,config,authenticate)
+        self.assertEqual(lines[3],roles.nf4_state.POLICY_LINE)
+        self.assertEqual((receipt['metadata_nf4_double_quant_groups'],receipt['nf4_double_quant_groups']),(2,1))
+        self.assertEqual((receipt['metadata_tensor_count'],receipt['physical_roles']),(345,325))
+        self.assertEqual(len(seen),345) # Each state is checked once, including unselected MTP.
+        self.assertEqual(receipt['nf4_double_quant_policy']['compute_dtype'],'F16')
+        self.assertIn('not yet implemented',receipt['nf4_execution_scope'])
+        ordinary=deepcopy(original);ordinary['roles']=[r for r in ordinary['roles']if not r['name'].startswith('mtp.')]
+        _,plain=roles._prepare_role_records(ordinary,False,config,authenticate)
+        self.assertEqual((plain['geometry']['mtp_layers'],plain['metadata_tensor_count'],plain['physical_roles']),(1,325,325))
+        with self.assertRaisesRegex(ValueError,'no original NextN'):
+            roles._prepare_role_records(ordinary,True,config,authenticate)
+        partial=deepcopy(original);partial['roles']=[r for r in partial['roles']if r['name']!='mtp.norm.weight']
+        with self.assertRaisesRegex(ValueError,'logical role inventory'):
+            roles._prepare_role_records(partial,False,config,authenticate)
+        for suffix in roles.nf4_state.SUFFIXES:
+            bad=deepcopy(original);bad['roles']=[r for r in bad['roles']if r['name']!='mtp.layers.0.self_attn.k_proj.weight'+suffix]
+            with self.subTest(suffix=suffix),self.assertRaises(ValueError):roles._prepare_role_records(bad,False,config,authenticate)
+        wrong=dict(raw_states);state_name='mtp.layers.0.self_attn.k_proj.weight'+roles.nf4_state.STATE_SUFFIX
+        wrong[state_name]=wrong[state_name].replace(b'512',b'513',1)
+        with self.assertRaises(ValueError):roles._prepare_role_records(original,False,config,lambda r:(Path('x'),wrong.get(r['name'])))
+        bad=deepcopy(config);bad['quantization_config']['bnb_4bit_compute_dtype']='bfloat16'
+        with self.assertRaisesRegex(ValueError,'compute F16'):roles._prepare_role_records(original,False,bad,authenticate)
+        bad=deepcopy(original);r=next(r for r in bad['roles']if r['name']=='model.language_model.norm.weight');r['dtype']='BF16'
+        with self.assertRaisesRegex(ValueError,'retain F16'):roles._prepare_role_records(bad,False,config,authenticate)
+
     def test_ct_channel_local_and_bf16_cache_omission_are_separate_contracts(self):
         config=source_config()
         common=dict(num_bits=8,type='float',symmetric=True,group_size=None)
