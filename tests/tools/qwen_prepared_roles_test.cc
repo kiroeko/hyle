@@ -400,6 +400,72 @@ void ct_storage_is_distinct_and_original_shape_is_checked(const fs::path &direct
   encode(8,UINT64_MAX);
   rejects([&]{p::validate_ct_shape_values(*codes,raw);},"weight_shape values differ");
 }
+void ct_asymmetric_zero_points_keep_the_original_output_axis(const fs::path &directory) {
+  // One exact Q27 original role geometry; all other roles are metadata-only
+  // dense fixtures. This is not a whole-artifact payload/engine execution.
+  // cyankiwi/Qwen3.8-27B-AWQ-INT4@6e134bae811fb5adac50ee042ae5f029ac6779aa.
+  const auto model = qwen_test::q27(false);
+  Inventory all;
+  for (const auto &[name, parameter] : p::parameter_inventory(false, model))
+    add(all, name, "BF16", parameter.shape);
+  const std::string base = "model.language_model.layers.3.self_attn.k_proj";
+  all.erase(base + ".weight");
+  add(all, base + ".weight_packed", "I32", {1024, 640});
+  add(all, base + ".weight_scale", "BF16", {1024, 160});
+  add(all, base + ".weight_zero_point", "I32", {128, 160});
+  add(all, base + ".weight_shape", "I64", {2});
+  const auto select = [&](const Inventory &input, bool enabled = true) {
+    return p::select_roles(input, identity, false, model, {}, {}, {}, {}, {}, {enabled});
+  };
+  const auto selected = select(all);
+  require(selected.ct_asymmetric_policy.enabled && selected.selected.size() ==
+      p::parameter_inventory(false, model).size() + 3, "CT asymmetric physical inventory differs");
+  const auto found = std::ranges::find(selected.selected, base + ".weight_packed", &p::Role::name);
+  require(found != selected.selected.end() && found->projection_codec == p::ProjectionCodec::kCtAsymmetric4 &&
+      found->projection_group_size == 32, "CT asymmetric storage is not a distinct original codec");
+  const auto zero = std::ranges::find(selected.selected, base + ".weight_zero_point", &p::Role::name);
+  require(zero != selected.selected.end() && zero->dtype == "I32" &&
+      zero->shape == std::vector<std::int64_t>{128,160}, "CT zero must remain I32 packed along output N");
+  rejects([&] { (void)select(all, false); }, "CT asymmetric reader policy/zero-point inventory");
+  for (const auto kind : {0,1,2,3,4}) {
+    auto invalid = all;
+    if (kind == 0) invalid.erase(base + ".weight_zero_point");
+    else if (kind <= 2) {
+      auto &role = invalid.at(base + ".weight_zero_point");
+      if (kind == 1) role.dtype = "I64";
+      else role.shape = {160,128};
+      role.bytes = p::physical_bytes(role.dtype, role.shape);
+    } else {
+      auto &scale = invalid.at(base + ".weight_scale");
+      if (kind == 3) scale.dtype = "F16";
+      else scale.shape = {1024,80};
+      scale.bytes = p::physical_bytes(scale.dtype, scale.shape);
+    }
+    rejects([&] { (void)select(invalid); }, kind == 0 ? "policy/zero-point inventory" :
+        kind <= 2 ? "type/shape differs" : "g32/BF16");
+  }
+  std::array<std::byte,16> shape{};
+  const auto encode = [&](std::size_t first, std::uint64_t value) {
+    for (std::size_t i=0; i<8; ++i) shape[first+i]=static_cast<std::byte>((value>>(i*8))&255);
+  };
+  encode(0,1024); encode(8,5120);
+  p::validate_ct_shape_values(*found,shape); ++checks;
+  shape[0] ^= std::byte{1};
+  rejects([&] { p::validate_ct_shape_values(*found,shape); }, "weight_shape values differ");
+
+  std::string header = std::string(p::role_signature) + '\n' + identity + '\n' + qwen_test::geometry_line(model) + '\n';
+  const auto policy = std::string(p::ct_asymmetric_policy_line) + '\n';
+  std::string body;
+  for (const auto &[name, role] : all) { (void)name; body += row(role); }
+  const auto path = directory / "CT-asymmetric.tsv";
+  write(path,header+policy+body);
+  require(p::read_roles(path,false).ct_asymmetric_policy.enabled,
+      "CT asymmetric policy is not carried through the real manifest parser");
+  write(path,header+policy+policy+body);
+  rejects([&] { (void)p::read_roles(path,false); }, "CT asymmetric policy");
+  write(path,header+body+policy);
+  rejects([&] { (void)p::read_roles(path,false); }, "CT asymmetric policy");
+}
 void malformed_input_and_shared_entrypoint_are_bounded(const fs::path &directory) {
   const auto path = directory / "malformed.tsv";
   const auto all = dense();
@@ -657,6 +723,7 @@ int main(int argc, char **argv) {
     quantized_auxiliaries_are_complete_and_typed(directory);
     packed_axes_are_complete_before_weight_io();
     ct_storage_is_distinct_and_original_shape_is_checked(directory);
+    ct_asymmetric_zero_points_keep_the_original_output_axis(directory);
     malformed_input_and_shared_entrypoint_are_bounded(directory);
     gguf_inventory_and_source_semantics(directory);
     source_geometry_drives_role_layout();

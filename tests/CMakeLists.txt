@@ -261,6 +261,24 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_qwen_backend_test)
 endif()
 
+if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
+  # Actual Model/Session regression, reusing the application's SDK contract.
+  # Missing local model input is a skip; an explicitly invalid input is an error.
+  add_executable(hyle_qwen_request_lifecycle_test tools/qwen_request_lifecycle_test.cc)
+  hyle_configure_engine_target(hyle_qwen_request_lifecycle_test)
+  set_target_properties(hyle_qwen_request_lifecycle_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_request_lifecycle_test)
+  add_test(NAME hyle_qwen_request_lifecycle_test COMMAND hyle_qwen_request_lifecycle_test)
+  add_test(NAME hyle_qwen_retirement_status_test
+    COMMAND hyle_qwen_request_lifecycle_test --retirement-status-only)
+  set_tests_properties(hyle_qwen_retirement_status_test PROPERTIES
+    LABELS "tooling;generation;retirement" TIMEOUT 30)
+  set_tests_properties(hyle_qwen_request_lifecycle_test PROPERTIES
+    LABELS "tooling;generation;admission;cuda;local-model" TIMEOUT 180
+    SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+endif()
+
 if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
    AND TARGET hyle_compute_stream_vulkan AND TARGET hyle_graph_progress)
   hyle_add_test(graph_route_vulkan NAME qwen_resource_retirement

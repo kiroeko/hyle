@@ -41,7 +41,10 @@ inline Result append(sem::Fragment &f,Value hidden,Value residual,Value old_main
     const graph::moe::Parameters &moe) {
   graph::require(f,hidden,sem::dense({1,graph::kHidden},c::DataType::kBFloat16));
   graph::require(f,residual,sem::dense({1,graph::kHidden},c::DataType::kBFloat16));
-  graph::require(f,upstream_selection,sem::dense({2048},c::DataType::kInt32));
+  const auto &selection=f.description(upstream_selection);
+  if(selection.rank()!=1||selection.dimensions()[0]<=0||selection.dimensions()[0]>2048)
+    throw std::runtime_error("original Pro target requires a positive upstream selection of at most2048 rows");
+  graph::require(f,upstream_selection,sem::dense({selection.dimensions()[0]},c::DataType::kInt32));
   graph::require(f,cursor,sem::dense({1},c::DataType::kInt32));
   Result result;auto &ports=result.ports;
   ports.hidden=hidden;ports.residual=residual;ports.main_input=old_main;

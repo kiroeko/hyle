@@ -47,14 +47,15 @@ bool observe(const roles::Data &data,const graph::Result &result,ReadValue &&act
   const auto ids=d::integers(actual(p.selection));
   const auto previous=fp(p.main_input),next=fp(result.main);
   if(positions.size()!=1||positions[0]<0||positions[0]>=1048576||
-      ids.size()!=2048||previous.empty()||previous.size()%576||next.size()!=previous.size()||
+      ids.empty()||ids.size()>2048||ids.size()>std::size_t(positions[0])+1||
+      previous.empty()||previous.size()%576||next.size()!=previous.size()||
       std::size_t(positions[0])>=previous.size()/576) {
     ADD_FAILURE()<<"original target77 actual cache/position/selection extent";return false;
   }
   std::vector<bool> used(previous.size()/576,false);
   for(const auto id:ids) {
     if(id<0||id>positions[0]||used[std::size_t(id)]) {
-      ADD_FAILURE()<<"target77 upstream Top2048 contains a future/duplicate row";return false;
+      ADD_FAILURE()<<"target77 upstream TopK contains a future/duplicate row";return false;
     }
     used[std::size_t(id)]=true;
   }
@@ -99,7 +100,7 @@ bool observe(const roles::Data &data,const graph::Result &result,ReadValue &&act
   }
   if(!lm::expect_widen(fp(a.query_full),full_query))return false;
   const auto chosen=fp(a.selected_full),values=fp(a.selected_value);
-  if(chosen.size()!=2048*576||values.size()!=2048*512){ADD_FAILURE()<<"target77 selected MLA extent";return false;}
+  if(chosen.size()!=ids.size()*576||values.size()!=ids.size()*512){ADD_FAILURE()<<"target77 selected MLA extent";return false;}
   for(std::size_t slot=0;slot<ids.size();++slot) {
     const auto physical=std::size_t(ids[slot]);
     if(!d::equal_f32(F32(chosen).subspan(slot*576,576),F32(next).subspan(physical*576,576),"target77 same upstream selected K row")||

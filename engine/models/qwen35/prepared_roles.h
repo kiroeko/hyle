@@ -52,7 +52,7 @@ enum class ParameterMeaning {
 // GGUF conversion retains its independent storage descriptor and parameter
 // meaning; this discriminator describes original HF projection groups.
 enum class ProjectionCodec { kUnspecified, kDense, kGptqV1Int4, kNvfp4, kCtSymmetric4, kFloat8Block128,
-                             kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant };
+                             kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant, kCtAsymmetric4 };
 // This is an explicit selected-reader arithmetic contract, not a claim that
 // every reader of the HF config chooses the same activation quantization.
 inline constexpr std::string_view fp8_reader = "sglang@06992c92ad4494fe9f9636e75be3e35040512447";
@@ -67,6 +67,9 @@ inline constexpr std::string_view ct_mixed_policy_line =
 struct CtMixedPolicy final { bool enabled = false; };
 inline constexpr std::string_view bf16_cache_policy_line = "kv_cache\tBF16\tomit_original_calibration";
 struct Bf16CachePolicy final { bool omit_calibration = false; };
+inline constexpr std::string_view ct_asymmetric_policy_line =
+    "ct_asymmetric_int4\t32\tBF16\tpacked_N\tcompressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4";
+struct CtAsymmetricPolicy final { bool enabled = false; };
 struct OriginalSource final {
   std::string repository, revision, file, lfs_sha256, xet_hash, header_sha256;
   std::uint64_t bytes = 0, header_bytes = 0;
@@ -150,6 +153,7 @@ struct Roles final {
   CtMixedPolicy ct_mixed_policy{};
   std::vector<Role> omitted_cache_calibration{};
   Nf4Policy nf4_policy{};
+  CtAsymmetricPolicy ct_asymmetric_policy{};
 };
 inline Roles read_gguf_roles(const std::filesystem::path &path, bool include_mtp);
 inline bool is_role_signature(std::string_view signature) noexcept {
@@ -191,7 +195,8 @@ inline std::size_t physical_bytes(std::string_view dtype, const std::vector<std:
 // Loading remains outside metadata selection. The loader calls this on the
 // original16 host bytes before admitting a CT projection into its weight bank.
 inline void validate_ct_shape_values(const Role &codes, std::span<const std::byte> original) {
-  if (codes.projection_codec != ProjectionCodec::kCtSymmetric4 || codes.dtype != "I32" ||
+  if ((codes.projection_codec != ProjectionCodec::kCtSymmetric4 &&
+       codes.projection_codec != ProjectionCodec::kCtAsymmetric4) || codes.dtype != "I32" ||
       codes.shape.size() != 2 || codes.shape[0] <= 0 || codes.shape[1] <= 0 ||
       codes.shape[1] > INT64_MAX / 8 || original.size() != 16)
     throw std::runtime_error("invalid original CT shape value input");
@@ -210,7 +215,8 @@ inline void validate_ct_shape_values(const Role &codes, std::span<const std::byt
 inline Roles select_roles(const std::map<std::string, Role> &all, std::string identity, bool include_mtp, const ModelGeometry &geometry,
                           Float8BlockPolicy float8_policy = {}, CtMixedPolicy ct_mixed_policy = {},
                           Bf16CachePolicy bf16_cache_policy = {}, Nf4Policy nf4_policy = {},
-                          const std::map<std::string, Nf4State> &nf4_states = {}) {
+                          const std::map<std::string, Nf4State> &nf4_states = {},
+                          CtAsymmetricPolicy ct_asymmetric_policy = {}) {
   geometry.validate();
   if (geometry.gdn_layout != GdnHeadLayout::kGrouped) throw std::runtime_error("HF roles require their original grouped GDN layout");
   const auto maximum_hf_physical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size() * maximum_physical_components;
@@ -221,8 +227,11 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   result.float8_policy = float8_policy;
   result.ct_mixed_policy = ct_mixed_policy;
   result.nf4_policy = nf4_policy;
-  if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration))
+  result.ct_asymmetric_policy = ct_asymmetric_policy;
+  if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration || ct_asymmetric_policy.enabled))
     throw std::runtime_error("prepared NF4 reader cannot mix unrelated precision policies");
+  if (ct_asymmetric_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration))
+    throw std::runtime_error("prepared CT asymmetric reader cannot mix unrelated precision policies");
   if (nf4_policy.enabled != !nf4_states.empty()) throw std::runtime_error("prepared NF4 policy/state inventory differs");
   bool has_float8_block = false;
   bool has_ct_mixed = false;
@@ -241,6 +250,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   const auto inventory = parameter_inventory(has_mtp, geometry);
   std::set<std::string> consumed;
   std::size_t nf4_groups = 0;
+  std::size_t ct_asymmetric_groups = 0;
   for (const auto &[name, parameter] : inventory) {
     const bool selected = include_mtp || !name.starts_with("mtp.");
     const auto take = [&](const std::string &physical, std::string_view dtype,
@@ -312,9 +322,19 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
       if (scale_type != "BF16" && scale_type != "F16" && scale_type != "F32")
         throw std::runtime_error("prepared CT symmetric scale type differs: " + name);
       const auto groups = scales->second.shape[1];
-      take(base + ".weight_packed", "I32", {n, k / 8}, ProjectionCodec::kCtSymmetric4,
+      const bool asymmetric = all.contains(base + ".weight_zero_point");
+      if (asymmetric != ct_asymmetric_policy.enabled)
+        throw std::runtime_error("prepared CT asymmetric reader policy/zero-point inventory differs: " + name);
+      if (asymmetric && (k / groups != 32 || scale_type != "BF16"))
+        throw std::runtime_error("prepared CT asymmetric requires original g32/BF16: " + name);
+      take(base + ".weight_packed", "I32", {n, k / 8},
+          asymmetric ? ProjectionCodec::kCtAsymmetric4 : ProjectionCodec::kCtSymmetric4,
           static_cast<std::uint32_t>(k / groups));
       take(base + ".weight_scale", scale_type, {n, groups});
+      if (asymmetric) {
+        take(base + ".weight_zero_point", "I32", {n / 8 + (n % 8 != 0), groups});
+        ++ct_asymmetric_groups;
+      }
       // The loader must check the two original little-endian I64 values against
       // [N,K]. Metadata selection does not read payloads or pretend to know them.
       take(base + ".weight_shape", "I64", {2});
@@ -385,6 +405,8 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   if (float8_policy.enabled && !has_float8_block) throw std::runtime_error("prepared FP8 policy has no block128 weights");
   if (ct_mixed_policy.enabled && !has_ct_mixed) throw std::runtime_error("prepared CT reader policy has no matching weights");
   if (nf4_groups != nf4_states.size()) throw std::runtime_error("prepared NF4 per-group state inventory differs");
+  if (ct_asymmetric_policy.enabled && !ct_asymmetric_groups)
+    throw std::runtime_error("prepared CT asymmetric policy has no matching weights");
   if (bf16_cache_policy.omit_calibration && result.omitted_cache_calibration.empty())
     throw std::runtime_error("prepared BF16 cache omission has no calibration roles");
   if (consumed.size() != all.size()) throw std::runtime_error("unclaimed prepared physical role");
@@ -409,13 +431,14 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
   CtMixedPolicy ct_mixed_policy;
   Bf16CachePolicy bf16_cache_policy;
   Nf4Policy nf4_policy;
+  CtAsymmetricPolicy ct_asymmetric_policy;
   std::map<std::string, Nf4State> nf4_states;
   std::string line;
   while (read_manifest_line(input, line)) {
     if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
     if (line.starts_with("nf4_double_quant")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (nf4_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled || !all.empty() || line != nf4_policy_line)
+      if (nf4_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != nf4_policy_line)
         throw std::runtime_error("invalid or misplaced prepared NF4 F16 policy");
       nf4_policy.enabled = true; continue;
     }
@@ -437,15 +460,22 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
         throw std::runtime_error("invalid or misplaced prepared BF16 cache omission policy");
       bf16_cache_policy.omit_calibration = true; continue;
     }
+    if (line.starts_with("ct_asymmetric_int4")) {
+      if (line.ends_with('\r')) line.pop_back();
+      if (ct_asymmetric_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled ||
+          !all.empty() || line != ct_asymmetric_policy_line)
+        throw std::runtime_error("invalid or misplaced prepared CT asymmetric policy");
+      ct_asymmetric_policy.enabled = true; continue;
+    }
     if (line.starts_with("ct_mixed")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (ct_mixed_policy.enabled || float8_policy.enabled || nf4_policy.enabled || !all.empty() || line != ct_mixed_policy_line)
+      if (ct_mixed_policy.enabled || float8_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != ct_mixed_policy_line)
         throw std::runtime_error("invalid or misplaced prepared CT reader/cache policy");
       ct_mixed_policy.enabled = true; continue;
     }
     if (line.starts_with("fp8_block128")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled || !all.empty() || line != fp8_policy_line)
+      if (float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != fp8_policy_line)
         throw std::runtime_error("invalid or misplaced prepared FP8 reader policy");
       float8_policy.enabled = true; continue;
     }
@@ -479,7 +509,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
       throw std::runtime_error("duplicate prepared role");
   }
   if (!input.eof()) throw std::runtime_error("failed reading prepared role manifest");
-  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states);
+  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy);
 }
 } // namespace qwen35::prepared
 

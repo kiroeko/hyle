@@ -1719,8 +1719,8 @@
       "provider_coverage": {
         "review": "pinned_tensor_headers_and_operator_regressions",
         "artifact_execution_verified": false,
-        "review_scope": "Pinned five safetensor headers/index and fixed upstream recipe; synthetic cold-decode regressions on Windows CPU/CUDA/Vulkan and Mac16,12 Apple, plus CUDA symmetric/asymmetric group32 packed Graph numerical, capture and lifetime regressions. No publisher tensor payload, importer or full quantized model execution.",
-        "mapping_status": "Conditional CT asymmetric INT4 group32 cold decode and four-backend same-graph packed linear candidates; native/CPU defaults differ by measured branch, publisher tensor bindings remain unverified",
+        "review_scope": "Pinned five safetensor headers/index and fixed upstream recipe; prior synthetic four-backend operation/Graph checks plus the 2026-10-25 ordinary source loader, typed zero-point binding and seven original target63 projections on CPU M1/M2. Full quantized model and this original-payload path on other backends are not verified.",
+        "mapping_status": "Original CT asymmetric INT4 group32 role/zero/shape binding and shared packed Recipe implemented. Original CPU M1 selects seven packed contractions; M2 follows the existing decomposed default. Component correctness is verified separately from whole-artifact execution.",
         "required_format_domain": "CT pack-quantized signed offset-binary INT4 weight-only group32; I32 codes[N,K/8], I32 zero[ceil(N/8),K/32], BF16 scales[N,K/32] in the inspected 399 language roles; no g_idx",
         "reachable_entry_points": [
           {
@@ -1789,13 +1789,13 @@
         ],
         "artifact_unaligned_or_unverified": [
           "Publisher metadata does not pin the exact official base-model commit.",
-          "Only safetensor headers/index were inspected: weight_shape payload and all tensor values were not read or executed.",
-          "Operation fixtures do not prove importer binding, model quality, full-model memory or throughput.",
+          "Original target63 seven projection groups, including seven actual I64 weight_shape payloads, are verified; remaining publisher body values and the whole model are not executed.",
+          "The bounded original loader/projection component does not prove complete-model quality, full-model memory or throughput.",
           "AWQ repository naming does not select legacy AWQ word axes or lane order."
         ],
         "missing_capabilities": [
-          "Apple CT packed performance and broader geometry policy; mature CUDA tensor-core GEMM and packed grouped/FFN execution",
-          "Publisher payload import and full selected 27B execution, quality, throughput and memory qualification"
+          "Broader packed geometry/performance policy and mature CUDA tensor-core GEMM require their own source-equivalent measurements; no speed claim follows from this component",
+          "Full selected 27B body execution, quality, throughput and memory remain unverified"
         ],
         "code": [
           "include/hyle/compute/model_ops.h",
@@ -1854,7 +1854,17 @@
           "publisher_artifact_run": false,
           "throughput_measured": false
         },
-        "fusion_coverage": "Exact public Decode[/Cast]/Transpose/MatMul contraction shares one cold pattern across CPU/CUDA/Apple/Vulkan; source-scale/decode/operand RNE retained, backend F32 reduction trees may differ. Group32 operation tests do not verify other group sizes, packed FFN/experts, publisher binding or whole artifacts. Default selection is backend-specific and measured separately.",
+        "original_projection_binding": {
+          "evidence": "../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json",
+          "cold_metadata": "../evidence/correctness/ct-asymmetric-qwen-cold-metadata-2026-10-25.json",
+          "roles": 28,
+          "original_bytes": 215203952,
+          "CPU_M1_packed_projections": 7,
+          "CPU_M2_decomposed_projections": 7,
+          "independent_values_checked": 178176,
+          "scope": "Same production source loader, resolver and Recipe. BF16 subtract/product and packed-N zero axis preserved; M1 has no Graph-visible floating W intermediates, M2 has fourteen and opaque provider storage remains unknown. Not a full artifact or performance result."
+        },
+        "fusion_coverage": "Exact public Decode[/Cast]/Transpose/MatMul contraction shares one cold pattern across CPU/CUDA/Apple/Vulkan; source-scale/decode/operand RNE retained, backend F32 reduction trees may differ. Seven original CPU projection groups are now bound and checked; other original backend paths and whole artifacts remain unverified. Default selection is backend-specific and measured separately.",
         "cpu_packed_graph_evidence": "../evidence/correctness/ct-packed-cpu-2026-10-20.json",
         "cpu_packed_portability_evidence": "../evidence/correctness/ct-packed-cpu-portability-2026-10-20.json",
         "cpu_packed_default_policy": {

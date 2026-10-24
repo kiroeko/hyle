@@ -145,6 +145,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     hyle_add_test(graph_route_cuda NAME glm_mtp_state_consumer
       SOURCES ../compute_models/glm_mtp_state_consumer_test.cc
               ../compute_models/glm_pro_mtp_state_consumer_test.cc
+              ../compute_models/glm_pro_original_early_history_test.cc
       DEPS hyle_compute_state hyle_simd hyle_compute_backend_cuda)
     target_compile_definitions(hyle_graph_route_cuda_glm_mtp_state_consumer_test PRIVATE HYLE_TEST_GLM_STATE_CUDA=1)
     target_link_libraries(hyle_graph_route_cuda_glm_mtp_state_consumer_test PRIVATE ggml)

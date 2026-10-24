@@ -39,7 +39,7 @@ inline Value project(sem::Fragment &f,Value input,std::initializer_list<Value> o
   const auto rhs=f.one(c::Operation(*transpose),{operand});
   return f.one(c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}),{input,rhs});
 }
-inline constexpr c::RoutePolicyId kPackedPolicy{0x48594c454354504cULL,1,1};
+inline constexpr c::RoutePolicyId kPackedPolicy = g::kArtifactPackedProjectionPolicy;
 // Call immediately after compile, before Invocation/workspace allocation.
 // Node count is the actual public recipe: Decode/View/MatMul, with one Cast
 // only when the original decoded dtype differs from the BF16 operand.

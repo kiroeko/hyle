@@ -18,7 +18,7 @@ namespace native = c::packed::internal;
 // The exact public recipe and reader/control proof are shared by provider
 // regions and native graph lowerers; neither needs a second discovery policy.
 struct ArtifactPackedPattern : ClosedRegionPattern {
-inline static constexpr c::RoutePolicyId kPolicy{0x48594c454354504cULL, 1, 1};
+inline static constexpr c::RoutePolicyId kPolicy = kArtifactPackedProjectionPolicy;
 inline static constexpr std::uint64_t kRoute = 1;
 inline static constexpr std::size_t kMaxNodes = 4;
 inline static constexpr std::size_t kMaxInputs = 5;

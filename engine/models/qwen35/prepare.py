@@ -35,6 +35,11 @@ CT_MIXED_POLICY = dict(reader="compressed-tensors@0.17.2a20260716",
 CT_MIXED_POLICY_LINE = "\t".join(("ct_mixed", "channel_token_bf16_zero_only",
     "local_nvfp4_f32", CT_MIXED_POLICY["reader"]))
 BF16_CACHE_POLICY_LINE = "kv_cache\tBF16\tomit_original_calibration"
+CT_ASYMMETRIC_POLICY = dict(reader="compressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+    group_size=32, scale_dtype="BF16", zero_dtype="I32", zero_packing_axis="N",
+    arithmetic="scale_dtype_subtract_then_multiply")
+CT_ASYMMETRIC_POLICY_LINE = "\t".join(("ct_asymmetric_int4", "32", "BF16", "packed_N",
+    CT_ASYMMETRIC_POLICY["reader"]))
 
 
 def ct_mixed_groups(roles: dict[str, dict], config: dict, model_geometry: dict,
@@ -141,10 +146,11 @@ def digest(path: Path) -> str:
 ROLE_SIZES = {"BF16": 2, "F16": 2, "F32": 4, "I32": 4, "I64": 8, "U8": 1, "F8_E4M3": 1}
 
 
-def ct_symmetric_groups(roles: dict[str, dict]) -> dict[str, dict]:
+def ct_packed_groups(roles: dict[str, dict]) -> dict[str, dict]:
     """Infer original CT group geometry; neither inspect values nor decode weights."""
     bases = {name[:-14] for name in roles if name.endswith(".weight_packed") and roles[name]["dtype"] != "U8"}
     bases.update(name[:-13] for name in roles if name.endswith(".weight_shape"))
+    bases.update(name[:-18] for name in roles if name.endswith(".weight_zero_point"))
     result = {}
     for base in sorted(bases):
         names = [base + suffix for suffix in (".weight_packed", ".weight_scale", ".weight_shape")]
@@ -165,7 +171,41 @@ def ct_symmetric_groups(roles: dict[str, dict]) -> dict[str, dict]:
         if any(base + suffix in roles for suffix in (".weight", ".qweight", ".qzeros", ".scales", ".g_idx", ".input_scale", ".weight_scale_2")):
             raise ValueError(f"ambiguous original CT projection storage: {base}")
         result[base] = dict(logical_shape=[n, k], group_size=k // groups, scale_dtype=scales["dtype"])
+        if base + ".weight_zero_point" in roles:
+            zero = roles[base + ".weight_zero_point"]
+            if zero["dtype"] != "I32" or zero["shape"] != [(n + 7) // 8, groups]:
+                raise ValueError(f"original CT zero-point output-axis geometry differs: {base}")
+            result[base]["asymmetric"] = True
     return result
+
+
+def ct_asymmetric_policy(groups: dict[str, dict], config: dict) -> dict | None:
+    """Select the original g32/BF16 reader, never infer symmetry from absent Z."""
+    quant = config.get("quantization_config") or {}
+    if not isinstance(quant, dict):
+        raise ValueError("original CT asymmetric reader config differs")
+    configured = quant.get("config_groups") or {}
+    if (not isinstance(configured, dict) or any(not isinstance(group, dict) or
+            not isinstance(group.get("weights"), dict) for group in configured.values())):
+        raise ValueError("original CT asymmetric reader config differs")
+    declared = any(group["weights"].get("symmetric") is False for group in configured.values())
+    if not declared and not any(group.get("asymmetric") for group in groups.values()):
+        return None
+    if quant.get("quant_method") != "compressed-tensors" or quant.get("format") != "pack-quantized" or len(configured) != 1:
+        raise ValueError("original CT asymmetric reader config differs")
+    group = next(iter(configured.values()))
+    weights = group.get("weights", {})
+    required = dict(num_bits=4, type="int", strategy="group", group_size=32, symmetric=False,
+                    dynamic=False, actorder=None, block_structure=None, scale_dtype=None, zp_dtype="torch.int8")
+    if (any(type(weights.get(key)) is not type(value) or weights.get(key) != value for key, value in required.items())
+            or group.get("format") != "pack-quantized" or group.get("targets") != ["Linear"]
+            or group.get("input_activations") is not None or group.get("output_activations") is not None
+            or quant.get("kv_cache_scheme") is not None):
+        raise ValueError("original CT asymmetric reader config differs")
+    if not groups or any(not value.get("asymmetric") or value["group_size"] != 32 or value["scale_dtype"] != "BF16"
+                         for value in groups.values()):
+        raise ValueError("original CT asymmetric g32/BF16 requires every packed zero-point role")
+    return dict(CT_ASYMMETRIC_POLICY)
 
 
 def validate_ct_shape_values(raw: bytes, geometry: dict, name: str) -> None:
@@ -174,7 +214,7 @@ def validate_ct_shape_values(raw: bytes, geometry: dict, name: str) -> None:
 
 
 def logical_roles(names, omitted_cache_calibration=()) -> set[str]:
-    auxiliary = (".qzeros", ".scales", ".g_idx", ".input_scale", ".weight_scale", ".weight_scale_2", ".weight_scale_inv", ".weight_shape", ".weight_global_scale", ".input_global_scale", *nf4_state.SUFFIXES[1:])
+    auxiliary = (".qzeros", ".scales", ".g_idx", ".input_scale", ".weight_scale", ".weight_zero_point", ".weight_scale_2", ".weight_scale_inv", ".weight_shape", ".weight_global_scale", ".input_global_scale", *nf4_state.SUFFIXES[1:])
     result = set()
     for name in names:
         if name in omitted_cache_calibration or name.endswith(auxiliary):
@@ -288,7 +328,8 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     channel_physical = {base+suffix for base in mixed['channel'] for suffix in ('.weight','.weight_scale')}
     fp8_groups = float8_block_groups({name:role for name,role in all_roles.items() if name not in channel_physical},
         config, fp8_reader if fp8_reader == FP8_READER else None)
-    ct_groups = ct_symmetric_groups(all_roles)
+    ct_groups = ct_packed_groups(all_roles)
+    asymmetric_policy = ct_asymmetric_policy(ct_groups, config)
     checked_shapes = {}
     for base, group_geometry in ct_groups.items():
         name = base + ".weight_shape"
@@ -320,6 +361,8 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     if nf4_groups:
         identity['nf4_double_quant_policy'] = dict(nf4_state.POLICY)
         identity['nf4_states'] = nf4_groups
+    if asymmetric_policy:
+        identity['ct_asymmetric_int4_policy'] = asymmetric_policy
     has_mixed = bool(mixed['channel'] or mixed['local'])
     if has_mixed:
         identity["ct_mixed_policy"] = dict(CT_MIXED_POLICY)
@@ -334,6 +377,8 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
                             for name,state in sorted(nf4_groups.items()))
     if has_mixed:
         policy_lines.append(CT_MIXED_POLICY_LINE)
+    if asymmetric_policy:
+        policy_lines.append(CT_ASYMMETRIC_POLICY_LINE)
     if omitted:
         policy_lines.append(BF16_CACHE_POLICY_LINE)
     receipt = dict(
@@ -358,6 +403,11 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         receipt['ct_mixed_policy'] = dict(CT_MIXED_POLICY)
         receipt['ct_channel_token_groups'] = len(mixed['channel'])
         receipt['ct_local_nvfp4_groups'] = len(mixed['local'])
+    if asymmetric_policy:
+        receipt['ct_asymmetric_int4_policy'] = asymmetric_policy
+        receipt['ct_asymmetric_int4_groups'] = sum(mtp or not name.startswith('mtp.') for name in ct_groups)
+        receipt['metadata_ct_asymmetric_int4_groups'] = len(ct_groups)
+        receipt['ct_asymmetric_execution_scope'] = 'metadata preparation only; original consumer projection binding is available, full-model execution is not verified'
     if omitted:
         receipt['cache_calibration_omission'] = dict(identity['cache_calibration_omission'],
             original_roles=[r for r in identities if r['name'] in omitted],bytes=sum(r['bytes']for r in identities if r['name']in omitted))

@@ -85,7 +85,7 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 已落地的第一步是同一个 `RequestWindow` 的固定容量 FIFO 和请求槽身份：空间随同时占用的槽数变化，
 不再随历史 turn 数增长。`enqueue` 可在运行中使用空槽；每次重新占用取得新世代，冷重置也不会复活旧身份。
 排队撤回只将该请求标为 Retiring；终态请求经原资源实际退休、owner 显式 `release` 后，槽才可复用。
-Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；这一步不等于在途取消、输出背压或增量输入已接通。
+Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；真实生命周期检查及其范围见下文。
 
 ## 从输入到一次完整提交
 
@@ -176,8 +176,8 @@ R 继续交现有分桶及真实执行容量处理。模型提供容量查询、
 最后已知 turn 完成但输入未关闭时保持原 request 身份；后续 turn 仍只消费一次真实 pending。
 实际提前停止只返还未使用的输出预留，重复提交观察不再次返还。模型的上下文、KV 和实际
 输入接纳仍归模型 owner；主机 token 边界不代替设备容量证明。
-上述[开放续轮检查](../evidence/correctness/request-incremental-turns-2026-10-25.json)是 host 原语检查，
-当前真实入口仍预读有限日程，运行中输入和输出背压的完整模型接线尚未完成。
+上述[开放续轮检查](../evidence/correctness/request-incremental-turns-2026-10-25.json)覆盖 host 原语，
+原 Qwen 普通 CUDA 的运行中续轮和背压另由真实生命周期消费者核验；CLI 仍预读有限日程。
 
 窗口的 `pause` 只释放活动名额，原 request key 和 payload 槽仍占用；可用输入或输出 credit
 到达后，`wake` 将同一 key 放回原 FIFO 尾。未完成 turn 的 survivor 用 `requeue`，不能冒充
@@ -185,7 +185,17 @@ R 继续交现有分桶及真实执行容量处理。模型提供容量查询、
 `cancel_waiting` 覆盖排队与暂停状态；取消请求、真实退休和槽位复用仍分开。
 暂停且确实驻留的 head 可参与原空闲淘汰政策，但 owner 必须重读实际预算，不能假设释放
 活动名额就回收设备字节。上述[状态检查](../evidence/correctness/request-window-suspension-2026-10-25.json)
-已通过主机用例，原生批取消及输出背压的消费者仍在接线。
+已通过主机用例。
+
+同批取消的正常终态只属于被取消的 episode。确认所有原生工作实际退休后，存活成员保留
+未发布的 head、ledger、pending 和 RNG，再用原 key 归队；不能把 peer 的正常取消永久写入
+它的 Session 退休错误。被停止成员仍保留取消事实；其它错误、原生错误及退休不明不能
+按这一例外丢弃。[真实 Qwen 普通 CUDA 用例](../evidence/correctness/qwen-live-request-lifecycle-2026-10-25.json)
+已复现并修复存活 B 最终停止时残留取消的问题，随后完成续跑、新请求接纳和完整退休。
+该用例观察到提交在途，不证明取消时 GPU 物理工作尚未完成，也未注入设备错误。
+随后退休返回的真实错误须能替换此前的纯取消状态；第一条真实错误仍保留。最终合并结果在
+销毁 episode 前返回给调用 owner，即使当前尚未退休也不能只返回较早的取消。正式消费者的
+七项主机错误合并检查已通过；未用主机合成状态冒充真实设备故障注入。
 
 `OutputDelivery` 只借用原有界输出记录，保存成功交付的绝对前缀游标；重复或较旧的确认
 不重复推进。它既不观察模型 commit，也不拥有第二队列；模型 turn 完成后仍可保留最终
@@ -194,7 +204,10 @@ R 继续交现有分桶及真实执行容量处理。模型提供容量查询、
 一个在途 episode 下的预检，不是另一套并发预留器。credit 不足时等待或选择原来支持的
 较窄 episode，不能把不可写当作 turn_done。输入关闭、模型结束、最终交付和资源退休各有
 自己的完成事实；释放 payload 槽前须满足实际寿命和交付／明确丢弃合同。
-当前[交付游标检查](../evidence/correctness/output-delivery-credit-2026-10-25.json)只覆盖主机合同。
+每次准备接收本 episode 的 output credit，而 turn 的原输出上限保持不变；零 credit 在接纳和
+状态访问前拒绝。原 Qwen 生命周期用例已检查 credit=1 暂停、其它请求继续、确认后唤醒及
+晚确认的世代隔离；[交付游标检查](../evidence/correctness/output-delivery-credit-2026-10-25.json)
+另覆盖主机合同。这些结果不代表 MTP 窄化或所有后端均已运行。
 GLM 同一原角色案例还复用真实 turn 进度：已有单输出 K1、新请求采样 fork 以及两次 ordinary
 续算均交共享算法观察，第二 turn 只消费历史 pending。它不计算任意用户 suffix，也不替代完整模型服务。
 

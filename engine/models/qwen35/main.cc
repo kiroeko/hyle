@@ -181,10 +181,10 @@ void auxiliaries(std::map<std::string, LoadedWeight> &bank, const std::string &b
                  std::initializer_list<std::string_view> allowed, std::string_view name) {
   // Recognized auxiliaries of another representation must not silently select
   // the first matching branch. Source inventory validation owns unknown names.
-  constexpr std::array<std::string_view, 10> known{
+  constexpr std::array<std::string_view, 11> known{
       ".qzeros", ".scales", ".g_idx", ".weight_scale", ".weight_shape",
       ".weight_global_scale", ".input_global_scale", ".weight_scale_2",
-      ".input_scale", ".weight_scale_inv"};
+      ".input_scale", ".weight_scale_inv", ".weight_zero_point"};
   for (const auto suffix : known) if (bank.contains(base + std::string(suffix)) &&
       std::ranges::find(allowed, suffix) == allowed.end())
     fail(name, "unexpected physical auxiliary " + base + std::string(suffix));
@@ -208,7 +208,7 @@ std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding) {
       const auto d = value.weight->description.dimensions(); return {d[0], d[1]};
     } else if constexpr (std::is_same_v<Entry, GptqProjection>) {
       const auto d = value.codes->description.dimensions(); return {d[1], d[0] * 8};
-    } else if constexpr (std::is_same_v<Entry, CtSymProjection>) {
+    } else if constexpr (std::is_same_v<Entry, CtPackedProjection>) {
       const auto d = value.codes->description.dimensions(); return {d[0], d[1] * 8};
     } else if constexpr (std::is_same_v<Entry, ModelOptNvfp4Projection> ||
                          std::is_same_v<Entry, LocalNvfp4Projection>) {
@@ -267,22 +267,32 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
           scales.description, weight_global.description, input_global.description}, name);
       return LocalNvfp4Projection{&packed->tensor, &scales, &weight_global, &input_global, equation};
     }
-    if (packed->codec != Codec::kCtSymmetric4)
+    const bool asymmetric = packed->codec == Codec::kCtAsymmetric4;
+    if (!asymmetric && packed->codec != Codec::kCtSymmetric4)
       detail::fail(name, "weight_packed is not an identified CT group");
-    detail::auxiliaries(bank, base, {".weight_scale", ".weight_shape"}, name);
+    if (asymmetric) detail::auxiliaries(bank, base, {".weight_scale", ".weight_zero_point", ".weight_shape"}, name);
+    else detail::auxiliaries(bank, base, {".weight_scale", ".weight_shape"}, name);
     auto &scales = detail::require(bank, base + ".weight_scale", name);
     detail::matrix(scales, name);
     const auto k = detail::packed_width(packed->tensor.description.dimensions()[1], 8, name);
     const auto group = detail::group_size(*packed, k, scales.description.dimensions()[1], name);
-    const ops::ArtifactWeightDecode decode{ops::WeightArtifactFormat::kCompressedTensorsSymmetric4, group, Type::kBFloat16};
-    detail::validate(decode, std::array{packed->tensor.description, scales.description}, name);
+    if (asymmetric && (group != 32 || scales.description.data_type() != Type::kBFloat16))
+      detail::fail(name, "original asymmetric CT requires group32 and BF16 scales");
+    const ops::ArtifactWeightDecode decode{asymmetric ? ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4 :
+        ops::WeightArtifactFormat::kCompressedTensorsSymmetric4, group, Type::kBFloat16};
+    Tensor *zeros = nullptr;
+    if (asymmetric) {
+      zeros = &detail::require(bank, base + ".weight_zero_point", name);
+      detail::validate(decode, std::array{packed->tensor.description, zeros->description, scales.description}, name);
+      (void)detail::require(bank, base + ".weight_shape", name);
+    } else detail::validate(decode, std::array{packed->tensor.description, scales.description}, name);
     // weight_shape is an authenticated source role, not an equation operand.
     // Full loader validation already checks its actual I64 [N,K] payload.
     if (const auto *shape = detail::find(bank, base + ".weight_shape")) {
       const auto expected = hyle::compute::TensorDesc::dense(Type::kInt64, std::array<std::int64_t, 1>{2});
       if (!expected || shape->tensor.description != *expected) detail::fail(name, "invalid CT shape auxiliary descriptor");
     }
-    return CtSymProjection{&packed->tensor, &scales, decode};
+    return CtPackedProjection{&packed->tensor, zeros, &scales, decode};
   }
 
   if (stored->codec == Codec::kNvfp4) {
@@ -372,7 +382,9 @@ std::string_view score_policy(const ProjectionBinding &binding) noexcept {
     return "bf16_inputs_f32_output";
   }
   if (std::holds_alternative<GptqProjection>(binding)) return "gptq_f16_weight_to_bf16_projection_f32_logits";
-  if (std::holds_alternative<CtSymProjection>(binding)) return "ct_sym4_bf16_projection_f32_logits";
+  if (const auto *projection = std::get_if<CtPackedProjection>(&binding))
+    return projection->decode.format == hyle::compute::model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4
+        ? "ct_asym4_bf16_subtract_product_projection_f32_logits" : "ct_sym4_bf16_projection_f32_logits";
   if (std::holds_alternative<ModelOptNvfp4Projection>(binding)) return "nvfp4_qdq_bf16_projection_f32_logits";
   if (std::holds_alternative<LocalNvfp4Projection>(binding)) return "ct_local_nvfp4_f32_preround_bf16_projection_f32_logits";
   if (std::holds_alternative<BlockFp8Projection>(binding)) return "fp8_block128_dynamic_divide_bf16_projection_f32_logits";
@@ -410,6 +422,7 @@ std::size_t recurrent_bytes(std::span<const StateSchema> schema, const ModelGeom
 }
 struct PackedProjectionNodes final {
   std::array<g::NodeId, 4> chain;
+  std::size_t count = 4;
 };
 using WeightMeanings = std::map<std::string, prepared::ParameterMeaning>;
 mem::MemoryResourceRef weight_resource(const Backend &backend, bool host) {
@@ -790,13 +803,18 @@ struct Recipe final {
             dense_spec(Type::kBFloat16, dimensions), &nodes.chain[3]);
         packed_projection_nodes.push_back(nodes);
         return output;
-      } else if constexpr (std::is_same_v<P, CtSymProjection>) {
-        const auto decoded = one(c::Operation::custom(projection.decode),
-            {operand(*projection.codes), operand(*projection.scales)});
+      } else if constexpr (std::is_same_v<P, CtPackedProjection>) {
+        PackedProjectionNodes nodes; nodes.count = 3;
+        const auto decoded = projection.zeros ? one(c::Operation::custom(projection.decode),
+            {operand(*projection.codes), operand(*projection.zeros), operand(*projection.scales)}, &nodes.chain[0]) :
+            one(c::Operation::custom(projection.decode), {operand(*projection.codes), operand(*projection.scales)}, &nodes.chain[0]);
         constexpr std::array<std::int32_t, 2> axes{1, 0};
-        const auto rhs = one(take(c::View::permute(axes)), {decoded});
+        const auto rhs = one(take(c::View::permute(axes)), {decoded}, &nodes.chain[1]);
         dimensions.back() = spec(decoded).dimensions()[0];
-        return one(c::MatMul{.accumulation_type = Type::kFloat32}, {x, rhs}, dense_spec(Type::kBFloat16, dimensions));
+        const auto output = one(c::MatMul{.accumulation_type = Type::kFloat32}, {x, rhs},
+            dense_spec(Type::kBFloat16, dimensions), &nodes.chain[2]);
+        packed_projection_nodes.push_back(nodes);
+        return output;
       } else if constexpr (std::is_same_v<P, LocalNvfp4Projection>) {
         const auto codes = operand(*projection.codes);
         dimensions.back() = spec(codes).dimensions()[0];
@@ -909,22 +927,35 @@ struct Recipe final {
 // Distinguish direct packed contractions from the ordinary Decode/Cast route.
 // The latter has per-projection Invocation workspace and may use managed
 // provider temporaries; it does not replace the original constant weight bank.
-void report_packed_projections(const g::CompileReport &report, std::span<const PackedProjectionNodes> projections) {
+void report_packed_projections(const g::Graph &graph, const g::CompileReport &report,
+                               std::span<const PackedProjectionNodes> projections) {
   std::size_t packed = 0;
   for (const auto &projection : projections) {
+    if (projection.count != 3 && projection.count != 4)
+      throw std::runtime_error("packed projection requires its actual three/four-node recipe");
     std::size_t containing = 0;
     for (std::size_t step_index = 0; step_index < report.step_count(); ++step_index) {
       const auto step = take(report.step(step_index));
       std::array<bool, 4> included{};
       for (std::size_t i = 0; i < step.node_count; ++i) {
         const auto node = take(report.step_node(step_index, i));
-        for (std::size_t j = 0; j < included.size(); ++j) included[j] = included[j] || node == projection.chain[j];
+        for (std::size_t j = 0; j < projection.count; ++j) included[j] = included[j] || node == projection.chain[j];
       }
-      if (!included.back()) continue;
+      if (!included[projection.count - 1]) continue;
       ++containing;
-      packed += std::ranges::all_of(included, [](bool value) { return value; });
+      const bool contracted = step.policy == g::kArtifactPackedProjectionPolicy && step.node_count == projection.count &&
+          std::ranges::all_of(std::span(included).first(projection.count), [](bool value) { return value; });
+      if (contracted) {
+        for (std::size_t j = 0; j + 1 < projection.count; ++j) {
+          const auto intermediate = take(graph.result(projection.chain[j]));
+          for (std::size_t i = 0; i < report.physical_value_count(); ++i)
+            if (take(report.physical_value(i)).value == intermediate)
+              throw std::runtime_error("packed projection materialized a floating weight intermediate");
+        }
+        ++packed;
+      }
     }
-    if (containing != 1) throw std::runtime_error("original GPTQ projection is missing from its selected plan");
+    if (containing != 1) throw std::runtime_error("original packed projection is missing from its selected plan");
   }
   if (!projections.empty())
     std::cerr << "original_quantized_projections=" << projections.size()
@@ -1150,6 +1181,16 @@ struct StepMember final {
   GenerationCommitRecord *commit_record = nullptr;
   GenerationLedger *commit_ledger = nullptr;
 };
+// A requested cancellation is an expected episode outcome. Preserve a later
+// actual retirement failure instead of letting first-error aggregation hide it.
+// Other first errors keep their original identity; this does not prove retirement.
+void record_retirement_status(hyle::Status &status, const hyle::Status &observed) noexcept {
+  if (status.IsCancelled() && !status.has_native_error() && !observed.ok() &&
+      (!observed.IsCancelled() || observed.has_native_error()))
+    status = observed;
+  else status.Update(observed);
+}
+
 struct StepState final {
   // Model owns the episode; these strong pins outlive all accepted native work.
   // Session's pending link borrows this owner and never creates a cycle.
@@ -1186,7 +1227,7 @@ struct StepState final {
     if (completion.valid()) {
       auto observed = completion.poll();
       if (observed && *observed == c::CompletionPoll::kPending) return false;
-      if (!observed) terminal.Update(observed.error());
+      if (!observed) record_retirement_status(terminal, observed.error());
       completion = {}; // Error/abandonment keeps actual native guards retained.
     }
     if (run) {
@@ -1316,16 +1357,17 @@ c::TensorDesc role_description(const prepared::Role &role) {
   if (role.shape.size() != 2) throw std::runtime_error("encoded original role must be [N,K]: " + role.name);
   return take(take(c::gguf_weight_description(*codec, Type::kFloat32, role.shape[1], role.shape[0])).transposed());
 }
-WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
+// The complete model wrapper validates its full source inventory first. A
+// source-bound component may select an explicit subset of those same roles;
+// both paths use this one IO/lease/shape-authentication implementation.
+WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     Backend &backend, std::map<std::string, LoadedWeight> &weights,
-    std::vector<c::LeasePool> &weight_pools,
-    const ModelGeometry &geometry, WeightSelection selection = WeightSelection::kText,
-    std::size_t cpu_ffn_layers = 0) {
-  if (selection != WeightSelection::kText && selection != WeightSelection::kTextAndMtp)
-    throw std::runtime_error("invalid weight selection");
-  const auto roles = read_weight_roles(manifest, selection == WeightSelection::kTextAndMtp);
-  if (roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
-  if (roles.nf4_policy.enabled)
+    std::vector<c::LeasePool> &weight_pools, std::size_t cpu_ffn_layers = 0) {
+  roles.geometry.validate();
+  validate_cpu_ffn_layers(cpu_ffn_layers, roles.geometry.layers.size());
+  if (roles.nf4_policy.enabled || std::ranges::any_of(roles.selected, [](const auto &role) {
+        return role.projection_codec == prepared::ProjectionCodec::kNf4DoubleQuant;
+      }))
     throw std::runtime_error("NF4 metadata is supported; F16 weight import and activation execution are not implemented");
   if (roles.selected.empty() || roles.selected.size() > UINT32_MAX)
     throw std::runtime_error("invalid prepared physical role count");
@@ -1522,6 +1564,18 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
       static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtFloat8ChannelToken, &prepared::Role::projection_codec)),
       static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtLocalNvfp4, &prepared::Role::projection_codec)),
       roles.omitted_cache_calibration.size()};
+}
+
+WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
+    Backend &backend, std::map<std::string, LoadedWeight> &weights,
+    std::vector<c::LeasePool> &weight_pools,
+    const ModelGeometry &geometry, WeightSelection selection = WeightSelection::kText,
+    std::size_t cpu_ffn_layers = 0) {
+  if (selection != WeightSelection::kText && selection != WeightSelection::kTextAndMtp)
+    throw std::runtime_error("invalid weight selection");
+  const auto roles = read_weight_roles(manifest, selection == WeightSelection::kTextAndMtp);
+  if (roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
+  return load_selected_weight_roles(roles, backend, weights, weight_pools, cpu_ffn_layers);
 }
 
 class Model;
@@ -1847,6 +1901,8 @@ public:
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
+    if (sampler.enabled && (!cache_plan.hidden_bytes || cache_plan.hidden_slots < cache_plan.snapshot_slots))
+      throw std::runtime_error("sampling requires a cache plan with retained frontier storage");
     const std::array limits{c::ResourceBudgetLimit{execution.device(), max_cache_bytes},
         c::ResourceBudgetLimit{mem::system_resource(), (std::numeric_limits<std::size_t>::max)()}};
     // CPU payload and host metadata can use the same real resource. Keep the
@@ -1937,7 +1993,7 @@ public:
       session->model_ = nullptr;
       session->stopping = true;
       session->pending = nullptr;
-      if (active_step) session->retirement_status.Update(active_step->terminal);
+      if (active_step) record_retirement_status(session->retirement_status, active_step->terminal);
     }
     resources_->release_invocation_roots();
     if (active_step) {
@@ -2589,7 +2645,7 @@ public:
       child->compiled.executable = take(definition.compiled.executable.exact_variant(index));
       child->compiled.report = take(definition.compiled.report.exact_variant(index));
       record_execution_plan(child->compiled.report, assembly.constants);
-      report_packed_projections(child->compiled.report, r.packed_projection_nodes);
+      report_packed_projections(definition.graph, child->compiled.report, r.packed_projection_nodes);
       child->outputs.resize(child->compiled.executable.output_count());
       child->output_indices.resize(definition.specs.size());
       check(inference::prepare_outputs(child->compiled, child->outputs, child->output_indices));
@@ -3439,20 +3495,28 @@ public:
 
   void detach_episode() noexcept {
     if (!active_step) return;
+    // Only a caller-requested, actually retired shared cancellation is local
+    // to this episode. An unchanged surviving Session remains runnable; do not
+    // poison its later retirement with a peer's normal Graph cancellation.
+    // Preserve native and all other failures, and the cancelled owner's fact.
+    const bool cancelled_episode = active_step->cancelled &&
+        active_step->terminal.IsCancelled() && !active_step->terminal.has_native_error();
     for (auto &member : active_step->members) {
-      member.session->retirement_status.Update(active_step->terminal);
+      if (!cancelled_episode || member.session->stopping)
+        record_retirement_status(member.session->retirement_status, active_step->terminal);
       member.session->pending = nullptr;
     }
     active_step.reset();
   }
 
-  hyle::Result<bool> try_retire_episode() noexcept {
+  hyle::Result<bool> try_retire_episode(hyle::Status *observed_status = nullptr) noexcept {
     if (!active_step) return true;
     // Dropping the public Completion does not remove original native work.
     // Drive its owning environment before checking the unchanged Graph/page
     // retirement gates; an observation error alone never proves retirement.
-    active_step->terminal.Update(execution.collect_retired());
+    record_retirement_status(active_step->terminal, execution.collect_retired());
     HYLE_ASSIGN_OR_RETURN(auto retired, active_step->try_abort());
+    if (observed_status) record_retirement_status(*observed_status, active_step->terminal);
     if (retired) detach_episode();
     return retired;
   }
@@ -3465,8 +3529,8 @@ public:
     // pins and admission intact for an explicit retry; it must not spin.
     hyle::Status terminal;
     if (active_step->run) terminal = execution.drain_retired(*active_step->run);
-    active_step->terminal.Update(terminal);
-    HYLE_ASSIGN_OR_RETURN(auto retired, try_retire_episode());
+    record_retirement_status(active_step->terminal, terminal);
+    HYLE_ASSIGN_OR_RETURN(auto retired, try_retire_episode(&terminal));
     if (retired) return terminal;
     if (!terminal.ok()) return terminal;
     return hyle::Status::Unavailable("Qwen episode still retains original native work");
@@ -4443,7 +4507,7 @@ hyle::Status Session::stop() noexcept {
     pending->cancelled = true;
     if (pending->completion.valid()) {
       const auto cancelled = pending->completion.request_cancel();
-      if (!cancelled.IsUnimplemented()) retirement_status.Update(cancelled);
+      if (!cancelled.IsUnimplemented()) record_retirement_status(retirement_status, cancelled);
     }
     if (pending->run) pending->run->close().IgnoreError();
   }
@@ -4452,7 +4516,7 @@ hyle::Status Session::stop() noexcept {
 hyle::Result<bool> Session::try_retire() noexcept {
   if (!stopping) return std::unexpected(hyle::Status::FailedPrecondition("stop the Qwen session before retirement"));
   if (!model_) {
-    retirement_status.Update(resources_->retire(false));
+    record_retirement_status(retirement_status, resources_->retire(false));
     if (resources_->pending()) return false;
   } else if (pending) {
     HYLE_ASSIGN_OR_RETURN(auto retired, model_->try_retire_episode());
@@ -4462,9 +4526,9 @@ hyle::Result<bool> Session::try_retire() noexcept {
 }
 hyle::Status Session::drain() noexcept {
   hyle::Status status;
-  if (!model_) status.Update(resources_->retire(true));
-  else if (pending) status.Update(model_->abort_episode());
-  status.Update(retirement_status); return status;
+  if (!model_) record_retirement_status(status, resources_->retire(true));
+  else if (pending) record_retirement_status(status, model_->abort_episode());
+  record_retirement_status(status, retirement_status); return status;
 }
 Session::~Session() { drain().IgnoreError(); }
 
@@ -4822,7 +4886,11 @@ struct PreparedGenerationCall final {
 };
 
 PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &request, std::size_t steps,
-    cache::PrefixCache *prefix, std::span<const GenerationRequest> requests) {
+    cache::PrefixCache *prefix, std::span<const GenerationRequest> requests,
+    std::size_t output_credit = SIZE_MAX) {
+  // Credit belongs to this episode, not the turn's immutable output quota.
+  // Reject before prefix lookup, session creation or any other admission work.
+  if (!output_credit) throw std::runtime_error("generation must wait for output credit before preparation");
   if (steps != request.progress.output_limit())
     throw std::runtime_error("generation call quota differs from its prepared request turn");
   if (!request.progress.turn_started()) (void)request.progress.begin_turn();
@@ -4903,7 +4971,8 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     call.full_hit = call.prompt.empty();
     call.name = request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_prefill" : "prefill";
   } else {
-    call.quota = request.progress.remaining_outputs(); call.pending = request.session->head->next_id;
+    call.quota = (std::min)(request.progress.remaining_outputs(), output_credit);
+    call.pending = request.session->head->next_id;
     if (request.progress.generated.empty() || call.pending != request.progress.generated.back())
       throw std::runtime_error("generation pending differs from its last observed output");
     const auto remaining = model.capacity - request.session->length();

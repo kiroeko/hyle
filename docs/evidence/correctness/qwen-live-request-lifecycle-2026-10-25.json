@@ -1,0 +1,531 @@
+{
+  "status": "PASS_ORIGINAL_ORDINARY_OWNER_PROCESS",
+  "date": "2026-10-25",
+  "scope": "Dedicated actual consumer using one original Qwen2B Model, GenerationLedger and shared host primitives; not online CLI/server support.",
+  "result": {
+    "status": "PASS",
+    "ordinary": true,
+    "backend": "cuda",
+    "physical_text_roles": 320,
+    "physical_mtp_roles": 0,
+    "device_weight_bytes": 3763655360,
+    "cache_limit": 1073741824,
+    "cache_backing_bytes": 105181233,
+    "submitted_R2_inflight_fact": true,
+    "hardware_completion_at_cancel": "unknown",
+    "survivor_retirement_status_after_abort_ok": true,
+    "survivor_final_status_before_stop_ok": true,
+    "B_key_generation": 2,
+    "C_old_generation": 3,
+    "C_new_generation": 4,
+    "B_sampling_draw": 4,
+    "B_committed_records": 4,
+    "B_ids": [
+      71093,
+      12305,
+      198,
+      727
+    ],
+    "C_ids": [
+      71093
+    ],
+    "scope": "one_original_model_host_owner_process_not_online_CLI"
+  },
+  "source_pins": [
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 23020,
+      "sha256": "fe7d3c10c3d4c1a5ac7f9243d5d9a26ca508b91391d6cb2c99707112ac1dcff6"
+    },
+    {
+      "path": "engine/inference/batch_indices.h",
+      "bytes": 2562,
+      "sha256": "f0bb89ff4fa0707b87f5941d34bbda2c91fc3bdc946d69845f1a2de16c080230"
+    },
+    {
+      "path": "engine/inference/execution_observation.h",
+      "bytes": 976,
+      "sha256": "d29d5df374d2055fe8f381f8a0b98f33a613526ea294ecccb9e820eb93db9ba3"
+    },
+    {
+      "path": "engine/inference/execution_resources.h",
+      "bytes": 3312,
+      "sha256": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65"
+    },
+    {
+      "path": "engine/inference/mtp_acceptance.h",
+      "bytes": 6899,
+      "sha256": "8d72de0dc241901758188fddc78b04f5b3aedde2e500ef521c71ec13a05df9ec"
+    },
+    {
+      "path": "engine/inference/output_delivery.h",
+      "bytes": 2599,
+      "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    {
+      "path": "engine/inference/prefix_directory.h",
+      "bytes": 14899,
+      "sha256": "5161c250059bf9a02dffbcdfcfba2b1c4292d11f741d3decf59568644fae1e9c"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 6830,
+      "sha256": "fc74f081a5ad3c090bca09ed2dc3fddc6d5498174545e4f68102d53a526eaf36"
+    },
+    {
+      "path": "engine/inference/readback.h",
+      "bytes": 4778,
+      "sha256": "8dc117a67d9915e6dcf1762d3f2701644fe613f8fbfb46949cd7057c1e7fc10c"
+    },
+    {
+      "path": "engine/inference/request_progress.h",
+      "bytes": 12440,
+      "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    {
+      "path": "engine/inference/sampling_cursor.h",
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    {
+      "path": "engine/inference/sampling_graph.h",
+      "bytes": 17641,
+      "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+    },
+    {
+      "path": "engine/inference/token_prefix.h",
+      "bytes": 2068,
+      "sha256": "fdc43b99c1fb398cd968e1047a26269f89deb6e0e5e4b45161161f20b531f7ba"
+    },
+    {
+      "path": "engine/inference/version_admission.h",
+      "bytes": 3009,
+      "sha256": "7983b7652aefa836bb4bf00eab7c5662099ca5f62cc7a2a03e3340623a0205b1"
+    },
+    {
+      "path": "engine/models/qwen35/batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": "engine/models/qwen35/driver.h",
+      "bytes": 166,
+      "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+    },
+    {
+      "path": "engine/models/qwen35/fp8_weight_import.h",
+      "bytes": 3765,
+      "sha256": "e5669f84d624635c641b06be264ae1889b4aed9760b23fa29b2227be2a91883d"
+    },
+    {
+      "path": "engine/models/qwen35/generation_schedule.h",
+      "bytes": 9702,
+      "sha256": "ef99737c5e6714e570a269c8d96979de31da86584b7d4d679cb26d3ae721da4f"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 429923,
+      "sha256": "3f8b8c6417408c93047259c7434576413c134118795d8da7e0235539d8b108f2"
+    },
+    {
+      "path": "engine/models/qwen35/model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": "engine/models/qwen35/native_gate.h",
+      "bytes": 1098,
+      "sha256": "d021a32ecac3452117df547a46d409c2772c30b36a73c895e758ed109f57b744"
+    },
+    {
+      "path": "engine/models/qwen35/nf4_state.h",
+      "bytes": 5375,
+      "sha256": "93d74bbfce17d9dc314fc951536b261d72e9f42d7422ebf56903c67814cc9a5f"
+    },
+    {
+      "path": "engine/models/qwen35/prefix_cache.h",
+      "bytes": 7893,
+      "sha256": "01ae750cd254085f9a59f32ad6a3b3ba6ecbb8ead9afe059a1049f2156860b29"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 28953,
+      "sha256": "067d7ed330a93b2afbd1e6a0d0a041b7a4925d6e21d029a100364ffa96f836a9"
+    },
+    {
+      "path": "engine/models/qwen35/probe_geometry.h",
+      "bytes": 1099,
+      "sha256": "85a3ccafa46bc359a81a1a7e0a343c536ca9a66b3b6a9a7e7c00772b65a8ab13"
+    },
+    {
+      "path": "engine/models/qwen35/projection_binding.h",
+      "bytes": 2571,
+      "sha256": "798135ab8161cf44b23a6317e2043863832952a1c24ef2784e073734e5b476b2"
+    },
+    {
+      "path": "engine/models/qwen35/schedule.h",
+      "bytes": 3938,
+      "sha256": "da54254636fde3febe92315b5b9459264e003ed07a1a12e32e92ca409d77f2ca"
+    },
+    {
+      "path": "engine/models/qwen35/session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": "engine/models/qwen35/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 14335,
+      "sha256": "2ebcc76d89fbeba6943b2c245f8102241f6ec7d48aedab098777b6b9955fd5e3"
+    },
+    {
+      "path": "engine/models/qwen35/token_ids.h",
+      "bytes": 2200,
+      "sha256": "d696a78d7db5cd8438d793ce63514e19bac68913716de9a4bc65ab532bee920a"
+    },
+    {
+      "path": "engine/reporting/execution_report.cc",
+      "bytes": 4377,
+      "sha256": "069a735b7e1f760d27bf427cddb63aba8850972caaa52790435be428049843ce"
+    },
+    {
+      "path": "engine/reporting/execution_report.h",
+      "bytes": 474,
+      "sha256": "50773c0ac5095d711c631f8f842c94d4e506109a89e12d0103113ae838b0bcd3"
+    }
+  ],
+  "consumer": {
+    "path": ".scratch/inference-live-owner-20261025/consumer3.cc",
+    "bytes": 15550,
+    "sha256": "991c92446dc7383902763127aeea9b7cf7d70fa986a8cb9c5683cf45a4c89015"
+  },
+  "fix_patch": {
+    "path": ".scratch/inference-live-owner-20261025/detach-changes.patch",
+    "bytes": 966,
+    "sha256": "fc126004569d942c4f84b5aae8108839ab381d501ec504806118401e85c9db1d"
+  },
+  "attempts": [
+    {
+      "name": "attempt1",
+      "compile": {
+        "exit": 0,
+        "seconds": 16.84399999998277,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.687999999994645,
+        "timeout": false
+      },
+      "run": {
+        "exit": 1,
+        "seconds": 2.9059999999881256,
+        "timeout": false
+      },
+      "result": "FAILED_PRESERVED",
+      "stdout": {
+        "path": ".scratch/inference-live-owner-20261025/attempt1/run1/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": ".scratch/inference-live-owner-20261025/attempt1/run1/stderr.log",
+        "bytes": 2196,
+        "sha256": "9d51d70f5f9e3f0af71b210f6a523af96a731e2db6445bdf9e9f9b8a97e95e41"
+      }
+    },
+    {
+      "name": "attempt2",
+      "compile": {
+        "exit": 0,
+        "seconds": 16.937000000005355,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.687999999994645,
+        "timeout": false
+      },
+      "run": {
+        "exit": 1,
+        "seconds": 2.3910000000032596,
+        "timeout": false
+      },
+      "result": "FAILED_PRESERVED",
+      "stdout": {
+        "path": ".scratch/inference-live-owner-20261025/attempt2/run1/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": ".scratch/inference-live-owner-20261025/attempt2/run1/stderr.log",
+        "bytes": 2874,
+        "sha256": "bd38af65bcc62a5a409f075acc4657e99aea53900a310414a27c1a58b0e8a74e"
+      }
+    },
+    {
+      "name": "attempt3",
+      "compile": {
+        "exit": 0,
+        "seconds": 16.875,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.687000000005355,
+        "timeout": false
+      },
+      "run": {
+        "exit": 1,
+        "seconds": 2.5,
+        "timeout": false
+      },
+      "result": "FAILED_PRESERVED",
+      "stdout": {
+        "path": ".scratch/inference-live-owner-20261025/attempt3/run1/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": ".scratch/inference-live-owner-20261025/attempt3/run1/stderr.log",
+        "bytes": 24497,
+        "sha256": "160b0ab014a5ad27a80ace57e879467d13ed94e4e0f1fb6e5131d6a2ff119c63"
+      }
+    },
+    {
+      "name": "attempt4",
+      "compile": {
+        "exit": 0,
+        "seconds": 16.75,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.7349999999860302,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 2.4219999999913853,
+        "timeout": false
+      },
+      "result": "PASS",
+      "stdout": {
+        "path": ".scratch/inference-live-owner-20261025/attempt4/run1/stdout.log",
+        "bytes": 576,
+        "sha256": "e7149ffcc5da9f17009b70e9b1582e2799453fbb0a1a2a288b53bad87fc12cb1"
+      },
+      "stderr": {
+        "path": ".scratch/inference-live-owner-20261025/attempt4/run1/stderr.log",
+        "bytes": 24390,
+        "sha256": "2a7dcd62d1311c358687a61ef723674429899633ca441e5750e9c421b7189221"
+      }
+    }
+  ],
+  "preserved_failures": "first-failures.json",
+  "final_run_command": {
+    "command": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-live-owner-20261025\\attempt4\\link\\consumer.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original"
+    ],
+    "cwd": "C:\\public\\project-hyle\\hyle",
+    "timeout_seconds": 180
+  },
+  "checks": [
+    "Original320 BF16 text roles loaded once per process, no draft resources.",
+    "A/B share an actual submitted R2 ordinary episode; cancellation retires original Invocation, page/lease/candidate and pending owners before requeue.",
+    "Neither committed head nor ledger, sampling cursor or historical pending publishes from the cancelled episode.",
+    "Survivor B keeps its key and continues target sampling from its original pending and cursor.",
+    "Bad C vocabulary token is rejected during whole-batch preflight before a StepState/native submission; B stays unchanged and C re-enters with a fresh key generation.",
+    "Credit1 rejects zero-credit preparation without effects, pauses B, admits C through the same FIFO and resumes B only after acknowledgement.",
+    "Completed final-known turn with open input waits; appended empty user suffix consumes the actual pending once and then input closes.",
+    "Final pending output retains occupied identity until explicit scripted acknowledgement, actual payload retirement and release; stale ACKs are ignored.",
+    "Expected episode Cancelled remains returned and logged; only its attribution to an unstopped survivor is excluded after actual retirement and without native error."
+  ],
+  "proof_boundaries": [
+    "The delivery ACKs and arrival/close events are scripted host-owner actions; no socket/server or online CLI adapter was exercised.",
+    "Invocation in_flight was true at cancellation; physical GPU completion at that instant is unknown, and no hardware preemption claim is made.",
+    "No new tensor-byte/reference oracle. Unchanged full immutable Snapshot identity/boundary, unchanged ledger/RNG/pending, native rollback gates and actual continuation are checked.",
+    "The sampler requires frontier_hidden=true in its cache Plan. The first fixture omitted it and failed before submission; future cold configuration should derive/validate that coupling earlier.",
+    "No MTP native credit-narrowing, throughput, quality or total opaque-provider VRAM-bound claim."
+  ],
+  "product_fix": "Model::detach_episode only; retain all unknown/native/non-Cancelled errors and cancellation status for the stopping participant.",
+  "hardware": "NVIDIA GeForce RTX4070, native CUDA",
+  "SDK_builds": 0,
+  "HTTP_requests": 0,
+  "new_model_or_weight_downloads": 0,
+  "original_model_process_attempts": 4,
+  "actual_successes": 1,
+  "remaining_GPU_processes": 0,
+  "same_successful_work_comparison": "same-work-before-after.json",
+  "source_version_note": "Frozen7731 Model plus exact output_credit function =>352cf, then isolated canonical detach_episode fix =>3f8b; unrelated later CT source changes excluded.",
+  "header_after_compile_change": "attempt4/header-after-compile-change.json",
+  "cleanup": {
+    "performed": true,
+    "scope": "Only failed, superseded attempt1..3 private binaries removed by exact test.ps1 branch after publication.",
+    "files_removed": 15,
+    "logical_bytes_removed": 469224056,
+    "physical_free_bytes": "not measured; DLL entries include hard links",
+    "retained": "Attempt4 final passed binary and objects, all source, commands, logs, raw results, original SDK/model/dependency caches and baseline images.",
+    "receipt_path": ".scratch/inference-live-owner-20261025/cleanup-removed.json",
+    "archive_scope": "The frozen ZIP records the pre-cleanup inventory. This wrapper adds the subsequent deletion fact; its verification/source results are unchanged."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-live-request-lifecycle-2026-10-25.zip",
+    "bytes": 1252761,
+    "sha256": "31f53f25ea6a5b7802815914b77083ec51012729fcccd9cba9997014873d9990"
+  },
+  "private_frozen_archive": {
+    "path": ".scratch/inference-live-owner-20261025/proof.zip",
+    "bytes": 533360,
+    "sha256": "c548e60a9b42cb6c4f7e160d4843601d6e74a15764bd4f04fcea3dd9fe6451d3"
+  },
+  "canonical_regression": {
+    "status": "SOURCE_ADAPTATION_ONLY_NOT_RECOMPILED_OR_RERUN",
+    "actual": {
+      "path": ".scratch/inference-live-owner-20261025/consumer3.cc",
+      "bytes": 15550,
+      "sha256": "991c92446dc7383902763127aeea9b7cf7d70fa986a8cb9c5683cf45a4c89015"
+    },
+    "canonical": {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 15826,
+      "sha256": "51c6820d6d515b12cbd64d8079c7af49730138f33d8de59f44e1d34ad4f930ed"
+    },
+    "patch": {
+      "path": ".scratch/inference-live-owner-20261025/canonical-source-bridge.patch",
+      "bytes": 1420,
+      "sha256": "76f089082da0ab5bcf0a3b755b808a5e01bc11c5addf548b82246481f98f0e63"
+    },
+    "changes": [
+      "Replace two private frozen include paths with canonical relative engine paths.",
+      "Add explicit cstdlib include for getenv.",
+      "Accept one explicit prepared input directory or HYLE_QWEN_REQUEST_INPUTS; absent both returns77."
+    ],
+    "all_other_bytes_exact": true,
+    "actual_frozen_model_sha256": "3f8b8c6417408c93047259c7434576413c134118795d8da7e0235539d8b108f2",
+    "original_input_contract": "Original BF16 Qwen2B V2 weights.tsv plus P154 prompt.ids, CUDA; no implicit download.",
+    "default_missing_input_exit": 77,
+    "invalid_explicit_input": "Original validation fails normally; no skip after a supplied directory.",
+    "native_GPU_rerun": false
+  },
+  "first_actual_failures": [
+    {
+      "attempt": "attempt1",
+      "stage": "R2 prefill preparation before submit",
+      "exit": 1,
+      "reason": "Private consumer cache Plan incorrectly disabled frontier_hidden despite sampling enabled.",
+      "classification": "fixture configuration error",
+      "fix": "Set frontier_hidden=true as the original CLI plan_for does.",
+      "native_submissions": 0,
+      "actual_process": {
+        "exit": 1,
+        "seconds": 2.9059999999881256,
+        "timeout": false
+      },
+      "stderr_sha256": "9d51d70f5f9e3f0af71b210f6a523af96a731e2db6445bdf9e9f9b8a97e95e41"
+    },
+    {
+      "attempt": "attempt2",
+      "stage": "after R2 submitted cancellation",
+      "exit": 1,
+      "reason": "Private consumer unconditionally check()ed the expected episode Cancelled from abort_episode.",
+      "classification": "fixture status classification error",
+      "fix": "Allow only explicit Cancelled for the cancelled episode; keep other errors and all retirement gates.",
+      "actual_process": {
+        "exit": 1,
+        "seconds": 2.3910000000032596,
+        "timeout": false
+      },
+      "stderr_sha256": "bd38af65bcc62a5a409f075acc4657e99aea53900a310414a27c1a58b0e8a74e"
+    },
+    {
+      "attempt": "attempt3",
+      "stage": "survivor final stop after successful continuation and appended turn",
+      "exit": 1,
+      "reason": "Model::detach_episode persisted the cancelled shared episode terminal into the unstopped survivor Request retirement_status.",
+      "classification": "confirmed product request/episode cancellation attribution bug",
+      "actual": [
+        "A.stop OK",
+        "abort_episode Cancelled",
+        "all episode/pending/carrier owners retired",
+        "B head/boundary/RNG/ledger unchanged after abort",
+        "B retirement_status Cancelled",
+        "B same-key target continuation succeeds",
+        "C invalid token rejected before native admission and re-enters with new generation",
+        "B credit pause allows C real prefill",
+        "B resumes and appends pending-only turn to cursor4/ledger4/length157",
+        "Final B.stop returns the stale Cancelled and fails strict retirement check"
+      ],
+      "source_location": "Frozen Model::detach_episode unconditional member.session->retirement_status.Update(active_step->terminal)",
+      "proposed_fix": "Do not attribute an explicitly cancelled episode to an unstopped survivor; preserve episode Cancelled return and all non-Cancelled retirement errors.",
+      "GPU_process_terminal": true,
+      "actual_process": {
+        "exit": 1,
+        "seconds": 2.5,
+        "timeout": false
+      },
+      "stderr_sha256": "160b0ab014a5ad27a80ace57e879467d13ed94e4e0f1fb6e5131d6a2ff119c63"
+    }
+  ],
+  "entry_runner_failures": [
+    {
+      "path": ".scratch/inference-live-owner-20261025/attempt1/closure-precheck-failure.json",
+      "classification": "Private closure precheck treated bare bcrypt.lib as a cwd file; original compile succeeded and sameOBJ link was corrected."
+    },
+    {
+      "path": ".scratch/inference-live-owner-20261025/attempt4/header-after-compile-change.json",
+      "classification": "Postcompile diagnostic constexpr-only public header addition; exact compiled688 header is archived, no ABI/layout/route change and no rebuild."
+    }
+  ],
+  "archive_verification": {
+    "members": 148,
+    "CRC_and_all_member_hashes": "PASS",
+    "binaries": false,
+    "weights": false,
+    "SDK": false
+  },
+  "scope_of_actual_run": "Final actual process used private frozen main3f8b+actual dependencies, not current canonical CT metadata changes; canonical regression entry adaptation is source-only and was not rerun.",
+  "canonical_build_and_retirement_followup": {
+    "scope": "Subsequent canonical source and host-only error aggregation; the original four native processes and their exact sources remain unchanged.",
+    "canonical_build": "STRICT_CANONICAL_BUILD_AND_HOST_CHECKS_PASS",
+    "compile_seconds": 16.957605100004002,
+    "link_seconds": 1.6835916999843903,
+    "host_seconds": 0.7720220999908634,
+    "host_checks": 7,
+    "missing_input_exit": 77,
+    "invalid_input_exit": 1,
+    "CRT_policy": "MSVC /W4 /WX with /U_CRT_SECURE_NO_WARNINGS; use _dupenv_s only on Microsoft CRT.",
+    "retirement_correction": "Pure Cancelled can be promoted by a later actual non-cancel/native retirement error. Publish the final aggregate to abort_episode before detach, also while retirement is still pending. Original retirement gates are unchanged.",
+    "source_scope": "Frozen index main plus CT loader/Recipe changes, excluding concurrent unverified chunked-prefill work.",
+    "GPU_runs": 0,
+    "actual_device_error_injection": false,
+    "full_native_rerun": false,
+    "CMake_configure": false
+  },
+  "archive_members": 266,
+  "canonical_regression_current_source": {
+    "path": "tests/tools/qwen_request_lifecycle_test.cc",
+    "bytes": 18136,
+    "sha256": "97b4a537a4379ca86b5ec49cd38b494d1082a08e5cc0a70228d7ecaec4e9fcf0"
+  }
+}

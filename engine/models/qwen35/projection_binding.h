@@ -21,8 +21,8 @@ struct GptqProjection final {
   Tensor *codes = nullptr, *zeros = nullptr, *scales = nullptr, *groups = nullptr;
   hyle::compute::model_ops::ArtifactWeightDecode decode;
 };
-struct CtSymProjection final {
-  Tensor *codes = nullptr, *scales = nullptr;
+struct CtPackedProjection final {
+  Tensor *codes = nullptr, *zeros = nullptr, *scales = nullptr;
   hyle::compute::model_ops::ArtifactWeightDecode decode;
 };
 struct ModelOptNvfp4Projection final {
@@ -41,7 +41,7 @@ struct BlockFp8Projection final {
 struct ChannelTokenFp8Projection final { Tensor *codes = nullptr, *channel_scales = nullptr; };
 
 using ProjectionBinding = std::variant<StoredProjection, GptqProjection,
-    CtSymProjection, ModelOptNvfp4Projection, LocalNvfp4Projection,
+    CtPackedProjection, ModelOptNvfp4Projection, LocalNvfp4Projection,
     BlockFp8Projection, ChannelTokenFp8Projection>;
 using ProjectionBindings = std::map<std::string, ProjectionBinding, std::less<>>;
 

@@ -57,6 +57,64 @@ def source_fixture():
 
 
 class OriginalHfRolesTest(unittest.TestCase):
+    def test_ct_asymmetric_preserves_packed_zero_axis_and_requires_source_policy(self):
+        # Original Q27 cyankiwi@6e134bae... uses I32 Z[ceil(N/8),K/32],
+        # not its config's unpacked int8 zero dtype or AWQ/GPTQ axes.
+        group = ct_group("x", 1024, 5120)
+        group['x.weight_zero_point'] = dict(dtype='I32', shape=[128,160])
+        actual = roles.ct_packed_groups(group)
+        self.assertEqual(actual['x'], dict(logical_shape=[1024,5120],group_size=32,
+                                          scale_dtype='BF16',asymmetric=True))
+        config = dict(quantization_config=dict(quant_method='compressed-tensors',format='pack-quantized',
+            config_groups=dict(group_0=dict(format='pack-quantized',input_activations=None,output_activations=None,
+                targets=['Linear'],weights=dict(num_bits=4,type='int',strategy='group',group_size=32,
+                    symmetric=False,dynamic=False,actorder=None,block_structure=None,scale_dtype=None,zp_dtype='torch.int8')))))
+        self.assertEqual(roles.ct_asymmetric_policy(actual,config), roles.CT_ASYMMETRIC_POLICY)
+        for dtype, shape in (('I64',[128,160]),('I32',[160,128]),('I32',[128,159])):
+            bad = deepcopy(group);bad['x.weight_zero_point']=dict(dtype=dtype,shape=shape)
+            with self.subTest(dtype=dtype,shape=shape), self.assertRaisesRegex(ValueError,'zero-point output-axis'):
+                roles.ct_packed_groups(bad)
+        for mutate in ('absent','symmetric','group','type','activation'):
+            bad = deepcopy(config)
+            if mutate == 'absent': bad = {}
+            elif mutate == 'activation': bad['quantization_config']['config_groups']['group_0']['input_activations'] = {}
+            else:
+                key,value = {'symmetric':('symmetric',True),'group':('group_size',128),'type':('zp_dtype','torch.int32')}[mutate]
+                bad['quantization_config']['config_groups']['group_0']['weights'][key]=value
+            with self.subTest(config=mutate), self.assertRaisesRegex(ValueError,'reader config'):
+                roles.ct_asymmetric_policy(actual,bad)
+        no_zero = deepcopy(group);del no_zero['x.weight_zero_point']
+        with self.assertRaisesRegex(ValueError,'every packed zero-point'):
+            roles.ct_asymmetric_policy(roles.ct_packed_groups(no_zero),config)
+        self.assertEqual(roles.logical_roles(group),{'x.weight'})
+
+    def test_ct_asymmetric_ordinary_preparation_keeps_all_original_roles_and_zero_policy(self):
+        original = source_fixture()
+        original['roles']=[r for r in original['roles'] if not r['name'].startswith('mtp.')]
+        config=source_config()
+        config['quantization_config']=dict(quant_method='compressed-tensors',format='pack-quantized',config_groups=dict(
+            group_0=dict(format='pack-quantized',targets=['Linear'],input_activations=None,output_activations=None,
+                weights=dict(num_bits=4,type='int',strategy='group',group_size=32,symmetric=False,dynamic=False,
+                    actorder=None,block_structure=None,scale_dtype=None,zp_dtype='torch.int8'))))
+        base='model.language_model.layers.0.mlp.gate_proj'
+        n,k=roles.ct_packed_groups({r['name']:r for r in original['roles']})[base]['logical_shape']
+        name=base+'.weight_zero_point'
+        original['roles'].append(dict(name=name,dtype='I32',shape=[(n+7)//8,k//32],bytes=4*((n+7)//8)*(k//32),
+            path='original zero.bin',offset=0,sha256='3'*64))
+        authenticate=lambda r:(Path(r['path']),struct.pack('<qq',n,k) if r['name']==base+'.weight_shape' else None)
+        lines,receipt=roles._prepare_role_records(original,False,config,authenticate)
+        self.assertEqual(lines[3],roles.CT_ASYMMETRIC_POLICY_LINE)
+        self.assertEqual((receipt['ct_asymmetric_int4_groups'],receipt['metadata_ct_asymmetric_int4_groups']),(1,1))
+        self.assertEqual(receipt['ct_asymmetric_int4_policy'],roles.CT_ASYMMETRIC_POLICY)
+        self.assertEqual(receipt['selected_tensor_count'],len(original['roles']))
+        self.assertTrue(any(line.startswith(name+'\tI32\t2\t768\t64\t') for line in lines))
+        missing=deepcopy(original);missing['roles']=[r for r in missing['roles'] if r['name']!=name]
+        with self.assertRaisesRegex(ValueError,'every packed zero-point'):
+            roles._prepare_role_records(missing,False,config,authenticate)
+        wrong=deepcopy(original);next(r for r in wrong['roles']if r['name']==name)['shape'].reverse()
+        with self.assertRaisesRegex(ValueError,'zero-point output-axis'):
+            roles._prepare_role_records(wrong,False,config,authenticate)
+
     def test_original_nf4_json_is_f16_bounded_and_not_a_smaller_component_shape(self):
         # unsloth/Qwen3.8-27B-unsloth-bnb-4bit@8aa5f05d26b7205477066e1449e0af13f762a299
         # model.safetensors bytes15264695436..15264695606; exact original171B.
@@ -232,30 +290,30 @@ class OriginalHfRolesTest(unittest.TestCase):
     def test_ct_geometry_uses_original_axes_scale_type_and_groups(self):
         for dtype in ("F16", "BF16", "F32"):
             group=ct_group("mtp.test",8,128,64,dtype)
-            self.assertEqual(roles.ct_symmetric_groups(group)["mtp.test"],
+            self.assertEqual(roles.ct_packed_groups(group)["mtp.test"],
                              dict(logical_shape=[8,128],group_size=64,scale_dtype=dtype))
 
     def test_actual_mtp_logical_geometry_has_seven_ct_and_eight_plain_roles(self):
         original=source_fixture();all_roles={r["name"]:r for r in original["roles"]}
         mtp={n:r for n,r in all_roles.items()if n.startswith("mtp.")}
-        self.assertEqual((len(mtp),len(roles.logical_roles(mtp)),len(roles.ct_symmetric_groups(mtp))),(29,15,7))
+        self.assertEqual((len(mtp),len(roles.logical_roles(mtp)),len(roles.ct_packed_groups(mtp))),(29,15,7))
         self.assertEqual(roles.logical_roles(mtp),{n for n in roles.geometry.role_shapes(roles.geometry.from_hf(source_config())) if n.startswith("mtp.")})
 
     def test_incomplete_ambiguous_or_wrong_ct_geometry_is_rejected(self):
         for suffix in (".weight_packed", ".weight_scale", ".weight_shape"):
             group=ct_group("x");del group["x"+suffix]
             with self.assertRaisesRegex(ValueError,"incomplete"):
-                roles.ct_symmetric_groups(group)
+                roles.ct_packed_groups(group)
         group=ct_group("x");group["x.weight_packed"]["shape"]=[4,8]
         with self.assertRaisesRegex(ValueError,"group geometry"):
-            roles.ct_symmetric_groups(group)
+            roles.ct_packed_groups(group)
         for field,value in (("dtype","I32"),("shape",[1,2])):
             group=ct_group("x");group["x.weight_shape"][field]=value
             with self.assertRaisesRegex(ValueError,"shape descriptor"):
-                roles.ct_symmetric_groups(group)
+                roles.ct_packed_groups(group)
         group=ct_group("x");group["x.weight"]={}
         with self.assertRaisesRegex(ValueError,"ambiguous"):
-            roles.ct_symmetric_groups(group)
+            roles.ct_packed_groups(group)
 
     def test_actual_shape_values_are_required_in_original_little_endian_order(self):
         geometry=dict(logical_shape=[8,32])
@@ -278,7 +336,7 @@ class OriginalHfRolesTest(unittest.TestCase):
                     roles.verify_role_source(role)
 
     def test_full_source_shape_checks_precede_mtp_selection(self):
-        original=source_fixture();groups=roles.ct_symmetric_groups({r["name"]:r for r in original["roles"]})
+        original=source_fixture();groups=roles.ct_packed_groups({r["name"]:r for r in original["roles"]})
         seen=[]
         def authenticates(role):
             seen.append(role["name"])
@@ -345,7 +403,7 @@ class OriginalHfRolesTest(unittest.TestCase):
         # Choosing a reader changes the authenticated source/math identity; it
         # is not silently added to non-FP8 records.
         ordinary=source_fixture()
-        old_lines,old_receipt=roles._prepare_role_records(ordinary,False,source_config(),lambda r:(Path('x'),struct.pack('<qq',*roles.ct_symmetric_groups({x['name']:x for x in ordinary['roles']})[r['name'][:-13]]['logical_shape']) if r['name'].endswith('.weight_shape') else None))
+        old_lines,old_receipt=roles._prepare_role_records(ordinary,False,source_config(),lambda r:(Path('x'),struct.pack('<qq',*roles.ct_packed_groups({x['name']:x for x in ordinary['roles']})[r['name'][:-13]]['logical_shape']) if r['name'].endswith('.weight_shape') else None))
         self.assertNotIn('fp8_block128_policy',old_receipt)
         self.assertFalse(old_lines[3].startswith('fp8_block128'))
 

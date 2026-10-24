@@ -8,6 +8,7 @@ CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修
 官方 BF16 及固定 GPTQ、NVFP4、Unsloth MTP GGUF Q4 制品已有完整模型短旅程；
 量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
 NF4 已接冷 metadata 校验，原权重小组件的 F16 解码及 CPU／CUDA 投影通过；完整 F16 推理仍待接线。
+CT asymmetric INT4 已接原零点角色和同一加载／投影流程，[原 CPU 组件](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json)的七组投影通过；完整 27B 模型及该原权重路径的其它后端尚未验证。
 
 目前使用准备后的本地权重清单和 token IDs，输出 JSON 中的生成 IDs 与计时。
 尚无通用模型目录加载、C++ tokenizer、聊天服务或图片输入；其它模型的有限组件检查也不表示已有完整引擎。

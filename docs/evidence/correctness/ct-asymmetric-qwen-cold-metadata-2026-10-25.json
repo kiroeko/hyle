@@ -1,0 +1,202 @@
+{
+  "status": "PASS_COLD_METADATA_ONLY",
+  "scope": {
+    "repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+    "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+    "ordinary_CT_asymmetric_groups": 399,
+    "ordinary_selected_physical_roles": 2048,
+    "complete_text_and_existing_NextN_physical_roles": 2063,
+    "existing_BF16_NextN_roles": 15,
+    "full_original_headers_including_excluded_vision": 2396,
+    "new_MTP_functionality": false,
+    "no_model_or_GPU": true,
+    "original_numeric_payload_read": false,
+    "source_weight_shape_I64_values_checked": false
+  },
+  "changes": [
+    "Recognize original I32 packed zero points alongN and exclude them from logical parameter inventory.",
+    "Require explicit source-derived CT asymmetric g32/BF16 reader policy; missing Z cannot silently select symmetric.",
+    "Distinct kCtAsymmetric4 typed selected principal, original codes/Z/scales/shape retained without conversion.",
+    "Reuse shape metadata helper for symmetric/asymmetric; subtraction/product remain existing Compute operator responsibilities."
+  ],
+  "interfaces": {
+    "codec": "prepared::ProjectionCodec::kCtAsymmetric4",
+    "policy": "prepared::CtAsymmetricPolicy",
+    "roles_field": "Roles.ct_asymmetric_policy.enabled",
+    "manifest": "ct_asymmetric_int4\t32\tBF16\tpacked_N\tcompressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4"
+  },
+  "validation": {
+    "CXX": {
+      "strict": "MSVC /O2 /W4 /WX /permissive-",
+      "checks": 356,
+      "new_checks": 14,
+      "compile": {
+        "exit": 0,
+        "seconds": 3.609000000025844,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.8120000000053551,
+        "timeout": false
+      }
+    },
+    "Python": {
+      "tests": 16,
+      "new_tests": 2,
+      "run": {
+        "exit": 0,
+        "seconds": 0.25,
+        "timeout": false
+      }
+    },
+    "cached_original_headers": {
+      "status": "PASS_CACHED_ORIGINAL_HEADERS",
+      "repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+      "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+      "original_tensors": 2396,
+      "text_and_existing_MTP_physical_roles": 2063,
+      "ordinary_selected_physical_roles": 2048,
+      "original_asymmetric_groups": 399,
+      "complete_logical_roles": 866,
+      "geometry": {
+        "hidden": 5120,
+        "intermediate": 17408,
+        "vocabulary": 248320,
+        "query_heads": 24,
+        "kv_heads": 4,
+        "key_depth": 256,
+        "value_depth": 256,
+        "gdn_key_heads": 16,
+        "gdn_value_heads": 48,
+        "gdn_key_depth": 128,
+        "gdn_value_depth": 128,
+        "conv_kernel": 4,
+        "context_limit": 262144,
+        "rotary": 64,
+        "layers": "GGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGAGGGA",
+        "rope_theta": 10000000,
+        "epsilon": 1e-06,
+        "tied_head": false,
+        "mtp_layers": 1,
+        "gdn_layout": "grouped"
+      },
+      "headers": [
+        {
+          "path": ".scratch/ct-asymmetric-int4-header/headers/model-00001-of-00005.header.json",
+          "bytes": 120,
+          "sha256": "1c0b3397aa02f43ff6571f52e9845e1df5d9a742d8ce37d54c1d08a9eaa962f5"
+        },
+        {
+          "path": ".scratch/ct-asymmetric-int4-header/headers/model-00002-of-00005.header.json",
+          "bytes": 45712,
+          "sha256": "98e90eba79056f48cec718e282fd646c60bc086e01c236e224e0a99b20ce0857"
+        },
+        {
+          "path": ".scratch/ct-asymmetric-int4-header/headers/model-00003-of-00005.header.json",
+          "bytes": 94968,
+          "sha256": "ea0cc620402f9cf6a2271e0ec07806051854f5f72a5c300448ce6b1482b8d1b1"
+        },
+        {
+          "path": ".scratch/ct-asymmetric-int4-header/headers/model-00004-of-00005.header.json",
+          "bytes": 97776,
+          "sha256": "3a6581e42ee288653e8a580426e7770b0444819da3ff7e8b6040e692f78ab683"
+        },
+        {
+          "path": ".scratch/ct-asymmetric-int4-header/headers/model-00005-of-00005.header.json",
+          "bytes": 72504,
+          "sha256": "3bbe17d5caa35f745d6220cd567ed43a45d624b49eb67c9659451564e51b0dda"
+        }
+      ],
+      "config": {
+        "path": ".scratch/ct-asymmetric-int4-header/config.json",
+        "bytes": 21007,
+        "sha256": "8a4c7cc94e338329a92ec9a1bb78cbd86f936de1c26aa82af90361ed5d3ef6a7"
+      },
+      "reader_policy": {
+        "reader": "compressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "group_size": 32,
+        "scale_dtype": "BF16",
+        "zero_dtype": "I32",
+        "zero_packing_axis": "N",
+        "arithmetic": "scale_dtype_subtract_then_multiply"
+      },
+      "original_code_zero_scale_dtypes": {
+        "weight_packed": "I32[N,K/8]",
+        "weight_zero_point": "I32[ceil(N/8),K/32]",
+        "weight_scale": "BF16[N,K/32]",
+        "weight_shape": "I64[2]"
+      },
+      "existing_MTP_plain_roles": 15,
+      "new_MTP_functionality": false,
+      "original_weight_shape_payload_read": false,
+      "original_tensor_payload_bytes_read": 0,
+      "SDK_builds": 0,
+      "HTTP": 0,
+      "unchanged_symmetric_fixture": {
+        "lines_and_receipt_exact_equal": true,
+        "physical_records": 351
+      },
+      "scope": "Complete cached original headers + cold typed schema only; no authenticated body import, decode or model/provider execution."
+    },
+    "private_header_first_failure": "cached-header-first-failure.json",
+    "private_header_fix": "Apply existing text-scope filter to333visual roles; keep15existing BF16 NextN metadata. No product repair or provider retry needed.",
+    "non_asymmetric_symmetric_fixture_lines_receipt_equal": true,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/prepare.py",
+      "bytes": 33297,
+      "sha256": "bcad27cab6db87035742bd982e668d8bd5552a76ce4147a1fd3166ff5ebe2fdc"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 31109,
+      "sha256": "b35b9b42b312d5c2831d6941d698105320be5719081052bd4c7cfa4115962c93"
+    },
+    {
+      "path": "tests/tooling/qwen_hf_roles_test.py",
+      "bytes": 29486,
+      "sha256": "6166a1a0f1c71306fc0cdfb5af27614af08f45e656b7add62e78e740bdcfa841"
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "bytes": 45113,
+      "sha256": "1c65471672fbf7d301b235b62190e1251ebc689d4aea90a103264e2d38de764e"
+    }
+  ],
+  "uncompleted": [
+    "Full original body authentication and actual I64 weight_shape values.",
+    "Consumer resolver/ProjectionBinding/ordinary Graph operation with zero input; main must fail fast before weight IO until that is connected.",
+    "Original numeric component and full ordinary engine are not certified by these metadata checks."
+  ],
+  "header_dependency": {
+    "path": "docs/evidence/correctness/ct-asymmetric-int4-header-2026-10-20.zip",
+    "bytes": 318369,
+    "sha256": "42873cc1b4b06ca069a11844081f22bca72abea195a6fd5e224b0cd6bbe9429a"
+  },
+  "cleanup": {
+    "performed": false,
+    "files": [
+      {
+        "path": ".scratch/ct-asymmetric-qwen27-20261025/host/checks.exe",
+        "bytes": 311808,
+        "sha256": "da507e0a99ffde586d28e1406517939bc24bbec90b72d424a9168dcd349abf8d"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen27-20261025/host/checks.obj",
+        "bytes": 3012667,
+        "sha256": "a47db3904f03e268416990e62b66c79056e6de5766e5add03a32ea35056f1113"
+      }
+    ],
+    "logical_bytes": 3324475
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/ct-asymmetric-qwen-cold-metadata-2026-10-25.zip",
+    "bytes": 97217,
+    "sha256": "df0746be575467fc33723bbe63c54552a8d0a5b1904f8d54988ab325d0f6760b",
+    "contains_native_binaries": false
+  }
+}

@@ -316,6 +316,12 @@ enum class CompileFallbackReason : std::uint8_t {
   kRegionDeclined,
 };
 
+// Diagnostic identity of the same-Graph typed ArtifactWeightDecode[/Cast]/View/
+// MatMul (or GroupedMatMul) contraction. Compare with CompileStepReport::policy
+// to identify the actual selected implementation; this is not a route switch.
+inline constexpr compute::RoutePolicyId kArtifactPackedProjectionPolicy{
+    0x48594c454354504cULL, 1, 1};
+
 // One immutable step in the exact emitted execution plan. Synchronization is
 // represented by segment dependencies rather than synthetic barrier steps.
 // Provider-private layouts stay inside a region; the public plan emits a Copy

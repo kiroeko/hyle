@@ -1,0 +1,147 @@
+{
+  "status": "HOST_COMPONENT_ONLY_PASS",
+  "date": "2026-10-25",
+  "scope": "RequestWindow, RequestProgress and OutputDelivery host primitives on the designated MacBook Air; no backend/model/GPU inference.",
+  "hardware": "Mac16,12",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+  "source_pins": {
+    "engine/inference/request_window.h": {
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    "engine/inference/request_progress.h": {
+      "bytes": 12440,
+      "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+    },
+    "engine/inference/output_delivery.h": {
+      "bytes": 2599,
+      "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    "engine/inference/sampling_cursor.h": {
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    "tests/tools/inference_request_window_test.cc": {
+      "bytes": 16487,
+      "sha256": "422e728a974b41a91ae77039a479f2b84012695e71caff47d409fd01283e4db5"
+    },
+    "tests/tools/inference_request_progress_test.cc": {
+      "bytes": 18919,
+      "sha256": "581134025234b9f938000e46f0aa7eebf17333b541d86dc80958eb9cc3e57bbf"
+    },
+    "tests/tools/inference_output_delivery_test.cc": {
+      "bytes": 4885,
+      "sha256": "ba1da86f9409a6aa1ec3995291a57b6d97dc044f3fbca95b3939f1d2612b3d03"
+    }
+  },
+  "results": {
+    "inference_request_window_test": {
+      "compile": {
+        "command": [
+          "/usr/bin/clang++",
+          "-std=c++23",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MMD",
+          "-MF",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_request_window_test/dependencies.d",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/source/tests/tools/inference_request_window_test.cc",
+          "-o",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_request_window_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.40514707565307617,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "command": [
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_request_window_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.5543208122253418,
+        "stdout": "request window: 8 checks passed\n",
+        "stderr": ""
+      }
+    },
+    "inference_request_progress_test": {
+      "compile": {
+        "command": [
+          "/usr/bin/clang++",
+          "-std=c++23",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MMD",
+          "-MF",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_request_progress_test/dependencies.d",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/source/tests/tools/inference_request_progress_test.cc",
+          "-o",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_request_progress_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.3850219249725342,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "command": [
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_request_progress_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.28172802925109863,
+        "stdout": "PASS ordinary/batched outputs, quota/stop and pending-only turn continuation\nPASS gap/duplicate/quota/begin failures and side-effect-free retry\nPASS imported history, no-Graph output and authoritative commit counts\nPASS mixed two-user FIFO turns and allocation-free prepared transitions\nPASS active/waiting open-input append, pending-once continuation and allocation-free transitions\nPASS extension pointer/count/token/output rejection atomicity and valid retry\nPASS cold open bounds, closed/finite input and idempotent close\nPASS actual EOS quota refund, duplicate no-op and allocation-free remaining-capacity admission\n",
+        "stderr": ""
+      }
+    },
+    "inference_output_delivery_test": {
+      "compile": {
+        "command": [
+          "/usr/bin/clang++",
+          "-std=c++23",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MMD",
+          "-MF",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_output_delivery_test/dependencies.d",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/source/tests/tools/inference_output_delivery_test.cc",
+          "-o",
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_output_delivery_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.291212797164917,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "command": [
+          "/Users/kiro/hyle/.scratch/inference-host-macos-20261025/inference_output_delivery_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.2585570812225342,
+        "stdout": "PASS partial delivery, one-token fallback credit, duplicate commit and pending-once continuation\nPASS bounded credit, idempotent prefix acknowledgement and atomic invalid-extent rejection\n",
+        "stderr": ""
+      }
+    }
+  },
+  "preflight_failure": "An assumed checkout path was absent. This failed before directory creation or compilation; the run uses the existing /Users/kiro/hyle checkout and fixed .scratch subdirectory.",
+  "product_changes": 0,
+  "SDK_builds": 0,
+  "GPU_runs": 0,
+  "HTTP": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/request-host-macos-portability-2026-10-25.zip",
+    "bytes": 82219,
+    "sha256": "e1ff38a3b28297d7808f40b4136b2eb6239dc9d7db4f942b543be705f445365a"
+  },
+  "archive_members": 32
+}

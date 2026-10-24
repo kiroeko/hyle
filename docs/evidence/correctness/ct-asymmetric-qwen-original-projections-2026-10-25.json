@@ -1,0 +1,935 @@
+{
+  "status": "PASS_ORIGINAL_COMPONENT",
+  "scope": {
+    "repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+    "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+    "metadata_roles": 2063,
+    "ordinary_selected_metadata": 2048,
+    "selected_original_component_roles": 28,
+    "selected_original_component_bytes": 215203952,
+    "ordinary_projections": 7,
+    "original_directory": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q09\\original-roles",
+    "source_identity": "be125739a2e580bd26f670ff31f78de13d0d23c6f7715df0e3da6790cd713ffb",
+    "source_identity_scope": "Fixed complete header/typed policy plus authenticated available-role manifest; not full original-body preparation fingerprint.",
+    "role_manifest_sha256": "91a0458cd7a7242bcb515cdbffe85edbc85c06704109cf1f76326dcab697d3e5",
+    "source_role_records": [
+      {
+        "name": "model.language_model.layers.63.mlp.down_proj.weight_shape",
+        "file": "model.language_model.layers.63.mlp.down_proj.weight_shape.i64",
+        "sha256": "7acd10fb9be3d798c256e4ff71b817cf7b0cf62082198552282304cc9e4b6b45",
+        "dtype": "I64",
+        "shape": [
+          2
+        ],
+        "bytes": 16,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          72896,
+          72911
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.gate_proj.weight_shape",
+        "file": "model.language_model.layers.63.mlp.gate_proj.weight_shape.i64",
+        "sha256": "ed359d6e41d9162272e39902b72d0bf31ad123818df2f342f4bf9c46ebb042ec",
+        "dtype": "I64",
+        "shape": [
+          2
+        ],
+        "bytes": 16,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          72912,
+          72927
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.up_proj.weight_shape",
+        "file": "model.language_model.layers.63.mlp.up_proj.weight_shape.i64",
+        "sha256": "ed359d6e41d9162272e39902b72d0bf31ad123818df2f342f4bf9c46ebb042ec",
+        "dtype": "I64",
+        "shape": [
+          2
+        ],
+        "bytes": 16,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          72928,
+          72943
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.k_proj.weight_shape",
+        "file": "model.language_model.layers.63.self_attn.k_proj.weight_shape.i64",
+        "sha256": "ab4883bc1598cd629f2bc82c74e40aa4bde410d948f89569dec2d5ccfa5d1885",
+        "dtype": "I64",
+        "shape": [
+          2
+        ],
+        "bytes": 16,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          72944,
+          72959
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.o_proj.weight_shape",
+        "file": "model.language_model.layers.63.self_attn.o_proj.weight_shape.i64",
+        "sha256": "e3c58b0403fe1948b42966e7b979908a292b37e7a0ffdfb096567624f7e5d6eb",
+        "dtype": "I64",
+        "shape": [
+          2
+        ],
+        "bytes": 16,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          72960,
+          72975
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.q_proj.weight_shape",
+        "file": "model.language_model.layers.63.self_attn.q_proj.weight_shape.i64",
+        "sha256": "a095b60cc6af063fe6c9866c2c90d94845ec5285c56e6ae4c91536d1297bb19b",
+        "dtype": "I64",
+        "shape": [
+          2
+        ],
+        "bytes": 16,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          72976,
+          72991
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.v_proj.weight_shape",
+        "file": "model.language_model.layers.63.self_attn.v_proj.weight_shape.i64",
+        "sha256": "ab4883bc1598cd629f2bc82c74e40aa4bde410d948f89569dec2d5ccfa5d1885",
+        "dtype": "I64",
+        "shape": [
+          2
+        ],
+        "bytes": 16,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          72992,
+          73007
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.down_proj.weight_packed",
+        "file": "model.language_model.layers.63.mlp.down_proj.weight_packed.i32",
+        "sha256": "099dd01fc7eadb83a264d83e9f29c47ee9322d19d1a3f2a7a79324c693b6aa60",
+        "dtype": "I32",
+        "shape": [
+          5120,
+          2176
+        ],
+        "bytes": 44564480,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          789454432,
+          834018911
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.down_proj.weight_zero_point",
+        "file": "model.language_model.layers.63.mlp.down_proj.weight_zero_point.i32",
+        "sha256": "063e3b4206fe08ffdd8b3ff77cc3a4cd1b1ef77afa20018a60933950c4a55901",
+        "dtype": "I32",
+        "shape": [
+          640,
+          544
+        ],
+        "bytes": 1392640,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          834018912,
+          835411551
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.gate_proj.weight_packed",
+        "file": "model.language_model.layers.63.mlp.gate_proj.weight_packed.i32",
+        "sha256": "27d503aa52354a80a18f402de70f24148da9505c7a99384eca4b23d3a1ad8291",
+        "dtype": "I32",
+        "shape": [
+          17408,
+          640
+        ],
+        "bytes": 44564480,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          835411552,
+          879976031
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.gate_proj.weight_zero_point",
+        "file": "model.language_model.layers.63.mlp.gate_proj.weight_zero_point.i32",
+        "sha256": "5f3b3f404cbc7907be9b091009637c62ce60b89960720389b28f6ac968d0619c",
+        "dtype": "I32",
+        "shape": [
+          2176,
+          160
+        ],
+        "bytes": 1392640,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          879976032,
+          881368671
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.up_proj.weight_packed",
+        "file": "model.language_model.layers.63.mlp.up_proj.weight_packed.i32",
+        "sha256": "13983cbb143da30e6e209eb962acb79027ad25f85dcc890e7c6e90be347ecb86",
+        "dtype": "I32",
+        "shape": [
+          17408,
+          640
+        ],
+        "bytes": 44564480,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          881368672,
+          925933151
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.up_proj.weight_zero_point",
+        "file": "model.language_model.layers.63.mlp.up_proj.weight_zero_point.i32",
+        "sha256": "74777288c8da5c48c2ed0c26f749b21075a04e61aded21824302a52fa58d401c",
+        "dtype": "I32",
+        "shape": [
+          2176,
+          160
+        ],
+        "bytes": 1392640,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          925933152,
+          927325791
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.k_proj.weight_packed",
+        "file": "model.language_model.layers.63.self_attn.k_proj.weight_packed.i32",
+        "sha256": "33e05091a66cc3df67760ca46777a35724cff9b372aba77dfdc9318b12191cd7",
+        "dtype": "I32",
+        "shape": [
+          1024,
+          640
+        ],
+        "bytes": 2621440,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          927325792,
+          929947231
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.k_proj.weight_zero_point",
+        "file": "model.language_model.layers.63.self_attn.k_proj.weight_zero_point.i32",
+        "sha256": "314730516af42ba6f92a86ad9bcf7b377481826a4ea9cd07418f5eefeaab0a8f",
+        "dtype": "I32",
+        "shape": [
+          128,
+          160
+        ],
+        "bytes": 81920,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          929947232,
+          930029151
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.o_proj.weight_packed",
+        "file": "model.language_model.layers.63.self_attn.o_proj.weight_packed.i32",
+        "sha256": "4116617ab9fd135e63aa5b8f85fea690b1767d37e2410a5c772a215dc1a3a0e9",
+        "dtype": "I32",
+        "shape": [
+          5120,
+          768
+        ],
+        "bytes": 15728640,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          930029152,
+          945757791
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.o_proj.weight_zero_point",
+        "file": "model.language_model.layers.63.self_attn.o_proj.weight_zero_point.i32",
+        "sha256": "fc09fdc638a69dfceec657db0e2192f100c95204f2c910a365bd5f1186597389",
+        "dtype": "I32",
+        "shape": [
+          640,
+          192
+        ],
+        "bytes": 491520,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          945757792,
+          946249311
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.q_proj.weight_packed",
+        "file": "model.language_model.layers.63.self_attn.q_proj.weight_packed.i32",
+        "sha256": "22f646c58aa08dda9a6e1e2828c02abbcceedf2753e6accbe7a55b8c25dd04a6",
+        "dtype": "I32",
+        "shape": [
+          12288,
+          640
+        ],
+        "bytes": 31457280,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          946249312,
+          977706591
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.q_proj.weight_zero_point",
+        "file": "model.language_model.layers.63.self_attn.q_proj.weight_zero_point.i32",
+        "sha256": "7df58f333792f989914f7c2d72ec6a6efae86b0de9a1321c1544df12d2f5f195",
+        "dtype": "I32",
+        "shape": [
+          1536,
+          160
+        ],
+        "bytes": 983040,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          977706592,
+          978689631
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.v_proj.weight_packed",
+        "file": "model.language_model.layers.63.self_attn.v_proj.weight_packed.i32",
+        "sha256": "94a1d64f5053cc61dd0ad6b6dbcc3a5835d8baff940871526913fe058021d51a",
+        "dtype": "I32",
+        "shape": [
+          1024,
+          640
+        ],
+        "bytes": 2621440,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          978689632,
+          981311071
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.v_proj.weight_zero_point",
+        "file": "model.language_model.layers.63.self_attn.v_proj.weight_zero_point.i32",
+        "sha256": "6a5ab6cfd0e9a25c065c0844f9a5dcdf1cd4d66d19998c58d9c0be4419944f7f",
+        "dtype": "I32",
+        "shape": [
+          128,
+          160
+        ],
+        "bytes": 81920,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          981311072,
+          981392991
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.down_proj.weight_scale",
+        "file": "model.language_model.layers.63.mlp.down_proj.weight_scale.bf16",
+        "sha256": "a0baf78929d934784dfa70a9caef0df309b5e76979d8cbd9f1a6b8697be174a5",
+        "dtype": "BF16",
+        "shape": [
+          5120,
+          544
+        ],
+        "bytes": 5570560,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          1666983072,
+          1672553631
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.gate_proj.weight_scale",
+        "file": "model.language_model.layers.63.mlp.gate_proj.weight_scale.bf16",
+        "sha256": "303d037d0d26c90ac71fb3447af54bc4837d6630ce09fdfdcbca079fc6eaf575",
+        "dtype": "BF16",
+        "shape": [
+          17408,
+          160
+        ],
+        "bytes": 5570560,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          1672553632,
+          1678124191
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.mlp.up_proj.weight_scale",
+        "file": "model.language_model.layers.63.mlp.up_proj.weight_scale.bf16",
+        "sha256": "724e1adcb5ec00af3979960614e9f279a5141442664145024bc59ddae772b2c9",
+        "dtype": "BF16",
+        "shape": [
+          17408,
+          160
+        ],
+        "bytes": 5570560,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          1678124192,
+          1683694751
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.k_proj.weight_scale",
+        "file": "model.language_model.layers.63.self_attn.k_proj.weight_scale.bf16",
+        "sha256": "7ba762d168f1837ab5695418a7d831f51362953f623faf5439a87e43bf8fd7a1",
+        "dtype": "BF16",
+        "shape": [
+          1024,
+          160
+        ],
+        "bytes": 327680,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          1683705504,
+          1684033183
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.o_proj.weight_scale",
+        "file": "model.language_model.layers.63.self_attn.o_proj.weight_scale.bf16",
+        "sha256": "ef2070551d2ddd7ef43120441df3241c06fb44687edaf7b0c58e98ac8ec4950a",
+        "dtype": "BF16",
+        "shape": [
+          5120,
+          192
+        ],
+        "bytes": 1966080,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          1684033184,
+          1685999263
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.q_proj.weight_scale",
+        "file": "model.language_model.layers.63.self_attn.q_proj.weight_scale.bf16",
+        "sha256": "e2c63a7708baa512ee1cfa9ccfe9bc9aa4255587dd4d6b11b91fa337d03ddd37",
+        "dtype": "BF16",
+        "shape": [
+          12288,
+          160
+        ],
+        "bytes": 3932160,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          1685999776,
+          1689931935
+        ]
+      },
+      {
+        "name": "model.language_model.layers.63.self_attn.v_proj.weight_scale",
+        "file": "model.language_model.layers.63.self_attn.v_proj.weight_scale.bf16",
+        "sha256": "49450f0675b1ad04dade998460444f952b2a4cfa420c5cdcf029d65c8a3db06d",
+        "dtype": "BF16",
+        "shape": [
+          1024,
+          160
+        ],
+        "bytes": 327680,
+        "section": "target",
+        "source_file": "model-00005-of-00005.safetensors",
+        "absolute_inclusive": [
+          1689931936,
+          1690259615
+        ]
+      }
+    ],
+    "full_original_model": false,
+    "unread_roles_never_requested": true,
+    "planned_backend": "CPU",
+    "planned_math_submissions": 2,
+    "planned_rows": [
+      1,
+      2
+    ],
+    "planned_numeric_values": 178176,
+    "HTTP": 0,
+    "SDK_builds": 0
+  },
+  "implementation": {
+    "validated_main": {
+      "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt4/source/engine/models/qwen35/main.cc",
+      "bytes": 433190,
+      "sha256": "25c519ec48627aa5ebf82447c524b8b315f1587a024ea082f93dea863f0888a3"
+    },
+    "validated_projection_binding": {
+      "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt4/source/engine/models/qwen35/projection_binding.h",
+      "bytes": 2595,
+      "sha256": "edb5059ef51ef71f12571c9946982a83528fdea1754255c1f392800181e14d4f"
+    },
+    "typed_codec": "kCtAsymmetric4",
+    "binding": "CtPackedProjection{codes,optional zeros,scales,ArtifactWeightDecode}",
+    "io": "Common load_selected_weight_roles original pipeline body; full load_weight_bank retains complete metadata selection/geometry validation.",
+    "graph": "Original Decode/View/MatMul public chain with BF16 subtraction/product/projection and optional final F32 score widening.",
+    "selected_policy": "kArtifactPackedProjectionPolicy names the unchanged cached SDK literal 0x48594c454354504c/1/1; SDK not rebuilt.",
+    "support_source_pins": [
+      {
+        "path": "src/graph/artifact_packed_region.h",
+        "bytes": 9621,
+        "sha256": "74e205e71ad56abf1b8827382947c1c007dfd61452cd280e3ea08d986e7ef2e7"
+      },
+      {
+        "path": "tests/compute_models/qwen_artifact_projection_fragment.h",
+        "bytes": 3495,
+        "sha256": "0dc7449a5c32ebe610ce9caa8bb93359d7ebf029813be2ab79f965556a9d0e1c"
+      },
+      {
+        "path": "src/compute_provider_native/native_provider.cc",
+        "bytes": 40915,
+        "sha256": "5e52894af3a1e1325a4b4a84b9ef44b89a89c327912b76b2d764f605b71d233d"
+      },
+      {
+        "path": "src/compute_provider_native/ct_packed.cc",
+        "bytes": 12490,
+        "sha256": "0a723ba80baa5b4cefcf6d0264f523215818595a6b313d5da380a307600758d0"
+      },
+      {
+        "path": "include/hyle/compute/resource_leases.h",
+        "bytes": 8660,
+        "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+      },
+      {
+        "path": "src/compute/resource_leases.cc",
+        "bytes": 41889,
+        "sha256": "8907cbd2b29054a6331d4196295976dc6286e05d2a92c24745b802d23ee8af17"
+      }
+    ]
+  },
+  "validation": {
+    "attempts": [
+      {
+        "name": "attempt1",
+        "reason": "Private final assertion called non-const ReadLease::try_write through const bank iteration; strict compile failed, no consumer run.",
+        "compile": {
+          "exit": 2,
+          "seconds": 4.9060000000172295,
+          "timeout": false
+        }
+      },
+      {
+        "name": "attempt2",
+        "reason": "Actual M1 passed; private test incorrectly demanded CPU default M2 use packed policy. Existing measured M>1 native preference1001 legitimately selects decomposed execution. No product failure.",
+        "compile": {
+          "exit": 0,
+          "seconds": 17.046999999991385,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.7189999999827705,
+          "timeout": false
+        },
+        "run": {
+          "exit": 1,
+          "seconds": 2.75,
+          "timeout": false
+        }
+      },
+      {
+        "name": "attempt3",
+        "reason": "All M1/M2 numerical comparisons passed; private final assertion incorrectly required loader-only unique I64 shape lease to reject promotion. Shared/native read permission is required only for actual graph operands.",
+        "compile": {
+          "exit": 0,
+          "seconds": 17.15600000001723,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.687999999994645,
+          "timeout": false
+        },
+        "run": {
+          "exit": 1,
+          "seconds": 4.421999999991385,
+          "timeout": false
+        }
+      },
+      {
+        "name": "attempt4",
+        "reason": "Corrected private assertions respect actual selected plan and lease contracts; unchanged product/math/route passed.",
+        "compile": {
+          "exit": 0,
+          "seconds": 17.0,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.7030000000086147,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 3.6719999999913853,
+          "timeout": false
+        }
+      }
+    ],
+    "actual_consumer_processes": 3,
+    "successful_consumer_processes": 1,
+    "compile_attempts": 4,
+    "strict_successful_compiles": 3,
+    "link_processes": 3,
+    "final_actual": {
+      "status": "PASS",
+      "consumer": {
+        "status": "PASS",
+        "backend": "CPU",
+        "original_roles": 28,
+        "original_bytes": 215203952,
+        "canonical_bytes": 215203952,
+        "source_full_metadata_roles": 2048,
+        "projections": 7,
+        "graph_submissions": 2,
+        "rows": [
+          1,
+          2
+        ],
+        "actual_packed_chains_per_child": [
+          7,
+          0
+        ],
+        "graph_visible_floating_intermediate_values": [
+          0,
+          14
+        ],
+        "chain_nodes": 3,
+        "numeric_values": 178176,
+        "wrong_symmetric_witnesses": 131105,
+        "corrupted_shape_loader_rejected": true,
+        "missing_Z_resolver_rejected": true,
+        "unsupported_NF4_before_IO_rejected": true,
+        "graph_floating_weight_materialized": [
+          false,
+          true
+        ],
+        "provider_internal_transient_storage_measured": false,
+        "source_component_not_full_model": true,
+        "score_policy": "ct_asym4_bf16_subtract_product_projection_f32_logits"
+      },
+      "compile": {
+        "exit": 0,
+        "seconds": 17.0,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.7030000000086147,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 3.6719999999913853,
+        "timeout": false
+      },
+      "actual_consumer_processes": 1,
+      "SDK_builds": 0,
+      "HTTP": 0,
+      "source_pins": "frozen-pins.json",
+      "limitations": [
+        "Finite original target63 projection component; not whole model or new MTP function.",
+        "M1 selects seven actual packed chains and has no Graph-visible full floating W; default M2 decomposes and materializes floating weight values. Provider internal transient storage is not measured."
+      ],
+      "outputs": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\M1-plan.tsv",
+          "bytes": 388,
+          "sha256": "6f3039cfe1f1aae3afcad6cad233802853bf5861a86ca2a31d7362c42dc91caf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\M2-plan.tsv",
+          "bytes": 610,
+          "sha256": "a0f9d72a53ec16274c5f7dfe4379592be5cba1d0313fae35d861a68eccc44bb2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P0-M1.f32",
+          "bytes": 20480,
+          "sha256": "99f5ae4706097e0c0ceef34b18ca04d30bf35aca734d53b423054182afd52537"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P0-M2.f32",
+          "bytes": 40960,
+          "sha256": "e6fe1325052edf246f2f7f10df5bbf001f0653425d8953a1cdb5a520d5af6c48"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P1-M1.bf16",
+          "bytes": 34816,
+          "sha256": "bd5179da5aed91aaddfba368424ce5f49b60bc1373a5ecaa995b54203ad5ceca"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P1-M2.bf16",
+          "bytes": 69632,
+          "sha256": "67e2c82cf9fa2a4f6e816c67dbdcce7144f14f95b006e35f4b07180c58f75ff1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P2-M1.bf16",
+          "bytes": 34816,
+          "sha256": "347dd86a053c06bcf11e5bba4d2cf074df67628975c6a3ddcfc117408da1c672"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P2-M2.bf16",
+          "bytes": 69632,
+          "sha256": "7d047f749f4baa57731124dfbb4e2234d04e2ab9098b3f3e190b48ebce1d3674"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P3-M1.bf16",
+          "bytes": 2048,
+          "sha256": "819931eafbf684441d5139e72d793f319caa270541a7776d5fb382805fb07be4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P3-M2.bf16",
+          "bytes": 4096,
+          "sha256": "e6f10282b3af84e63a5f4739b1cca2af47c04f0f752af997f24a0d814c0db34e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P4-M1.bf16",
+          "bytes": 10240,
+          "sha256": "a3d7dd843fb1ef1471e27af3d522f6430be11bfad299fa8feec041778bea4157"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P4-M2.bf16",
+          "bytes": 20480,
+          "sha256": "96326e77200c22376f21e8b9bd72d0c91b3cabd14d64f3121246165aaefe2c9f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P5-M1.bf16",
+          "bytes": 24576,
+          "sha256": "a03817ad4a6f0a9680635231ab75eee05460bb6799156b276ae294c659744696"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P5-M2.bf16",
+          "bytes": 49152,
+          "sha256": "a58a88794bf195d4aa908a0a3f739412bc9fd456dcfa68bbcc277365b6da99fd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P6-M1.bf16",
+          "bytes": 2048,
+          "sha256": "9a45f32df83263d9ec326ee698cf26863c278aab2a27aa835644067c70a886ef"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-qwen-projection-20261025\\attempt4\\vectors\\P6-M2.bf16",
+          "bytes": 4096,
+          "sha256": "26e03994ab7d5d551ab3abeaee76e3db185c36cb4bead16a9d4be546c5ca9131"
+        }
+      ]
+    },
+    "HTTP": 0,
+    "GPU_runs": 0,
+    "SDK_builds": 0,
+    "ordinary_numeric_values_per_complete_run": 178176,
+    "unchanged_original_cached_weights": true,
+    "original_weight_payloads_in_archive": false
+  },
+  "oracle": {
+    "kind": "Independent scalar low-first signed nibble/packed zero-point reader, not Hyle ArtifactWeightDecode.",
+    "producer_revision": "compressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+    "source_files": [
+      {
+        "path": ".scratch/ct-asymmetric-int4-header/ct-source/compressors/pack_quantized/base.py",
+        "bytes": 6753,
+        "sha256": "c0a8e902efb2069e34eb823157696a575193897069f70587150c59cdbe414d68"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-int4-header/ct-source/compressors/pack_quantized/helpers.py",
+        "bytes": 5644,
+        "sha256": "3fe695db3e38ee665d5c459ddce366df3e2dfed51be70058bcc6a9838117477d"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-int4-header/ct-source/quantization/lifecycle/forward.py",
+        "bytes": 10819,
+        "sha256": "37b21c5c383a4d592023dfd1f8ed9755a80b26e16585f4c2c4c3839803e2e98f"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-int4-header/ct-source/quantization/lifecycle/forward_helpers.py",
+        "bytes": 17360,
+        "sha256": "ed0411b24577ce1df427ff091ab34e3c8d8e61a6be19deb95a3aac97b48e4443"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-int4-header/ct-source/quantization/quant_args.py",
+        "bytes": 16566,
+        "sha256": "d63e2d995ca376a8db73d909bff65a8b6196294e4b3fc1600ad2451e67a725ac"
+      }
+    ],
+    "equations": "code=(nibble-8); Z=(nibble-8); D=BF16(BF16(code-Z)*BF16(scale)); dot uses BF16 activation, F32 accumulation then BF16 result; first projection is widened to F32 afterward.",
+    "inputs": "M1 col0=BF16(1.25); M2 also row1 col33=BF16(6.5), all other activations zero. Onehot projections give exact rounding witnesses, not dense-activation accuracy/quality coverage.",
+    "independent_expected_generated_from_original_cache": true,
+    "wrong_symmetric_witnesses": 131105,
+    "all_178176_final_values_exact": true
+  },
+  "plan": {
+    "M1": {
+      "actual_packed_chains": 7,
+      "chain_nodes": 3,
+      "graph_visible_full_weight_intermediate_values": 0
+    },
+    "M2": {
+      "actual_packed_chains": 0,
+      "decomposed_projections": 7,
+      "graph_visible_full_weight_intermediate_values": 14,
+      "reason": "Existing CPU M>1 scalar packed cost preference1001 vs ordinary1000; prior measured policy retained."
+    },
+    "provider_internal_transient_storage": "Not independently measured.",
+    "memory_benchmark": false
+  },
+  "negative_checks": {
+    "real_I64_weight_shape_corruption_rejected": true,
+    "missing_original_Z_rejected": true,
+    "NF4_unsupported_at_common_IO_entry_before_IO": true
+  },
+  "limits": [
+    "Finite target layer63 seven source projections only; not an entire Q27 model, vocabulary head or activation trajectory.",
+    "Complete metadata is authenticated from original headers; subset source identity is explicitly not the complete model-body preparation fingerprint.",
+    "Score widening uses one original component projection as a precision witness; does not claim the actual vocabulary head was loaded.",
+    "No new MTP functionality, backend matrix, end-to-end generation/quality or speed claim.",
+    "M2 default intentionally materializes Graph-visible floating W; no dense full-model resident bank was loaded.",
+    "Existing symmetric/GPTQ math/chain implementations preserved; not newly executed in this component."
+  ],
+  "dependencies": [
+    {
+      "path": "docs/evidence/correctness/ct-asymmetric-qwen-cold-metadata-2026-10-25.zip",
+      "sha256": "df0746be575467fc33723bbe63c54552a8d0a5b1904f8d54988ab325d0f6760b"
+    },
+    {
+      "path": "docs/evidence/performance/ct-packed-cpu-policy-2026-10-20.json",
+      "bytes": 23621,
+      "sha256": "83219d8d5126dbfa879ca687d0a22d9e695dc4d654d4a9a1779fe413258a9d5c"
+    }
+  ],
+  "cleanup": {
+    "performed": false,
+    "files": [
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt2/compile/consumer.obj",
+        "bytes": 14310092,
+        "sha256": "0f668bcf11e70d36daa9e8f6f8c259822f24dc778ee279b3ef78962545ba0149"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt2/link/consumer.exe",
+        "bytes": 140362752,
+        "sha256": "28395e0ca58f9b3072eddd953a51e86b2a6107a0a8332b1b798023482a70cb67"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt2/link/consumer.exp",
+        "bytes": 24998,
+        "sha256": "540b198603a455ef6370193c8b689cdb4e0126e97e072ecb19f697349c34776f"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt2/link/consumer.lib",
+        "bytes": 41736,
+        "sha256": "10bcaaadb0a76381e306214659391a909579bac97884da2fcb20a43a69b1abdc"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt3/compile/consumer.obj",
+        "bytes": 14312501,
+        "sha256": "746934e08d9ebcc6003e055205fd08f251b6ae4f269d76547a7d0499337730c0"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt3/link/consumer.exe",
+        "bytes": 140363264,
+        "sha256": "f384fbf4f55f9d2f627502f0a41f9f4a6a2840de7d15fd5c1cf1bb95512f22af"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt3/link/consumer.exp",
+        "bytes": 24998,
+        "sha256": "3b20cda4f6c309a10d828eee9e87972d7887886230601ee88dd4ef077ea5aa36"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt3/link/consumer.lib",
+        "bytes": 41736,
+        "sha256": "10bcaaadb0a76381e306214659391a909579bac97884da2fcb20a43a69b1abdc"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt3/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt4/compile/consumer.obj",
+        "bytes": 14312209,
+        "sha256": "ccb56c552cc678cfd5b26086939dad5bed6ebdd162681bd655ac604a362bf943"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt4/link/consumer.exe",
+        "bytes": 140363776,
+        "sha256": "56275fc910b52193c010081653f0f6378519617b72d1b8ecae602a286b3d2a67"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt4/link/consumer.exp",
+        "bytes": 24998,
+        "sha256": "77227b14641eafdd5de3994b530a22b1060ccbe6db66537d4327b6a0ffe389cc"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt4/link/consumer.lib",
+        "bytes": 41736,
+        "sha256": "10bcaaadb0a76381e306214659391a909579bac97884da2fcb20a43a69b1abdc"
+      },
+      {
+        "path": ".scratch/ct-asymmetric-qwen-projection-20261025/attempt4/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "logical_bytes": 467845148,
+    "note": "Exact private regenerated objects/images/import libraries and private hard links only; original SDK/native DLL, caches and c343 baseline excluded. DLL hard links need not reclaim their logical size."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.zip",
+    "bytes": 1822098,
+    "sha256": "85d2e0aaa10ac984cbe571b74a03deae30f636056dbab2e29c2be5e5c1f66c65",
+    "crc_verified": true,
+    "payload_sha256_verified": true
+  }
+}
