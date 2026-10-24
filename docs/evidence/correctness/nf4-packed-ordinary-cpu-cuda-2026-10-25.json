@@ -1,0 +1,528 @@
+{
+  "status": "PASS_LOW_LEVEL_NF4_PACKED_ORDINARY_CPU_CUDA",
+  "scope": "Existing private ArtifactPackedLinear/ArtifactPackedPattern extension for the ordinary non-grouped six-input NF4DoubleQuant Decode[/Cast]/View/MatMul recipe. No public operation, new executor/IR/route policy, engine wiring or full-model completion claim.",
+  "source": {
+    "repository": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "revision": "8aa5f05d26b7205477066e1449e0af13f762a299",
+    "original_file": {
+      "file": "model.safetensors",
+      "size": 22344833801,
+      "lfs_sha256": "d5ced71fee428687bca87ed1b62a1518e936e8698b180fbba35431ebd31e1a25",
+      "api_xet_hash": "88fa9db8893864a95b1499026c93b2784fa63c98e878688f05069524e2d42752",
+      "etag": "\"88fa9db8893864a95b1499026c93b2784fa63c98e878688f05069524e2d42752\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+    },
+    "logical_role": "model.language_model.layers.3.self_attn.k_proj.weight",
+    "logical_shape": [
+      1024,
+      5120
+    ],
+    "original_group_bytes": 2705899,
+    "HTTP_this_batch": 0,
+    "full_LFS_hash_verified": false
+  },
+  "actual_original_CPU": {
+    "status": "PASS",
+    "backend": "CPU",
+    "original_shape": [
+      1024,
+      5120
+    ],
+    "original_numeric_inputs": 6,
+    "logical_input_ports": 7,
+    "decoded_operand_output": "F16",
+    "scale_boundaries": "F32_mul_add_mul",
+    "ordinary_rows": [
+      1,
+      2
+    ],
+    "output_values": 3072,
+    "packed_public_nodes": [
+      3,
+      3
+    ],
+    "providers": [
+      "hyle-native",
+      "hyle-native"
+    ],
+    "Graph_full_F16_weight_values": 0,
+    "Graph_workspace_bytes": [
+      0,
+      0
+    ],
+    "physical_values": [
+      8,
+      8
+    ],
+    "selection": "existing_RequirePrepared_contract",
+    "private_dequantization_unknown": true,
+    "full_model": false
+  },
+  "actual_original_CUDA": {
+    "status": "PASS",
+    "backend": "CUDA",
+    "original_shape": [
+      1024,
+      5120
+    ],
+    "original_numeric_inputs": 6,
+    "logical_input_ports": 7,
+    "decoded_operand_output": "F16",
+    "scale_boundaries": "F32_mul_add_mul",
+    "ordinary_rows": [
+      1,
+      2
+    ],
+    "output_values": 3072,
+    "packed_public_nodes": [
+      3,
+      3
+    ],
+    "providers": [
+      "original-artifacts-cuda",
+      "original-artifacts-cuda"
+    ],
+    "Graph_full_F16_weight_values": 0,
+    "Graph_workspace_bytes": [
+      0,
+      0
+    ],
+    "physical_values": [
+      8,
+      8
+    ],
+    "selection": "default_managed_capability_actual_packed",
+    "private_dequantization_unknown": true,
+    "full_model": false
+  },
+  "numerical_contract": {
+    "high_first_U8_nibbles": true,
+    "group_size": 64,
+    "nested_group_size": 256,
+    "rounding": [
+      "F32(nested_map[original_absmax_code] * original_nested_scale)",
+      "F32(previous + original_F32_offset)",
+      "F32(original_NF4_codebook[code] * previous)",
+      "actual Decode output F16",
+      "actual MatMul operand F16",
+      "F32 accumulation with backend reduction tree",
+      "output F16"
+    ],
+    "CPU_separate_F32_rounding": "volatile pointwise products and nested sum prevent FMA contraction; original local compile flags unchanged",
+    "CUDA_separate_F32_rounding": "__fmul_rn then __fadd_rn then __fmul_rn followed by existing typed RNE",
+    "original_3072_output_values_per_backend": "bit-exact to fixed extracted original BNB reader + F16 A/F32 dot/F16 output oracle from previous evidence; no claim of full 5242880 packed-weight point outputs",
+    "previous_full_decoded_weight_oracle": {
+      "path": ".scratch/nf4-typed-profile-20261025/oracle/result.json",
+      "bytes": 2026,
+      "sha256": "f1297e7cf890f60e09531b9ccf23c6c21d4db88d8a756f8b2188559b6b369bdf"
+    }
+  },
+  "actual_plan": {
+    "original_public_nodes": 3,
+    "logical_inputs": 7,
+    "physical_values": 8,
+    "Graph_complete_decoded_weight_values": 0,
+    "Graph_workspace_bytes": 0,
+    "CPU_M1_M2_selection": "Existing RequirePrepared opt-in excludes managed decoder fallback; CPU M>1 preference1001/default cost was preserved and this is not default M2 packed selection evidence.",
+    "CUDA_M1_M2_selection": "Existing default kAllowAny; actual original-artifacts-cuda packed region. kManaged runtime declaration unchanged.",
+    "opaque_provider_memory": "No provider-private allocation measurement in this batch; report Graph-visible materialization/workspace separately."
+  },
+  "permanent_regression": {
+    "shared_fixture": "tests/compute_models/nf4_packed_graph_fixture.h",
+    "CPU": "CpuCtPackedLinear.Nf4SourceHalfRoundsAndMutableNestedOffset",
+    "CUDA": "CudaCtPackedLinear.Nf4SourceHalfRoundsAndMutableNestedOffset",
+    "CPU_process": {
+      "exit": 0,
+      "seconds": 0.4379999999946449,
+      "timeout": false
+    },
+    "CUDA_process": {
+      "exit": 0,
+      "seconds": 0.5320000000065193,
+      "timeout": false
+    },
+    "scope": "Existing CT Graph Backend fixtures; seven actual inputs, nested256 boundary crossed, F16-vs-BF16 witness, two real offset payloads through one bound Invocation, closed three-node packed plan without dense-weight physical values. Source scalar arithmetic and independent test-only RNE encoder; no model/cache/network fixture."
+  },
+  "unsupported_backends": {
+    "Apple": "Source-level discovery/admission rejects NF4 packed recipe; independent lowerer format guard prevents treating it as CT. Original public Decode fallback unchanged.",
+    "Vulkan": "Source-level discovery rejects NF4 packed; lowerer rejects unknown format and validates5-port capacity before writes. Original public Decode fallback unchanged.",
+    "actual_Apple_or_Vulkan_build_or_run": false
+  },
+  "failures_preserved": [
+    {
+      "path": "component1/compile",
+      "kind": "Private consumer omitted direct model_ops.h include",
+      "corrected": "Explicit header included, component2 compile passed"
+    },
+    {
+      "path": "component2/run-cuda",
+      "kind": "Private consumer erroneously required CPU-only kPrepared on the existing CUDA kManaged packed implementation; cold compile rejected before inference",
+      "corrected": "Only private CUDA test requested original allowed replay class; actual packed policy/three nodes/physical values still checked; component3 passed. Product runtime not relaxed."
+    }
+  ],
+  "execution_accounting": {
+    "actual_original_component_processes": 3,
+    "original_CPU_passes": 1,
+    "CUDA_cold_contract_declines": 1,
+    "CUDA_passes": 1,
+    "permanent_actual_processes": 2,
+    "permanent_tests_passed": 2,
+    "compiler_processes": 10,
+    "linker_processes": 4,
+    "SDK_rebuilds": 0,
+    "new_HTTP_requests": 0,
+    "process_records": [
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component1/compile/process.json",
+        "exit": 2,
+        "seconds": 1.812000000005355,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/compile/process.json",
+        "exit": 0,
+        "seconds": 3.312000000005355,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/link/process.json",
+        "exit": 0,
+        "seconds": 1.6719999999913853,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/run/process.json",
+        "exit": 0,
+        "seconds": 1.0460000000020955,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/run-cuda/process.json",
+        "exit": 1,
+        "seconds": 0.5,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/compile/process.json",
+        "exit": 0,
+        "seconds": 3.2810000000172295,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/link/process.json",
+        "exit": 0,
+        "seconds": 1.6089999999967404,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/run-cuda/process.json",
+        "exit": 0,
+        "seconds": 0.9839999999967404,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/cuda1/process.json",
+        "exit": 0,
+        "seconds": 3.172000000020489,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/compute_provider_native--ct_packed/process.json",
+        "exit": 0,
+        "seconds": 1.8429999999934807,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/compute_provider_torch_cuda--artifact_provider/process.json",
+        "exit": 0,
+        "seconds": 6.719000000011874,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/graph_route_cpu--ct_packed_linear_region/process.json",
+        "exit": 0,
+        "seconds": 1.985000000015134,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/graph_route_cuda--ct_packed_linear_region/process.json",
+        "exit": 0,
+        "seconds": 1.952999999979511,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/compile/process.json",
+        "exit": 0,
+        "seconds": 3.0939999999827705,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/link/process.json",
+        "exit": 0,
+        "seconds": 1.7339999999967404,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/run/process.json",
+        "exit": 0,
+        "seconds": 0.4379999999946449,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/compile/process.json",
+        "exit": 0,
+        "seconds": 3.172000000020489,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/link/process.json",
+        "exit": 0,
+        "seconds": 1.687999999994645,
+        "timeout": false
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/run/process.json",
+        "exit": 0,
+        "seconds": 0.5320000000065193,
+        "timeout": false
+      }
+    ]
+  },
+  "product_files": [
+    {
+      "path": "src/compute_packed_shared/artifact_packed_linear.h",
+      "bytes": 4312,
+      "sha256": "5893df4fdb43b7c5160cde2741bc0c03f0a9dd5307987c28803a7d82c06abf98"
+    },
+    {
+      "path": "src/graph/artifact_packed_region.h",
+      "bytes": 9729,
+      "sha256": "463c2f199886fdd690bc3e04c02eddfd37a5d434022807f5ffa0c528b878729c"
+    },
+    {
+      "path": "src/compute_provider_native/ct_packed.cc",
+      "bytes": 14143,
+      "sha256": "7932ae6e6e880ed8e164d8b3bbdcc3ab2fd2b01b4dc675ef3b743f4bce61f228"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "bytes": 40766,
+      "sha256": "1849556070799d2297f201d7a5f17f0f1b780d30cb259fa1594944074146915d"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.h",
+      "bytes": 2429,
+      "sha256": "de272735e6f8cfdc3da048633b46b1c46c302d8ff6296a8fd11c538f68a6d9fc"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+      "bytes": 25892,
+      "sha256": "90de2fe9ac43a64adce171f9656521d1596e912876c5936374d5dfd8e06a2382"
+    },
+    {
+      "path": "src/graph_route_apple/native_region.cc",
+      "bytes": 49385,
+      "sha256": "b03070e5fd2e337d434327a4d9b60b9496e26d9ac1198be267826c9ea19c4b9f"
+    },
+    {
+      "path": "src/graph_route_apple/apple_lowering.cc",
+      "bytes": 41095,
+      "sha256": "267018d5664873ea5eee380fc8a9a63f692bebfc4fff8669df848d8b9f6ea210"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_region.cc",
+      "bytes": 54086,
+      "sha256": "1656c1a84d3eaae454828124ee6f270ca748cdfe4dd9ea12344e1a903bc94f52"
+    },
+    {
+      "path": "src/compute_route_apple/apple_ct_packed.cc",
+      "bytes": 13085,
+      "sha256": "718964d55f394f5ced2675895ba4825952cc449357411103c018285a42b6f683"
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 43477,
+      "sha256": "28d33f1ca9ed5cd9733d7ddd359c66a2ada4d69cf866fbf483c7bcfb3de9ca9a"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_ct_packed.cc",
+      "bytes": 13738,
+      "sha256": "d729d6f6d04f93a13bda491e1f15709e0d856849c6833ad4465975c412c5b10a"
+    },
+    {
+      "path": "tests/compute_models/nf4_packed_graph_fixture.h",
+      "bytes": 6711,
+      "sha256": "8e42db76be868953ab51dbded4357a5f654706c250d3a6be15a1890aa3589273"
+    },
+    {
+      "path": "tests/graph_route_cpu/ct_packed_linear_test.cc",
+      "bytes": 4107,
+      "sha256": "9896baec20f6ef2ab0ee3d19f85541b4a75d9fdaa7ad45a80bb8725e73f65e9c"
+    },
+    {
+      "path": "tests/graph_route_cuda/ct_packed_linear_test.cc",
+      "bytes": 2486,
+      "sha256": "b7f4704b52993021c3fc97da7f2c7e10355bdc6b086f390529772d0dfe1acc48"
+    }
+  ],
+  "patch": {
+    "path": ".scratch/nf4-packed-contraction-20261025/core-changes.patch",
+    "bytes": 36416,
+    "sha256": "0fc59c9e85b79f7f671f88c41ca51c5707d4b6a791176b87d8b0a0e388d7faf4"
+  },
+  "engine_status": "NOT_WIRED_THIS_LOW_LEVEL_BATCH: engine still uses the separately proven cold F16 fallback; six-role resident consumer migration is a following slice. Do not claim compressed-resident full engine completion from these components.",
+  "limits": [
+    "No grouped NF4 support introduced.",
+    "No whole original27B inference, quality, throughput or all-backend claim.",
+    "Public Decode escapes and reader closure still follow existing ClosedRegionPattern algorithm; this batch adds no permission or retirement mechanism.",
+    "Successful numerical and lifecycle outputs do not certify zero allocation across every provider or arbitrary context."
+  ],
+  "related_evidence": [
+    {
+      "path": "docs/evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.zip",
+      "sha256": "a000f80c35b0185bc67ab69331e3129a6afdc4fb9f38bf46c723b6ab7b93b913"
+    }
+  ],
+  "cleanup": {
+    "performed": false,
+    "files": [
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/compile/component.obj",
+        "bytes": 1221020,
+        "sha256": "12dd057765d0eca77fd3166c3bb57ff4334dcdd540c9124323076e15a43b0d7c"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/link/component.exe",
+        "bytes": 140070912,
+        "sha256": "44d219cecee11dcb52822f9560a5c462253c8173e68a4f6bb91d66ed3f51d972"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/link/component.exp",
+        "bytes": 24994,
+        "sha256": "399763dd8e7205c2a9ee1a98c8fce7777cb3454b47282a77b02c94f7a3884056"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/compile/component.obj",
+        "bytes": 1221622,
+        "sha256": "dce1bf429dabb90892a7038e1bf99361b4c1e84648d4393c6e4b20f6d386f234"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/link/component.exe",
+        "bytes": 140070912,
+        "sha256": "3279db159191e5b183100d42bb6be4da2bf82c79330e9bb2ee7cc9117ab21f5b"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/link/component.exp",
+        "bytes": 24994,
+        "sha256": "0167ee7e1f66eb77bcfcd45ed1818b51cac32f84968cdaa9f87e9345faa9a068"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/component3/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/compile/unit.obj",
+        "bytes": 2780898,
+        "sha256": "f46c930cd8568a903bb1c431037f32dc8e37772d76006e4b85fa2c78967d0dbb"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/link/checks.exe",
+        "bytes": 140389376,
+        "sha256": "35d9f5bc3859a2a29877810fc1399744af56042b31816b2ba99f2d43610e3606"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/link/checks.exp",
+        "bytes": 24998,
+        "sha256": "fb657920ab974ac51d4c68bde5b84a186c5e8dde0b1aba01ab1a64a4f0b2fd9f"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/link/checks.lib",
+        "bytes": 41560,
+        "sha256": "e3eec625c4d56af921c84bc5bca498fbb2dd363ea9da365d72c9c124867c8b3a"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cpu/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/compile/unit.obj",
+        "bytes": 2765037,
+        "sha256": "2515a0bd03016caf1db283b9191ad92109072470c21b84f2b78fc59580a39372"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/link/checks.exe",
+        "bytes": 140395008,
+        "sha256": "94f53673186c4ab7da14967e3406132db8f5efe31f3fba5c660daf11f0a0c321"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/link/checks.exp",
+        "bytes": 24999,
+        "sha256": "6f03ae641090f28a11ef7cfe80364d28ce8ab85e0ef7de55c1e615735a3e8040"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/link/checks.lib",
+        "bytes": 41560,
+        "sha256": "e3eec625c4d56af921c84bc5bca498fbb2dd363ea9da365d72c9c124867c8b3a"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/permanent-test1/cuda/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "logical_bytes": 574008678,
+    "retained_for_next_consumer": [
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/compute_provider_native--ct_packed/unit.obj",
+        "bytes": 977073,
+        "sha256": "794a73283fabb2dfbb6f0d0cd2c363733bc56e4b4af0d2974f5ff4d49128c814"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/graph_route_cpu--ct_packed_linear_region/unit.obj",
+        "bytes": 1136077,
+        "sha256": "e62ee314ea2183e64335b8f6e2ed041c5386474623d02606b2742c0034c2dcb8"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/graph_route_cuda--ct_packed_linear_region/unit.obj",
+        "bytes": 1136350,
+        "sha256": "03716288612523949e9f49663e31cb7cf4196c270516f1845a5b65a17f8c3f35"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/compute_provider_torch_cuda--artifact_provider/unit.obj",
+        "bytes": 1381707,
+        "sha256": "d48a4034697c592316af86a9f808199ebc7a20caec37b8d9cf90a721ea025fab"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/cuda1/unit.obj",
+        "bytes": 1007874,
+        "sha256": "fe734576d63c6b8fbf6297b3773f55a83cdf0082effed9aa9eff25e4d4211e41"
+      }
+    ],
+    "scope": "Consumer/test reproducible images and entry objects only. Five incremental Hyle leaves remain for the next source-retaining engine integration; original SDK/baseline/Graph objects excluded."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/nf4-packed-ordinary-cpu-cuda-2026-10-25.zip",
+    "bytes": 490120,
+    "sha256": "72c5a0c1a6c2914e7176d1651f98af8ff2e55ab10c0242ba526790b113de478b",
+    "CRC_verified": true,
+    "payloads": 232,
+    "path_mapping": ".scratch/nf4-packed-contraction-20261025/payload-manifest.json"
+  }
+}

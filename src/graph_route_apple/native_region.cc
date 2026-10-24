@@ -167,7 +167,9 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
     bool has_static = false;
     for (auto node : nodes) {
       Packed::Pattern pattern;
-      if (Packed::pattern(graph, node, pattern) && Packed::closed(graph, pattern, ct_uses, ct_allowed)) {
+      if (Packed::pattern(graph, node, pattern) &&
+          pattern.descriptor.format != compute::model_ops::WeightArtifactFormat::kNf4DoubleQuant &&
+          Packed::closed(graph, pattern, ct_uses, ct_allowed)) {
         has_packed = true;
         has_grouped_packed |= pattern.descriptor.expert_count != 0;
       }

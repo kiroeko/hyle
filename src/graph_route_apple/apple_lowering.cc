@@ -525,7 +525,9 @@ static Result<ca::Program> compile_impl(const std::shared_ptr<ca::detail::Runtim
       bool selected = false;
       for (auto id : boundary->nodes) {
         Packed::Pattern pattern;
-        if (!Packed::pattern(graph, id, pattern) || !Packed::closed(graph, pattern, uses, allowed))
+        if (!Packed::pattern(graph, id, pattern) ||
+            pattern.descriptor.format == compute::model_ops::WeightArtifactFormat::kNf4DoubleQuant ||
+            !Packed::closed(graph, pattern, uses, allowed))
           continue;
         const auto terminal = graph.producer(pattern.output).value().ordinal();
         packed[terminal] = pattern;

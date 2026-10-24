@@ -64,6 +64,10 @@ Result<std::vector<mx::array>> lower_ct_packed(
     const packed::internal::ArtifactPackedLinear &operation,
     std::span<const TensorDesc> descriptions,
     std::span<const mx::array> inputs, mx::Stream stream) {
+  if (operation.format != model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4 &&
+      operation.format != model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4 &&
+      operation.format != model_ops::WeightArtifactFormat::kGptqV1Int4)
+    return std::unexpected(Status::Unimplemented("Apple packed artifact codec is not implemented"));
   std::array<TensorDesc, 1> output;
   HYLE_RETURN_IF_ERROR(operation.infer_output_descriptions(descriptions, output));
   if (inputs.size() != descriptions.size() || stream.device.type != mx::Device::gpu)

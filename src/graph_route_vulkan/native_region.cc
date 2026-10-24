@@ -9,6 +9,7 @@
 #include <mutex>
 #include <new>
 #include <unordered_set>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -60,6 +61,9 @@ Result<Vector<typename Rule::Pattern>> packed_patterns(const Graph &graph,
     typename Rule::Pattern pattern;
     if (!Rule::pattern(graph, node, pattern) || !Rule::closed(graph, pattern, uses, allowed))
       continue;
+    if constexpr (std::is_same_v<Rule, CtPattern>)
+      if (pattern.descriptor.format == compute::model_ops::WeightArtifactFormat::kNf4DoubleQuant)
+        continue; // This native packed implementation admits CT/GPTQ only.
     std::array<compute::TensorDesc, Rule::kMaxInputs> inputs;
     for (std::size_t port = 0; port < pattern.input_count; ++port) {
       HYLE_ASSIGN_OR_RETURN(inputs[port], graph.value_description(pattern.inputs[port]));

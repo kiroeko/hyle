@@ -1,4 +1,5 @@
 #include "../compute_models/ct_packed_graph_fixture.h"
+#include "../compute_models/nf4_packed_graph_fixture.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/cpu.h"
 
@@ -78,4 +79,8 @@ TEST(CpuCtPackedLinear, DefaultMultirowKeepsOriginalRouteAndPreparedCanSelectPac
   ::testing::Test::RecordProperty("default_packed_regions", "0");
   ::testing::Test::RecordProperty("prepared_packed_regions", "1");
 }
+TEST(CpuCtPackedLinear, Nf4SourceHalfRoundsAndMutableNestedOffset) {
+  nf4_packed_graph_test::SourceHalfRoundsAndMutableNestedOffset<Backend>();
+}
+
 } // namespace

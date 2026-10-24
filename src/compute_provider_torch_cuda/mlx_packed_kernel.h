@@ -19,7 +19,7 @@ struct MlxPacked final {
   // rows=T*S; shared activation slots use a real zero stride.
   std::uint64_t slots, activation_token_stride, activation_slot_stride;
 };
-enum class ArtifactFormat { kCtSymmetric, kCtAsymmetric, kGptqV1Int4 };
+enum class ArtifactFormat { kCtSymmetric, kCtAsymmetric, kGptqV1Int4, kNf4DoubleQuant };
 struct ArtifactPacked final {
   ArtifactFormat format;
   Scalar scale_type, decode_type, operand_type;

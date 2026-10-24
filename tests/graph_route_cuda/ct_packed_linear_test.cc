@@ -1,4 +1,5 @@
 #include "../compute_models/ct_packed_graph_fixture.h"
+#include "../compute_models/nf4_packed_graph_fixture.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/graph/cuda.h"
@@ -49,4 +50,8 @@ TEST(CudaCtPackedLinear, PublishedViewAndControlEscapesExecuteTheOriginalDecompo
 TEST(CudaCtPackedLinear, OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank) {
   f::OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank<Backend>();
 }
+TEST(CudaCtPackedLinear, Nf4SourceHalfRoundsAndMutableNestedOffset) {
+  nf4_packed_graph_test::SourceHalfRoundsAndMutableNestedOffset<Backend>();
+}
+
 } // namespace

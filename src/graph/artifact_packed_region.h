@@ -21,12 +21,12 @@ struct ArtifactPackedPattern : ClosedRegionPattern {
 inline static constexpr c::RoutePolicyId kPolicy = kArtifactPackedProjectionPolicy;
 inline static constexpr std::uint64_t kRoute = 1;
 inline static constexpr std::size_t kMaxNodes = 4;
-inline static constexpr std::size_t kMaxInputs = 5;
+inline static constexpr std::size_t kMaxInputs = 7;
 
 struct Pattern final {
   std::array<NodeId, kMaxNodes> nodes{};
   std::size_t size = 0;
-  std::array<ValueId, kMaxInputs> inputs{}; // Original A,codes[,Z],scale[,group index].
+  std::array<ValueId, kMaxInputs> inputs{}; // Original A and complete typed decoder operands (plus grouped IDs).
   std::size_t input_count = 0;
   ValueId output{};
   native::ArtifactPackedLinear descriptor{};
@@ -95,7 +95,8 @@ static bool pattern(const Graph &graph, NodeId matrix, Pattern &p) noexcept {
   if (!artifact ||
       (artifact->format != c::model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4 &&
        artifact->format != c::model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4 &&
-       artifact->format != c::model_ops::WeightArtifactFormat::kGptqV1Int4))
+       artifact->format != c::model_ops::WeightArtifactFormat::kGptqV1Int4 &&
+       artifact->format != c::model_ops::WeightArtifactFormat::kNf4DoubleQuant))
     return false;
   const auto count = artifact->operation_traits().inputs.minimum;
   if (!arity(graph, decode, count)) return false;

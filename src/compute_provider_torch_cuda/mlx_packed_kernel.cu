@@ -150,6 +150,42 @@ struct ArtifactRows final {
   }
 };
 
+// NF4 double-quant uses the same original packed row reduction. Only its
+// point reader differs: U8 high-first codes and the six public Decode inputs.
+struct Nf4Group final {
+  ArtifactPacked p;
+  const std::uint8_t *codes;
+  const float *codebook;
+  Index row;
+  float scale;
+  __device__ __forceinline__ float value(Index k) const {
+    const Index original = row * p.depth + k;
+    const auto code = (codes[original / 2] >> (original % 2 ? 0 : 4)) & 15U;
+    const float decoded = q::rounded(__fmul_rn(codebook[code], scale), p.decode_type);
+    return q::rounded(decoded, p.operand_type);
+  }
+  __device__ __forceinline__ float finish(float dot) const { return dot; }
+};
+struct Nf4Rows final {
+  using GroupIndex = Index;
+  ArtifactPacked p;
+  const std::uint8_t *codes, *absmax;
+  const float *nested_scale, *nested_map, *offset, *codebook;
+  __device__ __forceinline__ Index activation_offset(Index row) const {
+    return row * p.depth;
+  }
+  __device__ __forceinline__ Index weight_row(Index, Index column) const { return column; }
+  __device__ __forceinline__ Nf4Group group(Index row, Index group) const {
+    const Index original_group = row * (p.depth / p.group) + group;
+    const float product = __fmul_rn(nested_map[absmax[original_group]],
+                                    nested_scale[original_group / 256]);
+    // Original BNB rounds nested multiplication, offset addition, and NF4
+    // multiplication separately in F32; never contract these into an FMA.
+    const float scale = __fadd_rn(product, *offset);
+    return {p, codes, codebook, row, scale};
+  }
+};
+
 using cuda_native::packed::packed_rows;
 
 // Original MLX qmv warp-to-row mapping with the widened CPU equations:
@@ -217,6 +253,16 @@ __global__ void artifact_packed(ArtifactPacked p, const void *activation,
       ArtifactRows<Gptq, Grouped>{p, codes, zeros, scales, indices});
 }
 
+template<class Output, unsigned Rows>
+__global__ void nf4_packed(ArtifactPacked p, const void *activation,
+    const std::uint8_t *codes, const std::uint8_t *absmax,
+    const float *nested_scale, const float *nested_map, const float *offset,
+    const float *codebook, void *output) {
+  packed_rows<Output, Rows>(p.rows, p.columns, p.depth, p.group,
+      p.operand_type, activation, output,
+      Nf4Rows{p, codes, absmax, nested_scale, nested_map, offset, codebook});
+}
+
 template<class Output>
 __global__ void gptq_decode(ArtifactPacked p, const std::uint32_t *codes,
     const std::uint32_t *zeros, const void *scales, const std::int32_t *indices,
@@ -282,6 +328,24 @@ cudaError_t launch_artifact(const ArtifactPacked &p, const void *const *inputs,
                       void *output, unsigned *status, cudaStream_t stream) {
   ArtifactPacked spec = p;
   constexpr auto first = DecodeOnly ? 0 : 1;
+  if (p.format == ArtifactFormat::kNf4DoubleQuant) {
+    if constexpr (DecodeOnly) return cudaErrorInvalidValue;
+    const void *activation = inputs[0];
+    const auto *codes = static_cast<const std::uint8_t *>(inputs[1]);
+    const auto *absmax = static_cast<const std::uint8_t *>(inputs[2]);
+    const auto *nested_scale = static_cast<const float *>(inputs[3]);
+    const auto *nested_map = static_cast<const float *>(inputs[4]);
+    const auto *offset = static_cast<const float *>(inputs[5]);
+    const auto *codebook = static_cast<const float *>(inputs[6]);
+    void *args[]{&spec, &activation, &codes, &absmax, &nested_scale,
+                 &nested_map, &offset, &codebook, &output};
+    const bool row_batch = p.rows > 1;
+    const Index work_rows = row_batch ? 1 + (p.rows - 1) / 4 : p.rows;
+    const auto *kernel = row_batch ? reinterpret_cast<const void *>(nf4_packed<Output, 4>)
+                                   : reinterpret_cast<const void *>(nf4_packed<Output, 1>);
+    return cudaLaunchKernel(kernel, dim3(blocks(work_rows * p.columns, 8)),
+                            dim3(256), args, 0, stream);
+  }
   const bool gptq = p.format == ArtifactFormat::kGptqV1Int4;
   const bool zeros_present = p.format != ArtifactFormat::kCtSymmetric;
   const auto *codes = static_cast<const std::uint32_t *>(inputs[first]);
@@ -314,6 +378,12 @@ cudaError_t launch_artifact(const ArtifactPacked &p, const void *const *inputs,
 template<class Output>
 cudaError_t prepare_artifact(const ArtifactPacked &p, bool decode_only) {
   cudaFuncAttributes attributes{};
+  if (p.format == ArtifactFormat::kNf4DoubleQuant) {
+    if (decode_only || p.experts) return cudaErrorInvalidValue;
+    const auto *kernel = p.rows > 1 ? reinterpret_cast<const void *>(nf4_packed<Output, 4>)
+                                   : reinterpret_cast<const void *>(nf4_packed<Output, 1>);
+    return cudaFuncGetAttributes(&attributes, kernel);
+  }
   if (p.format == ArtifactFormat::kGptqV1Int4 || p.experts) {
     const auto result = cudaFuncGetAttributes(&attributes,
         reinterpret_cast<const void *>(check_ids));

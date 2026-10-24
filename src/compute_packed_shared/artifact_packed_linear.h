@@ -23,6 +23,7 @@ struct ArtifactPackedLinear final {
       "private-artifact-packed-linear";
   constexpr OperationTraits operation_traits() const noexcept {
     const auto count = std::uint16_t((
+        format == model_ops::WeightArtifactFormat::kNf4DoubleQuant ? 7 :
         format == model_ops::WeightArtifactFormat::kGptqV1Int4 ? 5 :
         format == model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4
             ? 4 : 3) + (expert_count != 0));
@@ -38,11 +39,13 @@ struct ArtifactPackedLinear final {
     };
     if ((format != model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4 &&
          format != model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4 &&
-         format != model_ops::WeightArtifactFormat::kGptqV1Int4) ||
+         format != model_ops::WeightArtifactFormat::kGptqV1Int4 &&
+         format != model_ops::WeightArtifactFormat::kNf4DoubleQuant) ||
         !floating(decode_type) || !floating(operand_type) ||
         in.size() != operation_traits().inputs.minimum || out.size() != 1)
       return Status::InvalidArgument("private packed artifact linear ports/types differ");
-    if (expert_count && format == model_ops::WeightArtifactFormat::kGptqV1Int4)
+    if (expert_count && (format == model_ops::WeightArtifactFormat::kGptqV1Int4 ||
+                         format == model_ops::WeightArtifactFormat::kNf4DoubleQuant))
       return Status::Unimplemented("private grouped artifact requires the CT bank layout");
     // An empty MatMul still follows a checked public GPTQ Decode. Keep that
     // decomposition instead of dropping its g_idx failure behind an empty dot.

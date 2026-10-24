@@ -29,7 +29,7 @@ bool overlaps(const void *a, std::size_t na, const void *b,
 }
 
 struct Mappings final {
-  std::array<mem::HostMapping, 5> inputs;
+  std::array<mem::HostMapping, 7> inputs;
   mem::HostMapping output;
   bool wrote = false;
   Status finish(Status status, mem::BufferView destination) noexcept {
@@ -43,7 +43,7 @@ struct Mappings final {
   }
 };
 
-template <class Scale, class Decoded, class Operand, bool Grouped>
+template <class Scale, class Decoded, class Operand, bool Grouped, bool Nf4 = false>
 struct Episode final {
   using Activation = std::conditional_t<Grouped, float, Operand>;
   using Output = std::conditional_t<Grouped, float, Operand>;
@@ -54,12 +54,14 @@ struct Episode final {
   const Scale *scales;
   Output *output;
   std::size_t slots;
+  const std::uint8_t *nf4_codes, *nf4_absmax;
+  const float *nf4_nested_scale, *nf4_nested_map, *nf4_offset, *nf4_map;
 };
 
-template <class Scale, class Decoded, class Operand, bool Grouped>
+template <class Scale, class Decoded, class Operand, bool Grouped, bool Nf4 = false>
 void dot_rows(void *state, std::size_t, std::size_t begin,
               std::size_t end) noexcept {
-  const auto &episode = *static_cast<const Episode<Scale, Decoded, Operand, Grouped> *>(state);
+  const auto &episode = *static_cast<const Episode<Scale, Decoded, Operand, Grouped, Nf4> *>(state);
   const auto n = episode.plan->parameters[1], k = episode.plan->parameters[2];
   const auto group_size = episode.plan->axis, groups = k / group_size;
   std::array<float, kTile> activation{}, weight{};
@@ -70,7 +72,17 @@ void dot_rows(void *state, std::size_t, std::size_t begin,
     float sum = 0.F;
     for (std::size_t group = 0; group < groups; ++group) {
       const bool gptq = episode.plan->scalar_bits == 2;
-      const float group_scale = gptq ? 0.F : numeric::decode(episode.scales[weight_row * groups + group]);
+      float group_scale;
+      if constexpr (Nf4) {
+        const auto original_group = weight_row * groups + group;
+        // Original nested dequantization has two separate F32 roundings.
+        volatile float nested_product = episode.nf4_nested_map[episode.nf4_absmax[original_group]] *
+            episode.nf4_nested_scale[original_group / 256];
+        volatile float nested_sum = nested_product + *episode.nf4_offset;
+        group_scale = nested_sum;
+      } else {
+        group_scale = gptq ? 0.F : numeric::decode(episode.scales[weight_row * groups + group]);
+      }
       const auto group_zero = gptq ? 0U : episode.zeros
           ? (episode.zeros[(weight_row / 8) * groups + group] >> (4 * (weight_row % 8))) & 15U
           : 8U;
@@ -97,13 +109,20 @@ void dot_rows(void *state, std::size_t, std::size_t begin,
           const auto zero = gptq
               ? ((episode.zeros[selected * (n / 8) + column / 8] >> (4 * (column % 8))) & 15U) + 1U
               : group_zero;
-          const auto code = (episode.codes[gptq ? (depth / 8) * n + column
-                                                : weight_row * (k / 8) + depth / 8] >>
-                             (4 * (depth % 8))) & 15U;
+          unsigned code;
+          if constexpr (Nf4) {
+            const auto original = weight_row * k + depth;
+            code = (episode.nf4_codes[original / 2] >> (original % 2 ? 0 : 4)) & 15U;
+          } else {
+            code = (episode.codes[gptq ? (depth / 8) * n + column
+                                      : weight_row * (k / 8) + depth / 8] >>
+                    (4 * (depth % 8))) & 15U;
+          }
           // The centered integer is exact in every admitted scale dtype.
           // Keep the F32 product boundary even when all following casts are
           // F32; it must not become part of the dot's fused multiply-add.
-          volatile float product = float(int(code) - int(zero)) * scale;
+          volatile float product = (Nf4 ? episode.nf4_map[code]
+                                       : float(int(code) - int(zero))) * scale;
           const auto source = numeric::encode<Scale>(product);
           const auto decoded = numeric::encode<Decoded>(numeric::decode(source));
           const auto operand = numeric::encode<Operand>(numeric::decode(decoded));
@@ -112,23 +131,23 @@ void dot_rows(void *state, std::size_t, std::size_t begin,
         sum += simd::dot(activation.data(), weight.data(), count);
       }
     }
-    episode.output[index] = numeric::encode<typename Episode<Scale, Decoded, Operand, Grouped>::Output>(sum);
+    episode.output[index] = numeric::encode<typename Episode<Scale, Decoded, Operand, Grouped, Nf4>::Output>(sum);
   }
 }
 
-template <class Scale, class Decoded, class Operand, bool Grouped>
+template <class Scale, class Decoded, class Operand, bool Grouped, bool Nf4 = false>
 detail::EnqueueResult submit_ct_packed(const NativePlan &plan,
     std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept {
   const bool gptq = plan.scalar_bits == 2;
   const bool asymmetric = plan.scalar_bits == 1;
-  if (inputs.size() != (gptq ? 5U : asymmetric ? 4U : 3U) + Grouped || outputs.size() != 1)
+  if (inputs.size() != (Nf4 ? 7U : gptq ? 5U : asymmetric ? 4U : 3U) + Grouped || outputs.size() != 1)
     return completed(Status::Internal("native CT packed binding count differs"));
   Mappings maps;
   const auto finish = [&](Status status) {
     return completed(maps.finish(std::move(status), outputs[0].storage()));
   };
-  std::array<std::size_t, 5> sizes{};
+  std::array<std::size_t, 7> sizes{};
   for (std::size_t i = 0; i < inputs.size(); ++i) {
     const auto storage = inputs[i].storage();
     if (!storage.resource().properties().has(mem::MemoryProperty::kHostDeviceCoherent)) {
@@ -163,12 +182,12 @@ detail::EnqueueResult submit_ct_packed(const NativePlan &plan,
   auto output = maps.output.writable_bytes();
   const auto bytes = *outputs[0].description().required_bytes();
   if (!output || output->size() < bytes || !bounded(output->data(), bytes) ||
-      !aligned_for_storage(output->data(), alignof(typename Episode<Scale, Decoded, Operand, Grouped>::Output)))
+      !aligned_for_storage(output->data(), alignof(typename Episode<Scale, Decoded, Operand, Grouped, Nf4>::Output)))
     return finish(Status::FailedPrecondition("native CT packed output mapping differs"));
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (overlaps(maps.inputs[i].bytes().data(), sizes[i], output->data(), bytes))
       return finish(Status::InvalidArgument("native CT packed input/output overlaps"));
-  using CurrentEpisode = Episode<Scale, Decoded, Operand, Grouped>;
+  using CurrentEpisode = Episode<Scale, Decoded, Operand, Grouped, Nf4>;
   CurrentEpisode episode{&plan,
       reinterpret_cast<const typename CurrentEpisode::Activation *>(maps.inputs[0].bytes().data()),
       reinterpret_cast<const std::uint32_t *>(maps.inputs[1].bytes().data()),
@@ -176,28 +195,34 @@ detail::EnqueueResult submit_ct_packed(const NativePlan &plan,
       indices,
       reinterpret_cast<const Scale *>(maps.inputs[gptq ? 3 : inputs.size() - 1 - Grouped].bytes().data()),
       reinterpret_cast<typename CurrentEpisode::Output *>(output->data()),
-      Grouped ? static_cast<std::size_t>(inputs.back().description().dimensions()[1]) : 1};
+      Grouped ? static_cast<std::size_t>(inputs.back().description().dimensions()[1]) : 1,
+      Nf4 ? reinterpret_cast<const std::uint8_t *>(maps.inputs[1].bytes().data()) : nullptr,
+      Nf4 ? reinterpret_cast<const std::uint8_t *>(maps.inputs[2].bytes().data()) : nullptr,
+      Nf4 ? reinterpret_cast<const float *>(maps.inputs[3].bytes().data()) : nullptr,
+      Nf4 ? reinterpret_cast<const float *>(maps.inputs[4].bytes().data()) : nullptr,
+      Nf4 ? reinterpret_cast<const float *>(maps.inputs[5].bytes().data()) : nullptr,
+      Nf4 ? reinterpret_cast<const float *>(maps.inputs[6].bytes().data()) : nullptr};
   maps.wrote = true;
   parallel_for_ranges(plan, *outputs[0].description().element_count(),
-                       &dot_rows<Scale, Decoded, Operand, Grouped>, &episode);
+                       &dot_rows<Scale, Decoded, Operand, Grouped, Nf4>, &episode);
   return finish(Status::Ok());
 }
 
-template <class Scale, class Decoded, bool Grouped>
+template <class Scale, class Decoded, bool Grouped, bool Nf4 = false>
 SubmitRoute operand_route(DataType type) noexcept {
   if (type == DataType::kFloat16)
-    return &submit_ct_packed<Scale, Decoded, simd::float16_t, Grouped>;
+    return &submit_ct_packed<Scale, Decoded, simd::float16_t, Grouped, Nf4>;
   if (type == DataType::kBFloat16)
-    return &submit_ct_packed<Scale, Decoded, simd::bfloat16_t, Grouped>;
-  return &submit_ct_packed<Scale, Decoded, float, Grouped>;
+    return &submit_ct_packed<Scale, Decoded, simd::bfloat16_t, Grouped, Nf4>;
+  return &submit_ct_packed<Scale, Decoded, float, Grouped, Nf4>;
 }
-template <class Scale, bool Grouped = false>
+template <class Scale, bool Grouped = false, bool Nf4 = false>
 SubmitRoute decode_route(const ArtifactPackedLinear &operation) noexcept {
   if (operation.decode_type == DataType::kFloat16)
-    return operand_route<Scale, simd::float16_t, Grouped>(operation.operand_type);
+    return operand_route<Scale, simd::float16_t, Grouped, Nf4>(operation.operand_type);
   if (operation.decode_type == DataType::kBFloat16)
-    return operand_route<Scale, simd::bfloat16_t, Grouped>(operation.operand_type);
-  return operand_route<Scale, float, Grouped>(operation.operand_type);
+    return operand_route<Scale, simd::bfloat16_t, Grouped, Nf4>(operation.operand_type);
+  return operand_route<Scale, float, Grouped, Nf4>(operation.operand_type);
 }
 } // namespace
 
@@ -214,17 +239,19 @@ Status prepare_ct_packed(Operation operation, std::span<const TensorDesc> inputs
   if (!inputs[0].is_plain() || (!grouped && (!inputs[0].is_dense() ||
       inputs[0].rank() != 2 || inputs[0].dimensions()[0] <= 0)))
     return Status::Unimplemented("native CT packed linear requires positive dense rank2 activation");
+  const bool nf4 = ct->format == model_ops::WeightArtifactFormat::kNf4DoubleQuant;
   const auto columns = grouped ? static_cast<std::size_t>(outputs[0].dimensions()[2])
-      : static_cast<std::size_t>(inputs[1].dimensions()[
-          ct->format == model_ops::WeightArtifactFormat::kGptqV1Int4 ? 1 : 0]);
+      : static_cast<std::size_t>(outputs[0].dimensions()[1]);
   plan.parameters = {grouped ? *outputs[0].element_count() / columns
                             : static_cast<std::size_t>(inputs[0].dimensions()[0]),
       columns, static_cast<std::size_t>(inputs[0].dimensions().back())};
   plan.axis = ct->group_size;
   const bool gptq = ct->format == model_ops::WeightArtifactFormat::kGptqV1Int4;
-  plan.scalar_bits = gptq ? 2 : ct->format == model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4;
+  plan.scalar_bits = nf4 ? 3 : gptq ? 2 : ct->format == model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4;
   const auto scale = inputs[gptq ? 3 : inputs.size() - 1 - grouped].data_type();
-  if (grouped) {
+  if (nf4) {
+    plan.submit_route = decode_route<float, false, true>(*ct);
+  } else if (grouped) {
     plan.row_first_stride = static_cast<std::size_t>(inputs[0].byte_strides()[0]);
     plan.row_second_stride = inputs[0].dimensions()[1] == 1 ? 0
         : static_cast<std::size_t>(inputs[0].byte_strides()[1]);

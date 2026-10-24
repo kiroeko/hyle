@@ -563,5 +563,15 @@
     "CRC_verified": true,
     "payloads": 1649,
     "source_and_path_mapping": ".scratch/nf4-typed-profile-20261025/payload-manifest.json"
+  },
+  "cleanup_followup": {
+    "performed": true,
+    "method": "Exact recorded binary paths written to repository test.ps1, previewed and then applied with native PowerShell literal-path removal.",
+    "files_removed": 24,
+    "logical_bytes_removed": 613750357,
+    "physical_bytes_freed": null,
+    "retained": "Original payloads, independent oracle, all source/commands/results, public archive, original SDK/cache and the separate ongoing packed-contraction work remain.",
+    "archive_unchanged": true,
+    "scope": "Only rebuildable binaries of the published F16 batch; private DLL entries included hardlinks, so logical size is not measured physical free space."
   }
 }

@@ -167,7 +167,13 @@ Status lower_ct_packed(ProgramState &program, const PlanStep &step) noexcept try
   if (!descriptor || step.outputs.size() != 1 ||
       step.inputs.size() != descriptor->operation_traits().inputs.minimum)
     return Status::InvalidArgument("Vulkan CT packed ports differ");
+  if (descriptor->format != model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4 &&
+      descriptor->format != model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4 &&
+      descriptor->format != model_ops::WeightArtifactFormat::kGptqV1Int4)
+    return Status::Unimplemented("Vulkan packed artifact codec is not implemented");
   std::array<TensorDesc, 5> inputs;
+  if (step.inputs.size() > inputs.size())
+    return Status::InvalidArgument("Vulkan packed artifact input capacity differs");
   for (std::size_t port = 0; port < step.inputs.size(); ++port)
     inputs[port] = program.values[step.inputs[port]].description;
   std::array<TensorDesc, 1> output;

@@ -470,6 +470,9 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s,
 
 bool is_mlx_float_operation(const Operation &operation,
                             std::span<const TensorDesc> inputs) noexcept {
+  if (const auto packed = operation.custom_as<packed::internal::ArtifactPackedLinear>();
+      packed && packed->format == model_ops::WeightArtifactFormat::kNf4DoubleQuant)
+    return false;
   return operation.custom_as<model_ops::CacheEncode>() ||
          is_mlx_float8_cast(operation, inputs) ||
          is_mlx_exact_binary(operation, inputs) ||

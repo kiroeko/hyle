@@ -88,7 +88,7 @@ struct Program final {
   bool is_softplus = false;
   bool is_attention = false;
   ScaledDotProductAttention attention{};
-  std::array<TensorDesc, 6> inputs;
+  std::array<TensorDesc, 7> inputs;
   TensorDesc output;
   std::size_t count = 0;
   at::Tensor shifts, order;
@@ -290,7 +290,8 @@ std::uint64_t artifact_route(const packed::internal::ArtifactPackedLinear &opera
   const auto code = [](DataType type) -> std::uint64_t {
     return type == DataType::kFloat16 ? 0 : type == DataType::kBFloat16 ? 1 : 2;
   };
-  const auto format = operation.format == model_ops::WeightArtifactFormat::kGptqV1Int4 ? 2ULL :
+  const auto format = operation.format == model_ops::WeightArtifactFormat::kNf4DoubleQuant ? 3ULL :
+      operation.format == model_ops::WeightArtifactFormat::kGptqV1Int4 ? 2ULL :
       operation.format == model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4 ? 1ULL : 0ULL;
   return 0x2000ULL | (operation.expert_count ? 0x1000ULL : 0) | (format << 8) |
       (code(operation.decode_type) << 4) | code(operation.operand_type);
@@ -298,16 +299,18 @@ std::uint64_t artifact_route(const packed::internal::ArtifactPackedLinear &opera
 native::ArtifactPacked artifact_program(const Program &p) noexcept {
   const auto format = p.is_gptq_decode ? p.operation.format : p.packed_artifact.format;
   const bool gptq = format == model_ops::WeightArtifactFormat::kGptqV1Int4;
+  const bool nf4 = format == model_ops::WeightArtifactFormat::kNf4DoubleQuant;
   const auto first = p.is_gptq_decode ? 0U : 1U;
   const auto codes = p.inputs[first].dimensions();
-  const auto depth = std::uint64_t(codes[gptq ? 0 : 1]) * 8;
+  const auto depth = std::uint64_t(codes[gptq ? 0 : 1]) * (nf4 ? 2 : 8);
   const auto experts = p.is_packed_artifact ? p.packed_artifact.expert_count : 0;
   const auto columns = std::uint64_t(codes[gptq ? 1 : 0]) / (experts ? experts : 1);
   const auto scale_port = first + (format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4 ? 1 : 2);
-  return {.format = gptq ? native::ArtifactFormat::kGptqV1Int4 :
+  return {.format = nf4 ? native::ArtifactFormat::kNf4DoubleQuant :
+              gptq ? native::ArtifactFormat::kGptqV1Int4 :
               format == model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4
                   ? native::ArtifactFormat::kCtAsymmetric : native::ArtifactFormat::kCtSymmetric,
-      .scale_type = packed_scalar(p.inputs[scale_port].data_type()),
+      .scale_type = nf4 ? native::Scalar::kFloat32 : packed_scalar(p.inputs[scale_port].data_type()),
       .decode_type = packed_scalar(p.is_gptq_decode ? p.output.data_type() : p.packed_artifact.decode_type),
       .operand_type = packed_scalar(p.is_gptq_decode ? p.output.data_type() : p.packed_artifact.operand_type),
       .group = p.is_gptq_decode ? p.operation.group_size : p.packed_artifact.group_size,
@@ -446,7 +449,7 @@ detail::EnqueueResult submit(void *state, void *slot, detail::QueueSequence &seq
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   cuda::detail::ScopedPrimaryContext scope(program.context.primary);
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
-  std::array<const void *, 6> pointers{};
+  std::array<const void *, 7> pointers{};
   for (std::size_t i = 0; i < inputs.size(); ++i) {
     const auto alignment = program.is_attention
         ? (std::max)(program.inputs[i].required_alignment(), std::size_t{16})
