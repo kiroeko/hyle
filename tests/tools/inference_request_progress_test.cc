@@ -12,6 +12,11 @@
 namespace {
 bool track_allocations = false;
 std::size_t allocation_count = 0;
+// Keep GCC's allocation-family analysis outside the paired malloc/free hooks.
+#if defined(__GNUC__)
+[[gnu::noinline]]
+#endif
+void free_test_allocation(void *memory) noexcept { std::free(memory); }
 }
 void *operator new(std::size_t bytes) {
   if (track_allocations) ++allocation_count;
@@ -19,10 +24,10 @@ void *operator new(std::size_t bytes) {
   throw std::bad_alloc{};
 }
 void *operator new[](std::size_t bytes) { return ::operator new(bytes); }
-void operator delete(void *memory) noexcept { std::free(memory); }
-void operator delete[](void *memory) noexcept { std::free(memory); }
-void operator delete(void *memory, std::size_t) noexcept { std::free(memory); }
-void operator delete[](void *memory, std::size_t) noexcept { std::free(memory); }
+void operator delete(void *memory) noexcept { free_test_allocation(memory); }
+void operator delete[](void *memory) noexcept { free_test_allocation(memory); }
+void operator delete(void *memory, std::size_t) noexcept { free_test_allocation(memory); }
+void operator delete[](void *memory, std::size_t) noexcept { free_test_allocation(memory); }
 
 namespace {
 using hyle::inference::GenerationTurn;

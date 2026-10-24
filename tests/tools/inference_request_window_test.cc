@@ -12,6 +12,13 @@
 namespace {
 bool track_allocations = false, fail_next_allocation = false;
 std::size_t allocation_count = 0;
+// Keep GCC's allocation-family analysis outside this malloc/free test hook.
+// Otherwise inlining replacement delete into std::vector falsely attributes
+// its free() to the language operator new rather than our paired replacement.
+#if defined(__GNUC__)
+[[gnu::noinline]]
+#endif
+void free_test_allocation(void *memory) noexcept { std::free(memory); }
 }
 
 void *operator new(std::size_t bytes) {
@@ -21,10 +28,10 @@ void *operator new(std::size_t bytes) {
   throw std::bad_alloc{};
 }
 void *operator new[](std::size_t bytes) { return ::operator new(bytes); }
-void operator delete(void *memory) noexcept { std::free(memory); }
-void operator delete[](void *memory) noexcept { std::free(memory); }
-void operator delete(void *memory, std::size_t) noexcept { std::free(memory); }
-void operator delete[](void *memory, std::size_t) noexcept { std::free(memory); }
+void operator delete(void *memory) noexcept { free_test_allocation(memory); }
+void operator delete[](void *memory) noexcept { free_test_allocation(memory); }
+void operator delete(void *memory, std::size_t) noexcept { free_test_allocation(memory); }
+void operator delete[](void *memory, std::size_t) noexcept { free_test_allocation(memory); }
 
 namespace {
 using hyle::inference::RequestKey;

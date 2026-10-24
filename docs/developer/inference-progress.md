@@ -1,8 +1,9 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 06:24（北京时间）。整体暂估 **9%**，当前阶段：补普通模型接线、运行中续轮、等待／取消与输出背压。
+更新：2026-10-25 06:40（北京时间）。整体暂估 **11%**，当前阶段：普通模型量化／短历史接线，以及请求生命周期的真实消费者。
 百分比只表示本轮工作完成度，不是现有引擎的功能覆盖率；盘点后按实际缺项调整。
 本轮基线为 `c950466ec`，已提交并推送；上一轮 MTP 范围与结果保留在[工程说明](../implementation/inference-roadmap.md)及所属证据。
+最近完成批次已推送：`29a746911`（开放续轮／等待窗口／交付游标、DeepSeek 短历史、NF4 原值组件）。
 
 范围：单机、多系统，CPU／单 GPU／CPU＋GPU；基础普通推理、多会话、多请求／多任务。
 实现重心在 Compute／Graph、状态与缓存、内存／资源寿命、调度／I/O 和共用推理原语。
@@ -13,15 +14,15 @@
 功能完成标准是当前硬件能实现、能检查的相关底层功能全部完成；新增缺项继续纳入。
 首批清单、代表样例或盘点完成都不作为功能穷尽完成。本轮性能查明普通／MTP 落后原因，寻找反超机会和更好的基础设计，CUDA 重点参考 TensorRT-LLM；不以只整理旧对照作为完成。
 
-- 功能盘点与补齐：约 8%
-  - 基础普通推理：约 14%
+- 功能盘点与补齐：约 12%
+  - 基础普通推理：约 18%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 普通角色与计算接线：约 25%
     - MLX affine 普通投影／embedding／head：0%
-    - CT asymmetric INT4 角色与零点接线：0%
+    - CT asymmetric INT4 角色与零点接线：约 25%
     - 解码／激活／计算／缓存精度合同：约 5%
     - DeepSeek 原 target 空／短历史与 SWA 阶段：100%
-    - GLM Pro 短上下文与真实 index 供给：0%
+    - GLM Pro 短上下文与真实 index 供给：约 20%
     - Kimi 普通异构状态统一提交与恢复：0%
     - Kimi 混合量化专家工作集组合：0%
     - prefill／decode／上下文与状态：约 5%
@@ -32,7 +33,7 @@
     - 生成后前缀命中的 Text R2 suffix 接纳：100%
     - 容量／淘汰／驻留与实际退休：约 5%
     - 已确认缺项的实现与有限检查：0%
-  - 多请求与多任务：约 12%
+  - 多请求与多任务：约 17%
     - 有界槽／世代／FIFO 与等待／唤醒原语：100%
     - 运行中有界接纳与增量续轮：约 25%
     - 请求级取消与保留同批未提交成员：约 10%
@@ -40,7 +41,7 @@
     - 输出消费／背压与完成观察：约 20%
     - prefill／decode 调度量与公平性：约 5%
     - 多 Model 的资源寿命与设备接纳：约 5%
-- 架构复审、设计与调整：约 7%
+- 架构复审、设计与调整：约 10%
   - 全链职责、所有权与配置合同复审：约 5%
   - 按真实缺项调整共同机制：约 10%
   - 新模型／新后端／新请求政策扩展检查：0%
@@ -63,9 +64,9 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| CT asymmetric INT4 冷接线 | 功能／基础推理 | 核原零点角色、group32 与 reader 数学，补现有角色准备；复用已有解码器 | 约 5% |
-| 请求生命周期原生消费者 | 功能／架构 | 用原 Qwen 普通 R2 检查在途取消、survivor 续算、credit 暂停／唤醒与运行中追加轮次；尚未运行 | 约 10% |
-| GLM Pro 短历史接线调研 | 功能／基础推理 | 核固定 selected=2048 的壳与真实 index 供给，复用已有原角色和通用 MLA 算子 | 约 5% |
+| CT asymmetric INT4 投影接线 | 功能／基础推理 | 冷 metadata 已通过；复用原 packed Graph 融合接原零点角色，不展开整模型 dense 权重 | 约 10% |
+| 请求生命周期原生消费者 | 功能／架构 | 原 Qwen 普通随机 R2 prefill 已执行；继续核整批取消、survivor 续算、背压与增量续轮，尚未全程通过 | 约 35% |
+| GLM Pro 短历史与真实 index | 功能／基础推理 | 真实正宽 host 检查已通过；7 个必要原索引角色已取齐，继续接完整状态提交 | 约 30% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
@@ -79,6 +80,7 @@
 | [输入与有界窗口](../evidence/correctness/ordinary-input-and-request-window-2026-10-25.json) | pending-only 两轮、四请求 R2 CUDA 通过；窗口 224 次占位／672 turn、热零分配 |
 | [运行中追加轮次原语](../evidence/correctness/request-incremental-turns-2026-10-25.json) | host 8 组通过；包括等待输入、pending 一次消费、实际提前停止额度复用；尚未接在线入口 |
 | [等待／唤醒窗口](../evidence/correctness/request-window-suspension-2026-10-25.json)／[输出交付游标](../evidence/correctness/output-delivery-credit-2026-10-25.json) | host 检查通过；同一 FIFO、暂停仍占 payload、成功前缀确认幂等；尚未证明原生取消／背压全链 |
+| [Linux 主机原语检查](../evidence/correctness/request-host-linux-portability-2026-10-25.json) | WSL／GCC13 三套严格编译及运行通过；测试分配钩子修正后 Windows 两套复验通过；未运行 Linux GPU 推理 |
 | [NF4 冷 metadata](../evidence/correctness/nf4-original-cold-metadata-2026-10-25.json)／[原值 F16 组件](../evidence/correctness/nf4-original-f16-component-2026-10-25.json) | 原 15,360 个解码值及 CPU／CUDA M1、M2 投影通过；完整 F16 激活／导入及其余 351 份原 state 未完成 |
 | [DeepSeek 普通短历史](../evidence/correctness/deepseek-ordinary-early-history-2026-10-25.json) | 原三层 target CUDA 组件通过空启动、ratio4／ratio128 首压缩及 SWA 回绕；给定 126 前缀不是实际执行前 126 行；旧 Flash／Pro 消费者仅语法检查 |
 | [控制传输归因](../evidence/performance/inference-control-transfer-2026-10-25.json) | 既有 trace 的直接 H2D＋显式同步 API 约占普通／MTP warm 窗 0.528%／0.531%，尚未确认约 10% 差距主因 |

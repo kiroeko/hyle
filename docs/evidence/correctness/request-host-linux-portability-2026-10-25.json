@@ -1,0 +1,172 @@
+{
+  "status": "HOST_COMPONENT_ONLY_PASS",
+  "date": "2026-10-25",
+  "scope": "RequestWindow, RequestProgress and OutputDelivery standard-library host primitives only; no Linux device/backend inference.",
+  "system": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "final_source_pins": {
+    "engine/inference/request_window.h": {
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    "engine/inference/request_progress.h": {
+      "bytes": 12440,
+      "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+    },
+    "engine/inference/output_delivery.h": {
+      "bytes": 2599,
+      "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    "engine/inference/sampling_cursor.h": {
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    "tests/tools/inference_request_window_test.cc": {
+      "bytes": 16487,
+      "sha256": "422e728a974b41a91ae77039a479f2b84012695e71caff47d409fd01283e4db5"
+    },
+    "tests/tools/inference_request_progress_test.cc": {
+      "bytes": 18919,
+      "sha256": "581134025234b9f938000e46f0aa7eebf17333b541d86dc80958eb9cc3e57bbf"
+    },
+    "tests/tools/inference_output_delivery_test.cc": {
+      "bytes": 4885,
+      "sha256": "ba1da86f9409a6aa1ec3995291a57b6d97dc044f3fbca95b3939f1d2612b3d03"
+    }
+  },
+  "first_Linux_attempt": {
+    "inference_request_window_test": {
+      "compile": 1
+    },
+    "inference_request_progress_test": {
+      "compile": 1
+    },
+    "inference_output_delivery_test": {
+      "compile": 0,
+      "run": 0
+    }
+  },
+  "Linux_final": {
+    "inference_request_window_test": {
+      "compile": {
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++23",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MMD",
+          "-MF",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_request_window_test/dependencies.d",
+          "/mnt/c/public/project-hyle/hyle/tests/tools/inference_request_window_test.cc",
+          "-o",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_request_window_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 1.743837594985962
+      },
+      "run": {
+        "command": [
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_request_window_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.0413205623626709
+      }
+    },
+    "inference_request_progress_test": {
+      "compile": {
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++23",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MMD",
+          "-MF",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_request_progress_test/dependencies.d",
+          "/mnt/c/public/project-hyle/hyle/tests/tools/inference_request_progress_test.cc",
+          "-o",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_request_progress_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 1.322486400604248
+      },
+      "run": {
+        "command": [
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_request_progress_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.0033903121948242188
+      }
+    },
+    "inference_output_delivery_test": {
+      "compile": {
+        "command": [
+          "/usr/bin/g++",
+          "-std=c++23",
+          "-O2",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MMD",
+          "-MF",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_output_delivery_test/dependencies.d",
+          "/mnt/c/public/project-hyle/hyle/tests/tools/inference_output_delivery_test.cc",
+          "-o",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_output_delivery_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.795905351638794
+      },
+      "run": {
+        "command": [
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-host-linux-20261025/attempt2/inference_output_delivery_test/checks"
+        ],
+        "exit": 0,
+        "seconds": 0.00446009635925293
+      }
+    }
+  },
+  "Windows_changed_test_hook_recheck": {
+    "inference_request_window_test": {
+      "compile": {
+        "exit": 0,
+        "seconds": 0.5401955999841448
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.03619569999864325
+      }
+    },
+    "inference_request_progress_test": {
+      "compile": {
+        "exit": 0,
+        "seconds": 0.6908068000047933
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.033561999996891245
+      }
+    }
+  },
+  "cause_and_fix": "GCC13 inlining replacement delete into std::vector attributes its paired free() to language operator new and diagnoses mismatched-new-delete. Isolate only the test-hook free helper with GNU noinline; preserve -Wall/-Wextra/-Wpedantic/-Werror, production headers, allocation counting and runtime ownership.",
+  "claims": [
+    "No inference product logic changed by the portability correction.",
+    "Original first failures and both Linux revisions are retained.",
+    "All three Linux host suites and two changed Windows test suites compile and execute; no broad CMake configure/build or platform/backend matrix."
+  ],
+  "GPU_runs": 0,
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/request-host-linux-portability-2026-10-25.zip",
+    "bytes": 52288,
+    "sha256": "586c492388812b1f7342d3eca41f1ca029fe5f197a470cf5bc8d58705472e9ed"
+  },
+  "archive_members": 58
+}
